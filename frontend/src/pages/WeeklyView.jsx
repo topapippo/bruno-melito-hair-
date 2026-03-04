@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Layout from '../components/Layout';
@@ -31,7 +31,17 @@ export default function WeeklyView() {
   const scrollRef = useRef(null);
   const navigate = useNavigate();
 
-  useEffect(() => { fetchAppointments(); }, [weekStart]);
+  const fetchAppointments = useCallback(async () => {
+    setLoading(true);
+    try {
+      const startDate = format(weekStart, 'yyyy-MM-dd');
+      const endDate = format(addDays(weekStart, 5), 'yyyy-MM-dd');
+      const res = await axios.get(`${API}/appointments?start_date=${startDate}&end_date=${endDate}`);
+      setAppointments(res.data);
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
+  }, [weekStart]);
+
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -41,16 +51,7 @@ export default function WeeklyView() {
     }
   }, [loading]);
 
-  const fetchAppointments = async () => {
-    setLoading(true);
-    try {
-      const startDate = format(weekStart, 'yyyy-MM-dd');
-      const endDate = format(addDays(weekStart, 5), 'yyyy-MM-dd');
-      const res = await axios.get(`${API}/appointments?start_date=${startDate}&end_date=${endDate}`);
-      setAppointments(res.data);
-    } catch (err) { console.error(err); }
-    finally { setLoading(false); }
-  };
+  useEffect(() => { fetchAppointments(); }, [fetchAppointments]);
 
   const weekDays = Array.from({ length: 6 }, (_, i) => addDays(weekStart, i));
 

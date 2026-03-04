@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import * as XLSX from 'xlsx';
 import Layout from '../components/Layout';
@@ -28,9 +28,9 @@ export default function ReportIncassiPage() {
 
   useEffect(() => {
     fetchPayments();
-  }, [period]);
+  }, [fetchPayments]);
 
-  const getDateRange = () => {
+  const getDateRange = useCallback(() => {
     const now = new Date();
     switch (period) {
       case 'today':
@@ -47,9 +47,9 @@ export default function ReportIncassiPage() {
       default:
         return { start: startOfDay(now), end: endOfDay(now) };
     }
-  };
+  }, [period]);
 
-  const fetchPayments = async () => {
+  const fetchPayments = useCallback(async () => {
     setLoading(true);
     try {
       const { start, end } = getDateRange();
@@ -68,7 +68,7 @@ export default function ReportIncassiPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getDateRange]);
 
   const exportToExcel = () => {
     const data = payments.map(p => ({
