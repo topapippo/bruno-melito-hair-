@@ -1,0 +1,546 @@
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import Layout from '../components/Layout';
+import PageHeader from '../components/PageHeader';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Star, Gift, Search, Trophy, TrendingUp, Award, ChevronRight, Clock, Minus, Plus, Pencil, Save } from 'lucide-react';
+import { toast } from 'sonner';
+
+const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
+export default function LoyaltyPage() {
+  const [loyalties, setLoyalties] = useState([]);
+  const [config, setConfig] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [clientLoyalty, setClientLoyalty] = useState(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+  const [redeemOpen, setRedeemOpen] = useState(false);
+  const [redeemType, setRedeemType] = useState('');
+  const [redeeming, setRedeeming] = useState(false);
+  const [editingRewards, setEditingRewards] = useState(false);
+  const [editRewards, setEditRewards] = useState({});
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const [loyRes, configRes] = await Promise.all([
+        axios.get(`${API}/loyalty`),
+        axios.get(`${API}/loyalty/config`)
+      ]);
+      setLoyalties(loyRes.data);
+      setConfig(configRes.data);
+    } catch (err) {
+      console.error(err);
+      toast.error('Errore nel caricamento dei dati fedeltà');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const startEditRewards = () => {
+    if (config?.rewards) {
+      setEditRewards(JSON.parse(JSON.stringify(config.rewards)));
+    }
+    setEditingRewards(true);
+  };
+
+  const saveRewards = async () => {
+    try {
+      const res = await axios.put(`${API}/loyalty/config`, { rewards: editRewards });
+      setConfig(res.data);
+      setEditingRewards(false);
+      toast.success('Premi aggiornati!');
+    } catch (err) {
+      toast.error('Errore nel salvataggio');
+    }
+  };
+
+  const updateReward = (key, field, value) => {
+    setEditRewards(prev => ({
+      ...prev,
+      [key]: { ...prev[key], [field]: field === 'points_required' || field === 'discount_percent' ? Number(value) : value }
+    }));
+  };
+
+
+  const openClientDetail = async (loy) => {
+    setSelectedClient(loy);
+    setDetailOpen(true);
+    setLoadingDetail(true);
+    try {
+      const res = await axios.get(`${API}/loyalty/${loy.client_id}`);
+      setClientLoyalty(res.data);
+    } catch (err) {
+      toast.error('Errore nel caricamento dettagli');
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
+
+  const handleRedeem = async () => {
+    if (!selectedClient || !redeemType) return;
+    setRedeeming(true);
+    try {
+      await axios.post(`${API}/loyalty/${selectedClient.client_id}/redeem`, {
+        reward_type: redeemType
+      });
+      toast.success('Premio riscattato con successo!');
+      setRedeemOpen(false);
+      setRedeemType('');
+      // Refresh data
+      const res = await axios.get(`${API}/loyalty/${selectedClient.client_id}`);
+      setClientLoyalty(res.data);
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Errore nel riscatto');
+    } finally {
+      setRedeeming(false);
+    }
+  };
+
+  const handleUseReward = async (rewardId) => {
+    if (!selectedClient) return;
+    try {
+      await axios.post(`${API}/loyalty/${selectedClient.client_id}/use-reward/${rewardId}`);
+      toast.success('Premio utilizzato!');
+      const res = await axios.get(`${API}/loyalty/${selectedClient.client_id}`);
+      setClientLoyalty(res.data);
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Errore');
+    }
+  };
+
+  const filtered = loyalties.filter(l =>
+    l.client_name?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const totalPoints = loyalties.reduce((sum, l) => sum + l.points, 0);
+  const clientsWithRewards = loyalties.filter(l => l.points >= 5).length;
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="space-y-4">
+          <Skeleton className="h-12 w-64" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Skeleton className="h-28" />
+            <Skeleton className="h-28" />
+            <Skeleton className="h-28" />
+          </div>
+          <Skeleton className="h-64" />
+        </div>
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout>
+      <div className="space-y-6" data-testid="loyalty-page">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-black text-[#2D1B14] flex items-center gap-3">
+              <Star className="w-7 h-7 text-amber-500" />
+              Programma Fedeltà
+            </h1>
+            <p className="text-[#7C5C4A] mt-1">1 punto ogni €{config?.points_per_euro || 10} spesi</p>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-amber-500 rounded-xl">
+                  <Star className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm text-amber-700 font-semibold">Punti Totali in Circolo</p>
+                  <p className="text-3xl font-black text-amber-600" data-testid="total-points">{totalPoints}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-[#C8617A] rounded-xl">
+                  <Trophy className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm text-blue-700 font-semibold">Clienti Iscritti</p>
+                  <p className="text-3xl font-black text-[#C8617A]" data-testid="total-enrolled">{loyalties.length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-green-500 rounded-xl">
+                  <Gift className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm text-green-700 font-semibold">Con Premi Disponibili</p>
+                  <p className="text-3xl font-black text-green-600" data-testid="clients-with-rewards">{clientsWithRewards}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Rewards Info - Editable */}
+        <Card className="border-[#F0E6DC]/30">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg font-bold text-[#2D1B14] flex items-center gap-2">
+                <Gift className="w-5 h-5 text-[#C8617A]" />
+                Premi Disponibili
+              </CardTitle>
+              {!editingRewards ? (
+                <Button variant="outline" size="sm" onClick={startEditRewards} className="text-[#C8617A] border-[#C8617A]/30" data-testid="edit-rewards-btn">
+                  <Pencil className="w-4 h-4 mr-1" /> Modifica
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setEditingRewards(false)} className="text-gray-500">Annulla</Button>
+                  <Button size="sm" onClick={saveRewards} className="bg-[#C8617A] text-white" data-testid="save-rewards-btn">
+                    <Save className="w-4 h-4 mr-1" /> Salva
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {editingRewards ? (
+              <div className="space-y-4">
+                {Object.entries(editRewards).map(([key, reward]) => (
+                  <div key={key} className="p-4 bg-[#FAF7F2] rounded-xl border border-[#F0E6DC] space-y-3">
+                    <div>
+                      <label className="text-xs font-bold text-[#7C5C4A] block mb-1">Nome Premio</label>
+                      <Input value={reward.name || ''} onChange={(e) => updateReward(key, 'name', e.target.value)} className="border-[#F0E6DC]" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-[#7C5C4A] block mb-1">Descrizione</label>
+                      <Input value={reward.description || ''} onChange={(e) => updateReward(key, 'description', e.target.value)} className="border-[#F0E6DC]" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-bold text-[#7C5C4A] block mb-1">Punti Necessari</label>
+                        <Input type="number" value={reward.points_required || 0} onChange={(e) => updateReward(key, 'points_required', e.target.value)} className="border-[#F0E6DC]" />
+                      </div>
+                      {reward.discount_percent !== undefined && (
+                        <div>
+                          <label className="text-xs font-bold text-[#7C5C4A] block mb-1">Sconto %</label>
+                          <Input type="number" value={reward.discount_percent || 0} onChange={(e) => updateReward(key, 'discount_percent', e.target.value)} className="border-[#F0E6DC]" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {config?.rewards && Object.entries(config.rewards).map(([key, reward]) => {
+                  const isSconto = key.includes('sconto');
+                  return (
+                    <div key={key} className={`p-4 ${isSconto ? 'bg-purple-50 border-purple-200' : 'bg-emerald-50 border-emerald-200'} rounded-xl border`}>
+                      <div className="flex items-center gap-2 mb-2">
+                        {isSconto ? <Award className="w-5 h-5 text-purple-600" /> : <Trophy className="w-5 h-5 text-emerald-600" />}
+                        <h3 className={`font-bold ${isSconto ? 'text-purple-800' : 'text-emerald-800'}`}>{reward.name}</h3>
+                      </div>
+                      <p className={`text-sm ${isSconto ? 'text-purple-600' : 'text-emerald-600'} mb-2`}>{reward.description}</p>
+                      <div className="flex items-center gap-1">
+                        <Star className="w-4 h-4 text-amber-500" />
+                        <span className={`text-sm font-black ${isSconto ? 'text-purple-700' : 'text-emerald-700'}`}>{reward.points_required} punti necessari</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7C5C4A]" />
+          <Input
+            placeholder="Cerca cliente..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            data-testid="loyalty-search"
+            className="pl-10 bg-white border-[#F0E6DC] focus:border-[#C8617A] h-11"
+          />
+        </div>
+
+        {/* Client Loyalty List */}
+        {filtered.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filtered.sort((a, b) => b.points - a.points).map((loy) => (
+              <Card
+                key={loy.id}
+                className="bg-white border-[#F0E6DC]/30 hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => openClientDetail(loy)}
+                data-testid={`loyalty-card-${loy.client_id}`}
+              >
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-[#2D1B14] truncate">{loy.client_name}</h3>
+                      {loy.client_phone && (
+                        <p className="text-sm text-[#7C5C4A] mt-0.5">{loy.client_phone}</p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 bg-amber-100 px-3 py-1.5 rounded-full ml-2 shrink-0">
+                      <Star className="w-4 h-4 text-amber-500" />
+                      <span className="text-lg font-black text-amber-600">{loy.points}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Progress bars for rewards */}
+                  <div className="mt-4 space-y-2">
+                    <div>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="text-purple-600 font-semibold">Sconto Colorazione</span>
+                        <span className="font-bold text-purple-700">{Math.min(loy.points, 5)}/5</span>
+                      </div>
+                      <div className="h-2 bg-purple-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-purple-500 rounded-full transition-all"
+                          style={{ width: `${Math.min(100, (loy.points / 5) * 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="text-emerald-600 font-semibold">Taglio Gratuito</span>
+                        <span className="font-bold text-emerald-700">{Math.min(loy.points, 10)}/10</span>
+                      </div>
+                      <div className="h-2 bg-emerald-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-emerald-500 rounded-full transition-all"
+                          style={{ width: `${Math.min(100, (loy.points / 10) * 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Active unredeemed rewards */}
+                  {loy.active_rewards?.filter(r => !r.redeemed).length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-1">
+                      {loy.active_rewards.filter(r => !r.redeemed).map((r) => (
+                        <span key={r.id} className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">
+                          {r.reward_name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="mt-3 flex items-center text-xs text-[#7C5C4A]">
+                    <TrendingUp className="w-3 h-3 mr-1" />
+                    Totale guadagnati: {loy.total_points_earned}
+                    <ChevronRight className="w-4 h-4 ml-auto text-[#CBD5E1]" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card className="bg-white border-[#F0E6DC]/30">
+            <CardContent className="py-16 text-center">
+              <Star className="w-16 h-16 mx-auto text-[#E2E8F0] mb-4" strokeWidth={1.5} />
+              <h3 className="text-xl font-bold text-[#2D1B14] mb-2">
+                {search ? 'Nessun risultato' : 'Nessun cliente nel programma fedeltà'}
+              </h3>
+              <p className="text-[#7C5C4A]">
+                {search ? 'Prova con un termine diverso' : 'I punti vengono assegnati automaticamente al checkout'}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Client Detail Dialog */}
+        <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
+          <DialogContent className="sm:max-w-[550px] max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-black text-[#2D1B14] flex items-center gap-2">
+                <Star className="w-6 h-6 text-amber-500" />
+                {selectedClient?.client_name}
+              </DialogTitle>
+              <DialogDescription>Dettagli programma fedeltà</DialogDescription>
+            </DialogHeader>
+
+            {loadingDetail ? (
+              <div className="space-y-3">
+                <Skeleton className="h-20" />
+                <Skeleton className="h-20" />
+              </div>
+            ) : clientLoyalty ? (
+              <div className="space-y-5">
+                {/* Points Summary */}
+                <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-amber-50 to-amber-100 p-6 rounded-xl border border-amber-200">
+                  <Star className="w-8 h-8 text-amber-500" />
+                  <span className="text-5xl font-black text-amber-600" data-testid="client-points">{clientLoyalty.points}</span>
+                  <span className="text-lg font-semibold text-amber-700 ml-1">punti</span>
+                </div>
+
+                {/* Redeem Rewards */}
+                <div className="space-y-3">
+                  <h3 className="font-bold text-[#2D1B14]">Riscatta Premi</h3>
+                  {config?.rewards && Object.entries(config.rewards).map(([key, reward]) => {
+                    const reqPoints = reward.points_required || 0;
+                    const canRedeem = clientLoyalty.points >= reqPoints;
+                    const isSconto = key.includes('sconto');
+                    return (
+                      <div
+                        key={key}
+                        className={`p-4 rounded-xl border-2 flex items-center justify-between ${
+                          canRedeem ? 'border-green-300 bg-green-50' : 'border-[#F0E6DC] bg-[#FAF7F2] opacity-60'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-xl ${isSconto ? 'bg-purple-100' : 'bg-emerald-100'}`}>
+                            {isSconto ? <Award className="w-5 h-5 text-purple-600" /> : <Trophy className="w-5 h-5 text-emerald-600" />}
+                          </div>
+                          <div>
+                            <p className="font-bold text-[#2D1B14]">{reward.name}</p>
+                            <p className="text-xs text-[#7C5C4A]">{reqPoints} punti</p>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          disabled={!canRedeem}
+                          onClick={() => {
+                            setRedeemType(key);
+                            setRedeemOpen(true);
+                          }}
+                          className={canRedeem ? 'bg-amber-500 hover:bg-amber-600 text-white' : ''}
+                          data-testid={`redeem-${key}-btn`}
+                        >
+                          <Gift className="w-4 h-4 mr-1" />
+                          Riscatta
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Active Rewards */}
+                {clientLoyalty.active_rewards?.filter(r => !r.redeemed).length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="font-bold text-[#2D1B14]">Premi da Utilizzare</h3>
+                    {clientLoyalty.active_rewards.filter(r => !r.redeemed).map((r) => (
+                      <div key={r.id} className="p-4 bg-green-50 rounded-xl border border-green-200 flex items-center justify-between">
+                        <div>
+                          <p className="font-bold text-green-800">{r.reward_name}</p>
+                          <p className="text-xs text-green-600">
+                            <Clock className="w-3 h-3 inline mr-1" />
+                            Riscattato il {new Date(r.created_at).toLocaleDateString('it-IT')}
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => handleUseReward(r.id)}
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                          data-testid={`use-reward-${r.id}`}
+                        >
+                          Usa Ora
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* History */}
+                <div className="space-y-2">
+                  <h3 className="font-bold text-[#2D1B14]">Storico Punti</h3>
+                  {clientLoyalty.history?.length > 0 ? (
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {[...clientLoyalty.history].reverse().slice(0, 20).map((h) => (
+                        <div key={h.id} className="flex items-center justify-between p-3 bg-[#FAF7F2] rounded-xl border border-[#F0E6DC]">
+                          <div className="flex items-center gap-2">
+                            {h.type === 'earned' ? (
+                              <Plus className="w-4 h-4 text-green-600" />
+                            ) : h.type === 'redeemed' ? (
+                              <Minus className="w-4 h-4 text-red-500" />
+                            ) : (
+                              <Star className="w-4 h-4 text-amber-500" />
+                            )}
+                            <div>
+                              <p className="text-sm font-semibold text-[#2D1B14]">{h.description}</p>
+                              <p className="text-xs text-[#7C5C4A]">{new Date(h.date).toLocaleDateString('it-IT')}</p>
+                            </div>
+                          </div>
+                          <span className={`font-black text-sm ${h.points > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                            {h.points > 0 ? `+${h.points}` : h.points}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-[#7C5C4A] text-center py-4">Nessuna attività</p>
+                  )}
+                </div>
+              </div>
+            ) : null}
+          </DialogContent>
+        </Dialog>
+
+        {/* Redeem Confirmation */}
+        <AlertDialog open={redeemOpen} onOpenChange={setRedeemOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Riscattare Premio?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Vuoi riscattare "{config?.rewards?.[redeemType]?.name}" per {selectedClient?.client_name}?
+                Verranno scalati {config?.rewards?.[redeemType]?.points_required || 0} punti.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annulla</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleRedeem}
+                disabled={redeeming}
+                className="bg-amber-500 hover:bg-amber-600"
+              >
+                {redeeming ? 'Riscatto...' : 'Conferma Riscatto'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </Layout>
+  );
+}
+
+// Rewards loaded from API

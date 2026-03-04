@@ -1,0 +1,325 @@
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import Layout from '../components/Layout';
+import PageHeader from '../components/PageHeader';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Settings, Save, Loader2, Clock, Building2, User, Lock } from 'lucide-react';
+import { toast } from 'sonner';
+import { useAuth } from '../context/AuthContext';
+
+const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
+const DAYS = [
+  { value: 'lunedì', label: 'Lunedì' },
+  { value: 'martedì', label: 'Martedì' },
+  { value: 'mercoledì', label: 'Mercoledì' },
+  { value: 'giovedì', label: 'Giovedì' },
+  { value: 'venerdì', label: 'Venerdì' },
+  { value: 'sabato', label: 'Sabato' },
+  { value: 'domenica', label: 'Domenica' },
+];
+
+export default function SettingsPage() {
+  const { updateUser } = useAuth();
+  const [settings, setSettings] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [changingPw, setChangingPw] = useState(false);
+  const [pwForm, setPwForm] = useState({ current_password: '', new_password: '', confirm_password: '' });
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const res = await axios.get(`${API}/settings`);
+      setSettings(res.data);
+    } catch (err) {
+      console.error('Error fetching settings:', err);
+      toast.error('Errore nel caricamento delle impostazioni');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const res = await axios.put(`${API}/settings`, {
+        salon_name: settings.salon_name,
+        name: settings.name,
+        opening_time: settings.opening_time,
+        closing_time: settings.closing_time,
+        working_days: settings.working_days
+      });
+      updateUser({ name: settings.name, salon_name: settings.salon_name });
+      toast.success('Impostazioni salvate!');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Errore nel salvataggio');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleDay = (day) => {
+    setSettings(prev => ({
+      ...prev,
+      working_days: prev.working_days.includes(day)
+        ? prev.working_days.filter(d => d !== day)
+        : [...prev.working_days, day]
+    }));
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    if (pwForm.new_password !== pwForm.confirm_password) {
+      toast.error('Le nuove password non coincidono');
+      return;
+    }
+    if (pwForm.new_password.length < 6) {
+      toast.error('La password deve avere almeno 6 caratteri');
+      return;
+    }
+    setChangingPw(true);
+    try {
+      await axios.put(`${API}/auth/change-password`, {
+        current_password: pwForm.current_password,
+        new_password: pwForm.new_password
+      });
+      toast.success('Password cambiata con successo!');
+      setPwForm({ current_password: '', new_password: '', confirm_password: '' });
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Errore nel cambio password');
+    } finally {
+      setChangingPw(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="space-y-6">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-64" />
+        </div>
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout>
+      <div className="space-y-6" data-testid="settings-page">
+        {/* Header */}
+        <div>
+          <h1 className="font-display text-3xl font-medium text-[#2D1B14]">Impostazioni</h1>
+          <p className="text-[#7C5C4A] mt-1 ">Gestisci le impostazioni del tuo salone</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Profile Settings */}
+          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+            <CardHeader>
+              <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
+                <User className="w-5 h-5 text-[#C8617A]" />
+                Profilo
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Il tuo nome</Label>
+                  <Input
+                    value={settings.name || ''}
+                    onChange={(e) => setSettings({ ...settings, name: e.target.value })}
+                    data-testid="settings-name-input"
+                    className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input
+                    value={settings.email || ''}
+                    disabled
+                    className="bg-[#FAF7F2] border-transparent opacity-60"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Salon Settings */}
+          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+            <CardHeader>
+              <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-[#C8617A]" />
+                Salone
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Nome del Salone</Label>
+                <Input
+                  value={settings.salon_name || ''}
+                  onChange={(e) => setSettings({ ...settings, salon_name: e.target.value })}
+                  data-testid="settings-salon-name-input"
+                  className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Working Hours */}
+          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+            <CardHeader>
+              <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
+                <Clock className="w-5 h-5 text-[#C8617A]" />
+                Orari di Apertura
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Apertura</Label>
+                  <Input
+                    type="time"
+                    value={settings.opening_time || '09:00'}
+                    onChange={(e) => setSettings({ ...settings, opening_time: e.target.value })}
+                    data-testid="settings-opening-time-input"
+                    className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Chiusura</Label>
+                  <Input
+                    type="time"
+                    value={settings.closing_time || '19:00'}
+                    onChange={(e) => setSettings({ ...settings, closing_time: e.target.value })}
+                    data-testid="settings-closing-time-input"
+                    className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <Label>Giorni Lavorativi</Label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {DAYS.map((day) => (
+                    <div
+                      key={day.value}
+                      className={`flex items-center space-x-2 p-3 rounded-xl border cursor-pointer transition-colors ${
+                        settings.working_days?.includes(day.value)
+                          ? 'bg-[#C8617A]/10 border-[#C8617A]'
+                          : 'bg-[#FAF7F2] border-transparent hover:border-[#F0E6DC]'
+                      }`}
+                      onClick={() => toggleDay(day.value)}
+                    >
+                      <Checkbox
+                        checked={settings.working_days?.includes(day.value)}
+                        className="data-[state=checked]:bg-[#C8617A] data-[state=checked]:border-[#C8617A]"
+                      />
+                      <span className={`text-sm ${
+                        settings.working_days?.includes(day.value) ? 'text-[#C8617A] font-medium' : 'text-[#2D1B14]'
+                      }`}>
+                        {day.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Save Button */}
+          <div className="flex justify-end">
+            <Button
+              type="submit"
+              disabled={saving}
+              data-testid="save-settings-btn"
+              className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-[0_4px_12px_rgba(200,97,122,0.3)] shadow-lg shadow-[rgba(200,97,122,0.3)] px-8"
+            >
+              {saving ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <>
+                  <Save className="w-5 h-5 mr-2" />
+                  Salva Impostazioni
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
+
+        {/* Change Password */}
+        <Card className="border-2 border-[#F0E6DC]">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-[#2D1B14]">
+              <Lock className="w-5 h-5 text-[#C8617A]" />
+              Cambia Password
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-[#2D1B14] font-semibold">Password Attuale</Label>
+                <Input
+                  type="password"
+                  value={pwForm.current_password}
+                  onChange={(e) => setPwForm({ ...pwForm, current_password: e.target.value })}
+                  placeholder="Inserisci password attuale"
+                  required
+                  data-testid="current-password-input"
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-[#2D1B14] font-semibold">Nuova Password</Label>
+                  <Input
+                    type="password"
+                    value={pwForm.new_password}
+                    onChange={(e) => setPwForm({ ...pwForm, new_password: e.target.value })}
+                    placeholder="Minimo 6 caratteri"
+                    required
+                    data-testid="new-password-input"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[#2D1B14] font-semibold">Conferma Nuova Password</Label>
+                  <Input
+                    type="password"
+                    value={pwForm.confirm_password}
+                    onChange={(e) => setPwForm({ ...pwForm, confirm_password: e.target.value })}
+                    placeholder="Ripeti nuova password"
+                    required
+                    data-testid="confirm-password-input"
+                  />
+                </div>
+              </div>
+              <Button
+                type="submit"
+                disabled={changingPw}
+                className="bg-[#0F172A] hover:bg-[#1E293B] text-white"
+                data-testid="change-password-btn"
+              >
+                {changingPw ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    <Lock className="w-4 h-4 mr-2" />
+                    Cambia Password
+                  </>
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </Layout>
+  );
+}

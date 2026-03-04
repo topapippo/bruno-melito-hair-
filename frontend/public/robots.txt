@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /sito
+Allow: /prenota
+Disallow: /login
+Disallow: /planning
+Disallow: /appointments
+Disallow: /clients
+Disallow: /services
+Disallow: /operators
+Disallow: /cards
+Disallow: /promozioni
+Disallow: /loyalty
+Disallow: /incassi
+Disallow: /backup
+Disallow: /gestione-sito
+Disallow: /reminders
+Disallow: /expenses
+Disallow: /dashboard
+Disallow: /card-alerts
+
+Sitemap: https://mbhssalon.onrender.com/sitemap.xml
