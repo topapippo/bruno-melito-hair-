@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
@@ -24,11 +24,7 @@ export default function StatsPage() {
     end: new Date()
   });
 
-  useEffect(() => {
-    fetchStats();
-  }, [dateRange]);
-
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     setLoading(true);
     try {
       const res = await axios.get(`${API}/stats/revenue`, {
@@ -43,7 +39,11 @@ export default function StatsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [dateRange]);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
   const setPresetRange = (preset) => {
     const today = new Date();
