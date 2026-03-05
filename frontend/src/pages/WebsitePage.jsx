@@ -71,8 +71,8 @@ export default function WebsitePage() {
           axios.get(`${API}/public/services`).catch(() => ({ data: [] }))
         ]);
         setSiteData(siteRes.data);
-        setOperators(opsRes.data);
-        setBookingServices(svcRes.data);
+        setOperators(Array.isArray(opsRes.data) ? opsRes.data : []);
+        setBookingServices(Array.isArray(svcRes.data) ? svcRes.data : []);
         try {
           const promosRes = await axios.get(`${API}/public/promotions/all`);
           setPublicPromos(promosRes.data);
@@ -94,7 +94,7 @@ export default function WebsitePage() {
       ...prev, service_ids: prev.service_ids.includes(id) ? prev.service_ids.filter(s => s !== id) : [...prev.service_ids, id]
     }));
   };
-  const selectedServices = bookingServices.filter(s => formData.service_ids.includes(s.id));
+  const selectedServices = Array.isArray(bookingServices) ? bookingServices.filter(s => formData.service_ids.includes(s.id)) : [];
   const totalPrice = selectedServices.reduce((sum, s) => sum + (s.price || 0), 0);
   const totalDuration = selectedServices.reduce((sum, s) => sum + (s.duration || 0), 0);
 
