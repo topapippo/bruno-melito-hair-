@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
-import api from '../lib/api';
-import { getMediaUrl } from '../lib/mediaUrl';
+import axios from 'axios';
 import Layout from '../components/Layout';
-import PageHeader from '../components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,9 +30,9 @@ export default function WebsiteAdminPage() {
   const fetchAll = async () => {
     try {
       const [configRes, reviewsRes, galleryRes] = await Promise.all([
-        api.get(`${API}/website/config`),
-        api.get(`${API}/website/reviews`),
-        api.get(`${API}/website/gallery`)
+        axios.get(`${API}/website/config`),
+        axios.get(`${API}/website/reviews`),
+        axios.get(`${API}/website/gallery`)
       ]);
       setConfig(configRes.data);
       setReviews(reviewsRes.data);
@@ -46,7 +44,7 @@ export default function WebsiteAdminPage() {
   const saveConfig = async () => {
     setSaving(true);
     try {
-      const res = await api.put(`${API}/website/config`, config);
+      const res = await axios.put(`${API}/website/config`, config);
       setConfig(res.data);
       toast.success('Configurazione salvata!');
     } catch (err) { toast.error('Errore nel salvataggio'); }
@@ -72,12 +70,12 @@ export default function WebsiteAdminPage() {
   const saveReview = async () => {
     try {
       if (editReview) {
-        await api.put(`${API}/website/reviews/${editReview.id}`, reviewForm);
+        await axios.put(`${API}/website/reviews/${editReview.id}`, reviewForm);
       } else {
-        await api.post(`${API}/website/reviews`, reviewForm);
+        await axios.post(`${API}/website/reviews`, reviewForm);
       }
       setReviewDialog(false);
-      const res = await api.get(`${API}/website/reviews`);
+      const res = await axios.get(`${API}/website/reviews`);
       setReviews(res.data);
       toast.success('Recensione salvata!');
     } catch (err) { toast.error('Errore'); }
@@ -86,7 +84,7 @@ export default function WebsiteAdminPage() {
   const deleteReview = async (id) => {
     if (!window.confirm('Eliminare questa recensione?')) return;
     try {
-      await api.delete(`${API}/website/reviews/${id}`);
+      await axios.delete(`${API}/website/reviews/${id}`);
       setReviews(prev => prev.filter(r => r.id !== id));
       toast.success('Recensione eliminata');
     } catch (err) { toast.error('Errore'); }
@@ -101,11 +99,11 @@ export default function WebsiteAdminPage() {
       for (const file of files) {
         const formData = new FormData();
         formData.append('file', file);
-        const uploadRes = await api.post(`${API}/website/upload`, formData, {
+        const uploadRes = await axios.post(`${API}/website/upload`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
         const fileType = uploadRes.data.file_type || (file.type.startsWith('video') ? 'video' : 'image');
-        await api.post(`${API}/website/gallery`, {
+        await axios.post(`${API}/website/gallery`, {
           image_url: uploadRes.data.url,
           label: file.name.split('.')[0],
           tag: '',
@@ -113,7 +111,7 @@ export default function WebsiteAdminPage() {
           file_type: fileType
         });
       }
-      const res = await api.get(`${API}/website/gallery`);
+      const res = await axios.get(`${API}/website/gallery`);
       setGallery(res.data);
       const videoCount = files.filter(f => f.type.startsWith('video')).length;
       const imageCount = files.length - videoCount;
@@ -127,7 +125,7 @@ export default function WebsiteAdminPage() {
 
   const updateGalleryItem = async (id, field, value) => {
     try {
-      await api.put(`${API}/website/gallery/${id}`, { [field]: value });
+      await axios.put(`${API}/website/gallery/${id}`, { [field]: value });
       setGallery(prev => prev.map(g => g.id === id ? { ...g, [field]: value } : g));
     } catch (err) { toast.error('Errore'); }
   };
@@ -135,13 +133,17 @@ export default function WebsiteAdminPage() {
   const deleteGalleryItem = async (id) => {
     if (!window.confirm('Eliminare questa foto?')) return;
     try {
-      await api.delete(`${API}/website/gallery/${id}`);
+      await axios.delete(`${API}/website/gallery/${id}`);
       setGallery(prev => prev.filter(g => g.id !== id));
       toast.success('Foto eliminata');
     } catch (err) { toast.error('Errore'); }
   };
 
-  // getMediaUrl importato da ../lib/mediaUrl
+  const getImageUrl = (item) => {
+    if (!item?.image_url) return '';
+    if (item.image_url.startsWith('http')) return item.image_url;
+    return `${process.env.REACT_APP_BACKEND_URL}${item.image_url}`;
+  };
 
   // Service categories editor
   const updateCategory = (idx, field, value) => {
@@ -202,7 +204,7 @@ export default function WebsiteAdminPage() {
   const removeFeature = (idx) => updateField('about_features', (config.about_features || []).filter((_, i) => i !== idx));
 
   if (loading) {
-    return <Layout><div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-[#C8617A]" /></div></Layout>;
+    return <Layout><div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-[#0EA5E9]" /></div></Layout>;
   }
 
   const salonPhotos = gallery.filter(g => g.section === 'salon');
@@ -214,16 +216,16 @@ export default function WebsiteAdminPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-[#2D1B14]">Gestione Sito Web</h1>
-            <p className="text-sm text-[#7C5C4A]">Modifica i contenuti della tua pagina web pubblica</p>
+            <h1 className="text-2xl font-bold text-[#0F172A]">Gestione Sito Web</h1>
+            <p className="text-sm text-[#334155]">Modifica i contenuti della tua pagina web pubblica</p>
           </div>
           <div className="flex gap-2">
             <a href="/sito" target="_blank" rel="noopener noreferrer">
-              <Button variant="outline" className="border-[#C8617A] text-[#C8617A]" data-testid="preview-site-btn">
+              <Button variant="outline" className="border-[#0EA5E9] text-[#0EA5E9]" data-testid="preview-site-btn">
                 <Eye className="w-4 h-4 mr-2" /> Anteprima Sito
               </Button>
             </a>
-            <Button onClick={saveConfig} disabled={saving} className="bg-[#C8617A] hover:bg-[#A0404F] text-white" data-testid="save-config-btn">
+            <Button onClick={saveConfig} disabled={saving} className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white" data-testid="save-config-btn">
               {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
               Salva Modifiche
             </Button>
@@ -232,12 +234,12 @@ export default function WebsiteAdminPage() {
 
         <Tabs defaultValue="general" className="space-y-4">
           <TabsList className="bg-white border shadow-sm flex-wrap h-auto gap-1 p-1">
-            <TabsTrigger value="general" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Generale</TabsTrigger>
-            <TabsTrigger value="services" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Servizi</TabsTrigger>
-            <TabsTrigger value="photos" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Foto Salone</TabsTrigger>
-            <TabsTrigger value="gallery" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Gallery Lavori</TabsTrigger>
-            <TabsTrigger value="reviews" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Recensioni</TabsTrigger>
-            <TabsTrigger value="hours" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Orari & Contatti</TabsTrigger>
+            <TabsTrigger value="general" className="data-[state=active]:bg-[#0EA5E9] data-[state=active]:text-white">Generale</TabsTrigger>
+            <TabsTrigger value="services" className="data-[state=active]:bg-[#0EA5E9] data-[state=active]:text-white">Servizi</TabsTrigger>
+            <TabsTrigger value="photos" className="data-[state=active]:bg-[#0EA5E9] data-[state=active]:text-white">Foto Salone</TabsTrigger>
+            <TabsTrigger value="gallery" className="data-[state=active]:bg-[#0EA5E9] data-[state=active]:text-white">Gallery Lavori</TabsTrigger>
+            <TabsTrigger value="reviews" className="data-[state=active]:bg-[#0EA5E9] data-[state=active]:text-white">Recensioni</TabsTrigger>
+            <TabsTrigger value="hours" className="data-[state=active]:bg-[#0EA5E9] data-[state=active]:text-white">Orari & Contatti</TabsTrigger>
           </TabsList>
 
           {/* GENERAL */}
@@ -339,9 +341,9 @@ export default function WebsiteAdminPage() {
                     {salonPhotos.map((item) => (
                       <div key={item.id} className="relative group rounded-xl overflow-hidden border">
                         {item.file_type === 'video' ? (
-                          <video src={getMediaUrl(item?.image_url)} className="w-full aspect-square object-cover" muted playsInline />
+                          <video src={getImageUrl(item)} className="w-full aspect-square object-cover" muted playsInline />
                         ) : (
-                          <img src={getMediaUrl(item?.image_url)} alt={item.label} className="w-full aspect-square object-cover" />
+                          <img src={getImageUrl(item)} alt={item.label} className="w-full aspect-square object-cover" />
                         )}
                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <Button variant="ghost" size="icon" onClick={() => deleteGalleryItem(item.id)} className="text-white hover:text-red-400 hover:bg-red-400/20">
@@ -389,9 +391,9 @@ export default function WebsiteAdminPage() {
                     {galleryPhotos.map((item) => (
                       <div key={item.id} className="relative group rounded-xl overflow-hidden border">
                         {item.file_type === 'video' ? (
-                          <video src={getMediaUrl(item?.image_url)} className="w-full aspect-[3/4] object-cover" muted playsInline />
+                          <video src={getImageUrl(item)} className="w-full aspect-[3/4] object-cover" muted playsInline />
                         ) : (
-                          <img src={getMediaUrl(item?.image_url)} alt={item.label} className="w-full aspect-[3/4] object-cover" />
+                          <img src={getImageUrl(item)} alt={item.label} className="w-full aspect-[3/4] object-cover" />
                         )}
                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <Button variant="ghost" size="icon" onClick={() => deleteGalleryItem(item.id)} className="text-white hover:text-red-400 hover:bg-red-400/20">
@@ -512,7 +514,7 @@ export default function WebsiteAdminPage() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setReviewDialog(false)}>Annulla</Button>
-              <Button onClick={saveReview} className="bg-[#C8617A] text-white" data-testid="save-review-btn">Salva</Button>
+              <Button onClick={saveReview} className="bg-[#0EA5E9] text-white" data-testid="save-review-btn">Salva</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

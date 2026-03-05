@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import api from '../lib/api';
+import axios from 'axios';
 import Layout from '../components/Layout';
-import PageHeader from '../components/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -78,7 +77,7 @@ export default function ServicesPage() {
 
   const fetchServices = async () => {
     try {
-      const res = await api.get(`${API}/services`);
+      const res = await axios.get(`${API}/services`);
       setServices(res.data);
     } catch (err) {
       console.error('Error fetching services:', err);
@@ -98,10 +97,10 @@ export default function ServicesPage() {
     setSaving(true);
     try {
       if (editingService) {
-        await api.put(`${API}/services/${editingService.id}`, formData);
+        await axios.put(`${API}/services/${editingService.id}`, formData);
         toast.success('Servizio aggiornato!');
       } else {
-        await api.post(`${API}/services`, formData);
+        await axios.post(`${API}/services`, formData);
         toast.success('Servizio aggiunto!');
       }
       setDialogOpen(false);
@@ -130,7 +129,7 @@ export default function ServicesPage() {
   const handleDelete = async () => {
     if (!serviceToDelete) return;
     try {
-      await api.delete(`${API}/services/${serviceToDelete}`);
+      await axios.delete(`${API}/services/${serviceToDelete}`);
       toast.success('Servizio eliminato');
       setDeleteDialogOpen(false);
       setServiceToDelete(null);
@@ -173,13 +172,13 @@ export default function ServicesPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="font-display text-3xl font-medium text-[#2D1B14]">Servizi</h1>
-            <p className="text-[#7C5C4A] mt-1 ">{services.length} servizi disponibili</p>
+            <h1 className="font-playfair text-3xl font-medium text-[#0F172A]">Servizi</h1>
+            <p className="text-[#334155] mt-1 font-manrope">{services.length} servizi disponibili</p>
           </div>
           <Button 
             onClick={openNewDialog}
             data-testid="new-service-btn"
-            className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-[0_4px_12px_rgba(200,97,122,0.3)] shadow-lg shadow-[rgba(200,97,122,0.3)]"
+            className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white shadow-lg shadow-[#0EA5E9]/20"
           >
             <Plus className="w-5 h-5 mr-2" />
             Nuovo Servizio
@@ -207,8 +206,8 @@ export default function ServicesPage() {
                       className="w-3 h-3 rounded-full"
                       style={{ backgroundColor: category.color }}
                     />
-                    <h2 className="font-display text-xl text-[#2D1B14]">{category.label}</h2>
-                    <Badge variant="outline" className="ml-2 border-[#F0E6DC] text-[#7C5C4A]">
+                    <h2 className="font-playfair text-xl text-[#0F172A]">{category.label}</h2>
+                    <Badge variant="outline" className="ml-2 border-[#E2E8F0] text-[#334155]">
                       {categoryServices.length}
                     </Badge>
                   </div>
@@ -218,19 +217,19 @@ export default function ServicesPage() {
                       <Card
                         key={service.id}
                         data-testid={`service-card-${service.id}`}
-                        className="bg-white border-[#F0E6DC]/30 hover:border-[#C8617A]/30 transition-all duration-300 hover:-translate-y-1"
+                        className="bg-white border-[#E2E8F0]/30 hover:border-[#0EA5E9]/30 transition-all duration-300 hover:-translate-y-1"
                       >
                         <CardContent className="p-5">
                           <div className="flex items-start justify-between">
                             <div className="flex items-start gap-3">
                               <div className="w-3 h-3 rounded-full mt-2 shrink-0" style={{ backgroundColor: service.color || category.color }} />
                               <div>
-                                <h3 className="font-medium text-[#2D1B14] text-lg">{service.name}</h3>
-                                <div className="flex items-center gap-4 mt-3 text-sm text-[#7C5C4A]">
+                                <h3 className="font-medium text-[#0F172A] text-lg">{service.name}</h3>
+                                <div className="flex items-center gap-4 mt-3 text-sm text-[#334155]">
                                   <span className="flex items-center gap-1">
                                     <Clock className="w-4 h-4" /> {service.duration} min
                                   </span>
-                                  <span className="flex items-center gap-1 font-semibold text-[#2D1B14]">
+                                  <span className="flex items-center gap-1 font-semibold text-[#0F172A]">
                                     <Euro className="w-4 h-4" /> {service.price.toFixed(2)}
                                   </span>
                                 </div>
@@ -241,7 +240,7 @@ export default function ServicesPage() {
                                 size="icon"
                                 variant="ghost"
                                 onClick={() => handleEdit(service)}
-                                className="text-[#7C5C4A] hover:text-[#C8617A]"
+                                className="text-[#334155] hover:text-[#0EA5E9]"
                               >
                                 <Edit2 className="w-4 h-4" />
                               </Button>
@@ -252,7 +251,7 @@ export default function ServicesPage() {
                                   setServiceToDelete(service.id);
                                   setDeleteDialogOpen(true);
                                 }}
-                                className="text-[#7C5C4A] hover:text-[#E76F51]"
+                                className="text-[#334155] hover:text-[#E76F51]"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
@@ -267,14 +266,14 @@ export default function ServicesPage() {
             })}
           </div>
         ) : (
-          <Card className="bg-white border-[#F0E6DC]/30">
+          <Card className="bg-white border-[#E2E8F0]/30">
             <CardContent className="py-16 text-center">
               <Scissors className="w-16 h-16 mx-auto text-[#E2E8F0] mb-4" strokeWidth={1.5} />
-              <h3 className="font-display text-xl text-[#2D1B14] mb-2">Nessun servizio</h3>
-              <p className="text-[#7C5C4A] mb-4">Aggiungi i tuoi servizi per iniziare</p>
+              <h3 className="font-playfair text-xl text-[#0F172A] mb-2">Nessun servizio</h3>
+              <p className="text-[#334155] mb-4">Aggiungi i tuoi servizi per iniziare</p>
               <Button
                 onClick={openNewDialog}
-                className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-[0_4px_12px_rgba(200,97,122,0.3)]"
+                className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white"
               >
                 <Plus className="w-4 h-4 mr-2" /> Aggiungi Servizio
               </Button>
@@ -286,7 +285,7 @@ export default function ServicesPage() {
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle className="font-display text-2xl text-[#2D1B14]">
+              <DialogTitle className="font-playfair text-2xl text-[#0F172A]">
                 {editingService ? 'Modifica Servizio' : 'Nuovo Servizio'}
               </DialogTitle>
             </DialogHeader>
@@ -298,7 +297,7 @@ export default function ServicesPage() {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Es. Taglio Donna"
                   data-testid="service-name-input"
-                  className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
+                  className="bg-[#F8FAFC] border-transparent focus:border-[#0EA5E9]"
                   required
                 />
               </div>
@@ -336,7 +335,7 @@ export default function ServicesPage() {
                     value={formData.duration}
                     onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) || 0 })}
                     data-testid="service-duration-input"
-                    className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
+                    className="bg-[#F8FAFC] border-transparent focus:border-[#0EA5E9]"
                   />
                 </div>
                 <div className="space-y-2">
@@ -348,7 +347,7 @@ export default function ServicesPage() {
                     value={formData.price}
                     onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
                     data-testid="service-price-input"
-                    className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
+                    className="bg-[#F8FAFC] border-transparent focus:border-[#0EA5E9]"
                   />
                 </div>
               </div>
@@ -372,7 +371,7 @@ export default function ServicesPage() {
                   type="submit"
                   disabled={saving}
                   data-testid="save-service-btn"
-                  className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-[0_4px_12px_rgba(200,97,122,0.3)]"
+                  className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white"
                 >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : editingService ? 'Salva Modifiche' : 'Aggiungi Servizio'}
                 </Button>

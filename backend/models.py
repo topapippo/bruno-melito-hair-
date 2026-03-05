@@ -1,6 +1,5 @@
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr
 from typing import List, Optional
-import re
 
 from database import db
 
@@ -12,13 +11,6 @@ class UserCreate(BaseModel):
     password: str
     name: str
     salon_name: Optional[str] = "Il Mio Salone"
-
-    @field_validator('password')
-    @classmethod
-    def password_min_length(cls, v):
-        if len(v) < 6:
-            raise ValueError('La password deve avere almeno 6 caratteri')
-        return v
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -35,18 +27,6 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
-
-class ChangePasswordRequest(BaseModel):
-    """Modello tipizzato per cambio password (sostituisce dict generico)."""
-    current_password: str
-    new_password: str
-
-    @field_validator('new_password')
-    @classmethod
-    def new_password_min_length(cls, v):
-        if len(v) < 6:
-            raise ValueError('La nuova password deve avere almeno 6 caratteri')
-        return v
 
 
 # ============== OPERATOR ==============
@@ -78,7 +58,7 @@ class ClientCreate(BaseModel):
     phone: Optional[str] = ""
     email: Optional[str] = ""
     notes: Optional[str] = ""
-    send_sms_reminders: Optional[bool] = True  # campo canonico unificato
+    sms_reminder: Optional[bool] = True
 
 class ClientResponse(BaseModel):
     id: str
@@ -86,7 +66,8 @@ class ClientResponse(BaseModel):
     phone: Optional[str] = ""
     email: Optional[str] = ""
     notes: Optional[str] = ""
-    send_sms_reminders: Optional[bool] = False  # unico campo canonico
+    sms_reminder: Optional[bool] = False
+    send_sms_reminders: Optional[bool] = False
     created_at: str
     total_visits: int = 0
 
@@ -95,7 +76,7 @@ class ClientUpdate(BaseModel):
     phone: Optional[str] = None
     email: Optional[str] = None
     notes: Optional[str] = None
-    send_sms_reminders: Optional[bool] = None
+    sms_reminder: Optional[bool] = None
 
 class ClientBulkImport(BaseModel):
     clients: List[dict]
@@ -132,9 +113,6 @@ class ServiceUpdate(BaseModel):
 
 # ============== APPOINTMENT ==============
 
-_DATE_RE = re.compile(r'^\d{4}-\d{2}-\d{2}$')
-_TIME_RE = re.compile(r'^\d{2}:\d{2}$')
-
 class AppointmentCreate(BaseModel):
     client_id: Optional[str] = None
     client_name: Optional[str] = None
@@ -146,20 +124,6 @@ class AppointmentCreate(BaseModel):
     notes: Optional[str] = ""
     promo_id: Optional[str] = None
     card_id: Optional[str] = None
-
-    @field_validator('date')
-    @classmethod
-    def validate_date(cls, v):
-        if not _DATE_RE.match(v):
-            raise ValueError('Il formato della data deve essere YYYY-MM-DD')
-        return v
-
-    @field_validator('time')
-    @classmethod
-    def validate_time(cls, v):
-        if not _TIME_RE.match(v):
-            raise ValueError('Il formato dell\'orario deve essere HH:MM')
-        return v
 
 class AppointmentResponse(BaseModel):
     id: str
@@ -195,20 +159,6 @@ class AppointmentUpdate(BaseModel):
     time: Optional[str] = None
     status: Optional[str] = None
     notes: Optional[str] = None
-
-    @field_validator('date')
-    @classmethod
-    def validate_date(cls, v):
-        if v and not _DATE_RE.match(v):
-            raise ValueError('Il formato della data deve essere YYYY-MM-DD')
-        return v
-
-    @field_validator('time')
-    @classmethod
-    def validate_time(cls, v):
-        if v and not _TIME_RE.match(v):
-            raise ValueError('Il formato dell\'orario deve essere HH:MM')
-        return v
 
 
 # ============== SMS ==============
@@ -319,20 +269,6 @@ class PublicBookingRequest(BaseModel):
     date: str
     time: str
     notes: Optional[str] = ""
-
-    @field_validator('date')
-    @classmethod
-    def validate_date(cls, v):
-        if not _DATE_RE.match(v):
-            raise ValueError('Il formato della data deve essere YYYY-MM-DD')
-        return v
-
-    @field_validator('time')
-    @classmethod
-    def validate_time(cls, v):
-        if not _TIME_RE.match(v):
-            raise ValueError('Il formato dell\'orario deve essere HH:MM')
-        return v
 
 
 # ============== CHECKOUT ==============

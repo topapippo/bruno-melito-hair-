@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import api from '../lib/api';
+import axios from 'axios';
 import Layout from '../components/Layout';
-import PageHeader from '../components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -45,7 +44,7 @@ export default function CardAlertsPage() {
   const fetchAlerts = async () => {
     setLoading(true);
     try {
-      const res = await api.get(`${API}/cards/alerts/all?days=${daysThreshold}&threshold_percent=${balanceThreshold}`);
+      const res = await axios.get(`${API}/cards/alerts/all?days=${daysThreshold}&threshold_percent=${balanceThreshold}`);
       setExpiringCards(res.data.expiring_cards || []);
       setLowBalanceCards(res.data.low_balance_cards || []);
       setTotalAlerts(res.data.total_alerts || 0);
@@ -95,7 +94,7 @@ export default function CardAlertsPage() {
       window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
       
       // Mark as notified
-      await api.post(`${API}/cards/alerts/mark-notified/${selectedCard.id}?notification_type=whatsapp`);
+      await axios.post(`${API}/cards/alerts/mark-notified/${selectedCard.id}?notification_type=whatsapp`);
       
       toast.success('WhatsApp aperto! Notifica registrata.');
       setWhatsappDialogOpen(false);
@@ -126,18 +125,18 @@ export default function CardAlertsPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-[#2D1B14] flex items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl font-black text-[#0F172A] flex items-center gap-3">
               <Bell className="w-7 h-7 text-amber-500" />
               Avvisi Card
             </h1>
-            <p className="text-[#7C5C4A] mt-1">
+            <p className="text-[#334155] mt-1">
               Notifiche automatiche per card in scadenza o con credito basso
             </p>
           </div>
           <Button
             onClick={fetchAlerts}
             variant="outline"
-            className="border-[#F0E6DC]"
+            className="border-[#E2E8F0]"
             data-testid="refresh-alerts-btn"
           >
             <RefreshCw className="w-4 h-4 mr-2" />
@@ -146,11 +145,11 @@ export default function CardAlertsPage() {
         </div>
 
         {/* Settings */}
-        <Card className="bg-white border-[#F0E6DC]/30">
+        <Card className="bg-white border-[#E2E8F0]/30">
           <CardContent className="p-4">
             <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-2">
-                <Label className="text-sm text-[#7C5C4A]">Card in scadenza entro:</Label>
+                <Label className="text-sm text-[#334155]">Card in scadenza entro:</Label>
                 <Select value={daysThreshold} onValueChange={setDaysThreshold}>
                   <SelectTrigger className="w-28">
                     <SelectValue />
@@ -165,7 +164,7 @@ export default function CardAlertsPage() {
                 </Select>
               </div>
               <div className="flex items-center gap-2">
-                <Label className="text-sm text-[#7C5C4A]">Credito sotto:</Label>
+                <Label className="text-sm text-[#334155]">Credito sotto:</Label>
                 <Select value={balanceThreshold} onValueChange={setBalanceThreshold}>
                   <SelectTrigger className="w-24">
                     <SelectValue />
@@ -179,7 +178,7 @@ export default function CardAlertsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <Badge className="bg-[#C8617A] text-white text-sm px-3 py-1">
+              <Badge className="bg-[#0EA5E9] text-white text-sm px-3 py-1">
                 {totalAlerts} avvisi totali
               </Badge>
             </div>
@@ -247,10 +246,10 @@ export default function CardAlertsPage() {
                             </div>
                             <div className="min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <p className="font-bold text-[#2D1B14]">{card.client_name}</p>
+                                <p className="font-bold text-[#0F172A]">{card.client_name}</p>
                                 {getExpiryBadge(card.days_until_expiry)}
                               </div>
-                              <p className="text-sm text-[#7C5C4A] truncate">{card.name}</p>
+                              <p className="text-sm text-[#334155] truncate">{card.name}</p>
                               <div className="flex items-center gap-3 mt-1 text-xs text-[#64748B]">
                                 <span className="flex items-center gap-1">
                                   <Calendar className="w-3 h-3" />
@@ -275,7 +274,7 @@ export default function CardAlertsPage() {
                                 WhatsApp
                               </Button>
                             ) : (
-                              <Badge variant="outline" className="text-[#94A3B8] border-[#F0E6DC]">
+                              <Badge variant="outline" className="text-[#94A3B8] border-[#E2E8F0]">
                                 <Phone className="w-3 h-3 mr-1" />
                                 No telefono
                               </Badge>
@@ -313,10 +312,10 @@ export default function CardAlertsPage() {
                             </div>
                             <div className="min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <p className="font-bold text-[#2D1B14]">{card.client_name}</p>
+                                <p className="font-bold text-[#0F172A]">{card.client_name}</p>
                                 {getBalanceBadge(card.percent_remaining)}
                               </div>
-                              <p className="text-sm text-[#7C5C4A] truncate">{card.name}</p>
+                              <p className="text-sm text-[#334155] truncate">{card.name}</p>
                               <div className="flex items-center gap-3 mt-1 text-xs text-[#64748B]">
                                 <span className="flex items-center gap-1 font-semibold text-red-600">
                                   <Euro className="w-3 h-3" />
@@ -338,7 +337,7 @@ export default function CardAlertsPage() {
                                 WhatsApp
                               </Button>
                             ) : (
-                              <Badge variant="outline" className="text-[#94A3B8] border-[#F0E6DC]">
+                              <Badge variant="outline" className="text-[#94A3B8] border-[#E2E8F0]">
                                 <Phone className="w-3 h-3 mr-1" />
                                 No telefono
                               </Badge>
@@ -354,11 +353,11 @@ export default function CardAlertsPage() {
 
             {/* No Alerts */}
             {expiringCards.length === 0 && lowBalanceCards.length === 0 && (
-              <Card className="bg-white border-[#F0E6DC]/30">
+              <Card className="bg-white border-[#E2E8F0]/30">
                 <CardContent className="py-12 text-center">
                   <Check className="w-12 h-12 mx-auto text-green-500 mb-3" />
-                  <p className="text-lg font-bold text-[#2D1B14]">Tutto a posto!</p>
-                  <p className="text-sm text-[#7C5C4A] mt-1">
+                  <p className="text-lg font-bold text-[#0F172A]">Tutto a posto!</p>
+                  <p className="text-sm text-[#334155] mt-1">
                     Nessuna card in scadenza o con credito basso
                   </p>
                 </CardContent>
@@ -381,7 +380,7 @@ export default function CardAlertsPage() {
             </DialogHeader>
             <div className="mt-4 space-y-4">
               {selectedCard && (
-                <div className={`p-3 rounded-xl ${selectedCard.alertType === 'expiring' ? 'bg-amber-50 border border-amber-200' : 'bg-red-50 border border-red-200'}`}>
+                <div className={`p-3 rounded-lg ${selectedCard.alertType === 'expiring' ? 'bg-amber-50 border border-amber-200' : 'bg-red-50 border border-red-200'}`}>
                   <div className="flex items-center gap-2 text-sm">
                     {selectedCard.alertType === 'expiring' ? (
                       <>
@@ -408,7 +407,7 @@ export default function CardAlertsPage() {
                   value={messageTemplate}
                   onChange={(e) => setMessageTemplate(e.target.value)}
                   rows={8}
-                  className="bg-[#FAF7F2] border-2 border-[#F0E6DC] resize-none"
+                  className="bg-[#F8FAFC] border-2 border-[#E2E8F0] resize-none"
                   data-testid="whatsapp-message-textarea"
                 />
                 <p className="text-xs text-[#64748B]">
@@ -417,7 +416,7 @@ export default function CardAlertsPage() {
               </div>
 
               {selectedCard?.client_phone && (
-                <div className="flex items-center gap-2 p-2 bg-green-50 rounded-xl">
+                <div className="flex items-center gap-2 p-2 bg-green-50 rounded-lg">
                   <Phone className="w-4 h-4 text-green-600" />
                   <span className="text-sm text-green-800 font-medium">
                     {selectedCard.client_phone}

@@ -1,7 +1,9 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import api from '../lib/api';
+import axios from 'axios';
 
 const AuthContext = createContext(null);
+
+const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -10,22 +12,19 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       fetchUser();
     } else {
       setLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   const fetchUser = async () => {
     try {
-      const res = await api.get('/auth/me');
+      const res = await axios.get(`${API}/auth/me`);
       setUser(res.data);
     } catch (err) {
-      // 401 è già gestito dall'interceptor in api.js
-      if (err.response?.status !== 401) {
-        console.error('Auth error:', err);
-      }
+      console.error('Auth error:', err);
       logout();
     } finally {
       setLoading(false);
@@ -33,18 +32,20 @@ export function AuthProvider({ children }) {
   };
 
   const login = async (email, password) => {
-    const res = await api.post('/auth/login', { email, password });
+    const res = await axios.post(`${API}/auth/login`, { email, password });
     const { access_token, user: userData } = res.data;
     localStorage.setItem('token', access_token);
+    axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
     setToken(access_token);
     setUser(userData);
     return userData;
   };
 
   const register = async (email, password, name, salon_name) => {
-    const res = await api.post('/auth/register', { email, password, name, salon_name });
+    const res = await axios.post(`${API}/auth/register`, { email, password, name, salon_name });
     const { access_token, user: userData } = res.data;
     localStorage.setItem('token', access_token);
+    axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
     setToken(access_token);
     setUser(userData);
     return userData;
@@ -52,6 +53,7 @@ export function AuthProvider({ children }) {
 
   const logout = () => {
     localStorage.removeItem('token');
+    delete axios.defaults.headers.common['Authorization'];
     setToken(null);
     setUser(null);
   };

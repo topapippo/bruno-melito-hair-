@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import api from '../lib/api';
+import axios from 'axios';
 import Layout from '../components/Layout';
-import PageHeader from '../components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -31,7 +30,7 @@ export default function StatsPage() {
   const fetchStats = async () => {
     setLoading(true);
     try {
-      const res = await api.get(`${API}/stats/revenue`, {
+      const res = await axios.get(`${API}/stats/revenue`, {
         params: {
           start_date: format(dateRange.start, 'yyyy-MM-dd'),
           end_date: format(dateRange.end, 'yyyy-MM-dd')
@@ -69,7 +68,7 @@ export default function StatsPage() {
   const handleExportPdf = async () => {
     setExporting(true);
     try {
-      const response = await api.get(`${API}/stats/export-pdf`, {
+      const response = await axios.get(`${API}/stats/export-pdf`, {
         params: {
           start_date: format(dateRange.start, 'yyyy-MM-dd'),
           end_date: format(dateRange.end, 'yyyy-MM-dd')
@@ -103,8 +102,8 @@ export default function StatsPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="font-display text-3xl font-medium text-[#2D1B14]">Statistiche</h1>
-            <p className="text-[#7C5C4A] mt-1 ">
+            <h1 className="font-playfair text-3xl font-medium text-[#0F172A]">Statistiche</h1>
+            <p className="text-[#334155] mt-1 font-manrope">
               {format(dateRange.start, "d MMM", { locale: it })} - {format(dateRange.end, "d MMM yyyy", { locale: it })}
             </p>
           </div>
@@ -113,7 +112,7 @@ export default function StatsPage() {
               variant="outline"
               size="sm"
               onClick={() => setPresetRange('week')}
-              className="border-[#F0E6DC] text-[#2D1B14]"
+              className="border-[#E2E8F0] text-[#0F172A]"
             >
               7 giorni
             </Button>
@@ -121,7 +120,7 @@ export default function StatsPage() {
               variant="outline"
               size="sm"
               onClick={() => setPresetRange('month')}
-              className="border-[#F0E6DC] text-[#2D1B14]"
+              className="border-[#E2E8F0] text-[#0F172A]"
             >
               Questo mese
             </Button>
@@ -129,7 +128,7 @@ export default function StatsPage() {
               variant="outline"
               size="sm"
               onClick={() => setPresetRange('lastMonth')}
-              className="border-[#F0E6DC] text-[#2D1B14]"
+              className="border-[#E2E8F0] text-[#0F172A]"
             >
               Mese scorso
             </Button>
@@ -137,7 +136,7 @@ export default function StatsPage() {
               variant="outline"
               size="sm"
               onClick={() => setPresetRange('3months')}
-              className="border-[#F0E6DC] text-[#2D1B14]"
+              className="border-[#E2E8F0] text-[#0F172A]"
             >
               3 mesi
             </Button>
@@ -145,7 +144,7 @@ export default function StatsPage() {
               onClick={handleExportPdf}
               disabled={exporting || loading}
               data-testid="export-pdf-btn"
-              className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-[0_4px_12px_rgba(200,97,122,0.3)]"
+              className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white"
             >
               <Download className="w-4 h-4 mr-2" />
               {exporting ? 'Esportando...' : 'Esporta Report'}
@@ -163,28 +162,28 @@ export default function StatsPage() {
           <>
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+              <Card className="bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="text-sm text-[#7C5C4A] ">Incasso Totale</p>
-                      <p className="text-3xl font-display font-medium text-[#2D1B14] mt-2">
+                      <p className="text-sm text-[#334155] font-manrope">Incasso Totale</p>
+                      <p className="text-3xl font-playfair font-medium text-[#0F172A] mt-2">
                         €{(stats?.total_revenue || 0).toFixed(2)}
                       </p>
                     </div>
-                    <div className="w-12 h-12 rounded-xl bg-[#C8617A]/10 flex items-center justify-center">
-                      <Euro className="w-6 h-6 text-[#C8617A]" strokeWidth={1.5} />
+                    <div className="w-12 h-12 rounded-xl bg-[#0EA5E9]/10 flex items-center justify-center">
+                      <Euro className="w-6 h-6 text-[#0EA5E9]" strokeWidth={1.5} />
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+              <Card className="bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="text-sm text-[#7C5C4A] ">Appuntamenti</p>
-                      <p className="text-3xl font-display font-medium text-[#2D1B14] mt-2">
+                      <p className="text-sm text-[#334155] font-manrope">Appuntamenti</p>
+                      <p className="text-3xl font-playfair font-medium text-[#0F172A] mt-2">
                         {stats?.total_appointments || 0}
                       </p>
                     </div>
@@ -195,12 +194,12 @@ export default function StatsPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+              <Card className="bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="text-sm text-[#7C5C4A] ">Media per Appuntamento</p>
-                      <p className="text-3xl font-display font-medium text-[#2D1B14] mt-2">
+                      <p className="text-sm text-[#334155] font-manrope">Media per Appuntamento</p>
+                      <p className="text-3xl font-playfair font-medium text-[#0F172A] mt-2">
                         €{stats?.total_appointments > 0 
                           ? (stats.total_revenue / stats.total_appointments).toFixed(2) 
                           : '0.00'}
@@ -217,9 +216,9 @@ export default function StatsPage() {
             {/* Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Revenue Chart */}
-              <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+              <Card className="bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
                 <CardHeader>
-                  <CardTitle className="font-display text-xl text-[#2D1B14]">Incassi Giornalieri</CardTitle>
+                  <CardTitle className="font-playfair text-xl text-[#0F172A]">Incassi Giornalieri</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {stats?.daily_revenue?.length > 0 ? (
@@ -248,7 +247,7 @@ export default function StatsPage() {
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
-                    <div className="h-[300px] flex items-center justify-center text-[#7C5C4A]">
+                    <div className="h-[300px] flex items-center justify-center text-[#334155]">
                       Nessun dato disponibile
                     </div>
                   )}
@@ -256,9 +255,9 @@ export default function StatsPage() {
               </Card>
 
               {/* Services Breakdown */}
-              <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+              <Card className="bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
                 <CardHeader>
-                  <CardTitle className="font-display text-xl text-[#2D1B14]">Servizi Più Richiesti</CardTitle>
+                  <CardTitle className="font-playfair text-xl text-[#0F172A]">Servizi Più Richiesti</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {stats?.service_breakdown?.length > 0 ? (
@@ -296,9 +295,9 @@ export default function StatsPage() {
                                 className="w-3 h-3 rounded-full"
                                 style={{ backgroundColor: COLORS[idx % COLORS.length] }}
                               />
-                              <span className="text-sm text-[#2D1B14]">{service.name}</span>
+                              <span className="text-sm text-[#0F172A]">{service.name}</span>
                             </div>
-                            <span className="text-sm font-medium text-[#7C5C4A]">
+                            <span className="text-sm font-medium text-[#334155]">
                               {service.count}x - €{service.revenue.toFixed(0)}
                             </span>
                           </div>
@@ -306,7 +305,7 @@ export default function StatsPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="h-[200px] flex items-center justify-center text-[#7C5C4A]">
+                    <div className="h-[200px] flex items-center justify-center text-[#334155]">
                       Nessun dato disponibile
                     </div>
                   )}
@@ -316,10 +315,10 @@ export default function StatsPage() {
 
             {/* Operator Stats */}
             {stats?.operator_breakdown?.length > 0 && (
-              <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+              <Card className="bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
                 <CardHeader>
-                  <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
-                    <Users className="w-5 h-5 text-[#C8617A]" />
+                  <CardTitle className="font-playfair text-xl text-[#0F172A] flex items-center gap-2">
+                    <Users className="w-5 h-5 text-[#0EA5E9]" />
                     Performance Operatori
                   </CardTitle>
                 </CardHeader>
@@ -328,13 +327,13 @@ export default function StatsPage() {
                     {stats.operator_breakdown.map((operator, idx) => (
                       <div 
                         key={operator.name}
-                        className="p-4 rounded-xl bg-[#FAF7F2] border-l-4"
+                        className="p-4 rounded-xl bg-[#F8FAFC] border-l-4"
                         style={{ borderLeftColor: operator.color || COLORS[idx % COLORS.length] }}
                       >
-                        <h4 className="font-medium text-[#2D1B14]">{operator.name}</h4>
+                        <h4 className="font-medium text-[#0F172A]">{operator.name}</h4>
                         <div className="mt-2 flex items-center justify-between">
-                          <span className="text-sm text-[#7C5C4A]">{operator.count} appuntamenti</span>
-                          <span className="font-semibold text-[#2D1B14]">€{operator.revenue.toFixed(0)}</span>
+                          <span className="text-sm text-[#334155]">{operator.count} appuntamenti</span>
+                          <span className="font-semibold text-[#0F172A]">€{operator.revenue.toFixed(0)}</span>
                         </div>
                       </div>
                     ))}

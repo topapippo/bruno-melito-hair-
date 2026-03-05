@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import api from '../lib/api';
+import axios from 'axios';
 import Layout from '../components/Layout';
-import PageHeader from '../components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,7 +24,7 @@ export default function DailySummaryPage() {
   const fetchSummary = async () => {
     setLoading(true);
     try {
-      const res = await api.get(`${API}/stats/daily-summary?date=${selectedDate}`);
+      const res = await axios.get(`${API}/stats/daily-summary?date=${selectedDate}`);
       setData(res.data);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
@@ -55,19 +54,19 @@ export default function DailySummaryPage() {
         {/* Header with date nav */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="font-display text-3xl font-medium text-[#2D1B14]">Riepilogo Giornaliero</h1>
-            <p className="text-[#7C5C4A] mt-1  capitalize">
+            <h1 className="font-playfair text-3xl font-medium text-[#0F172A]">Riepilogo Giornaliero</h1>
+            <p className="text-[#334155] mt-1 font-manrope capitalize">
               {format(new Date(selectedDate), "EEEE d MMMM yyyy", { locale: it })}
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={prevDay} className="border-[#F0E6DC]" data-testid="prev-day-btn">
+            <Button variant="outline" size="icon" onClick={prevDay} className="border-[#E2E8F0]" data-testid="prev-day-btn">
               <ArrowLeft className="w-4 h-4" />
             </Button>
-            <Button variant="outline" onClick={goToday} className="border-[#F0E6DC] text-[#2D1B14] text-sm">Oggi</Button>
+            <Button variant="outline" onClick={goToday} className="border-[#E2E8F0] text-[#0F172A] text-sm">Oggi</Button>
             <Input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}
-              className="w-40 border-[#F0E6DC]" />
-            <Button variant="outline" size="icon" onClick={nextDay} className="border-[#F0E6DC]" data-testid="next-day-btn">
+              className="w-40 border-[#E2E8F0]" />
+            <Button variant="outline" size="icon" onClick={nextDay} className="border-[#E2E8F0]" data-testid="next-day-btn">
               <ArrowRight className="w-4 h-4" />
             </Button>
           </div>
@@ -75,12 +74,12 @@ export default function DailySummaryPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+          <Card className="bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm text-[#7C5C4A] ">Incasso Totale</p>
-                  <p className="text-3xl font-display font-medium text-[#2D1B14] mt-2" data-testid="total-earnings">
+                  <p className="text-sm text-[#334155] font-manrope">Incasso Totale</p>
+                  <p className="text-3xl font-playfair font-medium text-[#0F172A] mt-2" data-testid="total-earnings">
                     {'\u20AC'}{(data?.total_earnings || 0).toFixed(2)}
                   </p>
                   <div className="flex items-center gap-1 mt-1">
@@ -100,32 +99,32 @@ export default function DailySummaryPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+          <Card className="bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm text-[#7C5C4A] ">Clienti Serviti</p>
-                  <p className="text-3xl font-display font-medium text-[#2D1B14] mt-2" data-testid="unique-clients">
+                  <p className="text-sm text-[#334155] font-manrope">Clienti Serviti</p>
+                  <p className="text-3xl font-playfair font-medium text-[#0F172A] mt-2" data-testid="unique-clients">
                     {data?.unique_clients || 0}
                   </p>
-                  <p className="text-xs text-[#7C5C4A] mt-1">Media: {'\u20AC'}{(data?.avg_per_client || 0).toFixed(0)} / cliente</p>
+                  <p className="text-xs text-[#334155] mt-1">Media: {'\u20AC'}{(data?.avg_per_client || 0).toFixed(0)} / cliente</p>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center">
-                  <Users className="w-6 h-6 text-[#C8617A]" strokeWidth={1.5} />
+                  <Users className="w-6 h-6 text-[#0EA5E9]" strokeWidth={1.5} />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+          <Card className="bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm text-[#7C5C4A] ">Appuntamenti</p>
-                  <p className="text-3xl font-display font-medium text-[#2D1B14] mt-2" data-testid="total-appointments">
+                  <p className="text-sm text-[#334155] font-manrope">Appuntamenti</p>
+                  <p className="text-3xl font-playfair font-medium text-[#0F172A] mt-2" data-testid="total-appointments">
                     {data?.total_appointments || 0}
                   </p>
-                  <p className="text-xs text-[#7C5C4A] mt-1">{data?.completed_appointments || 0} completati</p>
+                  <p className="text-xs text-[#334155] mt-1">{data?.completed_appointments || 0} completati</p>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center">
                   <Clock className="w-6 h-6 text-amber-500" strokeWidth={1.5} />
@@ -134,15 +133,15 @@ export default function DailySummaryPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+          <Card className="bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm text-[#7C5C4A] ">Ora di Punta</p>
-                  <p className="text-3xl font-display font-medium text-[#2D1B14] mt-2" data-testid="busiest-hour">
+                  <p className="text-sm text-[#334155] font-manrope">Ora di Punta</p>
+                  <p className="text-3xl font-playfair font-medium text-[#0F172A] mt-2" data-testid="busiest-hour">
                     {data?.busiest_hour || '--'}
                   </p>
-                  <p className="text-xs text-[#7C5C4A] mt-1">{data?.busiest_hour_count || 0} appuntamenti</p>
+                  <p className="text-xs text-[#334155] mt-1">{data?.busiest_hour_count || 0} appuntamenti</p>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-rose-50 flex items-center justify-center">
                   <BarChart3 className="w-6 h-6 text-rose-500" strokeWidth={1.5} />
@@ -153,10 +152,10 @@ export default function DailySummaryPage() {
         </div>
 
         {/* Hourly Distribution Chart */}
-        <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+        <Card className="bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
           <CardHeader className="pb-2">
-            <CardTitle className="font-display text-xl text-[#2D1B14]">Distribuzione Oraria</CardTitle>
-            <p className="text-sm text-[#7C5C4A]">Numero appuntamenti per fascia oraria</p>
+            <CardTitle className="font-playfair text-xl text-[#0F172A]">Distribuzione Oraria</CardTitle>
+            <p className="text-sm text-[#334155]">Numero appuntamenti per fascia oraria</p>
           </CardHeader>
           <CardContent>
             <div className="flex items-end gap-1.5 h-48 pt-4" data-testid="hourly-chart">
@@ -166,18 +165,18 @@ export default function DailySummaryPage() {
                 return (
                   <div key={hour} className="flex-1 flex flex-col items-center justify-end h-full group relative">
                     {count > 0 && (
-                      <span className="text-xs font-bold text-[#2D1B14] mb-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-xs font-bold text-[#0F172A] mb-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         {count}
                       </span>
                     )}
                     <div
                       className={`w-full rounded-t-lg transition-all duration-500 ${
-                        isBusiest ? 'bg-[#C8617A] shadow-lg shadow-[rgba(200,97,122,0.3)]' :
-                        count > 0 ? 'bg-[#C8617A]/40 group-hover:bg-[#C8617A]/70' : 'bg-[#F5EDE0]'
+                        isBusiest ? 'bg-[#0EA5E9] shadow-lg shadow-[#0EA5E9]/20' :
+                        count > 0 ? 'bg-[#0EA5E9]/40 group-hover:bg-[#0EA5E9]/70' : 'bg-[#F1F5F9]'
                       }`}
                       style={{ height: `${Math.max(height, count > 0 ? 8 : 4)}%` }}
                     />
-                    <span className="text-[10px] text-[#7C5C4A] mt-2 ">{hour.replace(':00', '')}</span>
+                    <span className="text-[10px] text-[#334155] mt-2 font-manrope">{hour.replace(':00', '')}</span>
                   </div>
                 );
               })}
@@ -188,26 +187,26 @@ export default function DailySummaryPage() {
         {/* Bottom Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Top Services */}
-          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+          <Card className="bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
             <CardHeader className="pb-2">
-              <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
-                <Scissors className="w-5 h-5 text-[#C8617A]" /> Servizi Richiesti
+              <CardTitle className="font-playfair text-xl text-[#0F172A] flex items-center gap-2">
+                <Scissors className="w-5 h-5 text-[#0EA5E9]" /> Servizi Richiesti
               </CardTitle>
             </CardHeader>
             <CardContent>
               {data?.top_services?.length > 0 ? (
                 <div className="space-y-3">
                   {data.top_services.map((svc, idx) => {
-                    const colors = ['bg-[#C8617A]', 'bg-[#789F8A]', 'bg-[#E9C46A]', 'bg-[#C084FC]', 'bg-[#334155]'];
+                    const colors = ['bg-[#0EA5E9]', 'bg-[#789F8A]', 'bg-[#E9C46A]', 'bg-[#C084FC]', 'bg-[#334155]'];
                     return (
                       <div key={idx} className="flex items-center gap-3">
-                        <span className="text-sm font-bold text-[#7C5C4A] w-5 shrink-0">{idx + 1}.</span>
+                        <span className="text-sm font-bold text-[#334155] w-5 shrink-0">{idx + 1}.</span>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm font-medium text-[#2D1B14] truncate">{svc.name}</span>
-                            <span className="text-sm font-bold text-[#7C5C4A] shrink-0 ml-2">{svc.count}x</span>
+                            <span className="text-sm font-medium text-[#0F172A] truncate">{svc.name}</span>
+                            <span className="text-sm font-bold text-[#334155] shrink-0 ml-2">{svc.count}x</span>
                           </div>
-                          <div className="h-2 bg-[#F5EDE0] rounded-full overflow-hidden">
+                          <div className="h-2 bg-[#F1F5F9] rounded-full overflow-hidden">
                             <div className={`h-full ${colors[idx % 5]} rounded-full transition-all duration-700`}
                               style={{ width: `${(svc.count / (data.top_services[0]?.count || 1)) * 100}%` }} />
                           </div>
@@ -217,16 +216,16 @@ export default function DailySummaryPage() {
                   })}
                 </div>
               ) : (
-                <p className="text-sm text-[#7C5C4A] text-center py-8">Nessun servizio registrato per questa giornata</p>
+                <p className="text-sm text-[#334155] text-center py-8">Nessun servizio registrato per questa giornata</p>
               )}
             </CardContent>
           </Card>
 
           {/* Payment Methods */}
-          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+          <Card className="bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
             <CardHeader className="pb-2">
-              <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-[#C8617A]" /> Metodi di Pagamento
+              <CardTitle className="font-playfair text-xl text-[#0F172A] flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-[#0EA5E9]" /> Metodi di Pagamento
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -241,10 +240,10 @@ export default function DailySummaryPage() {
                         <div className={`w-3 h-3 rounded-full ${colors[method] || 'bg-gray-300'} shrink-0`} />
                         <div className="flex-1">
                           <div className="flex justify-between mb-1">
-                            <span className="text-sm text-[#2D1B14]">{labels[method] || method}</span>
-                            <span className="text-sm font-bold text-[#7C5C4A]">{count}</span>
+                            <span className="text-sm text-[#0F172A]">{labels[method] || method}</span>
+                            <span className="text-sm font-bold text-[#334155]">{count}</span>
                           </div>
-                          <div className="h-2 bg-[#F5EDE0] rounded-full overflow-hidden">
+                          <div className="h-2 bg-[#F1F5F9] rounded-full overflow-hidden">
                             <div className={`h-full ${colors[method] || 'bg-gray-300'} rounded-full`}
                               style={{ width: `${(count / totalPayments) * 100}%` }} />
                           </div>
@@ -254,7 +253,7 @@ export default function DailySummaryPage() {
                   })}
                 </div>
               ) : (
-                <p className="text-sm text-[#7C5C4A] text-center py-8">Nessun pagamento registrato per questa giornata</p>
+                <p className="text-sm text-[#334155] text-center py-8">Nessun pagamento registrato per questa giornata</p>
               )}
             </CardContent>
           </Card>
