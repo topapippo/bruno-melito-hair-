@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import * as XLSX from 'xlsx';
 import Layout from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -63,7 +63,7 @@ export default function ClientsPage() {
 
   const fetchClients = async () => {
     try {
-      const res = await axios.get(`${API}/clients`);
+      const res = await api.get(`${API}/clients`);
       setClients(res.data);
     } catch (err) {
       console.error('Error fetching clients:', err);
@@ -83,10 +83,10 @@ export default function ClientsPage() {
     setSaving(true);
     try {
       if (editingClient) {
-        await axios.put(`${API}/clients/${editingClient.id}`, formData);
+        await api.put(`${API}/clients/${editingClient.id}`, formData);
         toast.success('Cliente aggiornato!');
       } else {
-        await axios.post(`${API}/clients`, formData);
+        await api.post(`${API}/clients`, formData);
         toast.success('Cliente aggiunto!');
       }
       setDialogOpen(false);
@@ -115,7 +115,7 @@ export default function ClientsPage() {
   const handleDelete = async () => {
     if (!clientToDelete) return;
     try {
-      await axios.delete(`${API}/clients/${clientToDelete}`);
+      await api.delete(`${API}/clients/${clientToDelete}`);
       toast.success('Cliente eliminato');
       setDeleteDialogOpen(false);
       setClientToDelete(null);
@@ -136,7 +136,7 @@ export default function ClientsPage() {
     setHistoryDialogOpen(true);
     setLoadingHistory(true);
     try {
-      const res = await axios.get(`${API}/clients/${client.id}/history`);
+      const res = await api.get(`${API}/clients/${client.id}/history`);
       setClientHistory(res.data);
     } catch (err) {
       toast.error('Errore nel caricamento storico');
@@ -148,7 +148,7 @@ export default function ClientsPage() {
   // WhatsApp
   const openWhatsApp = async (client) => {
     try {
-      const res = await axios.get(`${API}/clients/${client.id}/whatsapp`);
+      const res = await api.get(`${API}/clients/${client.id}/whatsapp`);
       window.open(res.data.url, '_blank');
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Errore WhatsApp');
@@ -220,7 +220,7 @@ export default function ClientsPage() {
     
     setImporting(true);
     try {
-      const res = await axios.post(`${API}/clients/import`, {
+      const res = await api.post(`${API}/clients/import`, {
         clients: importPreview.map(c => ({
           name: c.name,
           phone: c.phone || '',

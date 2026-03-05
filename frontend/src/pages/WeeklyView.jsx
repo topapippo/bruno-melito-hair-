@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../lib/api';
 import Layout from '../components/Layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -45,7 +45,7 @@ export default function WeeklyView() {
     try {
       const startDate = format(weekStart, 'yyyy-MM-dd');
       const endDate = format(addDays(weekStart, 5), 'yyyy-MM-dd');
-      const res = await axios.get(`${API}/appointments?start_date=${startDate}&end_date=${endDate}`);
+      const res = await api.get(`${API}/appointments?start_date=${startDate}&end_date=${endDate}`);
       setAppointments(res.data);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }

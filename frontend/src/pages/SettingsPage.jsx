@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import Layout from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -37,7 +37,7 @@ export default function SettingsPage() {
 
   const fetchSettings = async () => {
     try {
-      const res = await axios.get(`${API}/settings`);
+      const res = await api.get(`${API}/settings`);
       setSettings(res.data);
     } catch (err) {
       console.error('Error fetching settings:', err);
@@ -51,7 +51,7 @@ export default function SettingsPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      const res = await axios.put(`${API}/settings`, {
+      const res = await api.put(`${API}/settings`, {
         salon_name: settings.salon_name,
         name: settings.name,
         opening_time: settings.opening_time,
@@ -88,7 +88,7 @@ export default function SettingsPage() {
     }
     setChangingPw(true);
     try {
-      await axios.put(`${API}/auth/change-password`, {
+      await api.put(`${API}/auth/change-password`, {
         current_password: pwForm.current_password,
         new_password: pwForm.new_password
       });

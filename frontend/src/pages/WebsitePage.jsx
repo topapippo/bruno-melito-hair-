@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -65,15 +65,15 @@ export default function WebsitePage() {
     const fetchAll = async () => {
       try {
         const [siteRes, opsRes, svcRes] = await Promise.all([
-          axios.get(`${API}/public/website`),
-          axios.get(`${API}/public/operators`).catch(() => ({ data: [] })),
-          axios.get(`${API}/public/services`).catch(() => ({ data: [] }))
+          api.get(`${API}/public/website`),
+          api.get(`${API}/public/operators`).catch(() => ({ data: [] })),
+          api.get(`${API}/public/services`).catch(() => ({ data: [] }))
         ]);
         setSiteData(siteRes.data);
         setOperators(opsRes.data);
         setBookingServices(svcRes.data);
         try {
-          const promosRes = await axios.get(`${API}/public/promotions/all`);
+          const promosRes = await api.get(`${API}/public/promotions/all`);
           setPublicPromos(promosRes.data);
         } catch (e) { /* promos not critical */ }
       } catch (err) { console.error(err); }
@@ -100,7 +100,7 @@ export default function WebsitePage() {
   const handleSubmit = async () => {
     if (!formData.client_name || !formData.client_phone) { toast.error('Inserisci nome e telefono'); return; }
     setSubmitting(true);
-    try { await axios.post(`${API}/public/booking`, formData); setSuccess(true); }
+    try { await api.post(`${API}/public/booking`, formData); setSuccess(true); }
     catch (err) { toast.error(err.response?.data?.detail || 'Errore nella prenotazione'); }
     finally { setSubmitting(false); }
   };

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import Layout from '../components/Layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -42,7 +42,7 @@ export default function HistoryPage() {
       if (statusFilter !== 'all') {
         url += `&status=${statusFilter}`;
       }
-      const res = await axios.get(url);
+      const res = await api.get(url);
       // Sort by date descending
       const sorted = res.data.sort((a, b) => {
         const dateCompare = b.date.localeCompare(a.date);

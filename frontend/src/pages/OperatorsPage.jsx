@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import Layout from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -61,7 +61,7 @@ export default function OperatorsPage() {
 
   const fetchOperators = async () => {
     try {
-      const res = await axios.get(`${API}/operators`);
+      const res = await api.get(`${API}/operators`);
       setOperators(res.data);
     } catch (err) {
       console.error('Error fetching operators:', err);
@@ -81,10 +81,10 @@ export default function OperatorsPage() {
     setSaving(true);
     try {
       if (editingOperator) {
-        await axios.put(`${API}/operators/${editingOperator.id}`, formData);
+        await api.put(`${API}/operators/${editingOperator.id}`, formData);
         toast.success('Operatore aggiornato!');
       } else {
-        await axios.post(`${API}/operators`, formData);
+        await api.post(`${API}/operators`, formData);
         toast.success('Operatore aggiunto!');
       }
       setDialogOpen(false);
@@ -110,7 +110,7 @@ export default function OperatorsPage() {
 
   const handleToggleActive = async (operator) => {
     try {
-      await axios.put(`${API}/operators/${operator.id}`, { active: !operator.active });
+      await api.put(`${API}/operators/${operator.id}`, { active: !operator.active });
       toast.success(operator.active ? 'Operatore disattivato' : 'Operatore attivato');
       fetchOperators();
     } catch (err) {
@@ -121,7 +121,7 @@ export default function OperatorsPage() {
   const handleDelete = async () => {
     if (!operatorToDelete) return;
     try {
-      await axios.delete(`${API}/operators/${operatorToDelete}`);
+      await api.delete(`${API}/operators/${operatorToDelete}`);
       toast.success('Operatore eliminato');
       setDeleteDialogOpen(false);
       setOperatorToDelete(null);

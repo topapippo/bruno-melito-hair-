@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import Layout from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -30,7 +30,7 @@ export default function StatsPage() {
   const fetchStats = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API}/stats/revenue`, {
+      const res = await api.get(`${API}/stats/revenue`, {
         params: {
           start_date: format(dateRange.start, 'yyyy-MM-dd'),
           end_date: format(dateRange.end, 'yyyy-MM-dd')
@@ -68,7 +68,7 @@ export default function StatsPage() {
   const handleExportPdf = async () => {
     setExporting(true);
     try {
-      const response = await axios.get(`${API}/stats/export-pdf`, {
+      const response = await api.get(`${API}/stats/export-pdf`, {
         params: {
           start_date: format(dateRange.start, 'yyyy-MM-dd'),
           end_date: format(dateRange.end, 'yyyy-MM-dd')
