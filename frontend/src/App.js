@@ -84,7 +84,7 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
 
           {/* HOME = Landing page per visitatori, Planning per loggati */}
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<WebsitePage />} />
 
           {/* PLANNING dedicato */}
           <Route
