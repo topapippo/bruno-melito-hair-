@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { getMediaUrl, getMediaType } from '../lib/mediaUrl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -71,8 +70,8 @@ export default function WebsitePage() {
           axios.get(`${API}/public/services`).catch(() => ({ data: [] }))
         ]);
         setSiteData(siteRes.data);
-        setOperators(Array.isArray(opsRes.data) ? opsRes.data : []);
-        setBookingServices(Array.isArray(svcRes.data) ? svcRes.data : []);
+        setOperators(opsRes.data);
+        setBookingServices(svcRes.data);
         try {
           const promosRes = await axios.get(`${API}/public/promotions/all`);
           setPublicPromos(promosRes.data);
@@ -94,7 +93,7 @@ export default function WebsitePage() {
       ...prev, service_ids: prev.service_ids.includes(id) ? prev.service_ids.filter(s => s !== id) : [...prev.service_ids, id]
     }));
   };
-  const selectedServices = Array.isArray(bookingServices) ? bookingServices.filter(s => formData.service_ids.includes(s.id)) : [];
+  const selectedServices = bookingServices.filter(s => formData.service_ids.includes(s.id));
   const totalPrice = selectedServices.reduce((sum, s) => sum + (s.price || 0), 0);
   const totalDuration = selectedServices.reduce((sum, s) => sum + (s.duration || 0), 0);
 
@@ -112,11 +111,15 @@ export default function WebsitePage() {
     window.open(`https://wa.me/${num}?text=Ciao, vorrei prenotare un appuntamento!`, '_blank');
   };
 
-  // getMediaUrl è importato da ../lib/mediaUrl — gestisce path relativi e URL esterni
+  const getImageUrl = (item) => {
+    if (!item?.image_url) return '';
+    if (item.image_url.startsWith('http')) return item.image_url;
+    return `${process.env.REACT_APP_BACKEND_URL}${item.image_url}`;
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#1C1008] flex items-center justify-center">
+      <div className="min-h-screen bg-[#1a1a2e] flex items-center justify-center">
         <div className="w-10 h-10 border-4 border-amber-400 border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -125,15 +128,15 @@ export default function WebsitePage() {
   // SUCCESS PAGE
   if (success) {
     return (
-      <div className="min-h-screen bg-[#1C1008] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#1a1a2e] flex items-center justify-center p-4">
         <Toaster position="top-center" />
         <div className="max-w-md w-full text-center">
           <CheckCircle className="w-20 h-20 mx-auto text-emerald-400 mb-6" />
           <h1 className="text-3xl font-black text-white mb-3">Prenotazione Confermata!</h1>
-          <p className="text-[#D4B89A] mb-2">Ti aspettiamo il <span className="text-white font-bold">{format(new Date(formData.date), 'd MMMM yyyy', { locale: it })}</span> alle <span className="text-white font-bold">{formData.time}</span></p>
-          <p className="text-sm text-[#8A6A4A] mb-8">Riceverai un promemoria prima dell'appuntamento.</p>
+          <p className="text-gray-300 mb-2">Ti aspettiamo il <span className="text-white font-bold">{format(new Date(formData.date), 'd MMMM yyyy', { locale: it })}</span> alle <span className="text-white font-bold">{formData.time}</span></p>
+          <p className="text-sm text-gray-500 mb-8">Riceverai un promemoria prima dell'appuntamento.</p>
           <Button onClick={() => { setSuccess(false); setShowBooking(false); setStep(1); setFormData({ client_name: '', client_phone: '', service_ids: [], operator_id: '', date: format(new Date(), 'yyyy-MM-dd'), time: '09:00', notes: '' }); }}
-            className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] text-white hover:bg-gray-200 font-bold px-8" data-testid="website-back-home-btn">Torna alla Home</Button>
+            className="bg-white text-[#1a1a2e] hover:bg-gray-200 font-bold px-8" data-testid="website-back-home-btn">Torna alla Home</Button>
         </div>
       </div>
     );
@@ -142,18 +145,18 @@ export default function WebsitePage() {
   // BOOKING FORM
   if (showBooking) {
     return (
-      <div className="min-h-screen bg-[#1C1008]">
+      <div className="min-h-screen bg-[#1a1a2e]">
         <Toaster position="top-center" />
-        <div className="bg-[#2A1A0E] border-b border-[#3A2A1A] py-4 px-4 sticky top-0 z-50">
+        <div className="bg-[#242445] border-b border-gray-800 py-4 px-4 sticky top-0 z-50">
           <div className="max-w-lg mx-auto flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => setShowBooking(false)} className="text-[#B89A7A] hover:text-white hover:bg-white/10 shrink-0" data-testid="website-booking-back-btn">
+            <Button variant="ghost" size="icon" onClick={() => setShowBooking(false)} className="text-gray-400 hover:text-white hover:bg-white/10 shrink-0" data-testid="website-booking-back-btn">
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div className="flex items-center gap-3">
               <img src="/logo.png?v=4" alt={config.salon_name} className="w-9 h-9 rounded-lg" />
               <div>
                 <h1 className="text-white text-sm font-black leading-tight">{config.salon_name || 'BRUNO MELITO HAIR'}</h1>
-                <p className="text-[#8A6A4A] text-xs">Prenota il tuo appuntamento</p>
+                <p className="text-gray-500 text-xs">Prenota il tuo appuntamento</p>
               </div>
             </div>
           </div>
@@ -162,10 +165,10 @@ export default function WebsitePage() {
           <div className="flex items-center justify-center gap-2 mb-6">
             {[1, 2, 3].map(s => (
               <div key={s} className="flex items-center gap-2">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${step >= s ? 'bg-gradient-to-r from-[#C8617A] to-[#A0404F] text-white' : 'bg-[#3A2A1A] text-[#8A6A4A]'}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${step >= s ? 'bg-white text-[#1a1a2e]' : 'bg-gray-800 text-gray-500'}`}>
                   {step > s ? <CheckCircle className="w-4 h-4" /> : s}
                 </div>
-                {s < 3 && <div className={`w-12 h-0.5 ${step > s ? 'bg-white' : 'bg-[#3A2A1A]'}`} />}
+                {s < 3 && <div className={`w-12 h-0.5 ${step > s ? 'bg-white' : 'bg-gray-800'}`} />}
               </div>
             ))}
           </div>
@@ -175,10 +178,10 @@ export default function WebsitePage() {
               <div className="space-y-2">
                 {bookingServices.map(service => (
                   <div key={service.id} onClick={() => toggleService(service.id)}
-                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${formData.service_ids.includes(service.id) ? 'border-[#D4A847] bg-[#D4A847]/15' : 'border-[#3A2A1A] bg-[#2A1A0E] hover:border-[#6A4A2A]'}`}
+                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${formData.service_ids.includes(service.id) ? 'border-white bg-white/10' : 'border-gray-800 bg-[#242445] hover:border-gray-600'}`}
                     data-testid={`website-service-${service.id}`}>
                     <div className="flex justify-between items-center">
-                      <div><p className="font-bold text-white">{service.name}</p><p className="text-sm text-[#8A6A4A]">{service.duration} min</p></div>
+                      <div><p className="font-bold text-white">{service.name}</p><p className="text-sm text-gray-500">{service.duration} min</p></div>
                       <p className="font-black text-white">{'\u20AC'}{service.price}</p>
                     </div>
                   </div>
@@ -209,7 +212,7 @@ export default function WebsitePage() {
                             <p className="font-bold text-white">{promo.name}</p>
                             <p className="text-sm text-amber-300">{promo.free_service_name || promo.description || 'Clicca per applicare'}</p>
                           </div>
-                          <div className="bg-amber-400 text-[#1C1008] text-xs font-bold px-3 py-1 rounded-full">PROMO</div>
+                          <div className="bg-amber-400 text-[#1a1a2e] text-xs font-bold px-3 py-1 rounded-full">PROMO</div>
                         </div>
                       </div>
                     ))}
@@ -218,34 +221,34 @@ export default function WebsitePage() {
               )}
 
               {formData.service_ids.length > 0 && (
-                <div className="bg-[#2A1A0E] p-4 rounded-xl border border-[#3A2A1A]">
+                <div className="bg-[#242445] p-4 rounded-xl border border-gray-800">
                   <p className="font-bold text-white">Riepilogo: {totalDuration} min - {'\u20AC'}{totalPrice}</p>
                 </div>
               )}
-              <Button onClick={() => setStep(2)} disabled={formData.service_ids.length === 0} className="w-full bg-gradient-to-r from-[#C8617A] to-[#A0404F] text-white hover:bg-gray-200 font-bold py-6" data-testid="website-step1-next">Continua <ArrowRight className="w-4 h-4 ml-2" /></Button>
+              <Button onClick={() => setStep(2)} disabled={formData.service_ids.length === 0} className="w-full bg-white text-[#1a1a2e] hover:bg-gray-200 font-bold py-6" data-testid="website-step1-next">Continua <ArrowRight className="w-4 h-4 ml-2" /></Button>
             </div>
           )}
           {step === 2 && (
             <div className="space-y-4">
               <h2 className="text-xl font-black text-white">Data e Ora</h2>
               <div className="space-y-3">
-                <div><label className="text-sm text-[#B89A7A] font-semibold mb-1 block">Data</label>
-                  <Input type="date" value={formData.date} min={format(new Date(), 'yyyy-MM-dd')} onChange={(e) => setFormData({...formData, date: e.target.value})} className="bg-[#2A1A0E] border-[#3A2A1A] text-white" /></div>
-                <div><label className="text-sm text-[#B89A7A] font-semibold mb-1 block">Ora</label>
-                  <select value={formData.time} onChange={(e) => setFormData({...formData, time: e.target.value})} className="w-full p-3 bg-[#2A1A0E] border border-[#3A2A1A] rounded-lg text-white">
+                <div><label className="text-sm text-gray-400 font-semibold mb-1 block">Data</label>
+                  <Input type="date" value={formData.date} min={format(new Date(), 'yyyy-MM-dd')} onChange={(e) => setFormData({...formData, date: e.target.value})} className="bg-[#242445] border-gray-800 text-white" /></div>
+                <div><label className="text-sm text-gray-400 font-semibold mb-1 block">Ora</label>
+                  <select value={formData.time} onChange={(e) => setFormData({...formData, time: e.target.value})} className="w-full p-3 bg-[#242445] border border-gray-800 rounded-lg text-white">
                     {getAvailableSlotsForDate(formData.date).map(t => <option key={t} value={t}>{t}</option>)}
                   </select></div>
                 {operators.length > 0 && (
-                  <div><label className="text-sm text-[#B89A7A] font-semibold mb-1 block">Operatore (opzionale)</label>
-                    <select value={formData.operator_id} onChange={(e) => setFormData({...formData, operator_id: e.target.value})} className="w-full p-3 bg-[#2A1A0E] border border-[#3A2A1A] rounded-lg text-white">
+                  <div><label className="text-sm text-gray-400 font-semibold mb-1 block">Operatore (opzionale)</label>
+                    <select value={formData.operator_id} onChange={(e) => setFormData({...formData, operator_id: e.target.value})} className="w-full p-3 bg-[#242445] border border-gray-800 rounded-lg text-white">
                       <option value="">Nessuna preferenza</option>
                       {operators.map(op => <option key={op.id} value={op.id}>{op.name}</option>)}
                     </select></div>
                 )}
               </div>
               <div className="flex gap-3">
-                <Button onClick={() => setStep(1)} variant="outline" className="flex-1 border-[#4A3020] text-[#D4B89A] hover:bg-white/10">Indietro</Button>
-                <Button onClick={() => setStep(3)} className="flex-1 bg-gradient-to-r from-[#C8617A] to-[#A0404F] text-white hover:bg-gray-200 font-bold" data-testid="website-step2-next">Continua <ArrowRight className="w-4 h-4 ml-2" /></Button>
+                <Button onClick={() => setStep(1)} variant="outline" className="flex-1 border-gray-700 text-gray-300 hover:bg-white/10">Indietro</Button>
+                <Button onClick={() => setStep(3)} className="flex-1 bg-white text-[#1a1a2e] hover:bg-gray-200 font-bold" data-testid="website-step2-next">Continua <ArrowRight className="w-4 h-4 ml-2" /></Button>
               </div>
             </div>
           )}
@@ -253,22 +256,22 @@ export default function WebsitePage() {
             <div className="space-y-4">
               <h2 className="text-xl font-black text-white">I Tuoi Dati</h2>
               <div className="space-y-3">
-                <div><label className="text-sm text-[#B89A7A] font-semibold mb-1 block">Nome e Cognome *</label>
-                  <Input value={formData.client_name} onChange={(e) => setFormData({...formData, client_name: e.target.value})} placeholder="Es. Maria Rossi" className="bg-[#2A1A0E] border-[#3A2A1A] text-white placeholder:text-[#7A5A3A]" data-testid="website-booking-name" /></div>
-                <div><label className="text-sm text-[#B89A7A] font-semibold mb-1 block">Telefono *</label>
-                  <Input value={formData.client_phone} onChange={(e) => setFormData({...formData, client_phone: e.target.value})} placeholder="Es. 339 123 4567" className="bg-[#2A1A0E] border-[#3A2A1A] text-white placeholder:text-[#7A5A3A]" data-testid="website-booking-phone" /></div>
-                <div><label className="text-sm text-[#B89A7A] font-semibold mb-1 block">Note (opzionale)</label>
-                  <Textarea value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})} placeholder="Richieste particolari..." className="bg-[#2A1A0E] border-[#3A2A1A] text-white placeholder:text-[#7A5A3A]" rows={3} /></div>
+                <div><label className="text-sm text-gray-400 font-semibold mb-1 block">Nome e Cognome *</label>
+                  <Input value={formData.client_name} onChange={(e) => setFormData({...formData, client_name: e.target.value})} placeholder="Es. Maria Rossi" className="bg-[#242445] border-gray-800 text-white placeholder:text-gray-600" data-testid="website-booking-name" /></div>
+                <div><label className="text-sm text-gray-400 font-semibold mb-1 block">Telefono *</label>
+                  <Input value={formData.client_phone} onChange={(e) => setFormData({...formData, client_phone: e.target.value})} placeholder="Es. 339 123 4567" className="bg-[#242445] border-gray-800 text-white placeholder:text-gray-600" data-testid="website-booking-phone" /></div>
+                <div><label className="text-sm text-gray-400 font-semibold mb-1 block">Note (opzionale)</label>
+                  <Textarea value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})} placeholder="Richieste particolari..." className="bg-[#242445] border-gray-800 text-white placeholder:text-gray-600" rows={3} /></div>
               </div>
-              <div className="bg-[#2A1A0E] p-4 rounded-xl border border-[#3A2A1A] space-y-2">
-                <p className="text-sm text-[#B89A7A]">Riepilogo:</p>
-                {selectedServices.map(s => (<div key={s.id} className="flex justify-between text-sm"><span className="text-[#D4B89A]">{s.name}</span><span className="text-white font-bold">{'\u20AC'}{s.price}</span></div>))}
-                <div className="border-t border-[#3A2A1A] pt-2 flex justify-between"><span className="text-white font-bold">Totale</span><span className="text-white font-black text-lg">{'\u20AC'}{totalPrice}</span></div>
-                <p className="text-xs text-[#8A6A4A]">{format(new Date(formData.date), 'd MMMM yyyy', { locale: it })} alle {formData.time}</p>
+              <div className="bg-[#242445] p-4 rounded-xl border border-gray-800 space-y-2">
+                <p className="text-sm text-gray-400">Riepilogo:</p>
+                {selectedServices.map(s => (<div key={s.id} className="flex justify-between text-sm"><span className="text-gray-300">{s.name}</span><span className="text-white font-bold">{'\u20AC'}{s.price}</span></div>))}
+                <div className="border-t border-gray-800 pt-2 flex justify-between"><span className="text-white font-bold">Totale</span><span className="text-white font-black text-lg">{'\u20AC'}{totalPrice}</span></div>
+                <p className="text-xs text-gray-500">{format(new Date(formData.date), 'd MMMM yyyy', { locale: it })} alle {formData.time}</p>
               </div>
               <div className="flex gap-3">
-                <Button onClick={() => setStep(2)} variant="outline" className="flex-1 border-[#4A3020] text-[#D4B89A] hover:bg-white/10">Indietro</Button>
-                <Button onClick={handleSubmit} disabled={submitting} className="flex-1 bg-gradient-to-r from-[#C8617A] to-[#A0404F] text-white hover:bg-gray-200 font-bold" data-testid="website-submit-btn">
+                <Button onClick={() => setStep(2)} variant="outline" className="flex-1 border-gray-700 text-gray-300 hover:bg-white/10">Indietro</Button>
+                <Button onClick={handleSubmit} disabled={submitting} className="flex-1 bg-white text-[#1a1a2e] hover:bg-gray-200 font-bold" data-testid="website-submit-btn">
                   {submitting ? <Clock className="w-4 h-4 animate-spin" /> : 'Conferma Prenotazione'}
                 </Button>
               </div>
@@ -300,7 +303,7 @@ export default function WebsitePage() {
             <button onClick={() => scrollTo(contactRef)} className="hover:text-[#0EA5E9] transition-colors font-semibold">Contatti</button>
             <div className="flex items-center gap-3 border-l border-gray-300 pl-4">
               {SOCIAL_LINKS.map((link, i) => (
-                <a key={i} href={link.url} target="_blank" rel="noopener noreferrer" className={`text-[#B89A7A] ${link.color} transition-colors`} title={link.label}>
+                <a key={i} href={link.url} target="_blank" rel="noopener noreferrer" className={`text-gray-400 ${link.color} transition-colors`} title={link.label}>
                   <link.icon className="w-4 h-4" />
                 </a>
               ))}
@@ -411,9 +414,9 @@ export default function WebsitePage() {
               {salonPhotos.map((item, idx) => (
                 <div key={item.id} className={`relative rounded-3xl overflow-hidden aspect-square group border-2 ${BORDER_COLORS[idx % 6]} transition-all duration-300 hover:shadow-xl ${GLOW_COLORS[idx % 6]} hover:border-opacity-60`}>
                   {item.file_type === 'video' ? (
-                    <video src={getMediaUrl(item?.image_url)} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" muted loop playsInline onMouseEnter={e => e.target.play()} onMouseLeave={e => { e.target.pause(); e.target.currentTime = 0; }} />
+                    <video src={getImageUrl(item)} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" muted loop playsInline onMouseEnter={e => e.target.play()} onMouseLeave={e => { e.target.pause(); e.target.currentTime = 0; }} />
                   ) : (
-                    <img src={getMediaUrl(item?.image_url)} alt={item.label} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                    <img src={getImageUrl(item)} alt={item.label} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
                   {item.file_type === 'video' && <div className="absolute top-3 left-3 bg-black/60 text-white text-xs font-bold px-2 py-1 rounded">VIDEO</div>}
@@ -432,20 +435,20 @@ export default function WebsitePage() {
             <div className={`grid grid-cols-1 ${salonPhotos.length > 1 ? 'lg:grid-cols-2' : ''} gap-12 items-center`}>
               {salonPhotos.length > 1 && (
                 <div className="rounded-3xl overflow-hidden h-80 lg:h-96 border-2 border-rose-400/20 hover:shadow-xl hover:shadow-rose-400/20 transition-all duration-300">
-                  <img src={getMediaUrl(salonPhotos[1]?.image_url || salonPhotos[0]?.image_url)} alt="Il nostro salone" className="w-full h-full object-cover" />
+                  <img src={getImageUrl(salonPhotos[1] || salonPhotos[0])} alt="Il nostro salone" className="w-full h-full object-cover" />
                 </div>
               )}
               <div>
                 <p className="text-rose-500 font-bold text-sm tracking-widest uppercase mb-3">Chi Siamo</p>
                 <h2 className="text-3xl sm:text-4xl font-black text-[#1e293b] mb-6">{config.about_title}</h2>
                 {config.about_text && <p className="text-[#64748B] leading-relaxed mb-6">{config.about_text}</p>}
-                {config.about_text_2 && <p className="text-[#B89A7A] leading-relaxed mb-8">{config.about_text_2}</p>}
+                {config.about_text_2 && <p className="text-gray-400 leading-relaxed mb-8">{config.about_text_2}</p>}
                 {config.about_features && config.about_features.length > 0 && (
                   <div className="grid grid-cols-2 gap-3">
                     {config.about_features.map((item, idx) => (
                       <div key={idx} className="flex items-center gap-2">
                         <CheckCircle className="w-4 h-4 text-teal-400 shrink-0" />
-                        <span className="text-sm text-[#D4B89A]">{item}</span>
+                        <span className="text-sm text-gray-300">{item}</span>
                       </div>
                     ))}
                   </div>
@@ -508,16 +511,16 @@ export default function WebsitePage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {reviews.map((review, idx) => (
-                <div key={review.id || idx} className={`bg-[#2A1A0E]/80 border ${BORDER_COLORS[idx % 4]} rounded-3xl p-5 transition-all duration-300 hover:shadow-lg ${GLOW_COLORS[idx % 4]} hover:border-opacity-60 hover:scale-[1.02]`}>
+                <div key={review.id || idx} className={`bg-[#242445]/80 border ${BORDER_COLORS[idx % 4]} rounded-3xl p-5 transition-all duration-300 hover:shadow-lg ${GLOW_COLORS[idx % 4]} hover:border-opacity-60 hover:scale-[1.02]`}>
                   <div className="flex gap-0.5 mb-3">
                     {[...Array(review.rating || 5)].map((_, i) => (<Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />))}
                   </div>
-                  <p className="text-[#D4B89A] text-sm leading-relaxed mb-4">"{review.text}"</p>
+                  <p className="text-gray-300 text-sm leading-relaxed mb-4">"{review.text}"</p>
                   <div className="flex items-center gap-3">
                     <div className={`w-8 h-8 ${AVATAR_BGS[idx % 4]} rounded-full flex items-center justify-center`}>
                       <span className={`${AVATAR_TEXTS[idx % 4]} font-bold text-sm`}>{(review.name || '?')[0]}</span>
                     </div>
-                    <span className="text-sm text-[#B89A7A] font-semibold">{review.name}</span>
+                    <span className="text-sm text-gray-400 font-semibold">{review.name}</span>
                   </div>
                 </div>
               ))}
@@ -538,11 +541,7 @@ export default function WebsitePage() {
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
               {hairstylePhotos.map((item, idx) => (
                 <div key={item.id} className={`relative rounded-3xl overflow-hidden aspect-[3/4] group cursor-pointer border-2 border-gray-200 transition-all duration-300 hover:shadow-xl hover:border-[#0EA5E9]/30`}>
-                  {item.file_type === 'video' ? (
-                    <video src={getMediaUrl(item?.image_url)} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" muted loop playsInline onMouseEnter={e => e.target.play()} onMouseLeave={e => { e.target.pause(); e.target.currentTime = 0; }} />
-                  ) : (
-                    <img src={getMediaUrl(item?.image_url)} alt={item.label} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                  )}
+                  <img src={getImageUrl(item)} alt={item.label} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   {item.tag && (
                     <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-md text-[#1e293b] text-xs font-bold px-3 py-1 rounded-full border border-gray-200">

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import Layout from '../components/Layout';
-import PageHeader from '../components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -167,11 +166,11 @@ export default function LoyaltyPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-[#2D1B14] flex items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl font-black text-[#0F172A] flex items-center gap-3">
               <Star className="w-7 h-7 text-amber-500" />
               Programma Fedeltà
             </h1>
-            <p className="text-[#7C5C4A] mt-1">1 punto ogni €{config?.points_per_euro || 10} spesi</p>
+            <p className="text-[#334155] mt-1">1 punto ogni €{config?.points_per_euro || 10} spesi</p>
           </div>
         </div>
 
@@ -193,12 +192,12 @@ export default function LoyaltyPage() {
           <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
             <CardContent className="p-5">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-[#C8617A] rounded-xl">
+                <div className="p-2.5 bg-[#0EA5E9] rounded-xl">
                   <Trophy className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <p className="text-sm text-blue-700 font-semibold">Clienti Iscritti</p>
-                  <p className="text-3xl font-black text-[#C8617A]" data-testid="total-enrolled">{loyalties.length}</p>
+                  <p className="text-3xl font-black text-[#0EA5E9]" data-testid="total-enrolled">{loyalties.length}</p>
                 </div>
               </div>
             </CardContent>
@@ -219,21 +218,21 @@ export default function LoyaltyPage() {
         </div>
 
         {/* Rewards Info - Editable */}
-        <Card className="border-[#F0E6DC]/30">
+        <Card className="border-[#E2E8F0]/30">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-bold text-[#2D1B14] flex items-center gap-2">
-                <Gift className="w-5 h-5 text-[#C8617A]" />
+              <CardTitle className="text-lg font-bold text-[#0F172A] flex items-center gap-2">
+                <Gift className="w-5 h-5 text-[#0EA5E9]" />
                 Premi Disponibili
               </CardTitle>
               {!editingRewards ? (
-                <Button variant="outline" size="sm" onClick={startEditRewards} className="text-[#C8617A] border-[#C8617A]/30" data-testid="edit-rewards-btn">
+                <Button variant="outline" size="sm" onClick={startEditRewards} className="text-[#0EA5E9] border-[#0EA5E9]/30" data-testid="edit-rewards-btn">
                   <Pencil className="w-4 h-4 mr-1" /> Modifica
                 </Button>
               ) : (
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => setEditingRewards(false)} className="text-gray-500">Annulla</Button>
-                  <Button size="sm" onClick={saveRewards} className="bg-[#C8617A] text-white" data-testid="save-rewards-btn">
+                  <Button size="sm" onClick={saveRewards} className="bg-[#0EA5E9] text-white" data-testid="save-rewards-btn">
                     <Save className="w-4 h-4 mr-1" /> Salva
                   </Button>
                 </div>
@@ -244,24 +243,24 @@ export default function LoyaltyPage() {
             {editingRewards ? (
               <div className="space-y-4">
                 {Object.entries(editRewards).map(([key, reward]) => (
-                  <div key={key} className="p-4 bg-[#FAF7F2] rounded-xl border border-[#F0E6DC] space-y-3">
+                  <div key={key} className="p-4 bg-[#F8FAFC] rounded-xl border border-[#E2E8F0] space-y-3">
                     <div>
-                      <label className="text-xs font-bold text-[#7C5C4A] block mb-1">Nome Premio</label>
-                      <Input value={reward.name || ''} onChange={(e) => updateReward(key, 'name', e.target.value)} className="border-[#F0E6DC]" />
+                      <label className="text-xs font-bold text-[#334155] block mb-1">Nome Premio</label>
+                      <Input value={reward.name || ''} onChange={(e) => updateReward(key, 'name', e.target.value)} className="border-[#E2E8F0]" />
                     </div>
                     <div>
-                      <label className="text-xs font-bold text-[#7C5C4A] block mb-1">Descrizione</label>
-                      <Input value={reward.description || ''} onChange={(e) => updateReward(key, 'description', e.target.value)} className="border-[#F0E6DC]" />
+                      <label className="text-xs font-bold text-[#334155] block mb-1">Descrizione</label>
+                      <Input value={reward.description || ''} onChange={(e) => updateReward(key, 'description', e.target.value)} className="border-[#E2E8F0]" />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="text-xs font-bold text-[#7C5C4A] block mb-1">Punti Necessari</label>
-                        <Input type="number" value={reward.points_required || 0} onChange={(e) => updateReward(key, 'points_required', e.target.value)} className="border-[#F0E6DC]" />
+                        <label className="text-xs font-bold text-[#334155] block mb-1">Punti Necessari</label>
+                        <Input type="number" value={reward.points_required || 0} onChange={(e) => updateReward(key, 'points_required', e.target.value)} className="border-[#E2E8F0]" />
                       </div>
                       {reward.discount_percent !== undefined && (
                         <div>
-                          <label className="text-xs font-bold text-[#7C5C4A] block mb-1">Sconto %</label>
-                          <Input type="number" value={reward.discount_percent || 0} onChange={(e) => updateReward(key, 'discount_percent', e.target.value)} className="border-[#F0E6DC]" />
+                          <label className="text-xs font-bold text-[#334155] block mb-1">Sconto %</label>
+                          <Input type="number" value={reward.discount_percent || 0} onChange={(e) => updateReward(key, 'discount_percent', e.target.value)} className="border-[#E2E8F0]" />
                         </div>
                       )}
                     </div>
@@ -293,13 +292,13 @@ export default function LoyaltyPage() {
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7C5C4A]" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#334155]" />
           <Input
             placeholder="Cerca cliente..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             data-testid="loyalty-search"
-            className="pl-10 bg-white border-[#F0E6DC] focus:border-[#C8617A] h-11"
+            className="pl-10 bg-white border-[#E2E8F0] focus:border-[#0EA5E9] h-11"
           />
         </div>
 
@@ -309,16 +308,16 @@ export default function LoyaltyPage() {
             {filtered.sort((a, b) => b.points - a.points).map((loy) => (
               <Card
                 key={loy.id}
-                className="bg-white border-[#F0E6DC]/30 hover:shadow-md transition-shadow cursor-pointer"
+                className="bg-white border-[#E2E8F0]/30 hover:shadow-md transition-shadow cursor-pointer"
                 onClick={() => openClientDetail(loy)}
                 data-testid={`loyalty-card-${loy.client_id}`}
               >
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-[#2D1B14] truncate">{loy.client_name}</h3>
+                      <h3 className="font-bold text-[#0F172A] truncate">{loy.client_name}</h3>
                       {loy.client_phone && (
-                        <p className="text-sm text-[#7C5C4A] mt-0.5">{loy.client_phone}</p>
+                        <p className="text-sm text-[#334155] mt-0.5">{loy.client_phone}</p>
                       )}
                     </div>
                     <div className="flex items-center gap-1 bg-amber-100 px-3 py-1.5 rounded-full ml-2 shrink-0">
@@ -366,7 +365,7 @@ export default function LoyaltyPage() {
                     </div>
                   )}
 
-                  <div className="mt-3 flex items-center text-xs text-[#7C5C4A]">
+                  <div className="mt-3 flex items-center text-xs text-[#334155]">
                     <TrendingUp className="w-3 h-3 mr-1" />
                     Totale guadagnati: {loy.total_points_earned}
                     <ChevronRight className="w-4 h-4 ml-auto text-[#CBD5E1]" />
@@ -376,13 +375,13 @@ export default function LoyaltyPage() {
             ))}
           </div>
         ) : (
-          <Card className="bg-white border-[#F0E6DC]/30">
+          <Card className="bg-white border-[#E2E8F0]/30">
             <CardContent className="py-16 text-center">
               <Star className="w-16 h-16 mx-auto text-[#E2E8F0] mb-4" strokeWidth={1.5} />
-              <h3 className="text-xl font-bold text-[#2D1B14] mb-2">
+              <h3 className="text-xl font-bold text-[#0F172A] mb-2">
                 {search ? 'Nessun risultato' : 'Nessun cliente nel programma fedeltà'}
               </h3>
-              <p className="text-[#7C5C4A]">
+              <p className="text-[#334155]">
                 {search ? 'Prova con un termine diverso' : 'I punti vengono assegnati automaticamente al checkout'}
               </p>
             </CardContent>
@@ -393,7 +392,7 @@ export default function LoyaltyPage() {
         <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
           <DialogContent className="sm:max-w-[550px] max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-black text-[#2D1B14] flex items-center gap-2">
+              <DialogTitle className="text-2xl font-black text-[#0F172A] flex items-center gap-2">
                 <Star className="w-6 h-6 text-amber-500" />
                 {selectedClient?.client_name}
               </DialogTitle>
@@ -416,7 +415,7 @@ export default function LoyaltyPage() {
 
                 {/* Redeem Rewards */}
                 <div className="space-y-3">
-                  <h3 className="font-bold text-[#2D1B14]">Riscatta Premi</h3>
+                  <h3 className="font-bold text-[#0F172A]">Riscatta Premi</h3>
                   {config?.rewards && Object.entries(config.rewards).map(([key, reward]) => {
                     const reqPoints = reward.points_required || 0;
                     const canRedeem = clientLoyalty.points >= reqPoints;
@@ -425,16 +424,16 @@ export default function LoyaltyPage() {
                       <div
                         key={key}
                         className={`p-4 rounded-xl border-2 flex items-center justify-between ${
-                          canRedeem ? 'border-green-300 bg-green-50' : 'border-[#F0E6DC] bg-[#FAF7F2] opacity-60'
+                          canRedeem ? 'border-green-300 bg-green-50' : 'border-[#E2E8F0] bg-[#F8FAFC] opacity-60'
                         }`}
                       >
                         <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-xl ${isSconto ? 'bg-purple-100' : 'bg-emerald-100'}`}>
+                          <div className={`p-2 rounded-lg ${isSconto ? 'bg-purple-100' : 'bg-emerald-100'}`}>
                             {isSconto ? <Award className="w-5 h-5 text-purple-600" /> : <Trophy className="w-5 h-5 text-emerald-600" />}
                           </div>
                           <div>
-                            <p className="font-bold text-[#2D1B14]">{reward.name}</p>
-                            <p className="text-xs text-[#7C5C4A]">{reqPoints} punti</p>
+                            <p className="font-bold text-[#0F172A]">{reward.name}</p>
+                            <p className="text-xs text-[#334155]">{reqPoints} punti</p>
                           </div>
                         </div>
                         <Button
@@ -458,7 +457,7 @@ export default function LoyaltyPage() {
                 {/* Active Rewards */}
                 {clientLoyalty.active_rewards?.filter(r => !r.redeemed).length > 0 && (
                   <div className="space-y-3">
-                    <h3 className="font-bold text-[#2D1B14]">Premi da Utilizzare</h3>
+                    <h3 className="font-bold text-[#0F172A]">Premi da Utilizzare</h3>
                     {clientLoyalty.active_rewards.filter(r => !r.redeemed).map((r) => (
                       <div key={r.id} className="p-4 bg-green-50 rounded-xl border border-green-200 flex items-center justify-between">
                         <div>
@@ -483,11 +482,11 @@ export default function LoyaltyPage() {
 
                 {/* History */}
                 <div className="space-y-2">
-                  <h3 className="font-bold text-[#2D1B14]">Storico Punti</h3>
+                  <h3 className="font-bold text-[#0F172A]">Storico Punti</h3>
                   {clientLoyalty.history?.length > 0 ? (
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                       {[...clientLoyalty.history].reverse().slice(0, 20).map((h) => (
-                        <div key={h.id} className="flex items-center justify-between p-3 bg-[#FAF7F2] rounded-xl border border-[#F0E6DC]">
+                        <div key={h.id} className="flex items-center justify-between p-3 bg-[#F8FAFC] rounded-lg border border-[#E2E8F0]">
                           <div className="flex items-center gap-2">
                             {h.type === 'earned' ? (
                               <Plus className="w-4 h-4 text-green-600" />
@@ -497,8 +496,8 @@ export default function LoyaltyPage() {
                               <Star className="w-4 h-4 text-amber-500" />
                             )}
                             <div>
-                              <p className="text-sm font-semibold text-[#2D1B14]">{h.description}</p>
-                              <p className="text-xs text-[#7C5C4A]">{new Date(h.date).toLocaleDateString('it-IT')}</p>
+                              <p className="text-sm font-semibold text-[#0F172A]">{h.description}</p>
+                              <p className="text-xs text-[#334155]">{new Date(h.date).toLocaleDateString('it-IT')}</p>
                             </div>
                           </div>
                           <span className={`font-black text-sm ${h.points > 0 ? 'text-green-600' : 'text-red-500'}`}>
@@ -508,7 +507,7 @@ export default function LoyaltyPage() {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-[#7C5C4A] text-center py-4">Nessuna attività</p>
+                    <p className="text-sm text-[#334155] text-center py-4">Nessuna attività</p>
                   )}
                 </div>
               </div>

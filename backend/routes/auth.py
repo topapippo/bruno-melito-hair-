@@ -1,39 +1,15 @@
-from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi import APIRouter, HTTPException, Depends
 from typing import List
 from datetime import datetime, timezone
-from collections import defaultdict
 import uuid
-import time
-import logging
 
 from database import db
 from auth import get_current_user, hash_password, verify_password, create_token
-from models import UserCreate, UserLogin, UserResponse, TokenResponse, ChangePasswordRequest
-
-logger = logging.getLogger(__name__)
+from models import UserCreate, UserLogin, UserResponse, TokenResponse
 
 router = APIRouter()
 
-# ── Rate limiting semplice in memoria (per brute-force su login) ──────────────
-_login_attempts: dict = defaultdict(list)
-LOGIN_MAX_ATTEMPTS = 10
-LOGIN_WINDOW_SECONDS = 300  # 5 minuti
 
-
-def _check_rate_limit(ip: str):
-    now = time.time()
-    attempts = _login_attempts[ip]
-    # Rimuovi tentativi vecchi
-    _login_attempts[ip] = [t for t in attempts if now - t < LOGIN_WINDOW_SECONDS]
-    if len(_login_attempts[ip]) >= LOGIN_MAX_ATTEMPTS:
-        raise HTTPException(
-            status_code=429,
-            detail=f"Troppi tentativi di login. Riprova tra {LOGIN_WINDOW_SECONDS // 60} minuti."
-        )
-    _login_attempts[ip].append(now)
-
-
-# ── Register ──────────────────────────────────────────────────────────────────
 @router.post("/auth/register", response_model=TokenResponse)
 async def register(data: UserCreate):
     existing = await db.users.find_one({"email": data.email}, {"_id": 0})
@@ -84,7 +60,6 @@ async def register(data: UserCreate):
     }
     await db.operators.insert_one(operator_doc)
 
-    logger.info(f"Nuovo utente registrato: {data.email}")
     token = create_token(user_id)
 
     return TokenResponse(
@@ -96,19 +71,15 @@ async def register(data: UserCreate):
     )
 
 
-# ── Login ─────────────────────────────────────────────────────────────────────
 @router.post("/auth/login", response_model=TokenResponse)
-async def login(data: UserLogin, request: Request):
-    client_ip = request.client.host if request.client else "unknown"
-    _check_rate_limit(client_ip)
-
+async def login(data: UserLogin):
     user = await db.users.find_one({"email": data.email}, {"_id": 0})
-    # Messaggio generico per non rivelare se l'email esiste
-    if not user or not verify_password(data.password, user["password"]):
-        logger.warning(f"Tentativo login fallito per: {data.email} da IP: {client_ip}")
+    if not user:
         raise HTTPException(status_code=401, detail="Credenziali non valide")
 
-    logger.info(f"Login riuscito per: {data.email}")
+    if not verify_password(data.password, user["password"]):
+        raise HTTPException(status_code=401, detail="Credenziali non valide")
+
     token = create_token(user["id"])
 
     return TokenResponse(
@@ -120,7 +91,6 @@ async def login(data: UserLogin, request: Request):
     )
 
 
-# ── Me ────────────────────────────────────────────────────────────────────────
 @router.get("/auth/me", response_model=UserResponse)
 async def get_me(current_user: dict = Depends(get_current_user)):
     return UserResponse(
@@ -130,17 +100,16 @@ async def get_me(current_user: dict = Depends(get_current_user)):
     )
 
 
-# ── Change Password ───────────────────────────────────────────────────────────
 @router.put("/auth/change-password")
-async def change_password(data: ChangePasswordRequest, current_user: dict = Depends(get_current_user)):
-    if len(data.new_password) < 6:
+async def change_password(data: dict, current_user: dict = Depends(get_current_user)):
+    current_pw = data.get("current_password", "")
+    new_pw = data.get("new_password", "")
+    if not current_pw or not new_pw:
+        raise HTTPException(status_code=400, detail="Password corrente e nuova password sono obbligatorie")
+    if len(new_pw) < 6:
         raise HTTPException(status_code=400, detail="La nuova password deve avere almeno 6 caratteri")
     user = await db.users.find_one({"id": current_user["id"]})
-    if not user or not verify_password(data.current_password, user["password"]):
+    if not user or not verify_password(current_pw, user["password"]):
         raise HTTPException(status_code=400, detail="Password corrente non corretta")
-    await db.users.update_one(
-        {"id": current_user["id"]},
-        {"$set": {"password": hash_password(data.new_password)}}
-    )
-    logger.info(f"Password aggiornata per utente: {current_user['email']}")
+    await db.users.update_one({"id": current_user["id"]}, {"$set": {"password": hash_password(new_pw)}})
     return {"success": True, "message": "Password aggiornata con successo"}

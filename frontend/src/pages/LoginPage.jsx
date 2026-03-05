@@ -1,175 +1,212 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Scissors, Sparkles, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Scissors } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function LoginPage() {
   const { login, register } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
-  const [showPass, setShowPass] = useState(false);
-
+  
   const [loginData, setLoginData] = useState({ email: '', password: '' });
-  const [registerData, setRegisterData] = useState({ email: '', password: '', name: '', salon_name: '' });
-
-  useEffect(() => {
-    if (searchParams.get('session') === 'expired') {
-      toast.warning('Sessione scaduta. Effettua nuovamente il login.');
-    }
-  }, [searchParams]);
+  const [registerData, setRegisterData] = useState({
+    email: '',
+    password: '',
+    name: '',
+    salon_name: ''
+  });
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
       await login(loginData.email, loginData.password);
-      toast.success('Bentornata! ✨');
+      toast.success('Benvenuta!');
       navigate('/');
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Credenziali non valide');
-    } finally { setLoading(false); }
+      toast.error(err.response?.data?.detail || 'Errore di accesso');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await register(registerData.email, registerData.password, registerData.name, registerData.salon_name);
-      toast.success('Account creato! Benvenuta 🎉');
+      await register(
+        registerData.email,
+        registerData.password,
+        registerData.name,
+        registerData.salon_name
+      );
+      toast.success('Account creato con successo!');
       navigate('/');
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Errore di registrazione');
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen flex">
-      {/* Left — immagine del salone */}
-      <div className="hidden lg:flex lg:w-1/2 relative items-end justify-start overflow-hidden">
+      {/* Left - Logo a tutta pagina */}
+      <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center overflow-hidden">
         <img src="/logo.png?v=4" alt="Bruno Melito Hair" className="absolute inset-0 w-full h-full object-cover" />
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-tr from-[#2D1B14]/80 via-[#2D1B14]/30 to-transparent" />
-        {/* Decorative dots */}
-        <div className="absolute top-10 right-10 w-32 h-32 rounded-full border border-white/10" />
-        <div className="absolute top-20 right-20 w-16 h-16 rounded-full border border-white/10" />
-        {/* Brand text */}
-        <div className="relative z-10 p-12 mb-4">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-0.5 bg-[#D4A847]" />
-            <span className="text-[#D4A847] text-xs font-bold uppercase tracking-[4px]">Dal 1983</span>
-          </div>
-          <h2 className="font-display text-5xl font-semibold text-white leading-tight mb-2">
-            Bruno Melito<br /><em>Hair</em>
-          </h2>
-          <p className="text-white/70 text-lg">Gestisci il tuo salone con eleganza</p>
-          {/* Feature pills */}
-          <div className="flex flex-wrap gap-2 mt-6">
-            {['Agenda Smart', 'Card Prepagate', 'Booking Online', 'Statistiche'].map(f => (
-              <span key={f} className="text-xs bg-white/10 backdrop-blur-sm border border-white/20 text-white px-3 py-1.5 rounded-full">
-                {f}
-              </span>
-            ))}
-          </div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+        <div className="relative text-center z-10 mt-auto pb-16">
+          <h2 className="font-playfair text-4xl font-bold text-white mb-2 drop-shadow-lg">BRUNO MELITO HAIR</h2>
+          <p className="font-manrope text-xl text-white/90 drop-shadow">Gestisci il tuo salone</p>
+          <p className="font-manrope text-lg text-white/70 mt-1 drop-shadow">Con eleganza e semplicità</p>
         </div>
       </div>
 
-      {/* Right — form */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-[#FAF7F2]">
+      {/* Right - Form */}
+      <div className="flex-1 flex items-center justify-center p-8 bg-[#F8FAFC]">
         <div className="w-full max-w-md">
-          {/* Logo mobile */}
-          <div className="lg:hidden flex justify-center mb-8">
-            <div className="w-20 h-20 rounded-2xl overflow-hidden shadow-lg">
-              <img src="/logo.png?v=4" alt="" className="w-full h-full object-cover" />
-            </div>
+          {/* Logo Mobile */}
+          <div className="text-center mb-8">
+            <img src="/logo.png?v=4" alt="Bruno Melito Hair" className="w-32 h-32 mx-auto mb-4 rounded-2xl shadow-lg object-cover lg:hidden" />
+            <h1 className="font-playfair text-3xl font-bold text-[#0F172A]">BRUNO MELITO HAIR</h1>
+            <p className="text-[#334155] mt-2 font-manrope">Il gestionale per il tuo salone</p>
           </div>
 
-          {/* Header */}
-          <div className="mb-8">
-            <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="w-4 h-4 text-[#D4A847]" />
-              <span className="text-xs font-bold uppercase tracking-widest text-[#9C7060]">Gestionale</span>
-            </div>
-            <h1 className="font-display text-4xl font-semibold text-[#2D1B14] italic">Bentornata</h1>
-            <p className="text-[#9C7060] mt-1 text-sm">Accedi al tuo salone</p>
-          </div>
+          <Card className="bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
+            <Tabs defaultValue="login">
+              <CardHeader className="pb-4">
+                <TabsList className="grid w-full grid-cols-2 bg-[#F8FAFC]">
+                  <TabsTrigger 
+                    value="login" 
+                    data-testid="tab-login"
+                    className="data-[state=active]:bg-white data-[state=active]:text-[#0EA5E9]"
+                  >
+                    Accedi
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="register" 
+                    data-testid="tab-register"
+                    className="data-[state=active]:bg-white data-[state=active]:text-[#0EA5E9]"
+                  >
+                    Registrati
+                  </TabsTrigger>
+                </TabsList>
+              </CardHeader>
 
-          <Tabs defaultValue="login">
-            <TabsList className="w-full mb-6 bg-[#F0E6DC] rounded-xl p-1">
-              <TabsTrigger value="login" className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:text-[#C8617A] data-[state=active]:shadow-sm text-[#9C7060]">
-                Accedi
-              </TabsTrigger>
-              <TabsTrigger value="register" className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:text-[#C8617A] data-[state=active]:shadow-sm text-[#9C7060]">
-                Registrati
-              </TabsTrigger>
-            </TabsList>
+              <CardContent>
+                {/* Login Form */}
+                <TabsContent value="login">
+                  <form onSubmit={handleLogin} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="login-email" className="text-[#0F172A]">Email</Label>
+                      <Input
+                        id="login-email"
+                        type="email"
+                        data-testid="login-email-input"
+                        placeholder="nome@esempio.it"
+                        value={loginData.email}
+                        onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                        className="bg-[#F8FAFC] border-transparent focus:border-[#0EA5E9] focus:ring-1 focus:ring-[#0EA5E9] h-12"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="login-password" className="text-[#0F172A]">Password</Label>
+                      <Input
+                        id="login-password"
+                        type="password"
+                        data-testid="login-password-input"
+                        placeholder="••••••••"
+                        value={loginData.password}
+                        onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                        className="bg-[#F8FAFC] border-transparent focus:border-[#0EA5E9] focus:ring-1 focus:ring-[#0EA5E9] h-12"
+                        required
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      data-testid="login-submit-btn"
+                      disabled={loading}
+                      className="w-full h-12 bg-[#0EA5E9] hover:bg-[#0284C7] text-white shadow-lg shadow-[#0EA5E9]/20 transition-all active:scale-95"
+                    >
+                      {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Accedi'}
+                    </Button>
+                  </form>
+                </TabsContent>
 
-            {/* LOGIN */}
-            <TabsContent value="login">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div>
-                  <Label className="text-[#5C3D30] text-sm font-medium mb-1.5 block">Email</Label>
-                  <Input
-                    type="email" required placeholder="tua@email.it"
-                    value={loginData.email} onChange={e => setLoginData(p => ({...p, email: e.target.value}))}
-                    className="rounded-xl border-[#E8D5C8] bg-white focus:border-[#C8617A] focus:ring-[#C8617A]/20 h-11"
-                  />
-                </div>
-                <div>
-                  <Label className="text-[#5C3D30] text-sm font-medium mb-1.5 block">Password</Label>
-                  <div className="relative">
-                    <Input
-                      type={showPass ? 'text' : 'password'} required placeholder="••••••••"
-                      value={loginData.password} onChange={e => setLoginData(p => ({...p, password: e.target.value}))}
-                      className="rounded-xl border-[#E8D5C8] bg-white focus:border-[#C8617A] focus:ring-[#C8617A]/20 h-11 pr-10"
-                    />
-                    <button type="button" onClick={() => setShowPass(p => !p)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9C7060] hover:text-[#C8617A]">
-                      {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-                <Button type="submit" disabled={loading} className="w-full h-11 bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white rounded-xl shadow-[0_4px_14px_rgba(200,97,122,0.35)] font-semibold mt-2">
-                  {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Scissors className="w-4 h-4 mr-2" />}
-                  Accedi
-                </Button>
-              </form>
-            </TabsContent>
-
-            {/* REGISTER */}
-            <TabsContent value="register">
-              <form onSubmit={handleRegister} className="space-y-4">
-                {[
-                  { key: 'name', label: 'Il tuo nome', placeholder: 'Es. Maria', type: 'text' },
-                  { key: 'salon_name', label: 'Nome del salone', placeholder: 'Es. Hair Studio Roma', type: 'text' },
-                  { key: 'email', label: 'Email', placeholder: 'tua@email.it', type: 'email' },
-                  { key: 'password', label: 'Password (min. 6 caratteri)', placeholder: '••••••••', type: 'password' },
-                ].map(f => (
-                  <div key={f.key}>
-                    <Label className="text-[#5C3D30] text-sm font-medium mb-1.5 block">{f.label}</Label>
-                    <Input
-                      type={f.type} required placeholder={f.placeholder}
-                      value={registerData[f.key]} onChange={e => setRegisterData(p => ({...p, [f.key]: e.target.value}))}
-                      className="rounded-xl border-[#E8D5C8] bg-white focus:border-[#C8617A] h-11"
-                    />
-                  </div>
-                ))}
-                <Button type="submit" disabled={loading} className="w-full h-11 bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white rounded-xl shadow-[0_4px_14px_rgba(200,97,122,0.35)] font-semibold mt-2">
-                  {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
-                  Crea Account
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
-
-          {/* Footer */}
-          <p className="text-center text-xs text-[#9C7060] mt-8">
-            Bruno Melito Hair · Gestionale Professionale
-          </p>
+                {/* Register Form */}
+                <TabsContent value="register">
+                  <form onSubmit={handleRegister} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="register-name" className="text-[#0F172A]">Nome</Label>
+                      <Input
+                        id="register-name"
+                        type="text"
+                        data-testid="register-name-input"
+                        placeholder="Il tuo nome"
+                        value={registerData.name}
+                        onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
+                        className="bg-[#F8FAFC] border-transparent focus:border-[#0EA5E9] focus:ring-1 focus:ring-[#0EA5E9] h-12"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="register-salon" className="text-[#0F172A]">Nome Salone</Label>
+                      <Input
+                        id="register-salon"
+                        type="text"
+                        data-testid="register-salon-input"
+                        placeholder="Il nome del tuo salone"
+                        value={registerData.salon_name}
+                        onChange={(e) => setRegisterData({ ...registerData, salon_name: e.target.value })}
+                        className="bg-[#F8FAFC] border-transparent focus:border-[#0EA5E9] focus:ring-1 focus:ring-[#0EA5E9] h-12"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="register-email" className="text-[#0F172A]">Email</Label>
+                      <Input
+                        id="register-email"
+                        type="email"
+                        data-testid="register-email-input"
+                        placeholder="nome@esempio.it"
+                        value={registerData.email}
+                        onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
+                        className="bg-[#F8FAFC] border-transparent focus:border-[#0EA5E9] focus:ring-1 focus:ring-[#0EA5E9] h-12"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="register-password" className="text-[#0F172A]">Password</Label>
+                      <Input
+                        id="register-password"
+                        type="password"
+                        data-testid="register-password-input"
+                        placeholder="••••••••"
+                        value={registerData.password}
+                        onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
+                        className="bg-[#F8FAFC] border-transparent focus:border-[#0EA5E9] focus:ring-1 focus:ring-[#0EA5E9] h-12"
+                        required
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      data-testid="register-submit-btn"
+                      disabled={loading}
+                      className="w-full h-12 bg-[#0EA5E9] hover:bg-[#0284C7] text-white shadow-lg shadow-[#0EA5E9]/20 transition-all active:scale-95"
+                    >
+                      {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Crea Account'}
+                    </Button>
+                  </form>
+                </TabsContent>
+              </CardContent>
+            </Tabs>
+          </Card>
         </div>
       </div>
     </div>

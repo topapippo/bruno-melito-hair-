@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { getMediaUrl } from '../lib/mediaUrl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -96,7 +95,11 @@ export default function BookingPage() {
   const hairstylePhotos = cmsGallery.filter(g => g.section === 'gallery' || g.section === 'works');
   const serviceCategories = config.service_categories || [];
 
-  // getMediaUrl importato da ../lib/mediaUrl
+  const getImageUrl = (item) => {
+    if (!item?.image_url) return '';
+    if (item.image_url.startsWith('http')) return item.image_url;
+    return `${process.env.REACT_APP_BACKEND_URL}${item.image_url}`;
+  };
 
   const toggleService = (id) => {
     setFormData(prev => ({
@@ -160,7 +163,7 @@ export default function BookingPage() {
         <div className="max-w-md w-full text-center">
           <CheckCircle className="w-20 h-20 mx-auto text-emerald-400 mb-6" />
           <h1 className="text-3xl font-black text-[#1e293b] mb-3">Prenotazione Confermata!</h1>
-          <p className="text-[#D4B89A] mb-2">Ti aspettiamo il <span className="text-[#1e293b] font-bold">{format(new Date(formData.date), 'd MMMM yyyy', { locale: it })}</span> alle <span className="text-[#1e293b] font-bold">{formData.time}</span></p>
+          <p className="text-gray-300 mb-2">Ti aspettiamo il <span className="text-[#1e293b] font-bold">{format(new Date(formData.date), 'd MMMM yyyy', { locale: it })}</span> alle <span className="text-[#1e293b] font-bold">{formData.time}</span></p>
           <p className="text-sm text-[#94A3B8] mb-8">Riceverai un promemoria prima dell'appuntamento.</p>
           <Button onClick={() => { setSuccess(false); setShowBooking(false); setStep(1); setFormData({ client_name: '', client_phone: '', service_ids: [], operator_id: '', date: format(new Date(), 'yyyy-MM-dd'), time: '09:00', notes: '' }); }}
             className="bg-[#0EA5E9] text-white hover:bg-gray-200 font-bold px-8" data-testid="booking-back-home-btn">Torna alla Home</Button>
@@ -223,7 +226,7 @@ export default function BookingPage() {
                           <Button onClick={updateAppointment} className="bg-emerald-500 hover:bg-emerald-600 text-[#1e293b] font-bold flex-1" data-testid="save-apt-btn">
                             <CheckCircle className="w-4 h-4 mr-1" /> Salva
                           </Button>
-                          <Button onClick={() => setEditingApt(null)} variant="outline" className="border-[#4A3020] text-[#64748B] hover:text-[#1e293b]">Annulla</Button>
+                          <Button onClick={() => setEditingApt(null)} variant="outline" className="border-gray-700 text-[#64748B] hover:text-[#1e293b]">Annulla</Button>
                         </div>
                       </div>
                     ) : (
@@ -233,7 +236,7 @@ export default function BookingPage() {
                             <p className="text-[#1e293b] font-bold">{format(new Date(apt.date + 'T00:00'), 'd MMMM yyyy', { locale: it })}</p>
                             <p className="text-amber-400 font-black text-lg">ore {apt.time}</p>
                           </div>
-                          <span className="text-xs bg-[#3A2A1A] text-[#64748B] px-2 py-1 rounded font-mono">{apt.booking_code}</span>
+                          <span className="text-xs bg-gray-800 text-[#64748B] px-2 py-1 rounded font-mono">{apt.booking_code}</span>
                         </div>
                         <p className="text-sm text-[#64748B] mb-1">{apt.services?.join(', ')}</p>
                         {apt.operator_name && <p className="text-xs text-[#94A3B8]">Operatore: {apt.operator_name}</p>}
@@ -285,7 +288,7 @@ export default function BookingPage() {
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${step >= s ? 'bg-[#0EA5E9] text-white' : 'bg-gray-100 text-[#94A3B8]'}`}>
                   {step > s ? <CheckCircle className="w-4 h-4" /> : s}
                 </div>
-                {s < 3 && <div className={`w-12 h-0.5 ${step > s ? 'bg-white' : 'bg-[#3A2A1A]'}`} />}
+                {s < 3 && <div className={`w-12 h-0.5 ${step > s ? 'bg-white' : 'bg-gray-800'}`} />}
               </div>
             ))}
           </div>
@@ -368,7 +371,7 @@ export default function BookingPage() {
                 )}
               </div>
               <div className="flex gap-3">
-                <Button onClick={() => setStep(1)} variant="outline" className="flex-1 border-[#4A3020] text-[#D4B89A] hover:bg-white/10">Indietro</Button>
+                <Button onClick={() => setStep(1)} variant="outline" className="flex-1 border-gray-700 text-gray-300 hover:bg-white/10">Indietro</Button>
                 <Button onClick={() => setStep(3)} className="flex-1 bg-[#0EA5E9] text-white hover:bg-gray-200 font-bold" data-testid="booking-step2-next">Continua <ArrowRight className="w-4 h-4 ml-2" /></Button>
               </div>
             </div>
@@ -378,20 +381,20 @@ export default function BookingPage() {
               <h2 className="text-xl font-black text-[#1e293b]">I Tuoi Dati</h2>
               <div className="space-y-3">
                 <div><label className="text-sm text-[#64748B] font-semibold mb-1 block">Nome e Cognome *</label>
-                  <Input value={formData.client_name} onChange={(e) => setFormData({...formData, client_name: e.target.value})} placeholder="Es. Maria Rossi" className="bg-gray-50 border-gray-200 text-[#1e293b] placeholder:text-[#7A5A3A]" data-testid="booking-name-input" /></div>
+                  <Input value={formData.client_name} onChange={(e) => setFormData({...formData, client_name: e.target.value})} placeholder="Es. Maria Rossi" className="bg-gray-50 border-gray-200 text-[#1e293b] placeholder:text-gray-600" data-testid="booking-name-input" /></div>
                 <div><label className="text-sm text-[#64748B] font-semibold mb-1 block">Telefono *</label>
-                  <Input value={formData.client_phone} onChange={(e) => setFormData({...formData, client_phone: e.target.value})} placeholder="Es. 339 123 4567" className="bg-gray-50 border-gray-200 text-[#1e293b] placeholder:text-[#7A5A3A]" data-testid="booking-phone-input" /></div>
+                  <Input value={formData.client_phone} onChange={(e) => setFormData({...formData, client_phone: e.target.value})} placeholder="Es. 339 123 4567" className="bg-gray-50 border-gray-200 text-[#1e293b] placeholder:text-gray-600" data-testid="booking-phone-input" /></div>
                 <div><label className="text-sm text-[#64748B] font-semibold mb-1 block">Note (opzionale)</label>
-                  <Textarea value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})} placeholder="Richieste particolari..." className="bg-gray-50 border-gray-200 text-[#1e293b] placeholder:text-[#7A5A3A]" rows={3} /></div>
+                  <Textarea value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})} placeholder="Richieste particolari..." className="bg-gray-50 border-gray-200 text-[#1e293b] placeholder:text-gray-600" rows={3} /></div>
               </div>
               <div className="bg-white p-4 rounded-xl border border-gray-200 space-y-2">
                 <p className="text-sm text-[#64748B]">Riepilogo:</p>
-                {selectedServices.map(s => (<div key={s.id} className="flex justify-between text-sm"><span className="text-[#D4B89A]">{s.name}</span><span className="text-[#1e293b] font-bold">{'\u20AC'}{s.price}</span></div>))}
+                {selectedServices.map(s => (<div key={s.id} className="flex justify-between text-sm"><span className="text-gray-300">{s.name}</span><span className="text-[#1e293b] font-bold">{'\u20AC'}{s.price}</span></div>))}
                 <div className="border-t border-gray-200 pt-2 flex justify-between"><span className="text-[#1e293b] font-bold">Totale</span><span className="text-[#1e293b] font-black text-lg">{'\u20AC'}{totalPrice}</span></div>
                 <p className="text-xs text-[#94A3B8]">{format(new Date(formData.date), 'd MMMM yyyy', { locale: it })} alle {formData.time}</p>
               </div>
               <div className="flex gap-3">
-                <Button onClick={() => setStep(2)} variant="outline" className="flex-1 border-[#4A3020] text-[#D4B89A] hover:bg-white/10">Indietro</Button>
+                <Button onClick={() => setStep(2)} variant="outline" className="flex-1 border-gray-700 text-gray-300 hover:bg-white/10">Indietro</Button>
                 <Button onClick={handleSubmit} disabled={submitting} className="flex-1 bg-[#0EA5E9] text-white hover:bg-gray-200 font-bold" data-testid="booking-submit-btn">
                   {submitting ? <Clock className="w-4 h-4 animate-spin" /> : 'Conferma Prenotazione'}
                 </Button>
@@ -418,7 +421,7 @@ export default function BookingPage() {
           <div className="hidden sm:flex items-center gap-6 text-sm text-[#64748B]">
             <button onClick={() => { setShowServices(true); setTimeout(() => scrollTo(servicesRef), 100); }} className="hover:text-[#1e293b] transition-colors">Servizi</button>
             <button onClick={() => scrollTo(contactRef)} className="hover:text-[#1e293b] transition-colors">Contatti</button>
-            <div className="flex items-center gap-3 border-l border-[#4A3020] pl-4">
+            <div className="flex items-center gap-3 border-l border-gray-700 pl-4">
               {SOCIAL_LINKS.map((link, i) => (
                 <a key={i} href={link.url} target="_blank" rel="noopener noreferrer" className={`text-[#94A3B8] ${link.color} transition-colors`} title={link.label}>
                   <link.icon className="w-4 h-4" />
@@ -447,7 +450,7 @@ export default function BookingPage() {
             <div className="inline-block bg-white/10 backdrop-blur-sm text-[#1e293b] text-xs font-bold px-4 py-2 rounded-full border border-amber-400/20 mb-6">
               SOLO PER APPUNTAMENTO
             </div>
-            <p className="text-base sm:text-lg text-[#D4B89A] max-w-lg mx-auto mb-8 leading-relaxed">
+            <p className="text-base sm:text-lg text-gray-300 max-w-lg mx-auto mb-8 leading-relaxed">
               Scopri l'eccellenza dell'hair styling al Bruno Melito Hair. Dove ogni taglio è un'opera d'arte e ogni cliente è unica.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center mb-10">
@@ -479,7 +482,7 @@ export default function BookingPage() {
           <div className="absolute right-4 sm:right-8 bottom-20 sm:bottom-32 bg-white/5 backdrop-blur-md border border-rose-400/30 rounded-3xl p-5 text-center hidden md:block hover:shadow-lg hover:shadow-rose-400/20 transition-all duration-300">
             <p className="text-4xl font-black text-rose-300">40+</p>
             <p className="text-xs text-[#64748B] font-semibold">Anni di<br />Esperienza</p>
-            <p className="text-[10px] text-[#7A5A3A] mt-1">Dal 1983</p>
+            <p className="text-[10px] text-gray-600 mt-1">Dal 1983</p>
           </div>
         </div>
       </section>
@@ -505,7 +508,7 @@ export default function BookingPage() {
                   <div className="space-y-3">
                     {(cat.items || []).map((item, i) => (
                       <div key={i} className="flex justify-between items-center py-2 border-b border-white/5 last:border-0">
-                        <span className="font-bold text-[#D4B89A]">{item.name}</span>
+                        <span className="font-bold text-gray-300">{item.name}</span>
                         <span className="font-black text-amber-400 text-lg shrink-0 ml-4">{item.price}</span>
                       </div>
                     ))}
@@ -513,7 +516,7 @@ export default function BookingPage() {
                 </div>
               ))}
               <div className="text-center">
-                <p className="text-[#7A5A3A] text-sm mb-6">Tutti i servizi includono consulenza personalizzata e prodotti professionali.</p>
+                <p className="text-gray-600 text-sm mb-6">Tutti i servizi includono consulenza personalizzata e prodotti professionali.</p>
                 <Button onClick={() => setShowBooking(true)} className="bg-[#0EA5E9] text-white hover:bg-gray-200 font-bold px-8 py-6 rounded-xl">
                   <Scissors className="w-4 h-4 mr-2" /> PRENOTA ORA
                 </Button>
@@ -551,7 +554,7 @@ export default function BookingPage() {
                       <Gift className="w-5 h-5 text-pink-400" />
                       <h3 className="text-lg font-black text-[#1e293b]">{promo.name}</h3>
                     </div>
-                    <p className="text-[#D4B89A] text-sm mb-4">{promo.description}</p>
+                    <p className="text-gray-300 text-sm mb-4">{promo.description}</p>
                     <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/10">
                       <p className="text-pink-300 font-black text-sm flex items-center gap-2">
                         <Gift className="w-4 h-4" /> IN OMAGGIO: {promo.free_service_name}
@@ -591,9 +594,9 @@ export default function BookingPage() {
               return (
               <div key={item.id || idx} className={`relative rounded-3xl overflow-hidden aspect-square group border-2 ${borders[idx % 4]} transition-all duration-300 hover:shadow-xl ${glows[idx % 4]} hover:border-opacity-60`}>
                 {item.file_type === 'video' ? (
-                  <video src={getMediaUrl(item?.image_url)} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" muted loop playsInline onMouseEnter={e => e.target.play()} onMouseLeave={e => { e.target.pause(); e.target.currentTime = 0; }} />
+                  <video src={getImageUrl(item)} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" muted loop playsInline onMouseEnter={e => e.target.play()} onMouseLeave={e => { e.target.pause(); e.target.currentTime = 0; }} />
                 ) : (
-                  <img src={getMediaUrl(item?.image_url)} alt={item.label || 'Salone'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                  <img src={getImageUrl(item)} alt={item.label || 'Salone'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
                 <p className="absolute bottom-3 left-3 text-white font-bold text-sm">{item.label}</p>
@@ -611,7 +614,7 @@ export default function BookingPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="rounded-3xl overflow-hidden h-80 lg:h-96 border-2 border-rose-400/20 hover:shadow-xl hover:shadow-rose-400/20 transition-all duration-300">
               {salonPhotos.length > 1 ? (
-                <img src={getMediaUrl(salonPhotos[1]?.image_url)} alt="Il nostro salone" className="w-full h-full object-cover" />
+                <img src={getImageUrl(salonPhotos[1])} alt="Il nostro salone" className="w-full h-full object-cover" />
               ) : (
                 <img src={HERO_LOGO} alt="Il nostro salone" className="w-full h-full object-cover" />
               )}
@@ -629,7 +632,7 @@ export default function BookingPage() {
                 {(config.about_features || ["Dal 1983 nel settore", "Senza parabeni e solfati", "Colorazioni senza ammoniaca", "Cheratina e olio di argan"]).map((item, idx) => (
                   <div key={idx} className="flex items-center gap-2">
                     <CheckCircle className="w-4 h-4 text-teal-400 shrink-0" />
-                    <span className="text-sm text-[#D4B89A]">{item}</span>
+                    <span className="text-sm text-gray-300">{item}</span>
                   </div>
                 ))}
               </div>
@@ -655,7 +658,7 @@ export default function BookingPage() {
                 <div className="flex gap-0.5 mb-3">
                   {[...Array(review.rating || 5)].map((_, i) => (<Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />))}
                 </div>
-                <p className="text-[#D4B89A] text-sm leading-relaxed mb-4">"{review.text}"</p>
+                <p className="text-gray-300 text-sm leading-relaxed mb-4">"{review.text}"</p>
                 <div className="flex items-center gap-3">
                   <div className={`w-8 h-8 ${avatarBgs[idx % 4]} rounded-full flex items-center justify-center`}>
                     <span className={`${avatarTexts[idx % 4]} font-bold text-sm`}>{(review.name || 'A')[0]}</span>
@@ -730,9 +733,9 @@ export default function BookingPage() {
               return (
               <div key={item.id || idx} className={`relative rounded-3xl overflow-hidden aspect-[3/4] group cursor-pointer border-2 ${borders[idx % 6]} transition-all duration-300 hover:shadow-xl ${glows[idx % 6]} hover:border-opacity-60`}>
                 {item.file_type === 'video' ? (
-                  <video src={getMediaUrl(item?.image_url)} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" muted loop playsInline onMouseEnter={e => e.target.play()} onMouseLeave={e => { e.target.pause(); e.target.currentTime = 0; }} />
+                  <video src={getImageUrl(item)} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" muted loop playsInline onMouseEnter={e => e.target.play()} onMouseLeave={e => { e.target.pause(); e.target.currentTime = 0; }} />
                 ) : (
-                  <img src={getMediaUrl(item?.image_url)} alt={item.label} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                  <img src={getImageUrl(item)} alt={item.label} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 {item.tag && (
@@ -793,7 +796,7 @@ export default function BookingPage() {
               ) : (
                 <>
                   <p className="text-[#64748B] text-xs">Mar - Sab: 08:00 - 19:00</p>
-                  <p className="text-[#7A5A3A] text-xs mt-1">Dom - Lun: Chiuso</p>
+                  <p className="text-gray-600 text-xs mt-1">Dom - Lun: Chiuso</p>
                 </>
               )}
             </div>

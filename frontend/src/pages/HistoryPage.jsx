@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import Layout from '../components/Layout';
-import PageHeader from '../components/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -65,7 +64,7 @@ export default function HistoryPage() {
       case 'cancelled':
         return <Badge className="bg-[#E76F51]/10 text-[#E76F51] border-[#E76F51]">Annullato</Badge>;
       default:
-        return <Badge className="bg-[#C8617A]/10 text-[#C8617A] border-[#C8617A]">Programmato</Badge>;
+        return <Badge className="bg-[#0EA5E9]/10 text-[#0EA5E9] border-[#0EA5E9]">Programmato</Badge>;
     }
   };
 
@@ -87,33 +86,33 @@ export default function HistoryPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="font-display text-3xl font-medium text-[#2D1B14]">Storico</h1>
-            <p className="text-[#7C5C4A] mt-1 ">
+            <h1 className="font-playfair text-3xl font-medium text-[#0F172A]">Storico</h1>
+            <p className="text-[#334155] mt-1 font-manrope">
               {filteredAppointments.length} appuntamenti trovati
             </p>
           </div>
         </div>
 
         {/* Filters */}
-        <Card className="bg-white border-[#F0E6DC]/30">
+        <Card className="bg-white border-[#E2E8F0]/30">
           <CardContent className="p-4">
             <div className="flex flex-col md:flex-row gap-4">
               {/* Search */}
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#7C5C4A]" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#334155]" />
                 <Input
                   type="search"
                   placeholder="Cerca per cliente o servizio..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   data-testid="search-history-input"
-                  className="pl-10 bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
+                  className="pl-10 bg-[#F8FAFC] border-transparent focus:border-[#0EA5E9]"
                 />
               </div>
 
               {/* Status Filter */}
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full md:w-[180px] bg-[#FAF7F2] border-transparent">
+                <SelectTrigger className="w-full md:w-[180px] bg-[#F8FAFC] border-transparent">
                   <SelectValue placeholder="Tutti gli stati" />
                 </SelectTrigger>
                 <SelectContent>
@@ -130,7 +129,7 @@ export default function HistoryPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => setDateRange({ start: subDays(new Date(), 7), end: new Date() })}
-                  className="border-[#F0E6DC]"
+                  className="border-[#E2E8F0]"
                 >
                   7 giorni
                 </Button>
@@ -138,7 +137,7 @@ export default function HistoryPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => setDateRange({ start: subMonths(new Date(), 1), end: new Date() })}
-                  className="border-[#F0E6DC]"
+                  className="border-[#E2E8F0]"
                 >
                   1 mese
                 </Button>
@@ -146,7 +145,7 @@ export default function HistoryPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => setDateRange({ start: subMonths(new Date(), 3), end: new Date() })}
-                  className="border-[#F0E6DC]"
+                  className="border-[#E2E8F0]"
                 >
                   3 mesi
                 </Button>
@@ -166,8 +165,8 @@ export default function HistoryPage() {
           <div className="space-y-6">
             {Object.entries(groupedByDate).map(([date, dayAppointments]) => (
               <div key={date}>
-                <h3 className="font-display text-lg text-[#2D1B14] mb-3 flex items-center gap-2">
-                  <CalendarIcon className="w-5 h-5 text-[#C8617A]" />
+                <h3 className="font-playfair text-lg text-[#0F172A] mb-3 flex items-center gap-2">
+                  <CalendarIcon className="w-5 h-5 text-[#0EA5E9]" />
                   {format(new Date(date), "EEEE d MMMM yyyy", { locale: it })}
                 </h3>
                 <div className="space-y-3">
@@ -175,33 +174,33 @@ export default function HistoryPage() {
                     <Card
                       key={apt.id}
                       data-testid={`history-card-${apt.id}`}
-                      className="bg-white border-[#F0E6DC]/30 hover:border-[#C8617A]/30 transition-colors"
+                      className="bg-white border-[#E2E8F0]/30 hover:border-[#0EA5E9]/30 transition-colors"
                     >
                       <CardContent className="p-4">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                           <div className="flex items-start gap-4">
                             <div className="text-center min-w-[60px]">
-                              <p className="text-lg font-semibold text-[#2D1B14] ">{apt.time}</p>
-                              <p className="text-xs text-[#7C5C4A]">{apt.end_time}</p>
+                              <p className="text-lg font-semibold text-[#0F172A] font-manrope">{apt.time}</p>
+                              <p className="text-xs text-[#334155]">{apt.end_time}</p>
                             </div>
                             <div>
                               <div className="flex items-center gap-3 mb-1">
-                                <h4 className="font-medium text-[#2D1B14]">{apt.client_name}</h4>
+                                <h4 className="font-medium text-[#0F172A]">{apt.client_name}</h4>
                                 {getStatusBadge(apt.status)}
                               </div>
-                              <p className="text-sm text-[#7C5C4A]">
+                              <p className="text-sm text-[#334155]">
                                 {apt.services.map(s => s.name).join(' + ')}
                               </p>
                               {apt.notes && (
-                                <p className="text-sm text-[#7C5C4A] mt-1 italic">"{apt.notes}"</p>
+                                <p className="text-sm text-[#334155] mt-1 italic">"{apt.notes}"</p>
                               )}
                             </div>
                           </div>
                           <div className="flex items-center gap-6 text-sm">
-                            <span className="flex items-center gap-1 text-[#7C5C4A]">
+                            <span className="flex items-center gap-1 text-[#334155]">
                               <Clock className="w-4 h-4" /> {apt.total_duration} min
                             </span>
-                            <span className="flex items-center gap-1 font-semibold text-[#2D1B14]">
+                            <span className="flex items-center gap-1 font-semibold text-[#0F172A]">
                               <Euro className="w-4 h-4" /> {apt.total_price.toFixed(2)}
                             </span>
                           </div>
@@ -214,11 +213,11 @@ export default function HistoryPage() {
             ))}
           </div>
         ) : (
-          <Card className="bg-white border-[#F0E6DC]/30">
+          <Card className="bg-white border-[#E2E8F0]/30">
             <CardContent className="py-16 text-center">
               <History className="w-16 h-16 mx-auto text-[#E2E8F0] mb-4" strokeWidth={1.5} />
-              <h3 className="font-display text-xl text-[#2D1B14] mb-2">Nessun appuntamento</h3>
-              <p className="text-[#7C5C4A]">
+              <h3 className="font-playfair text-xl text-[#0F172A] mb-2">Nessun appuntamento</h3>
+              <p className="text-[#334155]">
                 {search ? 'Prova con un termine diverso' : 'Non ci sono appuntamenti nel periodo selezionato'}
               </p>
             </CardContent>

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import Layout from '../components/Layout';
-import PageHeader from '../components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -118,16 +117,16 @@ export default function SettingsPage() {
       <div className="space-y-6" data-testid="settings-page">
         {/* Header */}
         <div>
-          <h1 className="font-display text-3xl font-medium text-[#2D1B14]">Impostazioni</h1>
-          <p className="text-[#7C5C4A] mt-1 ">Gestisci le impostazioni del tuo salone</p>
+          <h1 className="font-playfair text-3xl font-medium text-[#0F172A]">Impostazioni</h1>
+          <p className="text-[#334155] mt-1 font-manrope">Gestisci le impostazioni del tuo salone</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Profile Settings */}
-          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+          <Card className="bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
             <CardHeader>
-              <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
-                <User className="w-5 h-5 text-[#C8617A]" />
+              <CardTitle className="font-playfair text-xl text-[#0F172A] flex items-center gap-2">
+                <User className="w-5 h-5 text-[#0EA5E9]" />
                 Profilo
               </CardTitle>
             </CardHeader>
@@ -139,7 +138,7 @@ export default function SettingsPage() {
                     value={settings.name || ''}
                     onChange={(e) => setSettings({ ...settings, name: e.target.value })}
                     data-testid="settings-name-input"
-                    className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
+                    className="bg-[#F8FAFC] border-transparent focus:border-[#0EA5E9]"
                   />
                 </div>
                 <div className="space-y-2">
@@ -147,7 +146,7 @@ export default function SettingsPage() {
                   <Input
                     value={settings.email || ''}
                     disabled
-                    className="bg-[#FAF7F2] border-transparent opacity-60"
+                    className="bg-[#F8FAFC] border-transparent opacity-60"
                   />
                 </div>
               </div>
@@ -155,10 +154,10 @@ export default function SettingsPage() {
           </Card>
 
           {/* Salon Settings */}
-          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+          <Card className="bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
             <CardHeader>
-              <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-[#C8617A]" />
+              <CardTitle className="font-playfair text-xl text-[#0F172A] flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-[#0EA5E9]" />
                 Salone
               </CardTitle>
             </CardHeader>
@@ -169,17 +168,17 @@ export default function SettingsPage() {
                   value={settings.salon_name || ''}
                   onChange={(e) => setSettings({ ...settings, salon_name: e.target.value })}
                   data-testid="settings-salon-name-input"
-                  className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
+                  className="bg-[#F8FAFC] border-transparent focus:border-[#0EA5E9]"
                 />
               </div>
             </CardContent>
           </Card>
 
           {/* Working Hours */}
-          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+          <Card className="bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
             <CardHeader>
-              <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
-                <Clock className="w-5 h-5 text-[#C8617A]" />
+              <CardTitle className="font-playfair text-xl text-[#0F172A] flex items-center gap-2">
+                <Clock className="w-5 h-5 text-[#0EA5E9]" />
                 Orari di Apertura
               </CardTitle>
             </CardHeader>
@@ -192,7 +191,7 @@ export default function SettingsPage() {
                     value={settings.opening_time || '09:00'}
                     onChange={(e) => setSettings({ ...settings, opening_time: e.target.value })}
                     data-testid="settings-opening-time-input"
-                    className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
+                    className="bg-[#F8FAFC] border-transparent focus:border-[#0EA5E9]"
                   />
                 </div>
                 <div className="space-y-2">
@@ -202,7 +201,7 @@ export default function SettingsPage() {
                     value={settings.closing_time || '19:00'}
                     onChange={(e) => setSettings({ ...settings, closing_time: e.target.value })}
                     data-testid="settings-closing-time-input"
-                    className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
+                    className="bg-[#F8FAFC] border-transparent focus:border-[#0EA5E9]"
                   />
                 </div>
               </div>
@@ -213,19 +212,19 @@ export default function SettingsPage() {
                   {DAYS.map((day) => (
                     <div
                       key={day.value}
-                      className={`flex items-center space-x-2 p-3 rounded-xl border cursor-pointer transition-colors ${
+                      className={`flex items-center space-x-2 p-3 rounded-lg border cursor-pointer transition-colors ${
                         settings.working_days?.includes(day.value)
-                          ? 'bg-[#C8617A]/10 border-[#C8617A]'
-                          : 'bg-[#FAF7F2] border-transparent hover:border-[#F0E6DC]'
+                          ? 'bg-[#0EA5E9]/10 border-[#0EA5E9]'
+                          : 'bg-[#F8FAFC] border-transparent hover:border-[#E2E8F0]'
                       }`}
                       onClick={() => toggleDay(day.value)}
                     >
                       <Checkbox
                         checked={settings.working_days?.includes(day.value)}
-                        className="data-[state=checked]:bg-[#C8617A] data-[state=checked]:border-[#C8617A]"
+                        className="data-[state=checked]:bg-[#0EA5E9] data-[state=checked]:border-[#0EA5E9]"
                       />
                       <span className={`text-sm ${
-                        settings.working_days?.includes(day.value) ? 'text-[#C8617A] font-medium' : 'text-[#2D1B14]'
+                        settings.working_days?.includes(day.value) ? 'text-[#0EA5E9] font-medium' : 'text-[#0F172A]'
                       }`}>
                         {day.label}
                       </span>
@@ -242,7 +241,7 @@ export default function SettingsPage() {
               type="submit"
               disabled={saving}
               data-testid="save-settings-btn"
-              className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-[0_4px_12px_rgba(200,97,122,0.3)] shadow-lg shadow-[rgba(200,97,122,0.3)] px-8"
+              className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white shadow-lg shadow-[#0EA5E9]/20 px-8"
             >
               {saving ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -257,17 +256,17 @@ export default function SettingsPage() {
         </form>
 
         {/* Change Password */}
-        <Card className="border-2 border-[#F0E6DC]">
+        <Card className="border-2 border-[#E2E8F0]">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-[#2D1B14]">
-              <Lock className="w-5 h-5 text-[#C8617A]" />
+            <CardTitle className="flex items-center gap-2 text-[#0F172A]">
+              <Lock className="w-5 h-5 text-[#0EA5E9]" />
               Cambia Password
             </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleChangePassword} className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-[#2D1B14] font-semibold">Password Attuale</Label>
+                <Label className="text-[#0F172A] font-semibold">Password Attuale</Label>
                 <Input
                   type="password"
                   value={pwForm.current_password}
@@ -279,7 +278,7 @@ export default function SettingsPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-[#2D1B14] font-semibold">Nuova Password</Label>
+                  <Label className="text-[#0F172A] font-semibold">Nuova Password</Label>
                   <Input
                     type="password"
                     value={pwForm.new_password}
@@ -290,7 +289,7 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[#2D1B14] font-semibold">Conferma Nuova Password</Label>
+                  <Label className="text-[#0F172A] font-semibold">Conferma Nuova Password</Label>
                   <Input
                     type="password"
                     value={pwForm.confirm_password}

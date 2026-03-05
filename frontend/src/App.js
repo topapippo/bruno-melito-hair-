@@ -59,7 +59,7 @@ function OfflineIndicator() {
   if (isOnline) return null;
 
   return (
-    <div className="fixed top-0 left-0 right-0 bg-gradient-to-r from-[#C8617A] to-[#A0404F] text-white text-center py-2 text-sm z-50 font-medium shadow-lg">
+    <div className="fixed top-0 left-0 right-0 bg-amber-500 text-white text-center py-2 text-sm z-50 font-medium">
       Modalità Offline - I dati mostrati potrebbero non essere aggiornati
     </div>
   );
@@ -68,7 +68,7 @@ function OfflineIndicator() {
 // Homepage: gestionale for logged-in users, login for visitors
 function HomePage() {
   const { user, loading } = useAuth();
-  if (loading) return <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center"><div className="w-10 h-10 border-4 border-[#C8617A] border-t-transparent rounded-full animate-spin" /></div>;
+  if (loading) return <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center"><div className="w-8 h-8 border-4 border-[#0EA5E9] border-t-transparent rounded-full animate-spin" /></div>;
   if (user) return <PlanningPage />;
   // Non-authenticated users see the public website
   return <Navigate to="/sito" replace />;
@@ -308,8 +308,8 @@ export default function App() {
         toastOptions={{
           style: {
             background: '#fff',
-            border: '1px solid #E8D5C8',
-            color: '#2D1B14',
+            border: '1px solid #E6CCB2',
+            color: '#44403C',
           },
         }}
       />
