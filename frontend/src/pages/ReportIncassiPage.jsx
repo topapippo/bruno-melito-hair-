@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import * as XLSX from 'xlsx';
 import Layout from '../components/Layout';
+import PageHeader from '../components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -52,7 +53,7 @@ export default function ReportIncassiPage() {
     setLoading(true);
     try {
       const { start, end } = getDateRange();
-      const res = await axios.get(`${API}/payments?start=${start.toISOString()}&end=${end.toISOString()}`);
+      const res = await api.get(`${API}/payments?start=${start.toISOString()}&end=${end.toISOString()}`);
       const data = res.data;
       setPayments(data);
       
@@ -105,11 +106,11 @@ export default function ReportIncassiPage() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-4xl font-black text-black">Report Incassi</h1>
-            <p className="text-[#0EA5E9] mt-1 font-bold text-lg">{getPeriodLabel()}</p>
+            <p className="text-[#C8617A] mt-1 font-bold text-lg">{getPeriodLabel()}</p>
           </div>
           <div className="flex items-center gap-3">
             <Select value={period} onValueChange={setPeriod}>
-              <SelectTrigger className="w-48 border-2 border-[#0EA5E9] font-semibold">
+              <SelectTrigger className="w-48 border-2 border-[#C8617A] font-semibold">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -148,24 +149,24 @@ export default function ReportIncassiPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-white border-2 border-[#E2E8F0]">
+              <Card className="bg-white border-2 border-[#F0E6DC]">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-[#334155] font-semibold">Contanti</p>
-                      <p className="text-3xl font-black text-[#0F172A] mt-2">{'\u20AC'}{stats.cash.toFixed(2)}</p>
+                      <p className="text-[#7C5C4A] font-semibold">Contanti</p>
+                      <p className="text-3xl font-black text-[#2D1B14] mt-2">{'\u20AC'}{stats.cash.toFixed(2)}</p>
                     </div>
                     <Banknote className="w-10 h-10 text-green-500" />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-white border-2 border-[#E2E8F0]">
+              <Card className="bg-white border-2 border-[#F0E6DC]">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-[#334155] font-semibold">Abbonamento / Prepagata</p>
-                      <p className="text-3xl font-black text-[#0F172A] mt-2">{'\u20AC'}{stats.prepaid.toFixed(2)}</p>
+                      <p className="text-[#7C5C4A] font-semibold">Abbonamento / Prepagata</p>
+                      <p className="text-3xl font-black text-[#2D1B14] mt-2">{'\u20AC'}{stats.prepaid.toFixed(2)}</p>
                     </div>
                     <CreditCard className="w-10 h-10 text-purple-500" />
                   </div>
@@ -174,28 +175,28 @@ export default function ReportIncassiPage() {
             </div>
 
             {/* Payments List */}
-            <Card className="bg-white border-2 border-[#E2E8F0]">
+            <Card className="bg-white border-2 border-[#F0E6DC]">
               <CardHeader>
-                <CardTitle className="text-xl font-black text-[#0F172A]">Dettaglio Pagamenti</CardTitle>
+                <CardTitle className="text-xl font-black text-[#2D1B14]">Dettaglio Pagamenti</CardTitle>
               </CardHeader>
               <CardContent>
                 {payments.length === 0 ? (
-                  <div className="text-center py-12 text-[#334155]">
+                  <div className="text-center py-12 text-[#7C5C4A]">
                     <Euro className="w-12 h-12 mx-auto mb-4 opacity-50" />
                     <p className="font-semibold">Nessun pagamento in questo periodo</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {payments.map((payment) => (
-                      <div key={payment.id} className="flex items-center justify-between p-4 bg-[#F8FAFC] rounded-lg border border-[#E2E8F0]">
+                      <div key={payment.id} className="flex items-center justify-between p-4 bg-[#FAF7F2] rounded-xl border border-[#F0E6DC]">
                         <div className="flex-1">
-                          <p className="font-bold text-[#0F172A]">{payment.client_name}</p>
-                          <p className="text-sm text-[#334155]">{payment.services?.map(s => s.name).join(', ')}</p>
-                          <p className="text-xs text-[#334155] mt-1">{payment.date}</p>
+                          <p className="font-bold text-[#2D1B14]">{payment.client_name}</p>
+                          <p className="text-sm text-[#7C5C4A]">{payment.services?.map(s => s.name).join(', ')}</p>
+                          <p className="text-xs text-[#7C5C4A] mt-1">{payment.date}</p>
                         </div>
                         <div className="text-right">
                           <p className="text-xl font-black text-green-600">€{payment.total_paid.toFixed(2)}</p>
-                          <p className="text-xs text-[#334155] capitalize">
+                          <p className="text-xs text-[#7C5C4A] capitalize">
                             {payment.payment_method === 'cash' ? 'Contanti' : 'Abbonamento/Prepagata'}
                           </p>
                         </div>

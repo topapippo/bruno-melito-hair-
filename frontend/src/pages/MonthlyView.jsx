@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import Layout from '../components/Layout';
+import PageHeader from '../components/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -24,7 +25,7 @@ export default function MonthlyView() {
     try {
       const startDate = format(startOfMonth(currentMonth), 'yyyy-MM-dd');
       const endDate = format(endOfMonth(currentMonth), 'yyyy-MM-dd');
-      const res = await axios.get(`${API}/appointments?start_date=${startDate}&end_date=${endDate}`);
+      const res = await api.get(`${API}/appointments?start_date=${startDate}&end_date=${endDate}`);
       setAppointments(res.data);
     } catch (err) {
       console.error('Error fetching appointments:', err);
@@ -52,8 +53,8 @@ export default function MonthlyView() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="font-playfair text-3xl font-medium text-[#0F172A]">Vista Mensile</h1>
-            <p className="text-[#334155] mt-1 font-manrope capitalize">
+            <h1 className="font-display text-3xl font-medium text-[#2D1B14]">Vista Mensile</h1>
+            <p className="text-[#7C5C4A] mt-1  capitalize">
               {format(currentMonth, "MMMM yyyy", { locale: it })}
             </p>
           </div>
@@ -62,14 +63,14 @@ export default function MonthlyView() {
               variant="outline"
               size="icon"
               onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-              className="border-[#E2E8F0]"
+              className="border-[#F0E6DC]"
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
             <Button
               variant="outline"
               onClick={() => setCurrentMonth(new Date())}
-              className="border-[#E2E8F0] text-[#0F172A]"
+              className="border-[#F0E6DC] text-[#2D1B14]"
             >
               Oggi
             </Button>
@@ -77,7 +78,7 @@ export default function MonthlyView() {
               variant="outline"
               size="icon"
               onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-              className="border-[#E2E8F0]"
+              className="border-[#F0E6DC]"
             >
               <ChevronRight className="w-4 h-4" />
             </Button>
@@ -85,12 +86,12 @@ export default function MonthlyView() {
         </div>
 
         {/* Calendar */}
-        <Card className="bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] overflow-hidden">
+        <Card className="bg-white border-[#F0E6DC]/30 shadow-sm overflow-hidden">
           <CardContent className="p-0">
             {/* Week Headers */}
-            <div className="grid grid-cols-7 bg-[#F8FAFC] border-b border-[#E2E8F0]/30">
+            <div className="grid grid-cols-7 bg-[#FAF7F2] border-b border-[#F0E6DC]/30">
               {weekDays.map((day) => (
-                <div key={day} className="p-3 text-center text-sm font-medium text-[#334155]">
+                <div key={day} className="p-3 text-center text-sm font-medium text-[#7C5C4A]">
                   {day}
                 </div>
               ))}
@@ -112,19 +113,19 @@ export default function MonthlyView() {
                     <div
                       key={idx}
                       data-testid={`calendar-day-${format(day, 'yyyy-MM-dd')}`}
-                      className={`min-h-[100px] md:min-h-[120px] p-2 border-b border-r border-[#E2E8F0]/20 ${
-                        !isCurrentMonth ? 'bg-[#F8FAFC]/50' : ''
+                      className={`min-h-[100px] md:min-h-[120px] p-2 border-b border-r border-[#F0E6DC]/20 ${
+                        !isCurrentMonth ? 'bg-[#FAF7F2]/50' : ''
                       }`}
                     >
                       <div className={`text-right mb-1 ${
                         isToday 
                           ? 'text-white' 
                           : isCurrentMonth 
-                            ? 'text-[#0F172A]' 
-                            : 'text-[#334155]/50'
+                            ? 'text-[#2D1B14]' 
+                            : 'text-[#7C5C4A]/50'
                       }`}>
                         <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-medium ${
-                          isToday ? 'bg-[#0EA5E9]' : ''
+                          isToday ? 'bg-[#C8617A]' : ''
                         }`}>
                           {format(day, 'd')}
                         </span>
@@ -140,14 +141,14 @@ export default function MonthlyView() {
                                 ? 'bg-[#789F8A]/20 text-[#789F8A]'
                                 : apt.status === 'cancelled'
                                   ? 'bg-[#E76F51]/20 text-[#E76F51]'
-                                  : 'bg-[#0EA5E9]/20 text-[#0EA5E9]'
+                                  : 'bg-[#C8617A]/20 text-[#C8617A]'
                             }`}
                           >
                             <span className="font-medium">{apt.time}</span> {apt.client_name}
                           </div>
                         ))}
                         {dayAppointments.length > 2 && (
-                          <div className="text-[10px] text-[#334155] px-1.5">
+                          <div className="text-[10px] text-[#7C5C4A] px-1.5">
                             +{dayAppointments.length - 2} altri
                           </div>
                         )}
@@ -161,20 +162,20 @@ export default function MonthlyView() {
         </Card>
 
         {/* Summary */}
-        <Card className="bg-white border-[#E2E8F0]/30">
+        <Card className="bg-white border-[#F0E6DC]/30">
           <CardContent className="p-4">
             <div className="flex flex-wrap items-center justify-center gap-6 text-sm">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-[#0EA5E9]" />
-                <span className="text-[#334155]">Programmati ({appointments.filter(a => a.status === 'scheduled').length})</span>
+                <div className="w-3 h-3 rounded-full bg-[#C8617A]" />
+                <span className="text-[#7C5C4A]">Programmati ({appointments.filter(a => a.status === 'scheduled').length})</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-[#789F8A]" />
-                <span className="text-[#334155]">Completati ({appointments.filter(a => a.status === 'completed').length})</span>
+                <span className="text-[#7C5C4A]">Completati ({appointments.filter(a => a.status === 'completed').length})</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-[#E76F51]" />
-                <span className="text-[#334155]">Annullati ({appointments.filter(a => a.status === 'cancelled').length})</span>
+                <span className="text-[#7C5C4A]">Annullati ({appointments.filter(a => a.status === 'cancelled').length})</span>
               </div>
             </div>
           </CardContent>

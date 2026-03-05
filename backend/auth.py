@@ -4,14 +4,22 @@ from datetime import datetime, timezone, timedelta
 import jwt
 import bcrypt
 import os
+import sys
 
-from database import db
+# ── JWT Secret: obbligatorio in produzione, fallback SOLO in sviluppo ──────────
+JWT_SECRET = os.environ.get('JWT_SECRET')
+if not JWT_SECRET:
+    if os.environ.get('ENV', 'development') == 'production':
+        print("ERRORE FATALE: JWT_SECRET non è impostato in produzione!", file=sys.stderr)
+        sys.exit(1)
+    JWT_SECRET = 'dev-only-insecure-secret-change-in-production'
 
-JWT_SECRET = os.environ.get('JWT_SECRET', 'salone-parrucchiera-secret-key-2024')
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 24
 
 security = HTTPBearer()
+
+from database import db
 
 
 def hash_password(password: str) -> str:
@@ -44,6 +52,6 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
             raise HTTPException(status_code=401, detail="Utente non trovato")
         return user
     except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token scaduto")
+        raise HTTPException(status_code=401, detail="Token scaduto, effettua nuovamente il login")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Token non valido")

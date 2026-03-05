@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../lib/api';
 import Layout from '../components/Layout';
+import PageHeader from '../components/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -45,7 +46,7 @@ export default function WeeklyView() {
     try {
       const startDate = format(weekStart, 'yyyy-MM-dd');
       const endDate = format(addDays(weekStart, 5), 'yyyy-MM-dd');
-      const res = await axios.get(`${API}/appointments?start_date=${startDate}&end_date=${endDate}`);
+      const res = await api.get(`${API}/appointments?start_date=${startDate}&end_date=${endDate}`);
       setAppointments(res.data);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
@@ -68,7 +69,7 @@ export default function WeeklyView() {
   const getStatusColor = (status) => {
     if (status === 'completed') return 'bg-emerald-500';
     if (status === 'cancelled') return 'bg-red-400';
-    return 'bg-[#0EA5E9]';
+    return 'bg-[#C8617A]';
   };
 
   return (
@@ -76,19 +77,19 @@ export default function WeeklyView() {
       <div className="space-y-4" data-testid="weekly-view-page">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="font-playfair text-3xl font-medium text-[#0F172A]">Vista Settimanale</h1>
-            <p className="text-[#334155] mt-1 font-manrope">
+            <h1 className="font-display text-3xl font-medium text-[#2D1B14]">Vista Settimanale</h1>
+            <p className="text-[#7C5C4A] mt-1 ">
               {format(weekStart, "d MMMM", { locale: it })} - {format(addDays(weekStart, 5), "d MMMM yyyy", { locale: it })}
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={() => setWeekStart(subWeeks(weekStart, 1))} className="border-[#E2E8F0]">
+            <Button variant="outline" size="icon" onClick={() => setWeekStart(subWeeks(weekStart, 1))} className="border-[#F0E6DC]">
               <ChevronLeft className="w-4 h-4" />
             </Button>
-            <Button variant="outline" onClick={() => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))} className="border-[#E2E8F0] text-[#0F172A]">
+            <Button variant="outline" onClick={() => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))} className="border-[#F0E6DC] text-[#2D1B14]">
               Oggi
             </Button>
-            <Button variant="outline" size="icon" onClick={() => setWeekStart(addWeeks(weekStart, 1))} className="border-[#E2E8F0]">
+            <Button variant="outline" size="icon" onClick={() => setWeekStart(addWeeks(weekStart, 1))} className="border-[#F0E6DC]">
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
@@ -97,21 +98,21 @@ export default function WeeklyView() {
         {loading ? (
           <Skeleton className="h-96" />
         ) : (
-          <Card className="bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] overflow-hidden">
+          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm overflow-hidden">
             <CardContent className="p-0">
               {/* Day Headers */}
-              <div className="flex border-b border-[#E2E8F0]">
-                <div className="w-16 shrink-0 border-r border-[#E2E8F0] p-2 bg-[#F8FAFC]">
-                  <span className="text-xs text-[#334155]">Ora</span>
+              <div className="flex border-b border-[#F0E6DC]">
+                <div className="w-16 shrink-0 border-r border-[#F0E6DC] p-2 bg-[#FAF7F2]">
+                  <span className="text-xs text-[#7C5C4A]">Ora</span>
                 </div>
                 {weekDays.map((day) => {
                   const isToday = isSameDay(day, new Date());
                   const dayApts = getAppointmentsForDay(day);
                   return (
-                    <div key={day.toString()} className={`flex-1 min-w-[120px] p-2 text-center border-r border-[#E2E8F0] last:border-r-0 ${isToday ? 'bg-[#0EA5E9]/5' : 'bg-[#F8FAFC]'}`}>
-                      <p className="text-xs uppercase tracking-wide text-[#334155] font-manrope">{format(day, 'EEE', { locale: it })}</p>
-                      <p className={`text-lg font-bold ${isToday ? 'text-[#0EA5E9]' : 'text-[#0F172A]'}`}>{format(day, 'd')}</p>
-                      {dayApts.length > 0 && <p className="text-[10px] text-[#0EA5E9] font-bold">{dayApts.length} app.</p>}
+                    <div key={day.toString()} className={`flex-1 min-w-[120px] p-2 text-center border-r border-[#F0E6DC] last:border-r-0 ${isToday ? 'bg-[#C8617A]/5' : 'bg-[#FAF7F2]'}`}>
+                      <p className="text-xs uppercase tracking-wide text-[#7C5C4A] ">{format(day, 'EEE', { locale: it })}</p>
+                      <p className={`text-lg font-bold ${isToday ? 'text-[#C8617A]' : 'text-[#2D1B14]'}`}>{format(day, 'd')}</p>
+                      {dayApts.length > 0 && <p className="text-[10px] text-[#C8617A] font-bold">{dayApts.length} app.</p>}
                     </div>
                   );
                 })}
@@ -121,10 +122,10 @@ export default function WeeklyView() {
               <div ref={scrollRef} className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 260px)' }}>
                 <div className="flex relative">
                   {/* Time column */}
-                  <div className="w-16 shrink-0 border-r border-[#E2E8F0]">
+                  <div className="w-16 shrink-0 border-r border-[#F0E6DC]">
                     {TIME_SLOTS.map((time, idx) => (
-                      <div key={time} className="h-10 flex items-center justify-center border-b border-[#E2E8F0]/50" style={idx % 4 === 0 ? { borderBottomColor: '#E2E8F0' } : {}}>
-                        {idx % 4 === 0 && <span className="text-xs font-bold text-[#334155]">{time}</span>}
+                      <div key={time} className="h-10 flex items-center justify-center border-b border-[#F0E6DC]/50" style={idx % 4 === 0 ? { borderBottomColor: '#E2E8F0' } : {}}>
+                        {idx % 4 === 0 && <span className="text-xs font-bold text-[#7C5C4A]">{time}</span>}
                       </div>
                     ))}
                   </div>
@@ -134,9 +135,9 @@ export default function WeeklyView() {
                     const dayApts = getAppointmentsForDay(day);
                     const isToday = isSameDay(day, new Date());
                     return (
-                      <div key={day.toString()} className={`flex-1 min-w-[120px] border-r border-[#E2E8F0] last:border-r-0 relative ${isToday ? 'bg-[#0EA5E9]/[0.02]' : ''}`}>
+                      <div key={day.toString()} className={`flex-1 min-w-[120px] border-r border-[#F0E6DC] last:border-r-0 relative ${isToday ? 'bg-[#C8617A]/[0.02]' : ''}`}>
                         {TIME_SLOTS.map((time, idx) => (
-                          <div key={time} className={`h-10 border-b ${idx % 4 === 0 ? 'border-[#E2E8F0]' : 'border-[#E2E8F0]/30'}`} />
+                          <div key={time} className={`h-10 border-b ${idx % 4 === 0 ? 'border-[#F0E6DC]' : 'border-[#F0E6DC]/30'}`} />
                         ))}
                         {/* Appointments overlay */}
                         {dayApts.map((apt) => {
@@ -144,7 +145,7 @@ export default function WeeklyView() {
                           return (
                             <div
                               key={apt.id}
-                              className={`absolute left-0.5 right-0.5 ${getStatusColor(apt.status)} text-white rounded-lg px-1.5 py-0.5 overflow-hidden cursor-pointer hover:brightness-110 transition-all text-xs shadow-sm`}
+                              className={`absolute left-0.5 right-0.5 ${getStatusColor(apt.status)} text-white rounded-xl px-1.5 py-0.5 overflow-hidden cursor-pointer hover:brightness-110 transition-all text-xs shadow-sm`}
                               style={style}
                               title={`${apt.time} - ${apt.client_name}\n${apt.services.map(s => s.name).join(', ')}`}
                               onClick={() => navigate(`/planning?date=${format(day, 'yyyy-MM-dd')}`)}
@@ -163,13 +164,13 @@ export default function WeeklyView() {
           </Card>
         )}
 
-        <Card className="bg-white border-[#E2E8F0]/30">
+        <Card className="bg-white border-[#F0E6DC]/30">
           <CardContent className="p-4">
             <div className="flex flex-wrap items-center justify-center gap-6 text-sm">
-              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-[#0EA5E9]" /><span className="text-[#334155]">Programmati</span></div>
-              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-emerald-500" /><span className="text-[#334155]">Completati</span></div>
-              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-red-400" /><span className="text-[#334155]">Cancellati</span></div>
-              <span className="text-[#334155] font-bold">Totale: {appointments.length} appuntamenti</span>
+              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-[#C8617A]" /><span className="text-[#7C5C4A]">Programmati</span></div>
+              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-emerald-500" /><span className="text-[#7C5C4A]">Completati</span></div>
+              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-red-400" /><span className="text-[#7C5C4A]">Cancellati</span></div>
+              <span className="text-[#7C5C4A] font-bold">Totale: {appointments.length} appuntamenti</span>
             </div>
           </CardContent>
         </Card>

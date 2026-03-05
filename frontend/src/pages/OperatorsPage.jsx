@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import Layout from '../components/Layout';
+import PageHeader from '../components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -61,7 +62,7 @@ export default function OperatorsPage() {
 
   const fetchOperators = async () => {
     try {
-      const res = await axios.get(`${API}/operators`);
+      const res = await api.get(`${API}/operators`);
       setOperators(res.data);
     } catch (err) {
       console.error('Error fetching operators:', err);
@@ -81,10 +82,10 @@ export default function OperatorsPage() {
     setSaving(true);
     try {
       if (editingOperator) {
-        await axios.put(`${API}/operators/${editingOperator.id}`, formData);
+        await api.put(`${API}/operators/${editingOperator.id}`, formData);
         toast.success('Operatore aggiornato!');
       } else {
-        await axios.post(`${API}/operators`, formData);
+        await api.post(`${API}/operators`, formData);
         toast.success('Operatore aggiunto!');
       }
       setDialogOpen(false);
@@ -110,7 +111,7 @@ export default function OperatorsPage() {
 
   const handleToggleActive = async (operator) => {
     try {
-      await axios.put(`${API}/operators/${operator.id}`, { active: !operator.active });
+      await api.put(`${API}/operators/${operator.id}`, { active: !operator.active });
       toast.success(operator.active ? 'Operatore disattivato' : 'Operatore attivato');
       fetchOperators();
     } catch (err) {
@@ -121,7 +122,7 @@ export default function OperatorsPage() {
   const handleDelete = async () => {
     if (!operatorToDelete) return;
     try {
-      await axios.delete(`${API}/operators/${operatorToDelete}`);
+      await api.delete(`${API}/operators/${operatorToDelete}`);
       toast.success('Operatore eliminato');
       setDeleteDialogOpen(false);
       setOperatorToDelete(null);
@@ -143,13 +144,13 @@ export default function OperatorsPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="font-playfair text-3xl font-medium text-[#0F172A]">Operatori</h1>
-            <p className="text-[#334155] mt-1 font-manrope">{operators.length} collaboratori</p>
+            <h1 className="font-display text-3xl font-medium text-[#2D1B14]">Operatori</h1>
+            <p className="text-[#7C5C4A] mt-1 ">{operators.length} collaboratori</p>
           </div>
           <Button 
             onClick={openNewDialog}
             data-testid="new-operator-btn"
-            className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white shadow-lg shadow-[#0EA5E9]/20"
+            className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-[0_4px_12px_rgba(200,97,122,0.3)] shadow-lg shadow-[rgba(200,97,122,0.3)]"
           >
             <Plus className="w-5 h-5 mr-2" />
             Nuovo Operatore
@@ -169,7 +170,7 @@ export default function OperatorsPage() {
               <Card
                 key={operator.id}
                 data-testid={`operator-card-${operator.id}`}
-                className={`bg-white border-[#E2E8F0]/30 hover:border-[#0EA5E9]/30 transition-all duration-300 hover:-translate-y-1 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] ${
+                className={`bg-white border-[#F0E6DC]/30 hover:border-[#C8617A]/30 transition-all duration-300 hover:-translate-y-1 shadow-sm ${
                   !operator.active ? 'opacity-60' : ''
                 }`}
               >
@@ -187,9 +188,9 @@ export default function OperatorsPage() {
                         />
                       </div>
                       <div>
-                        <h3 className="font-medium text-[#0F172A]">{operator.name}</h3>
+                        <h3 className="font-medium text-[#2D1B14]">{operator.name}</h3>
                         {operator.phone && (
-                          <p className="text-sm text-[#334155]">{operator.phone}</p>
+                          <p className="text-sm text-[#7C5C4A]">{operator.phone}</p>
                         )}
                       </div>
                     </div>
@@ -199,14 +200,14 @@ export default function OperatorsPage() {
                     />
                   </div>
 
-                  <div className="flex items-center justify-between pt-3 border-t border-[#E2E8F0]/30">
+                  <div className="flex items-center justify-between pt-3 border-t border-[#F0E6DC]/30">
                     <div className="flex items-center gap-2">
                       <Switch
                         checked={operator.active}
                         onCheckedChange={() => handleToggleActive(operator)}
                         className="data-[state=checked]:bg-[#789F8A]"
                       />
-                      <span className="text-sm text-[#334155]">
+                      <span className="text-sm text-[#7C5C4A]">
                         {operator.active ? 'Attivo' : 'Inattivo'}
                       </span>
                     </div>
@@ -215,7 +216,7 @@ export default function OperatorsPage() {
                         size="icon"
                         variant="ghost"
                         onClick={() => handleEdit(operator)}
-                        className="text-[#334155] hover:text-[#0EA5E9]"
+                        className="text-[#7C5C4A] hover:text-[#C8617A]"
                       >
                         <Edit2 className="w-4 h-4" />
                       </Button>
@@ -226,7 +227,7 @@ export default function OperatorsPage() {
                           setOperatorToDelete(operator.id);
                           setDeleteDialogOpen(true);
                         }}
-                        className="text-[#334155] hover:text-[#E76F51]"
+                        className="text-[#7C5C4A] hover:text-[#E76F51]"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -237,14 +238,14 @@ export default function OperatorsPage() {
             ))}
           </div>
         ) : (
-          <Card className="bg-white border-[#E2E8F0]/30">
+          <Card className="bg-white border-[#F0E6DC]/30">
             <CardContent className="py-16 text-center">
               <Users className="w-16 h-16 mx-auto text-[#E2E8F0] mb-4" strokeWidth={1.5} />
-              <h3 className="font-playfair text-xl text-[#0F172A] mb-2">Nessun operatore</h3>
-              <p className="text-[#334155] mb-4">Aggiungi le tue collaboratrici</p>
+              <h3 className="font-display text-xl text-[#2D1B14] mb-2">Nessun operatore</h3>
+              <p className="text-[#7C5C4A] mb-4">Aggiungi le tue collaboratrici</p>
               <Button
                 onClick={openNewDialog}
-                className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white"
+                className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-[0_4px_12px_rgba(200,97,122,0.3)]"
               >
                 <Plus className="w-4 h-4 mr-2" /> Aggiungi Operatore
               </Button>
@@ -256,7 +257,7 @@ export default function OperatorsPage() {
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle className="font-playfair text-2xl text-[#0F172A]">
+              <DialogTitle className="font-display text-2xl text-[#2D1B14]">
                 {editingOperator ? 'Modifica Operatore' : 'Nuovo Operatore'}
               </DialogTitle>
             </DialogHeader>
@@ -268,7 +269,7 @@ export default function OperatorsPage() {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Nome operatore"
                   data-testid="operator-name-input"
-                  className="bg-[#F8FAFC] border-transparent focus:border-[#0EA5E9]"
+                  className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
                   required
                 />
               </div>
@@ -279,7 +280,7 @@ export default function OperatorsPage() {
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   placeholder="+39 ..."
                   data-testid="operator-phone-input"
-                  className="bg-[#F8FAFC] border-transparent focus:border-[#0EA5E9]"
+                  className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
                 />
               </div>
               <div className="space-y-2">
@@ -290,7 +291,7 @@ export default function OperatorsPage() {
                       key={color.value}
                       type="button"
                       onClick={() => setFormData({ ...formData, color: color.value })}
-                      className={`w-full h-10 rounded-lg transition-all ${
+                      className={`w-full h-10 rounded-xl transition-all ${
                         formData.color === color.value 
                           ? 'ring-2 ring-offset-2 ring-[#0F172A]' 
                           : ''
@@ -306,7 +307,7 @@ export default function OperatorsPage() {
                   type="submit"
                   disabled={saving}
                   data-testid="save-operator-btn"
-                  className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white"
+                  className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-[0_4px_12px_rgba(200,97,122,0.3)]"
                 >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : editingOperator ? 'Salva Modifiche' : 'Aggiungi Operatore'}
                 </Button>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import Layout from '../components/Layout';
+import PageHeader from '../components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -76,7 +77,7 @@ export default function ExpensesPage() {
       let url = `${API}/expenses`;
       if (filter === 'unpaid') url += '?paid=false';
       else if (filter === 'paid') url += '?paid=true';
-      const res = await axios.get(url);
+      const res = await api.get(url);
       setExpenses(res.data);
     } catch (err) {
       console.error(err);
@@ -100,10 +101,10 @@ export default function ExpensesPage() {
         recurrence: formData.is_recurring ? formData.recurrence : null,
       };
       if (editingExpense) {
-        await axios.put(`${API}/expenses/${editingExpense.id}`, payload);
+        await api.put(`${API}/expenses/${editingExpense.id}`, payload);
         toast.success('Uscita aggiornata');
       } else {
-        await axios.post(`${API}/expenses`, payload);
+        await api.post(`${API}/expenses`, payload);
         toast.success('Uscita registrata');
       }
       setDialogOpen(false);
@@ -117,7 +118,7 @@ export default function ExpensesPage() {
 
   const markPaid = async (id) => {
     try {
-      await axios.post(`${API}/expenses/${id}/pay`);
+      await api.post(`${API}/expenses/${id}/pay`);
       toast.success('Segnata come pagata');
       fetchExpenses();
     } catch (err) {
@@ -127,7 +128,7 @@ export default function ExpensesPage() {
 
   const markUnpaid = async (id) => {
     try {
-      await axios.post(`${API}/expenses/${id}/unpay`);
+      await api.post(`${API}/expenses/${id}/unpay`);
       toast.success('Riportata a da pagare');
       fetchExpenses();
     } catch (err) {
@@ -138,7 +139,7 @@ export default function ExpensesPage() {
   const deleteExpense = async (id) => {
     if (!window.confirm('Eliminare questa uscita?')) return;
     try {
-      await axios.delete(`${API}/expenses/${id}`);
+      await api.delete(`${API}/expenses/${id}`);
       toast.success('Uscita eliminata');
       fetchExpenses();
     } catch (err) {
@@ -190,11 +191,11 @@ export default function ExpensesPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-[#0F172A] flex items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl font-black text-[#2D1B14] flex items-center gap-3">
               <ArrowDownCircle className="w-7 h-7 text-red-500" />
               Registro Uscite
             </h1>
-            <p className="text-[#334155] mt-1">Gestisci spese e scadenze da pagare</p>
+            <p className="text-[#7C5C4A] mt-1">Gestisci spese e scadenze da pagare</p>
           </div>
           <Button
             onClick={() => { resetForm(); setDialogOpen(true); }}
@@ -233,7 +234,7 @@ export default function ExpensesPage() {
         </div>
 
         {/* Filters */}
-        <Card className="bg-white border-[#E2E8F0]/30">
+        <Card className="bg-white border-[#F0E6DC]/30">
           <CardContent className="p-4">
             <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
               <div className="flex gap-2">
@@ -247,7 +248,7 @@ export default function ExpensesPage() {
                     variant={filter === f.key ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setFilter(f.key)}
-                    className={filter === f.key ? 'bg-[#0EA5E9] text-white' : 'border-[#E2E8F0]'}
+                    className={filter === f.key ? 'bg-[#C8617A] text-white' : 'border-[#F0E6DC]'}
                     data-testid={`filter-${f.key}`}
                   >
                     <f.icon className="w-3.5 h-3.5 mr-1" /> {f.label}
@@ -276,10 +277,10 @@ export default function ExpensesPage() {
             {[1, 2, 3].map(i => <Skeleton key={i} className="h-20" />)}
           </div>
         ) : filteredExpenses.length === 0 ? (
-          <Card className="bg-white border-[#E2E8F0]/30">
+          <Card className="bg-white border-[#F0E6DC]/30">
             <CardContent className="py-12 text-center">
               <Receipt className="w-12 h-12 mx-auto text-[#E2E8F0] mb-3" />
-              <p className="text-[#334155] font-semibold">Nessuna uscita registrata</p>
+              <p className="text-[#7C5C4A] font-semibold">Nessuna uscita registrata</p>
               <Button
                 onClick={() => { resetForm(); setDialogOpen(true); }}
                 className="mt-4 bg-red-500 hover:bg-red-600 text-white"
@@ -302,7 +303,7 @@ export default function ExpensesPage() {
                     isOverdue ? 'border-red-300 bg-red-50/50' :
                     isDueSoon ? 'border-orange-200 bg-orange-50/30' :
                     exp.paid ? 'border-green-200 bg-green-50/30 opacity-70' :
-                    'border-[#E2E8F0]'
+                    'border-[#F0E6DC]'
                   }`}
                   data-testid={`expense-${exp.id}`}
                 >
@@ -310,10 +311,10 @@ export default function ExpensesPage() {
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <p className={`font-bold text-[#0F172A] ${exp.paid ? 'line-through' : ''}`}>{exp.description}</p>
+                          <p className={`font-bold text-[#2D1B14] ${exp.paid ? 'line-through' : ''}`}>{exp.description}</p>
                           <Badge className={catInfo.color}>{catInfo.label}</Badge>
                           {exp.is_recurring && (
-                            <Badge variant="outline" className="text-xs border-[#0EA5E9] text-[#0EA5E9]">
+                            <Badge variant="outline" className="text-xs border-[#C8617A] text-[#C8617A]">
                               <RotateCcw className="w-3 h-3 mr-1" />
                               {RECURRENCES.find(r => r.value === exp.recurrence)?.label || 'Ricorrente'}
                             </Badge>
@@ -328,7 +329,7 @@ export default function ExpensesPage() {
                             <Badge className="bg-green-500 text-white">PAGATA</Badge>
                           )}
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-[#334155] mt-1">
+                        <div className="flex items-center gap-4 text-sm text-[#7C5C4A] mt-1">
                           <span className="flex items-center gap-1">
                             <Calendar className="w-3.5 h-3.5" />
                             Scadenza: {exp.due_date}
@@ -366,7 +367,7 @@ export default function ExpensesPage() {
                             size="sm"
                             variant="ghost"
                             onClick={() => openEdit(exp)}
-                            className="text-[#334155] hover:text-[#0EA5E9]"
+                            className="text-[#7C5C4A] hover:text-[#C8617A]"
                             data-testid={`edit-expense-${exp.id}`}
                           >
                             <Pencil className="w-4 h-4" />
@@ -375,7 +376,7 @@ export default function ExpensesPage() {
                             size="sm"
                             variant="ghost"
                             onClick={() => deleteExpense(exp.id)}
-                            className="text-[#334155] hover:text-red-500"
+                            className="text-[#7C5C4A] hover:text-red-500"
                             data-testid={`delete-expense-${exp.id}`}
                           >
                             <Trash2 className="w-4 h-4" />
@@ -394,7 +395,7 @@ export default function ExpensesPage() {
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="sm:max-w-[480px]">
             <DialogHeader>
-              <DialogTitle className="text-xl font-bold text-[#0F172A]">
+              <DialogTitle className="text-xl font-bold text-[#2D1B14]">
                 {editingExpense ? 'Modifica Uscita' : 'Nuova Uscita'}
               </DialogTitle>
             </DialogHeader>
@@ -458,9 +459,9 @@ export default function ExpensesPage() {
                   data-testid="expense-date-input"
                 />
               </div>
-              <div className="flex items-center justify-between p-3 rounded-lg bg-[#F8FAFC]">
+              <div className="flex items-center justify-between p-3 rounded-xl bg-[#FAF7F2]">
                 <div className="flex items-center gap-2">
-                  <RotateCcw className="w-4 h-4 text-[#334155]" />
+                  <RotateCcw className="w-4 h-4 text-[#7C5C4A]" />
                   <Label className="font-normal">Pagamento ricorrente</Label>
                 </div>
                 <Switch

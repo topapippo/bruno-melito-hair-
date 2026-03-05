@@ -262,6 +262,13 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, current_
                   "payment_method": data.payment_method, "amount_paid": data.total_paid}}
     )
 
+    # Incrementa total_visits del cliente al momento del checkout
+    if appointment.get("client_id") and appointment["client_id"] not in ("", "generic"):
+        await db.clients.update_one(
+            {"id": appointment["client_id"], "user_id": current_user["id"]},
+            {"$inc": {"total_visits": 1}}
+        )
+
     if data.payment_method == "prepaid" and data.card_id:
         card = await db.cards.find_one({"id": data.card_id, "user_id": current_user["id"], "active": True})
         if card:
