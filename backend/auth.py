@@ -7,7 +7,7 @@ import os
 import sys
 
 # ── JWT Secret: obbligatorio in produzione, fallback SOLO in sviluppo ──────────
-JWT_SECRET = os.environ.get('JWT_SECRET')
+JWT_SECRET = os.environ.get('JWT_SECRET') or os.environ.get('JWT_SEGRETO') or os.environ.get('JWT_segreto')
 if not JWT_SECRET:
     if os.environ.get('ENV', 'development') == 'production':
         print("ERRORE FATALE: JWT_SECRET non è impostato in produzione!", file=sys.stderr)
