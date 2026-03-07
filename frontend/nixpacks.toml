@@ -1,0 +1,11 @@
+[phases.build]
+cmds = ["npm install", "npm run build"]
+
+[phases.setup]
+nixPkgs = ["caddy"]
+
+[start]
+cmd = "caddy run --config Caddyfile --adapter caddyfile"
+
+[staticAssets]
+path = "build"
