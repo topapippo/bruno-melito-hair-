@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../lib/api';
+import axios from 'axios';
 import Layout from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,7 @@ export default function DailySummaryPage() {
   const fetchSummary = async () => {
     setLoading(true);
     try {
-      const res = await api.get(`${API}/stats/daily-summary?date=${selectedDate}`);
+      const res = await axios.get(`${API}/stats/daily-summary?date=${selectedDate}`);
       setData(res.data);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }

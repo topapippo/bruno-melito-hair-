@@ -22,7 +22,6 @@ import PrepaidCardsPage from "./pages/PrepaidCardsPage";
 import CardAlertsPage from "./pages/CardAlertsPage";
 import ReportIncassiPage from "./pages/ReportIncassiPage";
 import BackupPage from "./pages/BackupPage";
-import BookingPage from "./pages/BookingPage";
 import LoyaltyPage from "./pages/LoyaltyPage";
 import RemindersPage from "./pages/RemindersPage";
 import DailySummaryPage from "./pages/DailySummaryPage";
@@ -84,7 +83,7 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
 
           {/* HOME = Landing page per visitatori, Planning per loggati */}
-          <Route path="/" element={<WebsitePage />} />
+          <Route path="/" element={<HomePage />} />
 
           {/* PLANNING dedicato */}
           <Route
@@ -216,8 +215,8 @@ export default function App() {
             }
           />
 
-          {/* PRENOTAZIONE ONLINE (pubblica) */}
-          <Route path="/prenota" element={<BookingPage />} />
+          {/* PRENOTAZIONE ONLINE - Redirect a sito unificato */}
+          <Route path="/prenota" element={<Navigate to="/sito" replace />} />
 
           {/* PROGRAMMA FEDELTÀ */}
           <Route

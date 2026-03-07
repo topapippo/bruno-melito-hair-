@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../lib/api';
+import axios from 'axios';
 import Layout from '../components/Layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -77,7 +77,7 @@ export default function ServicesPage() {
 
   const fetchServices = async () => {
     try {
-      const res = await api.get(`${API}/services`);
+      const res = await axios.get(`${API}/services`);
       setServices(res.data);
     } catch (err) {
       console.error('Error fetching services:', err);
@@ -97,10 +97,10 @@ export default function ServicesPage() {
     setSaving(true);
     try {
       if (editingService) {
-        await api.put(`${API}/services/${editingService.id}`, formData);
+        await axios.put(`${API}/services/${editingService.id}`, formData);
         toast.success('Servizio aggiornato!');
       } else {
-        await api.post(`${API}/services`, formData);
+        await axios.post(`${API}/services`, formData);
         toast.success('Servizio aggiunto!');
       }
       setDialogOpen(false);
@@ -129,7 +129,7 @@ export default function ServicesPage() {
   const handleDelete = async () => {
     if (!serviceToDelete) return;
     try {
-      await api.delete(`${API}/services/${serviceToDelete}`);
+      await axios.delete(`${API}/services/${serviceToDelete}`);
       toast.success('Servizio eliminato');
       setDeleteDialogOpen(false);
       setServiceToDelete(null);

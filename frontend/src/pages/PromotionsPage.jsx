@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../lib/api';
+import axios from 'axios';
 import Layout from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -53,7 +53,7 @@ export default function PromotionsPage() {
 
   const fetchPromos = async () => {
     try {
-      const res = await api.get(`${API}/promotions`);
+      const res = await axios.get(`${API}/promotions`);
       setPromotions(res.data);
     } catch (err) {
       toast.error('Errore nel caricamento');
@@ -71,10 +71,10 @@ export default function PromotionsPage() {
     setSaving(true);
     try {
       if (editing) {
-        await api.put(`${API}/promotions/${editing.id}`, formData);
+        await axios.put(`${API}/promotions/${editing.id}`, formData);
         toast.success('Promozione aggiornata');
       } else {
-        const response = await api.post(`${API}/promotions`, formData);
+        const response = await axios.post(`${API}/promotions`, formData);
         toast.success('Promozione creata');
         // Show "Go to checkout" dialog for new promos
         setNewlyCreatedPromo(response.data);
@@ -92,7 +92,7 @@ export default function PromotionsPage() {
   const deletePromo = async (id) => {
     if (!window.confirm('Eliminare questa promozione?')) return;
     try {
-      await api.delete(`${API}/promotions/${id}`);
+      await axios.delete(`${API}/promotions/${id}`);
       toast.success('Promozione eliminata');
       fetchPromos();
     } catch (err) {
@@ -102,7 +102,7 @@ export default function PromotionsPage() {
 
   const toggleActive = async (promo) => {
     try {
-      await api.put(`${API}/promotions/${promo.id}`, { active: !promo.active });
+      await axios.put(`${API}/promotions/${promo.id}`, { active: !promo.active });
       fetchPromos();
       toast.success(promo.active ? 'Disattivata' : 'Attivata');
     } catch (err) {

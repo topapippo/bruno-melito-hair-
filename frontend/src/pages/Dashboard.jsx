@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import api from '../lib/api';
+import axios from 'axios';
 import Layout from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -54,7 +54,7 @@ export default function Dashboard() {
 
   const fetchDashboardStats = async () => {
     try {
-      const res = await api.get(`${API}/stats/dashboard`);
+      const res = await axios.get(`${API}/stats/dashboard`);
       setStats(res.data);
     } catch (err) { console.error('Error fetching stats:', err); }
     finally { setLoading(false); }
@@ -62,7 +62,7 @@ export default function Dashboard() {
 
   const fetchCardAlerts = async () => {
     try {
-      const res = await api.get(`${API}/cards/alerts/all?days=7&threshold_percent=20`);
+      const res = await axios.get(`${API}/cards/alerts/all?days=7&threshold_percent=20`);
       setCardAlerts({
         expiring: res.data.expiring_cards || [],
         low_balance: res.data.low_balance_cards || [],

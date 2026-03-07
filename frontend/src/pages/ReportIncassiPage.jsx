@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../lib/api';
+import axios from 'axios';
 import * as XLSX from 'xlsx';
 import Layout from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -52,7 +52,7 @@ export default function ReportIncassiPage() {
     setLoading(true);
     try {
       const { start, end } = getDateRange();
-      const res = await api.get(`${API}/payments?start=${start.toISOString()}&end=${end.toISOString()}`);
+      const res = await axios.get(`${API}/payments?start=${start.toISOString()}&end=${end.toISOString()}`);
       const data = res.data;
       setPayments(data);
       

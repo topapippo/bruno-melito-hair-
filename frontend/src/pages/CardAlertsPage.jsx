@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../lib/api';
+import axios from 'axios';
 import Layout from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -44,7 +44,7 @@ export default function CardAlertsPage() {
   const fetchAlerts = async () => {
     setLoading(true);
     try {
-      const res = await api.get(`${API}/cards/alerts/all?days=${daysThreshold}&threshold_percent=${balanceThreshold}`);
+      const res = await axios.get(`${API}/cards/alerts/all?days=${daysThreshold}&threshold_percent=${balanceThreshold}`);
       setExpiringCards(res.data.expiring_cards || []);
       setLowBalanceCards(res.data.low_balance_cards || []);
       setTotalAlerts(res.data.total_alerts || 0);
@@ -94,7 +94,7 @@ export default function CardAlertsPage() {
       window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
       
       // Mark as notified
-      await api.post(`${API}/cards/alerts/mark-notified/${selectedCard.id}?notification_type=whatsapp`);
+      await axios.post(`${API}/cards/alerts/mark-notified/${selectedCard.id}?notification_type=whatsapp`);
       
       toast.success('WhatsApp aperto! Notifica registrata.');
       setWhatsappDialogOpen(false);

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../lib/api';
+import axios from 'axios';
 import Layout from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -50,8 +50,8 @@ export default function LoyaltyPage() {
   const fetchData = async () => {
     try {
       const [loyRes, configRes] = await Promise.all([
-        api.get(`${API}/loyalty`),
-        api.get(`${API}/loyalty/config`)
+        axios.get(`${API}/loyalty`),
+        axios.get(`${API}/loyalty/config`)
       ]);
       setLoyalties(loyRes.data);
       setConfig(configRes.data);
@@ -72,7 +72,7 @@ export default function LoyaltyPage() {
 
   const saveRewards = async () => {
     try {
-      const res = await api.put(`${API}/loyalty/config`, { rewards: editRewards });
+      const res = await axios.put(`${API}/loyalty/config`, { rewards: editRewards });
       setConfig(res.data);
       setEditingRewards(false);
       toast.success('Premi aggiornati!');
@@ -94,7 +94,7 @@ export default function LoyaltyPage() {
     setDetailOpen(true);
     setLoadingDetail(true);
     try {
-      const res = await api.get(`${API}/loyalty/${loy.client_id}`);
+      const res = await axios.get(`${API}/loyalty/${loy.client_id}`);
       setClientLoyalty(res.data);
     } catch (err) {
       toast.error('Errore nel caricamento dettagli');
@@ -107,14 +107,14 @@ export default function LoyaltyPage() {
     if (!selectedClient || !redeemType) return;
     setRedeeming(true);
     try {
-      await api.post(`${API}/loyalty/${selectedClient.client_id}/redeem`, {
+      await axios.post(`${API}/loyalty/${selectedClient.client_id}/redeem`, {
         reward_type: redeemType
       });
       toast.success('Premio riscattato con successo!');
       setRedeemOpen(false);
       setRedeemType('');
       // Refresh data
-      const res = await api.get(`${API}/loyalty/${selectedClient.client_id}`);
+      const res = await axios.get(`${API}/loyalty/${selectedClient.client_id}`);
       setClientLoyalty(res.data);
       fetchData();
     } catch (err) {
@@ -127,9 +127,9 @@ export default function LoyaltyPage() {
   const handleUseReward = async (rewardId) => {
     if (!selectedClient) return;
     try {
-      await api.post(`${API}/loyalty/${selectedClient.client_id}/use-reward/${rewardId}`);
+      await axios.post(`${API}/loyalty/${selectedClient.client_id}/use-reward/${rewardId}`);
       toast.success('Premio utilizzato!');
-      const res = await api.get(`${API}/loyalty/${selectedClient.client_id}`);
+      const res = await axios.get(`${API}/loyalty/${selectedClient.client_id}`);
       setClientLoyalty(res.data);
       fetchData();
     } catch (err) {

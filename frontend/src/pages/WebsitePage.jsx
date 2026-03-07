@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import api from '../lib/api';
+import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Clock, Scissors, CheckCircle, ArrowLeft, MapPin, Phone, Mail, Star, MessageSquare, ChevronDown, ChevronUp, ArrowRight, Instagram, Facebook, Globe, Youtube, Gift } from 'lucide-react';
+import { Clock, Scissors, CheckCircle, ArrowLeft, MapPin, Phone, Mail, Star, MessageSquare, ChevronDown, ChevronUp, ArrowRight, Instagram, Facebook, Globe, Youtube, Gift, Calendar, Pencil, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast, Toaster } from 'sonner';
@@ -15,7 +15,7 @@ const SOCIAL_LINKS = [
   { url: 'https://www.facebook.com/brunomelitohair', icon: Facebook, label: 'Facebook', color: 'hover:text-blue-400' },
   { url: 'https://www.youtube.com/@brunomelit', icon: Youtube, label: 'YouTube', color: 'hover:text-red-400' },
   { url: 'https://www.facebook.com/brunomelitoparrucchierimettilatestaaposto1983', icon: Facebook, label: 'Facebook Page', color: 'hover:text-blue-400' },
-  { url: 'https://appointment-system-21.preview.emergentagent.com', icon: Globe, label: 'Sito Web', color: 'hover:text-teal-400' },
+  { url: 'https://style-maestro-5.preview.emergentagent.com', icon: Globe, label: 'Sito Web', color: 'hover:text-teal-400' },
 ];
 
 const TIME_SLOTS = [];
@@ -56,6 +56,15 @@ export default function WebsitePage() {
 
   const [publicPromos, setPublicPromos] = useState([]);
 
+  // Manage appointment state
+  const [showManage, setShowManage] = useState(false);
+  const [managePhone, setManagePhone] = useState('');
+  const [myAppointments, setMyAppointments] = useState([]);
+  const [lookingUp, setLookingUp] = useState(false);
+  const [editingApt, setEditingApt] = useState(null);
+  const [editDate, setEditDate] = useState('');
+  const [editTime, setEditTime] = useState('');
+
   const [formData, setFormData] = useState({
     client_name: '', client_phone: '', service_ids: [], operator_id: '',
     date: format(new Date(), 'yyyy-MM-dd'), time: '09:00', notes: ''
@@ -65,15 +74,15 @@ export default function WebsitePage() {
     const fetchAll = async () => {
       try {
         const [siteRes, opsRes, svcRes] = await Promise.all([
-          api.get(`${API}/public/website`),
-          api.get(`${API}/public/operators`).catch(() => ({ data: [] })),
-          api.get(`${API}/public/services`).catch(() => ({ data: [] }))
+          axios.get(`${API}/public/website`),
+          axios.get(`${API}/public/operators`).catch(() => ({ data: [] })),
+          axios.get(`${API}/public/services`).catch(() => ({ data: [] }))
         ]);
         setSiteData(siteRes.data);
         setOperators(opsRes.data);
         setBookingServices(svcRes.data);
         try {
-          const promosRes = await api.get(`${API}/public/promotions/all`);
+          const promosRes = await axios.get(`${API}/public/promotions/all`);
           setPublicPromos(promosRes.data);
         } catch (e) { /* promos not critical */ }
       } catch (err) { console.error(err); }
@@ -100,9 +109,39 @@ export default function WebsitePage() {
   const handleSubmit = async () => {
     if (!formData.client_name || !formData.client_phone) { toast.error('Inserisci nome e telefono'); return; }
     setSubmitting(true);
-    try { await api.post(`${API}/public/booking`, formData); setSuccess(true); }
+    try { await axios.post(`${API}/public/booking`, formData); setSuccess(true); }
     catch (err) { toast.error(err.response?.data?.detail || 'Errore nella prenotazione'); }
     finally { setSubmitting(false); }
+  };
+
+  const lookupAppointments = async () => {
+    if (!managePhone) { toast.error('Inserisci il tuo numero di telefono'); return; }
+    setLookingUp(true);
+    try {
+      const res = await axios.get(`${API}/public/my-appointments?phone=${encodeURIComponent(managePhone)}`);
+      setMyAppointments(res.data);
+      if (res.data.length === 0) toast.info('Nessun appuntamento trovato con questo numero');
+    } catch { toast.error('Errore nella ricerca'); }
+    finally { setLookingUp(false); }
+  };
+
+  const cancelAppointment = async (aptId) => {
+    if (!window.confirm('Sei sicura di voler cancellare questo appuntamento?')) return;
+    try {
+      await axios.delete(`${API}/public/appointments/${aptId}?phone=${encodeURIComponent(managePhone)}`);
+      setMyAppointments(prev => prev.filter(a => a.id !== aptId));
+      toast.success('Appuntamento cancellato');
+    } catch (err) { toast.error(err.response?.data?.detail || 'Errore'); }
+  };
+
+  const updateAppointment = async () => {
+    if (!editingApt) return;
+    try {
+      await axios.put(`${API}/public/appointments/${editingApt.id}`, { phone: managePhone, date: editDate, time: editTime });
+      setMyAppointments(prev => prev.map(a => a.id === editingApt.id ? { ...a, date: editDate, time: editTime } : a));
+      setEditingApt(null);
+      toast.success('Appuntamento modificato!');
+    } catch (err) { toast.error(err.response?.data?.detail || 'Errore'); }
   };
 
   const scrollTo = (ref) => { ref.current?.scrollIntoView({ behavior: 'smooth' }); };
@@ -128,15 +167,105 @@ export default function WebsitePage() {
   // SUCCESS PAGE
   if (success) {
     return (
-      <div className="min-h-screen bg-[#1a1a2e] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-[#FFF8F0] via-[#FEF3E2] to-[#F0F4FF] flex items-center justify-center p-4">
         <Toaster position="top-center" />
         <div className="max-w-md w-full text-center">
           <CheckCircle className="w-20 h-20 mx-auto text-emerald-400 mb-6" />
-          <h1 className="text-3xl font-black text-white mb-3">Prenotazione Confermata!</h1>
-          <p className="text-gray-300 mb-2">Ti aspettiamo il <span className="text-white font-bold">{format(new Date(formData.date), 'd MMMM yyyy', { locale: it })}</span> alle <span className="text-white font-bold">{formData.time}</span></p>
-          <p className="text-sm text-gray-500 mb-8">Riceverai un promemoria prima dell'appuntamento.</p>
+          <h1 className="text-3xl font-black text-[#1e293b] mb-3">Prenotazione Confermata!</h1>
+          <p className="text-[#64748B] mb-2">Ti aspettiamo il <span className="text-[#1e293b] font-bold">{format(new Date(formData.date), 'd MMMM yyyy', { locale: it })}</span> alle <span className="text-[#1e293b] font-bold">{formData.time}</span></p>
+          <p className="text-sm text-[#94A3B8] mb-8">Riceverai un promemoria prima dell'appuntamento.</p>
           <Button onClick={() => { setSuccess(false); setShowBooking(false); setStep(1); setFormData({ client_name: '', client_phone: '', service_ids: [], operator_id: '', date: format(new Date(), 'yyyy-MM-dd'), time: '09:00', notes: '' }); }}
-            className="bg-white text-[#1a1a2e] hover:bg-gray-200 font-bold px-8" data-testid="website-back-home-btn">Torna alla Home</Button>
+            className="bg-[#0EA5E9] text-white hover:bg-[#0284C7] font-bold px-8" data-testid="website-back-home-btn">Torna alla Home</Button>
+        </div>
+      </div>
+    );
+  }
+
+  // MANAGE APPOINTMENTS
+  if (showManage) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#FFF8F0] via-[#FEF3E2] to-[#F0F4FF]">
+        <Toaster position="top-center" />
+        <div className="bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm py-4 px-4 sticky top-0 z-50">
+          <div className="max-w-lg mx-auto flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => { setShowManage(false); setMyAppointments([]); setManagePhone(''); }} className="text-[#64748B] hover:text-[#1e293b] hover:bg-gray-100 shrink-0">
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div>
+              <h1 className="text-[#1e293b] text-sm font-black">Gestisci Appuntamento</h1>
+              <p className="text-[#94A3B8] text-xs">Modifica o cancella la tua prenotazione</p>
+            </div>
+          </div>
+        </div>
+        <div className="max-w-lg mx-auto px-4 py-8">
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm text-[#64748B] font-semibold mb-2 block">Il tuo numero di telefono</label>
+              <div className="flex gap-2">
+                <Input value={managePhone} onChange={(e) => setManagePhone(e.target.value)}
+                  placeholder="Es: 339 1234567" className="bg-white border-gray-200 text-[#1e293b] flex-1" data-testid="manage-phone-input" />
+                <Button onClick={lookupAppointments} disabled={lookingUp} className="bg-[#0EA5E9] text-white hover:bg-[#0284C7] font-bold" data-testid="lookup-btn">
+                  {lookingUp ? <Clock className="w-4 h-4 animate-spin" /> : 'Cerca'}
+                </Button>
+              </div>
+            </div>
+
+            {myAppointments.length > 0 && (
+              <div className="space-y-3">
+                <p className="text-[#1e293b] font-bold">{myAppointments.length} appuntament{myAppointments.length === 1 ? 'o' : 'i'} trovati:</p>
+                {myAppointments.map(apt => (
+                  <div key={apt.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm" data-testid={`my-apt-${apt.id}`}>
+                    {editingApt?.id === apt.id ? (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-xs text-[#64748B] mb-1 block">Data</label>
+                            <Input type="date" value={editDate} min={format(new Date(), 'yyyy-MM-dd')}
+                              onChange={(e) => setEditDate(e.target.value)} className="bg-gray-50 border-gray-200 text-[#1e293b]" />
+                          </div>
+                          <div>
+                            <label className="text-xs text-[#64748B] mb-1 block">Ora</label>
+                            <select value={editTime} onChange={(e) => setEditTime(e.target.value)}
+                              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-[#1e293b] text-sm">
+                              {getAvailableSlotsForDate(editDate).map(t => <option key={t} value={t}>{t}</option>)}
+                            </select>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button onClick={updateAppointment} className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold flex-1" data-testid="save-apt-btn">
+                            <CheckCircle className="w-4 h-4 mr-1" /> Salva
+                          </Button>
+                          <Button onClick={() => setEditingApt(null)} variant="outline" className="border-gray-300 text-[#64748B]">Annulla</Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <p className="text-[#1e293b] font-bold">{format(new Date(apt.date + 'T00:00'), 'd MMMM yyyy', { locale: it })}</p>
+                            <p className="text-[#0EA5E9] font-black text-lg">ore {apt.time}</p>
+                          </div>
+                          <span className="text-xs bg-gray-100 text-[#64748B] px-2 py-1 rounded font-mono">{apt.booking_code}</span>
+                        </div>
+                        <p className="text-sm text-[#64748B] mb-1">{apt.services?.join(', ')}</p>
+                        {apt.operator_name && <p className="text-xs text-[#94A3B8]">Operatore: {apt.operator_name}</p>}
+                        <div className="flex gap-2 mt-3">
+                          <Button size="sm" onClick={() => { setEditingApt(apt); setEditDate(apt.date); setEditTime(apt.time); }}
+                            className="bg-blue-100 text-blue-600 hover:bg-blue-200 font-bold flex-1" data-testid={`edit-apt-${apt.id}`}>
+                            <Pencil className="w-3 h-3 mr-1" /> Modifica
+                          </Button>
+                          <Button size="sm" onClick={() => cancelAppointment(apt.id)}
+                            className="bg-red-100 text-red-600 hover:bg-red-200 font-bold flex-1" data-testid={`cancel-apt-${apt.id}`}>
+                            <Trash2 className="w-3 h-3 mr-1" /> Cancella
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -339,6 +468,9 @@ export default function WebsitePage() {
               </Button>
               <Button onClick={() => { setShowServices(true); setTimeout(() => scrollTo(servicesRef), 100); }} variant="outline" className="border-[#0EA5E9]/30 text-[#0EA5E9] hover:bg-[#0EA5E9]/10 font-bold text-base px-8 py-6 rounded-xl">
                 Scopri i Servizi <ChevronDown className="w-4 h-4 ml-2" />
+              </Button>
+              <Button onClick={() => setShowManage(true)} variant="outline" className="border-amber-400/30 text-amber-600 hover:bg-amber-50 font-bold text-base px-8 py-6 rounded-xl">
+                <Calendar className="w-5 h-5 mr-2" /> Gestisci Appuntamento
               </Button>
             </div>
             <div className="flex flex-col sm:flex-row gap-4 text-sm justify-center">
