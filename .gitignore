@@ -26,7 +26,6 @@ next-env.d.ts
 *.tsbuildinfo
 
 # Production builds
-/build
 dist/
 dist
 
