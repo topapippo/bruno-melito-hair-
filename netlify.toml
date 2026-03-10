@@ -1,12 +1,7 @@
 [build]
   base = "frontend"
-  command = "npm install --legacy-peer-deps && npm run build"
+  command = "echo 'Using pre-built files'"
   publish = "build"
-
-[build.environment]
-  CI = "false"
-  REACT_APP_BACKEND_URL = "https://bruno-melito-hair-production.up.railway.app"
-  NODE_VERSION = "16"
 
 [[redirects]]
   from = "/*"
