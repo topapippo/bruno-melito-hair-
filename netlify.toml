@@ -1,12 +1,12 @@
 [build]
   base = "frontend"
-  command = "npm install --legacy-peer-deps && NODE_OPTIONS=--openssl-legacy-provider npm run build"
+  command = "npm install --legacy-peer-deps && npm run build"
   publish = "build"
 
 [build.environment]
   CI = "false"
   REACT_APP_BACKEND_URL = "https://bruno-melito-hair-production.up.railway.app"
-  NODE_VERSION = "18"
+  NODE_VERSION = "16"
 
 [[redirects]]
   from = "/*"
