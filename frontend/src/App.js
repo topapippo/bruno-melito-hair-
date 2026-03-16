@@ -30,7 +30,6 @@ import WebsiteAdminPage from "./pages/WebsiteAdminPage";
 import ExpensesPage from "./pages/ExpensesPage";
 import PromotionsPage from "./pages/PromotionsPage";
 import LoginPage from "./pages/LoginPage";
-import { useAuth } from "./context/AuthContext";
 
 // Offline indicator component
 function OfflineIndicator() {
@@ -64,15 +63,6 @@ function OfflineIndicator() {
   );
 }
 
-// Homepage: gestionale for logged-in users, login for visitors
-function HomePage() {
-  const { user, loading } = useAuth();
-  if (loading) return <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center"><div className="w-8 h-8 border-4 border-[#0EA5E9] border-t-transparent rounded-full animate-spin" /></div>;
-  if (user) return <PlanningPage />;
-  // Non-authenticated users see the public website
-  return <Navigate to="/sito" replace />;
-}
-
 export default function App() {
   return (
     <AuthProvider>
@@ -82,8 +72,8 @@ export default function App() {
           {/* LOGIN (non protetto) */}
           <Route path="/login" element={<LoginPage />} />
 
-          {/* HOME = Landing page per visitatori, Planning per loggati */}
-          <Route path="/" element={<HomePage />} />
+          {/* HOME = Sito Web Pubblico */}
+          <Route path="/" element={<WebsitePage />} />
 
           {/* PLANNING dedicato */}
           <Route
@@ -215,8 +205,8 @@ export default function App() {
             }
           />
 
-          {/* PRENOTAZIONE ONLINE - Redirect a sito unificato */}
-          <Route path="/prenota" element={<Navigate to="/sito" replace />} />
+          {/* PRENOTAZIONE ONLINE - Redirect alla home */}
+          <Route path="/prenota" element={<Navigate to="/" replace />} />
 
           {/* PROGRAMMA FEDELTÀ */}
           <Route
@@ -268,8 +258,8 @@ export default function App() {
             }
           />
 
-          {/* SITO WEB PUBBLICO */}
-          <Route path="/sito" element={<WebsitePage />} />
+          {/* SITO WEB PUBBLICO - Redirect alla home */}
+          <Route path="/sito" element={<Navigate to="/" replace />} />
 
           {/* GESTIONE SITO WEB (admin) */}
           <Route

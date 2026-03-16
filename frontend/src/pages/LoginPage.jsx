@@ -28,7 +28,7 @@ export default function LoginPage() {
     try {
       await login(loginData.email, loginData.password);
       toast.success('Benvenuta!');
-      navigate('/');
+      navigate('/planning');
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Errore di accesso');
     } finally {
@@ -47,7 +47,7 @@ export default function LoginPage() {
         registerData.salon_name
       );
       toast.success('Account creato con successo!');
-      navigate('/');
+      navigate('/planning');
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Errore di registrazione');
     } finally {
