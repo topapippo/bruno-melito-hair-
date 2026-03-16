@@ -14,28 +14,28 @@ Sistema gestionale completo per salone di parrucchiere "Bruno Melito Hair" a San
 - **Database:** MongoDB
 - **PWA:** Installabile come app su PC/mobile
 
-## Routing (Aggiornato 16 Marzo 2026)
+## Routing
 - `/` → Sito Web Pubblico (WebsitePage)
 - `/login` → Pagina Login Admin
 - `/planning` → Planning giornaliero (dopo login)
 - `/sito` → Redirect a `/`
 - `/prenota` → Redirect a `/`
+- `/reminders` → Promemoria & Richiami WhatsApp
 
 ## Funzionalità Implementate
 
 ### Sito Web Pubblico (/)
-- Landing page professionale con logo e branding (logo grande, alta opacità)
-- Sezione servizi con listino prezzi espandibile
-- Gallery salone e lavori
-- Recensioni clienti
-- Programma fedeltà
-- Promozioni attive (cliccabili per prenotare)
+- Landing page professionale con logo grande e animazioni
+- Sezione servizi con listino prezzi espandibile e **servizi cliccabili** (aprono prenotazione)
+- Gallery salone e lavori con hover animations
+- Recensioni clienti (tema chiaro)
+- Programma fedeltà con card animate
+- **Promozioni attive cliccabili** (prenotazione con promo pre-applicata)
 - Contatti e social links (Instagram, Facebook, YouTube)
-- Sistema prenotazione online integrato (3 step: servizi → data/ora → dati cliente)
-- Gestione appuntamenti (modifica/cancella con numero telefono)
+- Sistema prenotazione online integrato (3 step)
+- Gestione appuntamenti (modifica/cancella)
 - CTA mobile fisso
-- Animazioni hover su tutti gli elementi interattivi
-- Design coerente light-theme
+- Design coerente light-theme con hover animations
 
 ### Gestionale (/login → /planning)
 - Planning giornaliero con timeline visiva
@@ -53,65 +53,70 @@ Sistema gestionale completo per salone di parrucchiere "Bruno Melito Hair" a San
 - Statistiche
 - Backup Dati
 - Gestione Sito Web (CMS)
+- **Promemoria WhatsApp automatici** (banner alle 14:00+, invio batch)
+- Template messaggi personalizzabili
+- Richiami clienti inattivi
 
 ## Dati nel Database
 - 165 Clienti
 - 21 Servizi
 - 7 Promozioni
 - 4 Foto Gallery
+- 5 Template Messaggi
 
-## Struttura File Principali
+## Struttura File
 ```
 /app/
 ├── backend/
 │   ├── server.py
+│   ├── utils.py (format_phone_whatsapp, no Twilio)
 │   ├── routes/
 │   │   ├── auth.py
 │   │   ├── clients.py
 │   │   ├── services.py
 │   │   ├── appointments.py
 │   │   ├── promotions.py
-│   │   └── public.py
+│   │   ├── public.py (con video range request)
+│   │   ├── reminders.py (WhatsApp, no SMS)
+│   │   ├── notifications.py
+│   │   ├── stats.py
+│   │   └── ...
 │   └── requirements.txt
 ├── frontend/
 │   ├── src/
 │   │   ├── pages/
 │   │   │   ├── WebsitePage.jsx (Sito Pubblico + Prenotazioni)
 │   │   │   ├── LoginPage.jsx
-│   │   │   ├── PlanningPage.jsx
+│   │   │   ├── PlanningPage.jsx (con banner promemoria)
+│   │   │   ├── RemindersPage.jsx (WhatsApp promemoria)
 │   │   │   └── ...
 │   │   ├── context/AuthContext.js
-│   │   └── App.js (Routing principale)
+│   │   └── App.js (Routing)
 │   └── public/
 ```
 
-## Completato (16 Marzo 2026)
-- Fix routing: `/` mostra il sito pubblico, `/login` mostra login admin
-- `/sito` e `/prenota` redirect a `/`
-- Dopo login, redirect a `/planning` invece di `/`
-- Logo più grande e prominente nell'hero (w-96 su desktop)
-- Overlay più scuro nell'hero per miglior leggibilità testo
-- Pulsanti hero con backdrop-blur e stile glass
-- Animazioni hover su tutti i bottoni (scale, shadow, translate)
-- Underline animato sui link navbar
-- Fix colori recensioni (da tema scuro a tema chiaro)
-- Fix colori testo About features (da text-gray-300 a text-[#475569])
-- Rimosso link social "Sito Web" che puntava alla preview URL
-- Footer: link aggiornati a button con onClick
-- Animazione fade-in per il logo hero
-- Hover scale su card contatti, promozioni, gallery, loyalty
+## Changelog
 
-## Backlog / Da Fare
-- [ ] P1: Redesign più approfondito di WebsitePage.jsx (componenti modulari)
-- [ ] P2: Merge dei due repository (BRUNO-MELITO-HAIR + MBHS-GESTIONALE-EMERGENT)
-- [ ] P2: Verifica dati storici nel database di produzione
-- [ ] P3: Refactoring WebsitePage.jsx in componenti più piccoli
-- [ ] P3: Ottimizzazione performance e SEO
-- [ ] Configurare dominio brunomelitohair.it
-- [ ] Migrare dati su database Render
+### 16 Marzo 2026
+- Fix routing: `/` → sito pubblico, `/login` → login admin
+- `/sito` e `/prenota` redirect a `/`, dopo login redirect a `/planning`
+- Logo più grande e prominente nell'hero
+- Overlay più scuro per leggibilità
+- Animazioni hover su tutti gli elementi interattivi
+- Fix colori recensioni (da tema scuro a chiaro)
+- Fix colori About features
+- Rimosso link social "Sito Web" a preview URL
+- Footer: link aggiornati con onClick
+- **Servizi cliccabili** sulla landing page → aprono booking con servizio pre-selezionato
+- **Promozioni cliccabili** → aprono booking con promo pre-applicata
+- **Rimosso Twilio SMS** (non serve)
+- Aggiunto `format_phone_whatsapp()` in utils.py
+- Aggiunto endpoint `/api/whatsapp/generate-link`
+- Merge video range request da MBHS per riproduzione video HTML5
+- Aggiunta animazione fade-in CSS
 
-## Note Tecniche
-- JWT per autenticazione
-- CORS configurato per tutti gli origins
-- Hot reload abilitato in development
-- PWA installabile come app desktop
+## Backlog
+- [ ] Refactoring WebsitePage.jsx in componenti più piccoli (attualmente ~870 righe)
+- [ ] Ottimizzazione performance e SEO
+- [ ] Configurare dominio brunomelitohair.it su Render
+- [ ] Aggiungere numeri telefono ai clienti mancanti per promemoria WhatsApp
