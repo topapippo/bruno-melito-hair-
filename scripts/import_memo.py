@@ -4,7 +4,7 @@
 import requests
 import sys
 
-API_URL = "https://appointment-system-21.preview.emergentagent.com/api"
+API_URL = "https://melito-public-site.preview.emergentagent.com/api"
 
 # Client notes extracted from Memo.xlsx
 # Format: client name -> notes (combining all memo data)
