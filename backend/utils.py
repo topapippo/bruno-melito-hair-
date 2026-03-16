@@ -1,18 +1,5 @@
 import os
 
-# Twilio Config (optional)
-TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID')
-TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN')
-TWILIO_PHONE_NUMBER = os.environ.get('TWILIO_PHONE_NUMBER')
-
-twilio_client = None
-if TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN:
-    try:
-        from twilio.rest import Client
-        twilio_client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
-    except ImportError:
-        pass
-
 
 def calculate_end_time(start_time: str, duration_minutes: int) -> str:
     hours, minutes = map(int, start_time.split(':'))
@@ -33,17 +20,9 @@ def format_phone_e164(phone: str) -> str:
     return phone
 
 
-async def send_sms_reminder(phone: str, message: str, salon_name: str) -> dict:
-    if not twilio_client or not TWILIO_PHONE_NUMBER:
-        return {"success": False, "error": "Twilio non configurato"}
-
-    try:
-        formatted_phone = format_phone_e164(phone)
-        sms = twilio_client.messages.create(
-            body=f"[{salon_name}] {message}",
-            from_=TWILIO_PHONE_NUMBER,
-            to=formatted_phone
-        )
-        return {"success": True, "sid": sms.sid}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+def format_phone_whatsapp(phone: str) -> str:
+    """Format phone for WhatsApp wa.me links (no + prefix, just digits)."""
+    p = ''.join(filter(str.isdigit, phone))
+    if not p.startswith('39') and p.startswith('3') and len(p) == 10:
+        p = '39' + p
+    return p

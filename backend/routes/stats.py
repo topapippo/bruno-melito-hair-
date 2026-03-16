@@ -7,7 +7,6 @@ import io
 from database import db
 from auth import get_current_user
 from models import SettingsUpdate, UserResponse
-from utils import twilio_client, TWILIO_PHONE_NUMBER
 
 router = APIRouter()
 
@@ -183,7 +182,7 @@ async def get_settings(current_user: dict = Depends(get_current_user)):
         "opening_time": current_user.get("opening_time", "09:00"),
         "closing_time": current_user.get("closing_time", "19:00"),
         "working_days": current_user.get("working_days", ["lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato"]),
-        "twilio_configured": twilio_client is not None
+        "whatsapp_configured": True
     }
 
 

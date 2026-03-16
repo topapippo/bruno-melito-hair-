@@ -5,8 +5,7 @@ import uuid
 
 from database import db
 from auth import get_current_user
-from models import SMSRequest
-from utils import send_sms_reminder, twilio_client, TWILIO_PHONE_NUMBER
+from utils import format_phone_whatsapp
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -22,32 +21,17 @@ class MessageTemplateUpdate(BaseModel):
     text: Optional[str] = None
 
 
-# ============== SMS ==============
+# ============== WHATSAPP LINK GENERATOR ==============
 
-@router.post("/sms/send-reminder")
-async def send_appointment_reminder(data: SMSRequest, current_user: dict = Depends(get_current_user)):
-    appointment = await db.appointments.find_one({"id": data.appointment_id, "user_id": current_user["id"]}, {"_id": 0})
-    if not appointment:
-        raise HTTPException(status_code=404, detail="Appuntamento non trovato")
-    client = await db.clients.find_one({"id": appointment["client_id"], "user_id": current_user["id"]}, {"_id": 0})
-    if not client or not client.get("phone"):
-        raise HTTPException(status_code=400, detail="Cliente senza numero di telefono")
-    if not client.get("sms_reminder", True):
-        raise HTTPException(status_code=400, detail="Cliente ha disabilitato promemoria SMS")
-    services_text = ", ".join([s["name"] for s in appointment["services"]])
-    default_message = f"Promemoria: hai un appuntamento il {appointment['date']} alle {appointment['time']} per {services_text}. Ti aspettiamo!"
-    message = data.message or default_message
-    result = await send_sms_reminder(client["phone"], message, current_user["salon_name"])
-    if result["success"]:
-        await db.appointments.update_one({"id": data.appointment_id}, {"$set": {"sms_sent": True}})
-        return {"success": True, "message": "SMS inviato con successo"}
-    return {"success": False, "error": result.get("error", "Errore sconosciuto")}
-
-
-@router.get("/sms/status")
-async def get_sms_status(current_user: dict = Depends(get_current_user)):
-    return {"configured": twilio_client is not None and TWILIO_PHONE_NUMBER is not None,
-            "phone_number": TWILIO_PHONE_NUMBER if TWILIO_PHONE_NUMBER else None}
+@router.get("/whatsapp/generate-link")
+async def generate_whatsapp_link(phone: str, message: str = "", current_user: dict = Depends(get_current_user)):
+    """Generate a WhatsApp link for a given phone number and message."""
+    formatted = format_phone_whatsapp(phone)
+    if not formatted:
+        raise HTTPException(status_code=400, detail="Numero di telefono non valido")
+    import urllib.parse
+    encoded_msg = urllib.parse.quote(message)
+    return {"url": f"https://wa.me/{formatted}?text={encoded_msg}", "phone": formatted}
 
 
 # ============== REMINDERS / RICHIAMI ==============

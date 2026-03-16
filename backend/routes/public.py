@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Request
 from fastapi.responses import Response, FileResponse
 from datetime import datetime, timezone
 import uuid
@@ -332,12 +332,34 @@ async def website_upload_file(file: UploadFile = File(...), current_user: dict =
 
 
 @router.get("/website/files/{file_id}")
-async def website_serve_file(file_id: str):
+async def website_serve_file(file_id: str, request: Request):
     record = await db.website_files.find_one({"id": file_id, "is_deleted": False}, {"_id": 0})
     if not record:
         raise HTTPException(status_code=404, detail="File non trovato")
     data, content_type = get_object(record["storage_path"])
-    return Response(content=data, media_type=record.get("content_type", content_type))
+    content_type = record.get("content_type", content_type)
+    total_size = len(data)
+
+    # Range request support for HTML5 video playback
+    range_header = request.headers.get("range")
+    if range_header and content_type.startswith("video/"):
+        try:
+            range_val = range_header.replace("bytes=", "")
+            start_str, end_str = range_val.split("-")
+            start = int(start_str)
+            end = int(end_str) if end_str.strip() else total_size - 1
+            end = min(end, total_size - 1)
+            chunk = data[start:end + 1]
+            headers = {
+                "Content-Range": f"bytes {start}-{end}/{total_size}",
+                "Accept-Ranges": "bytes",
+                "Content-Length": str(len(chunk)),
+            }
+            return Response(content=chunk, media_type=content_type, status_code=206, headers=headers)
+        except Exception:
+            pass
+
+    return Response(content=data, media_type=content_type)
 
 
 @router.get("/website/config")

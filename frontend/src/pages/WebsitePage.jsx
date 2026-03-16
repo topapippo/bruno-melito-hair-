@@ -143,6 +143,41 @@ export default function WebsitePage() {
     } catch (err) { toast.error(err.response?.data?.detail || 'Errore'); }
   };
 
+  const openBookingWithService = (serviceName) => {
+    const matchingService = bookingServices.find(s => 
+      s.name.toLowerCase().includes(serviceName.toLowerCase()) || 
+      serviceName.toLowerCase().includes(s.name.toLowerCase())
+    );
+    if (matchingService) {
+      setFormData(prev => ({
+        ...prev,
+        service_ids: prev.service_ids.includes(matchingService.id) 
+          ? prev.service_ids 
+          : [...prev.service_ids, matchingService.id]
+      }));
+    }
+    setShowBooking(true);
+    setStep(1);
+  };
+
+  const openBookingWithPromo = (promo) => {
+    if (promo.free_service_id && !formData.service_ids.includes(promo.free_service_id)) {
+      setFormData(prev => ({
+        ...prev,
+        service_ids: [...prev.service_ids, promo.free_service_id],
+        notes: (prev.notes ? prev.notes + ' ' : '') + `[PROMO: ${promo.name}]`
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        notes: (prev.notes ? prev.notes + ' ' : '') + `[PROMO: ${promo.name}]`
+      }));
+    }
+    toast.success(`Promo "${promo.name}" aggiunta!`);
+    setShowBooking(true);
+    setStep(1);
+  };
+
   const scrollTo = (ref) => { ref.current?.scrollIntoView({ behavior: 'smooth' }); };
   const openWhatsApp = () => {
     const num = config.whatsapp || '393397833526';
@@ -514,9 +549,14 @@ export default function WebsitePage() {
                     {cat.desc && <p className="text-sm text-[#64748B] mb-4">{cat.desc}</p>}
                     <div className="space-y-3">
                       {(cat.items || []).map((item, i) => (
-                        <div key={i} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0 hover:bg-amber-50/50 transition-colors duration-200 px-2 rounded-lg">
-                          <span className="font-bold text-[#334155]">{item.name}</span>
-                          <span className="font-black text-[#0EA5E9] text-lg shrink-0 ml-4">{'\u20AC'} {item.price}</span>
+                        <div key={i} onClick={() => item.name && openBookingWithService(item.name)}
+                          className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0 hover:bg-[#0EA5E9]/5 transition-colors duration-200 px-2 rounded-lg cursor-pointer group"
+                          data-testid={`service-item-${idx}-${i}`}>
+                          <span className="font-bold text-[#334155] group-hover:text-[#0EA5E9] transition-colors">{item.name}</span>
+                          <div className="flex items-center gap-3 shrink-0 ml-4">
+                            <span className="font-black text-[#0EA5E9] text-lg">{'\u20AC'} {item.price}</span>
+                            <span className="text-xs text-[#94A3B8] group-hover:text-[#0EA5E9] transition-colors">Prenota</span>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -604,7 +644,7 @@ export default function WebsitePage() {
                 const g = gradients[idx % gradients.length];
                 return (
                   <div key={promo.id || idx} className={`bg-gradient-to-br ${g} border border-gray-200 rounded-3xl p-6 transition-all duration-500 hover:shadow-2xl hover:scale-[1.03] hover:-translate-y-1 cursor-pointer`}
-                    onClick={() => setShowBooking(true)}
+                    onClick={() => openBookingWithPromo(promo)}
                     data-testid={`website-promo-${promo.id || idx}`}>
                     <div className="mb-3">
                       <h3 className="text-lg font-black text-[#1e293b]">{promo.name}</h3>
@@ -620,6 +660,7 @@ export default function WebsitePage() {
                         Codice: <span className="font-mono font-bold text-[#0EA5E9] bg-[#0EA5E9]/10 px-2 py-0.5 rounded text-sm">{promo.promo_code}</span>
                       </div>
                     )}
+                    <p className="text-xs text-[#94A3B8] mt-2 font-medium">Clicca per prenotare con questa promo</p>
                   </div>
                 );
               })}
