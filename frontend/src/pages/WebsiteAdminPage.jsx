@@ -496,6 +496,55 @@ export default function WebsiteAdminPage() {
 
           {/* DESIGN & STYLE */}
           <TabsContent value="design">
+            {/* Theme Presets */}
+            <Card className="mb-6">
+              <CardHeader><CardTitle>Temi Preimpostati</CardTitle></CardHeader>
+              <CardContent>
+                <p className="text-xs text-gray-500 mb-4">Scegli un tema per applicare colori, font e dimensioni. Poi puoi personalizzare i singoli valori.</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                  {[
+                    { name: 'Classico Rosa', primary: '#FF3366', accent: '#33CC99', bg: '#F0F4FF', text: '#2D3047', fd: 'Cormorant Garamond', fb: 'Nunito', fs: '16', ts: '48' },
+                    { name: 'Elegante Oro', primary: '#C9A84C', accent: '#8B7355', bg: '#FFF9F0', text: '#1A1A1A', fd: 'Playfair Display', fb: 'Lato', fs: '16', ts: '52' },
+                    { name: 'Moderno Blu', primary: '#2563EB', accent: '#06B6D4', bg: '#F0F7FF', text: '#0F172A', fd: 'DM Serif Display', fb: 'Source Sans 3', fs: '17', ts: '50' },
+                    { name: 'Naturale Verde', primary: '#2D6A4F', accent: '#95D5B2', bg: '#F0FFF4', text: '#1B4332', fd: 'Libre Baskerville', fb: 'Open Sans', fs: '16', ts: '46' },
+                    { name: 'Glamour Viola', primary: '#7C3AED', accent: '#A78BFA', bg: '#FAF5FF', text: '#1E1B4B', fd: 'Playfair Display', fb: 'Poppins', fs: '15', ts: '54' },
+                    { name: 'Minimal Chiaro', primary: '#18181B', accent: '#71717A', bg: '#FAFAFA', text: '#09090B', fd: 'DM Serif Display', fb: 'Raleway', fs: '16', ts: '48' },
+                  ].map((theme, i) => {
+                    const isActive = config.primary_color === theme.primary && config.accent_color === theme.accent;
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => {
+                          setConfig(c => ({
+                            ...c,
+                            primary_color: theme.primary,
+                            accent_color: theme.accent,
+                            bg_color: theme.bg,
+                            text_color: theme.text,
+                            font_display: theme.fd,
+                            font_body: theme.fb,
+                            font_size: theme.fs,
+                            title_size: theme.ts
+                          }));
+                        }}
+                        className={`rounded-xl p-3 border-2 transition-all hover:scale-[1.03] ${isActive ? 'ring-2 ring-offset-2' : ''}`}
+                        style={{ borderColor: isActive ? theme.primary : '#e5e7eb', ringColor: theme.primary }}
+                        data-testid={`theme-${i}`}
+                      >
+                        <div className="flex gap-1 mb-2 justify-center">
+                          <div className="w-6 h-6 rounded-full" style={{ background: theme.primary }} />
+                          <div className="w-6 h-6 rounded-full" style={{ background: theme.accent }} />
+                          <div className="w-6 h-6 rounded-full border" style={{ background: theme.bg }} />
+                          <div className="w-6 h-6 rounded-full" style={{ background: theme.text }} />
+                        </div>
+                        <p className="text-[11px] font-bold text-gray-700 text-center">{theme.name}</p>
+                        <p className="text-[9px] text-gray-400 text-center mt-0.5">{theme.fd}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card>
                 <CardHeader><CardTitle>Colori del Sito</CardTitle></CardHeader>
