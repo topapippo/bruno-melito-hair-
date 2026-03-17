@@ -87,29 +87,20 @@ Sistema gestionale completo per salone di parrucchiere "Bruno Melito Hair" a San
 ## Changelog
 
 ### 17 Marzo 2026
-- Implementato tab "Colori & Font" in Gestione Sito (WebsiteAdminPage.jsx)
-- Color picker per: colore primario, accento, sfondo, testo
-- Selettori font: 6 opzioni titoli e 6 opzioni corpo
-- Anteprima colori e font in tempo reale
-- WebsitePage.jsx ora legge colori e font dinamicamente dal CMS
-- Aggiunti campi default nel backend: primary_color, accent_color, bg_color, text_color, font_display, font_body
-- **Anteprima Live**: pannello laterale con iframe del sito pubblico che si aggiorna in tempo reale via postMessage
-- **Fix SEO / Google Search Console**:
-  - sitemap.xml: rimossi /sito, /prenota, /login — ora solo https://brunomelitohair.it/
-  - robots.txt: bloccati /sito e /prenota (redirect), aggiornato dominio
-  - index.html: canonical e og:url aggiornati a https://brunomelitohair.it/
-  - Structured data (JSON-LD): dominio aggiornato
-  - /prenota ora redirect a / (era contenuto duplicato con BookingPage)
-- Animazioni logo migliorate (no pulse, animazione elegante zoom+rotazione)
-- Pulsante "Torna al Planning" in Gestione Sito
-- Pulsante Area Riservata visibile su mobile (icona LogIn)
-- **Slot occupati nella prenotazione**: nuovo endpoint /api/public/busy-slots, griglia visuale orari con stati libero/occupato/parziale, toast con suggerimento operatore alternativo
-- **Rimosso "dal 1983"** da logo nav e footer
-- **Rimosso duplicato "dal 1983"** in Chi Siamo (titolo e features aggiornati)
-- **Sezione CTA** "Pronta per il tuo look?" spostata prima della galleria
-- **Promo cliccabili**: le card promo selezionano i servizi associati
-- 9/10 test passati (frontend) + fix duplicato dal database
-- 15/15 test passati (backend + frontend - iterazione precedente)
+- Implementato tab "Colori & Font" in Gestione Sito
+- Anteprima Live: pannello laterale iframe in tempo reale
+- Fix SEO Google Search Console (sitemap, robots.txt, canonical, og:url)
+- Animazioni logo migliorate, pulsante "Torna al Planning"
+- Pulsante Area Riservata visibile su mobile
+- Slot occupati nella prenotazione con griglia visuale e modale conflitto
+- Rimosso "dal 1983" da logo/nav/footer, duplicato in Chi Siamo
+- Sezione CTA spostata prima della galleria
+- Promo cliccabili con badge e codice nelle note
+- Testo Chi Siamo aggiornato, immagine "Metti la testa a posto!!" aggiunta
+- Formato data GG/MM/AA in tutto il flusso prenotazione
+- **Refactoring WebsitePage.jsx**: da 1700 a 1269 righe
+  - 8 componenti estratti: Navbar, HeroSection, StatsBar, AboutSection, CTASection, GallerySection, ReviewsSection, ContactSection/FooterSection
+  - 30/30 test passati dopo refactoring
 
 ### 16 Marzo 2026
 - Fix routing: `/` → sito pubblico, `/login` → login admin
