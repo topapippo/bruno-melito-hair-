@@ -1,25 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';  // ← SEPARATO!
+import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast, Toaster } from 'sonner';
-import { 
-  Clock, Scissors, CheckCircle, MapPin, Phone, Mail, Star, 
-  MessageSquare, ChevronDown, Instagram, Facebook, Youtube, 
-  Gift, Calendar, Pencil, Trash2, ArrowRight, Sparkles, X, 
-  Camera, Store, ChevronRight, AlertCircle, Users 
+import {
+  Clock, Scissors, CheckCircle, MapPin, Phone, Mail,
+  Star, MessageSquare, ChevronDown, Instagram, Facebook,
+  Youtube, Gift, Calendar, Pencil, Trash2, ArrowRight,
+  Sparkles, X, Camera, Store, ChevronRight, AlertCircle,
+  Users
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
-// 🎨 COLORI PERSONALIZZATI - CAMBIA QUI PER CAMBIARE TUTTO IL SITO!
-const COLORS = {
-  primary: "#FF3366",     // Rosso/rosa vibrante (bottoni, titoli, link)
-  accent: "#33CC99",      // Verde acqua (hover, dettagli, icone)
-  bg: "#F0F4FF",          // Azzurro chiarissimo (sfondo pagina)
-  text: "#2D3047"         // Blu scuro intenso (testo principale)
-};
 
 const SOCIAL = [
   { url: 'https://www.instagram.com/brunomelitohair', icon: Instagram, label: 'Instagram' },
@@ -117,7 +111,7 @@ const GStyles = `
   .hs:hover { transform: scale(1.04); }
   
   .hg { transition: box-shadow .3s ease, border-color .3s ease; } 
-  .hg:hover { box-shadow: 0 0 0 3px ${COLORS.primary}22; border-color: ${COLORS.primary}; }
+  .hg:hover { box-shadow: 0 0 0 3px rgba(14,165,233,.22); border-color: #0ea5e9; }
 
   /* Immagini gallery */
   .gi { overflow: hidden; border-radius: 16px; }
@@ -142,8 +136,8 @@ const GStyles = `
     transition: all .25s cubic-bezier(.34,1.56,.64,1);
     background: white;
   }
-  .si:hover { border-color: ${COLORS.primary}80; background: ${COLORS.primary}10; transform: scale(1.01); }
-  .si.sel { border-color: ${COLORS.primary}; background: ${COLORS.primary}20; }
+  .si:hover { border-color: #bae6fd; background: #f0f9ff; transform: scale(1.01); }
+  .si.sel { border-color: #0ea5e9; background: #e0f2fe; }
   .si .cd { 
     width: 22px; 
     height: 22px; 
@@ -155,11 +149,11 @@ const GStyles = `
     align-items: center; 
     justify-content: center; 
   }
-  .si.sel .cd { background: ${COLORS.primary}; border-color: ${COLORS.primary}; }
+  .si.sel .cd { background: #0ea5e9; border-color: #0ea5e9; }
 
   /* Promo */
   .pc { transition: transform .3s cubic-bezier(.34,1.56,.64,1), box-shadow .3s ease; }
-  .pc:hover { transform: translateY(-4px) scale(1.01); box-shadow: 0 16px 32px ${COLORS.accent}40; }
+  .pc:hover { transform: translateY(-4px) scale(1.01); box-shadow: 0 16px 32px rgba(236,72,153,.15); }
 
   /* Review */
   .rc { transition: transform .3s ease, box-shadow .3s ease; }
@@ -167,7 +161,7 @@ const GStyles = `
 
   /* Buttons */
   .bp { 
-    background: ${COLORS.primary}; 
+    background: #0ea5e9; 
     color: white; 
     font-weight: 800; 
     border-radius: 14px; 
@@ -178,9 +172,9 @@ const GStyles = `
     gap: 8px;
   }
   .bp:hover { 
-    background: ${COLORS.accent}; 
+    background: #0284c7; 
     transform: translateY(-2px); 
-    box-shadow: 0 8px 20px ${COLORS.primary}80; 
+    box-shadow: 0 8px 20px rgba(14,165,233,.4); 
   }
   
   .bw { 
@@ -202,11 +196,11 @@ const GStyles = `
 
   /* Step tab */
   .st { transition: all .2s; border-bottom: 2px solid transparent; }
-  .st.act { color: ${COLORS.primary}; border-bottom-color: ${COLORS.primary}; font-weight: 800; }
+  .st.act { color: #0ea5e9; border-bottom-color: #0ea5e9; font-weight: 800; }
 
   /* Gallery tab */
   .gt { transition: all .2s; } 
-  .gt.act { background: ${COLORS.primary}; color: white; }
+  .gt.act { background: #0f172a; color: white; }
   .gt:hover:not(.act) { background: #e2e8f0; }
 
   /* Social */
@@ -220,7 +214,7 @@ const GStyles = `
     left: 0; 
     width: 0; 
     height: 2px; 
-    background: ${COLORS.primary}; 
+    background: #0ea5e9; 
     transition: width .3s ease; 
   }
   .nav-link:hover .nul { width: 100%; }
@@ -562,27 +556,26 @@ export default function BookingPage() {
           </div>
           
           <p className="text-slate-600 mb-4">
-            L'orario <span className="font-bold" style={{ color: COLORS.primary }}>{form.time}</span> del{' '}
+            L'orario <span className="font-bold text-sky-600">{form.time}</span> del{' '}
             <span className="font-bold">{format(new Date(form.date + 'T00:00:00'), 'd MMMM', { locale: it })}</span>{' '}
-            è già occupato.
+            è già occupato con <span className="font-bold">BRUNO</span>.
           </p>
           
           {/* OPERATORE ALTERNATIVO - MBHS */}
           {availableOperators.length > 0 && (
             <div className="mb-5">
               <p className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-1">
-                <Users className="w-4 h-4" style={{ color: COLORS.primary }} /> Prova con altro operatore:
+                <Users className="w-4 h-4 text-sky-500" /> Prova con altro operatore:
               </p>
               <div className="space-y-2">
                 {availableOperators.map((op, idx) => (
                   <button
                     key={op.id || idx}
                     onClick={() => tryAlternativeOperator(op.id, op.name)}
-                    className="w-full flex items-center justify-between p-4 border-2 rounded-xl hover:bg-opacity-10 transition-all hover:border-opacity-100"
-                    style={{ borderColor: COLORS.primary + '40', hover: { borderColor: COLORS.primary } }}
+                    className="w-full flex items-center justify-between p-4 border-2 border-sky-200 rounded-xl hover:bg-sky-50 transition-all hover:border-sky-400"
                   >
                     <span className="font-bold text-lg text-slate-800">{op.name}</span>
-                    <span className="text-sm text-white px-4 py-1.5 rounded-full" style={{ background: COLORS.primary }}>Disponibile</span>
+                    <span className="text-sm bg-sky-500 text-white px-4 py-1.5 rounded-full">Disponibile</span>
                   </button>
                 ))}
               </div>
@@ -593,21 +586,20 @@ export default function BookingPage() {
           {alternativeSlots.length > 0 && (
             <div className="mb-5">
               <p className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-1">
-                <Clock className="w-4 h-4" style={{ color: COLORS.accent }} /> Oppure scegli un altro orario:
+                <Clock className="w-4 h-4 text-emerald-500" /> Oppure scegli un altro orario:
               </p>
               <div className="space-y-2">
                 {alternativeSlots.slice(0, 4).map((slot, idx) => (
                   <button
                     key={idx}
                     onClick={() => tryAlternativeSlot(slot.date || form.date, slot.time, slot.operator_id, slot.operator_name)}
-                    className="w-full flex items-center justify-between p-3 border rounded-xl hover:bg-opacity-10 transition-all hover:border-opacity-100"
-                    style={{ borderColor: COLORS.accent + '40' }}
+                    className="w-full flex items-center justify-between p-3 border border-emerald-200 rounded-xl hover:bg-emerald-50 transition-all hover:border-emerald-400"
                   >
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-slate-800">
                         {format(new Date((slot.date || form.date) + 'T00:00:00'), 'd MMM', { locale: it })}
                       </span>
-                      <span className="font-bold px-2 py-0.5 rounded-full" style={{ background: COLORS.accent + '20', color: COLORS.accent }}>
+                      <span className="text-emerald-600 font-bold bg-emerald-100 px-2 py-0.5 rounded-full">
                         ore {slot.time}
                       </span>
                     </div>
@@ -624,8 +616,7 @@ export default function BookingPage() {
           <div className="flex gap-2 mt-4">
             <button
               onClick={() => { setShowConflictModal(false); setStep(2); }}
-              className="flex-1 text-white font-bold py-3 rounded-xl transition-all"
-              style={{ background: COLORS.primary }}
+              className="flex-1 bg-sky-500 text-white font-bold py-3 rounded-xl hover:bg-sky-600 transition-all"
             >
               Scegli altro orario
             </button>
@@ -647,15 +638,15 @@ export default function BookingPage() {
       <style>{GStyles}</style>
       <Toaster position="top-center" />
       <div className="max-w-md w-full text-center fu">
-        <div className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6" style={{ background: COLORS.accent + '20' }}>
-          <CheckCircle className="w-12 h-12" style={{ color: COLORS.accent }} />
+        <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <CheckCircle className="w-12 h-12 text-emerald-500" />
         </div>
         <h1 className="fd text-4xl font-bold text-slate-900 mb-3">Prenotazione Inviata!</h1>
         <p className="text-slate-500 mb-8 text-lg">
           Ti aspettiamo il <strong>{format(new Date(form.date + 'T00:00:00'), 'd MMMM yyyy', { locale: it })}</strong> alle{' '}
-          <strong style={{ color: COLORS.primary }}>{form.time}</strong>
+          <strong className="text-sky-500">{form.time}</strong>
         </p>
-        <button onClick={resetBooking} className="px-10 py-4 text-base mx-auto text-white rounded-xl transition-all" style={{ background: COLORS.primary }}>
+        <button onClick={resetBooking} className="bp px-10 py-4 text-base mx-auto">
           Torna alla pagina
         </button>
       </div>
@@ -695,8 +686,7 @@ export default function BookingPage() {
             <button 
               onClick={lookupApts} 
               disabled={lookingUp} 
-              className="px-5 py-2 text-white rounded-xl disabled:opacity-50 transition-all"
-              style={{ background: COLORS.primary }}
+              className="bp px-5 py-2 disabled:opacity-50"
             >
               {lookingUp ? <Clock className="w-4 h-4 animate-spin" /> : 'Cerca'}
             </button>
@@ -732,8 +722,7 @@ export default function BookingPage() {
                 <div className="flex gap-2">
                   <button 
                     onClick={updateApt} 
-                    className="flex-1 text-white font-bold py-2 rounded-xl transition-all flex items-center justify-center gap-2"
-                    style={{ background: COLORS.accent }}
+                    className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 rounded-xl transition-all flex items-center justify-center gap-2"
                   >
                     <CheckCircle className="w-4 h-4" />Salva
                   </button>
@@ -752,7 +741,7 @@ export default function BookingPage() {
                     <p className="font-bold text-slate-900">
                       {format(new Date(apt.date + 'T00:00'), 'd MMMM yyyy', { locale: it })}
                     </p>
-                    <p className="font-black text-xl" style={{ color: COLORS.primary }}>ore {apt.time}</p>
+                    <p className="text-sky-500 font-black text-xl">ore {apt.time}</p>
                   </div>
                   <span className="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded-lg font-mono">
                     {apt.booking_code}
@@ -765,8 +754,7 @@ export default function BookingPage() {
                 <div className="flex gap-2">
                   <button 
                     onClick={() => { setEditingApt(apt); setEditDate(apt.date); setEditTime(apt.time); }} 
-                    className="flex-1 font-bold py-2 rounded-xl transition-all flex items-center justify-center gap-1 text-sm"
-                    style={{ background: COLORS.primary + '10', color: COLORS.primary }}
+                    className="flex-1 bg-sky-50 text-sky-600 hover:bg-sky-100 font-bold py-2 rounded-xl transition-all flex items-center justify-center gap-1 text-sm"
                   >
                     <Pencil className="w-3.5 h-3.5" />Modifica
                   </button>
@@ -839,8 +827,7 @@ export default function BookingPage() {
             </button>
             <button 
               onClick={() => bookRef.current?.scrollIntoView({ behavior: 'smooth' })} 
-              className="px-5 py-2.5 text-sm text-white rounded-xl transition-all"
-              style={{ background: COLORS.primary }}
+              className="bp px-5 py-2.5 text-sm"
             >
               <Scissors className="w-4 h-4" />Prenota ora
             </button>
@@ -860,16 +847,16 @@ export default function BookingPage() {
         </div>
         <div className="absolute inset-0 bg-gradient-to-r from-white via-white/92 to-transparent pointer-events-none" />
         <div className="absolute inset-0 bg-gradient-to-b from-white/5 via-transparent to-white pointer-events-none" />
-        <div className="absolute top-28 right-52 w-80 h-80 rounded-full blur-3xl pointer-events-none hidden lg:block" style={{ background: COLORS.primary + '20' }} />
-        <div className="absolute bottom-28 right-16 w-56 h-56 rounded-full blur-2xl pointer-events-none hidden lg:block" style={{ background: COLORS.accent + '20' }} />
+        <div className="absolute top-28 right-52 w-80 h-80 rounded-full bg-sky-100/60 blur-3xl pointer-events-none hidden lg:block" />
+        <div className="absolute bottom-28 right-16 w-56 h-56 rounded-full bg-amber-100/40 blur-2xl pointer-events-none hidden lg:block" />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-20 sm:py-32 w-full">
           <div className="max-w-2xl">
-            <div className="fu d1 inline-flex items-center gap-2 border text-xs font-bold px-4 py-2 rounded-full mb-6" style={{ background: COLORS.primary + '10', borderColor: COLORS.primary, color: COLORS.primary }}>
+            <div className="fu d1 inline-flex items-center gap-2 bg-sky-50 border border-sky-200 text-sky-600 text-xs font-bold px-4 py-2 rounded-full mb-6">
               <Sparkles className="w-3.5 h-3.5" />Solo per appuntamento · Santa Maria Capua Vetere
             </div>
             <h1 className="fu d2 fd text-6xl sm:text-7xl lg:text-8xl font-bold text-slate-900 leading-[1.02] mb-6">
-              La tua<br /><span className="italic" style={{ color: COLORS.primary }}>bellezza</span><br />merita il meglio
+              La tua<br /><span className="text-sky-500 italic">bellezza</span><br />merita il meglio
             </h1>
             <p className="fu d3 text-lg sm:text-xl text-slate-500 leading-relaxed mb-10 max-w-xl">
               {cfg.about_text || 'Da oltre 40 anni il punto di riferimento per l\'hair styling. Colorazioni senza ammoniaca, prodotti senza parabeni.'}
@@ -877,14 +864,13 @@ export default function BookingPage() {
             <div className="fu d4 flex flex-wrap gap-3">
               <button 
                 onClick={() => bookRef.current?.scrollIntoView({ behavior: 'smooth' })} 
-                className="px-8 py-4 text-base text-white rounded-xl transition-all"
-                style={{ background: COLORS.primary }}
+                className="bp px-8 py-4 text-base"
               >
                 <Scissors className="w-5 h-5" />Prenota ora
               </button>
               <button 
                 onClick={() => document.getElementById('galleria')?.scrollIntoView({ behavior: 'smooth' })}
-                className="border-2 border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 font-bold text-base px-8 py-4 rounded-2xl transition-all flex items-center gap-2"
+                className="border-2 border-slate-200 hover:border-sky-300 text-slate-700 hover:text-sky-600 font-bold text-base px-8 py-4 rounded-2xl transition-all flex items-center gap-2"
               >
                 I nostri lavori<ChevronRight className="w-4 h-4" />
               </button>
@@ -898,7 +884,7 @@ export default function BookingPage() {
       </section>
 
       {/* NUMERI */}
-      <section className="py-10" style={{ background: COLORS.text }}>
+      <section className="bg-slate-900 py-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
             {[
@@ -908,7 +894,7 @@ export default function BookingPage() {
               { n: '5★', l: 'Qualità garantita' }
             ].map((s, i) => (
               <div key={i} className="cursor-default py-2">
-                <p className="fd text-3xl font-bold mb-1" style={{ color: COLORS.primary }}>{s.n}</p>
+                <p className="fd text-3xl font-bold text-sky-400 mb-1">{s.n}</p>
                 <p className="text-sm text-slate-400 font-medium">{s.l}</p>
               </div>
             ))}
@@ -936,15 +922,15 @@ export default function BookingPage() {
                   </div>
                 )}
               </div>
-              <div className="absolute -bottom-5 -right-3 text-white rounded-2xl p-4 shadow-xl hidden sm:block" style={{ background: COLORS.primary }}>
+              <div className="absolute -bottom-5 -right-3 bg-sky-500 text-white rounded-2xl p-4 shadow-xl hidden sm:block">
                 <p className="fd text-3xl font-bold">40+</p>
                 <p className="text-xs font-semibold opacity-85">anni di<br />esperienza</p>
               </div>
             </div>
             <div>
-              <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: COLORS.primary }}>Chi siamo</p>
+              <p className="text-sky-500 font-bold text-sm tracking-widest uppercase mb-3">Chi siamo</p>
               <h2 className="fd text-4xl sm:text-5xl font-bold text-slate-900 mb-6 leading-tight">
-                {cfg.about_title || 'Passione per la bellezza'}<br /><span className="italic" style={{ color: COLORS.primary }}>dal 1983</span>
+                {cfg.about_title || 'Passione per la bellezza'}<br /><span className="text-sky-500 italic">dal 1983</span>
               </h2>
               <p className="text-slate-500 leading-relaxed mb-5 text-lg">
                 {cfg.about_text || "Da oltre 40 anni siamo il punto di riferimento per l'hair styling a Santa Maria Capua Vetere. Ogni cliente è unica per noi."}
@@ -960,8 +946,8 @@ export default function BookingPage() {
                   'Ambiente accogliente e curato'
                 ]).map((f, i) => (
                   <div key={i} className="flex items-center gap-2.5">
-                    <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: COLORS.primary + '20' }}>
-                      <CheckCircle className="w-3.5 h-3.5" style={{ color: COLORS.primary }} />
+                    <div className="w-5 h-5 rounded-full bg-sky-100 flex items-center justify-center flex-shrink-0">
+                      <CheckCircle className="w-3.5 h-3.5 text-sky-500" />
                     </div>
                     <span className="text-sm text-slate-600 font-semibold">{f}</span>
                   </div>
@@ -969,8 +955,7 @@ export default function BookingPage() {
               </div>
               <button 
                 onClick={() => bookRef.current?.scrollIntoView({ behavior: 'smooth' })} 
-                className="px-8 py-4 text-base text-white rounded-xl transition-all"
-                style={{ background: COLORS.primary }}
+                className="bp px-8 py-4 text-base"
               >
                 <Scissors className="w-5 h-5" />Prenota ora
               </button>
@@ -980,10 +965,10 @@ export default function BookingPage() {
       </section>
 
       {/* PRENOTA */}
-      <section ref={bookRef} id="prenota" className="py-20 sm:py-28" style={{ background: COLORS.bg }}>
+      <section ref={bookRef} id="prenota" className="py-20 sm:py-28 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-14">
-            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: COLORS.primary }}>
+            <p className="text-sky-500 font-bold text-sm tracking-widest uppercase mb-3">
               Prenota il tuo appuntamento
             </p>
             <h2 className="fd text-4xl sm:text-5xl font-bold text-slate-900 mb-4">
@@ -1007,8 +992,7 @@ export default function BookingPage() {
                     onClick={() => { if (s.n < step || (s.n === 2 && selIds.length > 0)) setStep(s.n); }}
                     className={`st flex-1 py-4 text-xs font-bold transition-all ${step === s.n ? 'act' : 'text-slate-400'}`}
                   >
-                    <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] mr-1.5 font-black ${step === s.n ? 'text-white' : step > s.n ? 'text-white' : 'bg-slate-100 text-slate-400'}`}
-                      style={step === s.n ? { background: COLORS.primary } : step > s.n ? { background: COLORS.accent } : {}}>
+                    <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] mr-1.5 font-black ${step === s.n ? 'bg-sky-500 text-white' : step > s.n ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
                       {step > s.n ? '✓' : s.n}
                     </span>{s.l}
                   </button>
@@ -1020,8 +1004,8 @@ export default function BookingPage() {
                 {step === 1 && (
                   <div>
                     {selIds.length > 0 && (
-                      <div className="mb-5 rounded-2xl p-4" style={{ background: COLORS.primary + '10', borderColor: COLORS.primary, borderWidth: 1 }}>
-                        <p className="text-xs font-bold mb-2 uppercase tracking-wider" style={{ color: COLORS.primary }}>
+                      <div className="mb-5 bg-sky-50 border border-sky-200 rounded-2xl p-4">
+                        <p className="text-xs font-bold text-sky-600 mb-2 uppercase tracking-wider">
                           Selezionati ({selIds.length})
                         </p>
                         <div className="space-y-1.5">
@@ -1029,16 +1013,16 @@ export default function BookingPage() {
                             <div key={s.id} className="flex justify-between items-center text-sm">
                               <span className="text-slate-700 font-medium">{getCatIcon(s.category)} {s.name}</span>
                               <div className="flex items-center gap-3">
-                                <span className="font-bold" style={{ color: COLORS.primary }}>€{s.price}</span>
+                                <span className="text-sky-600 font-bold">€{s.price}</span>
                                 <button onClick={() => toggleSvc(s)} className="text-slate-400 hover:text-red-400 transition-colors">
                                   <X className="w-4 h-4" />
                                 </button>
                               </div>
                             </div>
                           ))}
-                          <div className="border-t mt-2 pt-2 flex justify-between text-sm font-black" style={{ borderColor: COLORS.primary }}>
+                          <div className="border-t border-sky-200 mt-2 pt-2 flex justify-between text-sm font-black">
                             <span className="text-slate-500">{totDur} min</span>
-                            <span style={{ color: COLORS.primary }}>Totale: €{totPrice}</span>
+                            <span className="text-sky-600">Totale: €{totPrice}</span>
                           </div>
                         </div>
                       </div>
@@ -1098,26 +1082,26 @@ export default function BookingPage() {
                           <div>
                             <div className="flex items-center gap-2 mb-2.5 sticky top-0 bg-white/95 backdrop-blur-sm py-1 z-10">
                               <span className="text-base">🎁</span>
-                              <p className="text-xs font-black uppercase tracking-widest" style={{ color: COLORS.accent }}>Promozioni attive</p>
-                              <div className="flex-1 h-px" style={{ background: COLORS.accent }} />
+                              <p className="text-xs font-black text-pink-400 uppercase tracking-widest">Promozioni attive</p>
+                              <div className="flex-1 h-px bg-pink-100" />
                             </div>
                             <div className="space-y-3">
                               {promos.map((promo, i) => (
-                                <div key={promo.id || i} className="pc rounded-2xl p-4" style={{ background: `linear-gradient(135deg, ${COLORS.accent}10, ${COLORS.primary}10)`, borderColor: COLORS.accent, borderWidth: 2 }}>
+                                <div key={promo.id || i} className="pc bg-gradient-to-r from-pink-50 to-rose-50 border-2 border-pink-200 rounded-2xl p-4">
                                   <div className="flex justify-between items-start mb-1.5">
                                     <p className="font-bold text-slate-800 text-sm">{promo.name}</p>
-                                    <span className="text-white text-[9px] font-black px-2 py-0.5 rounded-full" style={{ background: COLORS.accent }}>PROMO</span>
+                                    <span className="bg-pink-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full">PROMO</span>
                                   </div>
                                   {promo.description && <p className="text-xs text-slate-500 mb-2">{promo.description}</p>}
                                   {promo.free_service_name && (
                                     <div className="flex items-center gap-1.5 bg-white/70 rounded-lg px-2.5 py-1.5">
-                                      <Gift className="w-3.5 h-3.5 flex-shrink-0" style={{ color: COLORS.accent }} />
-                                      <p className="text-xs font-bold" style={{ color: COLORS.accent }}>In omaggio: {promo.free_service_name}</p>
+                                      <Gift className="w-3.5 h-3.5 text-pink-500 flex-shrink-0" />
+                                      <p className="text-xs font-bold text-pink-700">In omaggio: {promo.free_service_name}</p>
                                     </div>
                                   )}
                                   {promo.promo_code && (
                                     <p className="text-[10px] text-slate-400 mt-1.5">
-                                      Codice: <span className="font-mono font-bold px-1.5 py-0.5 rounded" style={{ background: COLORS.accent + '20', color: COLORS.accent }}>{promo.promo_code}</span>
+                                      Codice: <span className="font-mono font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">{promo.promo_code}</span>
                                     </p>
                                   )}
                                 </div>
@@ -1130,13 +1114,12 @@ export default function BookingPage() {
 
                     <button 
                       onClick={() => { if (selIds.length === 0) { toast.error('Seleziona almeno un servizio'); return; } setStep(2); }} 
-                      className="w-full py-4 text-base mt-6 text-white rounded-xl transition-all"
-                      style={{ background: COLORS.primary }}
+                      className="bp w-full py-4 text-base mt-6"
                     >
                       Scegli data e ora<ArrowRight className="w-5 h-5" />
                     </button>
                     <div className="text-center mt-4">
-                      <button onClick={openWA} className="text-xs font-semibold flex items-center gap-1 mx-auto transition-colors" style={{ color: COLORS.accent }}>
+                      <button onClick={openWA} className="text-xs text-green-600 hover:text-green-700 font-semibold flex items-center gap-1 mx-auto transition-colors">
                         <MessageSquare className="w-3.5 h-3.5" />Preferisci prenotare via WhatsApp?
                       </button>
                     </div>
@@ -1146,8 +1129,8 @@ export default function BookingPage() {
                 {/* STEP 2 - Data e Ora */}
                 {step === 2 && (
                   <div className="space-y-5">
-                    <div className="rounded-xl p-4 text-sm" style={{ background: COLORS.primary + '10', borderColor: COLORS.primary, borderWidth: 1 }}>
-                      <p className="font-bold mb-1" style={{ color: COLORS.primary }}>{selIds.length} servizi · {totDur} min · €{totPrice}</p>
+                    <div className="bg-sky-50 border border-sky-200 rounded-xl p-4 text-sm">
+                      <p className="font-bold text-sky-700 mb-1">{selIds.length} servizi · {totDur} min · €{totPrice}</p>
                       <p className="text-slate-500 text-xs">{selSvcs.map(s => s.name).join(' · ')}</p>
                     </div>
                     <div>
@@ -1165,8 +1148,7 @@ export default function BookingPage() {
                       <select 
                         value={form.time} 
                         onChange={e => setForm({ ...form, time: e.target.value })} 
-                        className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-800 font-semibold bg-white focus:outline-none focus:ring-2"
-                        style={{ focus: { ringColor: COLORS.primary + '40', borderColor: COLORS.primary } }}
+                        className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-800 font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400"
                       >
                         {getSlots(form.date).map(t => <option key={t} value={t}>{t}</option>)}
                       </select>
@@ -1179,8 +1161,7 @@ export default function BookingPage() {
                         <select 
                           value={form.operator_id} 
                           onChange={e => setForm({ ...form, operator_id: e.target.value })} 
-                          className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white focus:outline-none focus:ring-2"
-                          style={{ focus: { ringColor: COLORS.primary + '40', borderColor: COLORS.primary } }}
+                          className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400"
                         >
                           <option value="">Nessuna preferenza</option>
                           {operators.map(op => <option key={op.id} value={op.id}>{op.name}</option>)}
@@ -1191,7 +1172,7 @@ export default function BookingPage() {
                       <button onClick={() => setStep(1)} className="flex-1 border-2 border-slate-200 text-slate-500 font-bold py-3.5 rounded-xl hover:bg-slate-50 transition-all">
                         ← Indietro
                       </button>
-                      <button onClick={() => setStep(3)} className="flex-1 py-3.5 text-white rounded-xl transition-all" style={{ background: COLORS.primary }}>
+                      <button onClick={() => setStep(3)} className="flex-1 bp py-3.5">
                         Avanti<ArrowRight className="w-4 h-4" />
                       </button>
                     </div>
@@ -1231,7 +1212,7 @@ export default function BookingPage() {
                         className="border-slate-200 text-slate-800 resize-none"
                       />
                     </div>
-                    <div className="rounded-2xl p-4 border border-slate-200 space-y-2 text-sm" style={{ background: COLORS.bg }}>
+                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-2 text-sm">
                       <p className="font-black text-slate-700 text-xs uppercase tracking-wider mb-2">Riepilogo</p>
                       <div className="flex justify-between text-slate-500">
                         <span>Data & Ora</span>
@@ -1245,14 +1226,14 @@ export default function BookingPage() {
                       </div>
                       <div className="flex justify-between font-black text-slate-900 pt-2 border-t border-slate-200">
                         <span>Totale</span>
-                        <span className="text-base" style={{ color: COLORS.primary }}>€{totPrice}</span>
+                        <span className="text-sky-500 text-base">€{totPrice}</span>
                       </div>
                     </div>
                     <div className="flex gap-3 pt-2">
                       <button onClick={() => setStep(2)} className="flex-1 border-2 border-slate-200 text-slate-500 font-bold py-3.5 rounded-xl hover:bg-slate-50 transition-all">
                         ← Indietro
                       </button>
-                      <button onClick={handleSubmit} disabled={submitting} className="flex-1 py-3.5 text-white rounded-xl disabled:opacity-60 transition-all" style={{ background: COLORS.primary }}>
+                      <button onClick={handleSubmit} disabled={submitting} className="flex-1 bp py-3.5 disabled:opacity-60">
                         {submitting ? (
                           <><Clock className="w-4 h-4 animate-spin" />Invio...</>
                         ) : (
@@ -1261,7 +1242,7 @@ export default function BookingPage() {
                       </button>
                     </div>
                     <div className="text-center">
-                      <button onClick={openWA} className="text-xs font-semibold flex items-center gap-1 mx-auto transition-colors" style={{ color: COLORS.accent }}>
+                      <button onClick={openWA} className="text-xs text-green-600 hover:text-green-700 font-semibold flex items-center gap-1 mx-auto transition-colors">
                         <MessageSquare className="w-3.5 h-3.5" />Prenota via WhatsApp
                       </button>
                     </div>
@@ -1272,17 +1253,17 @@ export default function BookingPage() {
 
             <div className="mt-5 grid grid-cols-2 gap-3">
               <a href="tel:08231878320" className="flex items-center gap-2.5 bg-white border border-slate-200 rounded-2xl p-3.5 transition-all hover:shadow-md">
-                <Phone className="w-4 h-4 flex-shrink-0" style={{ color: COLORS.primary }} />
+                <Phone className="w-4 h-4 text-sky-500 flex-shrink-0" />
                 <div>
                   <p className="text-[10px] text-slate-400 font-semibold">Telefono</p>
                   <p className="text-xs font-bold text-slate-700">0823 18 78 320</p>
                 </div>
               </a>
-              <button onClick={openWA} className="flex items-center gap-2.5 border rounded-2xl p-3.5 transition-all hover:shadow-md text-left" style={{ background: COLORS.accent + '10', borderColor: COLORS.accent }}>
-                <MessageSquare className="w-4 h-4 flex-shrink-0" style={{ color: COLORS.accent }} />
+              <button onClick={openWA} className="flex items-center gap-2.5 bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5 transition-all hover:shadow-md text-left">
+                <MessageSquare className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                 <div>
-                  <p className="text-[10px] font-semibold" style={{ color: COLORS.accent }}>WhatsApp</p>
-                  <p className="text-xs font-bold" style={{ color: COLORS.accent }}>Scrivici subito</p>
+                  <p className="text-[10px] text-emerald-500 font-semibold">WhatsApp</p>
+                  <p className="text-xs font-bold text-emerald-700">Scrivici subito</p>
                 </div>
               </button>
             </div>
@@ -1295,12 +1276,12 @@ export default function BookingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-12">
             <div>
-              <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: COLORS.primary }}>Galleria</p>
+              <p className="text-sky-500 font-bold text-sm tracking-widest uppercase mb-3">Galleria</p>
               <h2 className="fd text-4xl sm:text-5xl font-bold text-slate-900">
                 {galTab === 'lavori' ? 'I nostri lavori' : 'Il salone'}
               </h2>
             </div>
-            <div className="flex rounded-2xl p-1 gap-1 self-start sm:self-auto" style={{ background: COLORS.primary + '10' }}>
+            <div className="flex bg-slate-200 rounded-2xl p-1 gap-1 self-start sm:self-auto">
               {[
                 { id: 'lavori', icon: Camera, label: 'I nostri lavori' },
                 { id: 'salone', icon: Store, label: 'Il salone' }
@@ -1308,10 +1289,7 @@ export default function BookingPage() {
                 <button
                   key={t.id}
                   onClick={() => setGalTab(t.id)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                    galTab === t.id ? 'text-white' : 'text-gray-500 hover:bg-white/50'
-                  }`}
-                  style={galTab === t.id ? { background: COLORS.primary } : {}}
+                  className={`gt flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold ${galTab === t.id ? 'act' : ' text-slate-500'}`}
                 >
                   <t.icon className="w-4 h-4" />{t.label}
                 </button>
@@ -1325,7 +1303,7 @@ export default function BookingPage() {
                 const url = iUrl(item) || WORK_PH[i % WORK_PH.length];
                 const heights = ['h-48', 'h-64', 'h-56', 'h-72', 'h-52', 'h-60', 'h-44', 'h-68', 'h-56', 'h-48', 'h-64', 'h-60'];
                 return (
-                  <div key={item.id || i} className={`gi ${heights[i % heights.length]} break-inside-avoid shadow-md`} style={{ border: `2px solid ${COLORS.primary}20` }}>
+                  <div key={item.id || i} className={`gi ${heights[i % heights.length]} break-inside-avoid shadow-md`}>
                     {item.file_type === 'video' ? (
                       <video 
                         src={url} 
@@ -1353,7 +1331,7 @@ export default function BookingPage() {
                   <div 
                     key={item.id || i} 
                     className={`gi shadow-md ${i === 0 ? 'sm:col-span-2' : ''}`} 
-                    style={{ height: i === 0 ? '380px' : '220px', border: `2px solid ${COLORS.primary}20` }}
+                    style={{ height: i === 0 ? '380px' : '220px' }}
                   >
                     <img src={url} alt={item.label || `Salone ${i + 1}`} />
                   </div>
@@ -1368,10 +1346,10 @@ export default function BookingPage() {
       <section id="recensioni" className="py-20 sm:py-28">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-14">
-            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: COLORS.primary }}>Recensioni</p>
+            <p className="text-sky-500 font-bold text-sm tracking-widest uppercase mb-3">Recensioni</p>
             <h2 className="fd text-4xl sm:text-5xl font-bold text-slate-900 mb-3">Cosa dicono di noi</h2>
             <div className="flex justify-center gap-0.5 mt-3">
-              {[...Array(5)].map((_, i) => <Star key={i} className="w-5 h-5 fill-current" style={{ color: COLORS.accent }} />)}
+              {[...Array(5)].map((_, i) => <Star key={i} className="w-5 h-5 fill-amber-400 text-amber-400" />)}
               <span className="text-slate-400 text-sm font-semibold ml-2 self-center">5.0 · Clienti verificate</span>
             </div>
           </div>
@@ -1380,14 +1358,13 @@ export default function BookingPage() {
               <div key={rev.id || i} className="rc bg-white border border-slate-200 rounded-2xl p-6">
                 <div className="flex gap-0.5 mb-4">
                   {[...Array(rev.rating || 5)].map((_, j) => (
-                    <Star key={j} className="w-4 h-4 fill-current" style={{ color: COLORS.accent }} />
+                    <Star key={j} className="w-4 h-4 fill-amber-400 text-amber-400" />
                   ))}
                 </div>
                 <p className="text-slate-600 leading-relaxed mb-5 text-sm italic">"{rev.text}"</p>
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-white font-black text-sm"
-                       style={{ background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})` }}>
-                    {(rev.name || 'A')[0]}
+                  <div className="w-9 h-9 bg-gradient-to-br from-sky-400 to-sky-600 rounded-full flex items-center justify-center">
+                    <span className="text-white font-black text-sm">{(rev.name || 'A')[0]}</span>
                   </div>
                   <div>
                     <p className="font-bold text-slate-700 text-sm">{rev.name}</p>
@@ -1401,49 +1378,55 @@ export default function BookingPage() {
       </section>
 
       {/* CONTATTI */}
-      <section id="contatti" className="py-20 sm:py-28" style={{ background: COLORS.text }}>
+      <section id="contatti" className="py-20 sm:py-28 bg-slate-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-20 items-start">
             <div>
-              <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: COLORS.primary }}>Dove siamo</p>
+              <p className="text-sky-400 font-bold text-sm tracking-widest uppercase mb-3">Dove siamo</p>
               <h2 className="fd text-4xl sm:text-5xl font-bold text-white mb-10">Vieni a trovarci</h2>
               <div className="space-y-6">
                 {[
                   {
                     icon: MapPin,
+                    color: 'text-sky-400',
+                    bg: 'bg-sky-500/15',
                     href: `https://maps.google.com/?q=${encodeURIComponent(cfg.address || 'Via Vito Nicola Melorio 101 Santa Maria Capua Vetere')}`,
                     title: cfg.address || 'Via Vito Nicola Melorio 101',
                     sub: cfg.city || 'Santa Maria Capua Vetere (CE)'
                   },
                   {
                     icon: Phone,
+                    color: 'text-emerald-400',
+                    bg: 'bg-emerald-500/15',
                     href: 'tel:08231878320',
                     title: '0823 18 78 320',
                     sub: '339 78 33 526'
                   },
                   {
                     icon: Mail,
+                    color: 'text-amber-400',
+                    bg: 'bg-amber-500/15',
                     href: `mailto:${cfg.email || 'melitobruno@gmail.com'}`,
                     title: cfg.email || 'melitobruno@gmail.com',
                     sub: null
                   },
                   {
                     icon: Clock,
+                    color: 'text-violet-400',
+                    bg: 'bg-violet-500/15',
                     href: null,
                     title: 'Mar – Sab: 08:00 – 19:00',
                     sub: 'Dom – Lun: Chiuso'
                   },
                 ].map((item, i) => {
-                  const colors = [COLORS.primary, COLORS.accent, '#FFD700', '#9B59B6'];
                   const Inner = (
                     <div className="flex items-start gap-4 group cursor-pointer">
-                      <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110"
-                           style={{ background: colors[i % 4] + '20' }}>
-                        <item.icon className="w-5 h-5" style={{ color: colors[i % 4] }} />
+                      <div className={`w-11 h-11 ${item.bg} rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110`}>
+                        <item.icon className={`w-5 h-5 ${item.color}`} />
                       </div>
                       <div>
-                        <p className="text-white font-bold group-hover:opacity-80 transition-colors">{item.title}</p>
-                        {item.sub && <p className="text-sm mt-0.5" style={{ color: '#CBD5E1' }}>{item.sub}</p>}
+                        <p className="text-white font-bold group-hover:text-sky-300 transition-colors">{item.title}</p>
+                        {item.sub && <p className="text-slate-400 text-sm mt-0.5">{item.sub}</p>}
                       </div>
                     </div>
                   );
@@ -1477,12 +1460,11 @@ export default function BookingPage() {
               <div className="space-y-3">
                 <button 
                   onClick={() => bookRef.current?.scrollIntoView({ behavior: 'smooth' })} 
-                  className="w-full py-4 text-base font-black rounded-xl transition-all hover:opacity-90"
-                  style={{ background: COLORS.primary, color: 'white' }}
+                  className="bp w-full py-4 text-base"
                 >
                   <Scissors className="w-5 h-5" />Prenota online
                 </button>
-                <button onClick={openWA} className="w-full py-4 text-base font-black rounded-xl transition-all hover:opacity-90" style={{ background: COLORS.accent, color: 'white' }}>
+                <button onClick={openWA} className="bw w-full py-4 text-base">
                   <MessageSquare className="w-5 h-5" />Scrivici su WhatsApp
                 </button>
                 <a href="tel:08231878320" className="w-full border-2 border-white/20 hover:border-white/40 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 text-base hover:bg-white/5">
@@ -1531,8 +1513,7 @@ export default function BookingPage() {
       <div className="fixed bottom-0 left-0 right-0 p-3 bg-white/96 backdrop-blur-md border-t border-slate-200 sm:hidden z-50">
         <button 
           onClick={() => bookRef.current?.scrollIntoView({ behavior: 'smooth' })} 
-          className="w-full py-4 text-base font-black rounded-xl transition-all hover:opacity-90"
-          style={{ background: COLORS.primary, color: 'white' }}
+          className="bp w-full py-4 text-base"
         >
           <Scissors className="w-5 h-5" />Prenota ora
         </button>

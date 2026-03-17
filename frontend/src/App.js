@@ -30,6 +30,7 @@ import WebsiteAdminPage from "./pages/WebsiteAdminPage";
 import ExpensesPage from "./pages/ExpensesPage";
 import PromotionsPage from "./pages/PromotionsPage";
 import LoginPage from "./pages/LoginPage";
+import BookingPage from "./pages/BookingPage";
 
 // Offline indicator component
 function OfflineIndicator() {
@@ -205,8 +206,8 @@ export default function App() {
             }
           />
 
-          {/* PRENOTAZIONE ONLINE - Redirect alla home */}
-          <Route path="/prenota" element={<Navigate to="/" replace />} />
+          {/* PRENOTAZIONE ONLINE */}
+          <Route path="/prenota" element={<BookingPage />} />
 
           {/* PROGRAMMA FEDELTÀ */}
           <Route
