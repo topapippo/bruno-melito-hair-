@@ -101,12 +101,21 @@ const getGStyles = (COLORS, fontDisplay = 'Cormorant Garamond', fontBody = 'Nuni
   body, .pb { font-family: '${fontBody}', sans-serif; }
 
   @keyframes float {
-    0%, 100% { transform: translateY(0) rotate(0deg); }
-    50% { transform: translateY(-20px) rotate(2deg); }
+    0%, 100% { transform: translateY(0) scale(1); opacity: 0.92; }
+    50% { transform: translateY(-10px) scale(1.02); opacity: 1; }
   }
   
   .animate-float {
-    animation: float 6s ease-in-out infinite;
+    animation: float 8s ease-in-out infinite;
+  }
+
+  @keyframes logo-shine {
+    0% { transform: scale(1) rotate(0deg); }
+    50% { transform: scale(1.06) rotate(1.5deg); }
+    100% { transform: scale(1) rotate(0deg); }
+  }
+  .animate-logo {
+    animation: logo-shine 4s ease-in-out infinite;
   }
 
   .hl { transition: transform .3s cubic-bezier(.34,1.56,.64,1), box-shadow .3s ease; }
@@ -793,7 +802,7 @@ export default function BookingPage() {
             <img 
               src="/logo.png?v=4" 
               alt="Bruno Melito Hair" 
-              className="w-12 h-12 rounded-xl object-cover animate-pulse shadow-lg hover:scale-110 transition-transform duration-300"
+              className="w-12 h-12 rounded-xl object-cover animate-logo shadow-lg hover:scale-110 transition-transform duration-300"
             />
             <div className="hidden sm:block">
               <p className="fd text-xl font-bold bg-gradient-to-r from-sky-600 to-sky-400 bg-clip-text text-transparent leading-tight">
@@ -831,6 +840,13 @@ export default function BookingPage() {
             </button>
           </div>
           <div className="flex items-center gap-2">
+            <button 
+              onClick={goToAdminLogin}
+              className="md:hidden p-2 rounded-xl hover:bg-slate-100 transition-colors"
+              data-testid="mobile-admin-btn"
+            >
+              <LogIn className="w-5 h-5 text-slate-500" />
+            </button>
             <button 
               onClick={() => setManageOpen(true)} 
               className="md:hidden p-2 rounded-xl hover:bg-slate-100 transition-colors"
