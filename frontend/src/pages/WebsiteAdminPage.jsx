@@ -453,6 +453,114 @@ export default function WebsiteAdminPage() {
             </Card>
           </TabsContent>
 
+          {/* DESIGN & STYLE */}
+          <TabsContent value="design">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader><CardTitle>Colori del Sito</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Colore Primario</Label>
+                    <div className="flex gap-3 items-center mt-1">
+                      <input type="color" value={config.primary_color || '#FF3366'} onChange={e => updateField('primary_color', e.target.value)} className="w-12 h-10 rounded cursor-pointer border" data-testid="primary-color-input" />
+                      <Input value={config.primary_color || '#FF3366'} onChange={e => updateField('primary_color', e.target.value)} placeholder="#FF3366" className="flex-1 font-mono" />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">Usato per pulsanti, link e elementi principali</p>
+                  </div>
+                  <div>
+                    <Label>Colore Accento</Label>
+                    <div className="flex gap-3 items-center mt-1">
+                      <input type="color" value={config.accent_color || '#33CC99'} onChange={e => updateField('accent_color', e.target.value)} className="w-12 h-10 rounded cursor-pointer border" data-testid="accent-color-input" />
+                      <Input value={config.accent_color || '#33CC99'} onChange={e => updateField('accent_color', e.target.value)} placeholder="#33CC99" className="flex-1 font-mono" />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">Usato per badge, prezzi e elementi secondari</p>
+                  </div>
+                  <div>
+                    <Label>Colore Sfondo</Label>
+                    <div className="flex gap-3 items-center mt-1">
+                      <input type="color" value={config.bg_color || '#F0F4FF'} onChange={e => updateField('bg_color', e.target.value)} className="w-12 h-10 rounded cursor-pointer border" data-testid="bg-color-input" />
+                      <Input value={config.bg_color || '#F0F4FF'} onChange={e => updateField('bg_color', e.target.value)} placeholder="#F0F4FF" className="flex-1 font-mono" />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">Sfondo delle sezioni alternate</p>
+                  </div>
+                  <div>
+                    <Label>Colore Testo</Label>
+                    <div className="flex gap-3 items-center mt-1">
+                      <input type="color" value={config.text_color || '#2D3047'} onChange={e => updateField('text_color', e.target.value)} className="w-12 h-10 rounded cursor-pointer border" data-testid="text-color-input" />
+                      <Input value={config.text_color || '#2D3047'} onChange={e => updateField('text_color', e.target.value)} placeholder="#2D3047" className="flex-1 font-mono" />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">Colore principale del testo</p>
+                  </div>
+                  {/* Preview */}
+                  <div className="border rounded-xl p-4 mt-4" data-testid="color-preview">
+                    <Label className="mb-3 block">Anteprima Colori</Label>
+                    <div className="flex gap-3 flex-wrap">
+                      <div className="text-center">
+                        <div className="w-16 h-16 rounded-xl border shadow-sm" style={{ background: config.primary_color || '#FF3366' }} />
+                        <span className="text-xs text-gray-500 mt-1 block">Primario</span>
+                      </div>
+                      <div className="text-center">
+                        <div className="w-16 h-16 rounded-xl border shadow-sm" style={{ background: config.accent_color || '#33CC99' }} />
+                        <span className="text-xs text-gray-500 mt-1 block">Accento</span>
+                      </div>
+                      <div className="text-center">
+                        <div className="w-16 h-16 rounded-xl border shadow-sm" style={{ background: config.bg_color || '#F0F4FF' }} />
+                        <span className="text-xs text-gray-500 mt-1 block">Sfondo</span>
+                      </div>
+                      <div className="text-center">
+                        <div className="w-16 h-16 rounded-xl border shadow-sm" style={{ background: config.text_color || '#2D3047' }} />
+                        <span className="text-xs text-gray-500 mt-1 block">Testo</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader><CardTitle>Font del Sito</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Font Titoli</Label>
+                    <select value={config.font_display || 'Cormorant Garamond'} onChange={e => updateField('font_display', e.target.value)} className="w-full mt-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm" data-testid="font-display-select">
+                      <option value="Cormorant Garamond">Cormorant Garamond (Elegante)</option>
+                      <option value="Playfair Display">Playfair Display (Classico)</option>
+                      <option value="Lora">Lora (Raffinato)</option>
+                      <option value="Merriweather">Merriweather (Leggibile)</option>
+                      <option value="DM Serif Display">DM Serif Display (Moderno)</option>
+                      <option value="Libre Baskerville">Libre Baskerville (Tradizionale)</option>
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">Usato per titoli e intestazioni</p>
+                  </div>
+                  <div>
+                    <Label>Font Corpo</Label>
+                    <select value={config.font_body || 'Nunito'} onChange={e => updateField('font_body', e.target.value)} className="w-full mt-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm" data-testid="font-body-select">
+                      <option value="Nunito">Nunito (Morbido)</option>
+                      <option value="Open Sans">Open Sans (Pulito)</option>
+                      <option value="Lato">Lato (Moderno)</option>
+                      <option value="Poppins">Poppins (Geometrico)</option>
+                      <option value="Source Sans 3">Source Sans 3 (Professionale)</option>
+                      <option value="Raleway">Raleway (Elegante)</option>
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">Usato per paragrafi e testo generale</p>
+                  </div>
+                  {/* Font Preview */}
+                  <div className="border rounded-xl p-4 mt-4" data-testid="font-preview">
+                    <Label className="mb-3 block">Anteprima Font</Label>
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-xs text-gray-400 mb-1">Font Titoli:</p>
+                        <p className="text-2xl font-bold" style={{ fontFamily: `'${config.font_display || 'Cormorant Garamond'}', serif` }}>Bruno Melito Hair</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400 mb-1">Font Corpo:</p>
+                        <p className="text-base" style={{ fontFamily: `'${config.font_body || 'Nunito'}', sans-serif` }}>Scopri l'eccellenza dell'hair styling al Bruno Melito Hair.</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
           {/* HOURS & CONTACTS */}
           <TabsContent value="hours">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

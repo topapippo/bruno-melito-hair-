@@ -131,7 +131,13 @@ DEFAULT_WEBSITE_CONFIG = {
         {"title": "Modellanti", "desc": "", "items": [{"name": "Permanente / Ondulazione / Anticrespo / Stiratura Classica", "price": "Da 40"}]}
     ],
     "gallery_title": "Tendenze P/E 2026",
-    "gallery_subtitle": "Lasciati ispirare dalle ultime tendenze Primavera Estate 2026."
+    "gallery_subtitle": "Lasciati ispirare dalle ultime tendenze Primavera Estate 2026.",
+    "primary_color": "#FF3366",
+    "accent_color": "#33CC99",
+    "bg_color": "#F0F4FF",
+    "text_color": "#2D3047",
+    "font_display": "Cormorant Garamond",
+    "font_body": "Nunito"
 }
 
 

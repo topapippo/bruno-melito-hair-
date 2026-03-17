@@ -14,8 +14,8 @@ import {
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
-// 🎨 COLORI PERSONALIZZATI
-const COLORS = {
+// Default colors (overridden by CMS config)
+const DEFAULT_COLORS = {
   primary: "#FF3366",
   accent: "#33CC99",
   bg: "#F0F4FF",
@@ -91,14 +91,14 @@ const SALON_PH = [
   'https://images.unsplash.com/photo-1633681926022-84c23e8cb2d6?w=700&q=80',
 ];
 
-const GStyles = `
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;0,800;1,600;1,700&family=Nunito:wght@300;400;500;600;700;800;900&display=swap');
+const getGStyles = (COLORS, fontDisplay = 'Cormorant Garamond', fontBody = 'Nunito') => `
+  @import url('https://fonts.googleapis.com/css2?family=${fontDisplay.replace(/ /g, '+')}:ital,wght@0,600;0,700;0,800;1,600;1,700&family=${fontBody.replace(/ /g, '+')}:wght@300;400;500;600;700;800;900&display=swap');
   
   * { box-sizing: border-box; } 
   html { scroll-behavior: smooth; }
   
-  .fd { font-family: 'Cormorant Garamond', serif; }
-  body, .pb { font-family: 'Nunito', sans-serif; }
+  .fd { font-family: '${fontDisplay}', serif; }
+  body, .pb { font-family: '${fontBody}', sans-serif; }
 
   @keyframes float {
     0%, 100% { transform: translateY(0) rotate(0deg); }
@@ -336,6 +336,15 @@ export default function BookingPage() {
   };
 
   const cfg = siteData?.config || {};
+  const COLORS = {
+    primary: cfg.primary_color || DEFAULT_COLORS.primary,
+    accent: cfg.accent_color || DEFAULT_COLORS.accent,
+    bg: cfg.bg_color || DEFAULT_COLORS.bg,
+    text: cfg.text_color || DEFAULT_COLORS.text
+  };
+  const fontDisplay = cfg.font_display || 'Cormorant Garamond';
+  const fontBody = cfg.font_body || 'Nunito';
+  const GStyles = getGStyles(COLORS, fontDisplay, fontBody);
   const gallery = siteData?.gallery || [];
   const reviews = (siteData?.reviews?.length > 0) ? siteData.reviews : DEFAULT_REVIEWS;
 
