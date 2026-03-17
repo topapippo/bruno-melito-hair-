@@ -30,7 +30,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 const navItems = [
-  { path: '/', label: 'Planning', icon: Calendar },
+  { path: '/planning', label: 'Planning', icon: Calendar },
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/appointments', label: 'Agenda', icon: CalendarDays },
   { path: '/week', label: 'Settimana', icon: CalendarRange },
