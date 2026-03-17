@@ -7,6 +7,7 @@ Sistema gestionale completo per salone di parrucchiere "Bruno Melito Hair" a San
 - **Sito Web Pubblico:** https://design-stile-fix.preview.emergentagent.com/
 - **Gestionale (Area Riservata):** https://design-stile-fix.preview.emergentagent.com/login
 - **Credenziali Admin:** admin@brunomelito.it / Admin123!
+- **Credenziali Produzione (Render):** melitobruno@gmail.com / mbhs637104
 
 ## Architettura
 - **Frontend:** React + Tailwind CSS + Shadcn UI
@@ -18,24 +19,25 @@ Sistema gestionale completo per salone di parrucchiere "Bruno Melito Hair" a San
 - `/` → Sito Web Pubblico (WebsitePage)
 - `/login` → Pagina Login Admin
 - `/planning` → Planning giornaliero (dopo login)
+- `/gestione-sito` → Admin CMS Sito Web
 - `/sito` → Redirect a `/`
 - `/prenota` → Redirect a `/`
 - `/reminders` → Promemoria & Richiami WhatsApp
 
-## Funzionalità Implementate
+## Funzionalita Implementate
 
 ### Sito Web Pubblico (/)
 - Landing page professionale con logo grande e animazioni
-- Sezione servizi con listino prezzi espandibile e **servizi cliccabili** (aprono prenotazione)
+- Sezione servizi con listino prezzi espandibile e servizi cliccabili
 - Gallery salone e lavori con hover animations
 - Recensioni clienti (tema chiaro)
-- Programma fedeltà con card animate
-- **Promozioni attive cliccabili** (prenotazione con promo pre-applicata)
+- Programma fedelta con card animate
+- Promozioni attive cliccabili
 - Contatti e social links (Instagram, Facebook, YouTube)
 - Sistema prenotazione online integrato (3 step)
 - Gestione appuntamenti (modifica/cancella)
 - CTA mobile fisso
-- Design coerente light-theme con hover animations
+- Colori e font dinamici da CMS
 
 ### Gestionale (/login → /planning)
 - Planning giornaliero con timeline visiva
@@ -46,16 +48,25 @@ Sistema gestionale completo per salone di parrucchiere "Bruno Melito Hair" a San
 - Gestione Servizi (21 servizi)
 - Operatori
 - Card/Abbonamenti
-- Programma Fedeltà
+- Programma Fedelta
 - Promozioni (7 promozioni)
 - Report Incassi
 - Registro Uscite
 - Statistiche
 - Backup Dati
-- Gestione Sito Web (CMS)
-- **Promemoria WhatsApp automatici** (banner alle 14:00+, invio batch)
+- Gestione Sito Web (CMS) - COMPLETO con tab Design & Stile
+- Promemoria WhatsApp automatici
 - Template messaggi personalizzabili
 - Richiami clienti inattivi
+
+### CMS Gestione Sito (/gestione-sito) - 7 Tab
+1. **Generale** - Nome salone, descrizione, chi siamo, punti di forza
+2. **Colori & Font** - Colore primario, accento, sfondo, testo + Font titoli e corpo con anteprima live
+3. **Servizi** - Categorie servizi con listino pubblico
+4. **Foto Salone** - Upload e gestione foto/video salone
+5. **Gallery Lavori** - Upload e gestione portfolio lavori
+6. **Recensioni** - CRUD recensioni clienti
+7. **Orari & Contatti** - Orari apertura, email, telefoni, WhatsApp, indirizzo
 
 ## Dati nel Database
 - 165 Clienti
@@ -64,59 +75,40 @@ Sistema gestionale completo per salone di parrucchiere "Bruno Melito Hair" a San
 - 4 Foto Gallery
 - 5 Template Messaggi
 
-## Struttura File
-```
-/app/
-├── backend/
-│   ├── server.py
-│   ├── utils.py (format_phone_whatsapp, no Twilio)
-│   ├── routes/
-│   │   ├── auth.py
-│   │   ├── clients.py
-│   │   ├── services.py
-│   │   ├── appointments.py
-│   │   ├── promotions.py
-│   │   ├── public.py (con video range request)
-│   │   ├── reminders.py (WhatsApp, no SMS)
-│   │   ├── notifications.py
-│   │   ├── stats.py
-│   │   └── ...
-│   └── requirements.txt
-├── frontend/
-│   ├── src/
-│   │   ├── pages/
-│   │   │   ├── WebsitePage.jsx (Sito Pubblico + Prenotazioni)
-│   │   │   ├── LoginPage.jsx
-│   │   │   ├── PlanningPage.jsx (con banner promemoria)
-│   │   │   ├── RemindersPage.jsx (WhatsApp promemoria)
-│   │   │   └── ...
-│   │   ├── context/AuthContext.js
-│   │   └── App.js (Routing)
-│   └── public/
-```
+## API Endpoints Chiave
+- POST /api/auth/login
+- GET /api/auth/me
+- GET /api/public/website
+- GET/PUT /api/website/config (autenticato)
+- GET/POST/PUT/DELETE /api/website/reviews
+- GET/POST/DELETE /api/website/gallery
+- POST /api/website/upload
 
 ## Changelog
 
+### 17 Marzo 2026
+- Implementato tab "Colori & Font" in Gestione Sito (WebsiteAdminPage.jsx)
+- Color picker per: colore primario, accento, sfondo, testo
+- Selettori font: 6 opzioni titoli (Cormorant Garamond, Playfair Display, Lora, Merriweather, DM Serif Display, Libre Baskerville) e 6 opzioni corpo (Nunito, Open Sans, Lato, Poppins, Source Sans 3, Raleway)
+- Anteprima colori e font in tempo reale
+- WebsitePage.jsx ora legge colori e font dinamicamente dal CMS (getGStyles function)
+- Aggiunti campi default nel backend: primary_color, accent_color, bg_color, text_color, font_display, font_body
+- 15/15 test passati (backend + frontend)
+
 ### 16 Marzo 2026
 - Fix routing: `/` → sito pubblico, `/login` → login admin
-- `/sito` e `/prenota` redirect a `/`, dopo login redirect a `/planning`
-- Logo più grande e prominente nell'hero
-- Overlay più scuro per leggibilità
-- Animazioni hover su tutti gli elementi interattivi
-- Fix colori recensioni (da tema scuro a chiaro)
-- Fix colori About features
-- Rimosso link social "Sito Web" a preview URL
-- Footer: link aggiornati con onClick
-- **Servizi cliccabili** sulla landing page → aprono booking con servizio pre-selezionato
-- **Promozioni cliccabili** → aprono booking con promo pre-applicata
-- **Rimosso Twilio SMS** (non serve)
-- Aggiunto `format_phone_whatsapp()` in utils.py
-- Aggiunto endpoint `/api/whatsapp/generate-link`
-- Merge video range request da MBHS per riproduzione video HTML5
-- Aggiunta animazione fade-in CSS
+- Logo piu grande e prominente nell'hero
+- Servizi cliccabili sulla landing page
+- Promozioni cliccabili
+- Rimosso Twilio SMS
+- Aggiunto format_phone_whatsapp() in utils.py
+- Merge video range request
 
 ## Backlog
-- [ ] Refactoring WebsitePage.jsx in componenti più piccoli (attualmente ~870 righe)
+- [ ] Verifica utente: dati clienti (telefoni, card) visibili dopo login produzione
+- [ ] Refactoring WebsitePage.jsx in componenti piu piccoli (1500+ righe)
+- [ ] Refactoring WebsiteAdminPage.jsx (600+ righe)
 - [ ] Ottimizzazione performance e SEO
 - [ ] Configurare dominio brunomelitohair.it su Render
 - [ ] Aggiungere numeri telefono ai clienti mancanti per promemoria WhatsApp
+- [ ] Pulizia repository GitHub vecchi
