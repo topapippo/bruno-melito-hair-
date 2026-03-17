@@ -163,6 +163,34 @@ async def get_public_operators():
     return await db.operators.find({"user_id": user["id"]}, {"_id": 0, "user_id": 0}).to_list(50)
 
 
+@router.get("/public/busy-slots")
+async def get_busy_slots(date: str):
+    user = await db.users.find_one({"email": "melitobruno@gmail.com"}, {"_id": 0, "id": 1})
+    if not user:
+        user = await db.users.find_one({}, {"_id": 0, "id": 1})
+    if not user:
+        return {"busy": {}, "operators": []}
+    user_id = user["id"]
+    appointments = await db.appointments.find(
+        {"user_id": user_id, "date": date, "status": {"$ne": "cancelled"}},
+        {"_id": 0, "time": 1, "end_time": 1, "operator_id": 1, "operator_name": 1, "total_duration": 1}
+    ).to_list(200)
+    operators = await db.operators.find(
+        {"user_id": user_id, "active": True}, {"_id": 0, "id": 1, "name": 1}
+    ).to_list(50)
+    busy = {}
+    for apt in appointments:
+        t = apt.get("time", "")
+        if t not in busy:
+            busy[t] = []
+        busy[t].append({
+            "operator_id": apt.get("operator_id"),
+            "operator_name": apt.get("operator_name"),
+            "duration": apt.get("total_duration", 30)
+        })
+    return {"busy": busy, "operators": [{"id": o["id"], "name": o["name"]} for o in operators]}
+
+
 @router.post("/public/booking")
 async def create_public_booking(data: PublicBookingRequest):
     user = await db.users.find_one({"email": "melitobruno@gmail.com"}, {"_id": 0})

@@ -314,8 +314,21 @@ export default function BookingPage() {
   const [alternativeSlots, setAlternativeSlots] = useState([]);
   const [availableOperators, setAvailableOperators] = useState([]);
   const [previewOverrides, setPreviewOverrides] = useState(null);
+  const [busySlots, setBusySlots] = useState({});
 
   const bookRef = useRef(null);
+
+  // Fetch busy slots when date changes
+  const fetchBusySlots = useCallback(async (date) => {
+    try {
+      const res = await axios.get(`${API}/public/busy-slots?date=${date}`);
+      setBusySlots(res.data.busy || {});
+    } catch { setBusySlots({}); }
+  }, []);
+
+  useEffect(() => {
+    if (form.date) fetchBusySlots(form.date);
+  }, [form.date, fetchBusySlots]);
 
   // Listen for live preview messages from admin panel
   useEffect(() => {
@@ -387,6 +400,22 @@ export default function BookingPage() {
   const selSvcs = services.filter(s => selIds.includes(s.id));
   const totPrice = selSvcs.reduce((s, v) => s + (v.price || 0), 0);
   const totDur = selSvcs.reduce((s, v) => s + (v.duration || 0), 0);
+
+  // Check if a time slot is busy for selected operator or all operators
+  const getSlotStatus = (time) => {
+    const busy = busySlots[time];
+    if (!busy || busy.length === 0) return 'free';
+    if (!form.operator_id) {
+      // No operator selected: check if ALL operators are busy
+      const busyOpIds = busy.map(b => b.operator_id).filter(Boolean);
+      const allOps = operators.map(o => o.id);
+      if (allOps.length > 0 && allOps.every(id => busyOpIds.includes(id))) return 'full';
+      return 'partial';
+    }
+    // Specific operator selected
+    if (busy.some(b => b.operator_id === form.operator_id)) return 'busy';
+    return 'free';
+  };
 
   const toggleSvc = (svc) => setSelIds(p => p.includes(svc.id) ? p.filter(i => i !== svc.id) : [...p, svc.id]);
 
@@ -1159,27 +1188,6 @@ export default function BookingPage() {
                       <p className="font-bold mb-1" style={{ color: COLORS.primary }}>{selIds.length} servizi · {totDur} min · €{totPrice}</p>
                       <p className="text-slate-500 text-xs">{selSvcs.map(s => s.name).join(' · ')}</p>
                     </div>
-                    <div>
-                      <label className="text-xs font-bold text-slate-500 mb-1.5 block">📅 Data</label>
-                      <Input 
-                        type="date" 
-                        value={form.date} 
-                        min={format(new Date(), 'yyyy-MM-dd')} 
-                        onChange={e => setForm({ ...form, date: e.target.value })} 
-                        className="border-slate-200 text-slate-800 font-semibold"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-bold text-slate-500 mb-1.5 block">🕐 Ora</label>
-                      <select 
-                        value={form.time} 
-                        onChange={e => setForm({ ...form, time: e.target.value })} 
-                        className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-800 font-semibold bg-white focus:outline-none focus:ring-2"
-                        style={{ focus: { ringColor: COLORS.primary + '40', borderColor: COLORS.primary } }}
-                      >
-                        {getSlots(form.date).map(t => <option key={t} value={t}>{t}</option>)}
-                      </select>
-                    </div>
                     {operators.length > 0 && (
                       <div>
                         <label className="text-xs font-bold text-slate-500 mb-1.5 block">
@@ -1189,13 +1197,67 @@ export default function BookingPage() {
                           value={form.operator_id} 
                           onChange={e => setForm({ ...form, operator_id: e.target.value })} 
                           className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white focus:outline-none focus:ring-2"
-                          style={{ focus: { ringColor: COLORS.primary + '40', borderColor: COLORS.primary } }}
+                          data-testid="operator-select"
                         >
                           <option value="">Nessuna preferenza</option>
                           {operators.map(op => <option key={op.id} value={op.id}>{op.name}</option>)}
                         </select>
                       </div>
                     )}
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 mb-1.5 block">📅 Data</label>
+                      <Input 
+                        type="date" 
+                        value={form.date} 
+                        min={format(new Date(), 'yyyy-MM-dd')} 
+                        onChange={e => setForm({ ...form, date: e.target.value })} 
+                        className="border-slate-200 text-slate-800 font-semibold"
+                        data-testid="date-input"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 mb-1.5 block">🕐 Seleziona orario</label>
+                      <div className="grid grid-cols-4 gap-2 max-h-[220px] overflow-y-auto pr-1" data-testid="time-slots-grid">
+                        {getSlots(form.date).map(t => {
+                          const status = getSlotStatus(t);
+                          const isSelected = form.time === t;
+                          const isFull = status === 'full' || status === 'busy';
+                          const isPartial = status === 'partial';
+                          return (
+                            <button
+                              key={t}
+                              onClick={() => {
+                                if (isFull) {
+                                  toast.error(`Orario ${t} occupato. Cambia operatore o scegli un altro orario.`);
+                                  return;
+                                }
+                                setForm({ ...form, time: t });
+                              }}
+                              data-testid={`slot-${t}`}
+                              className={`relative px-2 py-2 rounded-lg text-xs font-bold transition-all border ${
+                                isFull
+                                  ? 'bg-red-50 border-red-200 text-red-300 cursor-not-allowed opacity-60 line-through'
+                                  : isSelected
+                                    ? 'text-white border-transparent shadow-md scale-105'
+                                    : isPartial
+                                      ? 'bg-amber-50 border-amber-200 text-amber-700 hover:border-amber-400'
+                                      : 'bg-white border-slate-200 text-slate-700 hover:border-slate-400'
+                              }`}
+                              style={isSelected && !isFull ? { background: COLORS.primary, borderColor: COLORS.primary } : {}}
+                            >
+                              {t}
+                              {isFull && <span className="block text-[9px] font-semibold no-underline" style={{ textDecoration: 'none' }}>Occupato</span>}
+                              {isPartial && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-400" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <div className="flex items-center gap-4 mt-2 text-[10px] text-slate-400">
+                        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-red-100 border border-red-200" /> Occupato</span>
+                        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-amber-50 border border-amber-200" /> Parziale</span>
+                        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-white border border-slate-200" /> Libero</span>
+                      </div>
+                    </div>
                     <div className="flex gap-3 pt-2">
                       <button onClick={() => setStep(1)} className="flex-1 border-2 border-slate-200 text-slate-500 font-bold py-3.5 rounded-xl hover:bg-slate-50 transition-all">
                         ← Indietro
