@@ -232,6 +232,7 @@ export default function WebsiteAdminPage() {
         <Tabs defaultValue="general" className="space-y-4">
           <TabsList className="bg-white border shadow-sm flex-wrap h-auto gap-1 p-1">
             <TabsTrigger value="general" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Generale</TabsTrigger>
+            <TabsTrigger value="design" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Colori & Font</TabsTrigger>
             <TabsTrigger value="services" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Servizi</TabsTrigger>
             <TabsTrigger value="photos" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Foto Salone</TabsTrigger>
             <TabsTrigger value="gallery" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Gallery Lavori</TabsTrigger>

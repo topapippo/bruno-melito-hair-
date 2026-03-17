@@ -4,7 +4,7 @@
 import requests
 import sys
 
-API_URL = "https://melito-public-site.preview.emergentagent.com/api"
+API_URL = "https://design-stile-fix.preview.emergentagent.com/api"
 
 # Services to import from Trattamenti.xml
 SERVICES = [

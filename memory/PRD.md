@@ -4,8 +4,8 @@
 Sistema gestionale completo per salone di parrucchiere "Bruno Melito Hair" a Santa Maria Capua Vetere.
 
 ## URL dell'Applicazione
-- **Sito Web Pubblico:** https://melito-public-site.preview.emergentagent.com/
-- **Gestionale (Area Riservata):** https://melito-public-site.preview.emergentagent.com/login
+- **Sito Web Pubblico:** https://design-stile-fix.preview.emergentagent.com/
+- **Gestionale (Area Riservata):** https://design-stile-fix.preview.emergentagent.com/login
 - **Credenziali Admin:** admin@brunomelito.it / Admin123!
 
 ## Architettura

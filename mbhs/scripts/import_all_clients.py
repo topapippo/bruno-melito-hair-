@@ -3,7 +3,7 @@
 
 import requests
 
-API_URL = "https://melito-public-site.preview.emergentagent.com/api"
+API_URL = "https://design-stile-fix.preview.emergentagent.com/api"
 
 # All clients with notes from Memo.xlsx
 CLIENTS = [
