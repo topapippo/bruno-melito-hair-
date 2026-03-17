@@ -41,14 +41,16 @@ export default function WebsiteAdminPage() {
         bg_color: config.bg_color,
         text_color: config.text_color,
         font_display: config.font_display,
-        font_body: config.font_body
+        font_body: config.font_body,
+        font_size: config.font_size,
+        title_size: config.title_size
       }
     }, '*');
   }, [config]);
 
   useEffect(() => {
     if (previewOpen) sendPreview();
-  }, [config?.primary_color, config?.accent_color, config?.bg_color, config?.text_color, config?.font_display, config?.font_body, previewOpen, sendPreview]);
+  }, [config?.primary_color, config?.accent_color, config?.bg_color, config?.text_color, config?.font_display, config?.font_body, config?.font_size, config?.title_size, previewOpen, sendPreview]);
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -581,17 +583,55 @@ export default function WebsiteAdminPage() {
                     </select>
                     <p className="text-xs text-gray-500 mt-1">Usato per paragrafi e testo generale</p>
                   </div>
+                  <div>
+                    <Label>Dimensione Testo</Label>
+                    <div className="flex items-center gap-3 mt-1">
+                      <input 
+                        type="range" 
+                        min="12" max="22" step="1"
+                        value={config.font_size || '16'} 
+                        onChange={e => updateField('font_size', e.target.value)}
+                        className="flex-1 accent-[#C8617A]"
+                        data-testid="font-size-range"
+                      />
+                      <span className="text-sm font-bold text-gray-700 w-12 text-center">{config.font_size || '16'}px</span>
+                    </div>
+                    <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+                      <span>Piccolo</span>
+                      <span>Normale</span>
+                      <span>Grande</span>
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Dimensione Titoli</Label>
+                    <div className="flex items-center gap-3 mt-1">
+                      <input 
+                        type="range" 
+                        min="24" max="80" step="2"
+                        value={config.title_size || '48'} 
+                        onChange={e => updateField('title_size', e.target.value)}
+                        className="flex-1 accent-[#C8617A]"
+                        data-testid="title-size-range"
+                      />
+                      <span className="text-sm font-bold text-gray-700 w-12 text-center">{config.title_size || '48'}px</span>
+                    </div>
+                    <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+                      <span>Piccolo</span>
+                      <span>Normale</span>
+                      <span>Grande</span>
+                    </div>
+                  </div>
                   {/* Font Preview */}
                   <div className="border rounded-xl p-4 mt-4" data-testid="font-preview">
                     <Label className="mb-3 block">Anteprima Font</Label>
                     <div className="space-y-3">
                       <div>
-                        <p className="text-xs text-gray-400 mb-1">Font Titoli:</p>
-                        <p className="text-2xl font-bold" style={{ fontFamily: `'${config.font_display || 'Cormorant Garamond'}', serif` }}>Bruno Melito Hair</p>
+                        <p className="text-xs text-gray-400 mb-1">Font Titoli ({config.title_size || '48'}px):</p>
+                        <p className="font-bold" style={{ fontFamily: `'${config.font_display || 'Cormorant Garamond'}', serif`, fontSize: `${config.title_size || 48}px`, lineHeight: 1.1 }}>Bruno Melito Hair</p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-400 mb-1">Font Corpo:</p>
-                        <p className="text-base" style={{ fontFamily: `'${config.font_body || 'Nunito'}', sans-serif` }}>Scopri l'eccellenza dell'hair styling al Bruno Melito Hair.</p>
+                        <p className="text-xs text-gray-400 mb-1">Font Corpo ({config.font_size || '16'}px):</p>
+                        <p style={{ fontFamily: `'${config.font_body || 'Nunito'}', sans-serif`, fontSize: `${config.font_size || 16}px` }}>Scopri l'eccellenza dell'hair styling al Bruno Melito Hair.</p>
                       </div>
                     </div>
                   </div>

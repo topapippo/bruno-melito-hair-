@@ -1,6 +1,6 @@
 import { Scissors, ChevronRight, ChevronDown, Sparkles } from 'lucide-react';
 
-export function HeroSection({ COLORS, cfg, bookRef }) {
+export function HeroSection({ COLORS, cfg, bookRef, titleSize }) {
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden pt-16">
       <div className="absolute inset-0 flex items-center justify-end pointer-events-none">
@@ -21,7 +21,7 @@ export function HeroSection({ COLORS, cfg, bookRef }) {
           <div className="fu d1 inline-flex items-center gap-2 border text-xs font-bold px-4 py-2 rounded-full mb-6" style={{ background: COLORS.primary + '10', borderColor: COLORS.primary, color: COLORS.primary }}>
             <Sparkles className="w-3.5 h-3.5" />Solo per appuntamento · Santa Maria Capua Vetere
           </div>
-          <h1 className="fu d2 fd text-6xl sm:text-7xl lg:text-8xl font-bold text-slate-900 leading-[1.02] mb-6">
+          <h1 className="fu d2 fd font-bold text-slate-900 leading-[1.02] mb-6" style={{ fontSize: `${titleSize || 48}px` }}>
             La tua<br /><span className="italic" style={{ color: COLORS.primary }}>bellezza</span><br />merita il meglio
           </h1>
           <p className="fu d3 text-lg sm:text-xl text-slate-500 leading-relaxed mb-10 max-w-xl">

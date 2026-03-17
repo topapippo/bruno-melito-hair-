@@ -84,14 +84,14 @@ const SALON_PH = [
   'https://images.unsplash.com/photo-1633681926022-84c23e8cb2d6?w=700&q=80',
 ];
 
-const getGStyles = (COLORS, fontDisplay = 'Cormorant Garamond', fontBody = 'Nunito') => `
+const getGStyles = (COLORS, fontDisplay = 'Cormorant Garamond', fontBody = 'Nunito', fontSize = '16', titleSize = '48') => `
   @import url('https://fonts.googleapis.com/css2?family=${fontDisplay.replace(/ /g, '+')}:ital,wght@0,600;0,700;0,800;1,600;1,700&family=${fontBody.replace(/ /g, '+')}:wght@300;400;500;600;700;800;900&display=swap');
   
   * { box-sizing: border-box; } 
   html { scroll-behavior: smooth; }
   
   .fd { font-family: '${fontDisplay}', serif; }
-  body, .pb { font-family: '${fontBody}', sans-serif; }
+  body, .pb { font-family: '${fontBody}', sans-serif; font-size: ${fontSize}px; }
 
   @keyframes float {
     0%, 100% { transform: translateY(0) scale(1); opacity: 0.92; }
@@ -374,7 +374,9 @@ export default function BookingPage() {
   };
   const fontDisplay = pv?.font_display || cfg.font_display || 'Cormorant Garamond';
   const fontBody = pv?.font_body || cfg.font_body || 'Nunito';
-  const GStyles = getGStyles(COLORS, fontDisplay, fontBody);
+  const fontSize = pv?.font_size || cfg.font_size || '16';
+  const titleSize = pv?.title_size || cfg.title_size || '48';
+  const GStyles = getGStyles(COLORS, fontDisplay, fontBody, fontSize, titleSize);
   const gallery = siteData?.gallery || [];
   const reviews = (siteData?.reviews?.length > 0) ? siteData.reviews : DEFAULT_REVIEWS;
 
@@ -822,11 +824,11 @@ export default function BookingPage() {
 
       <Navbar COLORS={COLORS} bookRef={bookRef} setManageOpen={setManageOpen} goToAdminLogin={goToAdminLogin} />
 
-      <HeroSection COLORS={COLORS} cfg={cfg} bookRef={bookRef} />
+      <HeroSection COLORS={COLORS} cfg={cfg} bookRef={bookRef} titleSize={titleSize} />
 
       <StatsBar COLORS={COLORS} />
 
-      <AboutSection COLORS={COLORS} cfg={cfg} bookRef={bookRef} dispSalon={dispSalon} iUrl={iUrl} SALON_PH={SALON_PH} />
+      <AboutSection COLORS={COLORS} cfg={cfg} bookRef={bookRef} dispSalon={dispSalon} iUrl={iUrl} SALON_PH={SALON_PH} titleSize={titleSize} />
 
       <section ref={bookRef} id="prenota" className="py-20 sm:py-28" style={{ background: COLORS.bg }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6">

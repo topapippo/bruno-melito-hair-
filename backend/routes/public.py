@@ -137,7 +137,9 @@ DEFAULT_WEBSITE_CONFIG = {
     "bg_color": "#F0F4FF",
     "text_color": "#2D3047",
     "font_display": "Cormorant Garamond",
-    "font_body": "Nunito"
+    "font_body": "Nunito",
+    "font_size": "16",
+    "title_size": "48"
 }
 
 

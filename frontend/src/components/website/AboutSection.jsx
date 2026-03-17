@@ -1,6 +1,6 @@
 import { CheckCircle, Scissors } from 'lucide-react';
 
-export function AboutSection({ COLORS, cfg, bookRef, dispSalon, iUrl, SALON_PH }) {
+export function AboutSection({ COLORS, cfg, bookRef, dispSalon, iUrl, SALON_PH, titleSize }) {
   return (
     <section id="chi-siamo" className="py-20 sm:py-28">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -28,7 +28,7 @@ export function AboutSection({ COLORS, cfg, bookRef, dispSalon, iUrl, SALON_PH }
           </div>
           <div>
             <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: COLORS.primary }}>Chi siamo</p>
-            <h2 className="fd text-4xl sm:text-5xl font-bold text-slate-900 mb-6 leading-tight">
+            <h2 className="fd font-bold text-slate-900 mb-6 leading-tight" style={{ fontSize: `${Math.round((titleSize || 48) * 0.75)}px` }}>
               {cfg.about_title || 'Passione per la bellezza'}
             </h2>
             <p className="text-slate-500 leading-relaxed mb-5 text-lg">
