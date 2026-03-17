@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { getMediaUrl } from '../lib/mediaUrl';
 import PageHeader from '../components/PageHeader';
@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Save, Plus, Trash2, Upload, Image, Star, Globe, Eye, Loader2, X, GripVertical } from 'lucide-react';
+import { Save, Plus, Trash2, Upload, Image, Star, Globe, Eye, Loader2, X, GripVertical, PanelRightOpen, PanelRightClose } from 'lucide-react';
 import { toast } from 'sonner';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -25,6 +25,28 @@ export default function WebsiteAdminPage() {
   const [editReview, setEditReview] = useState(null);
   const [reviewForm, setReviewForm] = useState({ name: '', text: '', rating: 5 });
   const [uploadSection, setUploadSection] = useState('gallery');
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const iframeRef = useRef(null);
+
+  // Send design changes to iframe preview
+  const sendPreview = useCallback(() => {
+    if (!iframeRef.current || !config) return;
+    iframeRef.current.contentWindow?.postMessage({
+      type: 'PREVIEW_DESIGN',
+      design: {
+        primary_color: config.primary_color,
+        accent_color: config.accent_color,
+        bg_color: config.bg_color,
+        text_color: config.text_color,
+        font_display: config.font_display,
+        font_body: config.font_body
+      }
+    }, '*');
+  }, [config]);
+
+  useEffect(() => {
+    if (previewOpen) sendPreview();
+  }, [config?.primary_color, config?.accent_color, config?.bg_color, config?.text_color, config?.font_display, config?.font_body, previewOpen, sendPreview]);
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -208,7 +230,8 @@ export default function WebsiteAdminPage() {
   const galleryPhotos = gallery.filter(g => g.section === 'gallery');
 
   return (
-    <div>
+    <div className="flex gap-0 h-full">
+      <div className={`${previewOpen ? 'w-1/2' : 'w-full'} transition-all duration-300 min-w-0`}>
       <div className="space-y-6" data-testid="website-admin-page">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -217,9 +240,18 @@ export default function WebsiteAdminPage() {
             <p className="text-sm text-[#7C5C4A]">Modifica i contenuti della tua pagina web pubblica</p>
           </div>
           <div className="flex gap-2">
-            <a href="/sito" target="_blank" rel="noopener noreferrer">
+            <Button
+              variant="outline"
+              onClick={() => setPreviewOpen(!previewOpen)}
+              className={previewOpen ? "bg-[#C8617A] text-white border-[#C8617A]" : "border-[#C8617A] text-[#C8617A]"}
+              data-testid="toggle-preview-btn"
+            >
+              {previewOpen ? <PanelRightClose className="w-4 h-4 mr-2" /> : <PanelRightOpen className="w-4 h-4 mr-2" />}
+              Anteprima Live
+            </Button>
+            <a href="/" target="_blank" rel="noopener noreferrer">
               <Button variant="outline" className="border-[#C8617A] text-[#C8617A]" data-testid="preview-site-btn">
-                <Eye className="w-4 h-4 mr-2" /> Anteprima Sito
+                <Eye className="w-4 h-4 mr-2" /> Apri Sito
               </Button>
             </a>
             <Button onClick={saveConfig} disabled={saving} className="bg-[#C8617A] hover:bg-[#A0404F] text-white" data-testid="save-config-btn">
@@ -625,6 +657,30 @@ export default function WebsiteAdminPage() {
           </DialogContent>
         </Dialog>
       </div>
+      </div>
+
+      {/* Live Preview Panel */}
+      {previewOpen && (
+        <div className="w-1/2 border-l border-gray-200 flex flex-col bg-gray-50 sticky top-0 h-[calc(100vh-64px)]" data-testid="live-preview-panel">
+          <div className="flex items-center justify-between px-4 py-3 bg-white border-b">
+            <div className="flex items-center gap-2">
+              <Eye className="w-4 h-4 text-[#C8617A]" />
+              <span className="text-sm font-bold text-gray-700">Anteprima Live</span>
+              <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Tempo reale</span>
+            </div>
+            <Button variant="ghost" size="icon" onClick={() => setPreviewOpen(false)} className="h-8 w-8" data-testid="close-preview-btn">
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+          <iframe
+            ref={iframeRef}
+            src="/"
+            className="flex-1 w-full"
+            title="Anteprima sito"
+            onLoad={sendPreview}
+          />
+        </div>
+      )}
     </div>
   );
 }

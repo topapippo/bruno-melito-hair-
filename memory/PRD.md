@@ -89,10 +89,11 @@ Sistema gestionale completo per salone di parrucchiere "Bruno Melito Hair" a San
 ### 17 Marzo 2026
 - Implementato tab "Colori & Font" in Gestione Sito (WebsiteAdminPage.jsx)
 - Color picker per: colore primario, accento, sfondo, testo
-- Selettori font: 6 opzioni titoli (Cormorant Garamond, Playfair Display, Lora, Merriweather, DM Serif Display, Libre Baskerville) e 6 opzioni corpo (Nunito, Open Sans, Lato, Poppins, Source Sans 3, Raleway)
+- Selettori font: 6 opzioni titoli e 6 opzioni corpo
 - Anteprima colori e font in tempo reale
-- WebsitePage.jsx ora legge colori e font dinamicamente dal CMS (getGStyles function)
+- WebsitePage.jsx ora legge colori e font dinamicamente dal CMS
 - Aggiunti campi default nel backend: primary_color, accent_color, bg_color, text_color, font_display, font_body
+- **Anteprima Live**: pannello laterale con iframe del sito pubblico che si aggiorna in tempo reale via postMessage quando si modificano colori e font
 - 15/15 test passati (backend + frontend)
 
 ### 16 Marzo 2026

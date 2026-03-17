@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -304,8 +304,20 @@ export default function BookingPage() {
   const [conflictData, setConflictData] = useState(null);
   const [alternativeSlots, setAlternativeSlots] = useState([]);
   const [availableOperators, setAvailableOperators] = useState([]);
+  const [previewOverrides, setPreviewOverrides] = useState(null);
 
   const bookRef = useRef(null);
+
+  // Listen for live preview messages from admin panel
+  useEffect(() => {
+    const handleMessage = (e) => {
+      if (e.data?.type === 'PREVIEW_DESIGN') {
+        setPreviewOverrides(e.data.design);
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
 
   // ✅ FUNZIONE CORRETTA - Punta al gestionale
   const goToAdminLogin = () => {
@@ -336,14 +348,15 @@ export default function BookingPage() {
   };
 
   const cfg = siteData?.config || {};
+  const pv = previewOverrides;
   const COLORS = {
-    primary: cfg.primary_color || DEFAULT_COLORS.primary,
-    accent: cfg.accent_color || DEFAULT_COLORS.accent,
-    bg: cfg.bg_color || DEFAULT_COLORS.bg,
-    text: cfg.text_color || DEFAULT_COLORS.text
+    primary: pv?.primary_color || cfg.primary_color || DEFAULT_COLORS.primary,
+    accent: pv?.accent_color || cfg.accent_color || DEFAULT_COLORS.accent,
+    bg: pv?.bg_color || cfg.bg_color || DEFAULT_COLORS.bg,
+    text: pv?.text_color || cfg.text_color || DEFAULT_COLORS.text
   };
-  const fontDisplay = cfg.font_display || 'Cormorant Garamond';
-  const fontBody = cfg.font_body || 'Nunito';
+  const fontDisplay = pv?.font_display || cfg.font_display || 'Cormorant Garamond';
+  const fontBody = pv?.font_body || cfg.font_body || 'Nunito';
   const GStyles = getGStyles(COLORS, fontDisplay, fontBody);
   const gallery = siteData?.gallery || [];
   const reviews = (siteData?.reviews?.length > 0) ? siteData.reviews : DEFAULT_REVIEWS;
