@@ -93,8 +93,10 @@ export default function WebsitePage() {
   const config = siteData?.config || {};
   const reviews = siteData?.reviews || [];
   const gallery = siteData?.gallery || [];
+  const resolveUrl = (url) => url?.startsWith('/api') ? `${API.replace('/api', '')}${url}` : url;
   const salonPhotos = gallery.filter(g => g.section === 'salon');
   const hairstylePhotos = gallery.filter(g => g.section === 'gallery');
+  const allPhotos = gallery.length > 0 && hairstylePhotos.length === 0 && salonPhotos.length === 0 ? gallery : null;
 
   const toggleService = (id) => {
     setFormData(prev => ({
@@ -337,27 +339,53 @@ export default function WebsitePage() {
           </div>
           {step === 1 && (
             <div className="space-y-4">
-              <h2 className="text-xl font-black text-white">Scegli i Servizi</h2>
-              <div className="space-y-2">
-                {bookingServices.map(service => (
-                  <div key={service.id} onClick={() => toggleService(service.id)}
-                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${formData.service_ids.includes(service.id) ? 'border-white bg-white/10' : 'border-gray-800 bg-[#242445] hover:border-gray-600'}`}
-                    data-testid={`website-service-${service.id}`}>
-                    <div className="flex justify-between items-center">
-                      <div><p className="font-bold text-white">{service.name}</p><p className="text-sm text-gray-500">{service.duration} min</p></div>
-                      <p className="font-black text-white">{'\u20AC'}{service.price}</p>
+              <div className="sticky top-[60px] z-40 bg-[#1a1a2e] py-3 -mx-4 px-4 border-b border-gray-800">
+                <h2 className="text-xl font-black text-white">Scegli i Servizi</h2>
+                {formData.service_ids.length > 0 && (
+                  <p className="text-sm text-amber-400 font-bold mt-1">{formData.service_ids.length} servizi - {totalDuration} min - {'\u20AC'}{totalPrice}</p>
+                )}
+              </div>
+              
+              {/* Servizi raggruppati per categoria */}
+              {(() => {
+                const categories = {};
+                bookingServices.forEach(s => {
+                  const cat = s.category || 'Altro';
+                  if (!categories[cat]) categories[cat] = [];
+                  categories[cat].push(s);
+                });
+                return Object.entries(categories).map(([catName, services]) => (
+                  <div key={catName} className="space-y-2">
+                    <h3 className="text-sm font-bold text-amber-400 uppercase tracking-wider mt-3">{catName}</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      {services.map(service => (
+                        <div key={service.id} onClick={() => toggleService(service.id)}
+                          className={`p-3 rounded-xl border-2 cursor-pointer transition-all duration-200 ${formData.service_ids.includes(service.id) ? 'border-amber-400 bg-amber-400/10 scale-[0.97]' : 'border-gray-800 bg-[#242445] hover:border-gray-600 hover:scale-[1.02]'}`}
+                          data-testid={`website-service-${service.id}`}>
+                          <p className="font-bold text-white text-sm leading-tight">{service.name}</p>
+                          <div className="flex justify-between items-center mt-2">
+                            <p className="text-xs text-gray-500">{service.duration} min</p>
+                            <p className="font-black text-white text-sm">{'\u20AC'}{service.price}</p>
+                          </div>
+                          {formData.service_ids.includes(service.id) && (
+                            <div className="mt-1 text-center">
+                              <CheckCircle className="w-4 h-4 text-amber-400 inline" />
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
-                ))}
-              </div>
+                ));
+              })()}
               
               {/* Promozioni & Card cliccabili */}
               {publicPromos.length > 0 && (
                 <div className="mt-4">
-                  <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
-                    <Gift className="w-5 h-5 text-amber-400" /> Promozioni & Card
+                  <h3 className="text-sm font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                    <Gift className="w-4 h-4" /> Promozioni & Card
                   </h3>
-                  <div className="space-y-2">
+                  <div className="grid grid-cols-1 gap-2 mt-2">
                     {publicPromos.map((promo) => (
                       <div key={promo.id}
                         onClick={() => {
@@ -368,7 +396,7 @@ export default function WebsitePage() {
                           }
                           toast.success(`Promo "${promo.name}" aggiunta!`);
                         }}
-                        className="p-4 rounded-xl border-2 border-amber-500/30 bg-gradient-to-r from-amber-500/10 to-orange-500/10 cursor-pointer transition-all hover:border-amber-400 hover:shadow-md"
+                        className="p-4 rounded-xl border-2 border-amber-500/30 bg-gradient-to-r from-amber-500/10 to-orange-500/10 cursor-pointer transition-all hover:border-amber-400 hover:shadow-md hover:scale-[1.02]"
                         data-testid={`website-promo-${promo.id}`}>
                         <div className="flex justify-between items-center">
                           <div>
@@ -383,12 +411,7 @@ export default function WebsitePage() {
                 </div>
               )}
 
-              {formData.service_ids.length > 0 && (
-                <div className="bg-[#242445] p-4 rounded-xl border border-gray-800">
-                  <p className="font-bold text-white">Riepilogo: {totalDuration} min - {'\u20AC'}{totalPrice}</p>
-                </div>
-              )}
-              <Button onClick={() => setStep(2)} disabled={formData.service_ids.length === 0} className="w-full bg-white text-[#1a1a2e] hover:bg-gray-200 font-bold py-6" data-testid="website-step1-next">Continua <ArrowRight className="w-4 h-4 ml-2" /></Button>
+              <Button onClick={() => setStep(2)} disabled={formData.service_ids.length === 0} className="w-full bg-white text-[#1a1a2e] hover:bg-gray-200 font-bold py-6 sticky bottom-4" data-testid="website-step1-next">Continua <ArrowRight className="w-4 h-4 ml-2" /></Button>
             </div>
           )}
           {step === 2 && (
@@ -702,8 +725,8 @@ export default function WebsitePage() {
         </section>
       )}
 
-      {/* HAIRSTYLE GALLERY */}
-      {hairstylePhotos.length > 0 && (
+      {/* GALLERY */}
+      {gallery.length > 0 && (
         <section className="py-20 sm:py-28 bg-white/60">
           <div className="max-w-6xl mx-auto px-4">
             <div className="text-center mb-12">
@@ -711,9 +734,9 @@ export default function WebsitePage() {
               <h2 className="text-3xl sm:text-4xl font-black text-[#1e293b]">I Nostri Lavori</h2>
               {config.gallery_subtitle && <p className="text-[#64748B] mt-3 max-w-xl mx-auto">{config.gallery_subtitle}</p>}
             </div>
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-              {hairstylePhotos.map((item, idx) => (
-                <div key={item.id} className={`relative rounded-3xl overflow-hidden aspect-[3/4] group cursor-pointer border-2 border-gray-200 transition-all duration-500 hover:shadow-2xl hover:border-[#0EA5E9]/30 hover:scale-[1.02]`}>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {gallery.map((item, idx) => (
+                <div key={item.id} className={`relative rounded-3xl overflow-hidden aspect-square group cursor-pointer border-2 border-gray-200 transition-all duration-500 hover:shadow-2xl hover:border-[#0EA5E9]/30 hover:scale-[1.02]`}>
                   <img src={getImageUrl(item)} alt={item.label} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   {item.tag && (
@@ -722,7 +745,7 @@ export default function WebsitePage() {
                     </div>
                   )}
                   <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                    <p className="text-white font-bold">{item.label}</p>
+                    <p className="text-white font-bold text-sm">{item.label}</p>
                   </div>
                 </div>
               ))}

@@ -220,7 +220,7 @@ export default function WebsiteAdminPage() {
             <p className="text-sm text-[#334155]">Modifica i contenuti della tua pagina web pubblica</p>
           </div>
           <div className="flex gap-2">
-            <a href="/sito" target="_blank" rel="noopener noreferrer">
+            <a href="/" target="_blank" rel="noopener noreferrer">
               <Button variant="outline" className="border-[#0EA5E9] text-[#0EA5E9]" data-testid="preview-site-btn">
                 <Eye className="w-4 h-4 mr-2" /> Anteprima Sito
               </Button>
@@ -235,6 +235,7 @@ export default function WebsiteAdminPage() {
         <Tabs defaultValue="general" className="space-y-4">
           <TabsList className="bg-white border shadow-sm flex-wrap h-auto gap-1 p-1">
             <TabsTrigger value="general" className="data-[state=active]:bg-[#0EA5E9] data-[state=active]:text-white">Generale</TabsTrigger>
+            <TabsTrigger value="design" className="data-[state=active]:bg-[#0EA5E9] data-[state=active]:text-white">Colori & Font</TabsTrigger>
             <TabsTrigger value="services" className="data-[state=active]:bg-[#0EA5E9] data-[state=active]:text-white">Servizi</TabsTrigger>
             <TabsTrigger value="photos" className="data-[state=active]:bg-[#0EA5E9] data-[state=active]:text-white">Foto Salone</TabsTrigger>
             <TabsTrigger value="gallery" className="data-[state=active]:bg-[#0EA5E9] data-[state=active]:text-white">Gallery Lavori</TabsTrigger>
@@ -280,6 +281,69 @@ export default function WebsiteAdminPage() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* DESIGN - Colori & Font */}
+          <TabsContent value="design">
+            <Card>
+              <CardHeader><CardTitle>Personalizzazione Colori & Font</CardTitle></CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label>Colore Principale</Label>
+                    <div className="flex gap-2 mt-1">
+                      <input type="color" value={config.primary_color || '#0EA5E9'} onChange={e => updateField('primary_color', e.target.value)} className="w-12 h-10 rounded cursor-pointer border" />
+                      <Input value={config.primary_color || '#0EA5E9'} onChange={e => updateField('primary_color', e.target.value)} placeholder="#0EA5E9" />
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Colore Accento</Label>
+                    <div className="flex gap-2 mt-1">
+                      <input type="color" value={config.accent_color || '#F59E0B'} onChange={e => updateField('accent_color', e.target.value)} className="w-12 h-10 rounded cursor-pointer border" />
+                      <Input value={config.accent_color || '#F59E0B'} onChange={e => updateField('accent_color', e.target.value)} placeholder="#F59E0B" />
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Colore Sfondo</Label>
+                    <div className="flex gap-2 mt-1">
+                      <input type="color" value={config.bg_color || '#FFF8F0'} onChange={e => updateField('bg_color', e.target.value)} className="w-12 h-10 rounded cursor-pointer border" />
+                      <Input value={config.bg_color || '#FFF8F0'} onChange={e => updateField('bg_color', e.target.value)} placeholder="#FFF8F0" />
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Font Titoli</Label>
+                    <select value={config.heading_font || 'system'} onChange={e => updateField('heading_font', e.target.value)}
+                      className="w-full h-10 px-3 rounded-md border border-gray-200 bg-white text-sm">
+                      <option value="system">System Default</option>
+                      <option value="playfair">Playfair Display (Elegante)</option>
+                      <option value="manrope">Manrope (Moderno)</option>
+                      <option value="poppins">Poppins (Pulito)</option>
+                      <option value="montserrat">Montserrat (Professionale)</option>
+                      <option value="lora">Lora (Classico)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label>Font Testo</Label>
+                    <select value={config.body_font || 'system'} onChange={e => updateField('body_font', e.target.value)}
+                      className="w-full h-10 px-3 rounded-md border border-gray-200 bg-white text-sm">
+                      <option value="system">System Default</option>
+                      <option value="manrope">Manrope</option>
+                      <option value="poppins">Poppins</option>
+                      <option value="inter">Inter</option>
+                      <option value="lato">Lato</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <Label>Testo personalizzato Footer</Label>
+                  <Input value={config.footer_text || ''} onChange={e => updateField('footer_text', e.target.value)} placeholder="es. Parrucchiere dal 1983" />
+                </div>
+                <p className="text-xs text-gray-400">Le modifiche ai colori e font verranno applicate dopo il salvataggio e ricaricamento del sito.</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
 
           {/* SERVICES */}
           <TabsContent value="services">

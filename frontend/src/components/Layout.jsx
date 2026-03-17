@@ -24,12 +24,14 @@ import {
   Globe,
   ArrowDownCircle,
   Gift,
-  AlertTriangle
+  AlertTriangle,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
-const navItems = [
+const DEFAULT_NAV_ITEMS = [
   { path: '/planning', label: 'Planning', icon: Calendar },
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/appointments', label: 'Agenda', icon: CalendarDays },
@@ -53,35 +55,67 @@ const navItems = [
   { path: '/settings', label: 'Impostazioni', icon: Settings },
 ];
 
+function getOrderedNavItems() {
+  try {
+    const saved = localStorage.getItem('sidebar_order');
+    if (saved) {
+      const order = JSON.parse(saved);
+      const ordered = order.map(path => DEFAULT_NAV_ITEMS.find(i => i.path === path)).filter(Boolean);
+      const remaining = DEFAULT_NAV_ITEMS.filter(i => !order.includes(i.path));
+      return [...ordered, ...remaining];
+    }
+  } catch {}
+  return DEFAULT_NAV_ITEMS;
+}
+
 export default function Layout({ children }) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [navItems, setNavItems] = useState(getOrderedNavItems);
+  const [editingOrder, setEditingOrder] = useState(false);
+
+  const moveItem = (index, direction) => {
+    const newItems = [...navItems];
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= newItems.length) return;
+    [newItems[index], newItems[newIndex]] = [newItems[newIndex], newItems[index]];
+    setNavItems(newItems);
+    localStorage.setItem('sidebar_order', JSON.stringify(newItems.map(i => i.path)));
+  };
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  const NavLink = ({ item, mobile = false }) => {
+  const NavLink = ({ item, index, mobile = false }) => {
     const isActive = location.pathname === item.path;
     const Icon = item.icon;
     
     return (
-      <Link
-        to={item.path}
-        onClick={() => mobile && setMobileOpen(false)}
-        data-testid={`nav-${item.path.replace('/', '') || 'home'}`}
-        className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 font-semibold ${
-          isActive
-            ? 'bg-[#E0F2FE] text-[#0EA5E9] border-r-2 border-[#0EA5E9]'
-            : 'text-[#334155] hover:text-[#0F172A] hover:bg-[#F1F5F9]'
-        }`}
-      >
-        <Icon className="w-5 h-5" strokeWidth={1.5} />
-        <span className="font-manrope">{item.label}</span>
-      </Link>
+      <div className="flex items-center gap-1">
+        {editingOrder && (
+          <div className="flex flex-col">
+            <button onClick={() => moveItem(index, -1)} className="text-gray-400 hover:text-[#0EA5E9] p-0.5"><ChevronUp className="w-3 h-3" /></button>
+            <button onClick={() => moveItem(index, 1)} className="text-gray-400 hover:text-[#0EA5E9] p-0.5"><ChevronDown className="w-3 h-3" /></button>
+          </div>
+        )}
+        <Link
+          to={item.path}
+          onClick={() => mobile && setMobileOpen(false)}
+          data-testid={`nav-${item.path.replace('/', '') || 'home'}`}
+          className={`flex-1 flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 font-semibold ${
+            isActive
+              ? 'bg-[#E0F2FE] text-[#0EA5E9] border-r-2 border-[#0EA5E9]'
+              : 'text-[#334155] hover:text-[#0F172A] hover:bg-[#F1F5F9]'
+          }`}
+        >
+          <Icon className="w-5 h-5" strokeWidth={1.5} />
+          <span className="font-manrope">{item.label}</span>
+        </Link>
+      </div>
     );
   };
 
@@ -100,8 +134,11 @@ export default function Layout({ children }) {
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-        {navItems.map((item) => (
-          <NavLink key={item.path} item={item} mobile={mobile} />
+        <button onClick={() => setEditingOrder(!editingOrder)} className="flex items-center gap-2 text-xs text-gray-400 hover:text-[#0EA5E9] mb-2 px-4 transition-colors">
+          <GripVertical className="w-3 h-3" /> {editingOrder ? 'Fine riordino' : 'Riordina menu'}
+        </button>
+        {navItems.map((item, index) => (
+          <NavLink key={item.path} item={item} index={index} mobile={mobile} />
         ))}
       </nav>
 
