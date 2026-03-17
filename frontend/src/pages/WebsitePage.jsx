@@ -837,7 +837,6 @@ export default function BookingPage() {
               <p className="fd text-xl font-bold bg-gradient-to-r from-sky-600 to-sky-400 bg-clip-text text-transparent leading-tight">
                 BRUNO MELITO HAIR
               </p>
-              <p className="text-[10px] text-slate-400 font-semibold tracking-widest uppercase">Parrucchieri · Dal 1983</p>
             </div>
           </div>
           <div className="hidden md:flex items-center gap-7 text-sm font-semibold text-slate-500">
@@ -986,7 +985,7 @@ export default function BookingPage() {
             <div>
               <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: COLORS.primary }}>Chi siamo</p>
               <h2 className="fd text-4xl sm:text-5xl font-bold text-slate-900 mb-6 leading-tight">
-                {cfg.about_title || 'Passione per la bellezza'}<br /><span className="italic" style={{ color: COLORS.primary }}>dal 1983</span>
+                {cfg.about_title || 'Passione per la bellezza'}
               </h2>
               <p className="text-slate-500 leading-relaxed mb-5 text-lg">
                 {cfg.about_text || "Da oltre 40 anni siamo il punto di riferimento per l'hair styling a Santa Maria Capua Vetere. Ogni cliente è unica per noi."}
@@ -1142,7 +1141,18 @@ export default function BookingPage() {
                             </div>
                             <div className="space-y-3">
                               {promos.map((promo, i) => (
-                                <div key={promo.id || i} className="pc rounded-2xl p-4" style={{ background: `linear-gradient(135deg, ${COLORS.accent}10, ${COLORS.primary}10)`, borderColor: COLORS.accent, borderWidth: 2 }}>
+                                <div 
+                                  key={promo.id || i} 
+                                  className="pc rounded-2xl p-4 cursor-pointer hover:scale-[1.02] transition-transform" 
+                                  style={{ background: `linear-gradient(135deg, ${COLORS.accent}10, ${COLORS.primary}10)`, borderColor: COLORS.accent, borderWidth: 2 }}
+                                  onClick={() => {
+                                    if (promo.required_services && promo.required_services.length > 0) {
+                                      setSelIds(promo.required_services);
+                                    }
+                                    toast.success(`Promo "${promo.name}" selezionata!`);
+                                  }}
+                                  data-testid={`promo-card-${i}`}
+                                >
                                   <div className="flex justify-between items-start mb-1.5">
                                     <p className="font-bold text-slate-800 text-sm">{promo.name}</p>
                                     <span className="text-white text-[9px] font-black px-2 py-0.5 rounded-full" style={{ background: COLORS.accent }}>PROMO</span>
@@ -1228,7 +1238,18 @@ export default function BookingPage() {
                               key={t}
                               onClick={() => {
                                 if (isFull) {
-                                  toast.error(`Orario ${t} occupato. Cambia operatore o scegli un altro orario.`);
+                                  // Show suggestion to change operator
+                                  const busyOps = (busySlots[t] || []).map(b => b.operator_id);
+                                  const freeOps = operators.filter(o => !busyOps.includes(o.id));
+                                  if (freeOps.length > 0) {
+                                    toast(`Orario ${t} occupato per questo operatore`, {
+                                      description: `Disponibile con: ${freeOps.map(o => o.name).join(', ')}`,
+                                      action: { label: 'Cambia', onClick: () => setForm(f => ({ ...f, operator_id: freeOps[0].id, time: t })) },
+                                      duration: 5000
+                                    });
+                                  } else {
+                                    toast.error(`Orario ${t} occupato per tutti gli operatori`);
+                                  }
                                   return;
                                 }
                                 setForm({ ...form, time: t });
@@ -1356,6 +1377,36 @@ export default function BookingPage() {
                 </div>
               </button>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16 sm:py-20" style={{ background: COLORS.text }}>
+        <div className="max-w-2xl mx-auto px-4 sm:px-6">
+          <div className="hl bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-sm text-center">
+            <h3 className="fd text-3xl font-bold text-white mb-3">Pronta per il tuo look?</h3>
+            <p className="text-slate-400 mb-8 leading-relaxed">Prenota il tuo appuntamento in pochi click, oppure contattaci direttamente.</p>
+            <div className="space-y-3">
+              <button 
+                onClick={() => bookRef.current?.scrollIntoView({ behavior: 'smooth' })} 
+                className="w-full py-4 text-base font-black rounded-xl transition-all hover:opacity-90"
+                style={{ background: COLORS.primary, color: 'white' }}
+              >
+                <Scissors className="w-5 h-5" />Prenota online
+              </button>
+              <button onClick={openWA} className="w-full py-4 text-base font-black rounded-xl transition-all hover:opacity-90" style={{ background: COLORS.accent, color: 'white' }}>
+                <MessageSquare className="w-5 h-5" />Scrivici su WhatsApp
+              </button>
+              <a href="tel:08231878320" className="w-full border-2 border-white/20 hover:border-white/40 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 text-base hover:bg-white/5">
+                <Phone className="w-5 h-5" />0823 18 78 320
+              </a>
+            </div>
+            <button 
+              onClick={() => setManageOpen(true)} 
+              className="w-full mt-4 text-slate-400 hover:text-white text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+            >
+              <Calendar className="w-4 h-4" />Gestisci il tuo appuntamento
+            </button>
           </div>
         </div>
       </section>
@@ -1538,31 +1589,6 @@ export default function BookingPage() {
                 ))}
               </div>
             </div>
-            <div className="hl bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-sm">
-              <h3 className="fd text-3xl font-bold text-white mb-3">Pronta per il tuo look?</h3>
-              <p className="text-slate-400 mb-8 leading-relaxed">Prenota il tuo appuntamento in pochi click, oppure contattaci direttamente.</p>
-              <div className="space-y-3">
-                <button 
-                  onClick={() => bookRef.current?.scrollIntoView({ behavior: 'smooth' })} 
-                  className="w-full py-4 text-base font-black rounded-xl transition-all hover:opacity-90"
-                  style={{ background: COLORS.primary, color: 'white' }}
-                >
-                  <Scissors className="w-5 h-5" />Prenota online
-                </button>
-                <button onClick={openWA} className="w-full py-4 text-base font-black rounded-xl transition-all hover:opacity-90" style={{ background: COLORS.accent, color: 'white' }}>
-                  <MessageSquare className="w-5 h-5" />Scrivici su WhatsApp
-                </button>
-                <a href="tel:08231878320" className="w-full border-2 border-white/20 hover:border-white/40 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 text-base hover:bg-white/5">
-                  <Phone className="w-5 h-5" />0823 18 78 320
-                </a>
-              </div>
-              <button 
-                onClick={() => setManageOpen(true)} 
-                className="w-full mt-4 text-slate-400 hover:text-white text-sm font-semibold transition-colors flex items-center justify-center gap-2"
-              >
-                <Calendar className="w-4 h-4" />Gestisci il tuo appuntamento
-              </button>
-            </div>
           </div>
         </div>
       </section>
@@ -1573,7 +1599,6 @@ export default function BookingPage() {
             <img src="/logo.png?v=4" alt="Bruno Melito Hair" className="w-10 h-10 rounded-xl hs" />
             <div>
               <p className="fd text-white font-bold">BRUNO MELITO HAIR</p>
-              <p className="text-[10px] text-slate-600 tracking-widest uppercase">Parrucchieri dal 1983</p>
             </div>
           </div>
           <p className="text-slate-700 text-xs">© {new Date().getFullYear()} Bruno Melito Hair · Tutti i diritti riservati</p>
