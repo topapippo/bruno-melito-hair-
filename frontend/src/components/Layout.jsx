@@ -26,7 +26,8 @@ import {
   Gift,
   AlertTriangle,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  GripVertical
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
