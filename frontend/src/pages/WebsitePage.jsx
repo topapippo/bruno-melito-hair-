@@ -315,6 +315,8 @@ export default function BookingPage() {
   const [availableOperators, setAvailableOperators] = useState([]);
   const [previewOverrides, setPreviewOverrides] = useState(null);
   const [busySlots, setBusySlots] = useState({});
+  const [selectedPromo, setSelectedPromo] = useState(null);
+  const [conflictModal, setConflictModal] = useState(null);
 
   const bookRef = useRef(null);
 
@@ -1152,13 +1154,24 @@ export default function BookingPage() {
                               {promos.map((promo, i) => (
                                 <div 
                                   key={promo.id || i} 
-                                  className="pc rounded-2xl p-4 cursor-pointer hover:scale-[1.02] transition-transform" 
-                                  style={{ background: `linear-gradient(135deg, ${COLORS.accent}10, ${COLORS.primary}10)`, borderColor: COLORS.accent, borderWidth: 2 }}
+                                  className={`pc rounded-2xl p-4 cursor-pointer hover:scale-[1.02] transition-transform ${selectedPromo?.id === promo.id ? 'ring-2' : ''}`}
+                                  style={{ 
+                                    background: `linear-gradient(135deg, ${COLORS.accent}10, ${COLORS.primary}10)`, 
+                                    borderColor: selectedPromo?.id === promo.id ? COLORS.primary : COLORS.accent, 
+                                    borderWidth: 2,
+                                    ringColor: COLORS.primary
+                                  }}
                                   onClick={() => {
-                                    if (promo.required_services && promo.required_services.length > 0) {
-                                      setSelIds(promo.required_services);
+                                    if (selectedPromo?.id === promo.id) {
+                                      setSelectedPromo(null);
+                                      setForm(f => ({ ...f, notes: f.notes.replace(`[PROMO: ${promo.promo_code || promo.name}] `, '') }));
+                                      toast('Promo rimossa');
+                                    } else {
+                                      setSelectedPromo(promo);
+                                      const code = promo.promo_code || promo.name;
+                                      setForm(f => ({ ...f, notes: `[PROMO: ${code}] ${f.notes.replace(/\[PROMO: [^\]]+\] /g, '')}` }));
+                                      toast.success(`Promo "${promo.name}" applicata! ${promo.free_service_name ? 'Omaggio: ' + promo.free_service_name : ''}`);
                                     }
-                                    toast.success(`Promo "${promo.name}" selezionata!`);
                                   }}
                                   data-testid={`promo-card-${i}`}
                                 >
@@ -1183,6 +1196,21 @@ export default function BookingPage() {
                             </div>
                           </div>
                         )}
+                      </div>
+                    )}
+
+                    {selectedPromo && (
+                      <div className="mt-4 p-3 rounded-xl flex items-center justify-between" style={{ background: COLORS.accent + '15', border: `2px solid ${COLORS.accent}` }} data-testid="selected-promo-badge">
+                        <div className="flex items-center gap-2">
+                          <Gift className="w-4 h-4" style={{ color: COLORS.accent }} />
+                          <div>
+                            <p className="text-xs font-bold" style={{ color: COLORS.accent }}>{selectedPromo.name}</p>
+                            {selectedPromo.free_service_name && <p className="text-[10px] text-slate-500">Omaggio: {selectedPromo.free_service_name}</p>}
+                          </div>
+                        </div>
+                        <button onClick={(e) => { e.stopPropagation(); setSelectedPromo(null); setForm(f => ({ ...f, notes: f.notes.replace(/\[PROMO: [^\]]+\] /g, '') })); }} className="text-xs font-bold px-2 py-1 rounded-lg hover:bg-white/50" style={{ color: COLORS.accent }}>
+                          Rimuovi
+                        </button>
                       </div>
                     )}
 
@@ -1247,18 +1275,9 @@ export default function BookingPage() {
                               key={t}
                               onClick={() => {
                                 if (isFull) {
-                                  // Show suggestion to change operator
                                   const busyOps = (busySlots[t] || []).map(b => b.operator_id);
                                   const freeOps = operators.filter(o => !busyOps.includes(o.id));
-                                  if (freeOps.length > 0) {
-                                    toast(`Orario ${t} occupato per questo operatore`, {
-                                      description: `Disponibile con: ${freeOps.map(o => o.name).join(', ')}`,
-                                      action: { label: 'Cambia', onClick: () => setForm(f => ({ ...f, operator_id: freeOps[0].id, time: t })) },
-                                      duration: 5000
-                                    });
-                                  } else {
-                                    toast.error(`Orario ${t} occupato per tutti gli operatori`);
-                                  }
+                                  setConflictModal({ time: t, freeOps });
                                   return;
                                 }
                                 setForm({ ...form, time: t });
@@ -1288,6 +1307,46 @@ export default function BookingPage() {
                         <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-white border border-slate-200" /> Libero</span>
                       </div>
                     </div>
+
+                    {/* Conflict Modal */}
+                    {conflictModal && (
+                      <div className="rounded-2xl border-2 border-red-200 bg-red-50 p-4 space-y-3" data-testid="conflict-modal">
+                        <div className="flex items-center justify-between">
+                          <p className="font-bold text-red-700 text-sm">Orario {conflictModal.time} occupato</p>
+                          <button onClick={() => setConflictModal(null)} className="text-red-400 hover:text-red-600 text-xs font-bold">✕</button>
+                        </div>
+                        {conflictModal.freeOps.length > 0 ? (
+                          <div>
+                            <p className="text-xs text-red-600 mb-2">Disponibile con altro operatore:</p>
+                            <div className="space-y-2">
+                              {conflictModal.freeOps.map(op => (
+                                <button
+                                  key={op.id}
+                                  onClick={() => {
+                                    setForm(f => ({ ...f, operator_id: op.id, time: conflictModal.time }));
+                                    setConflictModal(null);
+                                    toast.success(`Orario ${conflictModal.time} con ${op.name} selezionato`);
+                                  }}
+                                  className="w-full text-left px-3 py-2.5 rounded-xl bg-white border border-red-200 hover:border-green-400 hover:bg-green-50 transition-all flex items-center justify-between"
+                                  data-testid={`conflict-op-${op.id}`}
+                                >
+                                  <span className="text-sm font-bold text-slate-700">{op.name}</span>
+                                  <span className="text-xs font-bold text-green-600">Disponibile →</span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-red-600">Tutti gli operatori sono occupati a quest'ora. Scegli un altro orario.</p>
+                        )}
+                        <button
+                          onClick={() => setConflictModal(null)}
+                          className="w-full text-xs font-bold text-slate-500 hover:text-slate-700 py-2"
+                        >
+                          Scegli un altro orario
+                        </button>
+                      </div>
+                    )}
                     <div className="flex gap-3 pt-2">
                       <button onClick={() => setStep(1)} className="flex-1 border-2 border-slate-200 text-slate-500 font-bold py-3.5 rounded-xl hover:bg-slate-50 transition-all">
                         ← Indietro
