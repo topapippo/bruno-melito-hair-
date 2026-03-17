@@ -100,7 +100,16 @@ Sistema gestionale completo per salone di parrucchiere "Bruno Melito Hair" a San
   - index.html: canonical e og:url aggiornati a https://brunomelitohair.it/
   - Structured data (JSON-LD): dominio aggiornato
   - /prenota ora redirect a / (era contenuto duplicato con BookingPage)
-- 15/15 test passati (backend + frontend)
+- Animazioni logo migliorate (no pulse, animazione elegante zoom+rotazione)
+- Pulsante "Torna al Planning" in Gestione Sito
+- Pulsante Area Riservata visibile su mobile (icona LogIn)
+- **Slot occupati nella prenotazione**: nuovo endpoint /api/public/busy-slots, griglia visuale orari con stati libero/occupato/parziale, toast con suggerimento operatore alternativo
+- **Rimosso "dal 1983"** da logo nav e footer
+- **Rimosso duplicato "dal 1983"** in Chi Siamo (titolo e features aggiornati)
+- **Sezione CTA** "Pronta per il tuo look?" spostata prima della galleria
+- **Promo cliccabili**: le card promo selezionano i servizi associati
+- 9/10 test passati (frontend) + fix duplicato dal database
+- 15/15 test passati (backend + frontend - iterazione precedente)
 
 ### 16 Marzo 2026
 - Fix routing: `/` → sito pubblico, `/login` → login admin
