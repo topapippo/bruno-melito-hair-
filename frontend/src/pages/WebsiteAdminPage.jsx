@@ -9,12 +9,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Save, Plus, Trash2, Upload, Image, Star, Globe, Eye, Loader2, X, GripVertical, PanelRightOpen, PanelRightClose } from 'lucide-react';
+import { Save, Plus, Trash2, Upload, Image, Star, Globe, Eye, Loader2, X, GripVertical, PanelRightOpen, PanelRightClose, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export default function WebsiteAdminPage() {
+  const navigate = useNavigate();
   const [config, setConfig] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [gallery, setGallery] = useState([]);
@@ -236,8 +238,13 @@ export default function WebsiteAdminPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-[#2D1B14]">Gestione Sito Web</h1>
-            <p className="text-sm text-[#7C5C4A]">Modifica i contenuti della tua pagina web pubblica</p>
+            <div className="flex items-center gap-3 mb-1">
+              <Button variant="ghost" size="icon" onClick={() => navigate('/planning')} className="h-8 w-8 text-[#7C5C4A] hover:text-[#2D1B14]" data-testid="back-to-planning-btn">
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <h1 className="text-2xl font-bold text-[#2D1B14]">Gestione Sito Web</h1>
+            </div>
+            <p className="text-sm text-[#7C5C4A] ml-11">Modifica i contenuti della tua pagina web pubblica</p>
           </div>
           <div className="flex gap-2">
             <Button
