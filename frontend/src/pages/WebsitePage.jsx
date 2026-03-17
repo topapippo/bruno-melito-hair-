@@ -98,6 +98,12 @@ export default function WebsitePage() {
   const hairstylePhotos = gallery.filter(g => g.section === 'gallery');
   const allPhotos = gallery.length > 0 && hairstylePhotos.length === 0 && salonPhotos.length === 0 ? gallery : null;
 
+  // Dynamic colors from CMS
+  const colors = config.colors || {};
+  const primaryColor = colors.primary || '#0EA5E9';
+  const accentColor = colors.accent || '#F59E0B';
+  const bgColor = colors.bg || '#FFF8F0';
+
   const toggleService = (id) => {
     setFormData(prev => ({
       ...prev, service_ids: prev.service_ids.includes(id) ? prev.service_ids.filter(s => s !== id) : [...prev.service_ids, id]
@@ -365,7 +371,7 @@ export default function WebsitePage() {
                           <p className="font-bold text-white text-sm leading-tight">{service.name}</p>
                           <div className="flex justify-between items-center mt-2">
                             <p className="text-xs text-gray-500">{service.duration} min</p>
-                            <p className="font-black text-white text-sm">{'\u20AC'}{service.price}</p>
+                            <p className="font-black text-sm" style={{ color: primaryColor }}>{'\u20AC'}{service.price}</p>
                           </div>
                           {formData.service_ids.includes(service.id) && (
                             <div className="mt-1 text-center">
@@ -474,7 +480,14 @@ export default function WebsitePage() {
   const phones = config.phones || [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#FFF8F0] via-[#FEF3E2] to-[#F0F4FF] text-[#1e293b]" data-testid="website-landing">
+    <div className="min-h-screen text-[#1e293b]" style={{ background: `linear-gradient(135deg, ${bgColor}, ${bgColor}ee, ${bgColor}dd)`, '--primary': primaryColor, '--accent': accentColor }} data-testid="website-landing">
+      <style>{`
+        [data-testid="website-landing"] .btn-primary { background-color: ${primaryColor} !important; }
+        [data-testid="website-landing"] .btn-primary:hover { opacity: 0.9; }
+        [data-testid="website-landing"] .text-primary-dynamic { color: ${primaryColor}; }
+        [data-testid="website-landing"] .border-primary-dynamic { border-color: ${primaryColor}30; }
+        [data-testid="website-landing"] .shadow-primary-dynamic { box-shadow: 0 10px 25px ${primaryColor}30; }
+      `}</style>
       <Toaster position="top-center" />
 
       {/* NAVBAR */}
@@ -496,7 +509,7 @@ export default function WebsitePage() {
             </div>
             <a href="/login" className="hover:text-[#0EA5E9] transition-colors font-semibold">Area Riservata</a>
           </div>
-          <Button onClick={() => setShowBooking(true)} className="bg-[#0EA5E9] text-white hover:bg-[#0284C7] font-bold text-sm px-4 sm:px-6 hover:scale-105 transition-all duration-300 shadow-lg shadow-[#0EA5E9]/20" data-testid="website-book-btn">
+          <Button onClick={() => setShowBooking(true)} className="text-white hover:opacity-90 font-bold text-sm px-4 sm:px-6 hover:scale-105 transition-all duration-300 shadow-lg" style={{ backgroundColor: primaryColor, boxShadow: `0 5px 15px ${primaryColor}30` }} data-testid="website-book-btn">
             PRENOTA ORA
           </Button>
         </div>
@@ -520,7 +533,7 @@ export default function WebsitePage() {
               {config.hero_description || ''}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center mb-10">
-              <Button onClick={() => setShowBooking(true)} className="bg-[#0EA5E9] text-white hover:bg-[#0284C7] font-black text-base px-8 py-6 rounded-xl shadow-lg shadow-[#0EA5E9]/40 hover:shadow-[#0EA5E9]/60 hover:scale-105 transition-all duration-300" data-testid="website-hero-book-btn">
+              <Button onClick={() => setShowBooking(true)} className="text-white hover:opacity-90 font-black text-base px-8 py-6 rounded-xl shadow-lg hover:scale-105 transition-all duration-300" style={{ backgroundColor: primaryColor, boxShadow: `0 10px 25px ${primaryColor}40` }} data-testid="website-hero-book-btn">
                 <Scissors className="w-5 h-5 mr-2" /> PRENOTA ORA
               </Button>
               <Button onClick={() => { setShowServices(true); setTimeout(() => scrollTo(servicesRef), 100); }} variant="outline" className="border-white/40 text-white hover:bg-white/20 font-bold text-base px-8 py-6 rounded-xl backdrop-blur-sm hover:scale-105 transition-all duration-300">
@@ -545,7 +558,7 @@ export default function WebsitePage() {
           </div>
           {config.years_experience && (
             <div className="absolute right-4 sm:right-8 bottom-20 sm:bottom-32 bg-white/90 backdrop-blur-md border border-[#0EA5E9]/30 rounded-3xl p-5 text-center hidden md:block shadow-xl hover:shadow-2xl hover:scale-110 transition-all duration-500 cursor-default">
-              <p className="text-4xl font-black text-[#0EA5E9]">{config.years_experience}</p>
+              <p className="text-4xl font-black" style={{ color: primaryColor }}>{config.years_experience}</p>
               <p className="text-xs text-[#64748B] font-semibold">Anni di<br />Esperienza</p>
               {config.year_founded && <p className="text-[10px] text-[#94A3B8] mt-1">Dal {config.year_founded}</p>}
             </div>
