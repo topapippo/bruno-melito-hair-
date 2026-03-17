@@ -514,7 +514,7 @@ export default function BookingPage() {
     setForm(updatedForm);
     setShowConflictModal(false);
     
-    toast.success(`Nuovo orario: ${format(new Date(date + 'T00:00:00'), 'd MMM', { locale: it })} alle ${time}`);
+    toast.success(`Nuovo orario: ${format(new Date(date + 'T00:00:00'), 'dd/MM/yy', { locale: it })} alle ${time}`);
     
     setTimeout(() => handleSubmitWithData(updatedForm), 500);
   };
@@ -601,7 +601,7 @@ export default function BookingPage() {
           
           <p className="text-slate-600 mb-4">
             L'orario <span className="font-bold" style={{ color: COLORS.primary }}>{form.time}</span> del{' '}
-            <span className="font-bold">{format(new Date(form.date + 'T00:00:00'), 'd MMMM', { locale: it })}</span>{' '}
+            <span className="font-bold">{format(new Date(form.date + 'T00:00:00'), 'dd/MM/yy', { locale: it })}</span>{' '}
             è già occupato.
           </p>
           
@@ -641,7 +641,7 @@ export default function BookingPage() {
                   >
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-slate-800">
-                        {format(new Date((slot.date || form.date) + 'T00:00:00'), 'd MMM', { locale: it })}
+                        {format(new Date((slot.date || form.date) + 'T00:00:00'), 'dd/MM/yy', { locale: it })}
                       </span>
                       <span className="font-bold px-2 py-0.5 rounded-full" style={{ background: COLORS.accent + '20', color: COLORS.accent }}>
                         ore {slot.time}
@@ -686,7 +686,7 @@ export default function BookingPage() {
         </div>
         <h1 className="fd text-4xl font-bold text-slate-900 mb-3">Prenotazione Inviata!</h1>
         <p className="text-slate-500 mb-8 text-lg">
-          Ti aspettiamo il <strong>{format(new Date(form.date + 'T00:00:00'), 'd MMMM yyyy', { locale: it })}</strong> alle{' '}
+          Ti aspettiamo il <strong>{format(new Date(form.date + 'T00:00:00'), 'dd/MM/yy', { locale: it })}</strong> alle{' '}
           <strong style={{ color: COLORS.primary }}>{form.time}</strong>
         </p>
         <button onClick={resetBooking} className="px-10 py-4 text-base mx-auto text-white rounded-xl transition-all" style={{ background: COLORS.primary }}>
@@ -783,7 +783,7 @@ export default function BookingPage() {
                 <div className="flex justify-between items-start mb-3">
                   <div>
                     <p className="font-bold text-slate-900">
-                      {format(new Date(apt.date + 'T00:00'), 'd MMMM yyyy', { locale: it })}
+                      {format(new Date(apt.date + 'T00:00'), 'dd/MM/yy', { locale: it })}
                     </p>
                     <p className="font-black text-xl" style={{ color: COLORS.primary }}>ore {apt.time}</p>
                   </div>
@@ -991,6 +991,15 @@ export default function BookingPage() {
                 {cfg.about_text || "Da oltre 40 anni siamo il punto di riferimento per l'hair styling a Santa Maria Capua Vetere. Ogni cliente è unica per noi."}
               </p>
               {cfg.about_text_2 && <p className="text-slate-500 leading-relaxed mb-6">{cfg.about_text_2}</p>}
+              <div className="mb-8">
+                <img 
+                  src="/metti-la-testa-a-posto.jpg" 
+                  alt="Metti la testa a posto!! - B. Melito" 
+                  className="w-full max-w-md rounded-2xl shadow-lg"
+                  style={{ aspectRatio: '16/10', objectFit: 'contain', background: '#fff' }}
+                  data-testid="metti-la-testa-img"
+                />
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
                 {(cfg.about_features || [
                   'Prodotti senza parabeni e solfati',
@@ -1327,7 +1336,7 @@ export default function BookingPage() {
                       <div className="flex justify-between text-slate-500">
                         <span>Data & Ora</span>
                         <span className="font-bold text-slate-700">
-                          {format(new Date(form.date + 'T00:00:00'), 'd MMM yyyy', { locale: it })} · {form.time}
+                          {format(new Date(form.date + 'T00:00:00'), 'dd/MM/yy', { locale: it })} · {form.time}
                         </span>
                       </div>
                       <div className="flex justify-between text-slate-500">

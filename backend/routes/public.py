@@ -114,7 +114,7 @@ DEFAULT_WEBSITE_CONFIG = {
     "subtitle": "SOLO PER APPUNTAMENTO",
     "hero_description": "Scopri l'eccellenza dell'hair styling al Bruno Melito Hair. Dove ogni taglio e' un'opera d'arte e ogni cliente e' unica.",
     "about_title": "Passione per la bellezza",
-    "about_text": "Con grande soddisfazione nostra e delle clienti che ci seguono, dal 1983 siamo un punto di riferimento per chi cerca qualita' e professionalita' nell'hair styling.",
+    "about_text": "non CREATORI DI IMMAGINE O MAESTRI D'ARTE, noi siamo PARRUCCHIERI PER SIGNORA.",
     "about_text_2": "Abbiamo introdotto una nuova linea di prodotti altamente curativi, di ultima generazione: shampoo, maschere e finishing, senza parabeni, solfati e sale. Le colorazioni e le schiariture sono senza ammoniaca, ma con cheratina, olio di semi di lino, proteine della seta e olio di argan.",
     "about_features": ["Oltre 40 anni nel settore", "Senza parabeni e solfati", "Colorazioni senza ammoniaca", "Cheratina e olio di argan"],
     "years_experience": "40+",
