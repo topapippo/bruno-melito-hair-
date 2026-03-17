@@ -93,7 +93,13 @@ Sistema gestionale completo per salone di parrucchiere "Bruno Melito Hair" a San
 - Anteprima colori e font in tempo reale
 - WebsitePage.jsx ora legge colori e font dinamicamente dal CMS
 - Aggiunti campi default nel backend: primary_color, accent_color, bg_color, text_color, font_display, font_body
-- **Anteprima Live**: pannello laterale con iframe del sito pubblico che si aggiorna in tempo reale via postMessage quando si modificano colori e font
+- **Anteprima Live**: pannello laterale con iframe del sito pubblico che si aggiorna in tempo reale via postMessage
+- **Fix SEO / Google Search Console**:
+  - sitemap.xml: rimossi /sito, /prenota, /login — ora solo https://brunomelitohair.it/
+  - robots.txt: bloccati /sito e /prenota (redirect), aggiornato dominio
+  - index.html: canonical e og:url aggiornati a https://brunomelitohair.it/
+  - Structured data (JSON-LD): dominio aggiornato
+  - /prenota ora redirect a / (era contenuto duplicato con BookingPage)
 - 15/15 test passati (backend + frontend)
 
 ### 16 Marzo 2026

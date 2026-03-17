@@ -1,6 +1,5 @@
 User-agent: *
-Allow: /sito
-Allow: /prenota
+Allow: /
 Disallow: /login
 Disallow: /planning
 Disallow: /appointments
@@ -17,5 +16,7 @@ Disallow: /reminders
 Disallow: /expenses
 Disallow: /dashboard
 Disallow: /card-alerts
+Disallow: /sito
+Disallow: /prenota
 
-Sitemap: https://mbhssalon.onrender.com/sitemap.xml
+Sitemap: https://brunomelitohair.it/sitemap.xml

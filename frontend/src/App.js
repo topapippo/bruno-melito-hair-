@@ -206,8 +206,8 @@ export default function App() {
             }
           />
 
-          {/* PRENOTAZIONE ONLINE */}
-          <Route path="/prenota" element={<BookingPage />} />
+          {/* PRENOTAZIONE ONLINE - Redirect alla home (prenotazione integrata) */}
+          <Route path="/prenota" element={<Navigate to="/" replace />} />
 
           {/* PROGRAMMA FEDELTÀ */}
           <Route
