@@ -30,6 +30,12 @@ import { toast } from 'sonner';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
+const fmtDate = (d) => {
+  if (!d) return '';
+  const [y, m, dd] = d.split('-');
+  return `${dd}/${m}/${y?.slice(-2)}`;
+};
+
 const CATEGORIES = [
   { value: 'affitto', label: 'Affitto', color: 'bg-purple-100 text-purple-700' },
   { value: 'fornitori', label: 'Fornitori', color: 'bg-blue-100 text-blue-700' },
@@ -331,10 +337,10 @@ export default function ExpensesPage() {
                         <div className="flex items-center gap-4 text-sm text-[#334155] mt-1">
                           <span className="flex items-center gap-1">
                             <Calendar className="w-3.5 h-3.5" />
-                            Scadenza: {exp.due_date}
+                            Scadenza: {fmtDate(exp.due_date)}
                           </span>
                           {exp.paid_date && (
-                            <span className="text-green-600">Pagata il {exp.paid_date}</span>
+                            <span className="text-green-600">Pagata il {fmtDate(exp.paid_date)}</span>
                           )}
                         </div>
                         {exp.notes && <p className="text-xs text-[#64748B] mt-1">{exp.notes}</p>}
@@ -451,12 +457,18 @@ export default function ExpensesPage() {
                     </Button>
                   ))}
                 </div>
-                <Input
-                  type="date"
-                  value={formData.due_date}
-                  onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-                  data-testid="expense-date-input"
-                />
+                <div className="relative">
+                  <input
+                    type="date"
+                    value={formData.due_date}
+                    onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+                    data-testid="expense-date-input"
+                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                  />
+                  <div className="flex items-center h-10 px-3 border border-slate-200 rounded-md text-sm font-semibold bg-white cursor-pointer">
+                    {fmtDate(formData.due_date)}
+                  </div>
+                </div>
               </div>
               <div className="flex items-center justify-between p-3 rounded-lg bg-[#F8FAFC]">
                 <div className="flex items-center gap-2">
