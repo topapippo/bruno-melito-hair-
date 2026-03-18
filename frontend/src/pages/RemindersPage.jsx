@@ -26,6 +26,7 @@ import {
   RotateCcw, Pencil, Trash2, Plus, FileText, Send, Loader2, XCircle, Palette
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { fmtDate } from '../utils/formatDate';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -143,7 +144,7 @@ export default function RemindersPage() {
       text = text.replace('{ora}', apt.time || '');
       text = text.replace('{servizi}', apt.services?.map(s => s.name).join(', ') || '');
       text = text.replace('{operatore}', apt.operator_name || '');
-      text = text.replace('{data}', apt.date || '');
+      text = text.replace('{data}', fmtDate(apt.date) || '');
     } else {
       const client = target.data;
       text = text.replace('{nome}', client.client_name || '');
@@ -648,7 +649,7 @@ export default function RemindersPage() {
                         )}
                       </div>
                       <p className="text-xs text-[#64748B] mt-1">
-                        Ultima visita: {client.last_visit} — {client.last_services?.join(', ')}
+                        Ultima visita: {fmtDate(client.last_visit)} — {client.last_services?.join(', ')}
                       </p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">

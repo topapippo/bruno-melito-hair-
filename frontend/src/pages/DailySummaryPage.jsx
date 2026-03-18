@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { format, subDays, addDays } from 'date-fns';
 import { it } from 'date-fns/locale';
+import { fmtDate } from '../utils/formatDate';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -64,8 +65,13 @@ export default function DailySummaryPage() {
               <ArrowLeft className="w-4 h-4" />
             </Button>
             <Button variant="outline" onClick={goToday} className="border-[#E2E8F0] text-[#0F172A] text-sm">Oggi</Button>
-            <Input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}
-              className="w-40 border-[#E2E8F0]" />
+            <div className="relative">
+              <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}
+                className="absolute inset-0 opacity-0 cursor-pointer z-10" />
+              <div className="flex items-center h-10 px-3 w-28 border border-[#E2E8F0] rounded-md text-sm font-semibold cursor-pointer">
+                {fmtDate(selectedDate)}
+              </div>
+            </div>
             <Button variant="outline" size="icon" onClick={nextDay} className="border-[#E2E8F0]" data-testid="next-day-btn">
               <ArrowRight className="w-4 h-4" />
             </Button>

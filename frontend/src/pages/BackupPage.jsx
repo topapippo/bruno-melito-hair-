@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Database, Download, Users, Calendar, CreditCard, FileSpreadsheet, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { fmtDate } from '../utils/formatDate';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -63,7 +64,7 @@ export default function BackupPage() {
 
       // Appuntamenti
       const appointmentsData = appointmentsRes.data.map(a => ({
-        'Data': a.date,
+        'Data': fmtDate(a.date),
         'Ora': a.time,
         'Cliente': a.client_name,
         'Servizi': a.services?.map(s => s.name).join(', ') || '',
@@ -84,7 +85,7 @@ export default function BackupPage() {
 
       // Pagamenti
       const paymentsData = paymentsRes.data.map(p => ({
-        'Data': p.date,
+        'Data': fmtDate(p.date),
         'Cliente': p.client_name,
         'Importo': p.total_paid,
         'Metodo': p.payment_method,

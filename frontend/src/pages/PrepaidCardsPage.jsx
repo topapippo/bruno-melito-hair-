@@ -288,7 +288,11 @@ export default function PrepaidCardsPage() {
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
     try {
-      return format(new Date(dateStr), 'd MMM yyyy', { locale: it });
+      const d = new Date(dateStr);
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const yy = String(d.getFullYear()).slice(-2);
+      return `${dd}/${mm}/${yy}`;
     } catch {
       return dateStr;
     }
@@ -712,13 +716,18 @@ export default function PrepaidCardsPage() {
 
               <div className="space-y-2">
                 <Label>Data Scadenza (opzionale)</Label>
-                <Input
-                  type="date"
-                  value={formData.valid_until}
-                  onChange={(e) => setFormData({ ...formData, valid_until: e.target.value })}
-                  className="bg-[#F8FAFC]"
-                  data-testid="valid-until-input"
-                />
+                <div className="relative">
+                  <input
+                    type="date"
+                    value={formData.valid_until}
+                    onChange={(e) => setFormData({ ...formData, valid_until: e.target.value })}
+                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                    data-testid="valid-until-input"
+                  />
+                  <div className="flex items-center h-10 px-3 bg-[#F8FAFC] border border-slate-200 rounded-md text-sm font-medium cursor-pointer">
+                    {formData.valid_until ? formatDate(formData.valid_until) : 'Seleziona data'}
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-2">

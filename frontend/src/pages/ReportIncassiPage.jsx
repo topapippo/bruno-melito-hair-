@@ -16,6 +16,7 @@ import { Euro, TrendingUp, Calendar, CreditCard, Banknote, Download, FileSpreads
 import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { fmtDate } from '../utils/formatDate';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -71,7 +72,7 @@ export default function ReportIncassiPage() {
 
   const exportToExcel = () => {
     const data = payments.map(p => ({
-      'Data': p.date,
+      'Data': fmtDate(p.date),
       'Cliente': p.client_name,
       'Servizi': p.services?.map(s => s.name).join(', ') || '',
       'Importo Originale': p.original_amount,

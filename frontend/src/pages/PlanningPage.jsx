@@ -25,6 +25,7 @@ import { ChevronLeft, ChevronRight, Plus, Clock, Loader2, Search, X, Repeat, Che
 import { format, addDays, subDays, startOfWeek, endOfWeek, addWeeks, subWeeks, startOfMonth, endOfMonth, addMonths, subMonths, eachDayOfInterval, isSameDay, isSameMonth, isToday } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { fmtDate } from '../utils/formatDate';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -788,7 +789,7 @@ export default function PlanningPage() {
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-sm text-emerald-900 truncate">{booking.client_name}</p>
                       <p className="text-xs text-emerald-700">
-                        {booking.date} alle {booking.time} - {booking.services?.map(s => s.name).join(', ')}
+                        {fmtDate(booking.date)} alle {booking.time} - {booking.services?.map(s => s.name).join(', ')}
                       </p>
                     </div>
                     <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); dismissOnlineBooking(booking.id); }} className="h-7 w-7 shrink-0 text-emerald-500 hover:bg-emerald-100" data-testid={`dismiss-booking-${booking.id}`}>
@@ -993,7 +994,7 @@ export default function PlanningPage() {
                                 key={apt.id}
                                 className="px-4 py-1 pl-8 text-xs text-[#334155] bg-[#F8FAFC]/50"
                               >
-                                {apt.date} {apt.time} - {apt.services?.map(s => s.name).join(', ')}
+                                {fmtDate(apt.date)} {apt.time} - {apt.services?.map(s => s.name).join(', ')}
                               </div>
                             ))}
                           </div>
@@ -1308,13 +1309,18 @@ export default function PlanningPage() {
               {/* Date Picker */}
               <div className="space-y-2">
                 <Label className="text-[#0F172A] font-semibold">Data</Label>
-                <Input
-                  type="date"
-                  value={formData.date || format(selectedDate, 'yyyy-MM-dd')}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="bg-white border-2 border-[#E2E8F0] text-[#0F172A] font-medium"
-                  data-testid="appointment-date-input"
-                />
+                <div className="relative">
+                  <input
+                    type="date"
+                    value={formData.date || format(selectedDate, 'yyyy-MM-dd')}
+                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                    data-testid="appointment-date-input"
+                  />
+                  <div className="flex items-center h-10 px-3 bg-white border-2 border-[#E2E8F0] rounded-md text-sm text-[#0F172A] font-medium cursor-pointer">
+                    {fmtDate(formData.date || format(selectedDate, 'yyyy-MM-dd'))}
+                  </div>
+                </div>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -1646,7 +1652,7 @@ export default function PlanningPage() {
               <DialogDescription>
                 {selectedAppointment && (
                   <span>
-                    {selectedAppointment.client_name} - {selectedAppointment.date} alle {selectedAppointment.time}
+                    {selectedAppointment.client_name} - {fmtDate(selectedAppointment.date)} alle {selectedAppointment.time}
                   </span>
                 )}
               </DialogDescription>
@@ -1859,13 +1865,18 @@ export default function PlanningPage() {
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-2">
                   <Label className="text-[#0F172A] font-semibold">Data</Label>
-                  <Input
-                    type="date"
-                    value={editDate}
-                    onChange={(e) => setEditDate(e.target.value)}
-                    className="border-2 border-[#E2E8F0]"
-                    data-testid="edit-appointment-date"
-                  />
+                  <div className="relative">
+                    <input
+                      type="date"
+                      value={editDate}
+                      onChange={(e) => setEditDate(e.target.value)}
+                      className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                      data-testid="edit-appointment-date"
+                    />
+                    <div className="flex items-center h-10 px-3 border-2 border-[#E2E8F0] rounded-md text-sm text-[#0F172A] font-medium cursor-pointer">
+                      {fmtDate(editDate)}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-2">

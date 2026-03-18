@@ -167,7 +167,7 @@ export default function HistoryPage() {
               <div key={date}>
                 <h3 className="font-playfair text-lg text-[#0F172A] mb-3 flex items-center gap-2">
                   <CalendarIcon className="w-5 h-5 text-[#0EA5E9]" />
-                  {format(new Date(date), "EEEE d MMMM yyyy", { locale: it })}
+                  {format(new Date(date), "EEEE dd/MM/yy", { locale: it })}
                 </h3>
                 <div className="space-y-3">
                   {dayAppointments.map((apt) => (

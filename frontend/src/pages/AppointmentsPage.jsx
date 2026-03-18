@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
+
   Dialog,
   DialogContent,
   DialogDescription,
@@ -37,6 +38,7 @@ import { it } from 'date-fns/locale';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
+import { fmtDate } from '../utils/formatDate';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -226,7 +228,7 @@ export default function AppointmentsPage() {
   const openSmsDialog = (apt) => {
     setAppointmentForSms(apt);
     const servicesText = apt.services.map(s => s.name).join(', ');
-    setSmsMessage(`Promemoria: hai un appuntamento il ${apt.date} alle ${apt.time} per ${servicesText}. Ti aspettiamo!`);
+    setSmsMessage(`Promemoria: hai un appuntamento il ${fmtDate(apt.date)} alle ${apt.time} per ${servicesText}. Ti aspettiamo!`);
     setSmsDialogOpen(true);
   };
 

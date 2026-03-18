@@ -27,14 +27,9 @@ import {
   Calendar, AlertTriangle, RotateCcw, Receipt, Filter
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { fmtDate } from '../utils/formatDate';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
-
-const fmtDate = (d) => {
-  if (!d) return '';
-  const [y, m, dd] = d.split('-');
-  return `${dd}/${m}/${y?.slice(-2)}`;
-};
 
 const CATEGORIES = [
   { value: 'affitto', label: 'Affitto', color: 'bg-purple-100 text-purple-700' },

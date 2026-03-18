@@ -36,6 +36,7 @@ import { CreditCard, Plus, Euro, Calendar, Loader2, Trash2, RefreshCw, History }
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { fmtDate } from '../utils/formatDate';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -443,12 +444,17 @@ export default function CardsPage() {
 
               <div className="space-y-2">
                 <Label>Scadenza (opzionale)</Label>
-                <Input
-                  type="date"
-                  value={formData.valid_until}
-                  onChange={(e) => setFormData({ ...formData, valid_until: e.target.value })}
-                  className="bg-[#F8FAFC]"
-                />
+                <div className="relative">
+                  <input
+                    type="date"
+                    value={formData.valid_until}
+                    onChange={(e) => setFormData({ ...formData, valid_until: e.target.value })}
+                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                  />
+                  <div className="flex items-center h-10 px-3 bg-[#F8FAFC] border border-slate-200 rounded-md text-sm font-medium cursor-pointer">
+                    {formData.valid_until ? fmtDate(formData.valid_until) : 'Seleziona data'}
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -539,7 +545,7 @@ export default function CardsPage() {
                       <div>
                         <p className="text-sm text-[#0F172A]">{tx.description}</p>
                         <p className="text-xs text-[#334155]">
-                          {format(new Date(tx.date), 'd MMM yyyy HH:mm', { locale: it })}
+                          {(() => { try { const d = new Date(tx.date); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(-2)} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; } catch { return tx.date; } })()}
                         </p>
                       </div>
                       <span className={`font-semibold ${tx.amount < 0 ? 'text-[#789F8A]' : 'text-[#E76F51]'}`}>
