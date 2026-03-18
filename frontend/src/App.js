@@ -1,36 +1,38 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster, toast } from "sonner";
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 
 // CONTEXT LOGIN
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-// PAGINE
-import Dashboard from "./pages/Dashboard";
-import StatsPage from "./pages/StatsPage";
-import ClientsPage from "./pages/ClientsPage";
-import ServicesPage from "./pages/ServicesPage";
-import HistoryPage from "./pages/HistoryPage";
-import SettingsPage from "./pages/SettingsPage";
-import MonthlyView from "./pages/MonthlyView";
-import WeeklyView from "./pages/WeeklyView";
-import AppointmentsPage from "./pages/AppointmentsPage";
-import OperatorsPage from "./pages/OperatorsPage";
-import PlanningPage from "./pages/PlanningPage";
-import PrepaidCardsPage from "./pages/PrepaidCardsPage";
-import CardAlertsPage from "./pages/CardAlertsPage";
-import ReportIncassiPage from "./pages/ReportIncassiPage";
-import BackupPage from "./pages/BackupPage";
-import LoyaltyPage from "./pages/LoyaltyPage";
-import RemindersPage from "./pages/RemindersPage";
-import DailySummaryPage from "./pages/DailySummaryPage";
+// PAGINE - Eager load (homepage)
 import WebsitePage from "./pages/WebsitePage";
-import WebsiteAdminPage from "./pages/WebsiteAdminPage";
-import ExpensesPage from "./pages/ExpensesPage";
-import PromotionsPage from "./pages/PromotionsPage";
 import LoginPage from "./pages/LoginPage";
-import BookingPage from "./pages/BookingPage";
+
+// PAGINE - Lazy load (admin/gestionale)
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const StatsPage = lazy(() => import("./pages/StatsPage"));
+const ClientsPage = lazy(() => import("./pages/ClientsPage"));
+const ServicesPage = lazy(() => import("./pages/ServicesPage"));
+const HistoryPage = lazy(() => import("./pages/HistoryPage"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+const MonthlyView = lazy(() => import("./pages/MonthlyView"));
+const WeeklyView = lazy(() => import("./pages/WeeklyView"));
+const AppointmentsPage = lazy(() => import("./pages/AppointmentsPage"));
+const OperatorsPage = lazy(() => import("./pages/OperatorsPage"));
+const PlanningPage = lazy(() => import("./pages/PlanningPage"));
+const PrepaidCardsPage = lazy(() => import("./pages/PrepaidCardsPage"));
+const CardAlertsPage = lazy(() => import("./pages/CardAlertsPage"));
+const ReportIncassiPage = lazy(() => import("./pages/ReportIncassiPage"));
+const BackupPage = lazy(() => import("./pages/BackupPage"));
+const LoyaltyPage = lazy(() => import("./pages/LoyaltyPage"));
+const RemindersPage = lazy(() => import("./pages/RemindersPage"));
+const DailySummaryPage = lazy(() => import("./pages/DailySummaryPage"));
+const WebsiteAdminPage = lazy(() => import("./pages/WebsiteAdminPage"));
+const ExpensesPage = lazy(() => import("./pages/ExpensesPage"));
+const PromotionsPage = lazy(() => import("./pages/PromotionsPage"));
+const BookingPage = lazy(() => import("./pages/BookingPage"));
 
 // Offline indicator component
 function OfflineIndicator() {
@@ -69,6 +71,7 @@ export default function App() {
     <AuthProvider>
       <OfflineIndicator />
       <BrowserRouter basename="/">
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-slate-200 border-t-slate-600 rounded-full animate-spin" /></div>}>
         <Routes>
           {/* LOGIN (non protetto) */}
           <Route path="/login" element={<LoginPage />} />
@@ -292,6 +295,7 @@ export default function App() {
             }
           />
         </Routes>
+        </Suspense>
       </BrowserRouter>
       <Toaster 
         position="top-right" 
