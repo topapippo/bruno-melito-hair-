@@ -442,30 +442,15 @@ export default function BookingPage() {
       setSuccess(true);
     } catch (err) {
       const errorData = err.response?.data || {};
-      const errorDetail = errorData.detail || 'Errore nella prenotazione';
+      // Handle both string detail and object detail from backend
+      const rawDetail = errorData.detail;
+      const errorDetail = typeof rawDetail === 'string' ? rawDetail : (rawDetail?.message || 'Errore nella prenotazione');
+      const conflictData = typeof rawDetail === 'object' ? rawDetail : errorData;
       
-      const testMode = false;
-      if (testMode) {
-        setAvailableOperators([
-          { id: "op_mbhs", name: "MBHS" }
-        ]);
+      if (errorDetail.toLowerCase().includes('orario già occupato') || errorDetail.toLowerCase().includes('slot non disponibile') || conflictData.conflict) {
         
-        setAlternativeSlots([
-          { date: formData.date, time: "10:00", operator_name: "MBHS", operator_id: "op_mbhs" },
-          { date: formData.date, time: "11:30", operator_name: "MBHS", operator_id: "op_mbhs" },
-          { date: formData.date, time: "15:00", operator_name: "BRUNO", operator_id: "" },
-          { date: formData.date, time: "16:30", operator_name: "BRUNO", operator_id: "" }
-        ]);
-        
-        setShowConflictModal(true);
-        setSubmitting(false);
-        return;
-      }
-      
-      if (errorDetail.includes('orario già occupato') || errorDetail.includes('slot non disponibile') || errorData.conflict) {
-        
-        setAvailableOperators(errorData.available_operators || []);
-        setAlternativeSlots(errorData.alternative_slots || []);
+        setAvailableOperators(conflictData.available_operators || []);
+        setAlternativeSlots(conflictData.alternative_slots || []);
         setShowConflictModal(true);
         
       } else {

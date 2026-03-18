@@ -34,10 +34,11 @@ Salon management application (React, FastAPI, MongoDB) deployed on Render. The a
 - package-lock.json already removed
 - User needs to push to GitHub and redeploy on Render
 
-## Booking Conflict Verification (Mar 2026)
-- Verified conflict flow with 2 operators (BRUNO + MBHS): change operator, change time, WhatsApp fallback all working
-- Added missing MBHS operator to local DB to match production
-- Partial slot indicator (amber) works correctly when only 1 operator is busy
+## Booking Conflict Bug Fix (Mar 18, 2026)
+- Fixed case-sensitive bug: frontend checked lowercase "orario" but backend returned uppercase "Orario" → conflict modal never triggered
+- Enhanced backend POST /api/public/booking to return HTTP 409 with structured data (available_operators, alternative_slots) on conflicts
+- Updated frontend to correctly parse both string and object detail responses
+- Removed unused testMode code from booking submission handler
 
 ## Prioritized Backlog
 ### P0
