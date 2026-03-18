@@ -34,6 +34,11 @@ Salon management application (React, FastAPI, MongoDB) deployed on Render. The a
 - package-lock.json already removed
 - User needs to push to GitHub and redeploy on Render
 
+## Booking Conflict Verification (Mar 2026)
+- Verified conflict flow with 2 operators (BRUNO + MBHS): change operator, change time, WhatsApp fallback all working
+- Added missing MBHS operator to local DB to match production
+- Partial slot indicator (amber) works correctly when only 1 operator is busy
+
 ## Prioritized Backlog
 ### P0
 - User pushes to GitHub and redeploys on Render
