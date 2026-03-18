@@ -134,7 +134,7 @@ export default function BookingModal({ open, onClose, services, operators, promo
         time: formData.time,
         notes: formData.notes || ''
       });
-      onSuccess(formData);
+      onSuccess({ ...formData, serviceNames: selSvcs.map(s => s.name), totalPrice: totPrice, totalDuration: totDur });
     } catch (err) {
       const errorData = err.response?.data || {};
       const rawDetail = errorData.detail;

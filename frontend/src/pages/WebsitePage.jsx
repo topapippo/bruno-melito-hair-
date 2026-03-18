@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { format } from 'date-fns';
 import { toast, Toaster } from 'sonner';
-import { Scissors, CheckCircle } from 'lucide-react';
+import { Scissors, CheckCircle, MessageSquare } from 'lucide-react';
 import { it } from 'date-fns/locale';
 import {
   Navbar, HeroSection, StatsBar, AboutSection, CTASection,
@@ -204,6 +204,21 @@ export default function BookingPage() {
     setSuccessData(formData);
     setBookingOpen(false);
     setSuccess(true);
+
+    // Auto-open WhatsApp with booking summary
+    const num = cfg.whatsapp || '393397833526';
+    const dateFormatted = format(new Date(formData.date + 'T00:00:00'), 'dd/MM/yyyy', { locale: it });
+    const msg = encodeURIComponent(
+      `Ciao! Ho appena prenotato:\n` +
+      `Nome: ${formData.client_name}\n` +
+      `Data: ${dateFormatted} alle ${formData.time}\n` +
+      `Servizi: ${(formData.serviceNames || []).join(', ')}\n` +
+      `Totale: €${formData.totalPrice || 0}\n` +
+      `Tel: ${formData.client_phone}`
+    );
+    setTimeout(() => {
+      window.open(`https://wa.me/${num}?text=${msg}`, '_blank');
+    }, 1200);
   };
 
   if (success && successData) return (
@@ -215,14 +230,34 @@ export default function BookingPage() {
           <CheckCircle className="w-12 h-12" style={{ color: COLORS.accent }} />
         </div>
         <h1 className="fd text-4xl font-bold text-slate-900 mb-3">Prenotazione Inviata!</h1>
-        <p className="text-slate-500 mb-8 text-lg">
+        <p className="text-slate-500 mb-4 text-lg">
           Ti aspettiamo il <strong>{format(new Date(successData.date + 'T00:00:00'), 'dd/MM/yy', { locale: it })}</strong> alle{' '}
           <strong style={{ color: COLORS.primary }}>{successData.time}</strong>
         </p>
-        <button onClick={() => { setSuccess(false); setSuccessData(null); }}
-          className="px-10 py-4 text-base mx-auto text-white rounded-xl transition-all" style={{ background: COLORS.primary }}>
-          Torna alla pagina
-        </button>
+        <p className="text-slate-400 text-sm mb-6">
+          Si aprirà WhatsApp per inviare la conferma al salone.
+        </p>
+        <div className="space-y-3">
+          <button
+            onClick={() => {
+              const num = cfg.whatsapp || '393397833526';
+              const dateFormatted = format(new Date(successData.date + 'T00:00:00'), 'dd/MM/yyyy', { locale: it });
+              const msg = encodeURIComponent(
+                `Ciao! Ho appena prenotato:\nNome: ${successData.client_name}\nData: ${dateFormatted} alle ${successData.time}\nServizi: ${(successData.serviceNames || []).join(', ')}\nTotale: €${successData.totalPrice || 0}\nTel: ${successData.client_phone}`
+              );
+              window.open(`https://wa.me/${num}?text=${msg}`, '_blank');
+            }}
+            className="w-full py-4 text-base text-white font-bold rounded-xl transition-all hover:opacity-90 flex items-center justify-center gap-2"
+            style={{ background: '#22c55e' }}
+            data-testid="whatsapp-confirm-btn"
+          >
+            <MessageSquare className="w-5 h-5" /> Conferma su WhatsApp
+          </button>
+          <button onClick={() => { setSuccess(false); setSuccessData(null); }}
+            className="w-full py-3 text-sm text-slate-500 font-semibold rounded-xl border-2 border-slate-200 hover:bg-slate-50 transition-all">
+            Torna alla pagina
+          </button>
+        </div>
       </div>
     </div>
   );
