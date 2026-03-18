@@ -107,8 +107,13 @@ export default function ManageAppointments({ open, onClose, COLORS }) {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs font-bold text-slate-500 mb-1 block">Data</label>
-                    <Input type="date" value={editDate} min={format(new Date(), 'yyyy-MM-dd')}
-                      onChange={e => setEditDate(e.target.value)} className="border-slate-200" />
+                    <div className="relative">
+                      <input type="date" value={editDate} min={format(new Date(), 'yyyy-MM-dd')}
+                        onChange={e => setEditDate(e.target.value)} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
+                      <div className="flex items-center h-10 px-3 border border-slate-200 rounded-md text-sm text-slate-800 font-semibold bg-white cursor-pointer">
+                        {editDate ? format(new Date(editDate + 'T00:00:00'), 'dd/MM/yy', { locale: it }) : 'Seleziona'}
+                      </div>
+                    </div>
                   </div>
                   <div>
                     <label className="text-xs font-bold text-slate-500 mb-1 block">Ora</label>

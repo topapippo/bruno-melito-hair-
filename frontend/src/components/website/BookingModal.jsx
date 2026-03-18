@@ -465,9 +465,15 @@ export default function BookingModal({ open, onClose, services, operators, promo
                       )}
                       <div>
                         <label className="text-xs font-bold text-slate-500 mb-1.5 block">📅 Data</label>
-                        <Input type="date" value={form.date} min={format(new Date(), 'yyyy-MM-dd')}
-                          onChange={e => setForm({ ...form, date: e.target.value })}
-                          className="border-slate-200 text-slate-800 font-semibold" data-testid="date-input" />
+                        <div className="relative">
+                          <input type="date" value={form.date} min={format(new Date(), 'yyyy-MM-dd')}
+                            onChange={e => setForm({ ...form, date: e.target.value })}
+                            className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                            data-testid="date-input" />
+                          <div className="flex items-center h-10 px-3 border border-slate-200 rounded-md text-sm text-slate-800 font-semibold bg-white cursor-pointer">
+                            {format(new Date(form.date + 'T00:00:00'), 'dd/MM/yy', { locale: it })}
+                          </div>
+                        </div>
                       </div>
                       <div>
                         <label className="text-xs font-bold text-slate-500 mb-1.5 block">🕐 Seleziona orario</label>
