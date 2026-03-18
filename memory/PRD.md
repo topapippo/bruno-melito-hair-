@@ -1,121 +1,56 @@
-# MBHS - Bruno Melito Hair Stylist - Gestionale
+# Bruno Melito Hair Salon - PRD
 
-## Descrizione Progetto
-Sistema gestionale completo per salone di parrucchiere "Bruno Melito Hair" a Santa Maria Capua Vetere.
+## Original Problem Statement
+Salon management application (React, FastAPI, MongoDB) deployed on Render. The app manages bookings, CMS content, and the public-facing website for a hair salon.
 
-## URL dell'Applicazione
-- **Sito Web Pubblico:** https://design-stile-fix.preview.emergentagent.com/
-- **Gestionale (Area Riservata):** https://design-stile-fix.preview.emergentagent.com/login
-- **Credenziali Admin:** admin@brunomelito.it / Admin123!
-- **Credenziali Produzione (Render):** melitobruno@gmail.com / mbhs637104
+## Core Requirements
+- Stable, fully functional salon management app
+- CMS for site content, colors, and fonts
+- Intuitive booking flow with occupied slot feedback
+- Clean, modern homepage with booking in a modal
+- SEO compliance (Google Search Console)
+- Reliable deployment to Render
 
-## Architettura
-- **Frontend:** React + Tailwind CSS + Shadcn UI
-- **Backend:** FastAPI (Python)
+## Tech Stack
+- **Frontend:** React, Tailwind CSS, Yarn
+- **Backend:** Python, FastAPI
 - **Database:** MongoDB
-- **PWA:** Installabile come app su PC/mobile
+- **Deployment:** Render
+- **Domain:** brunomelitohair.it
+- **Repository:** https://github.com/topapippo/bruno-melito-hair-
 
-## Routing
-- `/` → Sito Web Pubblico (WebsitePage)
-- `/login` → Pagina Login Admin
-- `/planning` → Planning giornaliero (dopo login)
-- `/gestione-sito` → Admin CMS Sito Web
-- `/sito` → Redirect a `/`
-- `/prenota` → Redirect a `/`
-- `/reminders` → Promemoria & Richiami WhatsApp
+## What's Been Implemented
+- Refactored WebsitePage.jsx into 8 smaller components (Navbar, Hero, Stats, About, CTA, Gallery, Reviews, Footer)
+- Booking flow moved to modal overlay
+- CMS enhanced with font size controls and 6 theme presets
+- Improved "Slot Occupied" modal with alternative suggestions
+- Promo click-to-apply with confirmation badge
+- SEO fixes (sitemap, robots.txt, canonical URLs, redirects)
+- Mobile UX fixes (login button visibility)
+- UI cleanup (footer branding, admin back button)
 
-## Funzionalita Implementate
+## Deployment Fix (Feb 2026)
+- Verified yarn.lock is synced with package.json
+- package-lock.json already removed
+- User needs to push to GitHub and redeploy on Render
 
-### Sito Web Pubblico (/)
-- Landing page professionale con logo grande e animazioni
-- Sezione servizi con listino prezzi espandibile e servizi cliccabili
-- Gallery salone e lavori con hover animations
-- Recensioni clienti (tema chiaro)
-- Programma fedelta con card animate
-- Promozioni attive cliccabili
-- Contatti e social links (Instagram, Facebook, YouTube)
-- Sistema prenotazione online integrato (3 step)
-- Gestione appuntamenti (modifica/cancella)
-- CTA mobile fisso
-- Colori e font dinamici da CMS
+## Prioritized Backlog
+### P0
+- User pushes to GitHub and redeploys on Render
+- Full verification of all features on live site
 
-### Gestionale (/login → /planning)
-- Planning giornaliero con timeline visiva
-- Dashboard con statistiche
-- Agenda appuntamenti
-- Vista settimanale e mensile
-- Gestione Clienti (165 clienti importati)
-- Gestione Servizi (21 servizi)
-- Operatori
-- Card/Abbonamenti
-- Programma Fedelta
-- Promozioni (7 promozioni)
-- Report Incassi
-- Registro Uscite
-- Statistiche
-- Backup Dati
-- Gestione Sito Web (CMS) - COMPLETO con tab Design & Stile
-- Promemoria WhatsApp automatici
-- Template messaggi personalizzabili
-- Richiami clienti inattivi
+### P1
+- Make GitHub repository private + add Render collaborator
 
-### CMS Gestione Sito (/gestione-sito) - 7 Tab
-1. **Generale** - Nome salone, descrizione, chi siamo, punti di forza
-2. **Colori & Font** - Colore primario, accento, sfondo, testo + Font titoli e corpo con anteprima live
-3. **Servizi** - Categorie servizi con listino pubblico
-4. **Foto Salone** - Upload e gestione foto/video salone
-5. **Gallery Lavori** - Upload e gestione portfolio lavori
-6. **Recensioni** - CRUD recensioni clienti
-7. **Orari & Contatti** - Orari apertura, email, telefoni, WhatsApp, indirizzo
+### P2
+- Performance optimization (lazy loading, bundle analysis)
+- Booking modal refactoring into sub-components
 
-## Dati nel Database
-- 165 Clienti
-- 21 Servizi
-- 7 Promozioni
-- 4 Foto Gallery
-- 5 Template Messaggi
+## Credentials
+- **Production:** melitobruno@gmail.com / mbhs637104
+- **Local:** admin@brunomelito.it / Admin123!
 
-## API Endpoints Chiave
-- POST /api/auth/login
-- GET /api/auth/me
-- GET /api/public/website
-- GET/PUT /api/website/config (autenticato)
-- GET/POST/PUT/DELETE /api/website/reviews
-- GET/POST/DELETE /api/website/gallery
-- POST /api/website/upload
-
-## Changelog
-
-### 17 Marzo 2026
-- Implementato tab "Colori & Font" in Gestione Sito
-- Anteprima Live: pannello laterale iframe in tempo reale
-- Fix SEO Google Search Console (sitemap, robots.txt, canonical, og:url)
-- Animazioni logo migliorate, pulsante "Torna al Planning"
-- Pulsante Area Riservata visibile su mobile
-- Slot occupati nella prenotazione con griglia visuale e modale conflitto
-- Rimosso "dal 1983" da logo/nav/footer, duplicato in Chi Siamo
-- Sezione CTA spostata prima della galleria
-- Promo cliccabili con badge e codice nelle note
-- Testo Chi Siamo aggiornato, immagine "Metti la testa a posto!!" aggiunta
-- Formato data GG/MM/AA in tutto il flusso prenotazione
-- **Refactoring WebsitePage.jsx**: da 1700 a 1269 righe
-  - 8 componenti estratti: Navbar, HeroSection, StatsBar, AboutSection, CTASection, GallerySection, ReviewsSection, ContactSection/FooterSection
-  - 30/30 test passati dopo refactoring
-
-### 16 Marzo 2026
-- Fix routing: `/` → sito pubblico, `/login` → login admin
-- Logo piu grande e prominente nell'hero
-- Servizi cliccabili sulla landing page
-- Promozioni cliccabili
-- Rimosso Twilio SMS
-- Aggiunto format_phone_whatsapp() in utils.py
-- Merge video range request
-
-## Backlog
-- [ ] Verifica utente: dati clienti (telefoni, card) visibili dopo login produzione
-- [ ] Refactoring WebsitePage.jsx in componenti piu piccoli (1500+ righe)
-- [ ] Refactoring WebsiteAdminPage.jsx (600+ righe)
-- [ ] Ottimizzazione performance e SEO
-- [ ] Configurare dominio brunomelitohair.it su Render
-- [ ] Aggiungere numeri telefono ai clienti mancanti per promemoria WhatsApp
-- [ ] Pulizia repository GitHub vecchi
+## Key API Endpoints
+- GET /api/public/busy-slots - Fetch occupied time slots
+- PUT /api/website - Save CMS data (font_size, title_size)
+- GET /api/public/website - Public website data
