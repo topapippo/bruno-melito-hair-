@@ -1,6 +1,6 @@
 import { Scissors, ChevronRight, ChevronDown, Sparkles } from 'lucide-react';
 
-export function HeroSection({ COLORS, cfg, bookRef, titleSize }) {
+export function HeroSection({ COLORS, cfg, bookRef, titleSize, onBook }) {
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden pt-16">
       <div className="absolute inset-0 flex items-center justify-end pointer-events-none">
@@ -29,7 +29,7 @@ export function HeroSection({ COLORS, cfg, bookRef, titleSize }) {
           </p>
           <div className="fu d4 flex flex-wrap gap-3">
             <button 
-              onClick={() => bookRef.current?.scrollIntoView({ behavior: 'smooth' })} 
+              onClick={onBook} 
               className="px-8 py-4 text-base text-white rounded-xl transition-all"
               style={{ background: COLORS.primary }}
             >

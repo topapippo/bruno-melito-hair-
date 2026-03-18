@@ -1,6 +1,6 @@
 import { CheckCircle, Scissors } from 'lucide-react';
 
-export function AboutSection({ COLORS, cfg, bookRef, dispSalon, iUrl, SALON_PH, titleSize }) {
+export function AboutSection({ COLORS, cfg, bookRef, dispSalon, iUrl, SALON_PH, titleSize, onBook }) {
   return (
     <section id="chi-siamo" className="py-20 sm:py-28">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -63,7 +63,7 @@ export function AboutSection({ COLORS, cfg, bookRef, dispSalon, iUrl, SALON_PH, 
               ))}
             </div>
             <button 
-              onClick={() => bookRef.current?.scrollIntoView({ behavior: 'smooth' })} 
+              onClick={onBook} 
               className="px-8 py-4 text-base text-white rounded-xl transition-all"
               style={{ background: COLORS.primary }}
             >

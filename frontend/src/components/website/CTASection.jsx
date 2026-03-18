@@ -1,6 +1,6 @@
 import { Scissors, MessageSquare, Phone, Calendar } from 'lucide-react';
 
-export function CTASection({ COLORS, bookRef, openWA, setManageOpen }) {
+export function CTASection({ COLORS, bookRef, openWA, setManageOpen, onBook }) {
   return (
     <section className="py-16 sm:py-20" style={{ background: COLORS.text }}>
       <div className="max-w-2xl mx-auto px-4 sm:px-6">
@@ -9,11 +9,12 @@ export function CTASection({ COLORS, bookRef, openWA, setManageOpen }) {
           <p className="text-slate-400 mb-8 leading-relaxed">Prenota il tuo appuntamento in pochi click, oppure contattaci direttamente.</p>
           <div className="space-y-3">
             <button 
-              onClick={() => bookRef.current?.scrollIntoView({ behavior: 'smooth' })} 
+              onClick={onBook} 
               className="w-full py-4 text-base font-black rounded-xl transition-all hover:opacity-90"
               style={{ background: COLORS.primary, color: 'white' }}
+              data-testid="cta-book-btn"
             >
-              <Scissors className="w-5 h-5" />Prenota online
+              <Scissors className="w-5 h-5" />Scegli e Prenota
             </button>
             <button onClick={openWA} className="w-full py-4 text-base font-black rounded-xl transition-all hover:opacity-90" style={{ background: COLORS.accent, color: 'white' }}>
               <MessageSquare className="w-5 h-5" />Scrivici su WhatsApp

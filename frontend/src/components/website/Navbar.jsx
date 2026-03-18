@@ -1,6 +1,6 @@
 import { Scissors, Calendar, LogIn } from 'lucide-react';
 
-export function Navbar({ COLORS, bookRef, setManageOpen, goToAdminLogin }) {
+export function Navbar({ COLORS, bookRef, setManageOpen, goToAdminLogin, onBook }) {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/96 backdrop-blur-md border-b border-slate-100 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
@@ -58,7 +58,7 @@ export function Navbar({ COLORS, bookRef, setManageOpen, goToAdminLogin }) {
             <Calendar className="w-5 h-5 text-slate-500" />
           </button>
           <button 
-            onClick={() => bookRef.current?.scrollIntoView({ behavior: 'smooth' })} 
+            onClick={onBook} 
             className="px-5 py-2.5 text-sm text-white rounded-xl transition-all"
             style={{ background: COLORS.primary }}
           >

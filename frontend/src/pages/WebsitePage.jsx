@@ -310,6 +310,7 @@ export default function BookingPage() {
   const [busySlots, setBusySlots] = useState({});
   const [selectedPromo, setSelectedPromo] = useState(null);
   const [conflictModal, setConflictModal] = useState(null);
+  const [bookingOpen, setBookingOpen] = useState(false);
 
   const bookRef = useRef(null);
 
@@ -822,27 +823,59 @@ export default function BookingPage() {
       
       <ConflictModal />
 
-      <Navbar COLORS={COLORS} bookRef={bookRef} setManageOpen={setManageOpen} goToAdminLogin={goToAdminLogin} />
+      <Navbar COLORS={COLORS} bookRef={bookRef} setManageOpen={setManageOpen} goToAdminLogin={goToAdminLogin} onBook={() => setBookingOpen(true)} />
 
-      <HeroSection COLORS={COLORS} cfg={cfg} bookRef={bookRef} titleSize={titleSize} />
+      <HeroSection COLORS={COLORS} cfg={cfg} bookRef={bookRef} titleSize={titleSize} onBook={() => setBookingOpen(true)} />
 
       <StatsBar COLORS={COLORS} />
 
-      <AboutSection COLORS={COLORS} cfg={cfg} bookRef={bookRef} dispSalon={dispSalon} iUrl={iUrl} SALON_PH={SALON_PH} titleSize={titleSize} />
+      <AboutSection COLORS={COLORS} cfg={cfg} bookRef={bookRef} dispSalon={dispSalon} iUrl={iUrl} SALON_PH={SALON_PH} titleSize={titleSize} onBook={() => setBookingOpen(true)} />
 
-      <section ref={bookRef} id="prenota" className="py-20 sm:py-28" style={{ background: COLORS.bg }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-14">
-            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: COLORS.primary }}>
-              Prenota il tuo appuntamento
-            </p>
-            <h2 className="fd text-4xl sm:text-5xl font-bold text-slate-900 mb-4">
-              Scegli e Prenota
-            </h2>
-            <p className="text-slate-400 max-w-md mx-auto">
-              Seleziona i tuoi servizi, scegli data e ora, e conferma in pochi secondi.
-            </p>
-          </div>
+      <GallerySection COLORS={COLORS} galTab={galTab} setGalTab={setGalTab} dispWork={dispWork} dispSalon={dispSalon} iUrl={iUrl} WORK_PH={WORK_PH} SALON_PH={SALON_PH} />
+
+      <CTASection COLORS={COLORS} bookRef={bookRef} openWA={openWA} setManageOpen={setManageOpen} onBook={() => setBookingOpen(true)} />
+
+      <ReviewsSection COLORS={COLORS} reviews={reviews} />
+
+      <ContactSection COLORS={COLORS} cfg={cfg} />
+
+      <FooterSection />
+
+      {/* Mobile CTA */}
+      <div className="fixed bottom-0 left-0 right-0 p-3 bg-white/96 backdrop-blur-md border-t border-slate-200 sm:hidden z-50">
+        <button 
+          onClick={() => setBookingOpen(true)} 
+          className="w-full py-4 text-base font-black rounded-xl transition-all hover:opacity-90"
+          style={{ background: COLORS.primary, color: 'white' }}
+        >
+          <Scissors className="w-5 h-5" />Prenota ora
+        </button>
+      </div>
+
+      {/* Booking Modal */}
+      {bookingOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center" data-testid="booking-modal">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setBookingOpen(false)} />
+          <div className="relative w-full max-w-2xl max-h-[92vh] mx-4 overflow-y-auto rounded-3xl bg-white shadow-2xl">
+            <button 
+              onClick={() => setBookingOpen(false)} 
+              className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center hover:bg-slate-100 transition-colors"
+              data-testid="close-booking-btn"
+            >
+              <X className="w-5 h-5 text-slate-500" />
+            </button>
+            <div className="p-6 sm:p-8">
+              <div className="text-center mb-8">
+                <p className="font-bold text-sm tracking-widest uppercase mb-2" style={{ color: COLORS.primary }}>
+                  Prenota il tuo appuntamento
+                </p>
+                <h2 className="fd text-3xl sm:text-4xl font-bold text-slate-900 mb-2">
+                  Scegli e Prenota
+                </h2>
+                <p className="text-slate-400 text-sm">
+                  Seleziona i tuoi servizi, scegli data e ora, e conferma in pochi secondi.
+                </p>
+              </div>
           <div className="max-w-2xl mx-auto">
             <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-2xl">
               <div className="flex border-b border-slate-100">
@@ -1245,28 +1278,10 @@ export default function BookingPage() {
               </button>
             </div>
           </div>
+          </div>
         </div>
-      </section>
-
-      <CTASection COLORS={COLORS} bookRef={bookRef} openWA={openWA} setManageOpen={setManageOpen} />
-
-      <GallerySection COLORS={COLORS} galTab={galTab} setGalTab={setGalTab} dispWork={dispWork} dispSalon={dispSalon} iUrl={iUrl} WORK_PH={WORK_PH} SALON_PH={SALON_PH} />
-
-      <ReviewsSection COLORS={COLORS} reviews={reviews} />
-
-      <ContactSection COLORS={COLORS} cfg={cfg} />
-
-      <FooterSection />
-
-      <div className="fixed bottom-0 left-0 right-0 p-3 bg-white/96 backdrop-blur-md border-t border-slate-200 sm:hidden z-50">
-        <button 
-          onClick={() => bookRef.current?.scrollIntoView({ behavior: 'smooth' })} 
-          className="w-full py-4 text-base font-black rounded-xl transition-all hover:opacity-90"
-          style={{ background: COLORS.primary, color: 'white' }}
-        >
-          <Scissors className="w-5 h-5" />Prenota ora
-        </button>
-      </div>
+        </div>
+      )}
     </div>
   );
 }
