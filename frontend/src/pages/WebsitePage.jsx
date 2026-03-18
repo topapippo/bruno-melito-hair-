@@ -1142,14 +1142,16 @@ export default function BookingPage() {
 
                     {/* Conflict Modal */}
                     {conflictModal && (
-                      <div className="rounded-2xl border-2 border-red-200 bg-red-50 p-4 space-y-3" data-testid="conflict-modal">
+                      <div className="rounded-2xl border-2 border-red-200 bg-red-50 p-4 space-y-4" data-testid="conflict-modal">
                         <div className="flex items-center justify-between">
                           <p className="font-bold text-red-700 text-sm">Orario {conflictModal.time} occupato</p>
                           <button onClick={() => setConflictModal(null)} className="text-red-400 hover:text-red-600 text-xs font-bold">✕</button>
                         </div>
-                        {conflictModal.freeOps.length > 0 ? (
+
+                        {/* Option 1: Change operator */}
+                        {conflictModal.freeOps.length > 0 && (
                           <div>
-                            <p className="text-xs text-red-600 mb-2">Disponibile con altro operatore:</p>
+                            <p className="text-xs font-bold text-slate-600 mb-2">Cambia operatore:</p>
                             <div className="space-y-2">
                               {conflictModal.freeOps.map(op => (
                                 <button
@@ -1159,7 +1161,7 @@ export default function BookingPage() {
                                     setConflictModal(null);
                                     toast.success(`Orario ${conflictModal.time} con ${op.name} selezionato`);
                                   }}
-                                  className="w-full text-left px-3 py-2.5 rounded-xl bg-white border border-red-200 hover:border-green-400 hover:bg-green-50 transition-all flex items-center justify-between"
+                                  className="w-full text-left px-3 py-2.5 rounded-xl bg-white border border-green-200 hover:border-green-400 hover:bg-green-50 transition-all flex items-center justify-between"
                                   data-testid={`conflict-op-${op.id}`}
                                 >
                                   <span className="text-sm font-bold text-slate-700">{op.name}</span>
@@ -1168,14 +1170,49 @@ export default function BookingPage() {
                               ))}
                             </div>
                           </div>
-                        ) : (
-                          <p className="text-xs text-red-600">Tutti gli operatori sono occupati a quest'ora. Scegli un altro orario.</p>
                         )}
+
+                        {/* Option 2: Choose nearby free time */}
+                        <div>
+                          <p className="text-xs font-bold text-slate-600 mb-2">Scegli un altro orario:</p>
+                          <div className="flex flex-wrap gap-2">
+                            {getSlots(form.date)
+                              .filter(t => {
+                                const st = getSlotStatus(t);
+                                return st === 'free' || st === 'partial';
+                              })
+                              .filter(t => {
+                                const diff = Math.abs(
+                                  parseInt(t.split(':')[0]) * 60 + parseInt(t.split(':')[1]) -
+                                  parseInt(conflictModal.time.split(':')[0]) * 60 - parseInt(conflictModal.time.split(':')[1])
+                                );
+                                return diff <= 120;
+                              })
+                              .slice(0, 6)
+                              .map(t => (
+                                <button
+                                  key={t}
+                                  onClick={() => {
+                                    setForm(f => ({ ...f, time: t }));
+                                    setConflictModal(null);
+                                    toast.success(`Orario ${t} selezionato`);
+                                  }}
+                                  className="px-3 py-2 rounded-lg bg-white border border-slate-200 hover:border-green-400 hover:bg-green-50 text-sm font-bold text-slate-700 transition-all"
+                                >
+                                  {t}
+                                </button>
+                              ))
+                            }
+                          </div>
+                        </div>
+
+                        {/* Option 3: WhatsApp */}
                         <button
-                          onClick={() => setConflictModal(null)}
-                          className="w-full text-xs font-bold text-slate-500 hover:text-slate-700 py-2"
+                          onClick={() => { setConflictModal(null); openWA(); }}
+                          className="w-full flex items-center justify-center gap-2 px-3 py-3 rounded-xl font-bold text-sm text-white transition-all hover:opacity-90"
+                          style={{ background: COLORS.accent }}
                         >
-                          Scegli un altro orario
+                          <MessageSquare className="w-4 h-4" />Contattaci su WhatsApp
                         </button>
                       </div>
                     )}
