@@ -7,19 +7,18 @@ export function AboutSection({ COLORS, cfg, bookRef, dispSalon, iUrl, SALON_PH, 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-20 items-center">
           <div className="relative">
             <div className="grid grid-cols-2 gap-3">
-              <div className="gi col-span-2 h-72 sm:h-88 shadow-xl" style={{ height: '360px' }}>
-                <img src={iUrl(dispSalon[0]) || SALON_PH[0]} alt="Il salone" loading="lazy" />
-              </div>
-              {[1, 2].map(idx => (
-                <div key={idx} className="gi shadow-md" style={{ height: '180px' }}>
-                  <img src={iUrl(dispSalon[idx]) || SALON_PH[idx] || SALON_PH[0]} alt={`Salone ${idx + 1}`} loading="lazy" />
-                </div>
-              ))}
-              {dispSalon[3] && (
-                <div className="gi col-span-2 shadow-md" style={{ height: '160px' }}>
-                  <img src={iUrl(dispSalon[3]) || SALON_PH[3]} alt="Salone 4" loading="lazy" />
+              {dispSalon.length > 0 && (
+                <div className="gi col-span-2 shadow-xl" style={{ height: '360px' }}>
+                  <img src={iUrl(dispSalon[0]) || SALON_PH[0]} alt="Il salone" loading="lazy" />
                 </div>
               )}
+              {dispSalon.slice(1).map((item, idx) => (
+                <div key={item.id || idx}
+                  className={`gi shadow-md ${dispSalon.length > 3 && idx === dispSalon.length - 2 && (dispSalon.length - 1) % 2 !== 0 ? 'col-span-2' : ''}`}
+                  style={{ height: '180px' }}>
+                  <img src={iUrl(item) || SALON_PH[(idx + 1) % SALON_PH.length]} alt={item.label || `Salone ${idx + 2}`} loading="lazy" />
+                </div>
+              ))}
             </div>
             <div className="absolute -bottom-5 -right-3 text-white rounded-2xl p-4 shadow-xl hidden sm:block" style={{ background: COLORS.primary }}>
               <p className="fd text-3xl font-bold">40+</p>
