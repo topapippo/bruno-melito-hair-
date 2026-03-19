@@ -72,6 +72,14 @@ Salon management application (React, FastAPI, MongoDB) deployed on Render. The a
 - **Social media links:** TikTok, YouTube, Instagram, Facebook in both Contact section and Footer
 - **Testing:** Frontend 14/14 (iteration_12) - all 5 features verified
 
+### Phase 7 - Mar 19, 2026 (Progressive Web App)
+- **manifest.json:** Updated with Onyx & Gold theme (#D4AF37 gold, #0B1120 dark bg), 9 icon sizes, standalone display, correct start_url
+- **Service Worker (sw.js):** Stale-while-revalidate caching, API caching, offline fallback, cache name 'bruno-melito-v2'
+- **offline.html:** Rebranded with Onyx & Gold dark theme, auto-reload on connectivity restore
+- **manifest-gestionale.json:** Updated colors for admin panel PWA
+- **Meta tags:** theme-color, apple-mobile-web-app-capable, apple-touch-icon
+- **Testing:** Backend 43/43, Frontend 12/12 (iteration_13)
+
 ## Architecture
 ```
 /app/frontend/src/
@@ -117,15 +125,13 @@ Salon management application (React, FastAPI, MongoDB) deployed on Render. The a
 ### P0 - None (all completed)
 
 ### P1
-- Deploy to Render with latest changes
-- Performance optimization (bundle analysis, advanced code splitting)
+- Deploy to Render con ultime modifiche
 
 ### P2
 - Advanced drag-and-drop for section reorder (currently uses arrows)
 
 ### P3
 - Refactoring backend structure (routes, models, tests)
-- Progressive Web App features
 
 ## Credentials
 - **Production:** melitobruno@gmail.com / mbhs637104
