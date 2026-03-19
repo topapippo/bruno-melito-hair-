@@ -55,16 +55,27 @@ export function GallerySection({ COLORS, galTab, setGalTab, dispWork, dispSalon,
         )}
 
         {galTab === 'salone' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {dispSalon.map((item, i) => {
               const url = iUrl(item) || SALON_PH[i % SALON_PH.length];
+              const isHero = i === 0;
               return (
                 <div 
                   key={item.id || i} 
-                  className={`gi shadow-md ${i === 0 ? 'sm:col-span-2' : ''}`} 
-                  style={{ height: i === 0 ? '380px' : '220px', border: `2px solid ${COLORS.primary}20` }}
+                  className={`gi shadow-md ${isHero ? 'col-span-2 row-span-2' : ''}`} 
+                  style={{ height: isHero ? '380px' : '220px', border: `2px solid ${COLORS.primary}20` }}
                 >
-                  <img src={url} alt={item.label || `Salone ${i + 1}`} loading="lazy" />
+                  {item.file_type === 'video' ? (
+                    <video 
+                      src={url} 
+                      className="w-full h-full object-cover" 
+                      muted loop playsInline 
+                      onMouseEnter={e => e.target.play()} 
+                      onMouseLeave={e => { e.target.pause(); e.target.currentTime = 0; }} 
+                    />
+                  ) : (
+                    <img src={url} alt={item.label || `Salone ${i + 1}`} loading="lazy" />
+                  )}
                 </div>
               );
             })}

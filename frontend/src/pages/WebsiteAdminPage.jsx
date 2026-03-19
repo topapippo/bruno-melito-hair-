@@ -340,6 +340,7 @@ export default function WebsiteAdminPage() {
                     <div className="space-y-2 pl-4">
                       {(cat.items || []).map((item, itemIdx) => (
                         <div key={itemIdx} className="flex gap-2 items-center">
+                          <span className="text-xs font-bold text-gray-400 w-5 flex-shrink-0">{itemIdx + 1}.</span>
                           <Input value={item.name} onChange={e => updateCategoryItem(catIdx, itemIdx, 'name', e.target.value)} placeholder="Servizio" className="flex-1" />
                           <Input value={item.price} onChange={e => updateCategoryItem(catIdx, itemIdx, 'price', e.target.value)} placeholder="Prezzo" className="w-28" />
                           <Button variant="ghost" size="icon" onClick={() => removeCategoryItem(catIdx, itemIdx)} className="text-red-500 shrink-0"><X className="w-4 h-4" /></Button>
