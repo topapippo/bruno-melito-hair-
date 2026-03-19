@@ -78,7 +78,8 @@ Salon management application (React, FastAPI, MongoDB) deployed on Render. The a
 - **offline.html:** Rebranded with Onyx & Gold dark theme, auto-reload on connectivity restore
 - **manifest-gestionale.json:** Updated colors for admin panel PWA
 - **Meta tags:** theme-color, apple-mobile-web-app-capable, apple-touch-icon
-- **Testing:** Backend 43/43, Frontend 12/12 (iteration_13)
+- **Banner "Installa l'App":** Custom PWA install banner on mobile, appears via beforeinstallprompt, dismiss saved in localStorage
+- **Testing:** Backend 43/43 + Frontend 12/12 (iteration_13), Banner 9/9 + regression 5/5 (iteration_14)
 
 ## Architecture
 ```
