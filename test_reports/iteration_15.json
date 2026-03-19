@@ -1,0 +1,87 @@
+{
+  "summary": "Iteration 15: Backend Models Refactoring & Drag-and-Drop Section Reorder - All tests passed. Backend: 14/14 pytest tests passed (100%). Frontend: All drag-and-drop and regression tests passed.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": [
+    "BACKEND REFACTORING (14/14 pytest tests):",
+    "1. /api/ health check returns 200 - PASS",
+    "2. Login POST /api/auth/login with admin@brunomelito.it works - PASS",
+    "3. Invalid credentials return 401 - PASS",
+    "4. GET /api/public/services returns services list - PASS",
+    "5. GET /api/public/operators returns operators list - PASS",
+    "6. GET /api/public/website returns website config - PASS",
+    "7. GET /api/services (auth) returns services - PASS",
+    "8. GET /api/clients (auth) returns clients - PASS",
+    "9. GET /api/operators (auth) returns operators - PASS",
+    "10. GET /api/nav-config (auth) returns nav config - PASS",
+    "11. GET /api/admin-theme (auth) returns theme config - PASS",
+    "12. Models import - UserCreate from models package - PASS",
+    "13. Models import - AppointmentCreate from models package - PASS",
+    "14. Models import - PrepaidCardCreate from models package - PASS",
+    "",
+    "DRAG-AND-DROP SECTION REORDER (Playwright UI tests):",
+    "15. Navigate to /gestione-sito page - PASS",
+    "16. Click 'Ordine Sezioni' tab - PASS",
+    "17. 7 section items rendered (hero, stats, about, gallery, cta, reviews, contact) - PASS",
+    "18. All sections have draggable='true' attribute - PASS",
+    "19. All sections have data-testid='section-item-{key}' - PASS",
+    "20. GripVertical drag handle icons present (7 SVG icons) - PASS",
+    "21. 'Ripristina ordine predefinito' reset button visible with data-testid='reset-section-order' - PASS",
+    "22. NO arrow buttons (ChevronUp/ChevronDown) present - correctly removed - PASS",
+    "23. Drag and drop reorders sections successfully - PASS",
+    "24. Reset button restores default order - PASS",
+    "25. 'Salva Modifiche' button saves changes with toast 'Configurazione salvata!' - PASS",
+    "",
+    "REGRESSION TESTS:",
+    "26. Public website loads at / - PASS",
+    "27. Admin dashboard loads at /dashboard - PASS"
+  ],
+  "failed_tests": [],
+  "test_report_links": [
+    "/app/backend/tests/test_iteration15_models_refactoring.py",
+    "/app/test_reports/pytest/pytest_iteration15.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Backend models/ package: Clean separation of concerns - auth.py, business.py, appointments.py, loyalty.py",
+    "models/__init__.py: Correctly re-exports all models for backward compatibility",
+    "WebsiteAdminPage.jsx lines 730-820: Drag-and-drop implementation uses native HTML5 API correctly",
+    "Section items have proper data-testid and draggable attributes for testability",
+    "handleDragStart/handleDragEnd/handleDragOver/handleDrop functions handle reordering correctly"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration15_models_refactoring.py"
+  ],
+  "success_rate": {
+    "backend": "100% (14/14 tests passed)",
+    "frontend": "100% (All drag-and-drop and regression tests passed)"
+  },
+  "test_credentials": {
+    "admin_email": "admin@brunomelito.it",
+    "admin_password": "Admin123!"
+  },
+  "seed_data_creation": "None - used existing data",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 15 verified: 1) Backend models.py refactored into models/ package with 4 files (auth.py, business.py, appointments.py, loyalty.py) + __init__.py for re-exports. All imports work via 'from models import ModelName'. 2) Drag-and-drop section reorder replaces arrow buttons in /gestione-sito page 'Ordine Sezioni' tab. Each section has data-testid='section-item-{key}' and draggable='true'. Reset button data-testid='reset-section-order'. Save persists order via PUT /api/website/config.",
+  "models_refactoring_verified": {
+    "package_path": "/app/backend/models/",
+    "files": ["__init__.py", "auth.py", "business.py", "appointments.py", "loyalty.py"],
+    "import_syntax": "from models import UserCreate, AppointmentCreate, PrepaidCardCreate"
+  },
+  "drag_drop_verified": {
+    "page_route": "/gestione-sito",
+    "tab": "Ordine Sezioni",
+    "section_testids": ["section-item-hero", "section-item-stats", "section-item-about", "section-item-gallery", "section-item-cta", "section-item-reviews", "section-item-contact"],
+    "reset_button_testid": "reset-section-order",
+    "drag_handle": "GripVertical icon",
+    "arrow_buttons_removed": true
+  }
+}

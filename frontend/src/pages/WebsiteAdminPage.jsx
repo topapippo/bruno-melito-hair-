@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Save, Plus, Trash2, Upload, Image, Star, Globe, Eye, Loader2, X, GripVertical, PanelRightOpen, PanelRightClose, ArrowLeft, ChevronUp, ChevronDown, Layout } from 'lucide-react';
+import { Save, Plus, Trash2, Upload, Image, Star, Globe, Eye, Loader2, X, GripVertical, PanelRightOpen, PanelRightClose, ArrowLeft, Layout } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
@@ -736,7 +736,7 @@ export default function WebsiteAdminPage() {
                 <CardTitle className="flex items-center gap-2"><Layout className="w-5 h-5" /> Ordine Sezioni del Sito</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-xs text-[var(--text-muted)] mb-4">Riordina le sezioni del sito pubblico trascinandole su e giù. La Navbar e il Footer sono sempre fissi.</p>
+                <p className="text-xs text-[var(--text-muted)] mb-4">Trascina le sezioni per riordinarle. La Navbar e il Footer sono sempre fissi.</p>
                 {(() => {
                   const SECTION_LABELS = {
                     hero: { label: 'Hero / Benvenuto', desc: 'Banner principale con titolo e pulsante prenota' },
@@ -750,17 +750,38 @@ export default function WebsiteAdminPage() {
                   const DEFAULT_ORDER = ['hero', 'stats', 'about', 'gallery', 'cta', 'reviews', 'contact'];
                   const order = config.section_order?.length > 0 ? config.section_order : DEFAULT_ORDER;
 
-                  const moveSection = (idx, dir) => {
-                    const newOrder = [...order];
-                    const target = idx + dir;
-                    if (target < 0 || target >= newOrder.length) return;
-                    [newOrder[idx], newOrder[target]] = [newOrder[target], newOrder[idx]];
-                    updateField('section_order', newOrder);
-                  };
-
                   const resetOrder = () => {
                     updateField('section_order', DEFAULT_ORDER);
                     toast.success('Ordine ripristinato');
+                  };
+
+                  const handleDragStart = (e, idx) => {
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', idx.toString());
+                    e.currentTarget.style.opacity = '0.4';
+                  };
+
+                  const handleDragEnd = (e) => {
+                    e.currentTarget.style.opacity = '1';
+                    document.querySelectorAll('[data-drag-over]').forEach(el => el.removeAttribute('data-drag-over'));
+                  };
+
+                  const handleDragOver = (e, idx) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    document.querySelectorAll('[data-drag-over]').forEach(el => el.removeAttribute('data-drag-over'));
+                    e.currentTarget.setAttribute('data-drag-over', 'true');
+                  };
+
+                  const handleDrop = (e, toIdx) => {
+                    e.preventDefault();
+                    e.currentTarget.removeAttribute('data-drag-over');
+                    const fromIdx = parseInt(e.dataTransfer.getData('text/plain'), 10);
+                    if (fromIdx === toIdx) return;
+                    const newOrder = [...order];
+                    const [moved] = newOrder.splice(fromIdx, 1);
+                    newOrder.splice(toIdx, 0, moved);
+                    updateField('section_order', newOrder);
                   };
 
                   return (
@@ -769,33 +790,21 @@ export default function WebsiteAdminPage() {
                         const info = SECTION_LABELS[key] || { label: key, desc: '' };
                         return (
                           <div key={key}
-                            className="flex items-center gap-3 p-3 rounded-xl border transition-all glass"
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, idx)}
+                            onDragEnd={handleDragEnd}
+                            onDragOver={(e) => handleDragOver(e, idx)}
+                            onDrop={(e) => handleDrop(e, idx)}
+                            className="flex items-center gap-3 p-3 rounded-xl border transition-all glass cursor-grab active:cursor-grabbing data-[drag-over]:border-[var(--gold)] data-[drag-over]:bg-[var(--gold-dim)]"
                             style={{ borderColor: 'var(--border-subtle)' }}
                             data-testid={`section-item-${key}`}>
+                            <GripVertical className="w-4 h-4 text-[var(--text-muted)] flex-shrink-0" />
                             <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black bg-[var(--gold-dim)] text-[var(--gold)]">
                               {idx + 1}
                             </span>
                             <div className="flex-1 min-w-0">
                               <p className="font-bold text-sm text-[var(--text-primary)]">{info.label}</p>
                               <p className="text-[11px] text-[var(--text-muted)]">{info.desc}</p>
-                            </div>
-                            <div className="flex gap-1">
-                              <Button
-                                variant="ghost" size="icon"
-                                onClick={() => moveSection(idx, -1)}
-                                disabled={idx === 0}
-                                className="h-8 w-8 text-[var(--text-muted)] hover:text-[var(--gold)] disabled:opacity-30"
-                                data-testid={`move-up-${key}`}>
-                                <ChevronUp className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost" size="icon"
-                                onClick={() => moveSection(idx, 1)}
-                                disabled={idx === order.length - 1}
-                                className="h-8 w-8 text-[var(--text-muted)] hover:text-[var(--gold)] disabled:opacity-30"
-                                data-testid={`move-down-${key}`}>
-                                <ChevronDown className="w-4 h-4" />
-                              </Button>
                             </div>
                           </div>
                         );
