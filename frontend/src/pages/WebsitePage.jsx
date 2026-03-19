@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { format } from 'date-fns';
 import { toast, Toaster } from 'sonner';
-import { Scissors, CheckCircle, MessageSquare, ArrowUp } from 'lucide-react';
+import { Scissors, CheckCircle, MessageSquare, ArrowUp, Download, X } from 'lucide-react';
 import { it } from 'date-fns/locale';
 import {
   Navbar, HeroSection, StatsBar, AboutSection, CTASection,
@@ -145,6 +145,8 @@ export default function BookingPage() {
   const [successData, setSuccessData] = useState(null);
 
   const [showScroll, setShowScroll] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState(null);
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
   const bookRef = useRef(null);
 
   useEffect(() => {
@@ -152,6 +154,33 @@ export default function BookingPage() {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  useEffect(() => {
+    const dismissed = localStorage.getItem('pwa-banner-dismissed');
+    if (dismissed) return;
+    const handler = (e) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+      setShowInstallBanner(true);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const result = await installPrompt.userChoice;
+    if (result.outcome === 'accepted') {
+      setShowInstallBanner(false);
+    }
+    setInstallPrompt(null);
+  };
+
+  const dismissBanner = () => {
+    setShowInstallBanner(false);
+    localStorage.setItem('pwa-banner-dismissed', 'true');
+  };
 
   useEffect(() => {
     const handleMessage = (e) => {
@@ -293,6 +322,45 @@ export default function BookingPage() {
       <Toaster position="top-center" />
 
       <Navbar COLORS={COLORS} bookRef={bookRef} setManageOpen={setManageOpen} goToAdminLogin={goToAdminLogin} onBook={() => setBookingOpen(true)} />
+
+      {/* PWA Install Banner */}
+      {showInstallBanner && (
+        <div
+          className="fixed top-0 left-0 right-0 z-[60] px-4 py-3 flex items-center justify-between gap-3"
+          style={{ background: 'linear-gradient(135deg, #1a1a2e, #16213e)', borderBottom: '1px solid rgba(212,175,55,0.3)', animation: 'slideDown 0.4s ease' }}
+          data-testid="pwa-install-banner"
+        >
+          <style>{`@keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`}</style>
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(212,175,55,0.15)' }}>
+              <Download className="w-5 h-5" style={{ color: '#D4AF37' }} />
+            </div>
+            <div className="min-w-0">
+              <p className="font-bold text-sm truncate" style={{ color: '#F1F5F9' }}>Installa l'App</p>
+              <p className="text-xs" style={{ color: '#94A3B8' }}>Accesso rapido dalla home del telefono</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={handleInstall}
+              className="px-4 py-2 rounded-lg text-sm font-bold transition-all hover:opacity-90"
+              style={{ background: '#D4AF37', color: '#0B1120' }}
+              data-testid="pwa-install-btn"
+            >
+              Installa
+            </button>
+            <button
+              onClick={dismissBanner}
+              className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:bg-white/10"
+              style={{ color: '#64748B' }}
+              data-testid="pwa-dismiss-btn"
+              aria-label="Chiudi"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
       {sectionOrder.map(key => {
         const Section = sectionMap[key];
         return Section ? <Section key={key} /> : null;
