@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { ChevronLeft, ChevronRight, Plus, Clock, Loader2, Search, X, Repeat, Check, Trash2, Edit3, User, CreditCard, Banknote, Percent, Euro, CheckCircle, Star, MessageSquare, Bell, UserPlus, Ticket, Gift, CalendarDays, LayoutGrid } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, Plus, Clock, Loader2, Search, X, Repeat, Check, Trash2, Edit3, User, CreditCard, Banknote, Percent, Euro, CheckCircle, Star, MessageSquare, Bell, UserPlus, Ticket, Gift, CalendarDays, LayoutGrid } from 'lucide-react';
 import { format, addDays, subDays, startOfWeek, endOfWeek, addWeeks, subWeeks, startOfMonth, endOfMonth, addMonths, subMonths, eachDayOfInterval, isSameDay, isSameMonth, isToday } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -346,7 +346,7 @@ export default function PlanningPage() {
 
     setSaving(true);
     try {
-      const { _activeCat, ...cleanFormData } = formData;
+      const { _activeCat, _openCats, ...cleanFormData } = formData;
       const payload = {
         ...cleanFormData,
         date: formData.date || format(selectedDate, 'yyyy-MM-dd'),
@@ -507,7 +507,7 @@ export default function PlanningPage() {
     
     setSaving(true);
     try {
-      const { _activeCat: _ac, ...cleanData } = formData;
+      const { _activeCat: _ac, _openCats: _oc, ...cleanData } = formData;
       await axios.put(`${API}/appointments/${editingAppointment.id}`, {
         ...cleanData,
         date: editDate || format(selectedDate, 'yyyy-MM-dd')
@@ -1504,58 +1504,60 @@ export default function PlanningPage() {
 
               <div className="space-y-2">
                 <Label>Servizi</Label>
-                {/* Category tabs */}
-                <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide" data-testid="dialog-category-tabs">
+                {/* Accordion categories */}
+                <div className="max-h-52 overflow-y-auto space-y-1 pr-0.5" data-testid="dialog-services-accordion">
                   {CATEGORY_ORDER.filter(cat => sortedServices.some(s => s.category === cat)).concat(
                     [...new Set(sortedServices.map(s => s.category).filter(c => c && !CATEGORY_ORDER.includes(c)))]
                   ).map(cat => {
                     const catServices = sortedServices.filter(s => s.category === cat);
                     const selCount = catServices.filter(s => formData.service_ids.includes(s.id)).length;
+                    const isOpen = formData._openCats?.includes(cat);
                     return (
-                      <button key={cat} type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, _activeCat: cat }))}
-                        className={`flex-shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-bold transition-all border ${
-                          (formData._activeCat || CATEGORY_ORDER.find(c => sortedServices.some(s => s.category === c)) || '') === cat
-                            ? 'bg-[#0EA5E9]/10 border-[#0EA5E9] text-[#0EA5E9]'
-                            : 'bg-white border-[#E2E8F0] text-[#64748B] hover:border-[#94A3B8]'
-                        }`}
-                        data-testid={`dialog-cat-${cat}`}>
-                        <span className="capitalize">{cat}</span>
-                        <span className="text-[9px] font-black bg-[#F1F5F9] px-1 rounded-full">{catServices.length}</span>
-                        {selCount > 0 && <span className="w-1.5 h-1.5 rounded-full bg-[#0EA5E9]" />}
-                      </button>
+                      <div key={cat} className="border border-[#E2E8F0] rounded-lg overflow-hidden" data-testid={`dialog-cat-${cat}`}>
+                        <button type="button"
+                          onClick={() => setFormData(prev => {
+                            const open = prev._openCats || [];
+                            return { ...prev, _openCats: open.includes(cat) ? open.filter(c => c !== cat) : [...open, cat] };
+                          })}
+                          className={`w-full flex items-center justify-between px-3 py-2 text-left transition-all ${
+                            isOpen ? 'bg-[#0EA5E9]/5' : 'bg-[#F8FAFC] hover:bg-[#F1F5F9]'
+                          }`}>
+                          <div className="flex items-center gap-2">
+                            <ChevronDown className={`w-4 h-4 text-[#64748B] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                            <span className="font-bold text-sm text-[#0F172A] capitalize">{cat}</span>
+                            <span className="text-[10px] font-bold bg-[#E2E8F0] text-[#64748B] px-1.5 py-0.5 rounded-full">{catServices.length}</span>
+                          </div>
+                          {selCount > 0 && (
+                            <span className="text-[10px] font-black bg-[#0EA5E9] text-white px-2 py-0.5 rounded-full">{selCount} sel.</span>
+                          )}
+                        </button>
+                        {isOpen && (
+                          <div className="border-t border-[#E2E8F0] divide-y divide-[#F1F5F9]">
+                            {catServices.map(service => {
+                              const sel = formData.service_ids.includes(service.id);
+                              return (
+                                <button key={service.id} type="button"
+                                  onClick={() => toggleService(service.id)}
+                                  className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-all ${
+                                    sel ? 'bg-[#0EA5E9]/5' : 'hover:bg-[#F8FAFC]'
+                                  }`}
+                                  data-testid={`dialog-service-${service.id}`}>
+                                  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                                    sel ? 'border-[#0EA5E9] bg-[#0EA5E9]' : 'border-[#CBD5E1]'
+                                  }`}>
+                                    {sel && <Check className="w-2.5 h-2.5 text-white" />}
+                                  </div>
+                                  <span className={`flex-1 text-sm ${sel ? 'font-bold text-[#0EA5E9]' : 'text-[#0F172A]'}`}>{service.name}</span>
+                                  <span className={`text-sm font-bold flex-shrink-0 ${sel ? 'text-[#0EA5E9]' : 'text-[#334155]'}`}>{'\u20AC'}{service.price}</span>
+                                  <span className="text-[10px] text-[#94A3B8] flex-shrink-0 w-12 text-right">{service.duration} min</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
-                </div>
-                {/* Services for active category */}
-                <div className="space-y-1 max-h-44 overflow-y-auto" data-testid="dialog-services-list">
-                  {(() => {
-                    const activeCat = formData._activeCat || CATEGORY_ORDER.find(c => sortedServices.some(s => s.category === c)) || sortedServices[0]?.category;
-                    return sortedServices.filter(s => s.category === activeCat).map(service => {
-                      const sel = formData.service_ids.includes(service.id);
-                      return (
-                        <button key={service.id} type="button"
-                          onClick={() => toggleService(service.id)}
-                          className={`w-full flex items-center gap-2 p-2 rounded-lg text-left transition-all border ${
-                            sel ? 'border-[#0EA5E9] bg-[#0EA5E9]/5' : 'border-[#F1F5F9] bg-white hover:border-[#CBD5E1]'
-                          }`}
-                          data-testid={`dialog-service-${service.id}`}>
-                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                            sel ? 'border-[#0EA5E9] bg-[#0EA5E9]' : 'border-[#CBD5E1]'
-                          }`}>
-                            {sel && <Check className="w-3 h-3 text-white" />}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className={`font-semibold text-sm ${sel ? 'text-[#0EA5E9]' : 'text-[#0F172A]'}`}>{service.name}</p>
-                          </div>
-                          <div className="text-right flex-shrink-0">
-                            <p className={`font-bold text-sm ${sel ? 'text-[#0EA5E9]' : 'text-[#334155]'}`}>{'\u20AC'}{service.price}</p>
-                            <p className="text-[10px] text-[#94A3B8]">{service.duration} min</p>
-                          </div>
-                        </button>
-                      );
-                    });
-                  })()}
                 </div>
                 {/* Selected services summary */}
                 {formData.service_ids.length > 0 && (
@@ -1976,55 +1978,59 @@ export default function PlanningPage() {
 
               <div className="space-y-2">
                 <Label className="text-[#0F172A] font-semibold">Servizi</Label>
-                {/* Category tabs for edit dialog */}
-                <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+                {/* Accordion categories for edit dialog */}
+                <div className="max-h-52 overflow-y-auto space-y-1 pr-0.5">
                   {CATEGORY_ORDER.filter(cat => sortedServices.some(s => s.category === cat)).concat(
                     [...new Set(sortedServices.map(s => s.category).filter(c => c && !CATEGORY_ORDER.includes(c)))]
                   ).map(cat => {
                     const catServices = sortedServices.filter(s => s.category === cat);
                     const selCount = catServices.filter(s => formData.service_ids.includes(s.id)).length;
+                    const isOpen = formData._openCats?.includes(cat);
                     return (
-                      <button key={cat} type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, _activeCat: cat }))}
-                        className={`flex-shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-bold transition-all border ${
-                          (formData._activeCat || CATEGORY_ORDER.find(c => sortedServices.some(s => s.category === c)) || '') === cat
-                            ? 'bg-[#0EA5E9]/10 border-[#0EA5E9] text-[#0EA5E9]'
-                            : 'bg-white border-[#E2E8F0] text-[#64748B] hover:border-[#94A3B8]'
-                        }`}>
-                        <span className="capitalize">{cat}</span>
-                        <span className="text-[9px] font-black bg-[#F1F5F9] px-1 rounded-full">{catServices.length}</span>
-                        {selCount > 0 && <span className="w-1.5 h-1.5 rounded-full bg-[#0EA5E9]" />}
-                      </button>
+                      <div key={cat} className="border border-[#E2E8F0] rounded-lg overflow-hidden">
+                        <button type="button"
+                          onClick={() => setFormData(prev => {
+                            const open = prev._openCats || [];
+                            return { ...prev, _openCats: open.includes(cat) ? open.filter(c => c !== cat) : [...open, cat] };
+                          })}
+                          className={`w-full flex items-center justify-between px-3 py-2 text-left transition-all ${
+                            isOpen ? 'bg-[#0EA5E9]/5' : 'bg-[#F8FAFC] hover:bg-[#F1F5F9]'
+                          }`}>
+                          <div className="flex items-center gap-2">
+                            <ChevronDown className={`w-4 h-4 text-[#64748B] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                            <span className="font-bold text-sm text-[#0F172A] capitalize">{cat}</span>
+                            <span className="text-[10px] font-bold bg-[#E2E8F0] text-[#64748B] px-1.5 py-0.5 rounded-full">{catServices.length}</span>
+                          </div>
+                          {selCount > 0 && (
+                            <span className="text-[10px] font-black bg-[#0EA5E9] text-white px-2 py-0.5 rounded-full">{selCount} sel.</span>
+                          )}
+                        </button>
+                        {isOpen && (
+                          <div className="border-t border-[#E2E8F0] divide-y divide-[#F1F5F9]">
+                            {catServices.map(service => {
+                              const sel = formData.service_ids.includes(service.id);
+                              return (
+                                <button key={service.id} type="button"
+                                  onClick={() => toggleService(service.id)}
+                                  className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-all ${
+                                    sel ? 'bg-[#0EA5E9]/5' : 'hover:bg-[#F8FAFC]'
+                                  }`}>
+                                  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                                    sel ? 'border-[#0EA5E9] bg-[#0EA5E9]' : 'border-[#CBD5E1]'
+                                  }`}>
+                                    {sel && <Check className="w-2.5 h-2.5 text-white" />}
+                                  </div>
+                                  <span className={`flex-1 text-sm ${sel ? 'font-bold text-[#0EA5E9]' : 'text-[#0F172A]'}`}>{service.name}</span>
+                                  <span className={`text-sm font-bold flex-shrink-0 ${sel ? 'text-[#0EA5E9]' : 'text-[#334155]'}`}>{'\u20AC'}{service.price}</span>
+                                  <span className="text-[10px] text-[#94A3B8] flex-shrink-0 w-12 text-right">{service.duration} min</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
-                </div>
-                <div className="space-y-1 max-h-44 overflow-y-auto">
-                  {(() => {
-                    const activeCat = formData._activeCat || CATEGORY_ORDER.find(c => sortedServices.some(s => s.category === c)) || sortedServices[0]?.category;
-                    return sortedServices.filter(s => s.category === activeCat).map(service => {
-                      const sel = formData.service_ids.includes(service.id);
-                      return (
-                        <button key={service.id} type="button"
-                          onClick={() => toggleService(service.id)}
-                          className={`w-full flex items-center gap-2 p-2 rounded-lg text-left transition-all border ${
-                            sel ? 'border-[#0EA5E9] bg-[#0EA5E9]/5' : 'border-[#F1F5F9] bg-white hover:border-[#CBD5E1]'
-                          }`}>
-                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                            sel ? 'border-[#0EA5E9] bg-[#0EA5E9]' : 'border-[#CBD5E1]'
-                          }`}>
-                            {sel && <Check className="w-3 h-3 text-white" />}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className={`font-semibold text-sm ${sel ? 'text-[#0EA5E9]' : 'text-[#0F172A]'}`}>{service.name}</p>
-                          </div>
-                          <div className="text-right flex-shrink-0">
-                            <p className={`font-bold text-sm ${sel ? 'text-[#0EA5E9]' : 'text-[#334155]'}`}>{'\u20AC'}{service.price}</p>
-                            <p className="text-[10px] text-[#94A3B8]">{service.duration} min</p>
-                          </div>
-                        </button>
-                      );
-                    });
-                  })()}
                 </div>
                 {formData.service_ids.length > 0 && (
                   <div className="flex flex-wrap gap-1 pt-1">
