@@ -160,7 +160,7 @@ export default function NavConfigurator({ open, onClose, onSave }) {
                       style={{ background: dragOver === path ? 'var(--gold-dim)' : 'var(--bg-elevated)', border: `1px solid var(--border-subtle)` }}
                       data-testid={`sidebar-item-${path.slice(1)}`}>
                       {!isDashboard && (
-                        <GripVertical className="w-3.5 h-3.5 text-slate-300 cursor-grab flex-shrink-0" />
+                        <GripVertical className="w-3.5 h-3.5 cursor-grab flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
                       )}
                       {isDashboard && <div className="w-3.5" />}
                       <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: mod.color + '15' }}>
@@ -169,18 +169,18 @@ export default function NavConfigurator({ open, onClose, onSave }) {
                       <span className="flex-1 text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{mod.label}</span>
                       <div className="flex items-center gap-0.5 flex-shrink-0">
                         <button onClick={() => moveUp(path)} disabled={idx === 0}
-                          className="w-6 h-6 rounded flex items-center justify-center hover:bg-slate-200 disabled:opacity-20 transition-all">
-                          <ChevronUp className="w-3.5 h-3.5 text-slate-500" />
+                          className="w-6 h-6 rounded flex items-center justify-center hover:bg-[var(--gold-dim)] disabled:opacity-20 transition-all">
+                          <ChevronUp className="w-3.5 h-3.5" style={{ color: 'var(--text-secondary)' }} />
                         </button>
                         <button onClick={() => moveDown(path)} disabled={idx === sidebar.length - 1}
-                          className="w-6 h-6 rounded flex items-center justify-center hover:bg-slate-200 disabled:opacity-20 transition-all">
-                          <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
+                          className="w-6 h-6 rounded flex items-center justify-center hover:bg-[var(--gold-dim)] disabled:opacity-20 transition-all">
+                          <ChevronDown className="w-3.5 h-3.5" style={{ color: 'var(--text-secondary)' }} />
                         </button>
                         {!isDashboard && (
                           <button onClick={() => moveToDashboard(path)}
-                            className="w-6 h-6 rounded flex items-center justify-center hover:bg-red-50 transition-all group"
+                            className="w-6 h-6 rounded flex items-center justify-center hover:bg-red-500/10 transition-all group"
                             title="Sposta in Dashboard">
-                            <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-red-500" />
+                            <ArrowRight className="w-3.5 h-3.5 group-hover:text-red-400" style={{ color: 'var(--text-secondary)' }} />
                           </button>
                         )}
                       </div>
@@ -217,9 +217,9 @@ export default function NavConfigurator({ open, onClose, onSave }) {
                         <p className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>{mod.desc}</p>
                       </div>
                       <button onClick={() => moveToSidebar(path)}
-                        className="w-6 h-6 rounded flex items-center justify-center hover:bg-blue-50 transition-all group flex-shrink-0"
+                        className="w-6 h-6 rounded flex items-center justify-center hover:bg-blue-500/10 transition-all group flex-shrink-0"
                         title="Sposta in Sidebar">
-                        <ArrowLeft className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#0EA5E9]" />
+                        <ArrowLeft className="w-3.5 h-3.5 group-hover:text-[#0EA5E9]" style={{ color: 'var(--text-secondary)' }} />
                       </button>
                     </div>
                   );
