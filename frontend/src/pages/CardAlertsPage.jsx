@@ -110,13 +110,13 @@ export default function CardAlertsPage() {
     if (daysLeft < 0) return <Badge className="bg-red-600 text-white">SCADUTA</Badge>;
     if (daysLeft <= 7) return <Badge className="bg-red-500 text-white">{daysLeft} giorni</Badge>;
     if (daysLeft <= 14) return <Badge className="bg-orange-500 text-white">{daysLeft} giorni</Badge>;
-    return <Badge className="bg-amber-500 text-white">{daysLeft} giorni</Badge>;
+    return <Badge className="bg-amber-500/100 text-white">{daysLeft} giorni</Badge>;
   };
 
   const getBalanceBadge = (percent) => {
     if (percent <= 10) return <Badge className="bg-red-500 text-white">{percent}%</Badge>;
     if (percent <= 15) return <Badge className="bg-orange-500 text-white">{percent}%</Badge>;
-    return <Badge className="bg-amber-500 text-white">{percent}%</Badge>;
+    return <Badge className="bg-amber-500/100 text-white">{percent}%</Badge>;
   };
 
   return (
@@ -192,7 +192,7 @@ export default function CardAlertsPage() {
               <div className="flex items-center gap-3">
                 <Clock className="w-8 h-8 text-amber-600" />
                 <div>
-                  <p className="text-sm text-amber-700 font-semibold">Card in Scadenza</p>
+                  <p className="text-sm text-amber-400 font-semibold">Card in Scadenza</p>
                   <p className="text-3xl font-black text-amber-600" data-testid="expiring-count">
                     {expiringCards.length}
                   </p>
@@ -203,10 +203,10 @@ export default function CardAlertsPage() {
           <Card className="bg-gradient-to-br from-red-50 to-pink-50 border-red-200">
             <CardContent className="p-5">
               <div className="flex items-center gap-3">
-                <Euro className="w-8 h-8 text-red-600" />
+                <Euro className="w-8 h-8 text-red-400" />
                 <div>
-                  <p className="text-sm text-red-700 font-semibold">Credito Basso</p>
-                  <p className="text-3xl font-black text-red-600" data-testid="low-balance-count">
+                  <p className="text-sm text-red-400 font-semibold">Credito Basso</p>
+                  <p className="text-3xl font-black text-red-400" data-testid="low-balance-count">
                     {lowBalanceCards.length}
                   </p>
                 </div>
@@ -226,7 +226,7 @@ export default function CardAlertsPage() {
             {expiringCards.length > 0 && (
               <Card className="bg-[var(--bg-card)] border-amber-200 shadow-lg">
                 <CardHeader className="pb-3 bg-gradient-to-r from-amber-50 to-orange-50 rounded-t-lg">
-                  <CardTitle className="text-lg font-bold text-amber-800 flex items-center gap-2">
+                  <CardTitle className="text-lg font-bold text-amber-400 flex items-center gap-2">
                     <Clock className="w-5 h-5" />
                     Card in Scadenza ({expiringCards.length})
                   </CardTitle>
@@ -236,13 +236,13 @@ export default function CardAlertsPage() {
                     {expiringCards.map((card) => (
                       <div
                         key={card.id}
-                        className={`p-4 hover:bg-amber-50/50 transition-colors ${card.is_expired ? 'bg-red-50' : ''}`}
+                        className={`p-4 hover:bg-amber-500/10/50 transition-colors ${card.is_expired ? 'bg-red-50' : ''}`}
                         data-testid={`expiring-card-${card.id}`}
                       >
                         <div className="flex items-center justify-between gap-4">
                           <div className="flex items-center gap-3 min-w-0">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${card.is_expired ? 'bg-red-100' : 'bg-amber-100'}`}>
-                              <CreditCard className={`w-5 h-5 ${card.is_expired ? 'text-red-600' : 'text-amber-600'}`} />
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${card.is_expired ? 'bg-red-500/10' : 'bg-amber-500/100/10'}`}>
+                              <CreditCard className={`w-5 h-5 ${card.is_expired ? 'text-red-400' : 'text-amber-600'}`} />
                             </div>
                             <div className="min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
@@ -292,7 +292,7 @@ export default function CardAlertsPage() {
             {lowBalanceCards.length > 0 && (
               <Card className="bg-[var(--bg-card)] border-red-200 shadow-lg">
                 <CardHeader className="pb-3 bg-gradient-to-r from-red-50 to-pink-50 rounded-t-lg">
-                  <CardTitle className="text-lg font-bold text-red-800 flex items-center gap-2">
+                  <CardTitle className="text-lg font-bold text-red-400 flex items-center gap-2">
                     <AlertTriangle className="w-5 h-5" />
                     Credito Basso ({lowBalanceCards.length})
                   </CardTitle>
@@ -307,8 +307,8 @@ export default function CardAlertsPage() {
                       >
                         <div className="flex items-center justify-between gap-4">
                           <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-                              <Euro className="w-5 h-5 text-red-600" />
+                            <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
+                              <Euro className="w-5 h-5 text-red-400" />
                             </div>
                             <div className="min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
@@ -317,7 +317,7 @@ export default function CardAlertsPage() {
                               </div>
                               <p className="text-sm text-[var(--text-secondary)] truncate">{card.name}</p>
                               <div className="flex items-center gap-3 mt-1 text-xs text-[var(--text-muted)]">
-                                <span className="flex items-center gap-1 font-semibold text-red-600">
+                                <span className="flex items-center gap-1 font-semibold text-red-400">
                                   <Euro className="w-3 h-3" />
                                   €{card.remaining_value?.toFixed(2)} rimanenti
                                 </span>
@@ -370,7 +370,7 @@ export default function CardAlertsPage() {
         <Dialog open={whatsappDialogOpen} onOpenChange={setWhatsappDialogOpen}>
           <DialogContent className="sm:max-w-[520px]">
             <DialogHeader>
-              <DialogTitle className="text-xl font-bold text-green-700 flex items-center gap-2">
+              <DialogTitle className="text-xl font-bold text-green-400 flex items-center gap-2">
                 <MessageCircle className="w-6 h-6" />
                 Invia Notifica WhatsApp
               </DialogTitle>
@@ -380,19 +380,19 @@ export default function CardAlertsPage() {
             </DialogHeader>
             <div className="mt-4 space-y-4">
               {selectedCard && (
-                <div className={`p-3 rounded-lg ${selectedCard.alertType === 'expiring' ? 'bg-amber-50 border border-amber-200' : 'bg-red-50 border border-red-200'}`}>
+                <div className={`p-3 rounded-lg ${selectedCard.alertType === 'expiring' ? 'bg-amber-500/10 border border-amber-200' : 'bg-red-50 border border-red-200'}`}>
                   <div className="flex items-center gap-2 text-sm">
                     {selectedCard.alertType === 'expiring' ? (
                       <>
                         <Clock className="w-4 h-4 text-amber-600" />
-                        <span className="text-amber-800">
+                        <span className="text-amber-400">
                           {selectedCard.is_expired ? 'Card SCADUTA' : `Scade tra ${selectedCard.days_until_expiry} giorni`}
                         </span>
                       </>
                     ) : (
                       <>
-                        <Euro className="w-4 h-4 text-red-600" />
-                        <span className="text-red-800">
+                        <Euro className="w-4 h-4 text-red-400" />
+                        <span className="text-red-400">
                           Credito: €{selectedCard.remaining_value?.toFixed(2)} ({selectedCard.percent_remaining}%)
                         </span>
                       </>
@@ -416,9 +416,9 @@ export default function CardAlertsPage() {
               </div>
 
               {selectedCard?.client_phone && (
-                <div className="flex items-center gap-2 p-2 bg-green-50 rounded-lg">
-                  <Phone className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-green-800 font-medium">
+                <div className="flex items-center gap-2 p-2 bg-green-500/10 rounded-lg">
+                  <Phone className="w-4 h-4 text-green-400" />
+                  <span className="text-sm text-green-400 font-medium">
                     {selectedCard.client_phone}
                   </span>
                 </div>

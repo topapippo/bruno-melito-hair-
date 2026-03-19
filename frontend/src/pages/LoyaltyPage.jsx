@@ -179,38 +179,38 @@ export default function LoyaltyPage() {
           <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
             <CardContent className="p-5">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-amber-500 rounded-xl">
+                <div className="p-2.5 bg-amber-500/100 rounded-xl">
                   <Star className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <p className="text-sm text-amber-700 font-semibold">Punti Totali in Circolo</p>
+                  <p className="text-sm text-amber-400 font-semibold">Punti Totali in Circolo</p>
                   <p className="text-3xl font-black text-amber-600" data-testid="total-points">{totalPoints}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-500/30">
             <CardContent className="p-5">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 bg-[var(--gold)] rounded-xl">
                   <Trophy className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <p className="text-sm text-blue-700 font-semibold">Clienti Iscritti</p>
+                  <p className="text-sm text-blue-400 font-semibold">Clienti Iscritti</p>
                   <p className="text-3xl font-black text-[var(--gold)]" data-testid="total-enrolled">{loyalties.length}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-500/30">
             <CardContent className="p-5">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-green-500 rounded-xl">
+                <div className="p-2.5 bg-green-500/100 rounded-xl">
                   <Gift className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <p className="text-sm text-green-700 font-semibold">Con Premi Disponibili</p>
-                  <p className="text-3xl font-black text-green-600" data-testid="clients-with-rewards">{clientsWithRewards}</p>
+                  <p className="text-sm text-green-400 font-semibold">Con Premi Disponibili</p>
+                  <p className="text-3xl font-black text-green-400" data-testid="clients-with-rewards">{clientsWithRewards}</p>
                 </div>
               </div>
             </CardContent>
@@ -274,13 +274,13 @@ export default function LoyaltyPage() {
                   return (
                     <div key={key} className={`p-4 ${isSconto ? 'bg-purple-50 border-purple-200' : 'bg-emerald-50 border-emerald-200'} rounded-xl border`}>
                       <div className="flex items-center gap-2 mb-2">
-                        {isSconto ? <Award className="w-5 h-5 text-purple-600" /> : <Trophy className="w-5 h-5 text-emerald-600" />}
-                        <h3 className={`font-bold ${isSconto ? 'text-purple-800' : 'text-emerald-800'}`}>{reward.name}</h3>
+                        {isSconto ? <Award className="w-5 h-5 text-purple-600" /> : <Trophy className="w-5 h-5 text-emerald-400" />}
+                        <h3 className={`font-bold ${isSconto ? 'text-purple-400' : 'text-emerald-400'}`}>{reward.name}</h3>
                       </div>
-                      <p className={`text-sm ${isSconto ? 'text-purple-600' : 'text-emerald-600'} mb-2`}>{reward.description}</p>
+                      <p className={`text-sm ${isSconto ? 'text-purple-600' : 'text-emerald-400'} mb-2`}>{reward.description}</p>
                       <div className="flex items-center gap-1">
                         <Star className="w-4 h-4 text-amber-500" />
-                        <span className={`text-sm font-black ${isSconto ? 'text-purple-700' : 'text-emerald-700'}`}>{reward.points_required} punti necessari</span>
+                        <span className={`text-sm font-black ${isSconto ? 'text-purple-400' : 'text-emerald-400'}`}>{reward.points_required} punti necessari</span>
                       </div>
                     </div>
                   );
@@ -320,7 +320,7 @@ export default function LoyaltyPage() {
                         <p className="text-sm text-[var(--text-secondary)] mt-0.5">{loy.client_phone}</p>
                       )}
                     </div>
-                    <div className="flex items-center gap-1 bg-amber-100 px-3 py-1.5 rounded-full ml-2 shrink-0">
+                    <div className="flex items-center gap-1 bg-amber-500/100/10 px-3 py-1.5 rounded-full ml-2 shrink-0">
                       <Star className="w-4 h-4 text-amber-500" />
                       <span className="text-lg font-black text-amber-600">{loy.points}</span>
                     </div>
@@ -331,9 +331,9 @@ export default function LoyaltyPage() {
                     <div>
                       <div className="flex justify-between text-xs mb-1">
                         <span className="text-purple-600 font-semibold">Sconto Colorazione</span>
-                        <span className="font-bold text-purple-700">{Math.min(loy.points, 5)}/5</span>
+                        <span className="font-bold text-purple-400">{Math.min(loy.points, 5)}/5</span>
                       </div>
-                      <div className="h-2 bg-purple-100 rounded-full overflow-hidden">
+                      <div className="h-2 bg-purple-500/10 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-purple-500 rounded-full transition-all"
                           style={{ width: `${Math.min(100, (loy.points / 5) * 100)}%` }}
@@ -342,10 +342,10 @@ export default function LoyaltyPage() {
                     </div>
                     <div>
                       <div className="flex justify-between text-xs mb-1">
-                        <span className="text-emerald-600 font-semibold">Taglio Gratuito</span>
-                        <span className="font-bold text-emerald-700">{Math.min(loy.points, 10)}/10</span>
+                        <span className="text-emerald-400 font-semibold">Taglio Gratuito</span>
+                        <span className="font-bold text-emerald-400">{Math.min(loy.points, 10)}/10</span>
                       </div>
-                      <div className="h-2 bg-emerald-100 rounded-full overflow-hidden">
+                      <div className="h-2 bg-emerald-500/10 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-emerald-500 rounded-full transition-all"
                           style={{ width: `${Math.min(100, (loy.points / 10) * 100)}%` }}
@@ -358,7 +358,7 @@ export default function LoyaltyPage() {
                   {loy.active_rewards?.filter(r => !r.redeemed).length > 0 && (
                     <div className="mt-3 flex flex-wrap gap-1">
                       {loy.active_rewards.filter(r => !r.redeemed).map((r) => (
-                        <span key={r.id} className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">
+                        <span key={r.id} className="text-xs bg-green-500/100/10 text-green-400 px-2 py-0.5 rounded-full font-semibold">
                           {r.reward_name}
                         </span>
                       ))}
@@ -410,7 +410,7 @@ export default function LoyaltyPage() {
                 <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-amber-50 to-amber-100 p-6 rounded-xl border border-amber-200">
                   <Star className="w-8 h-8 text-amber-500" />
                   <span className="text-5xl font-black text-amber-600" data-testid="client-points">{clientLoyalty.points}</span>
-                  <span className="text-lg font-semibold text-amber-700 ml-1">punti</span>
+                  <span className="text-lg font-semibold text-amber-400 ml-1">punti</span>
                 </div>
 
                 {/* Redeem Rewards */}
@@ -424,12 +424,12 @@ export default function LoyaltyPage() {
                       <div
                         key={key}
                         className={`p-4 rounded-xl border-2 flex items-center justify-between ${
-                          canRedeem ? 'border-green-300 bg-green-50' : 'border-[var(--border-subtle)] bg-[var(--bg-elevated)] opacity-60'
+                          canRedeem ? 'border-green-500/30 bg-green-500/10' : 'border-[var(--border-subtle)] bg-[var(--bg-elevated)] opacity-60'
                         }`}
                       >
                         <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-lg ${isSconto ? 'bg-purple-100' : 'bg-emerald-100'}`}>
-                            {isSconto ? <Award className="w-5 h-5 text-purple-600" /> : <Trophy className="w-5 h-5 text-emerald-600" />}
+                          <div className={`p-2 rounded-lg ${isSconto ? 'bg-purple-500/10' : 'bg-emerald-500/10'}`}>
+                            {isSconto ? <Award className="w-5 h-5 text-purple-600" /> : <Trophy className="w-5 h-5 text-emerald-400" />}
                           </div>
                           <div>
                             <p className="font-bold text-[var(--text-primary)]">{reward.name}</p>
@@ -443,7 +443,7 @@ export default function LoyaltyPage() {
                             setRedeemType(key);
                             setRedeemOpen(true);
                           }}
-                          className={canRedeem ? 'bg-amber-500 hover:bg-amber-600 text-white' : ''}
+                          className={canRedeem ? 'bg-amber-500/100 hover:bg-amber-600 text-white' : ''}
                           data-testid={`redeem-${key}-btn`}
                         >
                           <Gift className="w-4 h-4 mr-1" />
@@ -459,10 +459,10 @@ export default function LoyaltyPage() {
                   <div className="space-y-3">
                     <h3 className="font-bold text-[var(--text-primary)]">Premi da Utilizzare</h3>
                     {clientLoyalty.active_rewards.filter(r => !r.redeemed).map((r) => (
-                      <div key={r.id} className="p-4 bg-green-50 rounded-xl border border-green-200 flex items-center justify-between">
+                      <div key={r.id} className="p-4 bg-green-500/10 rounded-xl border border-green-500/30 flex items-center justify-between">
                         <div>
-                          <p className="font-bold text-green-800">{r.reward_name}</p>
-                          <p className="text-xs text-green-600">
+                          <p className="font-bold text-green-400">{r.reward_name}</p>
+                          <p className="text-xs text-green-400">
                             <Clock className="w-3 h-3 inline mr-1" />
                             Riscattato il {new Date(r.created_at).toLocaleDateString('it-IT')}
                           </p>
@@ -489,7 +489,7 @@ export default function LoyaltyPage() {
                         <div key={h.id} className="flex items-center justify-between p-3 bg-[var(--bg-elevated)] rounded-lg border border-[var(--border-subtle)]">
                           <div className="flex items-center gap-2">
                             {h.type === 'earned' ? (
-                              <Plus className="w-4 h-4 text-green-600" />
+                              <Plus className="w-4 h-4 text-green-400" />
                             ) : h.type === 'redeemed' ? (
                               <Minus className="w-4 h-4 text-red-500" />
                             ) : (
@@ -500,7 +500,7 @@ export default function LoyaltyPage() {
                               <p className="text-xs text-[var(--text-secondary)]">{new Date(h.date).toLocaleDateString('it-IT')}</p>
                             </div>
                           </div>
-                          <span className={`font-black text-sm ${h.points > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                          <span className={`font-black text-sm ${h.points > 0 ? 'text-green-400' : 'text-red-500'}`}>
                             {h.points > 0 ? `+${h.points}` : h.points}
                           </span>
                         </div>
@@ -530,7 +530,7 @@ export default function LoyaltyPage() {
               <AlertDialogAction
                 onClick={handleRedeem}
                 disabled={redeeming}
-                className="bg-amber-500 hover:bg-amber-600"
+                className="bg-amber-500/100 hover:bg-amber-600"
               >
                 {redeeming ? 'Riscatto...' : 'Conferma Riscatto'}
               </AlertDialogAction>

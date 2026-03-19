@@ -261,7 +261,7 @@ export default function CardsPage() {
                       <span className="text-[var(--text-secondary)]">Credito residuo</span>
                       <span className="font-semibold text-[var(--text-primary)]">€{card.remaining_value.toFixed(2)}</span>
                     </div>
-                    <div className="h-2 bg-[#E2E8F0]/30 rounded-full overflow-hidden">
+                    <div className="h-2 bg-[var(--bg-elevated)]/30 rounded-full overflow-hidden">
                       <div 
                         className="h-full bg-[var(--gold)] rounded-full transition-all"
                         style={{ width: `${100 - getCardProgress(card)}%` }}

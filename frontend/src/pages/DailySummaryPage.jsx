@@ -115,7 +115,7 @@ export default function DailySummaryPage() {
                   </p>
                   <p className="text-xs text-[var(--text-secondary)] mt-1">Media: {'\u20AC'}{(data?.avg_per_client || 0).toFixed(0)} / cliente</p>
                 </div>
-                <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center">
                   <Users className="w-6 h-6 text-[var(--gold)]" strokeWidth={1.5} />
                 </div>
               </div>
@@ -132,7 +132,7 @@ export default function DailySummaryPage() {
                   </p>
                   <p className="text-xs text-[var(--text-secondary)] mt-1">{data?.completed_appointments || 0} completati</p>
                 </div>
-                <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center">
                   <Clock className="w-6 h-6 text-amber-500" strokeWidth={1.5} />
                 </div>
               </div>
@@ -239,18 +239,18 @@ export default function DailySummaryPage() {
                 <div className="space-y-4">
                   {Object.entries(data.payment_methods).map(([method, count]) => {
                     const labels = { contanti: 'Contanti', carta: 'Carta', prepagata: 'Prepagata', 'non specificato': 'Non specificato' };
-                    const colors = { contanti: 'bg-emerald-400', carta: 'bg-blue-400', prepagata: 'bg-violet-400', 'non specificato': 'bg-gray-300' };
+                    const colors = { contanti: 'bg-emerald-400', carta: 'bg-blue-400', prepagata: 'bg-violet-400', 'non specificato': 'bg-gray-500' };
                     const totalPayments = Object.values(data.payment_methods).reduce((a, b) => a + b, 0);
                     return (
                       <div key={method} className="flex items-center gap-3">
-                        <div className={`w-3 h-3 rounded-full ${colors[method] || 'bg-gray-300'} shrink-0`} />
+                        <div className={`w-3 h-3 rounded-full ${colors[method] || 'bg-gray-500'} shrink-0`} />
                         <div className="flex-1">
                           <div className="flex justify-between mb-1">
                             <span className="text-sm text-[var(--text-primary)]">{labels[method] || method}</span>
                             <span className="text-sm font-bold text-[var(--text-secondary)]">{count}</span>
                           </div>
                           <div className="h-2 bg-[var(--bg-elevated)] rounded-full overflow-hidden">
-                            <div className={`h-full ${colors[method] || 'bg-gray-300'} rounded-full`}
+                            <div className={`h-full ${colors[method] || 'bg-gray-500'} rounded-full`}
                               style={{ width: `${(count / totalPayments) * 100}%` }} />
                           </div>
                         </div>

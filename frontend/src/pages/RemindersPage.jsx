@@ -351,17 +351,17 @@ export default function RemindersPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-500/30">
             <CardContent className="p-5">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 bg-[var(--gold)] rounded-xl">
                   <Calendar className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <p className="text-sm text-blue-700 font-semibold">Promemoria Domani</p>
+                  <p className="text-sm text-blue-400 font-semibold">Promemoria Domani</p>
                   <p className="text-3xl font-black text-[var(--gold)]" data-testid="pending-reminders-count">
                     {pendingReminders.length}
-                    <span className="text-sm font-semibold text-blue-600 ml-1">/ {tomorrowReminders.length}</span>
+                    <span className="text-sm font-semibold text-blue-400 ml-1">/ {tomorrowReminders.length}</span>
                   </p>
                 </div>
               </div>
@@ -374,8 +374,8 @@ export default function RemindersPage() {
                   <UserX className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <p className="text-sm text-orange-700 font-semibold">Clienti Inattivi (60+ giorni)</p>
-                  <p className="text-3xl font-black text-orange-600" data-testid="inactive-clients-count">
+                  <p className="text-sm text-orange-400 font-semibold">Clienti Inattivi (60+ giorni)</p>
+                  <p className="text-3xl font-black text-orange-400" data-testid="inactive-clients-count">
                     {pendingRecalls.length}
                     <span className="text-sm font-semibold text-orange-500 ml-1">/ {inactiveClients.length}</span>
                   </p>
@@ -391,14 +391,14 @@ export default function RemindersPage() {
             <CardContent className="p-5">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  <div className="p-2.5 bg-green-500 rounded-xl shrink-0">
+                  <div className="p-2.5 bg-green-500/100 rounded-xl shrink-0">
                     <Send className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <p className="font-bold text-green-800 text-lg">
+                    <p className="font-bold text-green-400 text-lg">
                       Invio Automatico Promemoria
                     </p>
-                    <p className="text-sm text-green-700 mt-0.5">
+                    <p className="text-sm text-green-400 mt-0.5">
                       {autoCheck.pending.length} clienti da avvisare per domani ({autoCheck.tomorrow_date}).
                       {autoCheck.already_sent > 0 && (
                         <span className="ml-1">({autoCheck.already_sent} già inviati)</span>
@@ -406,12 +406,12 @@ export default function RemindersPage() {
                     </p>
                     <div className="flex flex-wrap gap-1.5 mt-2">
                       {autoCheck.pending.slice(0, 5).map((p, i) => (
-                        <span key={i} className="text-xs bg-[var(--bg-card)] border border-green-200 text-green-800 px-2 py-0.5 rounded-full">
+                        <span key={i} className="text-xs bg-[var(--bg-card)] border border-green-500/30 text-green-400 px-2 py-0.5 rounded-full">
                           {p.client_name} ({p.time})
                         </span>
                       ))}
                       {autoCheck.pending.length > 5 && (
-                        <span className="text-xs text-green-600">+{autoCheck.pending.length - 5} altri</span>
+                        <span className="text-xs text-green-400">+{autoCheck.pending.length - 5} altri</span>
                       )}
                     </div>
                   </div>
@@ -419,7 +419,7 @@ export default function RemindersPage() {
                 <Button
                   onClick={batchSendAll}
                   disabled={batchSending}
-                  className="bg-green-500 hover:bg-green-600 text-white font-bold text-base px-6 py-3 h-auto shrink-0"
+                  className="bg-green-500/100 hover:bg-green-600 text-white font-bold text-base px-6 py-3 h-auto shrink-0"
                   data-testid="batch-send-btn"
                 >
                   {batchSending ? (
@@ -455,8 +455,8 @@ export default function RemindersPage() {
                         <p className="font-semibold text-[var(--text-primary)] text-sm">{tmpl.name}</p>
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                           tmpl.template_type === 'appointment'
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'bg-orange-100 text-orange-700'
+                            ? 'bg-blue-500/100/10 text-blue-400'
+                            : 'bg-orange-500/10 text-orange-400'
                         }`}>
                           {tmpl.template_type === 'appointment' ? 'Appuntamento' : 'Richiamo'}
                         </span>
@@ -522,7 +522,7 @@ export default function RemindersPage() {
               <Calendar className="w-5 h-5 text-[var(--gold)]" />
               Appuntamenti di Domani
               {pendingReminders.length > 0 && (
-                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold">
+                <span className="text-xs bg-blue-500/100/10 text-blue-400 px-2 py-0.5 rounded-full font-semibold">
                   {pendingReminders.length} da inviare
                 </span>
               )}
@@ -535,7 +535,7 @@ export default function RemindersPage() {
                   <div
                     key={apt.id}
                     className={`p-4 rounded-xl border-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
-                      apt.reminded ? 'border-green-200 bg-green-50' : 'border-[var(--border-subtle)] bg-[var(--bg-card)]'
+                      apt.reminded ? 'border-green-500/30 bg-green-500/10' : 'border-[var(--border-subtle)] bg-[var(--bg-card)]'
                     }`}
                     data-testid={`reminder-apt-${apt.id}`}
                   >
@@ -543,7 +543,7 @@ export default function RemindersPage() {
                       <div className="flex items-center gap-2">
                         <p className="font-bold text-[var(--text-primary)] truncate">{apt.client_name}</p>
                         {apt.reminded && (
-                          <span className="text-xs bg-green-200 text-green-800 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                          <span className="text-xs bg-green-200 text-green-400 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
                             <Check className="w-3 h-3" /> Inviato
                           </span>
                         )}
@@ -569,7 +569,7 @@ export default function RemindersPage() {
                           size="sm"
                           onClick={() => resetReminder('appointment', apt.id)}
                           disabled={resettingId === apt.id}
-                          className="border-red-300 text-red-600 hover:bg-red-50"
+                          className="border-red-300 text-red-400 hover:bg-red-50"
                           data-testid={`reset-reminder-${apt.id}`}
                         >
                           {resettingId === apt.id ? (
@@ -582,7 +582,7 @@ export default function RemindersPage() {
                         <Button
                           onClick={() => openMessageDialog('appointment', apt)}
                           disabled={sendingId === apt.id || !apt.client_phone}
-                          className="bg-green-500 hover:bg-green-600 text-white font-bold"
+                          className="bg-green-500/100 hover:bg-green-600 text-white font-bold"
                           data-testid={`send-reminder-${apt.id}`}
                         >
                           {sendingId === apt.id ? (
@@ -612,7 +612,7 @@ export default function RemindersPage() {
               <UserX className="w-5 h-5 text-orange-500" />
               Clienti Inattivi — Offri 10% di Sconto
               {pendingRecalls.length > 0 && (
-                <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-semibold">
+                <span className="text-xs bg-orange-500/10 text-orange-400 px-2 py-0.5 rounded-full font-semibold">
                   {pendingRecalls.length} da richiamare
                 </span>
               )}
@@ -625,7 +625,7 @@ export default function RemindersPage() {
                   <div
                     key={client.client_id}
                     className={`p-4 rounded-xl border-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
-                      client.already_recalled ? 'border-green-200 bg-green-50' : 'border-orange-200 bg-orange-50'
+                      client.already_recalled ? 'border-green-500/30 bg-green-500/10' : 'border-orange-200 bg-orange-50'
                     }`}
                     data-testid={`inactive-client-${client.client_id}`}
                   >
@@ -633,13 +633,13 @@ export default function RemindersPage() {
                       <div className="flex items-center gap-2">
                         <p className="font-bold text-[var(--text-primary)] truncate">{client.client_name}</p>
                         {client.already_recalled && (
-                          <span className="text-xs bg-green-200 text-green-800 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                          <span className="text-xs bg-green-200 text-green-400 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
                             <Check className="w-3 h-3" /> Richiamato
                           </span>
                         )}
                       </div>
                       <div className="flex items-center gap-3 text-sm mt-1 flex-wrap">
-                        <span className="text-orange-700 font-semibold flex items-center gap-1">
+                        <span className="text-orange-400 font-semibold flex items-center gap-1">
                           <Clock className="w-3.5 h-3.5" /> {client.days_ago} giorni fa
                         </span>
                         {client.client_phone && (
@@ -659,7 +659,7 @@ export default function RemindersPage() {
                           size="sm"
                           onClick={() => resetReminder('recall', client.client_id)}
                           disabled={resettingId === client.client_id}
-                          className="border-orange-300 text-orange-600 hover:bg-orange-50"
+                          className="border-orange-300 text-orange-400 hover:bg-orange-50"
                           data-testid={`reset-recall-${client.client_id}`}
                         >
                           {resettingId === client.client_id ? (
@@ -703,7 +703,7 @@ export default function RemindersPage() {
               <CardTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
                 <Palette className="w-5 h-5 text-purple-500" />
                 Scadenza Colore (30+ giorni)
-                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-semibold">
+                <span className="text-xs bg-purple-500/10 text-purple-400 px-2 py-0.5 rounded-full font-semibold">
                   {colorReminders.filter(c => !c.already_sent).length} da avvisare
                 </span>
               </CardTitle>
@@ -713,20 +713,20 @@ export default function RemindersPage() {
                 {colorReminders.map((cr) => (
                   <div key={cr.client_id}
                     className={`p-4 rounded-xl border-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
-                      cr.already_sent ? 'border-green-200 bg-green-50' : 'border-purple-200 bg-purple-50'
+                      cr.already_sent ? 'border-green-500/30 bg-green-500/10' : 'border-purple-200 bg-purple-50'
                     }`}
                     data-testid={`color-reminder-${cr.client_id}`}>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="font-bold text-[var(--text-primary)] truncate">{cr.client_name}</p>
                         {cr.already_sent && (
-                          <span className="text-xs bg-green-200 text-green-800 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                          <span className="text-xs bg-green-200 text-green-400 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
                             <Check className="w-3 h-3" /> Inviato
                           </span>
                         )}
                       </div>
                       <div className="flex items-center gap-3 text-sm mt-1 flex-wrap">
-                        <span className="text-purple-700 font-semibold flex items-center gap-1">
+                        <span className="text-purple-400 font-semibold flex items-center gap-1">
                           <Clock className="w-3.5 h-3.5" /> {cr.days_ago} giorni fa
                         </span>
                         {cr.phone && (
@@ -747,7 +747,7 @@ export default function RemindersPage() {
                               toast.success('Annullato');
                             } catch { toast.error('Errore'); }
                           }}
-                          className="border-red-300 text-red-600 hover:bg-red-50"
+                          className="border-red-300 text-red-400 hover:bg-red-50"
                           data-testid={`reset-color-${cr.client_id}`}>
                           <XCircle className="w-4 h-4 mr-1" /> Annulla
                         </Button>
@@ -830,7 +830,7 @@ export default function RemindersPage() {
               <Button variant="outline" onClick={() => setMsgDialog(false)}>Annulla</Button>
               <Button
                 onClick={sendMessage}
-                className="bg-green-500 hover:bg-green-600 text-white font-bold"
+                className="bg-green-500/100 hover:bg-green-600 text-white font-bold"
                 disabled={!msgText.trim()}
                 data-testid="confirm-send-btn"
               >

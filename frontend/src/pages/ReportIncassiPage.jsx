@@ -195,7 +195,7 @@ export default function ReportIncassiPage() {
                           <p className="text-xs text-[var(--text-secondary)] mt-1">{payment.date}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-xl font-black text-green-600">€{payment.total_paid.toFixed(2)}</p>
+                          <p className="text-xl font-black text-green-400">€{payment.total_paid.toFixed(2)}</p>
                           <p className="text-xs text-[var(--text-secondary)] capitalize">
                             {payment.payment_method === 'cash' ? 'Contanti' : 'Abbonamento/Prepagata'}
                           </p>

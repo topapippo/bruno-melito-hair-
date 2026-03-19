@@ -432,7 +432,7 @@ export default function ClientsPage() {
                       <Button
                         size="sm"
                         onClick={() => openWhatsApp(client)}
-                        className="flex-1 text-xs bg-green-500 hover:bg-green-600 text-white"
+                        className="flex-1 text-xs bg-green-500/100 hover:bg-green-600 text-white"
                       >
                         <MessageSquare className="w-3 h-3 mr-1" />
                         WhatsApp
@@ -672,15 +672,15 @@ export default function ClientsPage() {
                     <p className="text-2xl font-black text-[var(--gold)]">{clientHistory.total_visits}</p>
                     <p className="text-xs text-[var(--text-secondary)] font-semibold">Visite</p>
                   </div>
-                  <div className="p-4 bg-green-100 rounded-lg text-center">
-                    <p className="text-2xl font-black text-green-600">€{clientHistory.total_spent.toFixed(0)}</p>
+                  <div className="p-4 bg-green-500/100/10 rounded-lg text-center">
+                    <p className="text-2xl font-black text-green-400">€{clientHistory.total_spent.toFixed(0)}</p>
                     <p className="text-xs text-[var(--text-secondary)] font-semibold">Totale Speso</p>
                   </div>
-                  <div className="p-4 bg-amber-100 rounded-lg text-center">
+                  <div className="p-4 bg-amber-500/100/10 rounded-lg text-center">
                     <p className="text-2xl font-black text-amber-600">{clientHistory.loyalty_points ?? 0}</p>
                     <p className="text-xs text-[var(--text-secondary)] font-semibold">Punti Fedeltà</p>
                   </div>
-                  <div className="p-4 bg-purple-100 rounded-lg text-center">
+                  <div className="p-4 bg-purple-500/10 rounded-lg text-center">
                     <p className="text-sm font-black text-purple-600">{fmtDate(clientHistory.last_visit) || '-'}</p>
                     <p className="text-xs text-[var(--text-secondary)] font-semibold">Ultima Visita</p>
                   </div>
@@ -688,11 +688,11 @@ export default function ClientsPage() {
 
                 {/* Active Rewards */}
                 {clientHistory.active_rewards?.length > 0 && (
-                  <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                    <p className="text-sm font-bold text-green-800 mb-1">Premi Disponibili</p>
+                  <div className="p-3 bg-green-500/10 rounded-lg border border-green-500/30">
+                    <p className="text-sm font-bold text-green-400 mb-1">Premi Disponibili</p>
                     <div className="flex flex-wrap gap-2">
                       {clientHistory.active_rewards.map((r, idx) => (
-                        <span key={idx} className="text-xs bg-green-200 text-green-800 px-2 py-1 rounded-full font-semibold">
+                        <span key={idx} className="text-xs bg-green-200 text-green-400 px-2 py-1 rounded-full font-semibold">
                           {r.reward_name}
                         </span>
                       ))}
@@ -717,13 +717,13 @@ export default function ClientsPage() {
                             <div className="flex items-center gap-2">
                               <button
                                 onClick={() => openRecurringDialog(apt)}
-                                className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 transition-colors"
+                                className="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/100/100/10 text-blue-400 transition-colors"
                                 title="Rendi ricorrente"
                                 data-testid={`recurring-btn-${apt.id}`}
                               >
                                 <Repeat className="w-3.5 h-3.5" />
                               </button>
-                              <span className={`text-xs px-2 py-1 rounded ${apt.paid ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                              <span className={`text-xs px-2 py-1 rounded ${apt.paid ? 'bg-green-500/100/10 text-green-400' : 'bg-yellow-500/100/10 text-yellow-400'}`}>
                                 {apt.paid ? 'Pagato' : 'Da pagare'}
                               </span>
                             </div>
@@ -740,12 +740,12 @@ export default function ClientsPage() {
                     <h3 className="font-bold text-[var(--text-primary)] mb-2">Pagamenti</h3>
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                       {clientHistory.payments.slice(0, 10).map((pay) => (
-                        <div key={pay.id} className="p-3 bg-green-50 rounded-lg flex justify-between items-center">
+                        <div key={pay.id} className="p-3 bg-green-500/10 rounded-lg flex justify-between items-center">
                           <div>
                             <p className="font-semibold text-[var(--text-primary)]">{fmtDate(pay.date)}</p>
                             <p className="text-xs text-[var(--text-secondary)] capitalize">{pay.payment_method}</p>
                           </div>
-                          <p className="font-black text-green-600">€{pay.total_paid.toFixed(2)}</p>
+                          <p className="font-black text-green-400">€{pay.total_paid.toFixed(2)}</p>
                         </div>
                       ))}
                     </div>

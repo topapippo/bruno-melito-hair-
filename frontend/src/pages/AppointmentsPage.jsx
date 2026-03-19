@@ -421,22 +421,22 @@ export default function AppointmentsPage() {
 
         {/* Card Alerts / Scadenze */}
         {cardAlerts.total_alerts > 0 && (
-          <Card className="bg-amber-50 border-amber-200 shadow-sm" data-testid="card-alerts-section">
+          <Card className="bg-amber-500/10 border-amber-200 shadow-sm" data-testid="card-alerts-section">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-amber-500/100/10 rounded-lg flex items-center justify-center">
                   <Calendar className="w-4 h-4 text-amber-600" />
                 </div>
-                <h3 className="font-semibold text-amber-800">Scadenze Card ({cardAlerts.total_alerts})</h3>
+                <h3 className="font-semibold text-amber-400">Scadenze Card ({cardAlerts.total_alerts})</h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {cardAlerts.expiring_cards.map((card) => (
                   <div key={card.id} className="flex items-center justify-between p-2 bg-[var(--bg-card)] rounded-lg border border-amber-100">
                     <div>
                       <p className="font-medium text-sm text-[var(--text-primary)]">{card.client_name}</p>
-                      <p className="text-xs text-amber-700">{card.name} — scade {card.expiry_date ? new Date(card.expiry_date).toLocaleDateString('it-IT') : 'presto'}</p>
+                      <p className="text-xs text-amber-400">{card.name} — scade {card.expiry_date ? new Date(card.expiry_date).toLocaleDateString('it-IT') : 'presto'}</p>
                     </div>
-                    <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full font-semibold">
+                    <span className="text-xs bg-amber-500/100/10 text-amber-400 px-2 py-1 rounded-full font-semibold">
                       {card.days_until_expiry != null ? `${card.days_until_expiry}g` : '!'}
                     </span>
                   </div>
@@ -445,9 +445,9 @@ export default function AppointmentsPage() {
                   <div key={card.id} className="flex items-center justify-between p-2 bg-[var(--bg-card)] rounded-lg border border-red-100">
                     <div>
                       <p className="font-medium text-sm text-[var(--text-primary)]">{card.client_name}</p>
-                      <p className="text-xs text-red-600">{card.name} — credito basso: €{card.remaining_value?.toFixed(2)}</p>
+                      <p className="text-xs text-red-400">{card.name} — credito basso: €{card.remaining_value?.toFixed(2)}</p>
                     </div>
-                    <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-semibold">
+                    <span className="text-xs bg-red-500/10 text-red-400 px-2 py-1 rounded-full font-semibold">
                       {card.usage_percent != null ? `${Math.round(card.usage_percent)}%` : '!'}
                     </span>
                   </div>
@@ -462,10 +462,10 @@ export default function AppointmentsPage() {
           <Card className="bg-red-50/50 border-red-100 shadow-sm" data-testid="expense-alerts-section">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
-                  <Calendar className="w-4 h-4 text-red-600" />
+                <div className="w-8 h-8 bg-red-500/10 rounded-lg flex items-center justify-center">
+                  <Calendar className="w-4 h-4 text-red-400" />
                 </div>
-                <h3 className="font-semibold text-red-800">Scadenze Uscite ({upcomingExpenses.length})</h3>
+                <h3 className="font-semibold text-red-400">Scadenze Uscite ({upcomingExpenses.length})</h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {upcomingExpenses.map((exp) => {
@@ -479,9 +479,9 @@ export default function AppointmentsPage() {
                     <div key={exp.id} className={`flex items-center justify-between p-2 bg-[var(--bg-card)] rounded-lg border ${isOverdue ? 'border-red-300 bg-red-50' : isUrgent ? 'border-amber-200' : 'border-red-100'}`}>
                       <div>
                         <p className="font-medium text-sm text-[var(--text-primary)]">{exp.description}</p>
-                        <p className="text-xs text-red-600">€{exp.amount?.toFixed(2)} — {dueDate.toLocaleDateString('it-IT')}</p>
+                        <p className="text-xs text-red-400">€{exp.amount?.toFixed(2)} — {dueDate.toLocaleDateString('it-IT')}</p>
                       </div>
-                      <span className={`text-xs px-2 py-1 rounded-full font-semibold ${isOverdue ? 'bg-red-200 text-red-800' : isUrgent ? 'bg-amber-100 text-amber-700' : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)]'}`}>
+                      <span className={`text-xs px-2 py-1 rounded-full font-semibold ${isOverdue ? 'bg-red-200 text-red-400' : isUrgent ? 'bg-amber-500/100/10 text-amber-400' : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)]'}`}>
                         {isOverdue ? 'SCADUTA' : daysLeft === 0 ? 'OGGI' : `${daysLeft}g`}
                       </span>
                     </div>
@@ -494,23 +494,23 @@ export default function AppointmentsPage() {
 
         {/* Upcoming Appointments / Prossimi giorni */}
         {upcomingAppointments.length > 0 && (
-          <Card className="bg-blue-50/50 border-blue-100 shadow-sm" data-testid="upcoming-section">
+          <Card className="bg-blue-500/10/50 border-blue-100 shadow-sm" data-testid="upcoming-section">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Clock className="w-4 h-4 text-blue-600" />
+                <div className="w-8 h-8 bg-blue-500/100/10 rounded-lg flex items-center justify-center">
+                  <Clock className="w-4 h-4 text-blue-400" />
                 </div>
-                <h3 className="font-semibold text-blue-800">Prossimi Appuntamenti (7 giorni)</h3>
+                <h3 className="font-semibold text-blue-400">Prossimi Appuntamenti (7 giorni)</h3>
               </div>
               <div className="space-y-2">
                 {upcomingAppointments.map((day) => (
-                  <div key={day.date} className="p-2 bg-[var(--bg-card)] rounded-lg border border-blue-100 cursor-pointer hover:bg-blue-50 transition-colors"
+                  <div key={day.date} className="p-2 bg-[var(--bg-card)] rounded-lg border border-blue-100 cursor-pointer hover:bg-blue-500/100/10 transition-colors"
                     onClick={() => setSelectedDate(day.dateObj)}>
                     <div className="flex items-center justify-between">
                       <p className="font-medium text-sm text-[var(--text-primary)]">
                         {format(day.dateObj, "EEEE d MMMM", { locale: it })}
                       </p>
-                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-semibold">
+                      <span className="text-xs bg-blue-500/100/10 text-blue-400 px-2 py-1 rounded-full font-semibold">
                         {day.appointments.length} appuntament{day.appointments.length === 1 ? 'o' : 'i'}
                       </span>
                     </div>

@@ -303,7 +303,7 @@ export default function PrepaidCardsPage() {
   };
 
   const getCardTypeColor = (type) => {
-    return type === 'subscription' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700';
+    return type === 'subscription' ? 'bg-purple-500/10 text-purple-400' : 'bg-blue-500/100/10 text-blue-400';
   };
 
   return (
@@ -554,7 +554,7 @@ export default function PrepaidCardsPage() {
 
                     {/* Progress Bar */}
                     <div className="mt-4">
-                      <div className="w-full bg-[#E2E8F0]/30 rounded-full h-2">
+                      <div className="w-full bg-[var(--bg-elevated)]/30 rounded-full h-2">
                         <div
                           className="bg-[var(--gold)] h-2 rounded-full transition-all"
                           style={{
@@ -584,7 +584,7 @@ export default function PrepaidCardsPage() {
                                 {formatDate(tx.date)}
                               </TableCell>
                               <TableCell>{tx.description}</TableCell>
-                              <TableCell className={`text-right font-medium ${tx.amount < 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              <TableCell className={`text-right font-medium ${tx.amount < 0 ? 'text-green-400' : 'text-red-400'}`}>
                                 {tx.amount < 0 ? '+' : '-'}€{Math.abs(tx.amount).toFixed(2)}
                               </TableCell>
                             </TableRow>
@@ -924,7 +924,7 @@ export default function PrepaidCardsPage() {
         <Dialog open={goToCheckoutDialog} onOpenChange={setGoToCheckoutDialog}>
           <DialogContent className="sm:max-w-[420px]">
             <DialogHeader>
-              <DialogTitle className="text-xl font-bold text-green-700 flex items-center gap-2">
+              <DialogTitle className="text-xl font-bold text-green-400 flex items-center gap-2">
                 <CreditCard className="w-6 h-6" />
                 Card Creata!
               </DialogTitle>
@@ -934,10 +934,10 @@ export default function PrepaidCardsPage() {
             </DialogHeader>
             <div className="mt-4">
               {newlyCreatedCard && (
-                <div className="p-4 bg-green-50 border-2 border-green-200 rounded-xl mb-4">
+                <div className="p-4 bg-green-500/10 border-2 border-green-500/30 rounded-xl mb-4">
                   <p className="font-bold text-lg text-[var(--text-primary)]">{newlyCreatedCard.name}</p>
                   <p className="text-sm text-[var(--text-secondary)]">{newlyCreatedCard.card_type === 'subscription' ? 'Abbonamento' : 'Card Prepagata'}</p>
-                  <p className="text-2xl font-black text-green-600 mt-2">€{newlyCreatedCard.total_value?.toFixed(2)}</p>
+                  <p className="text-2xl font-black text-green-400 mt-2">€{newlyCreatedCard.total_value?.toFixed(2)}</p>
                   {newlyCreatedCard.total_services && (
                     <p className="text-sm text-[var(--text-muted)]">{newlyCreatedCard.total_services} servizi inclusi</p>
                   )}

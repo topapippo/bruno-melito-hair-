@@ -23,12 +23,12 @@ import { useNavigate } from 'react-router-dom';
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const RULE_TYPES = [
-  { value: 'under_30', label: 'Under 30', icon: Users, color: 'bg-pink-100 text-pink-700' },
-  { value: 'first_visit', label: 'Prima Visita', icon: UserPlus, color: 'bg-blue-100 text-blue-700' },
-  { value: 'birthday', label: 'Compleanno', icon: Cake, color: 'bg-purple-100 text-purple-700' },
-  { value: 'bring_friend', label: "Porta un'Amica", icon: Heart, color: 'bg-red-100 text-red-700' },
-  { value: 'google_review', label: 'Recensione Google', icon: Star, color: 'bg-yellow-100 text-yellow-700' },
-  { value: 'fidelity_vip', label: 'Fidelity VIP (10+ visite)', icon: Award, color: 'bg-emerald-100 text-emerald-700' },
+  { value: 'under_30', label: 'Under 30', icon: Users, color: 'bg-pink-500/10 text-pink-400' },
+  { value: 'first_visit', label: 'Prima Visita', icon: UserPlus, color: 'bg-blue-500/100/10 text-blue-400' },
+  { value: 'birthday', label: 'Compleanno', icon: Cake, color: 'bg-purple-500/10 text-purple-400' },
+  { value: 'bring_friend', label: "Porta un'Amica", icon: Heart, color: 'bg-red-500/10 text-red-400' },
+  { value: 'google_review', label: 'Recensione Google', icon: Star, color: 'bg-yellow-500/100/10 text-yellow-400' },
+  { value: 'fidelity_vip', label: 'Fidelity VIP (10+ visite)', icon: Award, color: 'bg-emerald-500/10 text-emerald-400' },
   { value: 'promo_code', label: 'Codice Promo Generico', icon: Hash, color: 'bg-[var(--bg-elevated)] text-[var(--text-primary)]' },
 ];
 
@@ -158,25 +158,25 @@ export default function PromotionsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Card className="bg-gradient-to-br from-pink-50 to-pink-100 border-pink-200">
             <CardContent className="p-5">
-              <p className="text-sm text-pink-700 font-semibold">Promozioni Attive</p>
-              <p className="text-3xl font-black text-pink-600" data-testid="active-promos-count">
+              <p className="text-sm text-pink-400 font-semibold">Promozioni Attive</p>
+              <p className="text-3xl font-black text-pink-400" data-testid="active-promos-count">
                 {promotions.filter(p => p.active).length}
               </p>
             </CardContent>
           </Card>
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-500/30">
             <CardContent className="p-5">
-              <p className="text-sm text-blue-700 font-semibold">Totale Promozioni</p>
-              <p className="text-3xl font-black text-blue-600">{promotions.length}</p>
+              <p className="text-sm text-blue-400 font-semibold">Totale Promozioni</p>
+              <p className="text-3xl font-black text-blue-400">{promotions.length}</p>
             </CardContent>
           </Card>
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-500/30">
             <CardContent className="p-5">
               <div className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-green-600" />
+                <TrendingUp className="w-5 h-5 text-green-400" />
                 <div>
-                  <p className="text-sm text-green-700 font-semibold">Utilizzi Totali</p>
-                  <p className="text-3xl font-black text-green-600" data-testid="total-usage">{totalUsage}</p>
+                  <p className="text-sm text-green-400 font-semibold">Utilizzi Totali</p>
+                  <p className="text-3xl font-black text-green-400" data-testid="total-usage">{totalUsage}</p>
                 </div>
               </div>
             </CardContent>
@@ -213,7 +213,7 @@ export default function PromotionsPage() {
                             <RuleIcon className="w-3 h-3 mr-1" /> {ruleInfo.label}
                           </Badge>
                           {promo.active ? (
-                            <Badge className="bg-green-100 text-green-700">Attiva</Badge>
+                            <Badge className="bg-green-500/100/10 text-green-400">Attiva</Badge>
                           ) : (
                             <Badge className="bg-gray-200 text-[var(--text-secondary)]">Disattivata</Badge>
                           )}
@@ -226,7 +226,7 @@ export default function PromotionsPage() {
                         <h3 className="font-bold text-lg text-[var(--text-primary)]">{promo.name}</h3>
                         <p className="text-sm text-[var(--text-secondary)] mt-1">{promo.description}</p>
                         <div className="mt-3 p-2.5 bg-pink-50 border border-pink-200 rounded-lg">
-                          <p className="text-sm font-bold text-pink-700 flex items-center gap-1.5">
+                          <p className="text-sm font-bold text-pink-400 flex items-center gap-1.5">
                             <Gift className="w-4 h-4" /> OMAGGIO: {promo.free_service_name}
                           </p>
                         </div>
@@ -331,7 +331,7 @@ export default function PromotionsPage() {
         <Dialog open={goToCheckoutDialog} onOpenChange={setGoToCheckoutDialog}>
           <DialogContent className="sm:max-w-[420px]">
             <DialogHeader>
-              <DialogTitle className="text-xl font-bold text-pink-700 flex items-center gap-2">
+              <DialogTitle className="text-xl font-bold text-pink-400 flex items-center gap-2">
                 <Gift className="w-6 h-6" />
                 Promozione Creata!
               </DialogTitle>
@@ -345,7 +345,7 @@ export default function PromotionsPage() {
                   <p className="font-bold text-lg text-[var(--text-primary)]">{newlyCreatedPromo.name}</p>
                   <p className="text-sm text-[var(--text-secondary)] mt-1">{newlyCreatedPromo.description}</p>
                   <div className="mt-3 p-2 bg-[var(--bg-card)] rounded-lg border border-pink-300">
-                    <p className="text-sm font-bold text-pink-700 flex items-center gap-1.5">
+                    <p className="text-sm font-bold text-pink-400 flex items-center gap-1.5">
                       <Gift className="w-4 h-4" /> OMAGGIO: {newlyCreatedPromo.free_service_name}
                     </p>
                   </div>

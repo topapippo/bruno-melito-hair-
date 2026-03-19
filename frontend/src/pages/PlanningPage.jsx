@@ -772,16 +772,16 @@ export default function PlanningPage() {
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <div className="relative">
-                    <CalendarDays className="w-6 h-6 text-emerald-600" />
+                    <CalendarDays className="w-6 h-6 text-emerald-400" />
                     <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center">
                       {newOnlineBookings.length}
                     </span>
                   </div>
-                  <span className="font-black text-emerald-800 text-sm">
+                  <span className="font-black text-emerald-400 text-sm">
                     {newOnlineBookings.length === 1 ? 'Nuova prenotazione online!' : `${newOnlineBookings.length} nuove prenotazioni online!`}
                   </span>
                 </div>
-                <Button variant="ghost" size="sm" onClick={dismissAllOnlineBookings} className="text-xs text-emerald-600 hover:bg-emerald-100 h-7" data-testid="dismiss-all-bookings-btn">
+                <Button variant="ghost" size="sm" onClick={dismissAllOnlineBookings} className="text-xs text-emerald-400 hover:bg-emerald-500/10 h-7" data-testid="dismiss-all-bookings-btn">
                   Segna tutte lette
                 </Button>
               </div>
@@ -790,17 +790,17 @@ export default function PlanningPage() {
                   <div key={booking.id} className="flex items-center gap-3 bg-[var(--bg-card)]/80 rounded-lg p-2.5 border border-emerald-200 hover:shadow-md transition-shadow cursor-pointer" onClick={() => goToBookingDate(booking)} data-testid={`new-booking-${booking.id}`}>
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-sm text-emerald-900 truncate">{booking.client_name}</p>
-                      <p className="text-xs text-emerald-700">
+                      <p className="text-xs text-emerald-400">
                         {fmtDate(booking.date)} alle {booking.time} - {booking.services?.map(s => s.name).join(', ')}
                       </p>
                     </div>
-                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); dismissOnlineBooking(booking.id); }} className="h-7 w-7 shrink-0 text-emerald-500 hover:bg-emerald-100" data-testid={`dismiss-booking-${booking.id}`}>
+                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); dismissOnlineBooking(booking.id); }} className="h-7 w-7 shrink-0 text-emerald-500 hover:bg-emerald-500/10" data-testid={`dismiss-booking-${booking.id}`}>
                       <X className="w-4 h-4" />
                     </Button>
                   </div>
                 ))}
                 {newOnlineBookings.length > 3 && (
-                  <p className="text-xs text-emerald-600 text-center font-medium">+{newOnlineBookings.length - 3} altre prenotazioni</p>
+                  <p className="text-xs text-emerald-400 text-center font-medium">+{newOnlineBookings.length - 3} altre prenotazioni</p>
                 )}
               </div>
             </div>
@@ -817,7 +817,7 @@ export default function PlanningPage() {
             <Bell className={`w-5 h-5 shrink-0 ${autoReminderPending > 0 ? 'text-green-500 animate-bounce' : 'text-amber-500'}`} />
             <div className="flex-1 text-sm">
               {autoReminderPending > 0 && (
-                <span className="font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full mr-2">
+                <span className="font-bold text-green-400 bg-green-500/100/10 px-2 py-0.5 rounded-full mr-2">
                   {autoReminderPending} promemoria da inviare ora!
                 </span>
               )}
@@ -827,11 +827,11 @@ export default function PlanningPage() {
               {inactiveClientsCount > 0 && (
                 <>
                   {(pendingRemindersCount > 0 || autoReminderPending > 0) && <span className="text-[var(--text-secondary)]"> · </span>}
-                  <span className="font-bold text-orange-600">{inactiveClientsCount} clienti inattivi</span>
+                  <span className="font-bold text-orange-400">{inactiveClientsCount} clienti inattivi</span>
                 </>
               )}
             </div>
-            <span className={`text-xs font-bold shrink-0 ${autoReminderPending > 0 ? 'text-green-600' : 'text-[var(--gold)]'}`}>
+            <span className={`text-xs font-bold shrink-0 ${autoReminderPending > 0 ? 'text-green-400' : 'text-[var(--gold)]'}`}>
               {autoReminderPending > 0 ? 'Invia ora →' : 'Gestisci →'}
             </span>
           </a>
@@ -847,7 +847,7 @@ export default function PlanningPage() {
             <Euro className="w-5 h-5 text-red-500 shrink-0" />
             <div className="flex-1 text-sm">
               {upcomingExpenses.filter(e => e.overdue).length > 0 && (
-                <span className="font-bold text-red-600">
+                <span className="font-bold text-red-400">
                   {upcomingExpenses.filter(e => e.overdue).length} scadenze SCADUTE!
                 </span>
               )}
@@ -855,7 +855,7 @@ export default function PlanningPage() {
                 <span className="text-[var(--text-secondary)]"> · </span>
               )}
               {upcomingExpenses.filter(e => !e.overdue).length > 0 && (
-                <span className="font-bold text-orange-600">
+                <span className="font-bold text-orange-400">
                   {upcomingExpenses.filter(e => !e.overdue).length} in scadenza (7 giorni)
                 </span>
               )}
@@ -1035,7 +1035,7 @@ export default function PlanningPage() {
           <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] overflow-hidden">
             <CardContent className="p-0">
               {/* Header with operator names */}
-              <div className="flex border-b-2 border-[var(--gold)]/40 bg-gradient-to-r from-[#0EA5E9]/10 to-[#E2E8F0]/20 sticky top-0 z-10">
+              <div className="flex border-b-2 border-[var(--gold)]/40 bg-gradient-to-r from-[var(--bg-elevated)] to-[var(--bg-card)] sticky top-0 z-10">
                 <div className="w-16 flex-shrink-0 p-2 border-r-2 border-[var(--gold)]/30">
                   <Clock className="w-5 h-5 text-[var(--gold)] mx-auto" />
                 </div>
@@ -1075,12 +1075,12 @@ export default function PlanningPage() {
               >
                 <div className="flex relative">
                   {/* Time column */}
-                  <div className="w-16 flex-shrink-0 bg-gradient-to-b from-[#F8FAFC] to-white">
+                  <div className="w-16 flex-shrink-0 bg-[var(--bg-card)]">
                     {TIME_SLOTS.map((time, idx) => (
                       <div
                         key={time}
                         className={`h-12 flex items-center justify-center border-b border-[var(--border-subtle)]/30 ${
-                          time.endsWith(':00') ? 'font-bold text-sm text-[var(--text-primary)] bg-[#E2E8F0]/20' : 'text-xs text-[var(--text-secondary)]'
+                          time.endsWith(':00') ? 'font-bold text-sm text-[var(--gold)] bg-[var(--bg-elevated)]' : 'text-xs text-[var(--text-secondary)]'
                         }`}
                       >
                         {time.endsWith(':00') || time.endsWith(':30') ? time : ''}
@@ -1176,7 +1176,7 @@ export default function PlanningPage() {
           /* WEEK VIEW */
           <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] overflow-hidden">
             <CardContent className="p-0">
-              <div className="grid grid-cols-7 border-b-2 border-[var(--gold)]/40 bg-gradient-to-r from-[#0EA5E9]/10 to-[#E2E8F0]/20">
+              <div className="grid grid-cols-7 border-b-2 border-[var(--gold)]/40 bg-gradient-to-r from-[var(--bg-elevated)] to-[var(--bg-card)]">
                 {eachDayOfInterval({ start: startOfWeek(selectedDate, { weekStartsOn: 1 }), end: endOfWeek(selectedDate, { weekStartsOn: 1 }) }).map(day => {
                   const dateStr = format(day, 'yyyy-MM-dd');
                   const dayApts = weekAppointments[dateStr] || [];
@@ -1241,7 +1241,7 @@ export default function PlanningPage() {
           /* MONTH VIEW */
           <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] overflow-hidden">
             <CardContent className="p-0">
-              <div className="grid grid-cols-7 border-b-2 border-[var(--gold)]/40 bg-gradient-to-r from-[#0EA5E9]/10 to-[#E2E8F0]/20">
+              <div className="grid grid-cols-7 border-b-2 border-[var(--gold)]/40 bg-gradient-to-r from-[var(--bg-elevated)] to-[var(--bg-card)]">
                 {['Lun','Mar','Mer','Gio','Ven','Sab','Dom'].map(d => (
                   <div key={d} className="p-2 text-center text-xs font-bold text-[var(--text-muted)] uppercase border-r border-[var(--border-subtle)]">{d}</div>
                 ))}
@@ -1339,7 +1339,7 @@ export default function PlanningPage() {
                       data-testid="generic-client-btn">
                       <User className="w-3 h-3 mr-1" /> Occasionale
                     </Button>
-                    <Button type="button" variant="ghost" size="sm" className="text-xs h-7 text-emerald-600"
+                    <Button type="button" variant="ghost" size="sm" className="text-xs h-7 text-emerald-400"
                       onClick={() => {
                         setNewClientMode(true);
                         setFormData({ ...formData, client_id: '' });
@@ -1373,7 +1373,7 @@ export default function PlanningPage() {
                         data-testid="new-client-phone-input"
                       />
                       {!newClientPhone && (
-                        <p className="text-xs text-orange-600 font-semibold mt-1 flex items-center gap-1">
+                        <p className="text-xs text-orange-400 font-semibold mt-1 flex items-center gap-1">
                           <Bell className="w-3 h-3" /> Inserisci il numero per inviare promemoria WhatsApp
                         </p>
                       )}
@@ -1417,7 +1417,7 @@ export default function PlanningPage() {
                             <div className="flex items-center justify-between">
                               <span>{client.name}</span>
                               {!client.phone && (
-                                <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-bold ml-2">TEL MANCANTE</span>
+                                <span className="text-[10px] bg-red-500/10 text-red-400 px-1.5 py-0.5 rounded-full font-bold ml-2">TEL MANCANTE</span>
                               )}
                             </div>
                           </button>
@@ -1437,19 +1437,19 @@ export default function PlanningPage() {
                   <div className="flex items-start gap-2">
                     <User className={`w-5 h-5 flex-shrink-0 mt-0.5 ${!selectedClientInfo.phone ? 'text-red-500' : 'text-[#F59E0B]'}`} />
                     <div className="flex-1">
-                      <p className={`font-bold ${!selectedClientInfo.phone ? 'text-red-700' : 'text-[#92400E]'}`}>{selectedClientInfo.name}</p>
+                      <p className={`font-bold ${!selectedClientInfo.phone ? 'text-red-400' : 'text-[var(--gold)]'}`}>{selectedClientInfo.name}</p>
                       {selectedClientInfo.phone ? (
-                        <p className="text-sm text-[#92400E]">Tel: {selectedClientInfo.phone}</p>
+                        <p className="text-sm text-[var(--gold)]">Tel: {selectedClientInfo.phone}</p>
                       ) : (
-                        <p className="text-sm text-red-600 font-semibold flex items-center gap-1">
+                        <p className="text-sm text-red-400 font-semibold flex items-center gap-1">
                           <Bell className="w-3.5 h-3.5" /> Telefono mancante! Inseriscilo nella scheda cliente
                         </p>
                       )}
                       {selectedClientInfo.notes && (
-                        <p className="text-sm text-[#92400E] mt-1 whitespace-pre-wrap">{selectedClientInfo.notes}</p>
+                        <p className="text-sm text-[var(--gold)] mt-1 whitespace-pre-wrap">{selectedClientInfo.notes}</p>
                       )}
                       {!selectedClientInfo.notes && selectedClientInfo.phone && (
-                        <p className="text-sm text-[#92400E]/60 italic">Nessuna nota</p>
+                        <p className="text-sm text-[var(--gold)]/60 italic">Nessuna nota</p>
                       )}
                     </div>
                   </div>
@@ -1525,7 +1525,7 @@ export default function PlanningPage() {
                           <div className="flex items-center gap-2">
                             <ChevronDown className={`w-4 h-4 text-[var(--text-muted)] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                             <span className="font-bold text-sm text-[var(--text-primary)] capitalize">{cat}</span>
-                            <span className="text-[10px] font-bold bg-[#E2E8F0] text-[var(--text-muted)] px-1.5 py-0.5 rounded-full">{catServices.length}</span>
+                            <span className="text-[10px] font-bold bg-[var(--bg-elevated)] text-[var(--text-muted)] px-1.5 py-0.5 rounded-full">{catServices.length}</span>
                           </div>
                           {selCount > 0 && (
                             <span className="text-[10px] font-black bg-[var(--gold)] text-white px-2 py-0.5 rounded-full">{selCount} sel.</span>
@@ -1584,16 +1584,16 @@ export default function PlanningPage() {
 
               {/* Card & Promozioni del Cliente - Selezionabili per cassa */}
               {(dialogClientCards.length > 0 || dialogClientPromos.length > 0) && (
-                <div className="space-y-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl">
-                  <Label className="text-green-800 font-bold flex items-center gap-2">
+                <div className="space-y-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-500/30 rounded-xl">
+                  <Label className="text-green-400 font-bold flex items-center gap-2">
                     <Ticket className="w-4 h-4" /> Card & Promozioni Disponibili
                   </Label>
-                  <p className="text-xs text-green-600 -mt-1">Seleziona per applicare automaticamente in cassa</p>
+                  <p className="text-xs text-green-400 -mt-1">Seleziona per applicare automaticamente in cassa</p>
                   
                   {/* Client Cards */}
                   {dialogClientCards.length > 0 && (
                     <div className="space-y-2">
-                      <p className="text-xs font-semibold text-green-700 uppercase">Card/Abbonamenti</p>
+                      <p className="text-xs font-semibold text-green-400 uppercase">Card/Abbonamenti</p>
                       <div className="grid grid-cols-1 gap-2">
                         {dialogClientCards.map(card => (
                           <button
@@ -1602,28 +1602,28 @@ export default function PlanningPage() {
                             onClick={() => setPreSelectedCardId(preSelectedCardId === card.id ? '' : card.id)}
                             className={`w-full p-2.5 rounded-lg border-2 text-left transition-all ${
                               preSelectedCardId === card.id 
-                                ? 'border-green-500 bg-green-100 ring-2 ring-green-400' 
-                                : 'border-green-200 bg-[var(--bg-card)] hover:border-green-400'
+                                ? 'border-green-500 bg-green-500/100/10 ring-2 ring-green-400' 
+                                : 'border-green-500/30 bg-[var(--bg-card)] hover:border-green-400'
                             }`}
                             data-testid={`preselect-card-${card.id}`}
                           >
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <CreditCard className={`w-4 h-4 ${preSelectedCardId === card.id ? 'text-green-600' : 'text-[var(--text-muted)]'}`} />
+                                <CreditCard className={`w-4 h-4 ${preSelectedCardId === card.id ? 'text-green-400' : 'text-[var(--text-muted)]'}`} />
                                 <div>
                                   <p className="font-bold text-sm text-[var(--text-primary)]">{card.name}</p>
                                   <p className="text-[10px] text-[var(--text-secondary)]">{card.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}</p>
                                 </div>
                               </div>
                               <div className="text-right">
-                                <p className="font-black text-green-600 text-sm">€{card.remaining_value?.toFixed(2)}</p>
+                                <p className="font-black text-green-400 text-sm">€{card.remaining_value?.toFixed(2)}</p>
                                 {card.total_services && (
                                   <p className="text-[10px] text-[var(--text-secondary)]">{card.total_services - card.used_services} servizi rimasti</p>
                                 )}
                               </div>
                             </div>
                             {preSelectedCardId === card.id && (
-                              <div className="mt-1.5 flex items-center gap-1 text-xs text-green-700 font-semibold">
+                              <div className="mt-1.5 flex items-center gap-1 text-xs text-green-400 font-semibold">
                                 <Check className="w-3 h-3" /> Verrà applicata in cassa
                               </div>
                             )}
@@ -1636,7 +1636,7 @@ export default function PlanningPage() {
                   {/* Client Promos */}
                   {dialogClientPromos.length > 0 && (
                     <div className="space-y-2">
-                      <p className="text-xs font-semibold text-pink-700 uppercase">Promozioni</p>
+                      <p className="text-xs font-semibold text-pink-400 uppercase">Promozioni</p>
                       <div className="grid grid-cols-1 gap-2">
                         {dialogClientPromos.map(promo => (
                           <button
@@ -1645,22 +1645,22 @@ export default function PlanningPage() {
                             onClick={() => setPreSelectedPromoId(preSelectedPromoId === promo.id ? '' : promo.id)}
                             className={`w-full p-2.5 rounded-lg border-2 text-left transition-all ${
                               preSelectedPromoId === promo.id 
-                                ? 'border-pink-500 bg-pink-100 ring-2 ring-pink-400' 
+                                ? 'border-pink-500 bg-pink-500/10 ring-2 ring-pink-400' 
                                 : 'border-pink-200 bg-[var(--bg-card)] hover:border-pink-400'
                             }`}
                             data-testid={`preselect-promo-${promo.id}`}
                           >
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <Gift className={`w-4 h-4 ${preSelectedPromoId === promo.id ? 'text-pink-600' : 'text-[var(--text-muted)]'}`} />
+                                <Gift className={`w-4 h-4 ${preSelectedPromoId === promo.id ? 'text-pink-400' : 'text-[var(--text-muted)]'}`} />
                                 <div>
                                   <p className="font-bold text-sm text-[var(--text-primary)]">{promo.name}</p>
-                                  <p className="text-[10px] text-pink-600 font-semibold">OMAGGIO: {promo.free_service_name}</p>
+                                  <p className="text-[10px] text-pink-400 font-semibold">OMAGGIO: {promo.free_service_name}</p>
                                 </div>
                               </div>
                             </div>
                             {preSelectedPromoId === promo.id && (
-                              <div className="mt-1.5 flex items-center gap-1 text-xs text-pink-700 font-semibold">
+                              <div className="mt-1.5 flex items-center gap-1 text-xs text-pink-400 font-semibold">
                                 <Check className="w-3 h-3" /> Verrà applicata in cassa
                               </div>
                             )}
@@ -1846,12 +1846,12 @@ export default function PlanningPage() {
                   <div className="flex items-start gap-2">
                     <User className="w-5 h-5 text-[#F59E0B] flex-shrink-0 mt-0.5" />
                     <div className="flex-1">
-                      <p className="font-bold text-[#92400E]">{selectedClientInfo.name}</p>
+                      <p className="font-bold text-[var(--gold)]">{selectedClientInfo.name}</p>
                       {selectedClientInfo.phone && (
-                        <p className="text-sm text-[#92400E]">Tel: {selectedClientInfo.phone}</p>
+                        <p className="text-sm text-[var(--gold)]">Tel: {selectedClientInfo.phone}</p>
                       )}
                       {selectedClientInfo.notes && (
-                        <p className="text-sm text-[#92400E] mt-1 whitespace-pre-wrap">{selectedClientInfo.notes}</p>
+                        <p className="text-sm text-[var(--gold)] mt-1 whitespace-pre-wrap">{selectedClientInfo.notes}</p>
                       )}
                     </div>
                   </div>
@@ -1860,15 +1860,15 @@ export default function PlanningPage() {
 
               {/* Loyalty Points Display */}
               {editingAppointment?.client_id && editingAppointment.client_id !== 'generic' && (
-                <div className="p-3 bg-amber-50 border-2 border-amber-200 rounded-lg" data-testid="loyalty-points-display">
+                <div className="p-3 bg-amber-500/10 border-2 border-amber-200 rounded-lg" data-testid="loyalty-points-display">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
-                      <span className="font-bold text-amber-800">Punti Fedelta: {clientLoyalty.points}</span>
+                      <span className="font-bold text-amber-400">Punti Fedelta: {clientLoyalty.points}</span>
                     </div>
                     <div className="flex gap-1">
                       <Button type="button" variant="outline" size="sm"
-                        className="h-7 text-xs border-green-300 text-green-700 hover:bg-green-50"
+                        className="h-7 text-xs border-green-500/30 text-green-400 hover:bg-green-500/100/10"
                         onClick={async () => {
                           const pts = prompt('Quanti punti aggiungere?', '10');
                           if (pts && !isNaN(pts)) {
@@ -1883,7 +1883,7 @@ export default function PlanningPage() {
                         <Plus className="w-3 h-3 mr-1" /> Aggiungi
                       </Button>
                       <Button type="button" variant="outline" size="sm"
-                        className="h-7 text-xs border-red-300 text-red-700 hover:bg-red-50"
+                        className="h-7 text-xs border-red-300 text-red-400 hover:bg-red-50"
                         onClick={async () => {
                           const pts = prompt('Quanti punti rimuovere?', '10');
                           if (pts && !isNaN(pts)) {
@@ -1898,7 +1898,7 @@ export default function PlanningPage() {
                         <Trash2 className="w-3 h-3 mr-1" /> Rimuovi
                       </Button>
                       <Button type="button" variant="outline" size="sm"
-                        className="h-7 text-xs border-orange-300 text-orange-700 hover:bg-orange-50"
+                        className="h-7 text-xs border-orange-300 text-orange-400 hover:bg-orange-50"
                         onClick={async () => {
                           if (!window.confirm('Azzerare tutti i punti di questo cliente?')) return;
                           try {
@@ -2001,7 +2001,7 @@ export default function PlanningPage() {
                           <div className="flex items-center gap-2">
                             <ChevronDown className={`w-4 h-4 text-[var(--text-muted)] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                             <span className="font-bold text-sm text-[var(--text-primary)] capitalize">{cat}</span>
-                            <span className="text-[10px] font-bold bg-[#E2E8F0] text-[var(--text-muted)] px-1.5 py-0.5 rounded-full">{catServices.length}</span>
+                            <span className="text-[10px] font-bold bg-[var(--bg-elevated)] text-[var(--text-muted)] px-1.5 py-0.5 rounded-full">{catServices.length}</span>
                           </div>
                           {selCount > 0 && (
                             <span className="text-[10px] font-black bg-[var(--gold)] text-white px-2 py-0.5 rounded-full">{selCount} sel.</span>
@@ -2070,12 +2070,12 @@ export default function PlanningPage() {
               {editingAppointment?.status === 'completed' ? (
                 <div className="pt-4 border-t-2 border-emerald-300 bg-emerald-50 -mx-6 px-6 pb-4 rounded-b-lg">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
-                      <CheckCircle className="w-6 h-6 text-emerald-600" />
+                    <div className="w-10 h-10 bg-emerald-500/10 rounded-full flex items-center justify-center">
+                      <CheckCircle className="w-6 h-6 text-emerald-400" />
                     </div>
                     <div>
-                      <p className="font-bold text-emerald-800">Pagamento completato</p>
-                      <p className="text-sm text-emerald-600">
+                      <p className="font-bold text-emerald-400">Pagamento completato</p>
+                      <p className="text-sm text-emerald-400">
                         {editingAppointment.payment_method === 'cash' ? 'Contanti' : editingAppointment.payment_method === 'card' ? 'Carta' : editingAppointment.payment_method || 'N/A'}
                         {editingAppointment.amount_paid ? ` - \u20AC${editingAppointment.amount_paid.toFixed(2)}` : ''}
                       </p>
@@ -2133,8 +2133,8 @@ export default function PlanningPage() {
                   </div>
                 </div>
               ) : (
-                <div className="pt-4 border-t-2 border-green-500 bg-green-50 -mx-6 px-6 pb-4 rounded-b-lg">
-                  <h3 className="text-lg font-black text-green-800 mb-4 flex items-center gap-2">
+                <div className="pt-4 border-t-2 border-green-500 bg-green-500/10 -mx-6 px-6 pb-4 rounded-b-lg">
+                  <h3 className="text-lg font-black text-green-400 mb-4 flex items-center gap-2">
                     <Euro className="w-5 h-5" />
                     INCASSO
                   </h3>
@@ -2169,7 +2169,7 @@ export default function PlanningPage() {
                           clientCards.map(card => (
                             <button key={card.id} type="button"
                               onClick={() => setSelectedCardId(card.id)}
-                              className={`w-full p-3 rounded-lg border-2 text-left transition-all ${selectedCardId === card.id ? 'border-green-500 bg-green-50' : 'border-[var(--border-subtle)] hover:border-gray-400'}`}
+                              className={`w-full p-3 rounded-lg border-2 text-left transition-all ${selectedCardId === card.id ? 'border-green-500 bg-green-500/10' : 'border-[var(--border-subtle)] hover:border-gray-400'}`}
                               data-testid={`select-card-${card.id}`}>
                               <div className="flex justify-between items-center">
                                 <div>
@@ -2177,14 +2177,14 @@ export default function PlanningPage() {
                                   <p className="text-xs text-[var(--text-secondary)]">{card.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}</p>
                                 </div>
                                 <div className="text-right">
-                                  <p className="font-black text-green-600">{'\u20AC'}{card.remaining_value?.toFixed(2)}</p>
+                                  <p className="font-black text-green-400">{'\u20AC'}{card.remaining_value?.toFixed(2)}</p>
                                   {card.total_services && <p className="text-xs text-[var(--text-secondary)]">{card.used_services}/{card.total_services} servizi</p>}
                                 </div>
                               </div>
                             </button>
                           ))
                         ) : (
-                          <p className="text-sm text-amber-600 p-2 bg-amber-50 rounded-lg">Nessun abbonamento/card attiva per questo cliente</p>
+                          <p className="text-sm text-amber-600 p-2 bg-amber-500/10 rounded-lg">Nessun abbonamento/card attiva per questo cliente</p>
                         )}
                       </div>
                     )}
@@ -2195,7 +2195,7 @@ export default function PlanningPage() {
                     <div className="mb-4">
                       <button type="button"
                         onClick={() => setUseLoyaltyPoints(!useLoyaltyPoints)}
-                        className={`w-full p-3 rounded-lg border-2 flex items-center justify-between transition-all ${useLoyaltyPoints ? 'border-amber-500 bg-amber-50' : 'border-[var(--border-subtle)] hover:border-amber-300'}`}
+                        className={`w-full p-3 rounded-lg border-2 flex items-center justify-between transition-all ${useLoyaltyPoints ? 'border-amber-500 bg-amber-500/10' : 'border-[var(--border-subtle)] hover:border-amber-300'}`}
                         data-testid="use-loyalty-btn">
                         <div className="flex items-center gap-2">
                           <Star className={`w-5 h-5 ${useLoyaltyPoints ? 'text-amber-500 fill-amber-500' : 'text-[var(--text-muted)]'}`} />
@@ -2225,7 +2225,7 @@ export default function PlanningPage() {
                             <div className="flex items-center justify-between">
                               <div>
                                 <p className="font-bold text-sm text-[var(--text-primary)]">{promo.name}</p>
-                                <p className="text-xs text-pink-600 font-semibold mt-0.5">
+                                <p className="text-xs text-pink-400 font-semibold mt-0.5">
                                   OMAGGIO: {promo.free_service_name}
                                 </p>
                               </div>
@@ -2264,26 +2264,26 @@ export default function PlanningPage() {
                   </div>
 
                   {/* Summary */}
-                  <div className="bg-[var(--bg-card)] rounded-lg p-4 border-2 border-green-200 space-y-2">
+                  <div className="bg-[var(--bg-card)] rounded-lg p-4 border-2 border-green-500/30 space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="font-semibold">Subtotale:</span>
                       <span>&euro;{calculateTotal().toFixed(2)}</span>
                     </div>
                     {selectedPromo && (
-                      <div className="flex justify-between text-sm text-pink-600">
+                      <div className="flex justify-between text-sm text-pink-400">
                         <span className="font-semibold flex items-center gap-1"><Gift className="w-3.5 h-3.5" /> Omaggio:</span>
                         <span>{selectedPromo.free_service_name}</span>
                       </div>
                     )}
                     {discountType !== 'none' && calculateDiscount() > 0 && (
-                      <div className="flex justify-between text-sm text-red-600">
+                      <div className="flex justify-between text-sm text-red-400">
                         <span className="font-semibold">Sconto:</span>
                         <span>-&euro;{calculateDiscount().toFixed(2)}</span>
                       </div>
                     )}
-                    <div className="flex justify-between text-xl font-black pt-2 border-t border-green-200">
+                    <div className="flex justify-between text-xl font-black pt-2 border-t border-green-500/30">
                       <span>TOTALE:</span>
-                      <span className="text-green-600">€{calculateFinalAmount().toFixed(2)}</span>
+                      <span className="text-green-400">€{calculateFinalAmount().toFixed(2)}</span>
                     </div>
                     {calculateFinalAmount() >= 10 && (
                       <div className="flex items-center gap-1.5 text-sm text-amber-600 pt-1" data-testid="loyalty-points-preview">
@@ -2377,7 +2377,7 @@ export default function PlanningPage() {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-2">
-              <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 text-sm text-amber-800">
+              <div className="p-4 bg-amber-500/10 rounded-xl border border-amber-200 text-sm text-amber-400">
                 {loyaltyAlertData?.totalPoints >= 10 ? (
                   <p>Ha diritto ad un <strong>taglio gratis</strong> o uno <strong>sconto di €10,00</strong> sui servizi di colpi di sole e schiariture.</p>
                 ) : (
@@ -2396,7 +2396,7 @@ export default function PlanningPage() {
               </Button>
               <Button
                 onClick={openLoyaltyWhatsApp}
-                className="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold"
+                className="flex-1 bg-green-500/100 hover:bg-green-600 text-white font-bold"
                 data-testid="loyalty-whatsapp-btn"
               >
                 <MessageSquare className="w-4 h-4 mr-2" />

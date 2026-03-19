@@ -32,13 +32,13 @@ import { fmtDate } from '../utils/formatDate';
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const CATEGORIES = [
-  { value: 'affitto', label: 'Affitto', color: 'bg-purple-100 text-purple-700' },
-  { value: 'fornitori', label: 'Fornitori', color: 'bg-blue-100 text-blue-700' },
-  { value: 'bollette', label: 'Bollette', color: 'bg-yellow-100 text-yellow-700' },
-  { value: 'stipendi', label: 'Stipendi', color: 'bg-green-100 text-green-700' },
-  { value: 'tasse', label: 'Tasse', color: 'bg-red-100 text-red-700' },
+  { value: 'affitto', label: 'Affitto', color: 'bg-purple-500/10 text-purple-400' },
+  { value: 'fornitori', label: 'Fornitori', color: 'bg-blue-500/100/10 text-blue-400' },
+  { value: 'bollette', label: 'Bollette', color: 'bg-yellow-500/100/10 text-yellow-400' },
+  { value: 'stipendi', label: 'Stipendi', color: 'bg-green-500/100/10 text-green-400' },
+  { value: 'tasse', label: 'Tasse', color: 'bg-red-500/10 text-red-400' },
   { value: 'prodotti', label: 'Prodotti', color: 'bg-cyan-100 text-cyan-700' },
-  { value: 'manutenzione', label: 'Manutenzione', color: 'bg-orange-100 text-orange-700' },
+  { value: 'manutenzione', label: 'Manutenzione', color: 'bg-orange-500/10 text-orange-400' },
   { value: 'altro', label: 'Altro', color: 'bg-[var(--bg-elevated)] text-[var(--text-primary)]' },
 ];
 
@@ -210,25 +210,25 @@ export default function ExpensesPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
             <CardContent className="p-5">
-              <p className="text-sm text-red-700 font-semibold">Da Pagare</p>
-              <p className="text-3xl font-black text-red-600" data-testid="total-unpaid">&euro;{totalUnpaid.toFixed(2)}</p>
+              <p className="text-sm text-red-400 font-semibold">Da Pagare</p>
+              <p className="text-3xl font-black text-red-400" data-testid="total-unpaid">&euro;{totalUnpaid.toFixed(2)}</p>
             </CardContent>
           </Card>
           <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
             <CardContent className="p-5">
               <div className="flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-orange-600" />
+                <AlertTriangle className="w-5 h-5 text-orange-400" />
                 <div>
-                  <p className="text-sm text-orange-700 font-semibold">Scadute</p>
-                  <p className="text-3xl font-black text-orange-600" data-testid="overdue-count">{overdueCount}</p>
+                  <p className="text-sm text-orange-400 font-semibold">Scadute</p>
+                  <p className="text-3xl font-black text-orange-400" data-testid="overdue-count">{overdueCount}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-500/30">
             <CardContent className="p-5">
-              <p className="text-sm text-green-700 font-semibold">Pagate</p>
-              <p className="text-3xl font-black text-green-600">&euro;{totalPaid.toFixed(2)}</p>
+              <p className="text-sm text-green-400 font-semibold">Pagate</p>
+              <p className="text-3xl font-black text-green-400">&euro;{totalPaid.toFixed(2)}</p>
             </CardContent>
           </Card>
         </div>
@@ -302,7 +302,7 @@ export default function ExpensesPage() {
                   className={`bg-[var(--bg-card)] border-2 transition-all ${
                     isOverdue ? 'border-red-300 bg-red-50/50' :
                     isDueSoon ? 'border-orange-200 bg-orange-50/30' :
-                    exp.paid ? 'border-green-200 bg-green-50/30 opacity-70' :
+                    exp.paid ? 'border-green-500/30 bg-green-500/10/30 opacity-70' :
                     'border-[var(--border-subtle)]'
                   }`}
                   data-testid={`expense-${exp.id}`}
@@ -326,7 +326,7 @@ export default function ExpensesPage() {
                             <Badge className="bg-orange-500 text-white">IN SCADENZA</Badge>
                           )}
                           {exp.paid && (
-                            <Badge className="bg-green-500 text-white">PAGATA</Badge>
+                            <Badge className="bg-green-500/100 text-white">PAGATA</Badge>
                           )}
                         </div>
                         <div className="flex items-center gap-4 text-sm text-[var(--text-secondary)] mt-1">
@@ -335,19 +335,19 @@ export default function ExpensesPage() {
                             Scadenza: {fmtDate(exp.due_date)}
                           </span>
                           {exp.paid_date && (
-                            <span className="text-green-600">Pagata il {fmtDate(exp.paid_date)}</span>
+                            <span className="text-green-400">Pagata il {fmtDate(exp.paid_date)}</span>
                           )}
                         </div>
                         {exp.notes && <p className="text-xs text-[var(--text-muted)] mt-1">{exp.notes}</p>}
                       </div>
                       <div className="flex items-center gap-3 shrink-0">
-                        <p className="text-2xl font-black text-red-600">&euro;{exp.amount.toFixed(2)}</p>
+                        <p className="text-2xl font-black text-red-400">&euro;{exp.amount.toFixed(2)}</p>
                         <div className="flex gap-1">
                           {!exp.paid ? (
                             <Button
                               size="sm"
                               onClick={() => markPaid(exp.id)}
-                              className="bg-green-500 hover:bg-green-600 text-white"
+                              className="bg-green-500/100 hover:bg-green-600 text-white"
                               data-testid={`pay-btn-${exp.id}`}
                             >
                               <Check className="w-4 h-4 mr-1" /> Paga
@@ -357,7 +357,7 @@ export default function ExpensesPage() {
                               size="sm"
                               variant="outline"
                               onClick={() => markUnpaid(exp.id)}
-                              className="border-orange-300 text-orange-600"
+                              className="border-orange-300 text-orange-400"
                               data-testid={`unpay-btn-${exp.id}`}
                             >
                               <RotateCcw className="w-3.5 h-3.5 mr-1" /> Annulla
