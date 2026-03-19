@@ -55,7 +55,11 @@ Salon management application (React, FastAPI, MongoDB) deployed on Render. The a
 - **Success page + mobile CTA:** Converted to dark theme
 - **Performance optimization:** Build fix, image lazy loading, prefers-reduced-motion, will-change, content-visibility
 - **Refactoring:** Cleaned 19 old test files (24→5), verified production build compiles
-- **Testing:** Backend 13/13, Frontend 16/16 (iteration_10), production build OK
+- **Dark theme batch fix:** 23 admin pages converted from light to dark theme (sed batch replace)
+- **Admin appearance customization ("Aspetto Gestionale"):** New section in Settings with color pickers, font selector (6 options), font size (4 options), border radius (5 options), save/reset functionality
+- **Admin theme API:** New GET/PUT /api/admin-theme endpoints for persistence in MongoDB
+- **Theme auto-load:** Admin theme preferences loaded at startup in Layout.jsx
+- **Testing:** Backend 12/12, Frontend 16/16 (iteration_11)
 
 ## Architecture
 ```
