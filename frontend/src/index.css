@@ -323,3 +323,28 @@ a, button { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
   overflow-y: auto;
   animation: fadeInScale 0.3s ease-out;
 }
+
+
+/* ====== PERFORMANCE ====== */
+
+/* Reduce animations for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .animate-float, .animate-logo, .animate-gold-pulse { animation: none !important; }
+  .btn-gold::before { display: none; }
+}
+
+/* GPU-accelerated animations */
+.animate-float, .animate-logo, .btn-gold, .btn-animate, .dash-card {
+  will-change: transform;
+}
+
+/* Content visibility for offscreen sections */
+section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 500px;
+}

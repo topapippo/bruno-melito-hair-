@@ -53,7 +53,9 @@ Salon management application (React, FastAPI, MongoDB) deployed on Render. The a
 - **Section reorder:** New "Ordine Sezioni" tab with up/down arrows, backend persistence
 - **Dynamic section rendering:** WebsitePage uses sectionMap/sectionOrder from config
 - **Success page + mobile CTA:** Converted to dark theme
-- **Testing:** Backend 13/13, Frontend 16/16 (iteration_10)
+- **Performance optimization:** Build fix, image lazy loading, prefers-reduced-motion, will-change, content-visibility
+- **Refactoring:** Cleaned 19 old test files (24→5), verified production build compiles
+- **Testing:** Backend 13/13, Frontend 16/16 (iteration_10), production build OK
 
 ## Architecture
 ```

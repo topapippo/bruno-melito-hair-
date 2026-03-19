@@ -89,7 +89,7 @@ export function FooterSection() {
     <footer className="py-8" style={{ background: '#0B1120', borderTop: '1px solid rgba(148,163,184,0.1)' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <img src="/logo.png?v=4" alt="Bruno Melito Hair" className="w-10 h-10 rounded-xl hs" />
+          <img src="/logo.png?v=4" alt="Bruno Melito Hair" className="w-10 h-10 rounded-xl hs" loading="lazy" />
           <div>
             <p className="fd font-bold" style={{ color: '#D4AF37' }}>BRUNO MELITO HAIR</p>
           </div>

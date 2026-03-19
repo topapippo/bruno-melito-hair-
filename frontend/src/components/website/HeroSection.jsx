@@ -10,6 +10,7 @@ export function HeroSection({ COLORS, cfg, bookRef, titleSize, onBook }) {
           alt="" 
           className="animate-float w-[65vw] max-w-[800px] h-auto object-contain mr-[-4vw]"
           style={{ filter: 'drop-shadow(0 10px 40px rgba(212,175,55,0.2))', opacity: 0.4 }}
+          loading="lazy"
         />
       </div>
       {/* Dark gradient overlays */}

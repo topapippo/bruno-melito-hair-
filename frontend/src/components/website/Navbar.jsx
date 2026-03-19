@@ -10,6 +10,7 @@ export function Navbar({ COLORS, bookRef, setManageOpen, goToAdminLogin, onBook 
             alt="Bruno Melito Hair" 
             className="w-12 h-12 rounded-xl object-cover animate-logo shadow-lg hover:scale-110 transition-transform duration-300"
             style={{ boxShadow: '0 0 20px rgba(212,175,55,0.3)' }}
+            loading="lazy"
           />
           <div className="hidden sm:block">
             <p className="fd text-xl font-bold leading-tight" style={{ color: '#D4AF37' }}>
