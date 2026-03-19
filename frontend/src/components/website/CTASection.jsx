@@ -2,16 +2,16 @@ import { Scissors, MessageSquare, Phone, Calendar } from 'lucide-react';
 
 export function CTASection({ COLORS, bookRef, openWA, setManageOpen, onBook }) {
   return (
-    <section className="py-16 sm:py-20" style={{ background: COLORS.text }}>
+    <section className="py-16 sm:py-20" style={{ background: '#0B1120' }}>
       <div className="max-w-2xl mx-auto px-4 sm:px-6">
-        <div className="hl bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-sm text-center">
-          <h3 className="fd text-3xl font-bold text-white mb-3">Pronta per il tuo look?</h3>
-          <p className="text-slate-400 mb-8 leading-relaxed">Prenota il tuo appuntamento in pochi click, oppure contattaci direttamente.</p>
+        <div className="rounded-3xl p-8 text-center" style={{ background: '#111827', border: '1px solid rgba(212,175,55,0.2)' }}>
+          <h3 className="fd text-3xl font-bold mb-3" style={{ color: '#D4AF37' }}>Pronta per il tuo look?</h3>
+          <p className="mb-8 leading-relaxed" style={{ color: '#94A3B8' }}>Prenota il tuo appuntamento in pochi click, oppure contattaci direttamente.</p>
           <div className="space-y-3">
             <button 
               onClick={onBook} 
-              className="w-full py-4 text-base font-black rounded-xl transition-all hover:opacity-90"
-              style={{ background: COLORS.primary, color: 'white' }}
+              className="w-full py-4 text-base font-black rounded-xl transition-all hover:shadow-lg"
+              style={{ background: '#D4AF37', color: '#0B1120' }}
               data-testid="cta-book-btn"
             >
               <Scissors className="w-5 h-5" />Scegli e Prenota

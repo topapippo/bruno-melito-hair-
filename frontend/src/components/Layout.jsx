@@ -1,18 +1,13 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
-import {
-  Calendar, LayoutDashboard, CalendarDays, CalendarRange, Users, Scissors,
-  UserCheck, BarChart3, History, Settings, LogOut, Menu, CreditCard, Euro,
-  Download, Star, Bell, FileBarChart, Globe, ArrowDownCircle, Gift, AlertTriangle,
-  Sliders
-} from 'lucide-react';
+import { LogOut, Menu, Sliders } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import PendingBookings from './PendingBookings';
 import NavConfigurator from './NavConfigurator';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { ALL_MODULES, DEFAULT_SIDEBAR, getModule } from '../utils/navModules';
+import { DEFAULT_SIDEBAR, getModule } from '../utils/navModules';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -57,25 +52,38 @@ export default function Layout({ children }) {
         to={mod.path}
         onClick={() => { if (mobile) setMobileOpen(false); }}
         data-testid={`nav-${mod.path.replace('/', '') || 'home'}`}
-        className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 font-semibold ${
-          isActive ? 'bg-[#E0F2FE] text-[#0EA5E9] border-r-2 border-[#0EA5E9]' : 'text-[#334155] hover:text-[#0F172A] hover:bg-[#F1F5F9]'
+        className={`group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 font-semibold relative overflow-hidden ${
+          isActive
+            ? 'text-[var(--gold)]'
+            : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
         }`}
+        style={isActive ? { background: 'var(--gold-dim)' } : {}}
       >
-        <Icon className="w-5 h-5 shrink-0" strokeWidth={1.5} />
+        {isActive && (
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full" style={{ background: 'var(--gold)' }} />
+        )}
+        <Icon className="w-5 h-5 shrink-0 transition-transform duration-300 group-hover:scale-110" strokeWidth={1.5}
+          style={isActive ? { color: 'var(--gold)', filter: 'drop-shadow(0 0 6px rgba(212,175,55,0.4))' } : {}} />
         <span className="font-manrope truncate">{mod.label}</span>
+        {!isActive && (
+          <div className="absolute inset-0 bg-white/[0.03] opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl" />
+        )}
       </Link>
     );
   };
 
   const SidebarContent = ({ mobile = false }) => (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full" style={{ background: 'var(--bg-deep)' }}>
       {/* Logo */}
-      <div className="p-4 border-b border-[#E2E8F0]">
+      <div className="p-5 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
         <div className="flex items-center gap-3">
-          <img src="/logo.png?v=4" alt="Bruno Melito Hair" className="w-12 h-12 rounded-lg object-cover" />
+          <div className="relative">
+            <img src="/logo.png?v=4" alt="Bruno Melito Hair" className="w-12 h-12 rounded-xl object-cover ring-2" style={{ ringColor: 'var(--gold-dim)' }} />
+            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 animate-gold-pulse" style={{ background: 'var(--gold)', borderColor: 'var(--bg-deep)' }} />
+          </div>
           <div className="flex-1 min-w-0">
-            <h1 className="font-bold text-lg text-[#0F172A] truncate">BRUNO MELITO</h1>
-            <p className="text-xs text-[#334155] font-semibold truncate">{user?.name}</p>
+            <h1 className="font-playfair font-bold text-base tracking-wide" style={{ color: 'var(--gold)' }}>BRUNO MELITO</h1>
+            <p className="text-xs font-semibold truncate" style={{ color: 'var(--text-muted)' }}>{user?.name}</p>
           </div>
         </div>
       </div>
@@ -92,45 +100,49 @@ export default function Layout({ children }) {
       </nav>
 
       {/* Customize + Logout */}
-      <div className="p-4 border-t border-[#E2E8F0] space-y-1">
+      <div className="p-4 space-y-1" style={{ borderTop: '1px solid var(--border-subtle)' }}>
         <button
           onClick={() => { setShowConfigurator(true); if (mobile) setMobileOpen(false); }}
-          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-[#64748B] hover:text-[#0EA5E9] hover:bg-[#F0F9FF] transition-all font-semibold text-sm"
+          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 hover:text-[var(--gold)]"
+          style={{ color: 'var(--text-muted)' }}
           data-testid="customize-nav-btn"
         >
           <Sliders className="w-5 h-5 shrink-0" strokeWidth={1.5} />
           <span className="font-manrope">Personalizza</span>
         </button>
-        <Button
-          variant="ghost"
+        <button
           onClick={handleLogout}
           data-testid="logout-btn"
-          className="w-full justify-start text-[#334155] font-semibold hover:text-[#EF4444] hover:bg-red-50"
+          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300"
+          style={{ color: 'var(--text-muted)' }}
+          onMouseEnter={e => e.currentTarget.style.color = '#EF4444'}
+          onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
         >
-          <LogOut className="w-5 h-5 mr-3" strokeWidth={1.5} />
-          Esci
-        </Button>
+          <LogOut className="w-5 h-5 shrink-0" strokeWidth={1.5} />
+          <span>Esci</span>
+        </button>
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-screen" style={{ background: 'var(--bg-deep)' }}>
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-64 h-screen fixed left-0 top-0 bg-white border-r border-[#E2E8F0]/30 z-40">
+      <aside className="hidden md:flex flex-col w-64 h-screen fixed left-0 top-0 z-40"
+        style={{ background: 'var(--bg-deep)', borderRight: '1px solid var(--border-subtle)' }}>
         <SidebarContent />
       </aside>
 
       {/* Mobile Header */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-[#E2E8F0]/30 px-4 py-3 flex items-center justify-between">
-        <h1 className="font-bold text-lg text-[#0F172A]">{user?.salon_name || 'Salone'}</h1>
+      <header className="md:hidden fixed top-0 left-0 right-0 z-50 glass px-4 py-3 flex items-center justify-between">
+        <h1 className="font-playfair font-bold text-lg" style={{ color: 'var(--gold)' }}>{user?.salon_name || 'Salone'}</h1>
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" data-testid="mobile-menu-btn">
-              <Menu className="w-6 h-6 text-[#0F172A]" />
+            <Button variant="ghost" size="icon" data-testid="mobile-menu-btn" className="text-[var(--text-primary)]">
+              <Menu className="w-6 h-6" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-64">
+          <SheetContent side="left" className="p-0 w-64 border-0" style={{ background: 'var(--bg-deep)' }}>
             <SidebarContent mobile />
           </SheetContent>
         </Sheet>
@@ -138,12 +150,11 @@ export default function Layout({ children }) {
 
       {/* Main Content */}
       <main className="md:ml-64 min-h-screen pt-16 md:pt-0">
-        <div className="p-6 md:p-8 lg:p-12">
+        <div className="p-6 md:p-8 lg:p-10">
           {children}
         </div>
       </main>
 
-      {/* Nav Configurator Modal */}
       <NavConfigurator
         open={showConfigurator}
         onClose={() => setShowConfigurator(false)}

@@ -119,13 +119,14 @@ export default function Dashboard() {
     <Layout>
       <div className="space-y-8" data-testid="dashboard-page">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 animate-fade-in-up">
           <div>
-            <h1 className="font-playfair text-3xl md:text-4xl font-medium text-[#0F172A]">Buongiorno!</h1>
-            <p className="text-[#334155] mt-1 font-manrope">{format(new Date(), "EEEE d MMMM yyyy", { locale: it })}</p>
+            <h1 className="font-playfair text-3xl md:text-4xl font-medium" style={{ color: 'var(--gold)' }}>Buongiorno!</h1>
+            <p className="mt-1 font-manrope" style={{ color: 'var(--text-secondary)' }}>{format(new Date(), "EEEE d MMMM yyyy", { locale: it })}</p>
           </div>
           <Link to="/appointments">
-            <Button data-testid="new-appointment-btn" className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white shadow-lg shadow-[#0EA5E9]/20 transition-all active:scale-95">
+            <Button data-testid="new-appointment-btn" className="text-[var(--bg-deep)] font-bold shadow-lg transition-all active:scale-95 glow-gold-hover"
+              style={{ background: 'var(--gold)' }}>
               <Plus className="w-5 h-5 mr-2" /> Nuovo Appuntamento
             </Button>
           </Link>
@@ -133,192 +134,163 @@ export default function Dashboard() {
 
         {/* Daily Card Alerts Banner */}
         {showAlerts && cardAlerts.total > 0 && (
-          <Card className="bg-gradient-to-r from-amber-50 via-orange-50 to-red-50 border-2 border-amber-300 shadow-lg animate-pulse-slow" data-testid="daily-alerts-banner">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-                    <Bell className="w-5 h-5 text-amber-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-amber-800 flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4" />
-                      Promemoria Giornaliero - {cardAlerts.total} Avvisi Card
-                    </h3>
-                    <p className="text-sm text-amber-700 mt-1">
-                      {cardAlerts.expiring.length > 0 && `${cardAlerts.expiring.length} card in scadenza nei prossimi 7 giorni`}
-                      {cardAlerts.expiring.length > 0 && cardAlerts.low_balance.length > 0 && ' • '}
-                      {cardAlerts.low_balance.length > 0 && `${cardAlerts.low_balance.length} card con credito basso`}
-                    </p>
-                    
-                    {/* Quick action cards */}
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {cardAlerts.expiring.slice(0, 3).map(card => (
-                        <div key={card.id} className="flex items-center gap-2 bg-white/80 rounded-lg px-3 py-1.5 border border-amber-200">
-                          <span className="text-sm font-medium text-[#0F172A]">{card.client_name}</span>
-                          <Badge className="bg-amber-500 text-white text-xs">{card.days_until_expiry}g</Badge>
-                          {card.client_phone && (
-                            <button
-                              onClick={() => sendQuickWhatsApp(card, 'expiring')}
-                              className="w-6 h-6 rounded-full bg-green-500 hover:bg-green-600 flex items-center justify-center transition-colors"
-                            >
-                              <MessageCircle className="w-3.5 h-3.5 text-white" />
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                      {cardAlerts.low_balance.slice(0, 2).map(card => (
-                        <div key={card.id} className="flex items-center gap-2 bg-white/80 rounded-lg px-3 py-1.5 border border-red-200">
-                          <span className="text-sm font-medium text-[#0F172A]">{card.client_name}</span>
-                          <Badge className="bg-red-500 text-white text-xs">{card.percent_remaining}%</Badge>
-                          {card.client_phone && (
-                            <button
-                              onClick={() => sendQuickWhatsApp(card, 'low_balance')}
-                              className="w-6 h-6 rounded-full bg-green-500 hover:bg-green-600 flex items-center justify-center transition-colors"
-                            >
-                              <MessageCircle className="w-3.5 h-3.5 text-white" />
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+          <div className="glass rounded-xl p-4 animate-slide-down" style={{ borderColor: 'var(--amber)' }} data-testid="daily-alerts-banner">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ background: 'rgba(245,158,11,0.15)' }}>
+                  <Bell className="w-5 h-5" style={{ color: 'var(--amber)' }} />
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <Link to="/card-alerts">
-                    <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-white">
-                      Vedi Tutti
-                    </Button>
-                  </Link>
-                  <button
-                    onClick={() => setShowAlerts(false)}
-                    className="w-8 h-8 rounded-full hover:bg-amber-100 flex items-center justify-center transition-colors"
-                  >
-                    <X className="w-4 h-4 text-amber-600" />
-                  </button>
+                <div>
+                  <h3 className="font-bold flex items-center gap-2" style={{ color: 'var(--amber)' }}>
+                    <AlertTriangle className="w-4 h-4" />
+                    Promemoria - {cardAlerts.total} Avvisi Card
+                  </h3>
+                  <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
+                    {cardAlerts.expiring.length > 0 && `${cardAlerts.expiring.length} card in scadenza`}
+                    {cardAlerts.expiring.length > 0 && cardAlerts.low_balance.length > 0 && ' · '}
+                    {cardAlerts.low_balance.length > 0 && `${cardAlerts.low_balance.length} credito basso`}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {cardAlerts.expiring.slice(0, 3).map(card => (
+                      <div key={card.id} className="flex items-center gap-2 glass rounded-lg px-3 py-1.5">
+                        <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{card.client_name}</span>
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(245,158,11,0.2)', color: 'var(--amber)' }}>{card.days_until_expiry}g</span>
+                        {card.client_phone && (
+                          <button onClick={() => sendQuickWhatsApp(card, 'expiring')}
+                            className="w-6 h-6 rounded-full flex items-center justify-center transition-all" style={{ background: 'var(--emerald)' }}>
+                            <MessageCircle className="w-3.5 h-3.5 text-white" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+              <div className="flex items-center gap-2 shrink-0">
+                <Link to="/card-alerts">
+                  <Button size="sm" style={{ background: 'var(--amber)', color: 'var(--bg-deep)' }} className="font-bold">Vedi Tutti</Button>
+                </Link>
+                <button onClick={() => setShowAlerts(false)} className="w-8 h-8 rounded-full flex items-center justify-center transition-colors hover:bg-white/5">
+                  <X className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Stats Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 stagger-children">
           {[
-            { title: "Appuntamenti Oggi", value: stats?.today_appointments_count || 0, icon: Calendar, color: '#0EA5E9' },
-            { title: "Clienti Totali", value: stats?.total_clients || 0, icon: Users, color: '#789F8A' },
-            { title: "Incasso Mensile", value: `\u20AC${(stats?.monthly_revenue || 0).toFixed(0)}`, icon: Euro, color: '#E9C46A', sub: `${stats?.monthly_appointments || 0} appuntamenti` },
-            { title: "Prossimi 7 Giorni", value: stats?.upcoming_appointments?.length || 0, icon: TrendingUp, color: '#334155' },
+            { title: "Appuntamenti Oggi", value: stats?.today_appointments_count || 0, icon: Calendar, color: 'var(--cyan)' },
+            { title: "Clienti Totali", value: stats?.total_clients || 0, icon: Users, color: 'var(--emerald)' },
+            { title: "Incasso Mensile", value: `\u20AC${(stats?.monthly_revenue || 0).toFixed(0)}`, icon: Euro, color: 'var(--gold)', sub: `${stats?.monthly_appointments || 0} appuntamenti` },
+            { title: "Prossimi 7 Giorni", value: stats?.upcoming_appointments?.length || 0, icon: TrendingUp, color: 'var(--violet)' },
           ].map((s, i) => (
-            <Card key={i} className="bg-white border-[#E2E8F0]/30 hover:border-[#0EA5E9]/30 transition-all duration-300 hover:-translate-y-1 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm text-[#334155] font-manrope">{s.title}</p>
-                    <p className="text-3xl font-playfair font-medium text-[#0F172A] mt-2">{s.value}</p>
-                    {s.sub && <p className="text-xs text-[#334155] mt-1 font-manrope">{s.sub}</p>}
-                  </div>
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${s.color}15` }}>
-                    <s.icon className="w-6 h-6" style={{ color: s.color }} strokeWidth={1.5} />
-                  </div>
+            <div key={i} className="glass rounded-xl p-6 transition-all duration-300 hover:-translate-y-1 glow-gold-hover cursor-default">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm font-manrope" style={{ color: 'var(--text-muted)' }}>{s.title}</p>
+                  <p className="text-3xl font-playfair font-medium mt-2" style={{ color: 'var(--text-primary)' }}>{s.value}</p>
+                  {s.sub && <p className="text-xs mt-1 font-manrope" style={{ color: 'var(--text-muted)' }}>{s.sub}</p>}
                 </div>
-              </CardContent>
-            </Card>
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: `${s.color}15` }}>
+                  <s.icon className="w-6 h-6" style={{ color: s.color }} strokeWidth={1.5} />
+                </div>
+              </div>
+            </div>
           ))}
         </div>
 
-        {/* Clickable Modules Grid */}
-        <div>
-          <h2 className="font-playfair text-xl text-[#0F172A] mb-4">Moduli</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        {/* Modules Grid */}
+        <div className="animate-fade-in-up" style={{ animationDelay: '0.3s', animationFillMode: 'both' }}>
+          <h2 className="font-playfair text-xl mb-4" style={{ color: 'var(--text-primary)' }}>Moduli</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 stagger-children">
             {dashboardPaths.map(path => {
               const mod = getModule(path);
               if (!mod) return null;
               const Icon = mod.icon;
               return (
-                <Card
+                <div
                   key={mod.path}
                   data-testid={`module-${mod.path.slice(1)}`}
                   onClick={() => navigate(mod.path)}
-                  className="bg-white border-[#E2E8F0]/30 hover:border-opacity-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg cursor-pointer group"
-                  style={{ borderColor: `${mod.color}20` }}
+                  className="glass rounded-xl p-4 text-center cursor-pointer transition-all duration-300 hover:-translate-y-1 group"
+                  style={{ '--glow-color': mod.color }}
+                  onMouseEnter={e => e.currentTarget.style.boxShadow = `0 0 20px ${mod.color}30`}
+                  onMouseLeave={e => e.currentTarget.style.boxShadow = ''}
                 >
-                  <CardContent className="p-4 text-center">
-                    <div
-                      className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3 transition-transform group-hover:scale-110"
-                      style={{ backgroundColor: `${mod.color}12` }}
-                    >
-                      <Icon className="w-6 h-6" style={{ color: mod.color }} strokeWidth={1.5} />
-                    </div>
-                    <p className="font-semibold text-[#0F172A] text-sm">{mod.label}</p>
-                    <p className="text-[10px] text-[#334155] mt-0.5">{mod.desc}</p>
-                  </CardContent>
-                </Card>
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3 transition-transform duration-300 group-hover:scale-110"
+                    style={{ background: `${mod.color}15` }}>
+                    <Icon className="w-6 h-6" style={{ color: mod.color }} strokeWidth={1.5} />
+                  </div>
+                  <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{mod.label}</p>
+                  <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{mod.desc}</p>
+                </div>
               );
             })}
           </div>
         </div>
 
         {/* Today's Appointments + Upcoming */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <Card className="lg:col-span-8 bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
-            <CardHeader className="flex flex-row items-center justify-between pb-4">
-              <CardTitle className="font-playfair text-xl text-[#0F172A]">Appuntamenti di Oggi</CardTitle>
-              <Link to="/planning"><Button variant="ghost" size="sm" className="text-[#0EA5E9] hover:text-[#0284C7]">Vedi tutti <ChevronRight className="w-4 h-4 ml-1" /></Button></Link>
-            </CardHeader>
-            <CardContent>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-fade-in-up" style={{ animationDelay: '0.5s', animationFillMode: 'both' }}>
+          <div className="lg:col-span-8 glass rounded-xl overflow-hidden">
+            <div className="flex items-center justify-between p-6 pb-4">
+              <h2 className="font-playfair text-xl" style={{ color: 'var(--text-primary)' }}>Appuntamenti di Oggi</h2>
+              <Link to="/planning"><Button variant="ghost" size="sm" style={{ color: 'var(--cyan)' }}>Vedi tutti <ChevronRight className="w-4 h-4 ml-1" /></Button></Link>
+            </div>
+            <div className="px-6 pb-6">
               {stats?.today_appointments?.length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {stats.today_appointments.map((apt) => (
-                    <div key={apt.id} data-testid={`appointment-${apt.id}`} className="flex items-center gap-4 p-4 rounded-xl bg-[#F8FAFC] hover:bg-[#FAF5F2] transition-colors">
+                    <div key={apt.id} data-testid={`appointment-${apt.id}`}
+                      className="flex items-center gap-4 p-4 rounded-xl transition-all duration-300 hover:bg-white/[0.03]"
+                      style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)' }}>
                       <div className="flex-shrink-0 w-16 text-center">
-                        <p className="text-lg font-medium text-[#0EA5E9] font-manrope">{apt.time}</p>
-                        <p className="text-xs text-[#334155]">{apt.end_time}</p>
+                        <p className="text-lg font-medium font-manrope" style={{ color: 'var(--cyan)' }}>{apt.time}</p>
+                        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{apt.end_time}</p>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-[#0F172A] truncate">{apt.client_name}</p>
-                        <p className="text-sm text-[#334155] truncate">{apt.services.map(s => s.name).join(', ')}</p>
+                        <p className="font-medium truncate" style={{ color: 'var(--text-primary)' }}>{apt.client_name}</p>
+                        <p className="text-sm truncate" style={{ color: 'var(--text-secondary)' }}>{apt.services.map(s => s.name).join(', ')}</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium text-[#0F172A]">{'\u20AC'}{apt.total_price}</p>
-                        <p className="text-xs text-[#334155]">{apt.total_duration} min</p>
+                        <p className="font-bold" style={{ color: 'var(--gold)' }}>{'\u20AC'}{apt.total_price}</p>
+                        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{apt.total_duration} min</p>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <Calendar className="w-12 h-12 mx-auto text-[#E2E8F0] mb-4" strokeWidth={1.5} />
-                  <p className="text-[#334155] font-manrope">Nessun appuntamento per oggi</p>
-                  <Link to="/appointments"><Button variant="outline" className="mt-4 border-[#0EA5E9] text-[#0EA5E9] hover:bg-[#FAF5F2]">Prenota un appuntamento</Button></Link>
+                  <Calendar className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--text-muted)' }} strokeWidth={1.5} />
+                  <p className="font-manrope" style={{ color: 'var(--text-secondary)' }}>Nessun appuntamento per oggi</p>
+                  <Link to="/appointments"><Button variant="outline" className="mt-4" style={{ borderColor: 'var(--gold)', color: 'var(--gold)' }}>Prenota un appuntamento</Button></Link>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          <div className="lg:col-span-4 space-y-6">
-            <Card className="bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
-              <CardHeader className="pb-4">
-                <CardTitle className="font-playfair text-xl text-[#0F172A]">Prossimi Appuntamenti</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {stats?.upcoming_appointments?.length > 0 ? (
-                  <div className="space-y-3">
-                    {stats.upcoming_appointments.slice(0, 5).map((apt) => (
-                      <div key={apt.id} className="flex items-center gap-3 py-2">
-                        <div className="w-2 h-2 rounded-full bg-[#0EA5E9]" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-[#0F172A] truncate">{apt.client_name}</p>
-                          <p className="text-xs text-[#334155]">{format(new Date(apt.date), "EEE d MMM", { locale: it })} - {apt.time}</p>
-                        </div>
+          <div className="lg:col-span-4 glass rounded-xl overflow-hidden">
+            <div className="p-6 pb-4">
+              <h2 className="font-playfair text-xl" style={{ color: 'var(--text-primary)' }}>Prossimi Appuntamenti</h2>
+            </div>
+            <div className="px-6 pb-6">
+              {stats?.upcoming_appointments?.length > 0 ? (
+                <div className="space-y-3">
+                  {stats.upcoming_appointments.slice(0, 5).map((apt) => (
+                    <div key={apt.id} className="flex items-center gap-3 py-2">
+                      <div className="w-2 h-2 rounded-full" style={{ background: 'var(--gold)' }} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{apt.client_name}</p>
+                        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{format(new Date(apt.date), "EEE d MMM", { locale: it })} - {apt.time}</p>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-[#334155] text-center py-4">Nessun appuntamento in programma</p>
-                )}
-              </CardContent>
-            </Card>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-center py-4" style={{ color: 'var(--text-muted)' }}>Nessun appuntamento in programma</p>
+              )}
+            </div>
           </div>
         </div>
       </div>

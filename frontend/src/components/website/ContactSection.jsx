@@ -8,12 +8,12 @@ const SOCIAL = [
 
 export function ContactSection({ COLORS, cfg }) {
   return (
-    <section id="contatti" className="py-20 sm:py-28" style={{ background: COLORS.text }}>
+    <section id="contatti" className="py-20 sm:py-28" style={{ background: '#0F172A' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-20 items-start">
           <div>
-            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: COLORS.primary }}>Dove siamo</p>
-            <h2 className="fd text-4xl sm:text-5xl font-bold text-white mb-10">Vieni a trovarci</h2>
+            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: '#D4AF37' }}>Dove siamo</p>
+            <h2 className="fd text-4xl sm:text-5xl font-bold mb-10" style={{ color: '#F1F5F9' }}>Vieni a trovarci</h2>
             <div className="space-y-6">
               {[
                 {
@@ -86,12 +86,12 @@ export function ContactSection({ COLORS, cfg }) {
 
 export function FooterSection() {
   return (
-    <footer className="bg-black py-8 border-t border-white/5">
+    <footer className="py-8" style={{ background: '#0B1120', borderTop: '1px solid rgba(148,163,184,0.1)' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <img src="/logo.png?v=4" alt="Bruno Melito Hair" className="w-10 h-10 rounded-xl hs" />
           <div>
-            <p className="fd text-white font-bold">BRUNO MELITO HAIR</p>
+            <p className="fd font-bold" style={{ color: '#D4AF37' }}>BRUNO MELITO HAIR</p>
           </div>
         </div>
         <p className="text-slate-700 text-xs">© {new Date().getFullYear()} Bruno Melito Hair · Tutti i diritti riservati</p>

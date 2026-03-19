@@ -55,6 +55,7 @@ const getGStyles = (COLORS, fontDisplay = 'Cormorant Garamond', fontBody = 'Nuni
   
   * { box-sizing: border-box; } 
   html { scroll-behavior: smooth; }
+  body { background: #0B1120; color: #F1F5F9; }
   
   .fd { font-family: '${fontDisplay}', serif; }
   body, .pb { font-family: '${fontBody}', sans-serif; font-size: ${fontSize}px; }
@@ -83,7 +84,7 @@ const getGStyles = (COLORS, fontDisplay = 'Cormorant Garamond', fontBody = 'Nuni
   .gi img, .gi video { width: 100%; height: 100%; object-fit: cover; transition: transform .55s cubic-bezier(.25,.46,.45,.94), filter .3s ease; filter: brightness(.95); }
   .gi:hover img, .gi:hover video { transform: scale(1.09); filter: brightness(1.06); }
 
-  .si { border: 2px solid #e2e8f0; border-radius: 14px; padding: 12px 14px; cursor: pointer; transition: all .25s cubic-bezier(.34,1.56,.64,1); background: white; }
+  .si { border: 2px solid rgba(148,163,184,0.15); border-radius: 14px; padding: 12px 14px; cursor: pointer; transition: all .25s cubic-bezier(.34,1.56,.64,1); background: #111827; }
   .si:hover { border-color: ${COLORS.primary}80; background: ${COLORS.primary}10; transform: scale(1.01); }
   .si.sel { border-color: ${COLORS.primary}; background: ${COLORS.primary}20; }
   .si .cd { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #cbd5e1; flex-shrink: 0; transition: all .2s; display: flex; align-items: center; justify-content: center; }
@@ -103,7 +104,7 @@ const getGStyles = (COLORS, fontDisplay = 'Cormorant Garamond', fontBody = 'Nuni
   .st.act { color: ${COLORS.primary}; border-bottom-color: ${COLORS.primary}; font-weight: 800; }
   .gt { transition: all .2s; } 
   .gt.act { background: ${COLORS.primary}; color: white; }
-  .gt:hover:not(.act) { background: #e2e8f0; }
+  .gt:hover:not(.act) { background: rgba(148,163,184,0.1); }
   .si2 { transition: transform .3s cubic-bezier(.34,1.56,.64,1); } 
   .si2:hover { transform: scale(1.3) rotate(-8deg); }
 
@@ -119,15 +120,15 @@ const getGStyles = (COLORS, fontDisplay = 'Cormorant Garamond', fontBody = 'Nuni
 
   .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1000; animation: fadeIn 0.2s ease; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  .modal-content { background: white; border-radius: 24px; padding: 24px; max-width: 450px; width: 90%; max-height: 80vh; overflow-y: auto; animation: slideUp 0.3s ease; }
+  .modal-content { background: #111827; border: 1px solid rgba(148,163,184,0.1); border-radius: 24px; padding: 24px; max-width: 450px; width: 90%; max-height: 80vh; overflow-y: auto; animation: slideUp 0.3s ease; }
   @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
   @keyframes sb { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(7px); } } 
   .sb { animation: sb 2s ease-in-out infinite; }
 
   ::-webkit-scrollbar { width: 5px; } 
-  ::-webkit-scrollbar-track { background: #f8fafc; } 
-  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+  ::-webkit-scrollbar-track { background: #0B1120; } 
+  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
 `;
 
 export default function BookingPage() {

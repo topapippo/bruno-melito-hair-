@@ -115,15 +115,15 @@ export default function NavConfigurator({ open, onClose, onSave }) {
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center" data-testid="nav-configurator">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-3xl mx-4 bg-white rounded-2xl shadow-2xl flex flex-col" style={{ maxHeight: '85vh' }}>
+      <div className="relative w-full max-w-3xl mx-4 rounded-2xl shadow-2xl flex flex-col" style={{ maxHeight: '85vh', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+        <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
           <div>
-            <h2 className="text-xl font-bold text-slate-900">Personalizza Navigazione</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Sposta le voci tra sidebar e dashboard, riordina la sidebar</p>
+            <h2 className="text-xl font-bold" style={{ color: 'var(--gold)' }}>Personalizza Navigazione</h2>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Sposta le voci tra sidebar e dashboard, riordina la sidebar</p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200">
-            <X className="w-4 h-4 text-slate-500" />
+          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center transition-colors" style={{ background: 'var(--bg-elevated)' }}>
+            <X className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
           </button>
         </div>
 
@@ -135,8 +135,8 @@ export default function NavConfigurator({ open, onClose, onSave }) {
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-2 h-8 rounded-full bg-[#0EA5E9]" />
                 <div>
-                  <h3 className="font-bold text-sm text-slate-800">Barra Laterale</h3>
-                  <p className="text-[10px] text-slate-400">Sempre visibile. Trascina per riordinare</p>
+                  <h3 className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>Barra Laterale</h3>
+                  <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Sempre visibile. Trascina per riordinare</p>
                 </div>
               </div>
               <div className="space-y-1" data-testid="sidebar-items">
@@ -152,11 +152,12 @@ export default function NavConfigurator({ open, onClose, onSave }) {
                       onDragOver={e => handleDragOver(e, path)}
                       onDrop={e => handleDrop(e, path)}
                       onDragEnd={() => { setDragItem(null); setDragOver(null); }}
-                      className={`flex items-center gap-2 p-2.5 rounded-lg border transition-all ${
-                        dragOver === path ? 'border-[#0EA5E9] bg-[#0EA5E9]/5' 
-                        : dragItem === path ? 'opacity-40 border-slate-200' 
-                        : 'border-slate-100 bg-slate-50 hover:border-slate-200'
+                      className={`flex items-center gap-2 p-2.5 rounded-lg transition-all ${
+                        dragOver === path ? 'border border-[var(--gold)]' 
+                        : dragItem === path ? 'opacity-40' 
+                        : ''
                       }`}
+                      style={{ background: dragOver === path ? 'var(--gold-dim)' : 'var(--bg-elevated)', border: `1px solid var(--border-subtle)` }}
                       data-testid={`sidebar-item-${path.slice(1)}`}>
                       {!isDashboard && (
                         <GripVertical className="w-3.5 h-3.5 text-slate-300 cursor-grab flex-shrink-0" />
@@ -165,7 +166,7 @@ export default function NavConfigurator({ open, onClose, onSave }) {
                       <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: mod.color + '15' }}>
                         <Icon className="w-3.5 h-3.5" style={{ color: mod.color }} />
                       </div>
-                      <span className="flex-1 text-sm font-semibold text-slate-700">{mod.label}</span>
+                      <span className="flex-1 text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{mod.label}</span>
                       <div className="flex items-center gap-0.5 flex-shrink-0">
                         <button onClick={() => moveUp(path)} disabled={idx === 0}
                           className="w-6 h-6 rounded flex items-center justify-center hover:bg-slate-200 disabled:opacity-20 transition-all">
@@ -194,8 +195,8 @@ export default function NavConfigurator({ open, onClose, onSave }) {
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-2 h-8 rounded-full bg-[#E9C46A]" />
                 <div>
-                  <h3 className="font-bold text-sm text-slate-800">Dashboard</h3>
-                  <p className="text-[10px] text-slate-400">Card nella pagina Dashboard</p>
+                  <h3 className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>Dashboard</h3>
+                  <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Card nella pagina Dashboard</p>
                 </div>
               </div>
               <div className="space-y-1" data-testid="dashboard-items">
@@ -205,14 +206,15 @@ export default function NavConfigurator({ open, onClose, onSave }) {
                   const Icon = mod.icon;
                   return (
                     <div key={path}
-                      className="flex items-center gap-2 p-2.5 rounded-lg border border-slate-100 bg-white hover:border-slate-200 transition-all"
+                      className="flex items-center gap-2 p-2.5 rounded-lg transition-all"
+                      style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)' }}
                       data-testid={`dashboard-item-${path.slice(1)}`}>
                       <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: mod.color + '15' }}>
                         <Icon className="w-3.5 h-3.5" style={{ color: mod.color }} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <span className="text-sm font-semibold text-slate-700">{mod.label}</span>
-                        <p className="text-[10px] text-slate-400 truncate">{mod.desc}</p>
+                        <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{mod.label}</span>
+                        <p className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>{mod.desc}</p>
                       </div>
                       <button onClick={() => moveToSidebar(path)}
                         className="w-6 h-6 rounded flex items-center justify-center hover:bg-blue-50 transition-all group flex-shrink-0"
@@ -223,7 +225,7 @@ export default function NavConfigurator({ open, onClose, onSave }) {
                   );
                 })}
                 {dashboard.length === 0 && (
-                  <p className="text-center text-sm text-slate-400 py-6">Dashboard vuota — sposta qui le voci dalla sidebar</p>
+                  <p className="text-center text-sm py-6" style={{ color: 'var(--text-muted)' }}>Dashboard vuota — sposta qui le voci dalla sidebar</p>
                 )}
               </div>
             </div>
@@ -231,18 +233,19 @@ export default function NavConfigurator({ open, onClose, onSave }) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-slate-50 rounded-b-2xl">
+        <div className="flex items-center justify-between px-6 py-4 rounded-b-2xl" style={{ borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-elevated)' }}>
           <button onClick={resetDefaults}
-            className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-700 transition-colors">
+            className="flex items-center gap-1.5 text-xs font-semibold transition-colors" style={{ color: 'var(--text-muted)' }}>
             <RotateCcw className="w-3.5 h-3.5" /> Ripristina predefiniti
           </button>
           <div className="flex gap-2">
             <button onClick={onClose}
-              className="px-4 py-2 text-sm font-semibold text-slate-500 hover:text-slate-700 rounded-lg transition-colors">
+              className="px-4 py-2 text-sm font-semibold rounded-lg transition-colors" style={{ color: 'var(--text-muted)' }}>
               Annulla
             </button>
             <button onClick={handleSave} disabled={saving}
-              className="flex items-center gap-1.5 px-5 py-2 bg-[#0EA5E9] text-white text-sm font-bold rounded-lg hover:bg-[#0284C7] disabled:opacity-50 transition-all"
+              className="flex items-center gap-1.5 px-5 py-2 text-sm font-bold rounded-lg disabled:opacity-50 transition-all"
+              style={{ background: 'var(--gold)', color: 'var(--bg-deep)' }}
               data-testid="save-nav-config-btn">
               <Save className="w-3.5 h-3.5" /> {saving ? 'Salvo...' : 'Salva'}
             </button>
