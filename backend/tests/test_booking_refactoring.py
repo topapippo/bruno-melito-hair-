@@ -8,7 +8,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://onyx-gold-ui.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://salon-ui-polish.preview.emergentagent.com').rstrip('/')
 
 # Test data
 TEST_OPERATOR_BRUNO = "199c0886-55af-40c3-8658-edd0be74ce70"

@@ -3,10 +3,18 @@ import { MapPin, Phone, Mail, Clock, Instagram, Facebook, Youtube } from 'lucide
 const SOCIAL = [
   { url: 'https://www.instagram.com/brunomelitohair', icon: Instagram, label: 'Instagram' },
   { url: 'https://www.facebook.com/brunomelitohair', icon: Facebook, label: 'Facebook' },
+  { url: 'https://www.tiktok.com/@brunomelitohair', icon: () => (
+    <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+      <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 00-.79-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V9.14a8.16 8.16 0 004.76 1.52v-3.4a4.85 4.85 0 01-1-.57z"/>
+    </svg>
+  ), label: 'TikTok' },
   { url: 'https://www.youtube.com/@brunomelit', icon: Youtube, label: 'YouTube' },
 ];
 
 export function ContactSection({ COLORS, cfg }) {
+  const address = cfg.address || 'Via Vito Nicola Melorio 101 Santa Maria Capua Vetere';
+  const mapQuery = encodeURIComponent(address);
+
   return (
     <section id="contatti" className="py-20 sm:py-28" style={{ background: '#0F172A' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -18,7 +26,7 @@ export function ContactSection({ COLORS, cfg }) {
               {[
                 {
                   icon: MapPin,
-                  href: `https://maps.google.com/?q=${encodeURIComponent(cfg.address || 'Via Vito Nicola Melorio 101 Santa Maria Capua Vetere')}`,
+                  href: `https://maps.google.com/?q=${mapQuery}`,
                   title: cfg.address || 'Via Vito Nicola Melorio 101',
                   sub: cfg.city || 'Santa Maria Capua Vetere (CE)'
                 },
@@ -71,12 +79,38 @@ export function ContactSection({ COLORS, cfg }) {
                   target="_blank" 
                   rel="noopener noreferrer" 
                   title={s.label}
-                  className="si2 w-12 h-12 bg-white/10 hover:bg-white/20 rounded-xl flex items-center justify-center text-white transition-all"
+                  className="btn-animate si2 w-12 h-12 bg-white/10 hover:bg-white/20 rounded-xl flex items-center justify-center text-white transition-all"
+                  data-testid={`social-${s.label.toLowerCase()}`}
                 >
                   <s.icon className="w-5 h-5" />
                 </a>
               ))}
             </div>
+          </div>
+
+          {/* Google Maps */}
+          <div className="rounded-2xl overflow-hidden border" style={{ borderColor: 'rgba(148,163,184,0.1)' }}>
+            <iframe
+              title="Mappa Bruno Melito Hair"
+              src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${mapQuery}&zoom=16`}
+              width="100%"
+              height="380"
+              style={{ border: 0, filter: 'invert(90%) hue-rotate(180deg) brightness(0.95) contrast(1.1)' }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              data-testid="google-map"
+            />
+            <a
+              href={`https://maps.google.com/?q=${mapQuery}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-gold flex items-center justify-center gap-2 py-3 font-bold text-sm transition-all"
+              style={{ background: '#D4AF37', color: '#0B1120' }}
+              data-testid="map-directions-btn"
+            >
+              <MapPin className="w-4 h-4" /> Apri in Google Maps
+            </a>
           </div>
         </div>
       </div>
@@ -94,7 +128,7 @@ export function FooterSection() {
             <p className="fd font-bold" style={{ color: '#D4AF37' }}>BRUNO MELITO HAIR</p>
           </div>
         </div>
-        <p className="text-slate-700 text-xs">© {new Date().getFullYear()} Bruno Melito Hair · Tutti i diritti riservati</p>
+        <p className="text-sm" style={{ color: '#334155' }}>© {new Date().getFullYear()} Bruno Melito Hair · Tutti i diritti riservati</p>
         <div className="flex gap-3">
           {SOCIAL.map((s, i) => (
             <a 
@@ -102,7 +136,9 @@ export function FooterSection() {
               href={s.url} 
               target="_blank" 
               rel="noopener noreferrer" 
-              className="si2 text-slate-600 hover:text-white transition-colors"
+              title={s.label}
+              className="btn-animate si2 text-[#64748B] hover:text-[#D4AF37] transition-colors"
+              data-testid={`footer-${s.label.toLowerCase()}`}
             >
               <s.icon className="w-4 h-4" />
             </a>

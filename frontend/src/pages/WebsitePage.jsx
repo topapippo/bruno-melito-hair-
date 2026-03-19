@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { format } from 'date-fns';
 import { toast, Toaster } from 'sonner';
-import { Scissors, CheckCircle, MessageSquare } from 'lucide-react';
+import { Scissors, CheckCircle, MessageSquare, ArrowUp } from 'lucide-react';
 import { it } from 'date-fns/locale';
 import {
   Navbar, HeroSection, StatsBar, AboutSection, CTASection,
