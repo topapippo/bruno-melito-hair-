@@ -81,6 +81,11 @@ Salon management application (React, FastAPI, MongoDB) deployed on Render. The a
 - **Banner "Installa l'App":** Custom PWA install banner on mobile, appears via beforeinstallprompt, dismiss saved in localStorage
 - **Testing:** Backend 43/43 + Frontend 12/12 (iteration_13), Banner 9/9 + regression 5/5 (iteration_14)
 
+### Phase 8 - Mar 19, 2026 (Drag-and-Drop + Backend Refactoring)
+- **Drag-and-drop sezioni:** Sostituito frecce su/giù con HTML5 native drag-and-drop + icona GripVertical come handle di trascinamento
+- **Backend models refactoring:** Diviso models.py (285 righe) in pacchetto models/ con 4 file separati per dominio (auth, business, appointments, loyalty) + __init__.py per re-export
+- **Testing:** Backend 14/14, Frontend 13/13 (iteration_15)
+
 ## Architecture
 ```
 /app/frontend/src/
@@ -111,7 +116,13 @@ Salon management application (React, FastAPI, MongoDB) deployed on Render. The a
 ├── routes/
 │   ├── public.py                   (website config supports section_order)
 │   └── stats.py                    (nav-config endpoints)
-├── models.py, database.py, auth.py
+├── models/                          (refactored from models.py)
+│   ├── __init__.py                 (re-exports all models)
+│   ├── auth.py                     (User, Token, Settings, SMS)
+│   ├── business.py                 (Operator, Client, Service)
+│   ├── appointments.py             (Appointment, Recurring, Booking, Checkout)
+│   └── loyalty.py                  (PrepaidCard, Loyalty, Rewards)
+├── database.py, auth.py
 ```
 
 ## Key API Endpoints
@@ -127,12 +138,6 @@ Salon management application (React, FastAPI, MongoDB) deployed on Render. The a
 
 ### P1
 - Deploy to Render con ultime modifiche
-
-### P2
-- Advanced drag-and-drop for section reorder (currently uses arrows)
-
-### P3
-- Refactoring backend structure (routes, models, tests)
 
 ## Credentials
 - **Production:** melitobruno@gmail.com / mbhs637104
