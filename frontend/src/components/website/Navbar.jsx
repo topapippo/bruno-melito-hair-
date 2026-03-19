@@ -38,7 +38,7 @@ export function Navbar({ COLORS, bookRef, setManageOpen, goToAdminLogin, onBook 
           </button>
           <button 
             onClick={goToAdminLogin}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition-all hover:shadow-lg"
+            className="btn-gold flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition-all hover:shadow-lg"
             style={{ background: '#D4AF37', color: '#0B1120' }}
           >
             <LogIn className="w-4 h-4" /> Accedi
@@ -62,7 +62,7 @@ export function Navbar({ COLORS, bookRef, setManageOpen, goToAdminLogin, onBook 
           </button>
           <button 
             onClick={onBook} 
-            className="px-5 py-2.5 text-sm rounded-xl transition-all font-bold animate-gold-pulse"
+            className="btn-gold px-5 py-2.5 text-sm rounded-xl transition-all font-bold animate-gold-pulse"
             style={{ background: '#D4AF37', color: '#0B1120' }}
             data-testid="book-now-hero-btn"
           >

@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Save, Plus, Trash2, Upload, Image, Star, Globe, Eye, Loader2, X, GripVertical, PanelRightOpen, PanelRightClose, ArrowLeft } from 'lucide-react';
+import { Save, Plus, Trash2, Upload, Image, Star, Globe, Eye, Loader2, X, GripVertical, PanelRightOpen, PanelRightClose, ArrowLeft, ChevronUp, ChevronDown, Layout } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
@@ -227,7 +227,7 @@ export default function WebsiteAdminPage() {
   const removeFeature = (idx) => updateField('about_features', (config.about_features || []).filter((_, i) => i !== idx));
 
   if (loading) {
-    return <div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-[#C8617A]" /></div>;
+    return <div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-[var(--gold)]" /></div>;
   }
 
   const salonPhotos = gallery.filter(g => g.section === 'salon');
@@ -241,29 +241,29 @@ export default function WebsiteAdminPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <Button variant="ghost" size="icon" onClick={() => navigate('/planning')} className="h-8 w-8 text-[#7C5C4A] hover:text-[#2D1B14]" data-testid="back-to-planning-btn">
+              <Button variant="ghost" size="icon" onClick={() => navigate('/planning')} className="h-8 w-8 text-[var(--text-secondary)] hover:text-[var(--text-primary)]" data-testid="back-to-planning-btn">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
-              <h1 className="text-2xl font-bold text-[#2D1B14]">Gestione Sito Web</h1>
+              <h1 className="text-2xl font-bold text-[var(--text-primary)]">Gestione Sito Web</h1>
             </div>
-            <p className="text-sm text-[#7C5C4A] ml-11">Modifica i contenuti della tua pagina web pubblica</p>
+            <p className="text-sm text-[var(--text-secondary)] ml-11">Modifica i contenuti della tua pagina web pubblica</p>
           </div>
           <div className="flex gap-2">
             <Button
               variant="outline"
               onClick={() => setPreviewOpen(!previewOpen)}
-              className={previewOpen ? "bg-[#C8617A] text-white border-[#C8617A]" : "border-[#C8617A] text-[#C8617A]"}
+              className={previewOpen ? "bg-[var(--gold)] text-white border-[var(--gold)]" : "border-[var(--gold)] text-[var(--gold)]"}
               data-testid="toggle-preview-btn"
             >
               {previewOpen ? <PanelRightClose className="w-4 h-4 mr-2" /> : <PanelRightOpen className="w-4 h-4 mr-2" />}
               Anteprima Live
             </Button>
             <a href="/" target="_blank" rel="noopener noreferrer">
-              <Button variant="outline" className="border-[#C8617A] text-[#C8617A]" data-testid="preview-site-btn">
+              <Button variant="outline" className="border-[var(--gold)] text-[var(--gold)]" data-testid="preview-site-btn">
                 <Eye className="w-4 h-4 mr-2" /> Apri Sito
               </Button>
             </a>
-            <Button onClick={saveConfig} disabled={saving} className="bg-[#C8617A] hover:bg-[#A0404F] text-white" data-testid="save-config-btn">
+            <Button onClick={saveConfig} disabled={saving} className="bg-[var(--gold)] hover:bg-[#A0404F] text-white" data-testid="save-config-btn">
               {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
               Salva Modifiche
             </Button>
@@ -271,14 +271,15 @@ export default function WebsiteAdminPage() {
         </div>
 
         <Tabs defaultValue="general" className="space-y-4">
-          <TabsList className="bg-white border shadow-sm flex-wrap h-auto gap-1 p-1">
-            <TabsTrigger value="general" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Generale</TabsTrigger>
-            <TabsTrigger value="design" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Colori & Font</TabsTrigger>
-            <TabsTrigger value="services" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Servizi</TabsTrigger>
-            <TabsTrigger value="photos" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Foto Salone</TabsTrigger>
-            <TabsTrigger value="gallery" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Gallery Lavori</TabsTrigger>
-            <TabsTrigger value="reviews" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Recensioni</TabsTrigger>
-            <TabsTrigger value="hours" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Orari & Contatti</TabsTrigger>
+          <TabsList className="bg-[var(--bg-card)] border shadow-sm flex-wrap h-auto gap-1 p-1">
+            <TabsTrigger value="general" className="data-[state=active]:bg-[var(--gold)] data-[state=active]:text-white">Generale</TabsTrigger>
+            <TabsTrigger value="design" className="data-[state=active]:bg-[var(--gold)] data-[state=active]:text-white">Colori & Font</TabsTrigger>
+            <TabsTrigger value="services" className="data-[state=active]:bg-[var(--gold)] data-[state=active]:text-white">Servizi</TabsTrigger>
+            <TabsTrigger value="photos" className="data-[state=active]:bg-[var(--gold)] data-[state=active]:text-white">Foto Salone</TabsTrigger>
+            <TabsTrigger value="gallery" className="data-[state=active]:bg-[var(--gold)] data-[state=active]:text-white">Gallery Lavori</TabsTrigger>
+            <TabsTrigger value="reviews" className="data-[state=active]:bg-[var(--gold)] data-[state=active]:text-white">Recensioni</TabsTrigger>
+            <TabsTrigger value="hours" className="data-[state=active]:bg-[var(--gold)] data-[state=active]:text-white">Orari & Contatti</TabsTrigger>
+            <TabsTrigger value="sections" className="data-[state=active]:bg-[var(--gold)] data-[state=active]:text-white">Ordine Sezioni</TabsTrigger>
           </TabsList>
 
           {/* GENERAL */}
@@ -340,7 +341,7 @@ export default function WebsiteAdminPage() {
                     <div className="space-y-2 pl-4">
                       {(cat.items || []).map((item, itemIdx) => (
                         <div key={itemIdx} className="flex gap-2 items-center">
-                          <span className="text-xs font-bold text-gray-400 w-5 flex-shrink-0">{itemIdx + 1}.</span>
+                          <span className="text-xs font-bold text-[var(--text-muted)] w-5 flex-shrink-0">{itemIdx + 1}.</span>
                           <Input value={item.name} onChange={e => updateCategoryItem(catIdx, itemIdx, 'name', e.target.value)} placeholder="Servizio" className="flex-1" />
                           <Input value={item.price} onChange={e => updateCategoryItem(catIdx, itemIdx, 'price', e.target.value)} placeholder="Prezzo" className="w-28" />
                           <Button variant="ghost" size="icon" onClick={() => removeCategoryItem(catIdx, itemIdx)} className="text-red-500 shrink-0"><X className="w-4 h-4" /></Button>
@@ -350,7 +351,7 @@ export default function WebsiteAdminPage() {
                     </div>
                   </div>
                 ))}
-                <p className="text-xs text-gray-500">Questi sono i servizi mostrati nel listino della pagina web. Per i servizi usati nelle prenotazioni, vai alla pagina Servizi del gestionale.</p>
+                <p className="text-xs text-[var(--text-secondary)]">Questi sono i servizi mostrati nel listino della pagina web. Per i servizi usati nelle prenotazioni, vai alla pagina Servizi del gestionale.</p>
               </CardContent>
             </Card>
           </TabsContent>
@@ -372,8 +373,8 @@ export default function WebsiteAdminPage() {
               </CardHeader>
               <CardContent>
                 {salonPhotos.length === 0 ? (
-                  <div className="text-center py-12 text-gray-500">
-                    <Image className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                  <div className="text-center py-12 text-[var(--text-secondary)]">
+                    <Image className="w-12 h-12 mx-auto mb-3 text-[var(--text-muted)]" />
                     <p>Nessuna foto del salone. Carica le prime foto!</p>
                   </div>
                 ) : (
@@ -400,7 +401,7 @@ export default function WebsiteAdminPage() {
                     ))}
                   </div>
                 )}
-                <p className="text-xs text-gray-500 mt-4">La prima foto viene usata come sfondo dell'hero. La seconda nella sezione "Chi Siamo".</p>
+                <p className="text-xs text-[var(--text-secondary)] mt-4">La prima foto viene usata come sfondo dell'hero. La seconda nella sezione "Chi Siamo".</p>
               </CardContent>
             </Card>
           </TabsContent>
@@ -422,8 +423,8 @@ export default function WebsiteAdminPage() {
               </CardHeader>
               <CardContent>
                 {galleryPhotos.length === 0 ? (
-                  <div className="text-center py-12 text-gray-500">
-                    <Image className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                  <div className="text-center py-12 text-[var(--text-secondary)]">
+                    <Image className="w-12 h-12 mx-auto mb-3 text-[var(--text-muted)]" />
                     <p>Nessuna foto/video nella gallery. Carica i tuoi lavori!</p>
                   </div>
                 ) : (
@@ -466,14 +467,14 @@ export default function WebsiteAdminPage() {
               </CardHeader>
               <CardContent>
                 {reviews.length === 0 ? (
-                  <div className="text-center py-12 text-gray-500">
-                    <Star className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                  <div className="text-center py-12 text-[var(--text-secondary)]">
+                    <Star className="w-12 h-12 mx-auto mb-3 text-[var(--text-muted)]" />
                     <p>Nessuna recensione. Aggiungi le recensioni dei tuoi clienti!</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {reviews.map((review) => (
-                      <div key={review.id} className="flex items-start gap-4 p-4 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
+                      <div key={review.id} className="flex items-start gap-4 p-4 rounded-xl bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated)] transition-colors">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="font-bold text-sm">{review.name}</span>
@@ -481,7 +482,7 @@ export default function WebsiteAdminPage() {
                               {[...Array(review.rating || 5)].map((_, i) => (<Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />))}
                             </div>
                           </div>
-                          <p className="text-sm text-gray-600">"{review.text}"</p>
+                          <p className="text-sm text-[var(--text-secondary)]">"{review.text}"</p>
                         </div>
                         <div className="flex gap-1 shrink-0">
                           <Button variant="ghost" size="icon" onClick={() => openReviewDialog(review)} className="h-8 w-8"><Save className="w-3 h-3" /></Button>
@@ -501,7 +502,7 @@ export default function WebsiteAdminPage() {
             <Card className="mb-6">
               <CardHeader><CardTitle>Temi Preimpostati</CardTitle></CardHeader>
               <CardContent>
-                <p className="text-xs text-gray-500 mb-4">Scegli un tema per applicare colori, font e dimensioni. Poi puoi personalizzare i singoli valori.</p>
+                <p className="text-xs text-[var(--text-secondary)] mb-4">Scegli un tema per applicare colori, font e dimensioni. Poi puoi personalizzare i singoli valori.</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                   {[
                     { name: 'Classico Rosa', primary: '#FF3366', accent: '#33CC99', bg: '#F0F4FF', text: '#2D3047', fd: 'Cormorant Garamond', fb: 'Nunito', fs: '16', ts: '48' },
@@ -538,8 +539,8 @@ export default function WebsiteAdminPage() {
                           <div className="w-6 h-6 rounded-full border" style={{ background: theme.bg }} />
                           <div className="w-6 h-6 rounded-full" style={{ background: theme.text }} />
                         </div>
-                        <p className="text-[11px] font-bold text-gray-700 text-center">{theme.name}</p>
-                        <p className="text-[9px] text-gray-400 text-center mt-0.5">{theme.fd}</p>
+                        <p className="text-[11px] font-bold text-[var(--text-primary)] text-center">{theme.name}</p>
+                        <p className="text-[9px] text-[var(--text-muted)] text-center mt-0.5">{theme.fd}</p>
                       </button>
                     );
                   })}
@@ -556,7 +557,7 @@ export default function WebsiteAdminPage() {
                       <input type="color" value={config.primary_color || '#FF3366'} onChange={e => updateField('primary_color', e.target.value)} className="w-12 h-10 rounded cursor-pointer border" data-testid="primary-color-input" />
                       <Input value={config.primary_color || '#FF3366'} onChange={e => updateField('primary_color', e.target.value)} placeholder="#FF3366" className="flex-1 font-mono" />
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">Usato per pulsanti, link e elementi principali</p>
+                    <p className="text-xs text-[var(--text-secondary)] mt-1">Usato per pulsanti, link e elementi principali</p>
                   </div>
                   <div>
                     <Label>Colore Accento</Label>
@@ -564,7 +565,7 @@ export default function WebsiteAdminPage() {
                       <input type="color" value={config.accent_color || '#33CC99'} onChange={e => updateField('accent_color', e.target.value)} className="w-12 h-10 rounded cursor-pointer border" data-testid="accent-color-input" />
                       <Input value={config.accent_color || '#33CC99'} onChange={e => updateField('accent_color', e.target.value)} placeholder="#33CC99" className="flex-1 font-mono" />
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">Usato per badge, prezzi e elementi secondari</p>
+                    <p className="text-xs text-[var(--text-secondary)] mt-1">Usato per badge, prezzi e elementi secondari</p>
                   </div>
                   <div>
                     <Label>Colore Sfondo</Label>
@@ -572,7 +573,7 @@ export default function WebsiteAdminPage() {
                       <input type="color" value={config.bg_color || '#F0F4FF'} onChange={e => updateField('bg_color', e.target.value)} className="w-12 h-10 rounded cursor-pointer border" data-testid="bg-color-input" />
                       <Input value={config.bg_color || '#F0F4FF'} onChange={e => updateField('bg_color', e.target.value)} placeholder="#F0F4FF" className="flex-1 font-mono" />
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">Sfondo delle sezioni alternate</p>
+                    <p className="text-xs text-[var(--text-secondary)] mt-1">Sfondo delle sezioni alternate</p>
                   </div>
                   <div>
                     <Label>Colore Testo</Label>
@@ -580,7 +581,7 @@ export default function WebsiteAdminPage() {
                       <input type="color" value={config.text_color || '#2D3047'} onChange={e => updateField('text_color', e.target.value)} className="w-12 h-10 rounded cursor-pointer border" data-testid="text-color-input" />
                       <Input value={config.text_color || '#2D3047'} onChange={e => updateField('text_color', e.target.value)} placeholder="#2D3047" className="flex-1 font-mono" />
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">Colore principale del testo</p>
+                    <p className="text-xs text-[var(--text-secondary)] mt-1">Colore principale del testo</p>
                   </div>
                   {/* Preview */}
                   <div className="border rounded-xl p-4 mt-4" data-testid="color-preview">
@@ -588,19 +589,19 @@ export default function WebsiteAdminPage() {
                     <div className="flex gap-3 flex-wrap">
                       <div className="text-center">
                         <div className="w-16 h-16 rounded-xl border shadow-sm" style={{ background: config.primary_color || '#FF3366' }} />
-                        <span className="text-xs text-gray-500 mt-1 block">Primario</span>
+                        <span className="text-xs text-[var(--text-secondary)] mt-1 block">Primario</span>
                       </div>
                       <div className="text-center">
                         <div className="w-16 h-16 rounded-xl border shadow-sm" style={{ background: config.accent_color || '#33CC99' }} />
-                        <span className="text-xs text-gray-500 mt-1 block">Accento</span>
+                        <span className="text-xs text-[var(--text-secondary)] mt-1 block">Accento</span>
                       </div>
                       <div className="text-center">
                         <div className="w-16 h-16 rounded-xl border shadow-sm" style={{ background: config.bg_color || '#F0F4FF' }} />
-                        <span className="text-xs text-gray-500 mt-1 block">Sfondo</span>
+                        <span className="text-xs text-[var(--text-secondary)] mt-1 block">Sfondo</span>
                       </div>
                       <div className="text-center">
                         <div className="w-16 h-16 rounded-xl border shadow-sm" style={{ background: config.text_color || '#2D3047' }} />
-                        <span className="text-xs text-gray-500 mt-1 block">Testo</span>
+                        <span className="text-xs text-[var(--text-secondary)] mt-1 block">Testo</span>
                       </div>
                     </div>
                   </div>
@@ -611,7 +612,7 @@ export default function WebsiteAdminPage() {
                 <CardContent className="space-y-4">
                   <div>
                     <Label>Font Titoli</Label>
-                    <select value={config.font_display || 'Cormorant Garamond'} onChange={e => updateField('font_display', e.target.value)} className="w-full mt-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm" data-testid="font-display-select">
+                    <select value={config.font_display || 'Cormorant Garamond'} onChange={e => updateField('font_display', e.target.value)} className="w-full mt-1 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-2 text-sm" data-testid="font-display-select">
                       <option value="Cormorant Garamond">Cormorant Garamond (Elegante)</option>
                       <option value="Playfair Display">Playfair Display (Classico)</option>
                       <option value="Lora">Lora (Raffinato)</option>
@@ -619,11 +620,11 @@ export default function WebsiteAdminPage() {
                       <option value="DM Serif Display">DM Serif Display (Moderno)</option>
                       <option value="Libre Baskerville">Libre Baskerville (Tradizionale)</option>
                     </select>
-                    <p className="text-xs text-gray-500 mt-1">Usato per titoli e intestazioni</p>
+                    <p className="text-xs text-[var(--text-secondary)] mt-1">Usato per titoli e intestazioni</p>
                   </div>
                   <div>
                     <Label>Font Corpo</Label>
-                    <select value={config.font_body || 'Nunito'} onChange={e => updateField('font_body', e.target.value)} className="w-full mt-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm" data-testid="font-body-select">
+                    <select value={config.font_body || 'Nunito'} onChange={e => updateField('font_body', e.target.value)} className="w-full mt-1 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-2 text-sm" data-testid="font-body-select">
                       <option value="Nunito">Nunito (Morbido)</option>
                       <option value="Open Sans">Open Sans (Pulito)</option>
                       <option value="Lato">Lato (Moderno)</option>
@@ -631,7 +632,7 @@ export default function WebsiteAdminPage() {
                       <option value="Source Sans 3">Source Sans 3 (Professionale)</option>
                       <option value="Raleway">Raleway (Elegante)</option>
                     </select>
-                    <p className="text-xs text-gray-500 mt-1">Usato per paragrafi e testo generale</p>
+                    <p className="text-xs text-[var(--text-secondary)] mt-1">Usato per paragrafi e testo generale</p>
                   </div>
                   <div>
                     <Label>Dimensione Testo</Label>
@@ -641,12 +642,12 @@ export default function WebsiteAdminPage() {
                         min="12" max="22" step="1"
                         value={config.font_size || '16'} 
                         onChange={e => updateField('font_size', e.target.value)}
-                        className="flex-1 accent-[#C8617A]"
+                        className="flex-1 accent-[var(--gold)]"
                         data-testid="font-size-range"
                       />
-                      <span className="text-sm font-bold text-gray-700 w-12 text-center">{config.font_size || '16'}px</span>
+                      <span className="text-sm font-bold text-[var(--text-primary)] w-12 text-center">{config.font_size || '16'}px</span>
                     </div>
-                    <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+                    <div className="flex justify-between text-[10px] text-[var(--text-muted)] mt-1">
                       <span>Piccolo</span>
                       <span>Normale</span>
                       <span>Grande</span>
@@ -660,12 +661,12 @@ export default function WebsiteAdminPage() {
                         min="24" max="80" step="2"
                         value={config.title_size || '48'} 
                         onChange={e => updateField('title_size', e.target.value)}
-                        className="flex-1 accent-[#C8617A]"
+                        className="flex-1 accent-[var(--gold)]"
                         data-testid="title-size-range"
                       />
-                      <span className="text-sm font-bold text-gray-700 w-12 text-center">{config.title_size || '48'}px</span>
+                      <span className="text-sm font-bold text-[var(--text-primary)] w-12 text-center">{config.title_size || '48'}px</span>
                     </div>
-                    <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+                    <div className="flex justify-between text-[10px] text-[var(--text-muted)] mt-1">
                       <span>Piccolo</span>
                       <span>Normale</span>
                       <span>Grande</span>
@@ -676,11 +677,11 @@ export default function WebsiteAdminPage() {
                     <Label className="mb-3 block">Anteprima Font</Label>
                     <div className="space-y-3">
                       <div>
-                        <p className="text-xs text-gray-400 mb-1">Font Titoli ({config.title_size || '48'}px):</p>
+                        <p className="text-xs text-[var(--text-muted)] mb-1">Font Titoli ({config.title_size || '48'}px):</p>
                         <p className="font-bold" style={{ fontFamily: `'${config.font_display || 'Cormorant Garamond'}', serif`, fontSize: `${config.title_size || 48}px`, lineHeight: 1.1 }}>Bruno Melito Hair</p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-400 mb-1">Font Corpo ({config.font_size || '16'}px):</p>
+                        <p className="text-xs text-[var(--text-muted)] mb-1">Font Corpo ({config.font_size || '16'}px):</p>
                         <p style={{ fontFamily: `'${config.font_body || 'Nunito'}', sans-serif`, fontSize: `${config.font_size || 16}px` }}>Scopri l'eccellenza dell'hair styling al Bruno Melito Hair.</p>
                       </div>
                     </div>
@@ -727,6 +728,89 @@ export default function WebsiteAdminPage() {
               </Card>
             </div>
           </TabsContent>
+
+          {/* SECTION ORDER */}
+          <TabsContent value="sections">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Layout className="w-5 h-5" /> Ordine Sezioni del Sito</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-[var(--text-muted)] mb-4">Riordina le sezioni del sito pubblico trascinandole su e giù. La Navbar e il Footer sono sempre fissi.</p>
+                {(() => {
+                  const SECTION_LABELS = {
+                    hero: { label: 'Hero / Benvenuto', desc: 'Banner principale con titolo e pulsante prenota' },
+                    stats: { label: 'Statistiche', desc: 'Anni di esperienza, clienti, ecc.' },
+                    about: { label: 'Chi Siamo', desc: 'Descrizione del salone e foto' },
+                    gallery: { label: 'Galleria', desc: 'Foto dei lavori e del salone' },
+                    cta: { label: 'Prenota / CTA', desc: 'Call-to-action con pulsanti prenotazione' },
+                    reviews: { label: 'Recensioni', desc: 'Testimonianze dei clienti' },
+                    contact: { label: 'Contatti', desc: 'Orari, mappa e informazioni di contatto' },
+                  };
+                  const DEFAULT_ORDER = ['hero', 'stats', 'about', 'gallery', 'cta', 'reviews', 'contact'];
+                  const order = config.section_order?.length > 0 ? config.section_order : DEFAULT_ORDER;
+
+                  const moveSection = (idx, dir) => {
+                    const newOrder = [...order];
+                    const target = idx + dir;
+                    if (target < 0 || target >= newOrder.length) return;
+                    [newOrder[idx], newOrder[target]] = [newOrder[target], newOrder[idx]];
+                    updateField('section_order', newOrder);
+                  };
+
+                  const resetOrder = () => {
+                    updateField('section_order', DEFAULT_ORDER);
+                    toast.success('Ordine ripristinato');
+                  };
+
+                  return (
+                    <div className="space-y-2" data-testid="section-order-list">
+                      {order.map((key, idx) => {
+                        const info = SECTION_LABELS[key] || { label: key, desc: '' };
+                        return (
+                          <div key={key}
+                            className="flex items-center gap-3 p-3 rounded-xl border transition-all glass"
+                            style={{ borderColor: 'var(--border-subtle)' }}
+                            data-testid={`section-item-${key}`}>
+                            <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black bg-[var(--gold-dim)] text-[var(--gold)]">
+                              {idx + 1}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-sm text-[var(--text-primary)]">{info.label}</p>
+                              <p className="text-[11px] text-[var(--text-muted)]">{info.desc}</p>
+                            </div>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost" size="icon"
+                                onClick={() => moveSection(idx, -1)}
+                                disabled={idx === 0}
+                                className="h-8 w-8 text-[var(--text-muted)] hover:text-[var(--gold)] disabled:opacity-30"
+                                data-testid={`move-up-${key}`}>
+                                <ChevronUp className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost" size="icon"
+                                onClick={() => moveSection(idx, 1)}
+                                disabled={idx === order.length - 1}
+                                className="h-8 w-8 text-[var(--text-muted)] hover:text-[var(--gold)] disabled:opacity-30"
+                                data-testid={`move-down-${key}`}>
+                                <ChevronDown className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      <div className="flex justify-end mt-4">
+                        <Button variant="outline" size="sm" onClick={resetOrder} className="text-xs" data-testid="reset-section-order">
+                          Ripristina ordine predefinito
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
 
         {/* Review Dialog */}
@@ -741,7 +825,7 @@ export default function WebsiteAdminPage() {
                 <div className="flex gap-1 mt-2">
                   {[1, 2, 3, 4, 5].map(n => (
                     <button key={n} onClick={() => setReviewForm({ ...reviewForm, rating: n })}>
-                      <Star className={`w-6 h-6 ${n <= reviewForm.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-300'}`} />
+                      <Star className={`w-6 h-6 ${n <= reviewForm.rating ? 'fill-amber-400 text-amber-400' : 'text-[var(--text-muted)]'}`} />
                     </button>
                   ))}
                 </div>
@@ -749,7 +833,7 @@ export default function WebsiteAdminPage() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setReviewDialog(false)}>Annulla</Button>
-              <Button onClick={saveReview} className="bg-[#C8617A] text-white" data-testid="save-review-btn">Salva</Button>
+              <Button onClick={saveReview} className="bg-[var(--gold)] text-white" data-testid="save-review-btn">Salva</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -758,12 +842,12 @@ export default function WebsiteAdminPage() {
 
       {/* Live Preview Panel */}
       {previewOpen && (
-        <div className="w-1/2 border-l border-gray-200 flex flex-col bg-gray-50 sticky top-0 h-[calc(100vh-64px)]" data-testid="live-preview-panel">
-          <div className="flex items-center justify-between px-4 py-3 bg-white border-b">
+        <div className="w-1/2 border-l border-[var(--border-subtle)] flex flex-col bg-[var(--bg-elevated)] sticky top-0 h-[calc(100vh-64px)]" data-testid="live-preview-panel">
+          <div className="flex items-center justify-between px-4 py-3 bg-[var(--bg-card)] border-b">
             <div className="flex items-center gap-2">
-              <Eye className="w-4 h-4 text-[#C8617A]" />
-              <span className="text-sm font-bold text-gray-700">Anteprima Live</span>
-              <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Tempo reale</span>
+              <Eye className="w-4 h-4 text-[var(--gold)]" />
+              <span className="text-sm font-bold text-[var(--text-primary)]">Anteprima Live</span>
+              <span className="text-xs bg-emerald-900/20 text-emerald-400 px-2 py-0.5 rounded-full">Tempo reale</span>
             </div>
             <Button variant="ghost" size="icon" onClick={() => setPreviewOpen(false)} className="h-8 w-8" data-testid="close-preview-btn">
               <X className="w-4 h-4" />

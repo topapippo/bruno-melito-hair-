@@ -35,7 +35,7 @@ export function HeroSection({ COLORS, cfg, bookRef, titleSize, onBook }) {
           <div className="fu d4 flex flex-wrap gap-3">
             <button 
               onClick={onBook} 
-              className="px-8 py-4 text-base rounded-xl transition-all font-bold hover:shadow-2xl active:scale-95"
+              className="btn-gold px-8 py-4 text-base rounded-xl transition-all font-bold hover:shadow-2xl active:scale-95"
               style={{ background: '#D4AF37', color: '#0B1120', boxShadow: '0 0 30px rgba(212,175,55,0.3)' }}
               data-testid="book-now-hero-btn"
             >
@@ -43,7 +43,7 @@ export function HeroSection({ COLORS, cfg, bookRef, titleSize, onBook }) {
             </button>
             <button 
               onClick={() => document.getElementById('galleria')?.scrollIntoView({ behavior: 'smooth' })}
-              className="font-bold text-base px-8 py-4 rounded-2xl transition-all flex items-center gap-2 hover:bg-white/5"
+              className="btn-animate font-bold text-base px-8 py-4 rounded-2xl transition-all flex items-center gap-2 hover:bg-white/5"
               style={{ border: '2px solid rgba(148,163,184,0.2)', color: '#94A3B8' }}
             >
               I nostri lavori<ChevronRight className="w-4 h-4" />

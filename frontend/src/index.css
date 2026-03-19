@@ -161,6 +161,83 @@ body {
 .stagger-children > *:nth-child(10) { animation-delay: 0.5s; }
 .stagger-children > *:nth-child(n+11) { animation-delay: 0.55s; }
 
+/* ====== BUTTON ANIMATIONS ====== */
+.btn-animate {
+  position: relative;
+  overflow: hidden;
+}
+.btn-animate::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(212,175,55,0.15) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.btn-animate:hover::after { opacity: 1; }
+.btn-animate:hover { transform: translateY(-1px); }
+.btn-animate:active { transform: scale(0.97) translateY(0); }
+
+.btn-gold {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(212,175,55,0.2);
+}
+.btn-gold:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(212,175,55,0.4);
+}
+.btn-gold:active {
+  transform: scale(0.97) translateY(0);
+  box-shadow: 0 1px 4px rgba(212,175,55,0.2);
+}
+.btn-gold::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.15) 50%, transparent 70%);
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
+  pointer-events: none;
+}
+.btn-gold:hover::before { transform: translateX(100%); }
+
+.btn-glass {
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-glass:hover {
+  border-color: var(--border-gold);
+  transform: translateY(-1px);
+  box-shadow: var(--glow-gold);
+}
+.btn-glass:active { transform: scale(0.97); }
+
+/* Sidebar & Nav button animations */
+nav a, nav button, [data-sidebar] a, [data-sidebar] button {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+nav a:hover, [data-sidebar] a:hover {
+  transform: translateX(3px);
+}
+
+/* Dashboard card hover */
+.dash-card {
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.dash-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(212,175,55,0.15);
+  border-color: var(--border-gold);
+}
+
 /* ====== TRANSITIONS ====== */
 a, button { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
 

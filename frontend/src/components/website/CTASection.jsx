@@ -10,13 +10,13 @@ export function CTASection({ COLORS, bookRef, openWA, setManageOpen, onBook }) {
           <div className="space-y-3">
             <button 
               onClick={onBook} 
-              className="w-full py-4 text-base font-black rounded-xl transition-all hover:shadow-lg"
+              className="btn-gold w-full py-4 text-base font-black rounded-xl transition-all hover:shadow-lg"
               style={{ background: '#D4AF37', color: '#0B1120' }}
               data-testid="cta-book-btn"
             >
               <Scissors className="w-5 h-5" />Scegli e Prenota
             </button>
-            <button onClick={openWA} className="w-full py-4 text-base font-black rounded-xl transition-all hover:opacity-90" style={{ background: COLORS.accent, color: 'white' }}>
+            <button onClick={openWA} className="btn-animate w-full py-4 text-base font-black rounded-xl transition-all hover:opacity-90" style={{ background: COLORS.accent, color: 'white' }}>
               <MessageSquare className="w-5 h-5" />Scrivici su WhatsApp
             </button>
             <a href="tel:08231878320" className="w-full border-2 border-white/20 hover:border-white/40 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 text-base hover:bg-white/5">

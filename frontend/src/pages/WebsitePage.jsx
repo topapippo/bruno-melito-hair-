@@ -221,20 +221,34 @@ export default function BookingPage() {
     return `https://wa.me/${num}?text=${msg}`;
   };
 
+  // Dynamic section order from config
+  const DEFAULT_SECTION_ORDER = ['hero', 'stats', 'about', 'gallery', 'cta', 'reviews', 'contact'];
+  const sectionOrder = cfg.section_order?.length > 0 ? cfg.section_order : DEFAULT_SECTION_ORDER;
+
+  const sectionMap = {
+    hero: () => <HeroSection COLORS={COLORS} cfg={cfg} bookRef={bookRef} titleSize={titleSize} onBook={() => setBookingOpen(true)} />,
+    stats: () => <StatsBar COLORS={COLORS} />,
+    about: () => <AboutSection COLORS={COLORS} cfg={cfg} bookRef={bookRef} dispSalon={dispSalon} iUrl={iUrl} SALON_PH={SALON_PH} titleSize={titleSize} onBook={() => setBookingOpen(true)} />,
+    gallery: () => <GallerySection COLORS={COLORS} galTab={galTab} setGalTab={setGalTab} dispWork={dispWork} dispSalon={dispSalon} iUrl={iUrl} WORK_PH={WORK_PH} SALON_PH={SALON_PH} />,
+    cta: () => <CTASection COLORS={COLORS} bookRef={bookRef} openWA={openWA} setManageOpen={setManageOpen} onBook={() => setBookingOpen(true)} />,
+    reviews: () => <ReviewsSection COLORS={COLORS} reviews={reviews} />,
+    contact: () => <ContactSection COLORS={COLORS} cfg={cfg} />,
+  };
+
   if (success && successData) return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-6 pb">
+    <div className="min-h-screen flex items-center justify-center p-6 pb" style={{ background: 'var(--bg-deep)' }}>
       <style>{GStyles}</style>
       <Toaster position="top-center" />
       <div className="max-w-md w-full text-center fu">
         <div className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6" style={{ background: COLORS.accent + '20' }}>
           <CheckCircle className="w-12 h-12" style={{ color: COLORS.accent }} />
         </div>
-        <h1 className="fd text-4xl font-bold text-slate-900 mb-3">Prenotazione Inviata!</h1>
-        <p className="text-slate-500 mb-2 text-lg">
+        <h1 className="fd text-4xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>Prenotazione Inviata!</h1>
+        <p className="mb-2 text-lg" style={{ color: 'var(--text-secondary)' }}>
           Ti aspettiamo il <strong>{format(new Date(successData.date + 'T00:00:00'), 'dd/MM/yy', { locale: it })}</strong> alle{' '}
           <strong style={{ color: COLORS.primary }}>{successData.time}</strong>
         </p>
-        <p className="text-slate-400 text-sm mb-6">
+        <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
           Invia la conferma al salone tramite WhatsApp
         </p>
         <div className="space-y-3">
@@ -242,14 +256,15 @@ export default function BookingPage() {
             href={getWhatsAppUrl(successData)}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full py-4 text-base text-white font-bold rounded-xl transition-all hover:opacity-90 flex items-center justify-center gap-2"
+            className="btn-gold w-full py-4 text-base text-white font-bold rounded-xl transition-all hover:opacity-90 flex items-center justify-center gap-2"
             style={{ background: '#22c55e' }}
             data-testid="whatsapp-confirm-btn"
           >
             <MessageSquare className="w-5 h-5" /> Conferma su WhatsApp
           </a>
           <button onClick={() => { setSuccess(false); setSuccessData(null); }}
-            className="w-full py-3 text-sm text-slate-500 font-semibold rounded-xl border-2 border-slate-200 hover:bg-slate-50 transition-all">
+            className="btn-animate w-full py-3 text-sm font-semibold rounded-xl border-2 transition-all"
+            style={{ color: 'var(--text-secondary)', borderColor: 'var(--border-subtle)' }}>
             Torna alla pagina
           </button>
         </div>
@@ -266,25 +281,22 @@ export default function BookingPage() {
   );
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 pb">
+    <div className="min-h-screen pb" style={{ background: '#0B1120', color: '#F1F5F9' }}>
       <style>{GStyles}</style>
       <Toaster position="top-center" />
 
       <Navbar COLORS={COLORS} bookRef={bookRef} setManageOpen={setManageOpen} goToAdminLogin={goToAdminLogin} onBook={() => setBookingOpen(true)} />
-      <HeroSection COLORS={COLORS} cfg={cfg} bookRef={bookRef} titleSize={titleSize} onBook={() => setBookingOpen(true)} />
-      <StatsBar COLORS={COLORS} />
-      <AboutSection COLORS={COLORS} cfg={cfg} bookRef={bookRef} dispSalon={dispSalon} iUrl={iUrl} SALON_PH={SALON_PH} titleSize={titleSize} onBook={() => setBookingOpen(true)} />
-      <GallerySection COLORS={COLORS} galTab={galTab} setGalTab={setGalTab} dispWork={dispWork} dispSalon={dispSalon} iUrl={iUrl} WORK_PH={WORK_PH} SALON_PH={SALON_PH} />
-      <CTASection COLORS={COLORS} bookRef={bookRef} openWA={openWA} setManageOpen={setManageOpen} onBook={() => setBookingOpen(true)} />
-      <ReviewsSection COLORS={COLORS} reviews={reviews} />
-      <ContactSection COLORS={COLORS} cfg={cfg} />
+      {sectionOrder.map(key => {
+        const Section = sectionMap[key];
+        return Section ? <Section key={key} /> : null;
+      })}
       <FooterSection />
 
       {/* Mobile CTA */}
-      <div className="fixed bottom-0 left-0 right-0 p-3 bg-white/96 backdrop-blur-md border-t border-slate-200 sm:hidden z-50">
+      <div className="fixed bottom-0 left-0 right-0 p-3 backdrop-blur-md border-t sm:hidden z-50" style={{ background: 'rgba(11,17,32,0.95)', borderColor: 'var(--border-subtle)' }}>
         <button onClick={() => setBookingOpen(true)}
-          className="w-full py-4 text-base font-black rounded-xl transition-all hover:opacity-90"
-          style={{ background: COLORS.primary, color: 'white' }}>
+          className="btn-gold w-full py-4 text-base font-black rounded-xl transition-all"
+          style={{ background: '#D4AF37', color: '#0B1120' }}>
           <Scissors className="w-5 h-5" />Prenota ora
         </button>
       </div>

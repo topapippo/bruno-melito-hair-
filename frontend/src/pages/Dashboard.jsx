@@ -214,7 +214,7 @@ export default function Dashboard() {
                   key={mod.path}
                   data-testid={`module-${mod.path.slice(1)}`}
                   onClick={() => navigate(mod.path)}
-                  className="glass rounded-xl p-4 text-center cursor-pointer transition-all duration-300 hover:-translate-y-1 group"
+                  className="glass dash-card rounded-xl p-4 text-center cursor-pointer transition-all duration-300 hover:-translate-y-1 group"
                   style={{ '--glow-color': mod.color }}
                   onMouseEnter={e => e.currentTarget.style.boxShadow = `0 0 20px ${mod.color}30`}
                   onMouseLeave={e => e.currentTarget.style.boxShadow = ''}
