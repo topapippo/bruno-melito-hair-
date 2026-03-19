@@ -84,7 +84,8 @@ Salon management application (React, FastAPI, MongoDB) deployed on Render. The a
 ### Phase 8 - Mar 19, 2026 (Drag-and-Drop + Backend Refactoring)
 - **Drag-and-drop sezioni:** Sostituito frecce su/giù con HTML5 native drag-and-drop + icona GripVertical come handle di trascinamento
 - **Backend models refactoring:** Diviso models.py (285 righe) in pacchetto models/ con 4 file separati per dominio (auth, business, appointments, loyalty) + __init__.py per re-export
-- **Testing:** Backend 14/14, Frontend 13/13 (iteration_15)
+- **CRITICAL BUG FIX: Settings page day toggles** — Risolto crash "Maximum update depth exceeded" causato da Radix Checkbox. Sostituito con indicatore visivo div puro (nessun conflitto di stato Radix)
+- **Testing:** Backend 14/14, Frontend 13/13 (iteration_15), Bug fix 12/12 (iteration_16)
 
 ## Architecture
 ```
