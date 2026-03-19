@@ -87,6 +87,14 @@ Salon management application (React, FastAPI, MongoDB) deployed on Render. The a
 - **CRITICAL BUG FIX: Settings page day toggles** — Risolto crash "Maximum update depth exceeded" causato da Radix Checkbox. Sostituito con indicatore visivo div puro (nessun conflitto di stato Radix)
 - **Testing:** Backend 14/14, Frontend 13/13 (iteration_15), Bug fix 12/12 (iteration_16)
 
+### Phase 9 - Mar 19, 2026 (Contrast/Readability Fix)
+- **Planning time column:** Sfondo da bianco a scuro (var(--bg-card)), orari in oro (var(--gold))
+- **Header gradient fix:** Da light gradient (#0EA5E9/10 → #E2E8F0/20) a dark gradient (var(--bg-elevated) → var(--bg-card))
+- **Badge colors batch fix:** 83+ badge convertiti da bg-X-100 (sfondo chiaro) a bg-X-500/10 (semi-trasparente scuro)
+- **Text colors batch fix:** 82+ testi convertiti da text-X-700/800 (scuro) a text-X-400 (chiaro, leggibile su scuro)
+- **Progress bars:** bg-[#E2E8F0] → bg-[var(--bg-elevated)] su PrepaidCards e Cards
+- **Testing:** Frontend 15/15 (iteration_17) - tutte le pagine admin verificate per contrasto
+
 ## Architecture
 ```
 /app/frontend/src/
