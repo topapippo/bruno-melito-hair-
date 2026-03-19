@@ -27,8 +27,16 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Users, Plus, Search, Phone, Mail, Edit2, Trash2, Loader2, History, MessageSquare, Upload, FileSpreadsheet, Euro } from 'lucide-react';
+import { Users, Plus, Search, Phone, Mail, Edit2, Trash2, Loader2, History, MessageSquare, Upload, FileSpreadsheet, Euro, Repeat } from 'lucide-react';
 import { toast } from 'sonner';
+import { fmtDate } from '../utils/formatDate';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -48,6 +56,9 @@ export default function ClientsPage() {
   const [importing, setImporting] = useState(false);
   const [importPreview, setImportPreview] = useState([]);
   const fileInputRef = useRef(null);
+  const [recurringDialogOpen, setRecurringDialogOpen] = useState(false);
+  const [recurringApt, setRecurringApt] = useState(null);
+  const [recurringData, setRecurringData] = useState({ repeat_type: 'weeks', repeat_weeks: 3, repeat_months: 1, repeat_count: 4 });
   
   const [formData, setFormData] = useState({
     name: '',
@@ -144,6 +155,31 @@ export default function ClientsPage() {
       setLoadingHistory(false);
     }
   };
+
+  // Recurring appointments
+  const openRecurringDialog = (apt) => {
+    setRecurringApt(apt);
+    setRecurringDialogOpen(true);
+  };
+
+  const createRecurring = async () => {
+    if (!recurringApt) return;
+    try {
+      const payload = {
+        ...recurringApt,
+        recurrence: recurringData.repeat_type === 'weeks' ? 'weekly' : 'monthly',
+        repeat_weeks: recurringData.repeat_weeks,
+        repeat_months: recurringData.repeat_months,
+        repeat_count: recurringData.repeat_count
+      };
+      await axios.post(`${API}/appointments/recurring`, payload, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
+      toast.success(`Creati ${recurringData.repeat_count} appuntamenti ricorrenti`);
+      setRecurringDialogOpen(false);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Errore nella creazione');
+    }
+  };
+
 
   // WhatsApp
   const openWhatsApp = async (client) => {
@@ -645,7 +681,7 @@ export default function ClientsPage() {
                     <p className="text-xs text-[#334155] font-semibold">Punti Fedeltà</p>
                   </div>
                   <div className="p-4 bg-purple-100 rounded-lg text-center">
-                    <p className="text-sm font-black text-purple-600">{clientHistory.last_visit || '-'}</p>
+                    <p className="text-sm font-black text-purple-600">{fmtDate(clientHistory.last_visit) || '-'}</p>
                     <p className="text-xs text-[#334155] font-semibold">Ultima Visita</p>
                   </div>
                 </div>
@@ -675,12 +711,22 @@ export default function ClientsPage() {
                         <div key={apt.id} className="p-3 bg-[#F8FAFC] rounded-lg border border-[#E2E8F0]">
                           <div className="flex justify-between items-start">
                             <div>
-                              <p className="font-semibold text-[#0F172A]">{apt.date} - {apt.time}</p>
+                              <p className="font-semibold text-[#0F172A]">{fmtDate(apt.date)} - {apt.time}</p>
                               <p className="text-sm text-[#334155]">{apt.services?.map(s => s.name).join(', ')}</p>
                             </div>
-                            <span className={`text-xs px-2 py-1 rounded ${apt.paid ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                              {apt.paid ? 'Pagato' : 'Da pagare'}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => openRecurringDialog(apt)}
+                                className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 transition-colors"
+                                title="Rendi ricorrente"
+                                data-testid={`recurring-btn-${apt.id}`}
+                              >
+                                <Repeat className="w-3.5 h-3.5" />
+                              </button>
+                              <span className={`text-xs px-2 py-1 rounded ${apt.paid ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                {apt.paid ? 'Pagato' : 'Da pagare'}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -696,7 +742,7 @@ export default function ClientsPage() {
                       {clientHistory.payments.slice(0, 10).map((pay) => (
                         <div key={pay.id} className="p-3 bg-green-50 rounded-lg flex justify-between items-center">
                           <div>
-                            <p className="font-semibold text-[#0F172A]">{pay.date}</p>
+                            <p className="font-semibold text-[#0F172A]">{fmtDate(pay.date)}</p>
                             <p className="text-xs text-[#334155] capitalize">{pay.payment_method}</p>
                           </div>
                           <p className="font-black text-green-600">€{pay.total_paid.toFixed(2)}</p>
@@ -710,6 +756,65 @@ export default function ClientsPage() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Dialog Appuntamento Ricorrente */}
+      <Dialog open={recurringDialogOpen} onOpenChange={setRecurringDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Appuntamento Ricorrente</DialogTitle>
+            <DialogDescription>
+              {recurringApt && `Ripeti l'appuntamento del ${fmtDate(recurringApt.date)} alle ${recurringApt.time}`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label className="font-semibold">Frequenza</Label>
+              <Select value={recurringData.repeat_type} onValueChange={v => setRecurringData({ ...recurringData, repeat_type: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="weeks">Settimanale</SelectItem>
+                  <SelectItem value="months">Mensile</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {recurringData.repeat_type === 'weeks' && (
+              <div className="space-y-2">
+                <Label className="font-semibold">Ogni quante settimane</Label>
+                <Select value={String(recurringData.repeat_weeks)} onValueChange={v => setRecurringData({ ...recurringData, repeat_weeks: parseInt(v) })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {[1,2,3,4,5,6].map(n => <SelectItem key={n} value={String(n)}>Ogni {n} settimana/e</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {recurringData.repeat_type === 'months' && (
+              <div className="space-y-2">
+                <Label className="font-semibold">Ogni quanti mesi</Label>
+                <Select value={String(recurringData.repeat_months)} onValueChange={v => setRecurringData({ ...recurringData, repeat_months: parseInt(v) })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {[1,2,3,6].map(n => <SelectItem key={n} value={String(n)}>Ogni {n} mese/i</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label className="font-semibold">Quante volte ripetere</Label>
+              <Select value={String(recurringData.repeat_count)} onValueChange={v => setRecurringData({ ...recurringData, repeat_count: parseInt(v) })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {[2,3,4,5,6,8,10,12].map(n => <SelectItem key={n} value={String(n)}>{n} volte</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRecurringDialogOpen(false)}>Annulla</Button>
+            <Button onClick={createRecurring} data-testid="confirm-recurring-btn">Crea Ricorrenti</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }
