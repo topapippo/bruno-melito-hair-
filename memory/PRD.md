@@ -60,6 +60,7 @@ Salon management application (React, FastAPI, MongoDB) deployed on Render. The a
 - **Testing Agent Iteration 9:** Backend 100% (15/15), Frontend 100%
 - **No JavaScript errors, no SIGSEGV crashes**
 - **Gallery .slice(0,16) limit removed** — now shows all photos
+- **Fix "Gestione Sito" black page:** Path mismatch in navModules.js (`/website-admin` → `/gestione-sito`)
 
 ## Architecture
 ```

@@ -23,7 +23,7 @@ export const ALL_MODULES = [
   { path: '/reminders', label: 'Promemoria', desc: 'Notifiche clienti', icon: Bell, iconName: 'Bell', color: '#F97316' },
   { path: '/promozioni', label: 'Promozioni', desc: 'Offerte e promo', icon: Gift, iconName: 'Gift', color: '#D946EF' },
   { path: '/stats', label: 'Statistiche', desc: 'Report e grafici', icon: BarChart3, iconName: 'BarChart3', color: '#EF4444' },
-  { path: '/website-admin', label: 'Gestione Sito', desc: 'CMS e contenuti', icon: Globe, iconName: 'Globe', color: '#14B8A6' },
+  { path: '/gestione-sito', label: 'Gestione Sito', desc: 'CMS e contenuti', icon: Globe, iconName: 'Globe', color: '#14B8A6' },
   { path: '/history', label: 'Storico', desc: 'Archivio operazioni', icon: History, iconName: 'History', color: '#64748B' },
   { path: '/backup', label: 'Backup', desc: 'Esporta dati', icon: Download, iconName: 'Download', color: '#64748B' },
   { path: '/prenota', label: 'Booking Online', desc: 'Pagina pubblica', icon: Globe, iconName: 'Globe', color: '#0EA5E9' },
@@ -31,6 +31,6 @@ export const ALL_MODULES = [
 ];
 
 export const DEFAULT_SIDEBAR = ['/planning', '/dashboard', '/appointments', '/incassi', '/uscite', '/daily-summary', '/settings'];
-export const DEFAULT_DASHBOARD = ['/week', '/month', '/clients', '/services', '/operators', '/cards', '/card-alerts', '/loyalty', '/reminders', '/promozioni', '/stats', '/website-admin', '/history', '/backup', '/prenota'];
+export const DEFAULT_DASHBOARD = ['/week', '/month', '/clients', '/services', '/operators', '/cards', '/card-alerts', '/loyalty', '/reminders', '/promozioni', '/stats', '/gestione-sito', '/history', '/backup', '/prenota'];
 
 export const getModule = (path) => ALL_MODULES.find(m => m.path === path);
