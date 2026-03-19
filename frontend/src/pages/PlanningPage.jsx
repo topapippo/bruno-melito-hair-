@@ -1533,8 +1533,9 @@ export default function PlanningPage() {
                         </button>
                         {isOpen && (
                           <div className="border-t border-[#E2E8F0] divide-y divide-[#F1F5F9]">
-                            {catServices.map(service => {
+                            {catServices.map((service, idx) => {
                               const sel = formData.service_ids.includes(service.id);
+                              const cleanName = service.name.replace(/^\d+\s*/, '');
                               return (
                                 <button key={service.id} type="button"
                                   onClick={() => toggleService(service.id)}
@@ -1547,7 +1548,8 @@ export default function PlanningPage() {
                                   }`}>
                                     {sel && <Check className="w-2.5 h-2.5 text-white" />}
                                   </div>
-                                  <span className={`flex-1 text-sm ${sel ? 'font-bold text-[#0EA5E9]' : 'text-[#0F172A]'}`}>{service.name}</span>
+                                  <span className="text-[10px] font-bold text-[#94A3B8] w-4 flex-shrink-0">{idx + 1}.</span>
+                                  <span className={`flex-1 text-sm ${sel ? 'font-bold text-[#0EA5E9]' : 'text-[#0F172A]'}`}>{cleanName}</span>
                                   <span className={`text-sm font-bold flex-shrink-0 ${sel ? 'text-[#0EA5E9]' : 'text-[#334155]'}`}>{'\u20AC'}{service.price}</span>
                                   <span className="text-[10px] text-[#94A3B8] flex-shrink-0 w-12 text-right">{service.duration} min</span>
                                 </button>
@@ -2007,8 +2009,9 @@ export default function PlanningPage() {
                         </button>
                         {isOpen && (
                           <div className="border-t border-[#E2E8F0] divide-y divide-[#F1F5F9]">
-                            {catServices.map(service => {
+                            {catServices.map((service, idx) => {
                               const sel = formData.service_ids.includes(service.id);
+                              const cleanName = service.name.replace(/^\d+\s*/, '');
                               return (
                                 <button key={service.id} type="button"
                                   onClick={() => toggleService(service.id)}
@@ -2020,7 +2023,8 @@ export default function PlanningPage() {
                                   }`}>
                                     {sel && <Check className="w-2.5 h-2.5 text-white" />}
                                   </div>
-                                  <span className={`flex-1 text-sm ${sel ? 'font-bold text-[#0EA5E9]' : 'text-[#0F172A]'}`}>{service.name}</span>
+                                  <span className="text-[10px] font-bold text-[#94A3B8] w-4 flex-shrink-0">{idx + 1}.</span>
+                                  <span className={`flex-1 text-sm ${sel ? 'font-bold text-[#0EA5E9]' : 'text-[#0F172A]'}`}>{cleanName}</span>
                                   <span className={`text-sm font-bold flex-shrink-0 ${sel ? 'text-[#0EA5E9]' : 'text-[#334155]'}`}>{'\u20AC'}{service.price}</span>
                                   <span className="text-[10px] text-[#94A3B8] flex-shrink-0 w-12 text-right">{service.duration} min</span>
                                 </button>

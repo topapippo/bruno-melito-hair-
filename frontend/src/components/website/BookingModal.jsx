@@ -359,8 +359,9 @@ export default function BookingModal({ open, onClose, services, operators, promo
                               </button>
                               {isOpen && (
                                 <div className="border-t divide-y" style={{ borderColor: '#f1f5f9' }}>
-                                  {catSvcs.map(svc => {
+                                  {catSvcs.map((svc, idx) => {
                                     const sel = selIds.includes(svc.id);
+                                    const cleanName = svc.name.replace(/^\d+\s*/, '');
                                     return (
                                       <button key={svc.id} onClick={() => toggleSvc(svc)}
                                         className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-all"
@@ -372,9 +373,10 @@ export default function BookingModal({ open, onClose, services, operators, promo
                                             : { borderColor: '#cbd5e1' }}>
                                           {sel && <CheckCircle className="w-3 h-3 text-white" />}
                                         </div>
+                                        <span className="text-[10px] font-bold text-slate-400 w-4 flex-shrink-0">{idx + 1}.</span>
                                         <span className={`flex-1 text-sm ${sel ? 'font-bold' : 'text-slate-700'}`}
                                           style={sel ? { color: COLORS.primary } : {}}>
-                                          {svc.name}
+                                          {cleanName}
                                         </span>
                                         <span className="font-black text-sm flex-shrink-0"
                                           style={sel ? { color: COLORS.primary } : { color: '#334155' }}>€{svc.price}</span>
