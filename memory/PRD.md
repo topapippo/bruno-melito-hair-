@@ -12,7 +12,7 @@ Salon management application (React, FastAPI, MongoDB) deployed on Render. The a
 - Reliable deployment to Render
 
 ## Tech Stack
-- **Frontend:** React, Tailwind CSS, npm
+- **Frontend:** React, Tailwind CSS, Shadcn UI
 - **Backend:** Python, FastAPI
 - **Database:** MongoDB
 - **Deployment:** Render
@@ -41,67 +41,81 @@ Salon management application (React, FastAPI, MongoDB) deployed on Render. The a
 - **Badge Removal:** Removed "Made with MBHS" badge
 
 ### Phase 3 - Mar 19, 2026
-- **BookingModal Redesign (P0):** Complete mobile-first redesign of the booking modal
-  - Services grouped by category with horizontal scrollable tab pills
-  - Compact service items with checkbox, name, price, duration
-  - Selected services shown as dismissible chips with total summary
-  - Promotions accessible via dedicated "Promo" tab
-  - Fixed footer with action buttons always visible on mobile (no more hidden confirm button)
-  - Bottom-sheet style modal on mobile devices
-  - Step indicator redesigned as compact pill buttons
+- **BookingModal Redesign (P0):** Complete mobile-first redesign with accordion-style service categories
 - **PlanningPage Dialog Redesign (P1):** Applied same category-tabbed service selection
-  - New Appointment dialog: category tabs replace flat 2-column grid
-  - Edit Appointment dialog: same category-tabbed layout
-  - Selected services shown as chips with running total
-  - `_activeCat` UI state properly stripped before API calls
-- **CSS Utility:** Added `.scrollbar-hide` class for clean horizontal tab scrolling
-- **Testing:** 100% pass rate - 19/19 frontend tests passed
+- **Animated Price Counter:** Real-time animated price on booking button
+- **Progressive Service Numbering:** Automatic numbering within categories
+- **Gallery Fix:** Shows ALL photos from CMS (no hardcoded limit)
+- **Dashboard Link Fix:** Corrected broken navigation link
+- **CSS Utility:** Added `.scrollbar-hide` class
+
+### Phase 4 - Mar 19, 2026 (Dark Theme & Customization)
+- **Complete Aesthetic Overhaul:** "Onyx & Gold" dark theme applied to entire app
+- **Customizable Admin Navigation:** NavConfigurator allows moving modules between sidebar and dashboard
+- **Nav Config Persistence:** Backend endpoints (GET/PUT /api/nav-config) save layout per user
+- **Dark Theme Design System:** CSS variables in :root for full theming
+- **Advanced CSS Animations:** Glassmorphism, gradient text, keyframe animations
+
+### Verification - Mar 19, 2026
+- **Testing Agent Iteration 9:** Backend 100% (15/15), Frontend 100%
+- **No JavaScript errors, no SIGSEGV crashes**
+- **Gallery .slice(0,16) limit removed** — now shows all photos
 
 ## Architecture
 ```
 /app/frontend/src/
 ├── App.js                          (Router + lazy loading)
 ├── pages/
-│   ├── WebsitePage.jsx             (276 lines - main page orchestrator)
-│   ├── PlanningPage.jsx            (2400+ lines - calendar + appointment management)
+│   ├── WebsitePage.jsx             (main page orchestrator)
+│   ├── PlanningPage.jsx            (calendar + appointment management)
+│   ├── Dashboard.jsx               (dynamic module grid, dark theme)
 │   └── [admin pages...]            (lazy loaded)
 ├── components/
+│   ├── Layout.jsx                  (dynamic sidebar, dark theme)
+│   ├── NavConfigurator.jsx         (layout customization UI)
 │   └── website/
-│       ├── BookingModal.jsx        (480 lines - redesigned booking flow with category tabs)
-│       ├── ManageAppointments.jsx  (166 lines - user appointments)
-│       ├── Navbar.jsx
-│       ├── HeroSection.jsx
-│       ├── AboutSection.jsx
-│       ├── CTASection.jsx
-│       ├── GallerySection.jsx
-│       ├── ReviewsSection.jsx
-│       ├── ContactSection.jsx (+ FooterSection)
-│       └── index.js
+│       ├── BookingModal.jsx        (accordion services, animated price)
+│       ├── ManageAppointments.jsx
+│       ├── GallerySection.jsx      (all photos, no limit)
+│       └── [other sections]
 ├── utils/
-│   └── formatDate.js               (Central date formatting utility)
-└── index.css                        (Added .scrollbar-hide utility)
+│   ├── navModules.js               (module definitions)
+│   └── formatDate.js               (Italian date formatting)
+└── index.css                       (dark theme design system)
+
+/app/backend/
+├── server.py
+├── routes/
+│   └── stats.py                    (nav-config endpoints)
+├── models.py
+├── database.py
+└── auth.py
 ```
 
 ## Key API Endpoints
-- GET /api/public/busy-slots - Fetch occupied time slots
-- POST /api/public/booking - Create booking (returns 409 with conflict data if occupied)
-- PUT /api/website - Save CMS data (font_size, title_size)
 - GET /api/public/website - Public website data
+- GET /api/public/busy-slots - Fetch occupied time slots
+- POST /api/public/booking - Create booking (409 on conflict)
 - GET /api/appointments - Fetch appointments by date
 - POST /api/appointments - Create appointment
 - PUT /api/appointments/:id - Update appointment
+- GET /api/nav-config - Get user navigation layout
+- PUT /api/nav-config - Save user navigation layout
 
 ## Prioritized Backlog
+
 ### P0
 - (None - all P0 items completed)
 
 ### P1
+- WhatsApp Business API integration for automatic appointment reminders
 - User pushes to GitHub and redeploys on Render
 
 ### P2
+- Drag-and-drop customization for public website sections
 - Performance optimization (bundle analysis, code splitting)
-- Fully automatic WhatsApp reminders (requires WhatsApp Business API + Twilio)
+- Investigate broken gallery image (5th position - external URL)
 
 ## Credentials
 - **Production:** melitobruno@gmail.com / mbhs637104
-- **Local:** admin@brunomelito.it / Admin123!
+- **Local Admin:** admin@brunomelito.it / Admin123!

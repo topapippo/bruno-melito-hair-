@@ -30,7 +30,7 @@ export function GallerySection({ COLORS, galTab, setGalTab, dispWork, dispSalon,
 
         {galTab === 'lavori' && (
           <div className="columns-2 sm:columns-3 lg:columns-4 gap-4 space-y-4">
-            {dispWork.slice(0, 16).map((item, i) => {
+            {dispWork.map((item, i) => {
               const url = iUrl(item) || WORK_PH[i % WORK_PH.length];
               const heights = ['h-48', 'h-64', 'h-56', 'h-72', 'h-52', 'h-60', 'h-44', 'h-68', 'h-56', 'h-48', 'h-64', 'h-60'];
               return (
