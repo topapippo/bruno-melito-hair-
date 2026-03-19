@@ -186,6 +186,28 @@ async def get_settings(current_user: dict = Depends(get_current_user)):
     }
 
 
+# ============== NAV CONFIG ==============
+
+@router.get("/nav-config")
+async def get_nav_config(current_user: dict = Depends(get_current_user)):
+    config = await db.nav_configs.find_one({"user_id": current_user["id"]}, {"_id": 0})
+    if not config:
+        return {"sidebar": None, "dashboard": None}
+    return {"sidebar": config.get("sidebar"), "dashboard": config.get("dashboard")}
+
+
+@router.put("/nav-config")
+async def save_nav_config(data: dict, current_user: dict = Depends(get_current_user)):
+    sidebar = data.get("sidebar", [])
+    dashboard = data.get("dashboard", [])
+    await db.nav_configs.update_one(
+        {"user_id": current_user["id"]},
+        {"$set": {"user_id": current_user["id"], "sidebar": sidebar, "dashboard": dashboard}},
+        upsert=True
+    )
+    return {"status": "ok"}
+
+
 # ============== PAYMENTS ==============
 
 @router.get("/payments")

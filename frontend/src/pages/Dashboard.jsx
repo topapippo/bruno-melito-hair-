@@ -15,38 +15,57 @@ import {
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { ALL_MODULES, DEFAULT_DASHBOARD, getModule } from '../utils/navModules';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
-
-const MODULES = [
-  { path: '/week', label: 'Settimanale', desc: 'Vista settimanale', icon: CalendarDays, color: '#789F8A' },
-  { path: '/month', label: 'Mensile', desc: 'Vista mensile', icon: CalendarRange, color: '#E9C46A' },
-  { path: '/clients', label: 'Clienti', desc: 'Gestione clienti', icon: Users, color: '#334155' },
-  { path: '/services', label: 'Servizi', desc: 'Listino prezzi', icon: Scissors, color: '#C084FC' },
-  { path: '/operators', label: 'Operatori', desc: 'Gestione staff', icon: UserCheck, color: '#F59E0B' },
-  { path: '/cards', label: 'Card Prepagate', desc: 'Abbonamenti', icon: CreditCard, color: '#6366F1' },
-  { path: '/card-alerts', label: 'Avvisi Card', desc: 'Scadenze e notifiche', icon: AlertTriangle, color: '#F97316' },
-  { path: '/loyalty', label: 'Fedeltà', desc: 'Programma punti', icon: Gift, color: '#EC4899' },
-  { path: '/reminders', label: 'Promemoria', desc: 'Notifiche clienti', icon: Bell, color: '#F97316' },
-  { path: '/promozioni', label: 'Promozioni', desc: 'Offerte e promo', icon: Gift, color: '#D946EF' },
-  { path: '/stats', label: 'Statistiche', desc: 'Report e grafici', icon: BarChart3, color: '#EF4444' },
-  { path: '/website-admin', label: 'Gestione Sito', desc: 'CMS e contenuti', icon: Globe, color: '#14B8A6' },
-  { path: '/history', label: 'Storico', desc: 'Archivio operazioni', icon: Clock, color: '#64748B' },
-  { path: '/backup', label: 'Backup', desc: 'Esporta dati', icon: Download, color: '#64748B' },
-  { path: '/prenota', label: 'Booking Online', desc: 'Pagina pubblica', icon: Globe, color: '#0EA5E9' },
-];
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [cardAlerts, setCardAlerts] = useState({ expiring: [], low_balance: [], total: 0 });
   const [showAlerts, setShowAlerts] = useState(true);
+  const [dashboardPaths, setDashboardPaths] = useState(() => {
+    try {
+      const saved = localStorage.getItem('mbhs_dashboard');
+      return saved ? JSON.parse(saved) : DEFAULT_DASHBOARD;
+    } catch { return DEFAULT_DASHBOARD; }
+  });
   const navigate = useNavigate();
 
   useEffect(() => { 
     fetchDashboardStats(); 
     fetchCardAlerts();
+    loadNavConfig();
+
+    // Listen for nav config changes from NavConfigurator
+    const handleStorage = (e) => {
+      if (e.key === 'mbhs_dashboard') {
+        try {
+          setDashboardPaths(JSON.parse(e.newValue));
+        } catch {}
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+
+    // Custom event for same-tab updates
+    const handleNavUpdate = () => loadNavConfig();
+    window.addEventListener('nav-config-updated', handleNavUpdate);
+
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('nav-config-updated', handleNavUpdate);
+    };
   }, []);
+
+  const loadNavConfig = async () => {
+    try {
+      const res = await axios.get(`${API}/nav-config`);
+      if (res.data.dashboard) {
+        setDashboardPaths(res.data.dashboard);
+        localStorage.setItem('mbhs_dashboard', JSON.stringify(res.data.dashboard));
+      }
+    } catch {}
+  };
 
   const fetchDashboardStats = async () => {
     try {
@@ -212,26 +231,31 @@ export default function Dashboard() {
         <div>
           <h2 className="font-playfair text-xl text-[#0F172A] mb-4">Moduli</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            {MODULES.map((mod) => (
-              <Card
-                key={mod.path}
-                data-testid={`module-${mod.path.slice(1)}`}
-                onClick={() => navigate(mod.path)}
-                className="bg-white border-[#E2E8F0]/30 hover:border-opacity-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg cursor-pointer group"
-                style={{ borderColor: `${mod.color}20` }}
-              >
-                <CardContent className="p-4 text-center">
-                  <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3 transition-transform group-hover:scale-110"
-                    style={{ backgroundColor: `${mod.color}12` }}
-                  >
-                    <mod.icon className="w-6 h-6" style={{ color: mod.color }} strokeWidth={1.5} />
-                  </div>
-                  <p className="font-semibold text-[#0F172A] text-sm">{mod.label}</p>
-                  <p className="text-[10px] text-[#334155] mt-0.5">{mod.desc}</p>
-                </CardContent>
-              </Card>
-            ))}
+            {dashboardPaths.map(path => {
+              const mod = getModule(path);
+              if (!mod) return null;
+              const Icon = mod.icon;
+              return (
+                <Card
+                  key={mod.path}
+                  data-testid={`module-${mod.path.slice(1)}`}
+                  onClick={() => navigate(mod.path)}
+                  className="bg-white border-[#E2E8F0]/30 hover:border-opacity-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg cursor-pointer group"
+                  style={{ borderColor: `${mod.color}20` }}
+                >
+                  <CardContent className="p-4 text-center">
+                    <div
+                      className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3 transition-transform group-hover:scale-110"
+                      style={{ backgroundColor: `${mod.color}12` }}
+                    >
+                      <Icon className="w-6 h-6" style={{ color: mod.color }} strokeWidth={1.5} />
+                    </div>
+                    <p className="font-semibold text-[#0F172A] text-sm">{mod.label}</p>
+                    <p className="text-[10px] text-[#334155] mt-0.5">{mod.desc}</p>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
 
