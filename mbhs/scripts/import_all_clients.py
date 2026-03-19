@@ -3,7 +3,7 @@
 
 import requests
 
-API_URL = "https://yarn-lock-fix.preview.emergentagent.com/api"
+API_URL = "https://booking-modal-fix-4.preview.emergentagent.com/api"
 
 # All clients with notes from Memo.xlsx
 CLIENTS = [
