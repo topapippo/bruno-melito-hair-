@@ -346,8 +346,9 @@ export default function PlanningPage() {
 
     setSaving(true);
     try {
+      const { _activeCat, ...cleanFormData } = formData;
       const payload = {
-        ...formData,
+        ...cleanFormData,
         date: formData.date || format(selectedDate, 'yyyy-MM-dd'),
         operator_id: formData.operator_id || null
       };
@@ -506,8 +507,9 @@ export default function PlanningPage() {
     
     setSaving(true);
     try {
+      const { _activeCat: _ac, ...cleanData } = formData;
       await axios.put(`${API}/appointments/${editingAppointment.id}`, {
-        ...formData,
+        ...cleanData,
         date: editDate || format(selectedDate, 'yyyy-MM-dd')
       });
       toast.success('Appuntamento aggiornato!');
@@ -1502,30 +1504,78 @@ export default function PlanningPage() {
 
               <div className="space-y-2">
                 <Label>Servizi</Label>
-                <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
-                  {sortedServices.map((service) => (
-                    <Button
-                      key={service.id}
-                      type="button"
-                      variant="outline"
-                      className={`justify-start h-auto py-2 px-3 ${
-                        formData.service_ids.includes(service.id)
-                          ? 'ring-2 ring-offset-1'
-                          : 'border-[#E2E8F0]'
-                      }`}
-                      style={formData.service_ids.includes(service.id) ? { borderColor: service.color || '#0EA5E9', color: service.color || '#0EA5E9', backgroundColor: `${service.color || '#0EA5E9'}15`, ringColor: service.color } : {}}
-                      onClick={() => toggleService(service.id)}
-                    >
-                      <div className="flex items-center gap-2 text-left">
-                        <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: service.color || '#0EA5E9' }} />
-                        <div>
-                          <p className="font-medium text-sm">{service.name}</p>
-                          <p className="text-xs opacity-70">{service.duration} min - {'\u20AC'}{service.price}</p>
-                        </div>
-                      </div>
-                    </Button>
-                  ))}
+                {/* Category tabs */}
+                <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide" data-testid="dialog-category-tabs">
+                  {CATEGORY_ORDER.filter(cat => sortedServices.some(s => s.category === cat)).concat(
+                    [...new Set(sortedServices.map(s => s.category).filter(c => c && !CATEGORY_ORDER.includes(c)))]
+                  ).map(cat => {
+                    const catServices = sortedServices.filter(s => s.category === cat);
+                    const selCount = catServices.filter(s => formData.service_ids.includes(s.id)).length;
+                    return (
+                      <button key={cat} type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, _activeCat: cat }))}
+                        className={`flex-shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-bold transition-all border ${
+                          (formData._activeCat || CATEGORY_ORDER.find(c => sortedServices.some(s => s.category === c)) || '') === cat
+                            ? 'bg-[#0EA5E9]/10 border-[#0EA5E9] text-[#0EA5E9]'
+                            : 'bg-white border-[#E2E8F0] text-[#64748B] hover:border-[#94A3B8]'
+                        }`}
+                        data-testid={`dialog-cat-${cat}`}>
+                        <span className="capitalize">{cat}</span>
+                        <span className="text-[9px] font-black bg-[#F1F5F9] px-1 rounded-full">{catServices.length}</span>
+                        {selCount > 0 && <span className="w-1.5 h-1.5 rounded-full bg-[#0EA5E9]" />}
+                      </button>
+                    );
+                  })}
                 </div>
+                {/* Services for active category */}
+                <div className="space-y-1 max-h-44 overflow-y-auto" data-testid="dialog-services-list">
+                  {(() => {
+                    const activeCat = formData._activeCat || CATEGORY_ORDER.find(c => sortedServices.some(s => s.category === c)) || sortedServices[0]?.category;
+                    return sortedServices.filter(s => s.category === activeCat).map(service => {
+                      const sel = formData.service_ids.includes(service.id);
+                      return (
+                        <button key={service.id} type="button"
+                          onClick={() => toggleService(service.id)}
+                          className={`w-full flex items-center gap-2 p-2 rounded-lg text-left transition-all border ${
+                            sel ? 'border-[#0EA5E9] bg-[#0EA5E9]/5' : 'border-[#F1F5F9] bg-white hover:border-[#CBD5E1]'
+                          }`}
+                          data-testid={`dialog-service-${service.id}`}>
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                            sel ? 'border-[#0EA5E9] bg-[#0EA5E9]' : 'border-[#CBD5E1]'
+                          }`}>
+                            {sel && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`font-semibold text-sm ${sel ? 'text-[#0EA5E9]' : 'text-[#0F172A]'}`}>{service.name}</p>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <p className={`font-bold text-sm ${sel ? 'text-[#0EA5E9]' : 'text-[#334155]'}`}>{'\u20AC'}{service.price}</p>
+                            <p className="text-[10px] text-[#94A3B8]">{service.duration} min</p>
+                          </div>
+                        </button>
+                      );
+                    });
+                  })()}
+                </div>
+                {/* Selected services summary */}
+                {formData.service_ids.length > 0 && (
+                  <div className="flex flex-wrap gap-1 pt-1" data-testid="dialog-selected-services">
+                    {formData.service_ids.map(id => {
+                      const svc = services.find(s => s.id === id);
+                      if (!svc) return null;
+                      return (
+                        <span key={id}
+                          className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#0EA5E9]/10 text-[#0EA5E9] cursor-pointer hover:bg-[#0EA5E9]/20"
+                          onClick={() => toggleService(id)}>
+                          {svc.name} <X className="w-2.5 h-2.5" />
+                        </span>
+                      );
+                    })}
+                    <span className="text-[10px] font-bold text-[#0F172A] ml-auto self-center">
+                      {formData.service_ids.reduce((sum, id) => { const s = services.find(sv => sv.id === id); return sum + (s?.duration || 0); }, 0)} min · {'\u20AC'}{formData.service_ids.reduce((sum, id) => { const s = services.find(sv => sv.id === id); return sum + (s?.price || 0); }, 0)}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Card & Promozioni del Cliente - Selezionabili per cassa */}
@@ -1926,30 +1976,74 @@ export default function PlanningPage() {
 
               <div className="space-y-2">
                 <Label className="text-[#0F172A] font-semibold">Servizi</Label>
-                <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
-                  {sortedServices.map((service) => (
-                    <Button
-                      key={service.id}
-                      type="button"
-                      variant="outline"
-                      className={`justify-start h-auto py-2 px-3 ${
-                        formData.service_ids.includes(service.id)
-                          ? 'ring-2 ring-offset-1 font-semibold'
-                          : 'border-2 border-[#E2E8F0] text-[#0F172A]'
-                      }`}
-                      style={formData.service_ids.includes(service.id) ? { borderColor: service.color || '#0EA5E9', color: service.color || '#0EA5E9', backgroundColor: `${service.color || '#0EA5E9'}15` } : {}}
-                      onClick={() => toggleService(service.id)}
-                    >
-                      <div className="flex items-center gap-2 text-left">
-                        <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: service.color || '#0EA5E9' }} />
-                        <div>
-                          <p className="font-medium text-sm">{service.name}</p>
-                          <p className="text-xs opacity-70">{service.duration} min - {'\u20AC'}{service.price}</p>
-                        </div>
-                      </div>
-                    </Button>
-                  ))}
+                {/* Category tabs for edit dialog */}
+                <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+                  {CATEGORY_ORDER.filter(cat => sortedServices.some(s => s.category === cat)).concat(
+                    [...new Set(sortedServices.map(s => s.category).filter(c => c && !CATEGORY_ORDER.includes(c)))]
+                  ).map(cat => {
+                    const catServices = sortedServices.filter(s => s.category === cat);
+                    const selCount = catServices.filter(s => formData.service_ids.includes(s.id)).length;
+                    return (
+                      <button key={cat} type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, _activeCat: cat }))}
+                        className={`flex-shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-bold transition-all border ${
+                          (formData._activeCat || CATEGORY_ORDER.find(c => sortedServices.some(s => s.category === c)) || '') === cat
+                            ? 'bg-[#0EA5E9]/10 border-[#0EA5E9] text-[#0EA5E9]'
+                            : 'bg-white border-[#E2E8F0] text-[#64748B] hover:border-[#94A3B8]'
+                        }`}>
+                        <span className="capitalize">{cat}</span>
+                        <span className="text-[9px] font-black bg-[#F1F5F9] px-1 rounded-full">{catServices.length}</span>
+                        {selCount > 0 && <span className="w-1.5 h-1.5 rounded-full bg-[#0EA5E9]" />}
+                      </button>
+                    );
+                  })}
                 </div>
+                <div className="space-y-1 max-h-44 overflow-y-auto">
+                  {(() => {
+                    const activeCat = formData._activeCat || CATEGORY_ORDER.find(c => sortedServices.some(s => s.category === c)) || sortedServices[0]?.category;
+                    return sortedServices.filter(s => s.category === activeCat).map(service => {
+                      const sel = formData.service_ids.includes(service.id);
+                      return (
+                        <button key={service.id} type="button"
+                          onClick={() => toggleService(service.id)}
+                          className={`w-full flex items-center gap-2 p-2 rounded-lg text-left transition-all border ${
+                            sel ? 'border-[#0EA5E9] bg-[#0EA5E9]/5' : 'border-[#F1F5F9] bg-white hover:border-[#CBD5E1]'
+                          }`}>
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                            sel ? 'border-[#0EA5E9] bg-[#0EA5E9]' : 'border-[#CBD5E1]'
+                          }`}>
+                            {sel && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`font-semibold text-sm ${sel ? 'text-[#0EA5E9]' : 'text-[#0F172A]'}`}>{service.name}</p>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <p className={`font-bold text-sm ${sel ? 'text-[#0EA5E9]' : 'text-[#334155]'}`}>{'\u20AC'}{service.price}</p>
+                            <p className="text-[10px] text-[#94A3B8]">{service.duration} min</p>
+                          </div>
+                        </button>
+                      );
+                    });
+                  })()}
+                </div>
+                {formData.service_ids.length > 0 && (
+                  <div className="flex flex-wrap gap-1 pt-1">
+                    {formData.service_ids.map(id => {
+                      const svc = services.find(s => s.id === id);
+                      if (!svc) return null;
+                      return (
+                        <span key={id}
+                          className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#0EA5E9]/10 text-[#0EA5E9] cursor-pointer hover:bg-[#0EA5E9]/20"
+                          onClick={() => toggleService(id)}>
+                          {svc.name} <X className="w-2.5 h-2.5" />
+                        </span>
+                      );
+                    })}
+                    <span className="text-[10px] font-bold text-[#0F172A] ml-auto self-center">
+                      {formData.service_ids.reduce((sum, id) => { const s = services.find(sv => sv.id === id); return sum + (s?.duration || 0); }, 0)} min · {'\u20AC'}{formData.service_ids.reduce((sum, id) => { const s = services.find(sv => sv.id === id); return sum + (s?.price || 0); }, 0)}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">

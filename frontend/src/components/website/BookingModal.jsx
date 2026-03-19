@@ -58,6 +58,7 @@ export default function BookingModal({ open, onClose, services, operators, promo
   const [showConflictOverlay, setShowConflictOverlay] = useState(false);
   const [availableOperators, setAvailableOperators] = useState([]);
   const [alternativeSlots, setAlternativeSlots] = useState([]);
+  const [activeCat, setActiveCat] = useState(null);
 
   const fetchBusySlots = useCallback(async (date) => {
     try {
@@ -70,7 +71,6 @@ export default function BookingModal({ open, onClose, services, operators, promo
     if (form.date && open) fetchBusySlots(form.date);
   }, [form.date, fetchBusySlots, open]);
 
-  // Reset when modal opens
   useEffect(() => {
     if (open) {
       setSelIds([]);
@@ -82,8 +82,17 @@ export default function BookingModal({ open, onClose, services, operators, promo
       setSelectedPromo(null);
       setConflictModal(null);
       setShowConflictOverlay(false);
+      setActiveCat(null);
     }
   }, [open]);
+
+  // Set first category as active when services load
+  useEffect(() => {
+    if (services.length > 0 && activeCat === null) {
+      const firstCat = (services[0]?.category || 'altro').toLowerCase();
+      setActiveCat(firstCat);
+    }
+  }, [services, activeCat]);
 
   if (!open) return null;
 
@@ -178,6 +187,10 @@ export default function BookingModal({ open, onClose, services, operators, promo
     setTimeout(() => handleSubmitWithData(updatedForm), 500);
   };
 
+  // "Promo" pseudo-tab active
+  const isPromoTab = activeCat === '__promo__';
+  const showCats = promos.length > 0 ? [...cats, '__promo__'] : cats;
+
   return (
     <>
       {/* Conflict Overlay Modal */}
@@ -253,407 +266,475 @@ export default function BookingModal({ open, onClose, services, operators, promo
       )}
 
       {/* Main Booking Modal */}
-      <div className="fixed inset-0 z-[100] flex items-center justify-center" data-testid="booking-modal">
+      <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center" data-testid="booking-modal">
         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-        <div className="relative w-full max-w-2xl max-h-[92vh] mx-4 overflow-y-auto rounded-3xl bg-white shadow-2xl">
-          <button onClick={onClose}
-            className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center hover:bg-slate-100 transition-colors"
-            data-testid="close-booking-btn">
-            <X className="w-5 h-5 text-slate-500" />
-          </button>
-          <div className="p-6 sm:p-8">
-            <div className="text-center mb-8">
-              <p className="font-bold text-sm tracking-widest uppercase mb-2" style={{ color: COLORS.primary }}>
-                Prenota il tuo appuntamento
-              </p>
-              <h2 className="fd text-3xl sm:text-4xl font-bold text-slate-900 mb-2">Scegli e Prenota</h2>
-              <p className="text-slate-400 text-sm">Seleziona i tuoi servizi, scegli data e ora, e conferma in pochi secondi.</p>
+        <div className="relative w-full sm:max-w-lg mx-0 sm:mx-4 flex flex-col bg-white sm:rounded-2xl rounded-t-2xl shadow-2xl"
+          style={{ maxHeight: '92vh', height: 'auto' }}>
+
+          {/* Fixed Header */}
+          <div className="flex-shrink-0 px-5 pt-5 pb-3 border-b border-slate-100">
+            <button onClick={onClose}
+              className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition-colors"
+              data-testid="close-booking-btn">
+              <X className="w-4 h-4 text-slate-500" />
+            </button>
+            <p className="font-bold text-xs tracking-widest uppercase mb-1" style={{ color: COLORS.primary }}>
+              Prenota appuntamento
+            </p>
+            <h2 className="fd text-2xl font-bold text-slate-900">Scegli e Prenota</h2>
+
+            {/* Step indicator */}
+            <div className="flex gap-1 mt-3">
+              {[
+                { n: 1, l: 'Servizi' },
+                { n: 2, l: 'Data & Ora' },
+                { n: 3, l: 'Conferma' }
+              ].map(s => (
+                <button key={s.n}
+                  onClick={() => { if (s.n < step || (s.n === 2 && selIds.length > 0)) setStep(s.n); }}
+                  className="flex-1 flex items-center justify-center gap-1 py-2 text-xs font-bold rounded-lg transition-all"
+                  style={step === s.n ? { background: COLORS.primary + '15', color: COLORS.primary } : step > s.n ? { color: COLORS.accent } : { color: '#94a3b8' }}
+                  data-testid={`step-tab-${s.n}`}>
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-black"
+                    style={step === s.n ? { background: COLORS.primary, color: '#fff' } : step > s.n ? { background: COLORS.accent, color: '#fff' } : { background: '#e2e8f0', color: '#94a3b8' }}>
+                    {step > s.n ? '✓' : s.n}
+                  </span>
+                  <span className="hidden sm:inline">{s.l}</span>
+                </button>
+              ))}
             </div>
-            <div className="max-w-2xl mx-auto">
-              <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-2xl">
-                {/* Step tabs */}
-                <div className="flex border-b border-slate-100">
-                  {[
-                    { n: 1, l: 'Servizi & Promo' },
-                    { n: 2, l: 'Data & Ora' },
-                    { n: 3, l: 'I tuoi dati' }
-                  ].map(s => (
-                    <button key={s.n}
-                      onClick={() => { if (s.n < step || (s.n === 2 && selIds.length > 0)) setStep(s.n); }}
-                      className={`st flex-1 py-4 text-xs font-bold transition-all ${step === s.n ? 'act' : 'text-slate-400'}`}>
-                      <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] mr-1.5 font-black ${step === s.n ? 'text-white' : step > s.n ? 'text-white' : 'bg-slate-100 text-slate-400'}`}
-                        style={step === s.n ? { background: COLORS.primary } : step > s.n ? { background: COLORS.accent } : {}}>
-                        {step > s.n ? '✓' : s.n}
-                      </span>{s.l}
-                    </button>
-                  ))}
-                </div>
+          </div>
 
-                <div className="p-6 sm:p-8">
-                  {/* STEP 1: Services */}
-                  {step === 1 && (
-                    <div>
-                      {selIds.length > 0 && (
-                        <div className="mb-5 rounded-2xl p-4" style={{ background: COLORS.primary + '10', borderColor: COLORS.primary, borderWidth: 1 }}>
-                          <p className="text-xs font-bold mb-2 uppercase tracking-wider" style={{ color: COLORS.primary }}>
-                            Selezionati ({selIds.length})
-                          </p>
-                          <div className="space-y-1.5">
-                            {selSvcs.map(s => (
-                              <div key={s.id} className="flex justify-between items-center text-sm">
-                                <span className="text-slate-700 font-medium">{getCatIcon(s.category)} {s.name}</span>
-                                <div className="flex items-center gap-3">
-                                  <span className="font-bold" style={{ color: COLORS.primary }}>€{s.price}</span>
-                                  <button onClick={() => toggleSvc(s)} className="text-slate-400 hover:text-red-400 transition-colors">
-                                    <X className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                            <div className="border-t mt-2 pt-2 flex justify-between text-sm font-black" style={{ borderColor: COLORS.primary }}>
-                              <span className="text-slate-500">{totDur} min</span>
-                              <span style={{ color: COLORS.primary }}>Totale: €{totPrice}</span>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {loading ? (
-                        <div className="space-y-3">
-                          {[...Array(5)].map((_, i) => <div key={i} className="h-16 bg-slate-100 rounded-2xl animate-pulse" />)}
-                        </div>
-                      ) : (
-                        <div className="space-y-5 max-h-[52vh] overflow-y-auto pr-1 pb-2">
-                          {cats.length > 0 ? cats.map(cat => (
-                            <div key={cat}>
-                              <div className="flex items-center gap-2 mb-2.5 sticky top-0 bg-white/95 backdrop-blur-sm py-1 z-10">
-                                <span className="text-base">{getCatIcon(cat)}</span>
-                                <p className="text-xs font-black text-slate-400 uppercase tracking-widest capitalize">{cat}</p>
-                                <div className="flex-1 h-px bg-slate-100" />
-                              </div>
-                              <div className="space-y-2">
-                                {byCat[cat].map(svc => {
-                                  const sel = selIds.includes(svc.id);
-                                  return (
-                                    <div key={svc.id} onClick={() => toggleSvc(svc)} className={`si ${sel ? 'sel' : ''}`}>
-                                      <div className="flex items-center gap-3">
-                                        <div className="cd">{sel && <CheckCircle className="w-3.5 h-3.5 text-white" />}</div>
-                                        <div className="flex-1 min-w-0">
-                                          <p className={`font-bold text-sm leading-tight ${sel ? 'text-sky-700' : 'text-slate-800'}`}>{svc.name}</p>
-                                          {svc.description && <p className="text-xs text-slate-400 truncate mt-0.5">{svc.description}</p>}
-                                        </div>
-                                        <div className="text-right flex-shrink-0">
-                                          <p className={`font-black text-sm ${sel ? 'text-sky-600' : 'text-slate-700'}`}>€{svc.price}</p>
-                                          <p className="text-[10px] text-slate-400 font-medium">{svc.duration} min</p>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )) : (
-                            <div className="text-center py-10 text-slate-400">
-                              <Scissors className="w-10 h-10 mx-auto mb-3 opacity-40" />
-                              <p className="font-medium">I servizi verranno caricati a breve</p>
-                              <p className="text-sm mt-1">Contattaci su WhatsApp per prenotare</p>
-                            </div>
-                          )}
-
-                          {promos.length > 0 && (
-                            <div>
-                              <div className="flex items-center gap-2 mb-2.5 sticky top-0 bg-white/95 backdrop-blur-sm py-1 z-10">
-                                <span className="text-base">🎁</span>
-                                <p className="text-xs font-black uppercase tracking-widest" style={{ color: COLORS.accent }}>Promozioni attive</p>
-                                <div className="flex-1 h-px" style={{ background: COLORS.accent }} />
-                              </div>
-                              <div className="space-y-3">
-                                {promos.map((promo, i) => (
-                                  <div key={promo.id || i}
-                                    className={`pc rounded-2xl p-4 cursor-pointer hover:scale-[1.02] transition-transform ${selectedPromo?.id === promo.id ? 'ring-2' : ''}`}
-                                    style={{
-                                      background: `linear-gradient(135deg, ${COLORS.accent}10, ${COLORS.primary}10)`,
-                                      borderColor: selectedPromo?.id === promo.id ? COLORS.primary : COLORS.accent,
-                                      borderWidth: 2, ringColor: COLORS.primary
-                                    }}
-                                    onClick={() => {
-                                      if (selectedPromo?.id === promo.id) {
-                                        setSelectedPromo(null);
-                                        setForm(f => ({ ...f, notes: f.notes.replace(`[PROMO: ${promo.promo_code || promo.name}] `, '') }));
-                                        toast('Promo rimossa');
-                                      } else {
-                                        setSelectedPromo(promo);
-                                        const code = promo.promo_code || promo.name;
-                                        setForm(f => ({ ...f, notes: `[PROMO: ${code}] ${f.notes.replace(/\[PROMO: [^\]]+\] /g, '')}` }));
-                                        toast.success(`Promo "${promo.name}" applicata! ${promo.free_service_name ? 'Omaggio: ' + promo.free_service_name : ''}`);
-                                      }
-                                    }}
-                                    data-testid={`promo-card-${i}`}>
-                                    <div className="flex justify-between items-start mb-1.5">
-                                      <p className="font-bold text-slate-800 text-sm">{promo.name}</p>
-                                      <span className="text-white text-[9px] font-black px-2 py-0.5 rounded-full" style={{ background: COLORS.accent }}>PROMO</span>
-                                    </div>
-                                    {promo.description && <p className="text-xs text-slate-500 mb-2">{promo.description}</p>}
-                                    {promo.free_service_name && (
-                                      <div className="flex items-center gap-1.5 bg-white/70 rounded-lg px-2.5 py-1.5">
-                                        <Gift className="w-3.5 h-3.5 flex-shrink-0" style={{ color: COLORS.accent }} />
-                                        <p className="text-xs font-bold" style={{ color: COLORS.accent }}>In omaggio: {promo.free_service_name}</p>
-                                      </div>
-                                    )}
-                                    {promo.promo_code && (
-                                      <p className="text-[10px] text-slate-400 mt-1.5">
-                                        Codice: <span className="font-mono font-bold px-1.5 py-0.5 rounded" style={{ background: COLORS.accent + '20', color: COLORS.accent }}>{promo.promo_code}</span>
-                                      </p>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {selectedPromo && (
-                        <div className="mt-4 p-3 rounded-xl flex items-center justify-between" style={{ background: COLORS.accent + '15', border: `2px solid ${COLORS.accent}` }} data-testid="selected-promo-badge">
-                          <div className="flex items-center gap-2">
-                            <Gift className="w-4 h-4" style={{ color: COLORS.accent }} />
-                            <div>
-                              <p className="text-xs font-bold" style={{ color: COLORS.accent }}>{selectedPromo.name}</p>
-                              {selectedPromo.free_service_name && <p className="text-[10px] text-slate-500">Omaggio: {selectedPromo.free_service_name}</p>}
-                            </div>
-                          </div>
-                          <button onClick={(e) => { e.stopPropagation(); setSelectedPromo(null); setForm(f => ({ ...f, notes: f.notes.replace(/\[PROMO: [^\]]+\] /g, '') })); }}
-                            className="text-xs font-bold px-2 py-1 rounded-lg hover:bg-white/50" style={{ color: COLORS.accent }}>
-                            Rimuovi
-                          </button>
-                        </div>
-                      )}
-
-                      <button
-                        onClick={() => { if (selIds.length === 0) { toast.error('Seleziona almeno un servizio'); return; } setStep(2); }}
-                        className="w-full py-4 text-base mt-6 text-white rounded-xl transition-all"
-                        style={{ background: COLORS.primary }}>
-                        Scegli data e ora<ArrowRight className="w-5 h-5" />
-                      </button>
-                      <div className="text-center mt-4">
-                        <button onClick={openWA} className="text-xs font-semibold flex items-center gap-1 mx-auto transition-colors" style={{ color: COLORS.accent }}>
-                          <MessageSquare className="w-3.5 h-3.5" />Preferisci prenotare via WhatsApp?
-                        </button>
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto overscroll-contain" style={{ minHeight: 0 }}>
+            <div className="p-5">
+              {/* STEP 1: Services */}
+              {step === 1 && (
+                <div>
+                  {/* Selected services compact bar */}
+                  {selIds.length > 0 && (
+                    <div className="mb-4 rounded-xl p-3" style={{ background: COLORS.primary + '08', border: `1px solid ${COLORS.primary}30` }} data-testid="selected-services-summary">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-bold uppercase tracking-wider" style={{ color: COLORS.primary }}>
+                          {selIds.length} selezionati
+                        </span>
+                        <span className="text-sm font-black" style={{ color: COLORS.primary }}>
+                          {totDur} min · €{totPrice}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {selSvcs.map(s => (
+                          <span key={s.id}
+                            className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full cursor-pointer hover:opacity-70 transition-opacity"
+                            style={{ background: COLORS.primary + '15', color: COLORS.primary }}
+                            onClick={() => toggleSvc(s)}>
+                            {s.name}
+                            <X className="w-3 h-3" />
+                          </span>
+                        ))}
                       </div>
                     </div>
                   )}
 
-                  {/* STEP 2: Date & Time */}
-                  {step === 2 && (
-                    <div className="space-y-5">
-                      <div className="rounded-xl p-4 text-sm" style={{ background: COLORS.primary + '10', borderColor: COLORS.primary, borderWidth: 1 }}>
-                        <p className="font-bold mb-1" style={{ color: COLORS.primary }}>{selIds.length} servizi · {totDur} min · €{totPrice}</p>
-                        <p className="text-slate-500 text-xs">{selSvcs.map(s => s.name).join(' · ')}</p>
+                  {loading ? (
+                    <div className="space-y-3">
+                      {[...Array(4)].map((_, i) => <div key={i} className="h-10 bg-slate-100 rounded-xl animate-pulse" />)}
+                    </div>
+                  ) : (
+                    <>
+                      {/* Category Tabs - horizontal scrollable */}
+                      <div className="flex gap-2 overflow-x-auto pb-2 mb-3 -mx-1 px-1 scrollbar-hide" data-testid="category-tabs">
+                        {showCats.map(cat => {
+                          const isActive = activeCat === cat;
+                          const isPromo = cat === '__promo__';
+                          const label = isPromo ? 'Promo' : cat;
+                          const icon = isPromo ? '🎁' : getCatIcon(cat);
+                          const count = isPromo ? promos.length : (byCat[cat]?.length || 0);
+                          // Count selected in this cat
+                          const selCount = isPromo ? (selectedPromo ? 1 : 0)
+                            : (byCat[cat] || []).filter(s => selIds.includes(s.id)).length;
+
+                          return (
+                            <button key={cat}
+                              onClick={() => setActiveCat(cat)}
+                              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap border-2"
+                              style={isActive
+                                ? { background: isPromo ? COLORS.accent + '15' : COLORS.primary + '15', borderColor: isPromo ? COLORS.accent : COLORS.primary, color: isPromo ? COLORS.accent : COLORS.primary }
+                                : { background: '#fff', borderColor: '#e2e8f0', color: '#64748b' }}
+                              data-testid={`cat-tab-${cat}`}>
+                              <span>{icon}</span>
+                              <span className="capitalize">{label}</span>
+                              <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full"
+                                style={isActive
+                                  ? { background: isPromo ? COLORS.accent + '25' : COLORS.primary + '25' }
+                                  : { background: '#f1f5f9' }}>
+                                {count}
+                              </span>
+                              {selCount > 0 && (
+                                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: COLORS.accent }} />
+                              )}
+                            </button>
+                          );
+                        })}
                       </div>
-                      {operators.length > 0 && (
-                        <div>
-                          <label className="text-xs font-bold text-slate-500 mb-1.5 block">
-                            👤 Operatore <span className="font-normal text-slate-400">(opzionale)</span>
-                          </label>
-                          <select value={form.operator_id} onChange={e => setForm({ ...form, operator_id: e.target.value })}
-                            className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white focus:outline-none focus:ring-2"
-                            data-testid="operator-select">
-                            <option value="">Nessuna preferenza</option>
-                            {operators.map(op => <option key={op.id} value={op.id}>{op.name}</option>)}
-                          </select>
-                        </div>
-                      )}
-                      <div>
-                        <label className="text-xs font-bold text-slate-500 mb-1.5 block">📅 Data</label>
-                        <div className="relative">
-                          <input type="date" value={form.date} min={format(new Date(), 'yyyy-MM-dd')}
-                            onChange={e => setForm({ ...form, date: e.target.value })}
-                            className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                            data-testid="date-input" />
-                          <div className="flex items-center h-10 px-3 border border-slate-200 rounded-md text-sm text-slate-800 font-semibold bg-white cursor-pointer">
-                            {format(new Date(form.date + 'T00:00:00'), 'dd/MM/yy', { locale: it })}
-                          </div>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-xs font-bold text-slate-500 mb-1.5 block">🕐 Seleziona orario</label>
-                        <div className="grid grid-cols-4 gap-2 max-h-[220px] overflow-y-auto pr-1" data-testid="time-slots-grid">
-                          {getSlots(form.date).map(t => {
-                            const status = getSlotStatus(t);
-                            const isSelected = form.time === t;
-                            const isFull = status === 'full' || status === 'busy';
-                            const isPartial = status === 'partial';
+
+                      {/* Services for active category */}
+                      {!isPromoTab && activeCat && byCat[activeCat] && (
+                        <div className="space-y-1.5" data-testid="services-list">
+                          {byCat[activeCat].map(svc => {
+                            const sel = selIds.includes(svc.id);
                             return (
-                              <button key={t}
-                                onClick={() => {
-                                  if (isFull) {
-                                    const busyOps = (busySlots[t] || []).map(b => b.operator_id);
-                                    const freeOps = operators.filter(o => !busyOps.includes(o.id));
-                                    setConflictModal({ time: t, freeOps });
-                                    return;
-                                  }
-                                  setForm({ ...form, time: t });
-                                }}
-                                data-testid={`slot-${t}`}
-                                className={`relative px-2 py-2 rounded-lg text-xs font-bold transition-all border ${
-                                  isFull ? 'bg-red-50 border-red-200 text-red-300 cursor-not-allowed opacity-60 line-through'
-                                    : isSelected ? 'text-white border-transparent shadow-md scale-105'
-                                      : isPartial ? 'bg-amber-50 border-amber-200 text-amber-700 hover:border-amber-400'
-                                        : 'bg-white border-slate-200 text-slate-700 hover:border-slate-400'
-                                }`}
-                                style={isSelected && !isFull ? { background: COLORS.primary, borderColor: COLORS.primary } : {}}>
-                                {t}
-                                {isFull && <span className="block text-[9px] font-semibold no-underline" style={{ textDecoration: 'none' }}>Occupato</span>}
-                                {isPartial && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-400" />}
-                              </button>
+                              <div key={svc.id}
+                                onClick={() => toggleSvc(svc)}
+                                className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border-2"
+                                style={sel
+                                  ? { borderColor: COLORS.primary, background: COLORS.primary + '08' }
+                                  : { borderColor: '#f1f5f9', background: '#fff' }}
+                                data-testid={`service-item-${svc.id}`}>
+                                <div className="w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
+                                  style={sel
+                                    ? { borderColor: COLORS.primary, background: COLORS.primary }
+                                    : { borderColor: '#cbd5e1' }}>
+                                  {sel && <CheckCircle className="w-3.5 h-3.5 text-white" />}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className={`font-bold text-sm leading-tight ${sel ? '' : 'text-slate-800'}`}
+                                    style={sel ? { color: COLORS.primary } : {}}>
+                                    {svc.name}
+                                  </p>
+                                  {svc.description && <p className="text-[11px] text-slate-400 truncate mt-0.5">{svc.description}</p>}
+                                </div>
+                                <div className="text-right flex-shrink-0">
+                                  <p className="font-black text-sm" style={sel ? { color: COLORS.primary } : { color: '#334155' }}>€{svc.price}</p>
+                                  <p className="text-[10px] text-slate-400">{svc.duration} min</p>
+                                </div>
+                              </div>
                             );
                           })}
                         </div>
-                        <div className="flex items-center gap-4 mt-2 text-[10px] text-slate-400">
-                          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-red-100 border border-red-200" /> Occupato</span>
-                          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-amber-50 border border-amber-200" /> Parziale</span>
-                          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-white border border-slate-200" /> Libero</span>
-                        </div>
-                      </div>
+                      )}
 
-                      {/* Inline Conflict Panel */}
-                      {conflictModal && (
-                        <div className="rounded-2xl border-2 border-red-200 bg-red-50 p-4 space-y-4" data-testid="conflict-modal">
-                          <div className="flex items-center justify-between">
-                            <p className="font-bold text-red-700 text-sm">Orario {conflictModal.time} occupato</p>
-                            <button onClick={() => setConflictModal(null)} className="text-red-400 hover:text-red-600 text-xs font-bold">✕</button>
-                          </div>
-                          {conflictModal.freeOps.length > 0 && (
-                            <div>
-                              <p className="text-xs font-bold text-slate-600 mb-2">Cambia operatore:</p>
-                              <div className="space-y-2">
-                                {conflictModal.freeOps.map(op => (
-                                  <button key={op.id}
-                                    onClick={() => { setForm(f => ({ ...f, operator_id: op.id, time: conflictModal.time })); setConflictModal(null); toast.success(`Orario ${conflictModal.time} con ${op.name} selezionato`); }}
-                                    className="w-full text-left px-3 py-2.5 rounded-xl bg-white border border-green-200 hover:border-green-400 hover:bg-green-50 transition-all flex items-center justify-between"
-                                    data-testid={`conflict-op-${op.id}`}>
-                                    <span className="text-sm font-bold text-slate-700">{op.name}</span>
-                                    <span className="text-xs font-bold text-green-600">Disponibile →</span>
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          <div>
-                            <p className="text-xs font-bold text-slate-600 mb-2">Scegli un altro orario:</p>
-                            <div className="flex flex-wrap gap-2">
-                              {getSlots(form.date)
-                                .filter(t => { const st = getSlotStatus(t); return st === 'free' || st === 'partial'; })
-                                .filter(t => {
-                                  const diff = Math.abs(
-                                    parseInt(t.split(':')[0]) * 60 + parseInt(t.split(':')[1]) -
-                                    parseInt(conflictModal.time.split(':')[0]) * 60 - parseInt(conflictModal.time.split(':')[1])
-                                  );
-                                  return diff <= 120;
-                                })
-                                .slice(0, 6)
-                                .map(t => (
-                                  <button key={t}
-                                    onClick={() => { setForm(f => ({ ...f, time: t })); setConflictModal(null); toast.success(`Orario ${t} selezionato`); }}
-                                    className="px-3 py-2 rounded-lg bg-white border border-slate-200 hover:border-green-400 hover:bg-green-50 text-sm font-bold text-slate-700 transition-all">
-                                    {t}
-                                  </button>
-                                ))}
-                            </div>
-                          </div>
-                          <button onClick={() => { setConflictModal(null); openWA(); }}
-                            className="w-full flex items-center justify-center gap-2 px-3 py-3 rounded-xl font-bold text-sm text-white transition-all hover:opacity-90"
-                            style={{ background: COLORS.accent }}>
-                            <MessageSquare className="w-4 h-4" />Contattaci su WhatsApp
-                          </button>
+                      {/* No services placeholder */}
+                      {!isPromoTab && (!activeCat || !byCat[activeCat] || byCat[activeCat].length === 0) && cats.length === 0 && (
+                        <div className="text-center py-8 text-slate-400">
+                          <Scissors className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                          <p className="font-medium text-sm">I servizi verranno caricati a breve</p>
+                          <p className="text-xs mt-1">Contattaci su WhatsApp per prenotare</p>
                         </div>
                       )}
 
-                      <div className="flex gap-3 pt-2">
-                        <button onClick={() => setStep(1)} className="flex-1 border-2 border-slate-200 text-slate-500 font-bold py-3.5 rounded-xl hover:bg-slate-50 transition-all">
-                          ← Indietro
-                        </button>
-                        <button onClick={() => setStep(3)} className="flex-1 py-3.5 text-white rounded-xl transition-all" style={{ background: COLORS.primary }}>
-                          Avanti<ArrowRight className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
+                      {/* Promos Tab Content */}
+                      {isPromoTab && (
+                        <div className="space-y-2" data-testid="promos-list">
+                          {promos.length === 0 ? (
+                            <p className="text-center text-sm text-slate-400 py-6">Nessuna promozione attiva</p>
+                          ) : promos.map((promo, i) => (
+                            <div key={promo.id || i}
+                              className="rounded-xl p-3 cursor-pointer transition-all border-2"
+                              style={{
+                                background: selectedPromo?.id === promo.id ? COLORS.accent + '10' : '#fff',
+                                borderColor: selectedPromo?.id === promo.id ? COLORS.accent : '#f1f5f9'
+                              }}
+                              onClick={() => {
+                                if (selectedPromo?.id === promo.id) {
+                                  setSelectedPromo(null);
+                                  setForm(f => ({ ...f, notes: f.notes.replace(`[PROMO: ${promo.promo_code || promo.name}] `, '') }));
+                                  toast('Promo rimossa');
+                                } else {
+                                  setSelectedPromo(promo);
+                                  const code = promo.promo_code || promo.name;
+                                  setForm(f => ({ ...f, notes: `[PROMO: ${code}] ${f.notes.replace(/\[PROMO: [^\]]+\] /g, '')}` }));
+                                  toast.success(`Promo "${promo.name}" applicata!`);
+                                }
+                              }}
+                              data-testid={`promo-card-${i}`}>
+                              <div className="flex items-start justify-between mb-1">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
+                                    style={selectedPromo?.id === promo.id
+                                      ? { background: COLORS.accent, color: '#fff' }
+                                      : { background: COLORS.accent + '20' }}>
+                                    {selectedPromo?.id === promo.id
+                                      ? <CheckCircle className="w-3.5 h-3.5" />
+                                      : <Gift className="w-3 h-3" style={{ color: COLORS.accent }} />}
+                                  </div>
+                                  <p className="font-bold text-sm text-slate-800">{promo.name}</p>
+                                </div>
+                                <span className="text-white text-[9px] font-black px-2 py-0.5 rounded-full flex-shrink-0"
+                                  style={{ background: COLORS.accent }}>PROMO</span>
+                              </div>
+                              {promo.description && <p className="text-xs text-slate-500 ml-8">{promo.description}</p>}
+                              {promo.free_service_name && (
+                                <div className="flex items-center gap-1.5 ml-8 mt-1.5 px-2 py-1 rounded-lg" style={{ background: COLORS.accent + '10' }}>
+                                  <Gift className="w-3 h-3 flex-shrink-0" style={{ color: COLORS.accent }} />
+                                  <p className="text-xs font-bold" style={{ color: COLORS.accent }}>Omaggio: {promo.free_service_name}</p>
+                                </div>
+                              )}
+                              {promo.promo_code && (
+                                <p className="text-[10px] text-slate-400 ml-8 mt-1">
+                                  Codice: <span className="font-mono font-bold px-1 py-0.5 rounded" style={{ background: COLORS.accent + '20', color: COLORS.accent }}>{promo.promo_code}</span>
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </>
                   )}
 
-                  {/* STEP 3: User Data & Confirm */}
-                  {step === 3 && (
-                    <div className="space-y-4">
-                      <div>
-                        <label className="text-xs font-bold text-slate-500 mb-1.5 block">Nome e cognome *</label>
-                        <Input value={form.client_name} onChange={e => setForm({ ...form, client_name: e.target.value })}
-                          placeholder="Es. Maria Rossi" className="border-slate-200 text-slate-800 font-semibold" />
+                  {/* Selected promo badge */}
+                  {selectedPromo && !isPromoTab && (
+                    <div className="mt-3 p-2.5 rounded-xl flex items-center justify-between" style={{ background: COLORS.accent + '10', border: `1.5px solid ${COLORS.accent}40` }} data-testid="selected-promo-badge">
+                      <div className="flex items-center gap-2">
+                        <Gift className="w-3.5 h-3.5" style={{ color: COLORS.accent }} />
+                        <p className="text-xs font-bold" style={{ color: COLORS.accent }}>{selectedPromo.name}</p>
                       </div>
-                      <div>
-                        <label className="text-xs font-bold text-slate-500 mb-1.5 block">Telefono *</label>
-                        <Input value={form.client_phone} onChange={e => setForm({ ...form, client_phone: e.target.value })}
-                          placeholder="Es. 339 123 4567" className="border-slate-200 text-slate-800 font-semibold" />
-                      </div>
-                      <div>
-                        <label className="text-xs font-bold text-slate-500 mb-1.5 block">
-                          Note <span className="font-normal text-slate-400">(opzionale)</span>
-                        </label>
-                        <Textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })}
-                          placeholder="Richieste particolari, allergie, ecc..." rows={2} className="border-slate-200 text-slate-800 resize-none" />
-                      </div>
-                      <div className="rounded-2xl p-4 border border-slate-200 space-y-2 text-sm" style={{ background: COLORS.bg }}>
-                        <p className="font-black text-slate-700 text-xs uppercase tracking-wider mb-2">Riepilogo</p>
-                        <div className="flex justify-between text-slate-500">
-                          <span>Data & Ora</span>
-                          <span className="font-bold text-slate-700">
-                            {format(new Date(form.date + 'T00:00:00'), 'dd/MM/yy', { locale: it })} · {form.time}
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-slate-500">
-                          <span>Servizi</span>
-                          <span className="font-bold text-slate-700">{selIds.length} selezionati · {totDur} min</span>
-                        </div>
-                        <div className="flex justify-between font-black text-slate-900 pt-2 border-t border-slate-200">
-                          <span>Totale</span>
-                          <span className="text-base" style={{ color: COLORS.primary }}>€{totPrice}</span>
-                        </div>
-                      </div>
-                      <div className="flex gap-3 pt-2">
-                        <button onClick={() => setStep(2)} className="flex-1 border-2 border-slate-200 text-slate-500 font-bold py-3.5 rounded-xl hover:bg-slate-50 transition-all">
-                          ← Indietro
-                        </button>
-                        <button onClick={() => handleSubmitWithData(form)} disabled={submitting}
-                          className="flex-1 py-3.5 text-white rounded-xl disabled:opacity-60 transition-all" style={{ background: COLORS.primary }}>
-                          {submitting ? <><Clock className="w-4 h-4 animate-spin" />Invio...</> : <><CheckCircle className="w-4 h-4" />Conferma</>}
-                        </button>
-                      </div>
-                      <div className="text-center">
-                        <button onClick={openWA} className="text-xs font-semibold flex items-center gap-1 mx-auto transition-colors" style={{ color: COLORS.accent }}>
-                          <MessageSquare className="w-3.5 h-3.5" />Prenota via WhatsApp
-                        </button>
-                      </div>
+                      <button onClick={(e) => { e.stopPropagation(); setSelectedPromo(null); setForm(f => ({ ...f, notes: f.notes.replace(/\[PROMO: [^\]]+\] /g, '') })); }}
+                        className="text-[10px] font-bold px-2 py-0.5 rounded-lg hover:bg-white/50" style={{ color: COLORS.accent }}>
+                        Rimuovi
+                      </button>
                     </div>
                   )}
                 </div>
-              </div>
+              )}
 
-              <div className="mt-5 grid grid-cols-2 gap-3">
-                <a href="tel:08231878320" className="flex items-center gap-2.5 bg-white border border-slate-200 rounded-2xl p-3.5 transition-all hover:shadow-md">
-                  <Phone className="w-4 h-4 flex-shrink-0" style={{ color: COLORS.primary }} />
-                  <div>
-                    <p className="text-[10px] text-slate-400 font-semibold">Telefono</p>
-                    <p className="text-xs font-bold text-slate-700">0823 18 78 320</p>
+              {/* STEP 2: Date & Time */}
+              {step === 2 && (
+                <div className="space-y-4">
+                  <div className="rounded-xl p-3 text-sm" style={{ background: COLORS.primary + '08', border: `1px solid ${COLORS.primary}20` }}>
+                    <p className="font-bold text-xs" style={{ color: COLORS.primary }}>{selIds.length} servizi · {totDur} min · €{totPrice}</p>
+                    <p className="text-slate-500 text-[11px] mt-0.5">{selSvcs.map(s => s.name).join(' · ')}</p>
                   </div>
-                </a>
-                <button onClick={openWA} className="flex items-center gap-2.5 border rounded-2xl p-3.5 transition-all hover:shadow-md text-left"
-                  style={{ background: COLORS.accent + '10', borderColor: COLORS.accent }}>
-                  <MessageSquare className="w-4 h-4 flex-shrink-0" style={{ color: COLORS.accent }} />
+                  {operators.length > 0 && (
+                    <div>
+                      <label className="text-xs font-bold text-slate-500 mb-1.5 block">Operatore <span className="font-normal text-slate-400">(opzionale)</span></label>
+                      <select value={form.operator_id} onChange={e => setForm({ ...form, operator_id: e.target.value })}
+                        className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white focus:outline-none focus:ring-2"
+                        data-testid="operator-select"
+                        style={{ focusRingColor: COLORS.primary }}>
+                        <option value="">Nessuna preferenza</option>
+                        {operators.map(op => <option key={op.id} value={op.id}>{op.name}</option>)}
+                      </select>
+                    </div>
+                  )}
                   <div>
-                    <p className="text-[10px] font-semibold" style={{ color: COLORS.accent }}>WhatsApp</p>
-                    <p className="text-xs font-bold" style={{ color: COLORS.accent }}>Scrivici subito</p>
+                    <label className="text-xs font-bold text-slate-500 mb-1.5 block">Data</label>
+                    <div className="relative">
+                      <input type="date" value={form.date} min={format(new Date(), 'yyyy-MM-dd')}
+                        onChange={e => setForm({ ...form, date: e.target.value })}
+                        className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                        data-testid="date-input" />
+                      <div className="flex items-center h-10 px-3 border border-slate-200 rounded-xl text-sm text-slate-800 font-semibold bg-white cursor-pointer">
+                        {format(new Date(form.date + 'T00:00:00'), 'dd/MM/yy', { locale: it })}
+                      </div>
+                    </div>
                   </div>
+                  <div>
+                    <label className="text-xs font-bold text-slate-500 mb-1.5 block">Seleziona orario</label>
+                    <div className="grid grid-cols-4 gap-1.5 max-h-[180px] overflow-y-auto pr-1" data-testid="time-slots-grid">
+                      {getSlots(form.date).map(t => {
+                        const status = getSlotStatus(t);
+                        const isSelected = form.time === t;
+                        const isFull = status === 'full' || status === 'busy';
+                        const isPartial = status === 'partial';
+                        return (
+                          <button key={t}
+                            onClick={() => {
+                              if (isFull) {
+                                const busyOps = (busySlots[t] || []).map(b => b.operator_id);
+                                const freeOps = operators.filter(o => !busyOps.includes(o.id));
+                                setConflictModal({ time: t, freeOps });
+                                return;
+                              }
+                              setForm({ ...form, time: t });
+                            }}
+                            data-testid={`slot-${t}`}
+                            className={`relative px-2 py-2 rounded-lg text-xs font-bold transition-all border ${
+                              isFull ? 'bg-red-50 border-red-200 text-red-300 cursor-not-allowed opacity-60 line-through'
+                                : isSelected ? 'text-white border-transparent shadow-md scale-105'
+                                  : isPartial ? 'bg-amber-50 border-amber-200 text-amber-700 hover:border-amber-400'
+                                    : 'bg-white border-slate-200 text-slate-700 hover:border-slate-400'
+                            }`}
+                            style={isSelected && !isFull ? { background: COLORS.primary, borderColor: COLORS.primary } : {}}>
+                            {t}
+                            {isFull && <span className="block text-[9px] font-semibold no-underline" style={{ textDecoration: 'none' }}>Occupato</span>}
+                            {isPartial && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-400" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="flex items-center gap-3 mt-2 text-[10px] text-slate-400">
+                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-red-100 border border-red-200" /> Occupato</span>
+                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-amber-50 border border-amber-200" /> Parziale</span>
+                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-white border border-slate-200" /> Libero</span>
+                    </div>
+                  </div>
+
+                  {/* Inline Conflict Panel */}
+                  {conflictModal && (
+                    <div className="rounded-xl border-2 border-red-200 bg-red-50 p-3 space-y-3" data-testid="conflict-modal">
+                      <div className="flex items-center justify-between">
+                        <p className="font-bold text-red-700 text-sm">Orario {conflictModal.time} occupato</p>
+                        <button onClick={() => setConflictModal(null)} className="text-red-400 hover:text-red-600 text-xs font-bold">✕</button>
+                      </div>
+                      {conflictModal.freeOps.length > 0 && (
+                        <div>
+                          <p className="text-xs font-bold text-slate-600 mb-1.5">Cambia operatore:</p>
+                          <div className="space-y-1.5">
+                            {conflictModal.freeOps.map(op => (
+                              <button key={op.id}
+                                onClick={() => { setForm(f => ({ ...f, operator_id: op.id, time: conflictModal.time })); setConflictModal(null); toast.success(`${conflictModal.time} con ${op.name}`); }}
+                                className="w-full text-left px-3 py-2 rounded-lg bg-white border border-green-200 hover:border-green-400 text-sm font-bold text-slate-700 flex items-center justify-between"
+                                data-testid={`conflict-op-${op.id}`}>
+                                <span>{op.name}</span>
+                                <span className="text-xs font-bold text-green-600">Disponibile</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-xs font-bold text-slate-600 mb-1.5">Altro orario:</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {getSlots(form.date)
+                            .filter(t => { const st = getSlotStatus(t); return st === 'free' || st === 'partial'; })
+                            .filter(t => {
+                              const diff = Math.abs(
+                                parseInt(t.split(':')[0]) * 60 + parseInt(t.split(':')[1]) -
+                                parseInt(conflictModal.time.split(':')[0]) * 60 - parseInt(conflictModal.time.split(':')[1])
+                              );
+                              return diff <= 120;
+                            })
+                            .slice(0, 6)
+                            .map(t => (
+                              <button key={t}
+                                onClick={() => { setForm(f => ({ ...f, time: t })); setConflictModal(null); toast.success(`Orario ${t} selezionato`); }}
+                                className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:border-green-400 text-xs font-bold text-slate-700">
+                                {t}
+                              </button>
+                            ))}
+                        </div>
+                      </div>
+                      <button onClick={() => { setConflictModal(null); openWA(); }}
+                        className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl font-bold text-sm text-white"
+                        style={{ background: COLORS.accent }}>
+                        <MessageSquare className="w-4 h-4" />WhatsApp
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* STEP 3: User Data & Confirm */}
+              {step === 3 && (
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-bold text-slate-500 mb-1 block">Nome e cognome *</label>
+                    <Input value={form.client_name} onChange={e => setForm({ ...form, client_name: e.target.value })}
+                      placeholder="Es. Maria Rossi" className="border-slate-200 text-slate-800 font-semibold" data-testid="client-name-input" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-slate-500 mb-1 block">Telefono *</label>
+                    <Input value={form.client_phone} onChange={e => setForm({ ...form, client_phone: e.target.value })}
+                      placeholder="Es. 339 123 4567" className="border-slate-200 text-slate-800 font-semibold" data-testid="client-phone-input" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-slate-500 mb-1 block">
+                      Note <span className="font-normal text-slate-400">(opzionale)</span>
+                    </label>
+                    <Textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })}
+                      placeholder="Richieste particolari..." rows={2} className="border-slate-200 text-slate-800 resize-none" data-testid="notes-input" />
+                  </div>
+                  <div className="rounded-xl p-3 border border-slate-200 space-y-1.5 text-sm" style={{ background: COLORS.bg }}>
+                    <p className="font-black text-slate-700 text-xs uppercase tracking-wider mb-1.5">Riepilogo</p>
+                    <div className="flex justify-between text-slate-500 text-xs">
+                      <span>Data & Ora</span>
+                      <span className="font-bold text-slate-700">
+                        {format(new Date(form.date + 'T00:00:00'), 'dd/MM/yy', { locale: it })} · {form.time}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-slate-500 text-xs">
+                      <span>Servizi</span>
+                      <span className="font-bold text-slate-700">{selIds.length} sel. · {totDur} min</span>
+                    </div>
+                    {selectedPromo && (
+                      <div className="flex justify-between text-xs">
+                        <span style={{ color: COLORS.accent }}>Promo</span>
+                        <span className="font-bold" style={{ color: COLORS.accent }}>{selectedPromo.name}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between font-black text-slate-900 pt-1.5 border-t border-slate-200">
+                      <span className="text-xs">Totale</span>
+                      <span className="text-base" style={{ color: COLORS.primary }}>€{totPrice}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Fixed Footer with action buttons */}
+          <div className="flex-shrink-0 p-4 border-t border-slate-100 bg-white sm:rounded-b-2xl">
+            {step === 1 && (
+              <div>
+                <button
+                  onClick={() => { if (selIds.length === 0) { toast.error('Seleziona almeno un servizio'); return; } setStep(2); }}
+                  className="w-full py-3.5 text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2 text-sm"
+                  style={{ background: COLORS.primary }}
+                  data-testid="step1-next-btn">
+                  Scegli data e ora <ArrowRight className="w-4 h-4" />
+                </button>
+                <button onClick={openWA} className="w-full text-xs font-semibold flex items-center gap-1 justify-center mt-2 py-1" style={{ color: COLORS.accent }}>
+                  <MessageSquare className="w-3 h-3" />Preferisci WhatsApp?
                 </button>
               </div>
-            </div>
+            )}
+            {step === 2 && (
+              <div className="flex gap-2">
+                <button onClick={() => setStep(1)} className="flex-1 border-2 border-slate-200 text-slate-500 font-bold py-3 rounded-xl hover:bg-slate-50 text-sm" data-testid="step2-back-btn">
+                  Indietro
+                </button>
+                <button onClick={() => setStep(3)} className="flex-1 py-3 text-white font-bold rounded-xl flex items-center justify-center gap-1 text-sm" style={{ background: COLORS.primary }} data-testid="step2-next-btn">
+                  Avanti <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+            {step === 3 && (
+              <div>
+                <div className="flex gap-2">
+                  <button onClick={() => setStep(2)} className="flex-1 border-2 border-slate-200 text-slate-500 font-bold py-3 rounded-xl hover:bg-slate-50 text-sm" data-testid="step3-back-btn">
+                    Indietro
+                  </button>
+                  <button onClick={() => handleSubmitWithData(form)} disabled={submitting}
+                    className="flex-1 py-3 text-white font-bold rounded-xl disabled:opacity-60 flex items-center justify-center gap-1.5 text-sm" style={{ background: COLORS.primary }}
+                    data-testid="confirm-booking-btn">
+                    {submitting ? <><Clock className="w-4 h-4 animate-spin" />Invio...</> : <><CheckCircle className="w-4 h-4" />Conferma</>}
+                  </button>
+                </div>
+                <button onClick={openWA} className="w-full text-xs font-semibold flex items-center gap-1 justify-center mt-2 py-1" style={{ color: COLORS.accent }}>
+                  <MessageSquare className="w-3 h-3" />Prenota via WhatsApp
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Contact bar */}
+          <div className="flex-shrink-0 grid grid-cols-2 gap-2 px-4 pb-4 bg-white sm:rounded-b-2xl">
+            <a href="tel:08231878320" className="flex items-center gap-2 border border-slate-200 rounded-xl p-2.5 hover:shadow-sm transition-all" data-testid="phone-link">
+              <Phone className="w-3.5 h-3.5 flex-shrink-0" style={{ color: COLORS.primary }} />
+              <div>
+                <p className="text-[9px] text-slate-400 font-semibold">Telefono</p>
+                <p className="text-[11px] font-bold text-slate-700">0823 18 78 320</p>
+              </div>
+            </a>
+            <button onClick={openWA} className="flex items-center gap-2 border rounded-xl p-2.5 hover:shadow-sm transition-all text-left"
+              style={{ background: COLORS.accent + '08', borderColor: COLORS.accent + '40' }} data-testid="whatsapp-link">
+              <MessageSquare className="w-3.5 h-3.5 flex-shrink-0" style={{ color: COLORS.accent }} />
+              <div>
+                <p className="text-[9px] font-semibold" style={{ color: COLORS.accent }}>WhatsApp</p>
+                <p className="text-[11px] font-bold" style={{ color: COLORS.accent }}>Scrivici</p>
+              </div>
+            </button>
           </div>
         </div>
       </div>
