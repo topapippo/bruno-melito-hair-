@@ -679,10 +679,16 @@ export default function BookingModal({ open, onClose, services, operators, promo
               <div>
                 <button
                   onClick={() => { if (selIds.length === 0) { toast.error('Seleziona almeno un servizio'); return; } setStep(2); }}
-                  className="w-full py-3.5 text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2 text-sm"
-                  style={{ background: COLORS.primary }}
+                  className="w-full py-3.5 text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2 text-sm active:scale-95"
+                  style={{ background: selIds.length > 0 ? COLORS.primary : '#94a3b8' }}
                   data-testid="step1-next-btn">
-                  Scegli data e ora <ArrowRight className="w-4 h-4" />
+                  Scegli data e ora
+                  {selIds.length > 0 && (
+                    <span key={totPrice} className="inline-flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-full text-xs font-black animate-[popIn_0.3s_ease-out]">
+                      €{totPrice}
+                    </span>
+                  )}
+                  <ArrowRight className="w-4 h-4" />
                 </button>
                 <button onClick={openWA} className="w-full text-xs font-semibold flex items-center gap-1 justify-center mt-2 py-1" style={{ color: COLORS.accent }}>
                   <MessageSquare className="w-3 h-3" />Preferisci WhatsApp?
