@@ -125,18 +125,18 @@ export default function CardAlertsPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-[#0F172A] flex items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl font-black text-[var(--text-primary)] flex items-center gap-3">
               <Bell className="w-7 h-7 text-amber-500" />
               Avvisi Card
             </h1>
-            <p className="text-[#334155] mt-1">
+            <p className="text-[var(--text-secondary)] mt-1">
               Notifiche automatiche per card in scadenza o con credito basso
             </p>
           </div>
           <Button
             onClick={fetchAlerts}
             variant="outline"
-            className="border-[#E2E8F0]"
+            className="border-[var(--border-subtle)]"
             data-testid="refresh-alerts-btn"
           >
             <RefreshCw className="w-4 h-4 mr-2" />
@@ -145,11 +145,11 @@ export default function CardAlertsPage() {
         </div>
 
         {/* Settings */}
-        <Card className="bg-white border-[#E2E8F0]/30">
+        <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)]/30">
           <CardContent className="p-4">
             <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-2">
-                <Label className="text-sm text-[#334155]">Card in scadenza entro:</Label>
+                <Label className="text-sm text-[var(--text-secondary)]">Card in scadenza entro:</Label>
                 <Select value={daysThreshold} onValueChange={setDaysThreshold}>
                   <SelectTrigger className="w-28">
                     <SelectValue />
@@ -164,7 +164,7 @@ export default function CardAlertsPage() {
                 </Select>
               </div>
               <div className="flex items-center gap-2">
-                <Label className="text-sm text-[#334155]">Credito sotto:</Label>
+                <Label className="text-sm text-[var(--text-secondary)]">Credito sotto:</Label>
                 <Select value={balanceThreshold} onValueChange={setBalanceThreshold}>
                   <SelectTrigger className="w-24">
                     <SelectValue />
@@ -178,7 +178,7 @@ export default function CardAlertsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <Badge className="bg-[#0EA5E9] text-white text-sm px-3 py-1">
+              <Badge className="bg-[var(--gold)] text-white text-sm px-3 py-1">
                 {totalAlerts} avvisi totali
               </Badge>
             </div>
@@ -224,7 +224,7 @@ export default function CardAlertsPage() {
           <>
             {/* Expiring Cards */}
             {expiringCards.length > 0 && (
-              <Card className="bg-white border-amber-200 shadow-lg">
+              <Card className="bg-[var(--bg-card)] border-amber-200 shadow-lg">
                 <CardHeader className="pb-3 bg-gradient-to-r from-amber-50 to-orange-50 rounded-t-lg">
                   <CardTitle className="text-lg font-bold text-amber-800 flex items-center gap-2">
                     <Clock className="w-5 h-5" />
@@ -246,11 +246,11 @@ export default function CardAlertsPage() {
                             </div>
                             <div className="min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <p className="font-bold text-[#0F172A]">{card.client_name}</p>
+                                <p className="font-bold text-[var(--text-primary)]">{card.client_name}</p>
                                 {getExpiryBadge(card.days_until_expiry)}
                               </div>
-                              <p className="text-sm text-[#334155] truncate">{card.name}</p>
-                              <div className="flex items-center gap-3 mt-1 text-xs text-[#64748B]">
+                              <p className="text-sm text-[var(--text-secondary)] truncate">{card.name}</p>
+                              <div className="flex items-center gap-3 mt-1 text-xs text-[var(--text-muted)]">
                                 <span className="flex items-center gap-1">
                                   <Calendar className="w-3 h-3" />
                                   Scade: {card.valid_until}
@@ -274,7 +274,7 @@ export default function CardAlertsPage() {
                                 WhatsApp
                               </Button>
                             ) : (
-                              <Badge variant="outline" className="text-[#94A3B8] border-[#E2E8F0]">
+                              <Badge variant="outline" className="text-[var(--text-muted)] border-[var(--border-subtle)]">
                                 <Phone className="w-3 h-3 mr-1" />
                                 No telefono
                               </Badge>
@@ -290,7 +290,7 @@ export default function CardAlertsPage() {
 
             {/* Low Balance Cards */}
             {lowBalanceCards.length > 0 && (
-              <Card className="bg-white border-red-200 shadow-lg">
+              <Card className="bg-[var(--bg-card)] border-red-200 shadow-lg">
                 <CardHeader className="pb-3 bg-gradient-to-r from-red-50 to-pink-50 rounded-t-lg">
                   <CardTitle className="text-lg font-bold text-red-800 flex items-center gap-2">
                     <AlertTriangle className="w-5 h-5" />
@@ -312,11 +312,11 @@ export default function CardAlertsPage() {
                             </div>
                             <div className="min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <p className="font-bold text-[#0F172A]">{card.client_name}</p>
+                                <p className="font-bold text-[var(--text-primary)]">{card.client_name}</p>
                                 {getBalanceBadge(card.percent_remaining)}
                               </div>
-                              <p className="text-sm text-[#334155] truncate">{card.name}</p>
-                              <div className="flex items-center gap-3 mt-1 text-xs text-[#64748B]">
+                              <p className="text-sm text-[var(--text-secondary)] truncate">{card.name}</p>
+                              <div className="flex items-center gap-3 mt-1 text-xs text-[var(--text-muted)]">
                                 <span className="flex items-center gap-1 font-semibold text-red-600">
                                   <Euro className="w-3 h-3" />
                                   €{card.remaining_value?.toFixed(2)} rimanenti
@@ -337,7 +337,7 @@ export default function CardAlertsPage() {
                                 WhatsApp
                               </Button>
                             ) : (
-                              <Badge variant="outline" className="text-[#94A3B8] border-[#E2E8F0]">
+                              <Badge variant="outline" className="text-[var(--text-muted)] border-[var(--border-subtle)]">
                                 <Phone className="w-3 h-3 mr-1" />
                                 No telefono
                               </Badge>
@@ -353,11 +353,11 @@ export default function CardAlertsPage() {
 
             {/* No Alerts */}
             {expiringCards.length === 0 && lowBalanceCards.length === 0 && (
-              <Card className="bg-white border-[#E2E8F0]/30">
+              <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)]/30">
                 <CardContent className="py-12 text-center">
                   <Check className="w-12 h-12 mx-auto text-green-500 mb-3" />
-                  <p className="text-lg font-bold text-[#0F172A]">Tutto a posto!</p>
-                  <p className="text-sm text-[#334155] mt-1">
+                  <p className="text-lg font-bold text-[var(--text-primary)]">Tutto a posto!</p>
+                  <p className="text-sm text-[var(--text-secondary)] mt-1">
                     Nessuna card in scadenza o con credito basso
                   </p>
                 </CardContent>
@@ -407,10 +407,10 @@ export default function CardAlertsPage() {
                   value={messageTemplate}
                   onChange={(e) => setMessageTemplate(e.target.value)}
                   rows={8}
-                  className="bg-[#F8FAFC] border-2 border-[#E2E8F0] resize-none"
+                  className="bg-[var(--bg-elevated)] border-2 border-[var(--border-subtle)] resize-none"
                   data-testid="whatsapp-message-textarea"
                 />
-                <p className="text-xs text-[#64748B]">
+                <p className="text-xs text-[var(--text-muted)]">
                   Puoi modificare il messaggio prima di inviarlo
                 </p>
               </div>

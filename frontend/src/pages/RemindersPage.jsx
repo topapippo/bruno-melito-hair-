@@ -332,16 +332,16 @@ export default function RemindersPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-[#0F172A] flex items-center gap-3">
-              <Bell className="w-7 h-7 text-[#0EA5E9]" />
+            <h1 className="text-2xl sm:text-3xl font-black text-[var(--text-primary)] flex items-center gap-3">
+              <Bell className="w-7 h-7 text-[var(--gold)]" />
               Promemoria & Richiami
             </h1>
-            <p className="text-[#334155] mt-1">Invia promemoria via WhatsApp e richiama clienti inattivi</p>
+            <p className="text-[var(--text-secondary)] mt-1">Invia promemoria via WhatsApp e richiama clienti inattivi</p>
           </div>
           <Button
             onClick={() => openTemplateDialog()}
             variant="outline"
-            className="border-[#0EA5E9] text-[#0EA5E9] hover:bg-[#0EA5E9]/10 shrink-0"
+            className="border-[var(--gold)] text-[var(--gold)] hover:bg-[var(--gold)]/10 shrink-0"
             data-testid="manage-templates-btn"
           >
             <FileText className="w-4 h-4 mr-2" />
@@ -354,12 +354,12 @@ export default function RemindersPage() {
           <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
             <CardContent className="p-5">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-[#0EA5E9] rounded-xl">
+                <div className="p-2.5 bg-[var(--gold)] rounded-xl">
                   <Calendar className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <p className="text-sm text-blue-700 font-semibold">Promemoria Domani</p>
-                  <p className="text-3xl font-black text-[#0EA5E9]" data-testid="pending-reminders-count">
+                  <p className="text-3xl font-black text-[var(--gold)]" data-testid="pending-reminders-count">
                     {pendingReminders.length}
                     <span className="text-sm font-semibold text-blue-600 ml-1">/ {tomorrowReminders.length}</span>
                   </p>
@@ -406,7 +406,7 @@ export default function RemindersPage() {
                     </p>
                     <div className="flex flex-wrap gap-1.5 mt-2">
                       {autoCheck.pending.slice(0, 5).map((p, i) => (
-                        <span key={i} className="text-xs bg-white border border-green-200 text-green-800 px-2 py-0.5 rounded-full">
+                        <span key={i} className="text-xs bg-[var(--bg-card)] border border-green-200 text-green-800 px-2 py-0.5 rounded-full">
                           {p.client_name} ({p.time})
                         </span>
                       ))}
@@ -434,10 +434,10 @@ export default function RemindersPage() {
         )}
 
         {/* Message Templates Section */}
-        <Card className="border-[#E2E8F0]/30">
+        <Card className="border-[var(--border-subtle)]/30">
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg font-bold text-[#0F172A] flex items-center gap-2">
-              <FileText className="w-5 h-5 text-[#0EA5E9]" />
+            <CardTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+              <FileText className="w-5 h-5 text-[var(--gold)]" />
               Messaggi Preimpostati
             </CardTitle>
           </CardHeader>
@@ -447,12 +447,12 @@ export default function RemindersPage() {
                 {templates.map((tmpl) => (
                   <div
                     key={tmpl.id}
-                    className="p-3 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2"
+                    className="p-3 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2"
                     data-testid={`template-${tmpl.id}`}
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="font-semibold text-[#0F172A] text-sm">{tmpl.name}</p>
+                        <p className="font-semibold text-[var(--text-primary)] text-sm">{tmpl.name}</p>
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                           tmpl.template_type === 'appointment'
                             ? 'bg-blue-100 text-blue-700'
@@ -461,14 +461,14 @@ export default function RemindersPage() {
                           {tmpl.template_type === 'appointment' ? 'Appuntamento' : 'Richiamo'}
                         </span>
                       </div>
-                      <p className="text-xs text-[#64748B] mt-1 truncate">{tmpl.text}</p>
+                      <p className="text-xs text-[var(--text-muted)] mt-1 truncate">{tmpl.text}</p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => openTemplateDialog(tmpl)}
-                        className="text-[#334155] hover:text-[#0EA5E9] h-8 w-8 p-0"
+                        className="text-[var(--text-secondary)] hover:text-[var(--gold)] h-8 w-8 p-0"
                         data-testid={`edit-template-${tmpl.id}`}
                       >
                         <Pencil className="w-3.5 h-3.5" />
@@ -477,7 +477,7 @@ export default function RemindersPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => deleteTemplate(tmpl.id)}
-                        className="text-[#334155] hover:text-red-500 h-8 w-8 p-0"
+                        className="text-[var(--text-secondary)] hover:text-red-500 h-8 w-8 p-0"
                         data-testid={`delete-template-${tmpl.id}`}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -489,7 +489,7 @@ export default function RemindersPage() {
                   variant="ghost"
                   size="sm"
                   onClick={() => openTemplateDialog()}
-                  className="text-[#0EA5E9] hover:bg-[#0EA5E9]/10 w-full mt-2"
+                  className="text-[var(--gold)] hover:bg-[var(--gold)]/10 w-full mt-2"
                   data-testid="add-template-btn"
                 >
                   <Plus className="w-4 h-4 mr-1" /> Aggiungi Template
@@ -498,28 +498,28 @@ export default function RemindersPage() {
             ) : (
               <div className="text-center py-6">
                 <FileText className="w-10 h-10 mx-auto text-[#E2E8F0] mb-2" />
-                <p className="text-sm text-[#334155]">Nessun template creato</p>
+                <p className="text-sm text-[var(--text-secondary)]">Nessun template creato</p>
                 <Button
                   onClick={() => openTemplateDialog()}
                   variant="outline"
                   size="sm"
-                  className="mt-3 border-[#0EA5E9] text-[#0EA5E9]"
+                  className="mt-3 border-[var(--gold)] text-[var(--gold)]"
                 >
                   <Plus className="w-4 h-4 mr-1" /> Crea Template
                 </Button>
               </div>
             )}
-            <p className="text-xs text-[#94A3B8] mt-3">
-              Variabili disponibili: <code className="bg-[#F1F5F9] px-1 rounded">{'{nome}'}</code> <code className="bg-[#F1F5F9] px-1 rounded">{'{ora}'}</code> <code className="bg-[#F1F5F9] px-1 rounded">{'{servizi}'}</code> <code className="bg-[#F1F5F9] px-1 rounded">{'{giorni}'}</code> <code className="bg-[#F1F5F9] px-1 rounded">{'{operatore}'}</code>
+            <p className="text-xs text-[var(--text-muted)] mt-3">
+              Variabili disponibili: <code className="bg-[var(--bg-elevated)] px-1 rounded">{'{nome}'}</code> <code className="bg-[var(--bg-elevated)] px-1 rounded">{'{ora}'}</code> <code className="bg-[var(--bg-elevated)] px-1 rounded">{'{servizi}'}</code> <code className="bg-[var(--bg-elevated)] px-1 rounded">{'{giorni}'}</code> <code className="bg-[var(--bg-elevated)] px-1 rounded">{'{operatore}'}</code>
             </p>
           </CardContent>
         </Card>
 
         {/* Tomorrow's Appointments */}
-        <Card className="border-[#E2E8F0]/30">
+        <Card className="border-[var(--border-subtle)]/30">
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg font-bold text-[#0F172A] flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-[#0EA5E9]" />
+            <CardTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-[var(--gold)]" />
               Appuntamenti di Domani
               {pendingReminders.length > 0 && (
                 <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold">
@@ -535,20 +535,20 @@ export default function RemindersPage() {
                   <div
                     key={apt.id}
                     className={`p-4 rounded-xl border-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
-                      apt.reminded ? 'border-green-200 bg-green-50' : 'border-[#E2E8F0] bg-white'
+                      apt.reminded ? 'border-green-200 bg-green-50' : 'border-[var(--border-subtle)] bg-[var(--bg-card)]'
                     }`}
                     data-testid={`reminder-apt-${apt.id}`}
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="font-bold text-[#0F172A] truncate">{apt.client_name}</p>
+                        <p className="font-bold text-[var(--text-primary)] truncate">{apt.client_name}</p>
                         {apt.reminded && (
                           <span className="text-xs bg-green-200 text-green-800 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
                             <Check className="w-3 h-3" /> Inviato
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-3 text-sm text-[#334155] mt-1 flex-wrap">
+                      <div className="flex items-center gap-3 text-sm text-[var(--text-secondary)] mt-1 flex-wrap">
                         <span className="flex items-center gap-1">
                           <Clock className="w-3.5 h-3.5" /> {apt.time}
                         </span>
@@ -558,7 +558,7 @@ export default function RemindersPage() {
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-[#64748B] mt-1">
+                      <p className="text-xs text-[var(--text-muted)] mt-1">
                         {apt.services?.map(s => s.name).join(', ')}
                       </p>
                     </div>
@@ -597,7 +597,7 @@ export default function RemindersPage() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-[#334155]">
+              <div className="text-center py-8 text-[var(--text-secondary)]">
                 <Calendar className="w-12 h-12 mx-auto text-[#E2E8F0] mb-3" strokeWidth={1.5} />
                 <p className="font-semibold">Nessun appuntamento domani</p>
               </div>
@@ -606,9 +606,9 @@ export default function RemindersPage() {
         </Card>
 
         {/* Inactive Clients */}
-        <Card className="border-[#E2E8F0]/30">
+        <Card className="border-[var(--border-subtle)]/30">
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg font-bold text-[#0F172A] flex items-center gap-2">
+            <CardTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
               <UserX className="w-5 h-5 text-orange-500" />
               Clienti Inattivi — Offri 10% di Sconto
               {pendingRecalls.length > 0 && (
@@ -631,7 +631,7 @@ export default function RemindersPage() {
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="font-bold text-[#0F172A] truncate">{client.client_name}</p>
+                        <p className="font-bold text-[var(--text-primary)] truncate">{client.client_name}</p>
                         {client.already_recalled && (
                           <span className="text-xs bg-green-200 text-green-800 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
                             <Check className="w-3 h-3" /> Richiamato
@@ -643,12 +643,12 @@ export default function RemindersPage() {
                           <Clock className="w-3.5 h-3.5" /> {client.days_ago} giorni fa
                         </span>
                         {client.client_phone && (
-                          <span className="text-[#334155] flex items-center gap-1">
+                          <span className="text-[var(--text-secondary)] flex items-center gap-1">
                             <Phone className="w-3.5 h-3.5" /> {client.client_phone}
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-[#64748B] mt-1">
+                      <p className="text-xs text-[var(--text-muted)] mt-1">
                         Ultima visita: {fmtDate(client.last_visit)} — {client.last_services?.join(', ')}
                       </p>
                     </div>
@@ -687,7 +687,7 @@ export default function RemindersPage() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-[#334155]">
+              <div className="text-center py-8 text-[var(--text-secondary)]">
                 <UserX className="w-12 h-12 mx-auto text-[#E2E8F0] mb-3" strokeWidth={1.5} />
                 <p className="font-semibold">Nessun cliente inattivo da 60+ giorni</p>
                 <p className="text-sm">Ottimo lavoro!</p>
@@ -698,9 +698,9 @@ export default function RemindersPage() {
 
         {/* Color Expiry Reminders (30 days) */}
         {colorReminders.length > 0 && (
-          <Card className="border-[#E2E8F0]/30">
+          <Card className="border-[var(--border-subtle)]/30">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-bold text-[#0F172A] flex items-center gap-2">
+              <CardTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
                 <Palette className="w-5 h-5 text-purple-500" />
                 Scadenza Colore (30+ giorni)
                 <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-semibold">
@@ -718,7 +718,7 @@ export default function RemindersPage() {
                     data-testid={`color-reminder-${cr.client_id}`}>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="font-bold text-[#0F172A] truncate">{cr.client_name}</p>
+                        <p className="font-bold text-[var(--text-primary)] truncate">{cr.client_name}</p>
                         {cr.already_sent && (
                           <span className="text-xs bg-green-200 text-green-800 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
                             <Check className="w-3 h-3" /> Inviato
@@ -730,12 +730,12 @@ export default function RemindersPage() {
                           <Clock className="w-3.5 h-3.5" /> {cr.days_ago} giorni fa
                         </span>
                         {cr.phone && (
-                          <span className="text-[#334155] flex items-center gap-1">
+                          <span className="text-[var(--text-secondary)] flex items-center gap-1">
                             <Phone className="w-3.5 h-3.5" /> {cr.phone}
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-[#64748B] mt-1">Ultimo colore: {cr.last_color_date}</p>
+                      <p className="text-xs text-[var(--text-muted)] mt-1">Ultimo colore: {cr.last_color_date}</p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       {cr.already_sent ? (
@@ -783,18 +783,18 @@ export default function RemindersPage() {
         <Dialog open={msgDialog} onOpenChange={setMsgDialog}>
           <DialogContent className="sm:max-w-[520px]">
             <DialogHeader>
-              <DialogTitle className="text-xl font-bold text-[#0F172A] flex items-center gap-2">
+              <DialogTitle className="text-xl font-bold text-[var(--text-primary)] flex items-center gap-2">
                 <Send className="w-5 h-5 text-green-500" />
                 Invia Messaggio WhatsApp
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 mt-2">
               {msgTarget && (
-                <div className="p-3 bg-[#F8FAFC] rounded-lg border border-[#E2E8F0]">
-                  <p className="font-semibold text-[#0F172A]">
+                <div className="p-3 bg-[var(--bg-elevated)] rounded-lg border border-[var(--border-subtle)]">
+                  <p className="font-semibold text-[var(--text-primary)]">
                     {msgTarget.type === 'appointment' ? msgTarget.data.client_name : msgTarget.data.client_name}
                   </p>
-                  <p className="text-sm text-[#334155] flex items-center gap-1 mt-1">
+                  <p className="text-sm text-[var(--text-secondary)] flex items-center gap-1 mt-1">
                     <Phone className="w-3.5 h-3.5" />
                     {msgTarget.type === 'appointment' ? msgTarget.data.client_phone : msgTarget.data.client_phone}
                   </p>
@@ -821,7 +821,7 @@ export default function RemindersPage() {
                   value={msgText}
                   onChange={(e) => setMsgText(e.target.value)}
                   rows={5}
-                  className="bg-white resize-none"
+                  className="bg-[var(--bg-card)] resize-none"
                   data-testid="message-text"
                 />
               </div>
@@ -845,7 +845,7 @@ export default function RemindersPage() {
         <Dialog open={templateDialog} onOpenChange={setTemplateDialog}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle className="text-xl font-bold text-[#0F172A]">
+              <DialogTitle className="text-xl font-bold text-[var(--text-primary)]">
                 {editingTemplate ? 'Modifica Template' : 'Nuovo Template'}
               </DialogTitle>
             </DialogHeader>
@@ -886,8 +886,8 @@ export default function RemindersPage() {
                   placeholder="Ciao {nome}! Ti ricordiamo..."
                   data-testid="template-text-input"
                 />
-                <p className="text-xs text-[#94A3B8]">
-                  Variabili: <code className="bg-[#F1F5F9] px-1 rounded">{'{nome}'}</code> <code className="bg-[#F1F5F9] px-1 rounded">{'{ora}'}</code> <code className="bg-[#F1F5F9] px-1 rounded">{'{servizi}'}</code> <code className="bg-[#F1F5F9] px-1 rounded">{'{giorni}'}</code> <code className="bg-[#F1F5F9] px-1 rounded">{'{operatore}'}</code>
+                <p className="text-xs text-[var(--text-muted)]">
+                  Variabili: <code className="bg-[var(--bg-elevated)] px-1 rounded">{'{nome}'}</code> <code className="bg-[var(--bg-elevated)] px-1 rounded">{'{ora}'}</code> <code className="bg-[var(--bg-elevated)] px-1 rounded">{'{servizi}'}</code> <code className="bg-[var(--bg-elevated)] px-1 rounded">{'{giorni}'}</code> <code className="bg-[var(--bg-elevated)] px-1 rounded">{'{operatore}'}</code>
                 </p>
               </div>
             </div>
@@ -896,7 +896,7 @@ export default function RemindersPage() {
               <Button
                 onClick={saveTemplate}
                 disabled={savingTemplate}
-                className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white"
+                className="bg-[var(--gold)] hover:bg-[var(--gold)] text-white"
                 data-testid="save-template-btn"
               >
                 {savingTemplate ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salva'}

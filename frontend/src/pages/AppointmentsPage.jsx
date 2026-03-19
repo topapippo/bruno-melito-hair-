@@ -252,7 +252,7 @@ export default function AppointmentsPage() {
     switch (status) {
       case 'completed': return 'bg-[#789F8A]/10 border-[#789F8A] text-[#789F8A]';
       case 'cancelled': return 'bg-[#E76F51]/10 border-[#E76F51] text-[#E76F51]';
-      default: return 'bg-[#0EA5E9]/10 border-[#0EA5E9] text-[#0EA5E9]';
+      default: return 'bg-[var(--gold)]/10 border-[var(--gold)] text-[var(--gold)]';
     }
   };
 
@@ -262,15 +262,15 @@ export default function AppointmentsPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="font-playfair text-3xl font-medium text-[#0F172A]">Agenda</h1>
-            <p className="text-[#334155] mt-1 font-manrope">
+            <h1 className="font-playfair text-3xl font-medium text-[var(--text-primary)]">Agenda</h1>
+            <p className="text-[var(--text-secondary)] mt-1 font-manrope">
               {format(selectedDate, "EEEE d MMMM yyyy", { locale: it })}
             </p>
           </div>
           <div className="flex items-center gap-3">
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="border-[#E2E8F0] text-[#0F172A]">
+                <Button variant="outline" className="border-[var(--border-subtle)] text-[var(--text-primary)]">
                   <Calendar className="w-4 h-4 mr-2" />
                   Cambia Data
                 </Button>
@@ -289,14 +289,14 @@ export default function AppointmentsPage() {
               <Button 
                 onClick={() => setDialogOpen(true)}
                 data-testid="new-appointment-btn"
-                className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white shadow-lg shadow-[#0EA5E9]/20"
+                className="bg-[var(--gold)] hover:bg-[var(--gold)] text-white shadow-lg shadow-[var(--gold)]/20"
               >
                 <Plus className="w-5 h-5 mr-2" />
                 Nuovo
               </Button>
               <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                  <DialogTitle className="font-playfair text-2xl text-[#0F172A]">Nuovo Appuntamento</DialogTitle>
+                  <DialogTitle className="font-playfair text-2xl text-[var(--text-primary)]">Nuovo Appuntamento</DialogTitle>
                   <DialogDescription>
                     {format(selectedDate, "EEEE d MMMM yyyy", { locale: it })}
                   </DialogDescription>
@@ -379,8 +379,8 @@ export default function AppointmentsPage() {
                           data-testid={`service-${service.id}`}
                           className={`justify-start h-auto py-2 px-3 ${
                             formData.service_ids.includes(service.id)
-                              ? 'bg-[#0EA5E9]/10 border-[#0EA5E9] text-[#0EA5E9]'
-                              : 'border-[#E2E8F0]'
+                              ? 'bg-[var(--gold)]/10 border-[var(--gold)] text-[var(--gold)]'
+                              : 'border-[var(--border-subtle)]'
                           }`}
                           onClick={() => toggleService(service.id)}
                         >
@@ -399,7 +399,7 @@ export default function AppointmentsPage() {
                       value={formData.notes}
                       onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                       placeholder="Note aggiuntive..."
-                      className="bg-[#F8FAFC]"
+                      className="bg-[var(--bg-elevated)]"
                     />
                   </div>
 
@@ -408,7 +408,7 @@ export default function AppointmentsPage() {
                       type="submit"
                       disabled={saving}
                       data-testid="save-appointment-btn"
-                      className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white"
+                      className="bg-[var(--gold)] hover:bg-[var(--gold)] text-white"
                     >
                       {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salva Appuntamento'}
                     </Button>
@@ -431,9 +431,9 @@ export default function AppointmentsPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {cardAlerts.expiring_cards.map((card) => (
-                  <div key={card.id} className="flex items-center justify-between p-2 bg-white rounded-lg border border-amber-100">
+                  <div key={card.id} className="flex items-center justify-between p-2 bg-[var(--bg-card)] rounded-lg border border-amber-100">
                     <div>
-                      <p className="font-medium text-sm text-[#0F172A]">{card.client_name}</p>
+                      <p className="font-medium text-sm text-[var(--text-primary)]">{card.client_name}</p>
                       <p className="text-xs text-amber-700">{card.name} — scade {card.expiry_date ? new Date(card.expiry_date).toLocaleDateString('it-IT') : 'presto'}</p>
                     </div>
                     <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full font-semibold">
@@ -442,9 +442,9 @@ export default function AppointmentsPage() {
                   </div>
                 ))}
                 {cardAlerts.low_balance_cards.map((card) => (
-                  <div key={card.id} className="flex items-center justify-between p-2 bg-white rounded-lg border border-red-100">
+                  <div key={card.id} className="flex items-center justify-between p-2 bg-[var(--bg-card)] rounded-lg border border-red-100">
                     <div>
-                      <p className="font-medium text-sm text-[#0F172A]">{card.client_name}</p>
+                      <p className="font-medium text-sm text-[var(--text-primary)]">{card.client_name}</p>
                       <p className="text-xs text-red-600">{card.name} — credito basso: €{card.remaining_value?.toFixed(2)}</p>
                     </div>
                     <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-semibold">
@@ -476,12 +476,12 @@ export default function AppointmentsPage() {
                   const isOverdue = daysLeft < 0;
                   const isUrgent = daysLeft <= 3;
                   return (
-                    <div key={exp.id} className={`flex items-center justify-between p-2 bg-white rounded-lg border ${isOverdue ? 'border-red-300 bg-red-50' : isUrgent ? 'border-amber-200' : 'border-red-100'}`}>
+                    <div key={exp.id} className={`flex items-center justify-between p-2 bg-[var(--bg-card)] rounded-lg border ${isOverdue ? 'border-red-300 bg-red-50' : isUrgent ? 'border-amber-200' : 'border-red-100'}`}>
                       <div>
-                        <p className="font-medium text-sm text-[#0F172A]">{exp.description}</p>
+                        <p className="font-medium text-sm text-[var(--text-primary)]">{exp.description}</p>
                         <p className="text-xs text-red-600">€{exp.amount?.toFixed(2)} — {dueDate.toLocaleDateString('it-IT')}</p>
                       </div>
-                      <span className={`text-xs px-2 py-1 rounded-full font-semibold ${isOverdue ? 'bg-red-200 text-red-800' : isUrgent ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600'}`}>
+                      <span className={`text-xs px-2 py-1 rounded-full font-semibold ${isOverdue ? 'bg-red-200 text-red-800' : isUrgent ? 'bg-amber-100 text-amber-700' : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)]'}`}>
                         {isOverdue ? 'SCADUTA' : daysLeft === 0 ? 'OGGI' : `${daysLeft}g`}
                       </span>
                     </div>
@@ -504,10 +504,10 @@ export default function AppointmentsPage() {
               </div>
               <div className="space-y-2">
                 {upcomingAppointments.map((day) => (
-                  <div key={day.date} className="p-2 bg-white rounded-lg border border-blue-100 cursor-pointer hover:bg-blue-50 transition-colors"
+                  <div key={day.date} className="p-2 bg-[var(--bg-card)] rounded-lg border border-blue-100 cursor-pointer hover:bg-blue-50 transition-colors"
                     onClick={() => setSelectedDate(day.dateObj)}>
                     <div className="flex items-center justify-between">
-                      <p className="font-medium text-sm text-[#0F172A]">
+                      <p className="font-medium text-sm text-[var(--text-primary)]">
                         {format(day.dateObj, "EEEE d MMMM", { locale: it })}
                       </p>
                       <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-semibold">
@@ -516,12 +516,12 @@ export default function AppointmentsPage() {
                     </div>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {day.appointments.slice(0, 4).map((a) => (
-                        <span key={a.id} className="text-xs text-[#334155] bg-gray-100 px-2 py-0.5 rounded">
+                        <span key={a.id} className="text-xs text-[var(--text-secondary)] bg-[var(--bg-elevated)] px-2 py-0.5 rounded">
                           {a.time} {a.client_name}
                         </span>
                       ))}
                       {day.appointments.length > 4 && (
-                        <span className="text-xs text-[#334155]">+{day.appointments.length - 4} altri</span>
+                        <span className="text-xs text-[var(--text-secondary)]">+{day.appointments.length - 4} altri</span>
                       )}
                     </div>
                   </div>
@@ -532,7 +532,7 @@ export default function AppointmentsPage() {
         )}
 
         {/* Appointments List */}
-        <Card className="bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
+        <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
           <CardContent className="p-6">
             {loading ? (
               <div className="space-y-4">
@@ -558,7 +558,7 @@ export default function AppointmentsPage() {
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <h3 className="font-medium text-[#0F172A] text-lg">{apt.client_name}</h3>
+                            <h3 className="font-medium text-[var(--text-primary)] text-lg">{apt.client_name}</h3>
                             {apt.operator_name && (
                               <span 
                                 className="text-xs px-2 py-0.5 rounded-full text-white"
@@ -568,14 +568,14 @@ export default function AppointmentsPage() {
                               </span>
                             )}
                           </div>
-                          <p className="text-sm text-[#334155] mt-1">
+                          <p className="text-sm text-[var(--text-secondary)] mt-1">
                             {apt.services.map(s => s.name).join(' + ')}
                           </p>
-                          <div className="flex items-center gap-4 mt-2 text-sm text-[#334155]">
+                          <div className="flex items-center gap-4 mt-2 text-sm text-[var(--text-secondary)]">
                             <span className="flex items-center gap-1">
                               <Clock className="w-4 h-4" /> {apt.total_duration} min
                             </span>
-                            <span className="font-medium text-[#0F172A]">€{apt.total_price}</span>
+                            <span className="font-medium text-[var(--text-primary)]">€{apt.total_price}</span>
                             {apt.sms_sent && (
                               <span className="text-[#789F8A] flex items-center gap-1">
                                 <MessageSquare className="w-4 h-4" /> SMS inviato
@@ -583,7 +583,7 @@ export default function AppointmentsPage() {
                             )}
                           </div>
                           {apt.notes && (
-                            <p className="text-sm text-[#334155] mt-2 italic">"{apt.notes}"</p>
+                            <p className="text-sm text-[var(--text-secondary)] mt-2 italic">"{apt.notes}"</p>
                           )}
                         </div>
                       </div>
@@ -628,7 +628,7 @@ export default function AppointmentsPage() {
                             setAppointmentToDelete(apt.id);
                             setDeleteDialogOpen(true);
                           }}
-                          className="text-[#334155] hover:text-[#E76F51] hover:bg-[#E76F51]/10"
+                          className="text-[var(--text-secondary)] hover:text-[#E76F51] hover:bg-[#E76F51]/10"
                           title="Elimina"
                         >
                           <Trash2 className="w-5 h-5" />
@@ -641,11 +641,11 @@ export default function AppointmentsPage() {
             ) : (
               <div className="text-center py-16">
                 <Calendar className="w-16 h-16 mx-auto text-[#E2E8F0] mb-4" strokeWidth={1.5} />
-                <h3 className="font-playfair text-xl text-[#0F172A] mb-2">Nessun appuntamento</h3>
-                <p className="text-[#334155] mb-4">Non ci sono appuntamenti per questa data</p>
+                <h3 className="font-playfair text-xl text-[var(--text-primary)] mb-2">Nessun appuntamento</h3>
+                <p className="text-[var(--text-secondary)] mb-4">Non ci sono appuntamenti per questa data</p>
                 <Button
                   onClick={() => setDialogOpen(true)}
-                  className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white"
+                  className="bg-[var(--gold)] hover:bg-[var(--gold)] text-white"
                 >
                   <Plus className="w-4 h-4 mr-2" /> Aggiungi Appuntamento
                 </Button>
@@ -679,16 +679,16 @@ export default function AppointmentsPage() {
         <Dialog open={smsDialogOpen} onOpenChange={setSmsDialogOpen}>
           <DialogContent className="sm:max-w-[450px]">
             <DialogHeader>
-              <DialogTitle className="font-playfair text-2xl text-[#0F172A]">Invia Promemoria SMS</DialogTitle>
+              <DialogTitle className="font-playfair text-2xl text-[var(--text-primary)]">Invia Promemoria SMS</DialogTitle>
               <DialogDescription>
                 Invia un SMS al cliente per ricordargli l'appuntamento
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 mt-4">
               {appointmentForSms && (
-                <div className="p-3 bg-[#F8FAFC] rounded-lg">
-                  <p className="font-medium text-[#0F172A]">{appointmentForSms.client_name}</p>
-                  <p className="text-sm text-[#334155]">{appointmentForSms.client_phone}</p>
+                <div className="p-3 bg-[var(--bg-elevated)] rounded-lg">
+                  <p className="font-medium text-[var(--text-primary)]">{appointmentForSms.client_name}</p>
+                  <p className="text-sm text-[var(--text-secondary)]">{appointmentForSms.client_phone}</p>
                 </div>
               )}
               <div className="space-y-2">
@@ -696,7 +696,7 @@ export default function AppointmentsPage() {
                 <textarea
                   value={smsMessage}
                   onChange={(e) => setSmsMessage(e.target.value)}
-                  className="w-full min-h-[100px] p-3 rounded-lg bg-[#F8FAFC] border-transparent focus:border-[#0EA5E9] focus:ring-1 focus:ring-[#0EA5E9] resize-none"
+                  className="w-full min-h-[100px] p-3 rounded-lg bg-[var(--bg-elevated)] border-transparent focus:border-[var(--gold)] focus:ring-1 focus:ring-[#0EA5E9] resize-none"
                   placeholder="Scrivi il messaggio..."
                 />
               </div>
@@ -704,7 +704,7 @@ export default function AppointmentsPage() {
                 <Button
                   onClick={handleSendSms}
                   disabled={sendingSms}
-                  className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white"
+                  className="bg-[var(--gold)] hover:bg-[var(--gold)] text-white"
                 >
                   {sendingSms ? (
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />

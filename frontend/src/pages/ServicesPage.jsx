@@ -172,13 +172,13 @@ export default function ServicesPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="font-playfair text-3xl font-medium text-[#0F172A]">Servizi</h1>
-            <p className="text-[#334155] mt-1 font-manrope">{services.length} servizi disponibili</p>
+            <h1 className="font-playfair text-3xl font-medium text-[var(--text-primary)]">Servizi</h1>
+            <p className="text-[var(--text-secondary)] mt-1 font-manrope">{services.length} servizi disponibili</p>
           </div>
           <Button 
             onClick={openNewDialog}
             data-testid="new-service-btn"
-            className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white shadow-lg shadow-[#0EA5E9]/20"
+            className="bg-[var(--gold)] hover:bg-[var(--gold)] text-white shadow-lg shadow-[var(--gold)]/20"
           >
             <Plus className="w-5 h-5 mr-2" />
             Nuovo Servizio
@@ -206,8 +206,8 @@ export default function ServicesPage() {
                       className="w-3 h-3 rounded-full"
                       style={{ backgroundColor: category.color }}
                     />
-                    <h2 className="font-playfair text-xl text-[#0F172A]">{category.label}</h2>
-                    <Badge variant="outline" className="ml-2 border-[#E2E8F0] text-[#334155]">
+                    <h2 className="font-playfair text-xl text-[var(--text-primary)]">{category.label}</h2>
+                    <Badge variant="outline" className="ml-2 border-[var(--border-subtle)] text-[var(--text-secondary)]">
                       {categoryServices.length}
                     </Badge>
                   </div>
@@ -217,19 +217,19 @@ export default function ServicesPage() {
                       <Card
                         key={service.id}
                         data-testid={`service-card-${service.id}`}
-                        className="bg-white border-[#E2E8F0]/30 hover:border-[#0EA5E9]/30 transition-all duration-300 hover:-translate-y-1"
+                        className="bg-[var(--bg-card)] border-[var(--border-subtle)]/30 hover:border-[var(--gold)]/30 transition-all duration-300 hover:-translate-y-1"
                       >
                         <CardContent className="p-5">
                           <div className="flex items-start justify-between">
                             <div className="flex items-start gap-3">
                               <div className="w-3 h-3 rounded-full mt-2 shrink-0" style={{ backgroundColor: service.color || category.color }} />
                               <div>
-                                <h3 className="font-medium text-[#0F172A] text-lg">{service.name}</h3>
-                                <div className="flex items-center gap-4 mt-3 text-sm text-[#334155]">
+                                <h3 className="font-medium text-[var(--text-primary)] text-lg">{service.name}</h3>
+                                <div className="flex items-center gap-4 mt-3 text-sm text-[var(--text-secondary)]">
                                   <span className="flex items-center gap-1">
                                     <Clock className="w-4 h-4" /> {service.duration} min
                                   </span>
-                                  <span className="flex items-center gap-1 font-semibold text-[#0F172A]">
+                                  <span className="flex items-center gap-1 font-semibold text-[var(--text-primary)]">
                                     <Euro className="w-4 h-4" /> {service.price.toFixed(2)}
                                   </span>
                                 </div>
@@ -240,7 +240,7 @@ export default function ServicesPage() {
                                 size="icon"
                                 variant="ghost"
                                 onClick={() => handleEdit(service)}
-                                className="text-[#334155] hover:text-[#0EA5E9]"
+                                className="text-[var(--text-secondary)] hover:text-[var(--gold)]"
                               >
                                 <Edit2 className="w-4 h-4" />
                               </Button>
@@ -251,7 +251,7 @@ export default function ServicesPage() {
                                   setServiceToDelete(service.id);
                                   setDeleteDialogOpen(true);
                                 }}
-                                className="text-[#334155] hover:text-[#E76F51]"
+                                className="text-[var(--text-secondary)] hover:text-[#E76F51]"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
@@ -266,14 +266,14 @@ export default function ServicesPage() {
             })}
           </div>
         ) : (
-          <Card className="bg-white border-[#E2E8F0]/30">
+          <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)]/30">
             <CardContent className="py-16 text-center">
               <Scissors className="w-16 h-16 mx-auto text-[#E2E8F0] mb-4" strokeWidth={1.5} />
-              <h3 className="font-playfair text-xl text-[#0F172A] mb-2">Nessun servizio</h3>
-              <p className="text-[#334155] mb-4">Aggiungi i tuoi servizi per iniziare</p>
+              <h3 className="font-playfair text-xl text-[var(--text-primary)] mb-2">Nessun servizio</h3>
+              <p className="text-[var(--text-secondary)] mb-4">Aggiungi i tuoi servizi per iniziare</p>
               <Button
                 onClick={openNewDialog}
-                className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white"
+                className="bg-[var(--gold)] hover:bg-[var(--gold)] text-white"
               >
                 <Plus className="w-4 h-4 mr-2" /> Aggiungi Servizio
               </Button>
@@ -285,7 +285,7 @@ export default function ServicesPage() {
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle className="font-playfair text-2xl text-[#0F172A]">
+              <DialogTitle className="font-playfair text-2xl text-[var(--text-primary)]">
                 {editingService ? 'Modifica Servizio' : 'Nuovo Servizio'}
               </DialogTitle>
             </DialogHeader>
@@ -297,7 +297,7 @@ export default function ServicesPage() {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Es. Taglio Donna"
                   data-testid="service-name-input"
-                  className="bg-[#F8FAFC] border-transparent focus:border-[#0EA5E9]"
+                  className="bg-[var(--bg-elevated)] border-transparent focus:border-[var(--gold)]"
                   required
                 />
               </div>
@@ -335,7 +335,7 @@ export default function ServicesPage() {
                     value={formData.duration}
                     onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) || 0 })}
                     data-testid="service-duration-input"
-                    className="bg-[#F8FAFC] border-transparent focus:border-[#0EA5E9]"
+                    className="bg-[var(--bg-elevated)] border-transparent focus:border-[var(--gold)]"
                   />
                 </div>
                 <div className="space-y-2">
@@ -347,7 +347,7 @@ export default function ServicesPage() {
                     value={formData.price}
                     onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
                     data-testid="service-price-input"
-                    className="bg-[#F8FAFC] border-transparent focus:border-[#0EA5E9]"
+                    className="bg-[var(--bg-elevated)] border-transparent focus:border-[var(--gold)]"
                   />
                 </div>
               </div>
@@ -371,7 +371,7 @@ export default function ServicesPage() {
                   type="submit"
                   disabled={saving}
                   data-testid="save-service-btn"
-                  className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white"
+                  className="bg-[var(--gold)] hover:bg-[var(--gold)] text-white"
                 >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : editingService ? 'Salva Modifiche' : 'Aggiungi Servizio'}
                 </Button>

@@ -52,8 +52,8 @@ export default function MonthlyView() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="font-playfair text-3xl font-medium text-[#0F172A]">Vista Mensile</h1>
-            <p className="text-[#334155] mt-1 font-manrope capitalize">
+            <h1 className="font-playfair text-3xl font-medium text-[var(--text-primary)]">Vista Mensile</h1>
+            <p className="text-[var(--text-secondary)] mt-1 font-manrope capitalize">
               {format(currentMonth, "MMMM yyyy", { locale: it })}
             </p>
           </div>
@@ -62,14 +62,14 @@ export default function MonthlyView() {
               variant="outline"
               size="icon"
               onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-              className="border-[#E2E8F0]"
+              className="border-[var(--border-subtle)]"
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
             <Button
               variant="outline"
               onClick={() => setCurrentMonth(new Date())}
-              className="border-[#E2E8F0] text-[#0F172A]"
+              className="border-[var(--border-subtle)] text-[var(--text-primary)]"
             >
               Oggi
             </Button>
@@ -77,7 +77,7 @@ export default function MonthlyView() {
               variant="outline"
               size="icon"
               onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-              className="border-[#E2E8F0]"
+              className="border-[var(--border-subtle)]"
             >
               <ChevronRight className="w-4 h-4" />
             </Button>
@@ -85,12 +85,12 @@ export default function MonthlyView() {
         </div>
 
         {/* Calendar */}
-        <Card className="bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] overflow-hidden">
+        <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] overflow-hidden">
           <CardContent className="p-0">
             {/* Week Headers */}
-            <div className="grid grid-cols-7 bg-[#F8FAFC] border-b border-[#E2E8F0]/30">
+            <div className="grid grid-cols-7 bg-[var(--bg-elevated)] border-b border-[var(--border-subtle)]/30">
               {weekDays.map((day) => (
-                <div key={day} className="p-3 text-center text-sm font-medium text-[#334155]">
+                <div key={day} className="p-3 text-center text-sm font-medium text-[var(--text-secondary)]">
                   {day}
                 </div>
               ))}
@@ -112,19 +112,19 @@ export default function MonthlyView() {
                     <div
                       key={idx}
                       data-testid={`calendar-day-${format(day, 'yyyy-MM-dd')}`}
-                      className={`min-h-[100px] md:min-h-[120px] p-2 border-b border-r border-[#E2E8F0]/20 ${
-                        !isCurrentMonth ? 'bg-[#F8FAFC]/50' : ''
+                      className={`min-h-[100px] md:min-h-[120px] p-2 border-b border-r border-[var(--border-subtle)]/20 ${
+                        !isCurrentMonth ? 'bg-[var(--bg-elevated)]/50' : ''
                       }`}
                     >
                       <div className={`text-right mb-1 ${
                         isToday 
                           ? 'text-white' 
                           : isCurrentMonth 
-                            ? 'text-[#0F172A]' 
-                            : 'text-[#334155]/50'
+                            ? 'text-[var(--text-primary)]' 
+                            : 'text-[var(--text-secondary)]/50'
                       }`}>
                         <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-medium ${
-                          isToday ? 'bg-[#0EA5E9]' : ''
+                          isToday ? 'bg-[var(--gold)]' : ''
                         }`}>
                           {format(day, 'd')}
                         </span>
@@ -140,14 +140,14 @@ export default function MonthlyView() {
                                 ? 'bg-[#789F8A]/20 text-[#789F8A]'
                                 : apt.status === 'cancelled'
                                   ? 'bg-[#E76F51]/20 text-[#E76F51]'
-                                  : 'bg-[#0EA5E9]/20 text-[#0EA5E9]'
+                                  : 'bg-[var(--gold)]/20 text-[var(--gold)]'
                             }`}
                           >
                             <span className="font-medium">{apt.time}</span> {apt.client_name}
                           </div>
                         ))}
                         {dayAppointments.length > 2 && (
-                          <div className="text-[10px] text-[#334155] px-1.5">
+                          <div className="text-[10px] text-[var(--text-secondary)] px-1.5">
                             +{dayAppointments.length - 2} altri
                           </div>
                         )}
@@ -161,20 +161,20 @@ export default function MonthlyView() {
         </Card>
 
         {/* Summary */}
-        <Card className="bg-white border-[#E2E8F0]/30">
+        <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)]/30">
           <CardContent className="p-4">
             <div className="flex flex-wrap items-center justify-center gap-6 text-sm">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-[#0EA5E9]" />
-                <span className="text-[#334155]">Programmati ({appointments.filter(a => a.status === 'scheduled').length})</span>
+                <div className="w-3 h-3 rounded-full bg-[var(--gold)]" />
+                <span className="text-[var(--text-secondary)]">Programmati ({appointments.filter(a => a.status === 'scheduled').length})</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-[#789F8A]" />
-                <span className="text-[#334155]">Completati ({appointments.filter(a => a.status === 'completed').length})</span>
+                <span className="text-[var(--text-secondary)]">Completati ({appointments.filter(a => a.status === 'completed').length})</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-[#E76F51]" />
-                <span className="text-[#334155]">Annullati ({appointments.filter(a => a.status === 'cancelled').length})</span>
+                <span className="text-[var(--text-secondary)]">Annullati ({appointments.filter(a => a.status === 'cancelled').length})</span>
               </div>
             </div>
           </CardContent>

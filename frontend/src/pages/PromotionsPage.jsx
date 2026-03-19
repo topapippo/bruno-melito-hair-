@@ -29,7 +29,7 @@ const RULE_TYPES = [
   { value: 'bring_friend', label: "Porta un'Amica", icon: Heart, color: 'bg-red-100 text-red-700' },
   { value: 'google_review', label: 'Recensione Google', icon: Star, color: 'bg-yellow-100 text-yellow-700' },
   { value: 'fidelity_vip', label: 'Fidelity VIP (10+ visite)', icon: Award, color: 'bg-emerald-100 text-emerald-700' },
-  { value: 'promo_code', label: 'Codice Promo Generico', icon: Hash, color: 'bg-gray-100 text-gray-700' },
+  { value: 'promo_code', label: 'Codice Promo Generico', icon: Hash, color: 'bg-[var(--bg-elevated)] text-[var(--text-primary)]' },
 ];
 
 export default function PromotionsPage() {
@@ -141,11 +141,11 @@ export default function PromotionsPage() {
       <div className="space-y-6" data-testid="promotions-page">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-[#0F172A] flex items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl font-black text-[var(--text-primary)] flex items-center gap-3">
               <Gift className="w-7 h-7 text-pink-500" />
               Promozioni
             </h1>
-            <p className="text-[#334155] mt-1">Crea offerte con servizi extra in omaggio per far crescere il salone</p>
+            <p className="text-[var(--text-secondary)] mt-1">Crea offerte con servizi extra in omaggio per far crescere il salone</p>
           </div>
           <Button onClick={() => { resetForm(); setDialogOpen(true); }}
             className="bg-pink-500 hover:bg-pink-600 text-white shrink-0"
@@ -188,8 +188,8 @@ export default function PromotionsPage() {
           <Card>
             <CardContent className="py-12 text-center">
               <Gift className="w-12 h-12 mx-auto text-[#E2E8F0] mb-3" />
-              <p className="text-[#334155] font-semibold">Nessuna promozione creata</p>
-              <p className="text-sm text-[#94A3B8] mt-1">Crea la tua prima promozione per attirare nuovi clienti!</p>
+              <p className="text-[var(--text-secondary)] font-semibold">Nessuna promozione creata</p>
+              <p className="text-sm text-[var(--text-muted)] mt-1">Crea la tua prima promozione per attirare nuovi clienti!</p>
               <Button onClick={() => { resetForm(); setDialogOpen(true); }}
                 className="mt-4 bg-pink-500 hover:bg-pink-600 text-white">
                 <Plus className="w-4 h-4 mr-2" /> Crea Promozione
@@ -203,7 +203,7 @@ export default function PromotionsPage() {
               const RuleIcon = ruleInfo.icon;
               return (
                 <Card key={promo.id}
-                  className={`border-2 transition-all ${promo.active ? 'border-[#E2E8F0] bg-white' : 'border-gray-200 bg-gray-50 opacity-60'}`}
+                  className={`border-2 transition-all ${promo.active ? 'border-[var(--border-subtle)] bg-[var(--bg-card)]' : 'border-[var(--border-subtle)] bg-[var(--bg-elevated)] opacity-60'}`}
                   data-testid={`promo-${promo.id}`}>
                   <CardContent className="p-5">
                     <div className="flex items-start justify-between gap-3">
@@ -215,16 +215,16 @@ export default function PromotionsPage() {
                           {promo.active ? (
                             <Badge className="bg-green-100 text-green-700">Attiva</Badge>
                           ) : (
-                            <Badge className="bg-gray-200 text-gray-500">Disattivata</Badge>
+                            <Badge className="bg-gray-200 text-[var(--text-secondary)]">Disattivata</Badge>
                           )}
                           {promo.show_on_booking && (
-                            <Badge variant="outline" className="text-xs border-[#0EA5E9] text-[#0EA5E9]">
+                            <Badge variant="outline" className="text-xs border-[var(--gold)] text-[var(--gold)]">
                               <Eye className="w-3 h-3 mr-1" /> Online
                             </Badge>
                           )}
                         </div>
-                        <h3 className="font-bold text-lg text-[#0F172A]">{promo.name}</h3>
-                        <p className="text-sm text-[#334155] mt-1">{promo.description}</p>
+                        <h3 className="font-bold text-lg text-[var(--text-primary)]">{promo.name}</h3>
+                        <p className="text-sm text-[var(--text-secondary)] mt-1">{promo.description}</p>
                         <div className="mt-3 p-2.5 bg-pink-50 border border-pink-200 rounded-lg">
                           <p className="text-sm font-bold text-pink-700 flex items-center gap-1.5">
                             <Gift className="w-4 h-4" /> OMAGGIO: {promo.free_service_name}
@@ -232,22 +232,22 @@ export default function PromotionsPage() {
                         </div>
                         <div className="flex items-center gap-4 mt-3 text-sm">
                           <button onClick={() => copyCode(promo.promo_code)}
-                            className="flex items-center gap-1.5 text-[#0EA5E9] hover:underline font-mono font-bold"
+                            className="flex items-center gap-1.5 text-[var(--gold)] hover:underline font-mono font-bold"
                             data-testid={`copy-code-${promo.id}`}>
                             <Copy className="w-3.5 h-3.5" /> {promo.promo_code}
                           </button>
-                          <span className="text-[#64748B] flex items-center gap-1">
+                          <span className="text-[var(--text-muted)] flex items-center gap-1">
                             <TrendingUp className="w-3.5 h-3.5" /> {promo.usage_count || 0} utilizzi
                           </span>
                         </div>
                       </div>
                       <div className="flex flex-col gap-1 shrink-0">
                         <Switch checked={promo.active} onCheckedChange={() => toggleActive(promo)} />
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-[#334155] hover:text-[#0EA5E9]"
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-[var(--text-secondary)] hover:text-[var(--gold)]"
                           onClick={() => openEdit(promo)} data-testid={`edit-promo-${promo.id}`}>
                           <Pencil className="w-3.5 h-3.5" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-[#334155] hover:text-red-500"
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-[var(--text-secondary)] hover:text-red-500"
                           onClick={() => deletePromo(promo.id)} data-testid={`delete-promo-${promo.id}`}>
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
@@ -264,7 +264,7 @@ export default function PromotionsPage() {
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="sm:max-w-[520px]">
             <DialogHeader>
-              <DialogTitle className="text-xl font-bold text-[#0F172A] flex items-center gap-2">
+              <DialogTitle className="text-xl font-bold text-[var(--text-primary)] flex items-center gap-2">
                 <Gift className="w-5 h-5 text-pink-500" />
                 {editing ? 'Modifica Promozione' : 'Nuova Promozione'}
               </DialogTitle>
@@ -310,9 +310,9 @@ export default function PromotionsPage() {
                   onChange={(e) => setFormData({ ...formData, promo_code: e.target.value.toUpperCase() })}
                   placeholder="es. UNDER30" className="font-mono" />
               </div>
-              <div className="flex items-center justify-between p-3 rounded-lg bg-[#F8FAFC]">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--bg-elevated)]">
                 <Label className="font-normal flex items-center gap-2">
-                  <Eye className="w-4 h-4 text-[#334155]" /> Mostra sulla pagina prenotazione
+                  <Eye className="w-4 h-4 text-[var(--text-secondary)]" /> Mostra sulla pagina prenotazione
                 </Label>
                 <Switch checked={formData.show_on_booking}
                   onCheckedChange={(c) => setFormData({ ...formData, show_on_booking: c })} />
@@ -342,17 +342,17 @@ export default function PromotionsPage() {
             <div className="mt-4">
               {newlyCreatedPromo && (
                 <div className="p-4 bg-pink-50 border-2 border-pink-200 rounded-xl mb-4">
-                  <p className="font-bold text-lg text-[#0F172A]">{newlyCreatedPromo.name}</p>
-                  <p className="text-sm text-[#334155] mt-1">{newlyCreatedPromo.description}</p>
-                  <div className="mt-3 p-2 bg-white rounded-lg border border-pink-300">
+                  <p className="font-bold text-lg text-[var(--text-primary)]">{newlyCreatedPromo.name}</p>
+                  <p className="text-sm text-[var(--text-secondary)] mt-1">{newlyCreatedPromo.description}</p>
+                  <div className="mt-3 p-2 bg-[var(--bg-card)] rounded-lg border border-pink-300">
                     <p className="text-sm font-bold text-pink-700 flex items-center gap-1.5">
                       <Gift className="w-4 h-4" /> OMAGGIO: {newlyCreatedPromo.free_service_name}
                     </p>
                   </div>
-                  <p className="text-xs text-[#64748B] mt-2 font-mono">Codice: {newlyCreatedPromo.promo_code}</p>
+                  <p className="text-xs text-[var(--text-muted)] mt-2 font-mono">Codice: {newlyCreatedPromo.promo_code}</p>
                 </div>
               )}
-              <p className="text-sm text-[#334155] mb-4">
+              <p className="text-sm text-[var(--text-secondary)] mb-4">
                 Vuoi applicare subito questa promozione a un cliente?
               </p>
             </div>

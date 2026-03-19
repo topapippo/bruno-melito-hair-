@@ -102,8 +102,8 @@ export default function StatsPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="font-playfair text-3xl font-medium text-[#0F172A]">Statistiche</h1>
-            <p className="text-[#334155] mt-1 font-manrope">
+            <h1 className="font-playfair text-3xl font-medium text-[var(--text-primary)]">Statistiche</h1>
+            <p className="text-[var(--text-secondary)] mt-1 font-manrope">
               {format(dateRange.start, "d MMM", { locale: it })} - {format(dateRange.end, "d MMM yyyy", { locale: it })}
             </p>
           </div>
@@ -112,7 +112,7 @@ export default function StatsPage() {
               variant="outline"
               size="sm"
               onClick={() => setPresetRange('week')}
-              className="border-[#E2E8F0] text-[#0F172A]"
+              className="border-[var(--border-subtle)] text-[var(--text-primary)]"
             >
               7 giorni
             </Button>
@@ -120,7 +120,7 @@ export default function StatsPage() {
               variant="outline"
               size="sm"
               onClick={() => setPresetRange('month')}
-              className="border-[#E2E8F0] text-[#0F172A]"
+              className="border-[var(--border-subtle)] text-[var(--text-primary)]"
             >
               Questo mese
             </Button>
@@ -128,7 +128,7 @@ export default function StatsPage() {
               variant="outline"
               size="sm"
               onClick={() => setPresetRange('lastMonth')}
-              className="border-[#E2E8F0] text-[#0F172A]"
+              className="border-[var(--border-subtle)] text-[var(--text-primary)]"
             >
               Mese scorso
             </Button>
@@ -136,7 +136,7 @@ export default function StatsPage() {
               variant="outline"
               size="sm"
               onClick={() => setPresetRange('3months')}
-              className="border-[#E2E8F0] text-[#0F172A]"
+              className="border-[var(--border-subtle)] text-[var(--text-primary)]"
             >
               3 mesi
             </Button>
@@ -144,7 +144,7 @@ export default function StatsPage() {
               onClick={handleExportPdf}
               disabled={exporting || loading}
               data-testid="export-pdf-btn"
-              className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white"
+              className="bg-[var(--gold)] hover:bg-[var(--gold)] text-white"
             >
               <Download className="w-4 h-4 mr-2" />
               {exporting ? 'Esportando...' : 'Esporta Report'}
@@ -162,28 +162,28 @@ export default function StatsPage() {
           <>
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card className="bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
+              <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="text-sm text-[#334155] font-manrope">Incasso Totale</p>
-                      <p className="text-3xl font-playfair font-medium text-[#0F172A] mt-2">
+                      <p className="text-sm text-[var(--text-secondary)] font-manrope">Incasso Totale</p>
+                      <p className="text-3xl font-playfair font-medium text-[var(--text-primary)] mt-2">
                         €{(stats?.total_revenue || 0).toFixed(2)}
                       </p>
                     </div>
-                    <div className="w-12 h-12 rounded-xl bg-[#0EA5E9]/10 flex items-center justify-center">
-                      <Euro className="w-6 h-6 text-[#0EA5E9]" strokeWidth={1.5} />
+                    <div className="w-12 h-12 rounded-xl bg-[var(--gold)]/10 flex items-center justify-center">
+                      <Euro className="w-6 h-6 text-[var(--gold)]" strokeWidth={1.5} />
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
+              <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="text-sm text-[#334155] font-manrope">Appuntamenti</p>
-                      <p className="text-3xl font-playfair font-medium text-[#0F172A] mt-2">
+                      <p className="text-sm text-[var(--text-secondary)] font-manrope">Appuntamenti</p>
+                      <p className="text-3xl font-playfair font-medium text-[var(--text-primary)] mt-2">
                         {stats?.total_appointments || 0}
                       </p>
                     </div>
@@ -194,12 +194,12 @@ export default function StatsPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
+              <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="text-sm text-[#334155] font-manrope">Media per Appuntamento</p>
-                      <p className="text-3xl font-playfair font-medium text-[#0F172A] mt-2">
+                      <p className="text-sm text-[var(--text-secondary)] font-manrope">Media per Appuntamento</p>
+                      <p className="text-3xl font-playfair font-medium text-[var(--text-primary)] mt-2">
                         €{stats?.total_appointments > 0 
                           ? (stats.total_revenue / stats.total_appointments).toFixed(2) 
                           : '0.00'}
@@ -216,9 +216,9 @@ export default function StatsPage() {
             {/* Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Revenue Chart */}
-              <Card className="bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
+              <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
                 <CardHeader>
-                  <CardTitle className="font-playfair text-xl text-[#0F172A]">Incassi Giornalieri</CardTitle>
+                  <CardTitle className="font-playfair text-xl text-[var(--text-primary)]">Incassi Giornalieri</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {stats?.daily_revenue?.length > 0 ? (
@@ -247,7 +247,7 @@ export default function StatsPage() {
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
-                    <div className="h-[300px] flex items-center justify-center text-[#334155]">
+                    <div className="h-[300px] flex items-center justify-center text-[var(--text-secondary)]">
                       Nessun dato disponibile
                     </div>
                   )}
@@ -255,9 +255,9 @@ export default function StatsPage() {
               </Card>
 
               {/* Services Breakdown */}
-              <Card className="bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
+              <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
                 <CardHeader>
-                  <CardTitle className="font-playfair text-xl text-[#0F172A]">Servizi Più Richiesti</CardTitle>
+                  <CardTitle className="font-playfair text-xl text-[var(--text-primary)]">Servizi Più Richiesti</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {stats?.service_breakdown?.length > 0 ? (
@@ -295,9 +295,9 @@ export default function StatsPage() {
                                 className="w-3 h-3 rounded-full"
                                 style={{ backgroundColor: COLORS[idx % COLORS.length] }}
                               />
-                              <span className="text-sm text-[#0F172A]">{service.name}</span>
+                              <span className="text-sm text-[var(--text-primary)]">{service.name}</span>
                             </div>
-                            <span className="text-sm font-medium text-[#334155]">
+                            <span className="text-sm font-medium text-[var(--text-secondary)]">
                               {service.count}x - €{service.revenue.toFixed(0)}
                             </span>
                           </div>
@@ -305,7 +305,7 @@ export default function StatsPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="h-[200px] flex items-center justify-center text-[#334155]">
+                    <div className="h-[200px] flex items-center justify-center text-[var(--text-secondary)]">
                       Nessun dato disponibile
                     </div>
                   )}
@@ -315,10 +315,10 @@ export default function StatsPage() {
 
             {/* Operator Stats */}
             {stats?.operator_breakdown?.length > 0 && (
-              <Card className="bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
+              <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
                 <CardHeader>
-                  <CardTitle className="font-playfair text-xl text-[#0F172A] flex items-center gap-2">
-                    <Users className="w-5 h-5 text-[#0EA5E9]" />
+                  <CardTitle className="font-playfair text-xl text-[var(--text-primary)] flex items-center gap-2">
+                    <Users className="w-5 h-5 text-[var(--gold)]" />
                     Performance Operatori
                   </CardTitle>
                 </CardHeader>
@@ -327,13 +327,13 @@ export default function StatsPage() {
                     {stats.operator_breakdown.map((operator, idx) => (
                       <div 
                         key={operator.name}
-                        className="p-4 rounded-xl bg-[#F8FAFC] border-l-4"
+                        className="p-4 rounded-xl bg-[var(--bg-elevated)] border-l-4"
                         style={{ borderLeftColor: operator.color || COLORS[idx % COLORS.length] }}
                       >
-                        <h4 className="font-medium text-[#0F172A]">{operator.name}</h4>
+                        <h4 className="font-medium text-[var(--text-primary)]">{operator.name}</h4>
                         <div className="mt-2 flex items-center justify-between">
-                          <span className="text-sm text-[#334155]">{operator.count} appuntamenti</span>
-                          <span className="font-semibold text-[#0F172A]">€{operator.revenue.toFixed(0)}</span>
+                          <span className="text-sm text-[var(--text-secondary)]">{operator.count} appuntamenti</span>
+                          <span className="font-semibold text-[var(--text-primary)]">€{operator.revenue.toFixed(0)}</span>
                         </div>
                       </div>
                     ))}

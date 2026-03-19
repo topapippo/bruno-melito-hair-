@@ -68,7 +68,7 @@ export default function WeeklyView() {
   const getStatusColor = (status) => {
     if (status === 'completed') return 'bg-emerald-500';
     if (status === 'cancelled') return 'bg-red-400';
-    return 'bg-[#0EA5E9]';
+    return 'bg-[var(--gold)]';
   };
 
   return (
@@ -76,19 +76,19 @@ export default function WeeklyView() {
       <div className="space-y-4" data-testid="weekly-view-page">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="font-playfair text-3xl font-medium text-[#0F172A]">Vista Settimanale</h1>
-            <p className="text-[#334155] mt-1 font-manrope">
+            <h1 className="font-playfair text-3xl font-medium text-[var(--text-primary)]">Vista Settimanale</h1>
+            <p className="text-[var(--text-secondary)] mt-1 font-manrope">
               {format(weekStart, "d MMMM", { locale: it })} - {format(addDays(weekStart, 5), "d MMMM yyyy", { locale: it })}
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={() => setWeekStart(subWeeks(weekStart, 1))} className="border-[#E2E8F0]">
+            <Button variant="outline" size="icon" onClick={() => setWeekStart(subWeeks(weekStart, 1))} className="border-[var(--border-subtle)]">
               <ChevronLeft className="w-4 h-4" />
             </Button>
-            <Button variant="outline" onClick={() => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))} className="border-[#E2E8F0] text-[#0F172A]">
+            <Button variant="outline" onClick={() => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))} className="border-[var(--border-subtle)] text-[var(--text-primary)]">
               Oggi
             </Button>
-            <Button variant="outline" size="icon" onClick={() => setWeekStart(addWeeks(weekStart, 1))} className="border-[#E2E8F0]">
+            <Button variant="outline" size="icon" onClick={() => setWeekStart(addWeeks(weekStart, 1))} className="border-[var(--border-subtle)]">
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
@@ -97,21 +97,21 @@ export default function WeeklyView() {
         {loading ? (
           <Skeleton className="h-96" />
         ) : (
-          <Card className="bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] overflow-hidden">
+          <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] overflow-hidden">
             <CardContent className="p-0">
               {/* Day Headers */}
-              <div className="flex border-b border-[#E2E8F0]">
-                <div className="w-16 shrink-0 border-r border-[#E2E8F0] p-2 bg-[#F8FAFC]">
-                  <span className="text-xs text-[#334155]">Ora</span>
+              <div className="flex border-b border-[var(--border-subtle)]">
+                <div className="w-16 shrink-0 border-r border-[var(--border-subtle)] p-2 bg-[var(--bg-elevated)]">
+                  <span className="text-xs text-[var(--text-secondary)]">Ora</span>
                 </div>
                 {weekDays.map((day) => {
                   const isToday = isSameDay(day, new Date());
                   const dayApts = getAppointmentsForDay(day);
                   return (
-                    <div key={day.toString()} className={`flex-1 min-w-[120px] p-2 text-center border-r border-[#E2E8F0] last:border-r-0 ${isToday ? 'bg-[#0EA5E9]/5' : 'bg-[#F8FAFC]'}`}>
-                      <p className="text-xs uppercase tracking-wide text-[#334155] font-manrope">{format(day, 'EEE', { locale: it })}</p>
-                      <p className={`text-lg font-bold ${isToday ? 'text-[#0EA5E9]' : 'text-[#0F172A]'}`}>{format(day, 'd')}</p>
-                      {dayApts.length > 0 && <p className="text-[10px] text-[#0EA5E9] font-bold">{dayApts.length} app.</p>}
+                    <div key={day.toString()} className={`flex-1 min-w-[120px] p-2 text-center border-r border-[var(--border-subtle)] last:border-r-0 ${isToday ? 'bg-[var(--gold)]/5' : 'bg-[var(--bg-elevated)]'}`}>
+                      <p className="text-xs uppercase tracking-wide text-[var(--text-secondary)] font-manrope">{format(day, 'EEE', { locale: it })}</p>
+                      <p className={`text-lg font-bold ${isToday ? 'text-[var(--gold)]' : 'text-[var(--text-primary)]'}`}>{format(day, 'd')}</p>
+                      {dayApts.length > 0 && <p className="text-[10px] text-[var(--gold)] font-bold">{dayApts.length} app.</p>}
                     </div>
                   );
                 })}
@@ -121,10 +121,10 @@ export default function WeeklyView() {
               <div ref={scrollRef} className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 260px)' }}>
                 <div className="flex relative">
                   {/* Time column */}
-                  <div className="w-16 shrink-0 border-r border-[#E2E8F0]">
+                  <div className="w-16 shrink-0 border-r border-[var(--border-subtle)]">
                     {TIME_SLOTS.map((time, idx) => (
-                      <div key={time} className="h-10 flex items-center justify-center border-b border-[#E2E8F0]/50" style={idx % 4 === 0 ? { borderBottomColor: '#E2E8F0' } : {}}>
-                        {idx % 4 === 0 && <span className="text-xs font-bold text-[#334155]">{time}</span>}
+                      <div key={time} className="h-10 flex items-center justify-center border-b border-[var(--border-subtle)]/50" style={idx % 4 === 0 ? { borderBottomColor: '#E2E8F0' } : {}}>
+                        {idx % 4 === 0 && <span className="text-xs font-bold text-[var(--text-secondary)]">{time}</span>}
                       </div>
                     ))}
                   </div>
@@ -134,9 +134,9 @@ export default function WeeklyView() {
                     const dayApts = getAppointmentsForDay(day);
                     const isToday = isSameDay(day, new Date());
                     return (
-                      <div key={day.toString()} className={`flex-1 min-w-[120px] border-r border-[#E2E8F0] last:border-r-0 relative ${isToday ? 'bg-[#0EA5E9]/[0.02]' : ''}`}>
+                      <div key={day.toString()} className={`flex-1 min-w-[120px] border-r border-[var(--border-subtle)] last:border-r-0 relative ${isToday ? 'bg-[var(--gold)]/[0.02]' : ''}`}>
                         {TIME_SLOTS.map((time, idx) => (
-                          <div key={time} className={`h-10 border-b ${idx % 4 === 0 ? 'border-[#E2E8F0]' : 'border-[#E2E8F0]/30'}`} />
+                          <div key={time} className={`h-10 border-b ${idx % 4 === 0 ? 'border-[var(--border-subtle)]' : 'border-[var(--border-subtle)]/30'}`} />
                         ))}
                         {/* Appointments overlay */}
                         {dayApts.map((apt) => {
@@ -163,13 +163,13 @@ export default function WeeklyView() {
           </Card>
         )}
 
-        <Card className="bg-white border-[#E2E8F0]/30">
+        <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)]/30">
           <CardContent className="p-4">
             <div className="flex flex-wrap items-center justify-center gap-6 text-sm">
-              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-[#0EA5E9]" /><span className="text-[#334155]">Programmati</span></div>
-              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-emerald-500" /><span className="text-[#334155]">Completati</span></div>
-              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-red-400" /><span className="text-[#334155]">Cancellati</span></div>
-              <span className="text-[#334155] font-bold">Totale: {appointments.length} appuntamenti</span>
+              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-[var(--gold)]" /><span className="text-[var(--text-secondary)]">Programmati</span></div>
+              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-emerald-500" /><span className="text-[var(--text-secondary)]">Completati</span></div>
+              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-red-400" /><span className="text-[var(--text-secondary)]">Cancellati</span></div>
+              <span className="text-[var(--text-secondary)] font-bold">Totale: {appointments.length} appuntamenti</span>
             </div>
           </CardContent>
         </Card>

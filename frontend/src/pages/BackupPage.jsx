@@ -107,7 +107,7 @@ export default function BackupPage() {
       <div className="space-y-6" data-testid="backup-page">
         <div>
           <h1 className="text-4xl font-black text-black">Backup Dati</h1>
-          <p className="text-[#0EA5E9] mt-1 font-bold text-lg">Esporta tutti i tuoi dati in Excel</p>
+          <p className="text-[var(--gold)] mt-1 font-bold text-lg">Esporta tutti i tuoi dati in Excel</p>
         </div>
 
         {loading ? (
@@ -115,32 +115,32 @@ export default function BackupPage() {
         ) : (
           <>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card className="bg-white border-2 border-[#E2E8F0]">
+              <Card className="bg-[var(--bg-card)] border-2 border-[var(--border-subtle)]">
                 <CardContent className="p-6 text-center">
-                  <Users className="w-10 h-10 mx-auto text-[#0EA5E9] mb-2" />
-                  <p className="text-3xl font-black text-[#0F172A]">{stats.clients}</p>
-                  <p className="text-[#334155] font-semibold">Clienti</p>
+                  <Users className="w-10 h-10 mx-auto text-[var(--gold)] mb-2" />
+                  <p className="text-3xl font-black text-[var(--text-primary)]">{stats.clients}</p>
+                  <p className="text-[var(--text-secondary)] font-semibold">Clienti</p>
                 </CardContent>
               </Card>
-              <Card className="bg-white border-2 border-[#E2E8F0]">
+              <Card className="bg-[var(--bg-card)] border-2 border-[var(--border-subtle)]">
                 <CardContent className="p-6 text-center">
-                  <Calendar className="w-10 h-10 mx-auto text-[#0EA5E9] mb-2" />
-                  <p className="text-3xl font-black text-[#0F172A]">{stats.appointments}</p>
-                  <p className="text-[#334155] font-semibold">Appuntamenti</p>
+                  <Calendar className="w-10 h-10 mx-auto text-[var(--gold)] mb-2" />
+                  <p className="text-3xl font-black text-[var(--text-primary)]">{stats.appointments}</p>
+                  <p className="text-[var(--text-secondary)] font-semibold">Appuntamenti</p>
                 </CardContent>
               </Card>
-              <Card className="bg-white border-2 border-[#E2E8F0]">
+              <Card className="bg-[var(--bg-card)] border-2 border-[var(--border-subtle)]">
                 <CardContent className="p-6 text-center">
-                  <CreditCard className="w-10 h-10 mx-auto text-[#0EA5E9] mb-2" />
-                  <p className="text-3xl font-black text-[#0F172A]">{stats.services}</p>
-                  <p className="text-[#334155] font-semibold">Servizi</p>
+                  <CreditCard className="w-10 h-10 mx-auto text-[var(--gold)] mb-2" />
+                  <p className="text-3xl font-black text-[var(--text-primary)]">{stats.services}</p>
+                  <p className="text-[var(--text-secondary)] font-semibold">Servizi</p>
                 </CardContent>
               </Card>
-              <Card className="bg-white border-2 border-[#E2E8F0]">
+              <Card className="bg-[var(--bg-card)] border-2 border-[var(--border-subtle)]">
                 <CardContent className="p-6 text-center">
                   <Database className="w-10 h-10 mx-auto text-green-500 mb-2" />
                   <CheckCircle className="w-6 h-6 mx-auto text-green-500" />
-                  <p className="text-[#334155] font-semibold mt-2">Dati OK</p>
+                  <p className="text-[var(--text-secondary)] font-semibold mt-2">Dati OK</p>
                 </CardContent>
               </Card>
             </div>
@@ -153,7 +153,7 @@ export default function BackupPage() {
                 <Button
                   onClick={exportAllData}
                   disabled={exporting}
-                  className="bg-white text-[#0EA5E9] hover:bg-blue-50 font-black text-lg px-8 py-6"
+                  className="bg-[var(--bg-card)] text-[var(--gold)] hover:bg-blue-50 font-black text-lg px-8 py-6"
                 >
                   {exporting ? (
                     'Esportazione in corso...'

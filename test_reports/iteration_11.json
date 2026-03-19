@@ -1,0 +1,79 @@
+{
+  "summary": "Iteration 11 Testing: Admin Theme Customization (Aspetto Gestionale) and Dark Theme Batch Fix across admin pages. All 12 backend tests passed (100%). All 16 frontend features tested and working (100%).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Console warnings",
+        "issues": ["404 errors for some resources (likely static assets) - does not affect functionality"]
+      }
+    ]
+  },
+  "passed_tests": [
+    "BACKEND: Admin login successful with admin@brunomelito.it",
+    "BACKEND: GET /api/admin-theme requires authentication (403)",
+    "BACKEND: PUT /api/admin-theme requires authentication (403)",
+    "BACKEND: GET /api/admin-theme returns theme config with auth",
+    "BACKEND: PUT /api/admin-theme saves primary_color correctly",
+    "BACKEND: PUT /api/admin-theme saves full config (primary_color, accent_color, font_family, font_size, border_radius)",
+    "BACKEND: Admin theme reset to default values works",
+    "BACKEND: GET /api/settings returns user settings",
+    "BACKEND: GET /api/clients returns client list",
+    "BACKEND: GET /api/services returns service list",
+    "BACKEND: GET /api/operators returns operator list",
+    "BACKEND: GET /api/nav-config returns navigation config",
+    "FRONTEND: Login page dark theme - readable inputs and gold Accedi button",
+    "FRONTEND: Settings/Impostazioni page text fully readable with dark theme",
+    "FRONTEND: Settings page 'Aspetto Gestionale' section visible with all controls",
+    "FRONTEND: Color pickers visible (Colore Primario #D4AF37, Colore Secondario #0EA5E9)",
+    "FRONTEND: Font selector visible (Sistema, Inter, Playfair Display, Poppins, Montserrat, DM Sans)",
+    "FRONTEND: Font size options visible (Piccolo, Medio Default, Grande, Extra Grande)",
+    "FRONTEND: Border radius options visible (Nessuno, Piccolo, Medio Default, Grande, Molto Grande)",
+    "FRONTEND: Admin theme font change applies in real-time (Poppins)",
+    "FRONTEND: Admin theme font size change applies in real-time (Grande=16px)",
+    "FRONTEND: 'Salva Aspetto' saves theme to backend and persists after page reload",
+    "FRONTEND: 'Ripristina Default' resets all values",
+    "FRONTEND: Theme loads at startup via Layout.jsx (--gold CSS variable set)",
+    "FRONTEND: Clients page (/clients) text readable with dark theme",
+    "FRONTEND: Services page (/services) text readable with dark theme",
+    "FRONTEND: Planning page (/planning) calendar and appointments readable",
+    "FRONTEND: Report Incassi page (/incassi) text readable with dark theme",
+    "FRONTEND: Dashboard page text readable with dark theme",
+    "FRONTEND: No JavaScript console errors on admin pages (excluding 404s)"
+  ],
+  "failed_tests": [],
+  "test_report_links": [
+    "/app/backend/tests/test_iteration11_admin_theme.py",
+    "/app/test_reports/pytest/pytest_iteration11.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "SettingsPage.jsx properly implements 'Aspetto Gestionale' card with all customization options",
+    "Admin theme API endpoints (GET/PUT /api/admin-theme) in stats.py work correctly with MongoDB persistence",
+    "Layout.jsx correctly loads admin theme at startup via loadAdminTheme() in useEffect",
+    "CSS variables (--gold, --gold-dim, --border-gold, --font-admin, --font-size-admin, --radius) are applied dynamically",
+    "Dark theme batch fix uses CSS variables like text-[var(--text-primary)], bg-[var(--bg-card)], etc.",
+    "All interactive elements have proper data-testid attributes for testing",
+    "Theme persistence works correctly - saved config loads after page reload"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration11_admin_theme.py"
+  ],
+  "success_rate": {
+    "backend": "100% (12/12 tests passed)",
+    "frontend": "100% (all 16 features tested working)"
+  },
+  "test_credentials": {
+    "admin_email": "admin@brunomelito.it",
+    "admin_password": "Admin123!"
+  },
+  "seed_data_creation": "None - used existing data",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 11 fully tested: Dark theme batch fix applied across 23+ admin pages using CSS variables (--text-primary, --bg-card, --bg-elevated, --gold). New 'Aspetto Gestionale' section in Settings allows customizing: primary_color, accent_color, font_family (6 options), font_size (4 options), border_radius (5 options). Admin theme saved to MongoDB via /api/admin-theme endpoint. Theme loads at app startup in Layout.jsx useEffect. All admin pages (Settings, Clients, Services, Planning, Dashboard, Report Incassi) have readable text with proper contrast on dark background."
+}

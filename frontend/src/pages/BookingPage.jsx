@@ -552,10 +552,10 @@ export default function BookingPage() {
             <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
               <AlertCircle className="w-5 h-5 text-amber-500" />
             </div>
-            <h3 className="fd text-xl font-bold text-slate-900">Orario non disponibile</h3>
+            <h3 className="fd text-xl font-bold text-[var(--text-primary)]">Orario non disponibile</h3>
           </div>
           
-          <p className="text-slate-600 mb-4">
+          <p className="text-[var(--text-secondary)] mb-4">
             L'orario <span className="font-bold text-sky-600">{form.time}</span> del{' '}
             <span className="font-bold">{format(new Date(form.date + 'T00:00:00'), 'd MMMM', { locale: it })}</span>{' '}
             è già occupato con <span className="font-bold">BRUNO</span>.
@@ -564,7 +564,7 @@ export default function BookingPage() {
           {/* OPERATORE ALTERNATIVO - MBHS */}
           {availableOperators.length > 0 && (
             <div className="mb-5">
-              <p className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-1">
+              <p className="text-sm font-bold text-[var(--text-primary)] mb-2 flex items-center gap-1">
                 <Users className="w-4 h-4 text-sky-500" /> Prova con altro operatore:
               </p>
               <div className="space-y-2">
@@ -574,7 +574,7 @@ export default function BookingPage() {
                     onClick={() => tryAlternativeOperator(op.id, op.name)}
                     className="w-full flex items-center justify-between p-4 border-2 border-sky-200 rounded-xl hover:bg-sky-50 transition-all hover:border-sky-400"
                   >
-                    <span className="font-bold text-lg text-slate-800">{op.name}</span>
+                    <span className="font-bold text-lg text-[var(--text-primary)]">{op.name}</span>
                     <span className="text-sm bg-sky-500 text-white px-4 py-1.5 rounded-full">Disponibile</span>
                   </button>
                 ))}
@@ -585,7 +585,7 @@ export default function BookingPage() {
           {/* ORARI ALTERNATIVI */}
           {alternativeSlots.length > 0 && (
             <div className="mb-5">
-              <p className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-1">
+              <p className="text-sm font-bold text-[var(--text-primary)] mb-2 flex items-center gap-1">
                 <Clock className="w-4 h-4 text-emerald-500" /> Oppure scegli un altro orario:
               </p>
               <div className="space-y-2">
@@ -596,14 +596,14 @@ export default function BookingPage() {
                     className="w-full flex items-center justify-between p-3 border border-emerald-200 rounded-xl hover:bg-emerald-50 transition-all hover:border-emerald-400"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-800">
+                      <span className="font-bold text-[var(--text-primary)]">
                         {format(new Date((slot.date || form.date) + 'T00:00:00'), 'd MMM', { locale: it })}
                       </span>
                       <span className="text-emerald-600 font-bold bg-emerald-100 px-2 py-0.5 rounded-full">
                         ore {slot.time}
                       </span>
                     </div>
-                    <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full">
+                    <span className="text-xs bg-[var(--bg-elevated)] text-[var(--text-secondary)] px-2 py-1 rounded-full">
                       {slot.operator_name || 'BRUNO'}
                     </span>
                   </button>
@@ -622,7 +622,7 @@ export default function BookingPage() {
             </button>
             <button
               onClick={() => setShowConflictModal(false)}
-              className="flex-1 border-2 border-slate-200 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-100 transition-all"
+              className="flex-1 border-2 border-[var(--border-subtle)] text-[var(--text-secondary)] font-bold py-3 rounded-xl hover:bg-[var(--bg-elevated)] transition-all"
             >
               Annulla
             </button>
@@ -634,15 +634,15 @@ export default function BookingPage() {
 
   // PAGINA SUCCESSO
   if (success) return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-6 pb">
+    <div className="min-h-screen bg-[var(--bg-card)] flex items-center justify-center p-6 pb">
       <style>{GStyles}</style>
       <Toaster position="top-center" />
       <div className="max-w-md w-full text-center fu">
         <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
           <CheckCircle className="w-12 h-12 text-emerald-500" />
         </div>
-        <h1 className="fd text-4xl font-bold text-slate-900 mb-3">Prenotazione Inviata!</h1>
-        <p className="text-slate-500 mb-8 text-lg">
+        <h1 className="fd text-4xl font-bold text-[var(--text-primary)] mb-3">Prenotazione Inviata!</h1>
+        <p className="text-[var(--text-secondary)] mb-8 text-lg">
           Ti aspettiamo il <strong>{format(new Date(form.date + 'T00:00:00'), 'd MMMM yyyy', { locale: it })}</strong> alle{' '}
           <strong className="text-sky-500">{form.time}</strong>
         </p>
@@ -655,24 +655,24 @@ export default function BookingPage() {
 
   // PAGINA GESTIONE APPUNTAMENTI
   if (manageOpen) return (
-    <div className="min-h-screen bg-slate-50 pb">
+    <div className="min-h-screen bg-[var(--bg-elevated)] pb">
       <style>{GStyles}</style>
       <Toaster position="top-center" />
-      <div className="bg-white border-b border-slate-200 px-4 py-4 flex items-center gap-3 sticky top-0 z-50">
+      <div className="bg-[var(--bg-card)] border-b border-[var(--border-subtle)] px-4 py-4 flex items-center gap-3 sticky top-0 z-50">
         <button 
           onClick={() => { setManageOpen(false); setMyApts([]); setManagePhone(''); }} 
-          className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition-colors"
+          className="w-10 h-10 rounded-full bg-[var(--bg-elevated)] flex items-center justify-center hover:bg-slate-200 transition-colors"
         >
-          <X className="w-4 h-4 text-slate-600" />
+          <X className="w-4 h-4 text-[var(--text-secondary)]" />
         </button>
         <div>
-          <p className="font-bold text-slate-900">I miei appuntamenti</p>
-          <p className="text-xs text-slate-400">Modifica o cancella la tua prenotazione</p>
+          <p className="font-bold text-[var(--text-primary)]">I miei appuntamenti</p>
+          <p className="text-xs text-[var(--text-muted)]">Modifica o cancella la tua prenotazione</p>
         </div>
       </div>
       <div className="max-w-lg mx-auto px-4 py-8 space-y-4">
-        <div className="bg-white rounded-2xl border border-slate-200 p-5">
-          <label className="text-sm font-bold text-slate-600 mb-2 block">
+        <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] p-5">
+          <label className="text-sm font-bold text-[var(--text-secondary)] mb-2 block">
             Il tuo numero di telefono
           </label>
           <div className="flex gap-2">
@@ -680,7 +680,7 @@ export default function BookingPage() {
               value={managePhone} 
               onChange={e => setManagePhone(e.target.value)} 
               placeholder="Es: 339 1234567" 
-              className="flex-1 border-slate-200" 
+              className="flex-1 border-[var(--border-subtle)]" 
               onKeyDown={e => e.key === 'Enter' && lookupApts()} 
             />
             <button 
@@ -694,26 +694,26 @@ export default function BookingPage() {
         </div>
         
         {myApts.map(apt => (
-          <div key={apt.id} className="bg-white rounded-2xl border border-slate-200 p-5">
+          <div key={apt.id} className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] p-5">
             {editingApt?.id === apt.id ? (
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-bold text-slate-500 mb-1 block">Data</label>
+                    <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block">Data</label>
                     <Input 
                       type="date" 
                       value={editDate} 
                       min={format(new Date(), 'yyyy-MM-dd')} 
                       onChange={e => setEditDate(e.target.value)} 
-                      className="border-slate-200"
+                      className="border-[var(--border-subtle)]"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-slate-500 mb-1 block">Ora</label>
+                    <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block">Ora</label>
                     <select 
                       value={editTime} 
                       onChange={e => setEditTime(e.target.value)} 
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-800"
+                      className="w-full px-3 py-2 border border-[var(--border-subtle)] rounded-lg text-sm text-[var(--text-primary)]"
                     >
                       {getSlots(editDate).map(t => <option key={t} value={t}>{t}</option>)}
                     </select>
@@ -728,7 +728,7 @@ export default function BookingPage() {
                   </button>
                   <button 
                     onClick={() => setEditingApt(null)} 
-                    className="flex-1 border border-slate-200 text-slate-500 font-bold py-2 rounded-xl hover:bg-slate-50"
+                    className="flex-1 border border-[var(--border-subtle)] text-[var(--text-secondary)] font-bold py-2 rounded-xl hover:bg-[var(--bg-elevated)]"
                   >
                     Annulla
                   </button>
@@ -738,18 +738,18 @@ export default function BookingPage() {
               <>
                 <div className="flex justify-between items-start mb-3">
                   <div>
-                    <p className="font-bold text-slate-900">
+                    <p className="font-bold text-[var(--text-primary)]">
                       {format(new Date(apt.date + 'T00:00'), 'd MMMM yyyy', { locale: it })}
                     </p>
                     <p className="text-sky-500 font-black text-xl">ore {apt.time}</p>
                   </div>
-                  <span className="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded-lg font-mono">
+                  <span className="text-xs bg-[var(--bg-elevated)] text-[var(--text-secondary)] px-2 py-1 rounded-lg font-mono">
                     {apt.booking_code}
                   </span>
                 </div>
-                <p className="text-sm text-slate-500 mb-1">{apt.services?.join(', ')}</p>
+                <p className="text-sm text-[var(--text-secondary)] mb-1">{apt.services?.join(', ')}</p>
                 {apt.operator_name && (
-                  <p className="text-xs text-slate-400 mb-3">Operatore: {apt.operator_name}</p>
+                  <p className="text-xs text-[var(--text-muted)] mb-3">Operatore: {apt.operator_name}</p>
                 )}
                 <div className="flex gap-2">
                   <button 
@@ -775,7 +775,7 @@ export default function BookingPage() {
 
   // PAGINA PRINCIPALE
   return (
-    <div className="min-h-screen bg-white text-slate-900 pb">
+    <div className="min-h-screen bg-[var(--bg-card)] text-[var(--text-primary)] pb">
       <style>{GStyles}</style>
       <Toaster position="top-center" />
       
@@ -783,7 +783,7 @@ export default function BookingPage() {
       <ConflictModal />
 
       {/* NAVBAR */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/96 backdrop-blur-md border-b border-slate-100 shadow-sm">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-[var(--bg-card)]/96 backdrop-blur-md border-b border-[var(--border-subtle)] shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img 
@@ -795,17 +795,17 @@ export default function BookingPage() {
               <p className="fd text-xl font-bold bg-gradient-to-r from-sky-600 to-sky-400 bg-clip-text text-transparent leading-tight">
                 BRUNO MELITO HAIR
               </p>
-              <p className="text-[10px] text-slate-400 font-semibold tracking-widest uppercase">Parrucchieri · Dal 1983</p>
+              <p className="text-[10px] text-[var(--text-muted)] font-semibold tracking-widest uppercase">Parrucchieri · Dal 1983</p>
             </div>
           </div>
-          <div className="hidden md:flex items-center gap-7 text-sm font-semibold text-slate-500">
+          <div className="hidden md:flex items-center gap-7 text-sm font-semibold text-[var(--text-secondary)]">
             {['Chi siamo', 'Galleria', 'Recensioni', 'Contatti'].map((l, i) => {
               const ids = ['chi-siamo', 'galleria', 'recensioni', 'contatti'];
               return (
                 <button 
                   key={l} 
                   onClick={() => document.getElementById(ids[i])?.scrollIntoView({ behavior: 'smooth' })}
-                  className="nav-link hover:text-slate-900 transition-colors relative"
+                  className="nav-link hover:text-[var(--text-primary)] transition-colors relative"
                 >
                   {l}<span className="nul" />
                 </button>
@@ -813,7 +813,7 @@ export default function BookingPage() {
             })}
             <button 
               onClick={() => setManageOpen(true)} 
-              className="nav-link hover:text-slate-900 transition-colors flex items-center gap-1.5 relative"
+              className="nav-link hover:text-[var(--text-primary)] transition-colors flex items-center gap-1.5 relative"
             >
               <Calendar className="w-4 h-4" />I miei appuntamenti<span className="nul" />
             </button>
@@ -821,9 +821,9 @@ export default function BookingPage() {
           <div className="flex items-center gap-2">
             <button 
               onClick={() => setManageOpen(true)} 
-              className="md:hidden p-2 rounded-xl hover:bg-slate-100 transition-colors"
+              className="md:hidden p-2 rounded-xl hover:bg-[var(--bg-elevated)] transition-colors"
             >
-              <Calendar className="w-5 h-5 text-slate-500" />
+              <Calendar className="w-5 h-5 text-[var(--text-secondary)]" />
             </button>
             <button 
               onClick={() => bookRef.current?.scrollIntoView({ behavior: 'smooth' })} 
@@ -855,10 +855,10 @@ export default function BookingPage() {
             <div className="fu d1 inline-flex items-center gap-2 bg-sky-50 border border-sky-200 text-sky-600 text-xs font-bold px-4 py-2 rounded-full mb-6">
               <Sparkles className="w-3.5 h-3.5" />Solo per appuntamento · Santa Maria Capua Vetere
             </div>
-            <h1 className="fu d2 fd text-6xl sm:text-7xl lg:text-8xl font-bold text-slate-900 leading-[1.02] mb-6">
+            <h1 className="fu d2 fd text-6xl sm:text-7xl lg:text-8xl font-bold text-[var(--text-primary)] leading-[1.02] mb-6">
               La tua<br /><span className="text-sky-500 italic">bellezza</span><br />merita il meglio
             </h1>
-            <p className="fu d3 text-lg sm:text-xl text-slate-500 leading-relaxed mb-10 max-w-xl">
+            <p className="fu d3 text-lg sm:text-xl text-[var(--text-secondary)] leading-relaxed mb-10 max-w-xl">
               {cfg.about_text || 'Da oltre 40 anni il punto di riferimento per l\'hair styling. Colorazioni senza ammoniaca, prodotti senza parabeni.'}
             </p>
             <div className="fu d4 flex flex-wrap gap-3">
@@ -870,7 +870,7 @@ export default function BookingPage() {
               </button>
               <button 
                 onClick={() => document.getElementById('galleria')?.scrollIntoView({ behavior: 'smooth' })}
-                className="border-2 border-slate-200 hover:border-sky-300 text-slate-700 hover:text-sky-600 font-bold text-base px-8 py-4 rounded-2xl transition-all flex items-center gap-2"
+                className="border-2 border-[var(--border-subtle)] hover:border-sky-300 text-[var(--text-primary)] hover:text-sky-600 font-bold text-base px-8 py-4 rounded-2xl transition-all flex items-center gap-2"
               >
                 I nostri lavori<ChevronRight className="w-4 h-4" />
               </button>
@@ -878,8 +878,8 @@ export default function BookingPage() {
           </div>
         </div>
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 sb">
-          <p className="text-xs text-slate-400 font-semibold tracking-wider uppercase">Scorri</p>
-          <ChevronDown className="w-4 h-4 text-slate-400" />
+          <p className="text-xs text-[var(--text-muted)] font-semibold tracking-wider uppercase">Scorri</p>
+          <ChevronDown className="w-4 h-4 text-[var(--text-muted)]" />
         </div>
       </section>
 
@@ -895,7 +895,7 @@ export default function BookingPage() {
             ].map((s, i) => (
               <div key={i} className="cursor-default py-2">
                 <p className="fd text-3xl font-bold text-sky-400 mb-1">{s.n}</p>
-                <p className="text-sm text-slate-400 font-medium">{s.l}</p>
+                <p className="text-sm text-[var(--text-muted)] font-medium">{s.l}</p>
               </div>
             ))}
           </div>
@@ -929,13 +929,13 @@ export default function BookingPage() {
             </div>
             <div>
               <p className="text-sky-500 font-bold text-sm tracking-widest uppercase mb-3">Chi siamo</p>
-              <h2 className="fd text-4xl sm:text-5xl font-bold text-slate-900 mb-6 leading-tight">
+              <h2 className="fd text-4xl sm:text-5xl font-bold text-[var(--text-primary)] mb-6 leading-tight">
                 {cfg.about_title || 'Passione per la bellezza'}<br /><span className="text-sky-500 italic">dal 1983</span>
               </h2>
-              <p className="text-slate-500 leading-relaxed mb-5 text-lg">
+              <p className="text-[var(--text-secondary)] leading-relaxed mb-5 text-lg">
                 {cfg.about_text || "Da oltre 40 anni siamo il punto di riferimento per l'hair styling a Santa Maria Capua Vetere. Ogni cliente è unica per noi."}
               </p>
-              {cfg.about_text_2 && <p className="text-slate-500 leading-relaxed mb-6">{cfg.about_text_2}</p>}
+              {cfg.about_text_2 && <p className="text-[var(--text-secondary)] leading-relaxed mb-6">{cfg.about_text_2}</p>}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
                 {(cfg.about_features || [
                   'Prodotti senza parabeni e solfati',
@@ -949,7 +949,7 @@ export default function BookingPage() {
                     <div className="w-5 h-5 rounded-full bg-sky-100 flex items-center justify-center flex-shrink-0">
                       <CheckCircle className="w-3.5 h-3.5 text-sky-500" />
                     </div>
-                    <span className="text-sm text-slate-600 font-semibold">{f}</span>
+                    <span className="text-sm text-[var(--text-secondary)] font-semibold">{f}</span>
                   </div>
                 ))}
               </div>
@@ -965,23 +965,23 @@ export default function BookingPage() {
       </section>
 
       {/* PRENOTA */}
-      <section ref={bookRef} id="prenota" className="py-20 sm:py-28 bg-slate-50">
+      <section ref={bookRef} id="prenota" className="py-20 sm:py-28 bg-[var(--bg-elevated)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-14">
             <p className="text-sky-500 font-bold text-sm tracking-widest uppercase mb-3">
               Prenota il tuo appuntamento
             </p>
-            <h2 className="fd text-4xl sm:text-5xl font-bold text-slate-900 mb-4">
+            <h2 className="fd text-4xl sm:text-5xl font-bold text-[var(--text-primary)] mb-4">
               Scegli e Prenota
             </h2>
-            <p className="text-slate-400 max-w-md mx-auto">
+            <p className="text-[var(--text-muted)] max-w-md mx-auto">
               Seleziona i tuoi servizi, scegli data e ora, e conferma in pochi secondi.
             </p>
           </div>
           <div className="max-w-2xl mx-auto">
-            <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-2xl">
+            <div className="bg-[var(--bg-card)] rounded-3xl border border-[var(--border-subtle)] overflow-hidden shadow-2xl">
               {/* Step tabs */}
-              <div className="flex border-b border-slate-100">
+              <div className="flex border-b border-[var(--border-subtle)]">
                 {[
                   { n: 1, l: 'Servizi & Promo' },
                   { n: 2, l: 'Data & Ora' },
@@ -990,9 +990,9 @@ export default function BookingPage() {
                   <button
                     key={s.n}
                     onClick={() => { if (s.n < step || (s.n === 2 && selIds.length > 0)) setStep(s.n); }}
-                    className={`st flex-1 py-4 text-xs font-bold transition-all ${step === s.n ? 'act' : 'text-slate-400'}`}
+                    className={`st flex-1 py-4 text-xs font-bold transition-all ${step === s.n ? 'act' : 'text-[var(--text-muted)]'}`}
                   >
-                    <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] mr-1.5 font-black ${step === s.n ? 'bg-sky-500 text-white' : step > s.n ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                    <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] mr-1.5 font-black ${step === s.n ? 'bg-sky-500 text-white' : step > s.n ? 'bg-emerald-500 text-white' : 'bg-[var(--bg-elevated)] text-[var(--text-muted)]'}`}>
                       {step > s.n ? '✓' : s.n}
                     </span>{s.l}
                   </button>
@@ -1011,17 +1011,17 @@ export default function BookingPage() {
                         <div className="space-y-1.5">
                           {selSvcs.map(s => (
                             <div key={s.id} className="flex justify-between items-center text-sm">
-                              <span className="text-slate-700 font-medium">{getCatIcon(s.category)} {s.name}</span>
+                              <span className="text-[var(--text-primary)] font-medium">{getCatIcon(s.category)} {s.name}</span>
                               <div className="flex items-center gap-3">
                                 <span className="text-sky-600 font-bold">€{s.price}</span>
-                                <button onClick={() => toggleSvc(s)} className="text-slate-400 hover:text-red-400 transition-colors">
+                                <button onClick={() => toggleSvc(s)} className="text-[var(--text-muted)] hover:text-red-400 transition-colors">
                                   <X className="w-4 h-4" />
                                 </button>
                               </div>
                             </div>
                           ))}
                           <div className="border-t border-sky-200 mt-2 pt-2 flex justify-between text-sm font-black">
-                            <span className="text-slate-500">{totDur} min</span>
+                            <span className="text-[var(--text-secondary)]">{totDur} min</span>
                             <span className="text-sky-600">Totale: €{totPrice}</span>
                           </div>
                         </div>
@@ -1031,17 +1031,17 @@ export default function BookingPage() {
                     {loading ? (
                       <div className="space-y-3">
                         {[...Array(5)].map((_, i) => (
-                          <div key={i} className="h-16 bg-slate-100 rounded-2xl animate-pulse" />
+                          <div key={i} className="h-16 bg-[var(--bg-elevated)] rounded-2xl animate-pulse" />
                         ))}
                       </div>
                     ) : (
                       <div className="space-y-5 max-h-[52vh] overflow-y-auto pr-1 pb-2">
                         {cats.length > 0 ? cats.map(cat => (
                           <div key={cat}>
-                            <div className="flex items-center gap-2 mb-2.5 sticky top-0 bg-white/95 backdrop-blur-sm py-1 z-10">
+                            <div className="flex items-center gap-2 mb-2.5 sticky top-0 bg-[var(--bg-card)]/95 backdrop-blur-sm py-1 z-10">
                               <span className="text-base">{getCatIcon(cat)}</span>
-                              <p className="text-xs font-black text-slate-400 uppercase tracking-widest capitalize">{cat}</p>
-                              <div className="flex-1 h-px bg-slate-100" />
+                              <p className="text-xs font-black text-[var(--text-muted)] uppercase tracking-widest capitalize">{cat}</p>
+                              <div className="flex-1 h-px bg-[var(--bg-elevated)]" />
                             </div>
                             <div className="space-y-2">
                               {byCat[cat].map(svc => {
@@ -1051,18 +1051,18 @@ export default function BookingPage() {
                                     <div className="flex items-center gap-3">
                                       <div className="cd">{sel && <CheckCircle className="w-3.5 h-3.5 text-white" />}</div>
                                       <div className="flex-1 min-w-0">
-                                        <p className={`font-bold text-sm leading-tight ${sel ? 'text-sky-700' : 'text-slate-800'}`}>
+                                        <p className={`font-bold text-sm leading-tight ${sel ? 'text-sky-700' : 'text-[var(--text-primary)]'}`}>
                                           {svc.name}
                                         </p>
                                         {svc.description && (
-                                          <p className="text-xs text-slate-400 truncate mt-0.5">{svc.description}</p>
+                                          <p className="text-xs text-[var(--text-muted)] truncate mt-0.5">{svc.description}</p>
                                         )}
                                       </div>
                                       <div className="text-right flex-shrink-0">
-                                        <p className={`font-black text-sm ${sel ? 'text-sky-600' : 'text-slate-700'}`}>
+                                        <p className={`font-black text-sm ${sel ? 'text-sky-600' : 'text-[var(--text-primary)]'}`}>
                                           €{svc.price}
                                         </p>
-                                        <p className="text-[10px] text-slate-400 font-medium">{svc.duration} min</p>
+                                        <p className="text-[10px] text-[var(--text-muted)] font-medium">{svc.duration} min</p>
                                       </div>
                                     </div>
                                   </div>
@@ -1071,7 +1071,7 @@ export default function BookingPage() {
                             </div>
                           </div>
                         )) : (
-                          <div className="text-center py-10 text-slate-400">
+                          <div className="text-center py-10 text-[var(--text-muted)]">
                             <Scissors className="w-10 h-10 mx-auto mb-3 opacity-40" />
                             <p className="font-medium">I servizi verranno caricati a breve</p>
                             <p className="text-sm mt-1">Contattaci su WhatsApp per prenotare</p>
@@ -1080,7 +1080,7 @@ export default function BookingPage() {
 
                         {promos.length > 0 && (
                           <div>
-                            <div className="flex items-center gap-2 mb-2.5 sticky top-0 bg-white/95 backdrop-blur-sm py-1 z-10">
+                            <div className="flex items-center gap-2 mb-2.5 sticky top-0 bg-[var(--bg-card)]/95 backdrop-blur-sm py-1 z-10">
                               <span className="text-base">🎁</span>
                               <p className="text-xs font-black text-pink-400 uppercase tracking-widest">Promozioni attive</p>
                               <div className="flex-1 h-px bg-pink-100" />
@@ -1089,18 +1089,18 @@ export default function BookingPage() {
                               {promos.map((promo, i) => (
                                 <div key={promo.id || i} className="pc bg-gradient-to-r from-pink-50 to-rose-50 border-2 border-pink-200 rounded-2xl p-4">
                                   <div className="flex justify-between items-start mb-1.5">
-                                    <p className="font-bold text-slate-800 text-sm">{promo.name}</p>
+                                    <p className="font-bold text-[var(--text-primary)] text-sm">{promo.name}</p>
                                     <span className="bg-pink-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full">PROMO</span>
                                   </div>
-                                  {promo.description && <p className="text-xs text-slate-500 mb-2">{promo.description}</p>}
+                                  {promo.description && <p className="text-xs text-[var(--text-secondary)] mb-2">{promo.description}</p>}
                                   {promo.free_service_name && (
-                                    <div className="flex items-center gap-1.5 bg-white/70 rounded-lg px-2.5 py-1.5">
+                                    <div className="flex items-center gap-1.5 bg-[var(--bg-card)]/70 rounded-lg px-2.5 py-1.5">
                                       <Gift className="w-3.5 h-3.5 text-pink-500 flex-shrink-0" />
                                       <p className="text-xs font-bold text-pink-700">In omaggio: {promo.free_service_name}</p>
                                     </div>
                                   )}
                                   {promo.promo_code && (
-                                    <p className="text-[10px] text-slate-400 mt-1.5">
+                                    <p className="text-[10px] text-[var(--text-muted)] mt-1.5">
                                       Codice: <span className="font-mono font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">{promo.promo_code}</span>
                                     </p>
                                   )}
@@ -1131,37 +1131,37 @@ export default function BookingPage() {
                   <div className="space-y-5">
                     <div className="bg-sky-50 border border-sky-200 rounded-xl p-4 text-sm">
                       <p className="font-bold text-sky-700 mb-1">{selIds.length} servizi · {totDur} min · €{totPrice}</p>
-                      <p className="text-slate-500 text-xs">{selSvcs.map(s => s.name).join(' · ')}</p>
+                      <p className="text-[var(--text-secondary)] text-xs">{selSvcs.map(s => s.name).join(' · ')}</p>
                     </div>
                     <div>
-                      <label className="text-xs font-bold text-slate-500 mb-1.5 block">📅 Data</label>
+                      <label className="text-xs font-bold text-[var(--text-secondary)] mb-1.5 block">📅 Data</label>
                       <Input 
                         type="date" 
                         value={form.date} 
                         min={format(new Date(), 'yyyy-MM-dd')} 
                         onChange={e => setForm({ ...form, date: e.target.value })} 
-                        className="border-slate-200 text-slate-800 font-semibold"
+                        className="border-[var(--border-subtle)] text-[var(--text-primary)] font-semibold"
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-bold text-slate-500 mb-1.5 block">🕐 Ora</label>
+                      <label className="text-xs font-bold text-[var(--text-secondary)] mb-1.5 block">🕐 Ora</label>
                       <select 
                         value={form.time} 
                         onChange={e => setForm({ ...form, time: e.target.value })} 
-                        className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-800 font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400"
+                        className="w-full px-3 py-2.5 border border-[var(--border-subtle)] rounded-xl text-sm text-[var(--text-primary)] font-semibold bg-[var(--bg-card)] focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400"
                       >
                         {getSlots(form.date).map(t => <option key={t} value={t}>{t}</option>)}
                       </select>
                     </div>
                     {operators.length > 0 && (
                       <div>
-                        <label className="text-xs font-bold text-slate-500 mb-1.5 block">
-                          👤 Operatore <span className="font-normal text-slate-400">(opzionale)</span>
+                        <label className="text-xs font-bold text-[var(--text-secondary)] mb-1.5 block">
+                          👤 Operatore <span className="font-normal text-[var(--text-muted)]">(opzionale)</span>
                         </label>
                         <select 
                           value={form.operator_id} 
                           onChange={e => setForm({ ...form, operator_id: e.target.value })} 
-                          className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400"
+                          className="w-full px-3 py-2.5 border border-[var(--border-subtle)] rounded-xl text-sm text-[var(--text-primary)] bg-[var(--bg-card)] focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400"
                         >
                           <option value="">Nessuna preferenza</option>
                           {operators.map(op => <option key={op.id} value={op.id}>{op.name}</option>)}
@@ -1169,7 +1169,7 @@ export default function BookingPage() {
                       </div>
                     )}
                     <div className="flex gap-3 pt-2">
-                      <button onClick={() => setStep(1)} className="flex-1 border-2 border-slate-200 text-slate-500 font-bold py-3.5 rounded-xl hover:bg-slate-50 transition-all">
+                      <button onClick={() => setStep(1)} className="flex-1 border-2 border-[var(--border-subtle)] text-[var(--text-secondary)] font-bold py-3.5 rounded-xl hover:bg-[var(--bg-elevated)] transition-all">
                         ← Indietro
                       </button>
                       <button onClick={() => setStep(3)} className="flex-1 bp py-3.5">
@@ -1183,54 +1183,54 @@ export default function BookingPage() {
                 {step === 3 && (
                   <div className="space-y-4">
                     <div>
-                      <label className="text-xs font-bold text-slate-500 mb-1.5 block">Nome e cognome *</label>
+                      <label className="text-xs font-bold text-[var(--text-secondary)] mb-1.5 block">Nome e cognome *</label>
                       <Input 
                         value={form.client_name} 
                         onChange={e => setForm({ ...form, client_name: e.target.value })} 
                         placeholder="Es. Maria Rossi" 
-                        className="border-slate-200 text-slate-800 font-semibold"
+                        className="border-[var(--border-subtle)] text-[var(--text-primary)] font-semibold"
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-bold text-slate-500 mb-1.5 block">Telefono *</label>
+                      <label className="text-xs font-bold text-[var(--text-secondary)] mb-1.5 block">Telefono *</label>
                       <Input 
                         value={form.client_phone} 
                         onChange={e => setForm({ ...form, client_phone: e.target.value })} 
                         placeholder="Es. 339 123 4567" 
-                        className="border-slate-200 text-slate-800 font-semibold"
+                        className="border-[var(--border-subtle)] text-[var(--text-primary)] font-semibold"
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-bold text-slate-500 mb-1.5 block">
-                        Note <span className="font-normal text-slate-400">(opzionale)</span>
+                      <label className="text-xs font-bold text-[var(--text-secondary)] mb-1.5 block">
+                        Note <span className="font-normal text-[var(--text-muted)]">(opzionale)</span>
                       </label>
                       <Textarea 
                         value={form.notes} 
                         onChange={e => setForm({ ...form, notes: e.target.value })} 
                         placeholder="Richieste particolari, allergie, ecc..." 
                         rows={2} 
-                        className="border-slate-200 text-slate-800 resize-none"
+                        className="border-[var(--border-subtle)] text-[var(--text-primary)] resize-none"
                       />
                     </div>
-                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-2 text-sm">
-                      <p className="font-black text-slate-700 text-xs uppercase tracking-wider mb-2">Riepilogo</p>
-                      <div className="flex justify-between text-slate-500">
+                    <div className="bg-[var(--bg-elevated)] rounded-2xl p-4 border border-[var(--border-subtle)] space-y-2 text-sm">
+                      <p className="font-black text-[var(--text-primary)] text-xs uppercase tracking-wider mb-2">Riepilogo</p>
+                      <div className="flex justify-between text-[var(--text-secondary)]">
                         <span>Data & Ora</span>
-                        <span className="font-bold text-slate-700">
+                        <span className="font-bold text-[var(--text-primary)]">
                           {format(new Date(form.date + 'T00:00:00'), 'd MMM yyyy', { locale: it })} · {form.time}
                         </span>
                       </div>
-                      <div className="flex justify-between text-slate-500">
+                      <div className="flex justify-between text-[var(--text-secondary)]">
                         <span>Servizi</span>
-                        <span className="font-bold text-slate-700">{selIds.length} selezionati · {totDur} min</span>
+                        <span className="font-bold text-[var(--text-primary)]">{selIds.length} selezionati · {totDur} min</span>
                       </div>
-                      <div className="flex justify-between font-black text-slate-900 pt-2 border-t border-slate-200">
+                      <div className="flex justify-between font-black text-[var(--text-primary)] pt-2 border-t border-[var(--border-subtle)]">
                         <span>Totale</span>
                         <span className="text-sky-500 text-base">€{totPrice}</span>
                       </div>
                     </div>
                     <div className="flex gap-3 pt-2">
-                      <button onClick={() => setStep(2)} className="flex-1 border-2 border-slate-200 text-slate-500 font-bold py-3.5 rounded-xl hover:bg-slate-50 transition-all">
+                      <button onClick={() => setStep(2)} className="flex-1 border-2 border-[var(--border-subtle)] text-[var(--text-secondary)] font-bold py-3.5 rounded-xl hover:bg-[var(--bg-elevated)] transition-all">
                         ← Indietro
                       </button>
                       <button onClick={handleSubmit} disabled={submitting} className="flex-1 bp py-3.5 disabled:opacity-60">
@@ -1252,11 +1252,11 @@ export default function BookingPage() {
             </div>
 
             <div className="mt-5 grid grid-cols-2 gap-3">
-              <a href="tel:08231878320" className="flex items-center gap-2.5 bg-white border border-slate-200 rounded-2xl p-3.5 transition-all hover:shadow-md">
+              <a href="tel:08231878320" className="flex items-center gap-2.5 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-3.5 transition-all hover:shadow-md">
                 <Phone className="w-4 h-4 text-sky-500 flex-shrink-0" />
                 <div>
-                  <p className="text-[10px] text-slate-400 font-semibold">Telefono</p>
-                  <p className="text-xs font-bold text-slate-700">0823 18 78 320</p>
+                  <p className="text-[10px] text-[var(--text-muted)] font-semibold">Telefono</p>
+                  <p className="text-xs font-bold text-[var(--text-primary)]">0823 18 78 320</p>
                 </div>
               </a>
               <button onClick={openWA} className="flex items-center gap-2.5 bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5 transition-all hover:shadow-md text-left">
@@ -1272,12 +1272,12 @@ export default function BookingPage() {
       </section>
 
       {/* GALLERIA */}
-      <section id="galleria" className="py-20 sm:py-28 bg-slate-50">
+      <section id="galleria" className="py-20 sm:py-28 bg-[var(--bg-elevated)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-12">
             <div>
               <p className="text-sky-500 font-bold text-sm tracking-widest uppercase mb-3">Galleria</p>
-              <h2 className="fd text-4xl sm:text-5xl font-bold text-slate-900">
+              <h2 className="fd text-4xl sm:text-5xl font-bold text-[var(--text-primary)]">
                 {galTab === 'lavori' ? 'I nostri lavori' : 'Il salone'}
               </h2>
             </div>
@@ -1289,7 +1289,7 @@ export default function BookingPage() {
                 <button
                   key={t.id}
                   onClick={() => setGalTab(t.id)}
-                  className={`gt flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold ${galTab === t.id ? 'act' : ' text-slate-500'}`}
+                  className={`gt flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold ${galTab === t.id ? 'act' : ' text-[var(--text-secondary)]'}`}
                 >
                   <t.icon className="w-4 h-4" />{t.label}
                 </button>
@@ -1347,28 +1347,28 @@ export default function BookingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-14">
             <p className="text-sky-500 font-bold text-sm tracking-widest uppercase mb-3">Recensioni</p>
-            <h2 className="fd text-4xl sm:text-5xl font-bold text-slate-900 mb-3">Cosa dicono di noi</h2>
+            <h2 className="fd text-4xl sm:text-5xl font-bold text-[var(--text-primary)] mb-3">Cosa dicono di noi</h2>
             <div className="flex justify-center gap-0.5 mt-3">
               {[...Array(5)].map((_, i) => <Star key={i} className="w-5 h-5 fill-amber-400 text-amber-400" />)}
-              <span className="text-slate-400 text-sm font-semibold ml-2 self-center">5.0 · Clienti verificate</span>
+              <span className="text-[var(--text-muted)] text-sm font-semibold ml-2 self-center">5.0 · Clienti verificate</span>
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {reviews.map((rev, i) => (
-              <div key={rev.id || i} className="rc bg-white border border-slate-200 rounded-2xl p-6">
+              <div key={rev.id || i} className="rc bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-6">
                 <div className="flex gap-0.5 mb-4">
                   {[...Array(rev.rating || 5)].map((_, j) => (
                     <Star key={j} className="w-4 h-4 fill-amber-400 text-amber-400" />
                   ))}
                 </div>
-                <p className="text-slate-600 leading-relaxed mb-5 text-sm italic">"{rev.text}"</p>
+                <p className="text-[var(--text-secondary)] leading-relaxed mb-5 text-sm italic">"{rev.text}"</p>
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 bg-gradient-to-br from-sky-400 to-sky-600 rounded-full flex items-center justify-center">
                     <span className="text-white font-black text-sm">{(rev.name || 'A')[0]}</span>
                   </div>
                   <div>
-                    <p className="font-bold text-slate-700 text-sm">{rev.name}</p>
-                    <p className="text-[10px] text-slate-400">Cliente verificata</p>
+                    <p className="font-bold text-[var(--text-primary)] text-sm">{rev.name}</p>
+                    <p className="text-[10px] text-[var(--text-muted)]">Cliente verificata</p>
                   </div>
                 </div>
               </div>
@@ -1426,7 +1426,7 @@ export default function BookingPage() {
                       </div>
                       <div>
                         <p className="text-white font-bold group-hover:text-sky-300 transition-colors">{item.title}</p>
-                        {item.sub && <p className="text-slate-400 text-sm mt-0.5">{item.sub}</p>}
+                        {item.sub && <p className="text-[var(--text-muted)] text-sm mt-0.5">{item.sub}</p>}
                       </div>
                     </div>
                   );
@@ -1447,16 +1447,16 @@ export default function BookingPage() {
                     target="_blank" 
                     rel="noopener noreferrer" 
                     title={s.label}
-                    className="si2 w-12 h-12 bg-white/10 hover:bg-white/20 rounded-xl flex items-center justify-center text-white transition-all"
+                    className="si2 w-12 h-12 bg-[var(--bg-card)]/10 hover:bg-[var(--bg-card)]/20 rounded-xl flex items-center justify-center text-white transition-all"
                   >
                     <s.icon className="w-5 h-5" />
                   </a>
                 ))}
               </div>
             </div>
-            <div className="hl bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-sm">
+            <div className="hl bg-[var(--bg-card)]/5 border border-white/10 rounded-3xl p-8 backdrop-blur-sm">
               <h3 className="fd text-3xl font-bold text-white mb-3">Pronta per il tuo look?</h3>
-              <p className="text-slate-400 mb-8 leading-relaxed">Prenota il tuo appuntamento in pochi click, oppure contattaci direttamente.</p>
+              <p className="text-[var(--text-muted)] mb-8 leading-relaxed">Prenota il tuo appuntamento in pochi click, oppure contattaci direttamente.</p>
               <div className="space-y-3">
                 <button 
                   onClick={() => bookRef.current?.scrollIntoView({ behavior: 'smooth' })} 
@@ -1467,13 +1467,13 @@ export default function BookingPage() {
                 <button onClick={openWA} className="bw w-full py-4 text-base">
                   <MessageSquare className="w-5 h-5" />Scrivici su WhatsApp
                 </button>
-                <a href="tel:08231878320" className="w-full border-2 border-white/20 hover:border-white/40 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 text-base hover:bg-white/5">
+                <a href="tel:08231878320" className="w-full border-2 border-white/20 hover:border-white/40 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 text-base hover:bg-[var(--bg-card)]/5">
                   <Phone className="w-5 h-5" />0823 18 78 320
                 </a>
               </div>
               <button 
                 onClick={() => setManageOpen(true)} 
-                className="w-full mt-4 text-slate-400 hover:text-white text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+                className="w-full mt-4 text-[var(--text-muted)] hover:text-white text-sm font-semibold transition-colors flex items-center justify-center gap-2"
               >
                 <Calendar className="w-4 h-4" />Gestisci il tuo appuntamento
               </button>
@@ -1489,10 +1489,10 @@ export default function BookingPage() {
             <img src="/logo.png?v=4" alt="Bruno Melito Hair" className="w-10 h-10 rounded-xl hs" />
             <div>
               <p className="fd text-white font-bold">BRUNO MELITO HAIR</p>
-              <p className="text-[10px] text-slate-600 tracking-widest uppercase">Parrucchieri dal 1983</p>
+              <p className="text-[10px] text-[var(--text-secondary)] tracking-widest uppercase">Parrucchieri dal 1983</p>
             </div>
           </div>
-          <p className="text-slate-700 text-xs">© {new Date().getFullYear()} Bruno Melito Hair · Tutti i diritti riservati</p>
+          <p className="text-[var(--text-primary)] text-xs">© {new Date().getFullYear()} Bruno Melito Hair · Tutti i diritti riservati</p>
           <div className="flex gap-3">
             {SOCIAL.map((s, i) => (
               <a 
@@ -1500,7 +1500,7 @@ export default function BookingPage() {
                 href={s.url} 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className="si2 text-slate-600 hover:text-white transition-colors"
+                className="si2 text-[var(--text-secondary)] hover:text-white transition-colors"
               >
                 <s.icon className="w-4 h-4" />
               </a>
@@ -1510,7 +1510,7 @@ export default function BookingPage() {
       </footer>
 
       {/* CTA MOBILE */}
-      <div className="fixed bottom-0 left-0 right-0 p-3 bg-white/96 backdrop-blur-md border-t border-slate-200 sm:hidden z-50">
+      <div className="fixed bottom-0 left-0 right-0 p-3 bg-[var(--bg-card)]/96 backdrop-blur-md border-t border-[var(--border-subtle)] sm:hidden z-50">
         <button 
           onClick={() => bookRef.current?.scrollIntoView({ behavior: 'smooth' })} 
           className="bp w-full py-4 text-base"

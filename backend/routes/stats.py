@@ -208,6 +208,26 @@ async def save_nav_config(data: dict, current_user: dict = Depends(get_current_u
     return {"status": "ok"}
 
 
+# ============== ADMIN THEME ==============
+
+@router.get("/admin-theme")
+async def get_admin_theme(current_user: dict = Depends(get_current_user)):
+    config = await db.admin_themes.find_one({"user_id": current_user["id"]}, {"_id": 0, "user_id": 0})
+    return config or {}
+
+@router.put("/admin-theme")
+async def save_admin_theme(data: dict, current_user: dict = Depends(get_current_user)):
+    data.pop("_id", None)
+    data["user_id"] = current_user["id"]
+    await db.admin_themes.update_one(
+        {"user_id": current_user["id"]},
+        {"$set": data},
+        upsert=True
+    )
+    return {"status": "ok"}
+
+
+
 # ============== PAYMENTS ==============
 
 @router.get("/payments")

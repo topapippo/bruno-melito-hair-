@@ -34,7 +34,30 @@ export default function Layout({ children }) {
         }
       } catch {}
     };
+    const loadAdminTheme = async () => {
+      try {
+        const res = await axios.get(`${API}/admin-theme`);
+        if (res.data && Object.keys(res.data).length > 0) {
+          const t = res.data;
+          const root = document.documentElement;
+          if (t.primary_color) {
+            root.style.setProperty('--gold', t.primary_color);
+            root.style.setProperty('--gold-dim', t.primary_color + '15');
+            root.style.setProperty('--border-gold', t.primary_color + '30');
+            root.style.setProperty('--glow-gold', `0 0 20px ${t.primary_color}30`);
+          }
+          if (t.accent_color) root.style.setProperty('--cyan', t.accent_color);
+          if (t.font_family) { root.style.setProperty('--font-admin', t.font_family); document.body.style.fontFamily = t.font_family; }
+          if (t.font_size) {
+            const sizes = { sm: '13px', base: '14px', lg: '16px', xl: '18px' };
+            document.body.style.fontSize = sizes[t.font_size] || '14px';
+          }
+          if (t.border_radius) root.style.setProperty('--radius', t.border_radius);
+        }
+      } catch {}
+    };
     loadNavConfig();
+    loadAdminTheme();
   }, []);
 
   const handleConfigSave = ({ sidebar }) => {

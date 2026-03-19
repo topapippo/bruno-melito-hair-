@@ -143,13 +143,13 @@ export default function OperatorsPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="font-playfair text-3xl font-medium text-[#0F172A]">Operatori</h1>
-            <p className="text-[#334155] mt-1 font-manrope">{operators.length} collaboratori</p>
+            <h1 className="font-playfair text-3xl font-medium text-[var(--text-primary)]">Operatori</h1>
+            <p className="text-[var(--text-secondary)] mt-1 font-manrope">{operators.length} collaboratori</p>
           </div>
           <Button 
             onClick={openNewDialog}
             data-testid="new-operator-btn"
-            className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white shadow-lg shadow-[#0EA5E9]/20"
+            className="bg-[var(--gold)] hover:bg-[var(--gold)] text-white shadow-lg shadow-[var(--gold)]/20"
           >
             <Plus className="w-5 h-5 mr-2" />
             Nuovo Operatore
@@ -169,7 +169,7 @@ export default function OperatorsPage() {
               <Card
                 key={operator.id}
                 data-testid={`operator-card-${operator.id}`}
-                className={`bg-white border-[#E2E8F0]/30 hover:border-[#0EA5E9]/30 transition-all duration-300 hover:-translate-y-1 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] ${
+                className={`bg-[var(--bg-card)] border-[var(--border-subtle)]/30 hover:border-[var(--gold)]/30 transition-all duration-300 hover:-translate-y-1 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] ${
                   !operator.active ? 'opacity-60' : ''
                 }`}
               >
@@ -187,9 +187,9 @@ export default function OperatorsPage() {
                         />
                       </div>
                       <div>
-                        <h3 className="font-medium text-[#0F172A]">{operator.name}</h3>
+                        <h3 className="font-medium text-[var(--text-primary)]">{operator.name}</h3>
                         {operator.phone && (
-                          <p className="text-sm text-[#334155]">{operator.phone}</p>
+                          <p className="text-sm text-[var(--text-secondary)]">{operator.phone}</p>
                         )}
                       </div>
                     </div>
@@ -199,14 +199,14 @@ export default function OperatorsPage() {
                     />
                   </div>
 
-                  <div className="flex items-center justify-between pt-3 border-t border-[#E2E8F0]/30">
+                  <div className="flex items-center justify-between pt-3 border-t border-[var(--border-subtle)]/30">
                     <div className="flex items-center gap-2">
                       <Switch
                         checked={operator.active}
                         onCheckedChange={() => handleToggleActive(operator)}
                         className="data-[state=checked]:bg-[#789F8A]"
                       />
-                      <span className="text-sm text-[#334155]">
+                      <span className="text-sm text-[var(--text-secondary)]">
                         {operator.active ? 'Attivo' : 'Inattivo'}
                       </span>
                     </div>
@@ -215,7 +215,7 @@ export default function OperatorsPage() {
                         size="icon"
                         variant="ghost"
                         onClick={() => handleEdit(operator)}
-                        className="text-[#334155] hover:text-[#0EA5E9]"
+                        className="text-[var(--text-secondary)] hover:text-[var(--gold)]"
                       >
                         <Edit2 className="w-4 h-4" />
                       </Button>
@@ -226,7 +226,7 @@ export default function OperatorsPage() {
                           setOperatorToDelete(operator.id);
                           setDeleteDialogOpen(true);
                         }}
-                        className="text-[#334155] hover:text-[#E76F51]"
+                        className="text-[var(--text-secondary)] hover:text-[#E76F51]"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -237,14 +237,14 @@ export default function OperatorsPage() {
             ))}
           </div>
         ) : (
-          <Card className="bg-white border-[#E2E8F0]/30">
+          <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)]/30">
             <CardContent className="py-16 text-center">
               <Users className="w-16 h-16 mx-auto text-[#E2E8F0] mb-4" strokeWidth={1.5} />
-              <h3 className="font-playfair text-xl text-[#0F172A] mb-2">Nessun operatore</h3>
-              <p className="text-[#334155] mb-4">Aggiungi le tue collaboratrici</p>
+              <h3 className="font-playfair text-xl text-[var(--text-primary)] mb-2">Nessun operatore</h3>
+              <p className="text-[var(--text-secondary)] mb-4">Aggiungi le tue collaboratrici</p>
               <Button
                 onClick={openNewDialog}
-                className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white"
+                className="bg-[var(--gold)] hover:bg-[var(--gold)] text-white"
               >
                 <Plus className="w-4 h-4 mr-2" /> Aggiungi Operatore
               </Button>
@@ -256,7 +256,7 @@ export default function OperatorsPage() {
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle className="font-playfair text-2xl text-[#0F172A]">
+              <DialogTitle className="font-playfair text-2xl text-[var(--text-primary)]">
                 {editingOperator ? 'Modifica Operatore' : 'Nuovo Operatore'}
               </DialogTitle>
             </DialogHeader>
@@ -268,7 +268,7 @@ export default function OperatorsPage() {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Nome operatore"
                   data-testid="operator-name-input"
-                  className="bg-[#F8FAFC] border-transparent focus:border-[#0EA5E9]"
+                  className="bg-[var(--bg-elevated)] border-transparent focus:border-[var(--gold)]"
                   required
                 />
               </div>
@@ -279,7 +279,7 @@ export default function OperatorsPage() {
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   placeholder="+39 ..."
                   data-testid="operator-phone-input"
-                  className="bg-[#F8FAFC] border-transparent focus:border-[#0EA5E9]"
+                  className="bg-[var(--bg-elevated)] border-transparent focus:border-[var(--gold)]"
                 />
               </div>
               <div className="space-y-2">
@@ -306,7 +306,7 @@ export default function OperatorsPage() {
                   type="submit"
                   disabled={saving}
                   data-testid="save-operator-btn"
-                  className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white"
+                  className="bg-[var(--gold)] hover:bg-[var(--gold)] text-white"
                 >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : editingOperator ? 'Salva Modifiche' : 'Aggiungi Operatore'}
                 </Button>

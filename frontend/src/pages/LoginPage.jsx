@@ -69,30 +69,30 @@ export default function LoginPage() {
       </div>
 
       {/* Right - Form */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-[#F8FAFC]">
+      <div className="flex-1 flex items-center justify-center p-8 bg-[var(--bg-elevated)]">
         <div className="w-full max-w-md">
           {/* Logo Mobile */}
           <div className="text-center mb-8">
             <img src="/logo.png?v=4" alt="Bruno Melito Hair" className="w-32 h-32 mx-auto mb-4 rounded-2xl shadow-lg object-cover lg:hidden" />
-            <h1 className="font-playfair text-3xl font-bold text-[#0F172A]">BRUNO MELITO HAIR</h1>
-            <p className="text-[#334155] mt-2 font-manrope">Il gestionale per il tuo salone</p>
+            <h1 className="font-playfair text-3xl font-bold text-[var(--text-primary)]">BRUNO MELITO HAIR</h1>
+            <p className="text-[var(--text-secondary)] mt-2 font-manrope">Il gestionale per il tuo salone</p>
           </div>
 
-          <Card className="bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
+          <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
             <Tabs defaultValue="login">
               <CardHeader className="pb-4">
-                <TabsList className="grid w-full grid-cols-2 bg-[#F8FAFC]">
+                <TabsList className="grid w-full grid-cols-2 bg-[var(--bg-elevated)]">
                   <TabsTrigger 
                     value="login" 
                     data-testid="tab-login"
-                    className="data-[state=active]:bg-white data-[state=active]:text-[#0EA5E9]"
+                    className="data-[state=active]:bg-[var(--bg-card)] data-[state=active]:text-[#0EA5E9]"
                   >
                     Accedi
                   </TabsTrigger>
                   <TabsTrigger 
                     value="register" 
                     data-testid="tab-register"
-                    className="data-[state=active]:bg-white data-[state=active]:text-[#0EA5E9]"
+                    className="data-[state=active]:bg-[var(--bg-card)] data-[state=active]:text-[#0EA5E9]"
                   >
                     Registrati
                   </TabsTrigger>
@@ -104,7 +104,7 @@ export default function LoginPage() {
                 <TabsContent value="login">
                   <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="login-email" className="text-[#0F172A]">Email</Label>
+                      <Label htmlFor="login-email" className="text-[var(--text-primary)]">Email</Label>
                       <Input
                         id="login-email"
                         type="email"
@@ -112,12 +112,12 @@ export default function LoginPage() {
                         placeholder="nome@esempio.it"
                         value={loginData.email}
                         onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                        className="bg-[#F8FAFC] border-transparent focus:border-[#0EA5E9] focus:ring-1 focus:ring-[#0EA5E9] h-12"
+                        className="bg-[var(--bg-elevated)] border-transparent focus:border-[var(--gold)] focus:ring-1 focus:ring-[#0EA5E9] h-12"
                         required
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="login-password" className="text-[#0F172A]">Password</Label>
+                      <Label htmlFor="login-password" className="text-[var(--text-primary)]">Password</Label>
                       <Input
                         id="login-password"
                         type="password"
@@ -125,7 +125,7 @@ export default function LoginPage() {
                         placeholder="••••••••"
                         value={loginData.password}
                         onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                        className="bg-[#F8FAFC] border-transparent focus:border-[#0EA5E9] focus:ring-1 focus:ring-[#0EA5E9] h-12"
+                        className="bg-[var(--bg-elevated)] border-transparent focus:border-[var(--gold)] focus:ring-1 focus:ring-[#0EA5E9] h-12"
                         required
                       />
                     </div>
@@ -133,7 +133,7 @@ export default function LoginPage() {
                       type="submit"
                       data-testid="login-submit-btn"
                       disabled={loading}
-                      className="w-full h-12 bg-[#0EA5E9] hover:bg-[#0284C7] text-white shadow-lg shadow-[#0EA5E9]/20 transition-all active:scale-95"
+                      className="w-full h-12 bg-[var(--gold)] hover:bg-[var(--gold)] text-white shadow-lg shadow-[var(--gold)]/20 transition-all active:scale-95"
                     >
                       {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Accedi'}
                     </Button>
@@ -144,7 +144,7 @@ export default function LoginPage() {
                 <TabsContent value="register">
                   <form onSubmit={handleRegister} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="register-name" className="text-[#0F172A]">Nome</Label>
+                      <Label htmlFor="register-name" className="text-[var(--text-primary)]">Nome</Label>
                       <Input
                         id="register-name"
                         type="text"
@@ -152,12 +152,12 @@ export default function LoginPage() {
                         placeholder="Il tuo nome"
                         value={registerData.name}
                         onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
-                        className="bg-[#F8FAFC] border-transparent focus:border-[#0EA5E9] focus:ring-1 focus:ring-[#0EA5E9] h-12"
+                        className="bg-[var(--bg-elevated)] border-transparent focus:border-[var(--gold)] focus:ring-1 focus:ring-[#0EA5E9] h-12"
                         required
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="register-salon" className="text-[#0F172A]">Nome Salone</Label>
+                      <Label htmlFor="register-salon" className="text-[var(--text-primary)]">Nome Salone</Label>
                       <Input
                         id="register-salon"
                         type="text"
@@ -165,11 +165,11 @@ export default function LoginPage() {
                         placeholder="Il nome del tuo salone"
                         value={registerData.salon_name}
                         onChange={(e) => setRegisterData({ ...registerData, salon_name: e.target.value })}
-                        className="bg-[#F8FAFC] border-transparent focus:border-[#0EA5E9] focus:ring-1 focus:ring-[#0EA5E9] h-12"
+                        className="bg-[var(--bg-elevated)] border-transparent focus:border-[var(--gold)] focus:ring-1 focus:ring-[#0EA5E9] h-12"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="register-email" className="text-[#0F172A]">Email</Label>
+                      <Label htmlFor="register-email" className="text-[var(--text-primary)]">Email</Label>
                       <Input
                         id="register-email"
                         type="email"
@@ -177,12 +177,12 @@ export default function LoginPage() {
                         placeholder="nome@esempio.it"
                         value={registerData.email}
                         onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
-                        className="bg-[#F8FAFC] border-transparent focus:border-[#0EA5E9] focus:ring-1 focus:ring-[#0EA5E9] h-12"
+                        className="bg-[var(--bg-elevated)] border-transparent focus:border-[var(--gold)] focus:ring-1 focus:ring-[#0EA5E9] h-12"
                         required
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="register-password" className="text-[#0F172A]">Password</Label>
+                      <Label htmlFor="register-password" className="text-[var(--text-primary)]">Password</Label>
                       <Input
                         id="register-password"
                         type="password"
@@ -190,7 +190,7 @@ export default function LoginPage() {
                         placeholder="••••••••"
                         value={registerData.password}
                         onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
-                        className="bg-[#F8FAFC] border-transparent focus:border-[#0EA5E9] focus:ring-1 focus:ring-[#0EA5E9] h-12"
+                        className="bg-[var(--bg-elevated)] border-transparent focus:border-[var(--gold)] focus:ring-1 focus:ring-[#0EA5E9] h-12"
                         required
                       />
                     </div>
@@ -198,7 +198,7 @@ export default function LoginPage() {
                       type="submit"
                       data-testid="register-submit-btn"
                       disabled={loading}
-                      className="w-full h-12 bg-[#0EA5E9] hover:bg-[#0284C7] text-white shadow-lg shadow-[#0EA5E9]/20 transition-all active:scale-95"
+                      className="w-full h-12 bg-[var(--gold)] hover:bg-[var(--gold)] text-white shadow-lg shadow-[var(--gold)]/20 transition-all active:scale-95"
                     >
                       {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Crea Account'}
                     </Button>

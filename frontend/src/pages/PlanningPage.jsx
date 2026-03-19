@@ -787,7 +787,7 @@ export default function PlanningPage() {
               </div>
               <div className="space-y-2">
                 {newOnlineBookings.slice(0, 3).map(booking => (
-                  <div key={booking.id} className="flex items-center gap-3 bg-white/80 rounded-lg p-2.5 border border-emerald-200 hover:shadow-md transition-shadow cursor-pointer" onClick={() => goToBookingDate(booking)} data-testid={`new-booking-${booking.id}`}>
+                  <div key={booking.id} className="flex items-center gap-3 bg-[var(--bg-card)]/80 rounded-lg p-2.5 border border-emerald-200 hover:shadow-md transition-shadow cursor-pointer" onClick={() => goToBookingDate(booking)} data-testid={`new-booking-${booking.id}`}>
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-sm text-emerald-900 truncate">{booking.client_name}</p>
                       <p className="text-xs text-emerald-700">
@@ -822,16 +822,16 @@ export default function PlanningPage() {
                 </span>
               )}
               {pendingRemindersCount > 0 && autoReminderPending === 0 && (
-                <span className="font-bold text-[#0F172A]">{pendingRemindersCount} promemoria domani</span>
+                <span className="font-bold text-[var(--text-primary)]">{pendingRemindersCount} promemoria domani</span>
               )}
               {inactiveClientsCount > 0 && (
                 <>
-                  {(pendingRemindersCount > 0 || autoReminderPending > 0) && <span className="text-[#334155]"> · </span>}
+                  {(pendingRemindersCount > 0 || autoReminderPending > 0) && <span className="text-[var(--text-secondary)]"> · </span>}
                   <span className="font-bold text-orange-600">{inactiveClientsCount} clienti inattivi</span>
                 </>
               )}
             </div>
-            <span className={`text-xs font-bold shrink-0 ${autoReminderPending > 0 ? 'text-green-600' : 'text-[#0EA5E9]'}`}>
+            <span className={`text-xs font-bold shrink-0 ${autoReminderPending > 0 ? 'text-green-600' : 'text-[var(--gold)]'}`}>
               {autoReminderPending > 0 ? 'Invia ora →' : 'Gestisci →'}
             </span>
           </a>
@@ -852,14 +852,14 @@ export default function PlanningPage() {
                 </span>
               )}
               {upcomingExpenses.filter(e => e.overdue).length > 0 && upcomingExpenses.filter(e => !e.overdue).length > 0 && (
-                <span className="text-[#334155]"> · </span>
+                <span className="text-[var(--text-secondary)]"> · </span>
               )}
               {upcomingExpenses.filter(e => !e.overdue).length > 0 && (
                 <span className="font-bold text-orange-600">
                   {upcomingExpenses.filter(e => !e.overdue).length} in scadenza (7 giorni)
                 </span>
               )}
-              <span className="text-[#334155] ml-1">
+              <span className="text-[var(--text-secondary)] ml-1">
                 — Totale: &euro;{upcomingExpenses.reduce((s, e) => s + e.amount, 0).toFixed(2)}
               </span>
             </div>
@@ -872,7 +872,7 @@ export default function PlanningPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-black text-black">Planning</h1>
-              <p className="text-[#0EA5E9] mt-1 font-bold text-lg">
+              <p className="text-[var(--gold)] mt-1 font-bold text-lg">
                 {format(selectedDate, "EEEE d MMMM yyyy", { locale: it })}
               </p>
             </div>
@@ -886,7 +886,7 @@ export default function PlanningPage() {
                   else if (viewMode === 'week') setSelectedDate(subWeeks(selectedDate, 1));
                   else setSelectedDate(subMonths(selectedDate, 1));
                 }}
-                className="border-[#E2E8F0] h-10 w-10"
+                className="border-[var(--border-subtle)] h-10 w-10"
                 data-testid="prev-day-btn"
               >
                 <ChevronLeft className="w-5 h-5" />
@@ -894,7 +894,7 @@ export default function PlanningPage() {
               <Button
                 variant="outline"
                 onClick={() => setSelectedDate(new Date())}
-                className="border-[#E2E8F0] text-[#0F172A] px-4"
+                className="border-[var(--border-subtle)] text-[var(--text-primary)] px-4"
               >
                 Oggi
               </Button>
@@ -906,16 +906,16 @@ export default function PlanningPage() {
                   else if (viewMode === 'week') setSelectedDate(addWeeks(selectedDate, 1));
                   else setSelectedDate(addMonths(selectedDate, 1));
                 }}
-                className="border-[#E2E8F0] h-10 w-10"
+                className="border-[var(--border-subtle)] h-10 w-10"
                 data-testid="next-day-btn"
               >
                 <ChevronRight className="w-5 h-5" />
               </Button>
-              <div className="flex border border-[#E2E8F0] rounded-lg overflow-hidden ml-2">
+              <div className="flex border border-[var(--border-subtle)] rounded-lg overflow-hidden ml-2">
                 {[{key:'day',label:'Giorno'},{key:'week',label:'Settimana'},{key:'month',label:'Mese'}].map(v => (
                   <Button key={v.key} variant="ghost" size="sm"
                     onClick={() => setViewMode(v.key)}
-                    className={`rounded-none text-xs px-3 h-10 ${viewMode === v.key ? 'bg-[#0EA5E9] text-white hover:bg-[#0EA5E9]' : 'text-[#64748B] hover:bg-gray-100'}`}
+                    className={`rounded-none text-xs px-3 h-10 ${viewMode === v.key ? 'bg-[var(--gold)] text-white hover:bg-[var(--gold)]' : 'text-[var(--text-muted)] hover:bg-[var(--bg-elevated)]'}`}
                     data-testid={`view-${v.key}-btn`}>
                     {v.label}
                   </Button>
@@ -927,7 +927,7 @@ export default function PlanningPage() {
             {/* New Appointment Button - always visible */}
             <Button
               onClick={() => openNewAppointmentForDate(selectedDate)}
-              className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white font-bold h-10 px-4"
+              className="bg-[var(--gold)] hover:bg-[var(--gold)] text-white font-bold h-10 px-4"
               data-testid="new-appointment-global-btn"
             >
               <Plus className="w-4 h-4 mr-1" /> Nuovo
@@ -936,13 +936,13 @@ export default function PlanningPage() {
             <div className="relative">
               <div className="flex items-center">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#0EA5E9]" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[var(--gold)]" />
                   <Input
                     placeholder="Cerca cliente..."
                     value={searchQuery}
                     onChange={(e) => handleSearch(e.target.value)}
                     onFocus={() => setSearchOpen(true)}
-                    className="pl-9 w-48 md:w-56 bg-white border-2 border-[#0EA5E9]/50 focus:border-[#0EA5E9] font-medium"
+                    className="pl-9 w-48 md:w-56 bg-[var(--bg-card)] border-2 border-[var(--gold)]/50 focus:border-[var(--gold)] font-medium"
                     data-testid="search-client-input"
                   />
                   {searchQuery && (
@@ -963,13 +963,13 @@ export default function PlanningPage() {
               
               {/* Search Results Dropdown */}
               {searchOpen && searchQuery.length >= 2 && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#E2E8F0] rounded-lg shadow-lg z-50 max-h-80 overflow-auto">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-lg shadow-lg z-50 max-h-80 overflow-auto">
                   {searching ? (
                     <div className="p-4 text-center">
-                      <Loader2 className="w-5 h-5 animate-spin mx-auto text-[#0EA5E9]" />
+                      <Loader2 className="w-5 h-5 animate-spin mx-auto text-[var(--gold)]" />
                     </div>
                   ) : searchResults.clients.length === 0 ? (
-                    <div className="p-4 text-center text-[#334155] text-sm">
+                    <div className="p-4 text-center text-[var(--text-secondary)] text-sm">
                       Nessun cliente trovato
                     </div>
                   ) : (
@@ -977,24 +977,24 @@ export default function PlanningPage() {
                       {searchResults.clients.map((client) => {
                         const clientApts = searchResults.appointments.filter(a => a.client_id === client.id);
                         return (
-                          <div key={client.id} className="border-b border-[#E2E8F0]/30 last:border-0">
+                          <div key={client.id} className="border-b border-[var(--border-subtle)]/30 last:border-0">
                             <button
-                              className="w-full px-4 py-2 text-left hover:bg-[#F8FAFC] flex items-center justify-between"
+                              className="w-full px-4 py-2 text-left hover:bg-[var(--bg-elevated)] flex items-center justify-between"
                               onClick={() => highlightClient(client.id)}
                               data-testid={`search-result-${client.id}`}
                             >
                               <div>
-                                <p className="font-medium text-[#0F172A]">{client.name}</p>
-                                <p className="text-xs text-[#334155]">{client.phone}</p>
+                                <p className="font-medium text-[var(--text-primary)]">{client.name}</p>
+                                <p className="text-xs text-[var(--text-secondary)]">{client.phone}</p>
                               </div>
-                              <span className="text-xs bg-[#0EA5E9]/10 text-[#0EA5E9] px-2 py-1 rounded">
+                              <span className="text-xs bg-[var(--gold)]/10 text-[var(--gold)] px-2 py-1 rounded">
                                 {clientApts.length} app.
                               </span>
                             </button>
                             {clientApts.slice(0, 3).map((apt) => (
                               <div
                                 key={apt.id}
-                                className="px-4 py-1 pl-8 text-xs text-[#334155] bg-[#F8FAFC]/50"
+                                className="px-4 py-1 pl-8 text-xs text-[var(--text-secondary)] bg-[var(--bg-elevated)]/50"
                               >
                                 {fmtDate(apt.date)} {apt.time} - {apt.services?.map(s => s.name).join(', ')}
                               </div>
@@ -1010,8 +1010,8 @@ export default function PlanningPage() {
 
             {/* Highlighted client indicator */}
             {highlightedClientId && (
-              <div className="flex items-center gap-2 bg-[#0EA5E9]/10 px-3 py-1.5 rounded-lg">
-                <span className="text-sm text-[#0EA5E9] font-medium">
+              <div className="flex items-center gap-2 bg-[var(--gold)]/10 px-3 py-1.5 rounded-lg">
+                <span className="text-sm text-[var(--gold)] font-medium">
                   Filtro attivo
                 </span>
                 <Button
@@ -1020,7 +1020,7 @@ export default function PlanningPage() {
                   className="h-5 w-5"
                   onClick={clearHighlight}
                 >
-                  <X className="w-3 h-3 text-[#0EA5E9]" />
+                  <X className="w-3 h-3 text-[var(--gold)]" />
                 </Button>
               </div>
             )}
@@ -1032,24 +1032,24 @@ export default function PlanningPage() {
         {loading ? (
           <Skeleton className="h-[600px] w-full" />
         ) : viewMode === 'day' ? (
-          <Card className="bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] overflow-hidden">
+          <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] overflow-hidden">
             <CardContent className="p-0">
               {/* Header with operator names */}
-              <div className="flex border-b-2 border-[#0EA5E9]/40 bg-gradient-to-r from-[#0EA5E9]/10 to-[#E2E8F0]/20 sticky top-0 z-10">
-                <div className="w-16 flex-shrink-0 p-2 border-r-2 border-[#0EA5E9]/30">
-                  <Clock className="w-5 h-5 text-[#0EA5E9] mx-auto" />
+              <div className="flex border-b-2 border-[var(--gold)]/40 bg-gradient-to-r from-[#0EA5E9]/10 to-[#E2E8F0]/20 sticky top-0 z-10">
+                <div className="w-16 flex-shrink-0 p-2 border-r-2 border-[var(--gold)]/30">
+                  <Clock className="w-5 h-5 text-[var(--gold)] mx-auto" />
                 </div>
                 {columns.map((col) => (
                   <div
                     key={col.id || 'unassigned'}
-                    className="flex-1 min-w-[150px] p-3 border-r-2 border-[#0EA5E9]/30 last:border-r-0"
+                    className="flex-1 min-w-[150px] p-3 border-r-2 border-[var(--gold)]/30 last:border-r-0"
                   >
                     <div className="flex items-center gap-2">
                       <div
                         className="w-4 h-4 rounded-full flex-shrink-0 shadow-sm"
                         style={{ backgroundColor: col.color }}
                       />
-                      <span className="font-bold text-[#0F172A] text-sm truncate">
+                      <span className="font-bold text-[var(--text-primary)] text-sm truncate">
                         {col.name}
                       </span>
                     </div>
@@ -1079,8 +1079,8 @@ export default function PlanningPage() {
                     {TIME_SLOTS.map((time, idx) => (
                       <div
                         key={time}
-                        className={`h-12 flex items-center justify-center border-b border-[#E2E8F0]/30 ${
-                          time.endsWith(':00') ? 'font-bold text-sm text-[#0F172A] bg-[#E2E8F0]/20' : 'text-xs text-[#334155]'
+                        className={`h-12 flex items-center justify-center border-b border-[var(--border-subtle)]/30 ${
+                          time.endsWith(':00') ? 'font-bold text-sm text-[var(--text-primary)] bg-[#E2E8F0]/20' : 'text-xs text-[var(--text-secondary)]'
                         }`}
                       >
                         {time.endsWith(':00') || time.endsWith(':30') ? time : ''}
@@ -1095,7 +1095,7 @@ export default function PlanningPage() {
                     return (
                       <div
                         key={col.id || 'unassigned'}
-                        className="flex-1 min-w-[150px] relative border-r border-[#E2E8F0]/20 last:border-r-0"
+                        className="flex-1 min-w-[150px] relative border-r border-[var(--border-subtle)]/20 last:border-r-0"
                       >
                         {/* Time slot backgrounds */}
                         {TIME_SLOTS.map((time) => (
@@ -1105,13 +1105,13 @@ export default function PlanningPage() {
                             onDragOver={(e) => handleDragOver(e, time, col.id)}
                             onDragLeave={handleDragLeave}
                             onDrop={(e) => handleDrop(e, time, col.id)}
-                            className={`h-12 border-b border-[#E2E8F0]/20 transition-colors ${
-                              time.endsWith(':00') ? 'bg-white' : 'bg-[#F8FAFC]/50'
+                            className={`h-12 border-b border-[var(--border-subtle)]/20 transition-colors ${
+                              time.endsWith(':00') ? 'bg-[var(--bg-card)]' : 'bg-[var(--bg-elevated)]/50'
                             } ${
-                              dragOverSlot === `${time}-${col.id}` ? 'bg-[#0EA5E9]/30 ring-2 ring-[#0EA5E9] ring-inset' : ''
+                              dragOverSlot === `${time}-${col.id}` ? 'bg-[var(--gold)]/30 ring-2 ring-[#0EA5E9] ring-inset' : ''
                             } ${
                               !isSlotOccupied(time, col.id) 
-                                ? 'hover:bg-[#0EA5E9]/20 cursor-pointer' 
+                                ? 'hover:bg-[var(--gold)]/20 cursor-pointer' 
                                 : ''
                             }`}
                           />
@@ -1155,7 +1155,7 @@ export default function PlanningPage() {
                                     e.stopPropagation();
                                     openRecurringDialog(apt);
                                   }}
-                                  className="ml-1 p-1 rounded hover:bg-white/20 transition-colors flex-shrink-0"
+                                  className="ml-1 p-1 rounded hover:bg-[var(--bg-card)]/20 transition-colors flex-shrink-0"
                                   title="Ripeti appuntamento"
                                   data-testid={`repeat-btn-${apt.id}`}
                                 >
@@ -1174,29 +1174,29 @@ export default function PlanningPage() {
           </Card>
         ) : viewMode === 'week' ? (
           /* WEEK VIEW */
-          <Card className="bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] overflow-hidden">
+          <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] overflow-hidden">
             <CardContent className="p-0">
-              <div className="grid grid-cols-7 border-b-2 border-[#0EA5E9]/40 bg-gradient-to-r from-[#0EA5E9]/10 to-[#E2E8F0]/20">
+              <div className="grid grid-cols-7 border-b-2 border-[var(--gold)]/40 bg-gradient-to-r from-[#0EA5E9]/10 to-[#E2E8F0]/20">
                 {eachDayOfInterval({ start: startOfWeek(selectedDate, { weekStartsOn: 1 }), end: endOfWeek(selectedDate, { weekStartsOn: 1 }) }).map(day => {
                   const dateStr = format(day, 'yyyy-MM-dd');
                   const dayApts = weekAppointments[dateStr] || [];
                   const isT = isToday(day);
                   return (
                     <div key={dateStr}
-                      className={`p-3 border-r border-[#E2E8F0] cursor-pointer hover:bg-[#0EA5E9]/5 transition-colors ${isT ? 'bg-[#0EA5E9]/10' : ''}`}
+                      className={`p-3 border-r border-[var(--border-subtle)] cursor-pointer hover:bg-[var(--gold)]/5 transition-colors ${isT ? 'bg-[var(--gold)]/10' : ''}`}
                       data-testid={`week-day-${dateStr}`}>
                       <div className="flex items-center justify-between">
                         <div className="text-center flex-1" onClick={() => { setSelectedDate(day); setViewMode('day'); }}>
-                          <p className={`text-xs font-bold uppercase ${isT ? 'text-[#0EA5E9]' : 'text-[#64748B]'}`}>
+                          <p className={`text-xs font-bold uppercase ${isT ? 'text-[var(--gold)]' : 'text-[var(--text-muted)]'}`}>
                             {format(day, 'EEE', { locale: it })}
                           </p>
-                          <p className={`text-2xl font-black ${isT ? 'text-[#0EA5E9]' : 'text-[#0F172A]'}`}>
+                          <p className={`text-2xl font-black ${isT ? 'text-[var(--gold)]' : 'text-[var(--text-primary)]'}`}>
                             {format(day, 'd')}
                           </p>
                         </div>
                         <Button
                           variant="ghost" size="icon"
-                          className="h-7 w-7 rounded-full bg-[#0EA5E9]/10 hover:bg-[#0EA5E9]/20 text-[#0EA5E9]"
+                          className="h-7 w-7 rounded-full bg-[var(--gold)]/10 hover:bg-[var(--gold)]/20 text-[var(--gold)]"
                           onClick={(e) => { e.stopPropagation(); openNewAppointmentForDate(day); }}
                           data-testid={`week-add-apt-${dateStr}`}
                         >
@@ -1212,21 +1212,21 @@ export default function PlanningPage() {
                   const dateStr = format(day, 'yyyy-MM-dd');
                   const dayApts = weekAppointments[dateStr] || [];
                   return (
-                    <div key={dateStr} className="border-r border-[#E2E8F0] p-2 overflow-auto">
+                    <div key={dateStr} className="border-r border-[var(--border-subtle)] p-2 overflow-auto">
                       {dayApts.length === 0 ? (
-                        <p className="text-center text-xs text-[#94A3B8] mt-4">Nessun appuntamento</p>
+                        <p className="text-center text-xs text-[var(--text-muted)] mt-4">Nessun appuntamento</p>
                       ) : (
                         <div className="space-y-1.5">
                           {dayApts.sort((a,b) => a.time.localeCompare(b.time)).map(apt => (
                             <div key={apt.id}
                               className={`p-2 rounded-lg text-xs cursor-pointer hover:scale-[1.02] transition-all border ${
-                                apt.status === 'completed' ? 'bg-emerald-50 border-emerald-200' : 'bg-[#0EA5E9]/10 border-[#0EA5E9]/30'
+                                apt.status === 'completed' ? 'bg-emerald-50 border-emerald-200' : 'bg-[var(--gold)]/10 border-[var(--gold)]/30'
                               }`}
                               onClick={() => { setSelectedDate(day); setViewMode('day'); }}
                               data-testid={`week-apt-${apt.id}`}>
-                              <p className="font-black text-[#0EA5E9]">{apt.time}</p>
-                              <p className="font-bold text-[#0F172A] truncate">{apt.client_name}</p>
-                              <p className="text-[#64748B] truncate">{apt.services?.map(s => s.name).join(', ')}</p>
+                              <p className="font-black text-[var(--gold)]">{apt.time}</p>
+                              <p className="font-bold text-[var(--text-primary)] truncate">{apt.client_name}</p>
+                              <p className="text-[var(--text-muted)] truncate">{apt.services?.map(s => s.name).join(', ')}</p>
                             </div>
                           ))}
                         </div>
@@ -1239,11 +1239,11 @@ export default function PlanningPage() {
           </Card>
         ) : (
           /* MONTH VIEW */
-          <Card className="bg-white border-[#E2E8F0]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] overflow-hidden">
+          <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)]/30 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] overflow-hidden">
             <CardContent className="p-0">
-              <div className="grid grid-cols-7 border-b-2 border-[#0EA5E9]/40 bg-gradient-to-r from-[#0EA5E9]/10 to-[#E2E8F0]/20">
+              <div className="grid grid-cols-7 border-b-2 border-[var(--gold)]/40 bg-gradient-to-r from-[#0EA5E9]/10 to-[#E2E8F0]/20">
                 {['Lun','Mar','Mer','Gio','Ven','Sab','Dom'].map(d => (
-                  <div key={d} className="p-2 text-center text-xs font-bold text-[#64748B] uppercase border-r border-[#E2E8F0]">{d}</div>
+                  <div key={d} className="p-2 text-center text-xs font-bold text-[var(--text-muted)] uppercase border-r border-[var(--border-subtle)]">{d}</div>
                 ))}
               </div>
               <div className="grid grid-cols-7">
@@ -1259,23 +1259,23 @@ export default function PlanningPage() {
                     const isT = isToday(day);
                     return (
                       <div key={dateStr}
-                        className={`border-r border-b border-[#E2E8F0] p-1.5 min-h-[80px] cursor-pointer hover:bg-[#0EA5E9]/5 transition-colors ${!inMonth ? 'bg-gray-50' : ''} ${isT ? 'bg-[#0EA5E9]/10' : ''}`}
+                        className={`border-r border-b border-[var(--border-subtle)] p-1.5 min-h-[80px] cursor-pointer hover:bg-[var(--gold)]/5 transition-colors ${!inMonth ? 'bg-[var(--bg-elevated)]' : ''} ${isT ? 'bg-[var(--gold)]/10' : ''}`}
                         onClick={() => { setSelectedDate(day); setViewMode('day'); }}
                         data-testid={`month-day-${dateStr}`}>
-                        <p className={`text-sm font-bold ${isT ? 'text-[#0EA5E9]' : inMonth ? 'text-[#0F172A]' : 'text-[#CBD5E1]'}`}>
+                        <p className={`text-sm font-bold ${isT ? 'text-[var(--gold)]' : inMonth ? 'text-[var(--text-primary)]' : 'text-[#CBD5E1]'}`}>
                           {format(day, 'd')}
                         </p>
                         {dayApts.length > 0 && (
                           <div className="mt-1">
-                            <span className="inline-block bg-[#0EA5E9] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                            <span className="inline-block bg-[var(--gold)] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                               {dayApts.length}
                             </span>
                             {dayApts.slice(0, 2).map(apt => (
-                              <p key={apt.id} className="text-[10px] text-[#64748B] truncate mt-0.5">
+                              <p key={apt.id} className="text-[10px] text-[var(--text-muted)] truncate mt-0.5">
                                 {apt.time} {apt.client_name}
                               </p>
                             ))}
-                            {dayApts.length > 2 && <p className="text-[10px] text-[#94A3B8]">+{dayApts.length - 2} altri</p>}
+                            {dayApts.length > 2 && <p className="text-[10px] text-[var(--text-muted)]">+{dayApts.length - 2} altri</p>}
                           </div>
                         )}
                       </div>
@@ -1288,8 +1288,8 @@ export default function PlanningPage() {
         )}
 
         {/* Legend */}
-        <div className="flex items-center gap-4 text-xs text-[#334155]">
-          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-[#0EA5E9]" /> Da fare</div>
+        <div className="flex items-center gap-4 text-xs text-[var(--text-secondary)]">
+          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-[var(--gold)]" /> Da fare</div>
           <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-emerald-500" /> Completato</div>
         </div>
 
@@ -1298,7 +1298,7 @@ export default function PlanningPage() {
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle className="font-playfair text-2xl text-[#0F172A]">
+              <DialogTitle className="font-playfair text-2xl text-[var(--text-primary)]">
                 Nuovo Appuntamento
               </DialogTitle>
               <DialogDescription>
@@ -1310,7 +1310,7 @@ export default function PlanningPage() {
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
               {/* Date Picker */}
               <div className="space-y-2">
-                <Label className="text-[#0F172A] font-semibold">Data</Label>
+                <Label className="text-[var(--text-primary)] font-semibold">Data</Label>
                 <div className="relative">
                   <input
                     type="date"
@@ -1319,14 +1319,14 @@ export default function PlanningPage() {
                     className="absolute inset-0 opacity-0 cursor-pointer z-10"
                     data-testid="appointment-date-input"
                   />
-                  <div className="flex items-center h-10 px-3 bg-white border-2 border-[#E2E8F0] rounded-md text-sm text-[#0F172A] font-medium cursor-pointer">
+                  <div className="flex items-center h-10 px-3 bg-[var(--bg-card)] border-2 border-[var(--border-subtle)] rounded-md text-sm text-[var(--text-primary)] font-medium cursor-pointer">
                     {fmtDate(formData.date || format(selectedDate, 'yyyy-MM-dd'))}
                   </div>
                 </div>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-[#0F172A] font-semibold">Cliente</Label>
+                  <Label className="text-[var(--text-primary)] font-semibold">Cliente</Label>
                   <div className="flex gap-1">
                     <Button type="button" variant="ghost" size="sm" className="text-xs h-7 text-amber-600"
                       onClick={() => {
@@ -1358,7 +1358,7 @@ export default function PlanningPage() {
                       placeholder="Nome e Cognome *"
                       value={newClientName}
                       onChange={(e) => setNewClientName(e.target.value)}
-                      className="bg-white border-2 border-emerald-300 text-[#0F172A] font-medium"
+                      className="bg-[var(--bg-card)] border-2 border-emerald-300 text-[var(--text-primary)] font-medium"
                       data-testid="new-client-name-input"
                     />
                     <div className="relative">
@@ -1367,7 +1367,7 @@ export default function PlanningPage() {
                         placeholder="Telefono (importante per promemoria!)"
                         value={newClientPhone}
                         onChange={(e) => setNewClientPhone(e.target.value)}
-                        className={`bg-white border-2 text-[#0F172A] font-medium ${
+                        className={`bg-[var(--bg-card)] border-2 text-[var(--text-primary)] font-medium ${
                           newClientPhone ? 'border-emerald-300' : 'border-orange-400 ring-1 ring-orange-300'
                         }`}
                         data-testid="new-client-phone-input"
@@ -1378,7 +1378,7 @@ export default function PlanningPage() {
                         </p>
                       )}
                     </div>
-                    <button type="button" className="text-xs text-gray-500 hover:text-red-500" onClick={() => { setNewClientMode(false); setNewClientName(''); setNewClientPhone(''); }}>
+                    <button type="button" className="text-xs text-[var(--text-secondary)] hover:text-red-500" onClick={() => { setNewClientMode(false); setNewClientName(''); setNewClientPhone(''); }}>
                       Annulla nuovo cliente
                     </button>
                   </div>
@@ -1397,11 +1397,11 @@ export default function PlanningPage() {
                       }
                     }}
                     onFocus={() => setShowClientDropdown(true)}
-                    className="bg-white border-2 border-[#E2E8F0] text-[#0F172A] font-medium"
+                    className="bg-[var(--bg-card)] border-2 border-[var(--border-subtle)] text-[var(--text-primary)] font-medium"
                     data-testid="search-client-dialog"
                   />
                   {showClientDropdown && clientSearch.length > 0 && (
-                    <div className="absolute z-50 w-full mt-1 bg-white border-2 border-[#0EA5E9] rounded-lg shadow-xl max-h-48 overflow-auto">
+                    <div className="absolute z-50 w-full mt-1 bg-[var(--bg-card)] border-2 border-[var(--gold)] rounded-lg shadow-xl max-h-48 overflow-auto">
                       {clients
                         .filter(c => c.name.toLowerCase().includes(clientSearch.toLowerCase()))
                         .slice(0, 20)
@@ -1409,8 +1409,8 @@ export default function PlanningPage() {
                           <button
                             key={client.id}
                             type="button"
-                            className={`w-full px-3 py-2 text-left hover:bg-[#0EA5E9]/20 text-sm font-medium border-b border-[#E2E8F0]/30 last:border-0 ${
-                              formData.client_id === client.id ? 'bg-[#0EA5E9]/20 text-[#0EA5E9]' : 'text-[#0F172A]'
+                            className={`w-full px-3 py-2 text-left hover:bg-[var(--gold)]/20 text-sm font-medium border-b border-[var(--border-subtle)]/30 last:border-0 ${
+                              formData.client_id === client.id ? 'bg-[var(--gold)]/20 text-[var(--gold)]' : 'text-[var(--text-primary)]'
                             }`}
                             onClick={() => handleClientSelect(client.id, client.name)}
                           >
@@ -1423,7 +1423,7 @@ export default function PlanningPage() {
                           </button>
                         ))}
                       {clients.filter(c => c.name.toLowerCase().includes(clientSearch.toLowerCase())).length === 0 && (
-                        <div className="px-3 py-2 text-sm text-[#334155]">Nessun cliente trovato</div>
+                        <div className="px-3 py-2 text-sm text-[var(--text-secondary)]">Nessun cliente trovato</div>
                       )}
                     </div>
                   )}
@@ -1513,26 +1513,26 @@ export default function PlanningPage() {
                     const selCount = catServices.filter(s => formData.service_ids.includes(s.id)).length;
                     const isOpen = formData._openCats?.includes(cat);
                     return (
-                      <div key={cat} className="border border-[#E2E8F0] rounded-lg overflow-hidden" data-testid={`dialog-cat-${cat}`}>
+                      <div key={cat} className="border border-[var(--border-subtle)] rounded-lg overflow-hidden" data-testid={`dialog-cat-${cat}`}>
                         <button type="button"
                           onClick={() => setFormData(prev => {
                             const open = prev._openCats || [];
                             return { ...prev, _openCats: open.includes(cat) ? open.filter(c => c !== cat) : [...open, cat] };
                           })}
                           className={`w-full flex items-center justify-between px-3 py-2 text-left transition-all ${
-                            isOpen ? 'bg-[#0EA5E9]/5' : 'bg-[#F8FAFC] hover:bg-[#F1F5F9]'
+                            isOpen ? 'bg-[var(--gold)]/5' : 'bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated)]'
                           }`}>
                           <div className="flex items-center gap-2">
-                            <ChevronDown className={`w-4 h-4 text-[#64748B] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-                            <span className="font-bold text-sm text-[#0F172A] capitalize">{cat}</span>
-                            <span className="text-[10px] font-bold bg-[#E2E8F0] text-[#64748B] px-1.5 py-0.5 rounded-full">{catServices.length}</span>
+                            <ChevronDown className={`w-4 h-4 text-[var(--text-muted)] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                            <span className="font-bold text-sm text-[var(--text-primary)] capitalize">{cat}</span>
+                            <span className="text-[10px] font-bold bg-[#E2E8F0] text-[var(--text-muted)] px-1.5 py-0.5 rounded-full">{catServices.length}</span>
                           </div>
                           {selCount > 0 && (
-                            <span className="text-[10px] font-black bg-[#0EA5E9] text-white px-2 py-0.5 rounded-full">{selCount} sel.</span>
+                            <span className="text-[10px] font-black bg-[var(--gold)] text-white px-2 py-0.5 rounded-full">{selCount} sel.</span>
                           )}
                         </button>
                         {isOpen && (
-                          <div className="border-t border-[#E2E8F0] divide-y divide-[#F1F5F9]">
+                          <div className="border-t border-[var(--border-subtle)] divide-y divide-[#F1F5F9]">
                             {catServices.map((service, idx) => {
                               const sel = formData.service_ids.includes(service.id);
                               const cleanName = service.name.replace(/^\d+\s*/, '');
@@ -1540,18 +1540,18 @@ export default function PlanningPage() {
                                 <button key={service.id} type="button"
                                   onClick={() => toggleService(service.id)}
                                   className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-all ${
-                                    sel ? 'bg-[#0EA5E9]/5' : 'hover:bg-[#F8FAFC]'
+                                    sel ? 'bg-[var(--gold)]/5' : 'hover:bg-[var(--bg-elevated)]'
                                   }`}
                                   data-testid={`dialog-service-${service.id}`}>
                                   <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${
-                                    sel ? 'border-[#0EA5E9] bg-[#0EA5E9]' : 'border-[#CBD5E1]'
+                                    sel ? 'border-[var(--gold)] bg-[var(--gold)]' : 'border-[var(--border-subtle)]'
                                   }`}>
                                     {sel && <Check className="w-2.5 h-2.5 text-white" />}
                                   </div>
-                                  <span className="text-[10px] font-bold text-[#94A3B8] w-4 flex-shrink-0">{idx + 1}.</span>
-                                  <span className={`flex-1 text-sm ${sel ? 'font-bold text-[#0EA5E9]' : 'text-[#0F172A]'}`}>{cleanName}</span>
-                                  <span className={`text-sm font-bold flex-shrink-0 ${sel ? 'text-[#0EA5E9]' : 'text-[#334155]'}`}>{'\u20AC'}{service.price}</span>
-                                  <span className="text-[10px] text-[#94A3B8] flex-shrink-0 w-12 text-right">{service.duration} min</span>
+                                  <span className="text-[10px] font-bold text-[var(--text-muted)] w-4 flex-shrink-0">{idx + 1}.</span>
+                                  <span className={`flex-1 text-sm ${sel ? 'font-bold text-[var(--gold)]' : 'text-[var(--text-primary)]'}`}>{cleanName}</span>
+                                  <span className={`text-sm font-bold flex-shrink-0 ${sel ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]'}`}>{'\u20AC'}{service.price}</span>
+                                  <span className="text-[10px] text-[var(--text-muted)] flex-shrink-0 w-12 text-right">{service.duration} min</span>
                                 </button>
                               );
                             })}
@@ -1569,13 +1569,13 @@ export default function PlanningPage() {
                       if (!svc) return null;
                       return (
                         <span key={id}
-                          className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#0EA5E9]/10 text-[#0EA5E9] cursor-pointer hover:bg-[#0EA5E9]/20"
+                          className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--gold)]/10 text-[var(--gold)] cursor-pointer hover:bg-[var(--gold)]/20"
                           onClick={() => toggleService(id)}>
                           {svc.name} <X className="w-2.5 h-2.5" />
                         </span>
                       );
                     })}
-                    <span className="text-[10px] font-bold text-[#0F172A] ml-auto self-center">
+                    <span className="text-[10px] font-bold text-[var(--text-primary)] ml-auto self-center">
                       {formData.service_ids.reduce((sum, id) => { const s = services.find(sv => sv.id === id); return sum + (s?.duration || 0); }, 0)} min · {'\u20AC'}{formData.service_ids.reduce((sum, id) => { const s = services.find(sv => sv.id === id); return sum + (s?.price || 0); }, 0)}
                     </span>
                   </div>
@@ -1603,22 +1603,22 @@ export default function PlanningPage() {
                             className={`w-full p-2.5 rounded-lg border-2 text-left transition-all ${
                               preSelectedCardId === card.id 
                                 ? 'border-green-500 bg-green-100 ring-2 ring-green-400' 
-                                : 'border-green-200 bg-white hover:border-green-400'
+                                : 'border-green-200 bg-[var(--bg-card)] hover:border-green-400'
                             }`}
                             data-testid={`preselect-card-${card.id}`}
                           >
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <CreditCard className={`w-4 h-4 ${preSelectedCardId === card.id ? 'text-green-600' : 'text-gray-400'}`} />
+                                <CreditCard className={`w-4 h-4 ${preSelectedCardId === card.id ? 'text-green-600' : 'text-[var(--text-muted)]'}`} />
                                 <div>
-                                  <p className="font-bold text-sm text-[#0F172A]">{card.name}</p>
-                                  <p className="text-[10px] text-gray-500">{card.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}</p>
+                                  <p className="font-bold text-sm text-[var(--text-primary)]">{card.name}</p>
+                                  <p className="text-[10px] text-[var(--text-secondary)]">{card.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}</p>
                                 </div>
                               </div>
                               <div className="text-right">
                                 <p className="font-black text-green-600 text-sm">€{card.remaining_value?.toFixed(2)}</p>
                                 {card.total_services && (
-                                  <p className="text-[10px] text-gray-500">{card.total_services - card.used_services} servizi rimasti</p>
+                                  <p className="text-[10px] text-[var(--text-secondary)]">{card.total_services - card.used_services} servizi rimasti</p>
                                 )}
                               </div>
                             </div>
@@ -1646,15 +1646,15 @@ export default function PlanningPage() {
                             className={`w-full p-2.5 rounded-lg border-2 text-left transition-all ${
                               preSelectedPromoId === promo.id 
                                 ? 'border-pink-500 bg-pink-100 ring-2 ring-pink-400' 
-                                : 'border-pink-200 bg-white hover:border-pink-400'
+                                : 'border-pink-200 bg-[var(--bg-card)] hover:border-pink-400'
                             }`}
                             data-testid={`preselect-promo-${promo.id}`}
                           >
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <Gift className={`w-4 h-4 ${preSelectedPromoId === promo.id ? 'text-pink-600' : 'text-gray-400'}`} />
+                                <Gift className={`w-4 h-4 ${preSelectedPromoId === promo.id ? 'text-pink-600' : 'text-[var(--text-muted)]'}`} />
                                 <div>
-                                  <p className="font-bold text-sm text-[#0F172A]">{promo.name}</p>
+                                  <p className="font-bold text-sm text-[var(--text-primary)]">{promo.name}</p>
                                   <p className="text-[10px] text-pink-600 font-semibold">OMAGGIO: {promo.free_service_name}</p>
                                 </div>
                               </div>
@@ -1678,7 +1678,7 @@ export default function PlanningPage() {
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   placeholder="Note aggiuntive..."
-                  className="bg-[#F8FAFC]"
+                  className="bg-[var(--bg-elevated)]"
                 />
               </div>
 
@@ -1686,7 +1686,7 @@ export default function PlanningPage() {
                 <Button
                   type="submit"
                   disabled={saving}
-                  className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white"
+                  className="bg-[var(--gold)] hover:bg-[var(--gold)] text-white"
                   data-testid="save-appointment-btn"
                 >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salva Appuntamento'}
@@ -1700,7 +1700,7 @@ export default function PlanningPage() {
         <Dialog open={recurringDialogOpen} onOpenChange={setRecurringDialogOpen}>
           <DialogContent className="sm:max-w-[400px]">
             <DialogHeader>
-              <DialogTitle className="font-playfair text-2xl text-[#0F172A]">
+              <DialogTitle className="font-playfair text-2xl text-[var(--text-primary)]">
                 Ripeti Appuntamento
               </DialogTitle>
               <DialogDescription>
@@ -1713,11 +1713,11 @@ export default function PlanningPage() {
             </DialogHeader>
             <div className="space-y-4 mt-4">
               {selectedAppointment && (
-                <div className="p-4 bg-[#F8FAFC] rounded-lg">
-                  <p className="text-sm font-medium text-[#0F172A]">
+                <div className="p-4 bg-[var(--bg-elevated)] rounded-lg">
+                  <p className="text-sm font-medium text-[var(--text-primary)]">
                     Servizi: {selectedAppointment.services.map(s => s.name).join(', ')}
                   </p>
-                  <p className="text-xs text-[#334155] mt-1">
+                  <p className="text-xs text-[var(--text-secondary)] mt-1">
                     {selectedAppointment.operator_name || operators[0]?.name || '-'}
                   </p>
                 </div>
@@ -1798,9 +1798,9 @@ export default function PlanningPage() {
                 </Select>
               </div>
 
-              <div className="p-3 bg-[#0EA5E9]/10 rounded-lg">
-                <p className="text-sm text-[#0F172A]">
-                  <Check className="w-4 h-4 inline mr-1 text-[#0EA5E9]" />
+              <div className="p-3 bg-[var(--gold)]/10 rounded-lg">
+                <p className="text-sm text-[var(--text-primary)]">
+                  <Check className="w-4 h-4 inline mr-1 text-[var(--gold)]" />
                   Verranno creati <strong>{recurringData.repeat_count}</strong> nuovi appuntamenti, 
                   uno ogni <strong>{recurringData.repeat_type === 'weeks' ? `${recurringData.repeat_weeks} settimane` : `${recurringData.repeat_months} mesi`}</strong>
                 </p>
@@ -1811,14 +1811,14 @@ export default function PlanningPage() {
                   type="button"
                   variant="outline"
                   onClick={() => setRecurringDialogOpen(false)}
-                  className="border-[#E2E8F0]"
+                  className="border-[var(--border-subtle)]"
                 >
                   Annulla
                 </Button>
                 <Button
                   onClick={handleCreateRecurring}
                   disabled={creatingRecurring}
-                  className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white"
+                  className="bg-[var(--gold)] hover:bg-[var(--gold)] text-white"
                   data-testid="create-recurring-btn"
                 >
                   {creatingRecurring ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Crea Appuntamenti'}
@@ -1832,7 +1832,7 @@ export default function PlanningPage() {
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
           <DialogContent className="sm:max-w-[550px]">
             <DialogHeader>
-              <DialogTitle className="font-playfair text-2xl text-[#0F172A]">
+              <DialogTitle className="font-playfair text-2xl text-[var(--text-primary)]">
                 Modifica Appuntamento
               </DialogTitle>
               <DialogDescription>
@@ -1918,7 +1918,7 @@ export default function PlanningPage() {
 
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-2">
-                  <Label className="text-[#0F172A] font-semibold">Data</Label>
+                  <Label className="text-[var(--text-primary)] font-semibold">Data</Label>
                   <div className="relative">
                     <input
                       type="date"
@@ -1927,19 +1927,19 @@ export default function PlanningPage() {
                       className="absolute inset-0 opacity-0 cursor-pointer z-10"
                       data-testid="edit-appointment-date"
                     />
-                    <div className="flex items-center h-10 px-3 border-2 border-[#E2E8F0] rounded-md text-sm text-[#0F172A] font-medium cursor-pointer">
+                    <div className="flex items-center h-10 px-3 border-2 border-[var(--border-subtle)] rounded-md text-sm text-[var(--text-primary)] font-medium cursor-pointer">
                       {fmtDate(editDate)}
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-[#0F172A] font-semibold">Orario</Label>
+                  <Label className="text-[var(--text-primary)] font-semibold">Orario</Label>
                   <Select
                     value={formData.time}
                     onValueChange={(val) => setFormData({ ...formData, time: val })}
                   >
-                    <SelectTrigger className="border-2 border-[#E2E8F0]">
+                    <SelectTrigger className="border-2 border-[var(--border-subtle)]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="max-h-[200px]">
@@ -1953,12 +1953,12 @@ export default function PlanningPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-[#0F172A] font-semibold">Operatore</Label>
+                  <Label className="text-[var(--text-primary)] font-semibold">Operatore</Label>
                   <Select
                     value={formData.operator_id || operators[0]?.id || ""}
                     onValueChange={(val) => setFormData({ ...formData, operator_id: val })}
                   >
-                    <SelectTrigger className="border-2 border-[#E2E8F0]">
+                    <SelectTrigger className="border-2 border-[var(--border-subtle)]">
                       <SelectValue placeholder="Seleziona..." />
                     </SelectTrigger>
                     <SelectContent>
@@ -1979,7 +1979,7 @@ export default function PlanningPage() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[#0F172A] font-semibold">Servizi</Label>
+                <Label className="text-[var(--text-primary)] font-semibold">Servizi</Label>
                 {/* Accordion categories for edit dialog */}
                 <div className="max-h-52 overflow-y-auto space-y-1 pr-0.5">
                   {CATEGORY_ORDER.filter(cat => sortedServices.some(s => s.category === cat)).concat(
@@ -1989,26 +1989,26 @@ export default function PlanningPage() {
                     const selCount = catServices.filter(s => formData.service_ids.includes(s.id)).length;
                     const isOpen = formData._openCats?.includes(cat);
                     return (
-                      <div key={cat} className="border border-[#E2E8F0] rounded-lg overflow-hidden">
+                      <div key={cat} className="border border-[var(--border-subtle)] rounded-lg overflow-hidden">
                         <button type="button"
                           onClick={() => setFormData(prev => {
                             const open = prev._openCats || [];
                             return { ...prev, _openCats: open.includes(cat) ? open.filter(c => c !== cat) : [...open, cat] };
                           })}
                           className={`w-full flex items-center justify-between px-3 py-2 text-left transition-all ${
-                            isOpen ? 'bg-[#0EA5E9]/5' : 'bg-[#F8FAFC] hover:bg-[#F1F5F9]'
+                            isOpen ? 'bg-[var(--gold)]/5' : 'bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated)]'
                           }`}>
                           <div className="flex items-center gap-2">
-                            <ChevronDown className={`w-4 h-4 text-[#64748B] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-                            <span className="font-bold text-sm text-[#0F172A] capitalize">{cat}</span>
-                            <span className="text-[10px] font-bold bg-[#E2E8F0] text-[#64748B] px-1.5 py-0.5 rounded-full">{catServices.length}</span>
+                            <ChevronDown className={`w-4 h-4 text-[var(--text-muted)] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                            <span className="font-bold text-sm text-[var(--text-primary)] capitalize">{cat}</span>
+                            <span className="text-[10px] font-bold bg-[#E2E8F0] text-[var(--text-muted)] px-1.5 py-0.5 rounded-full">{catServices.length}</span>
                           </div>
                           {selCount > 0 && (
-                            <span className="text-[10px] font-black bg-[#0EA5E9] text-white px-2 py-0.5 rounded-full">{selCount} sel.</span>
+                            <span className="text-[10px] font-black bg-[var(--gold)] text-white px-2 py-0.5 rounded-full">{selCount} sel.</span>
                           )}
                         </button>
                         {isOpen && (
-                          <div className="border-t border-[#E2E8F0] divide-y divide-[#F1F5F9]">
+                          <div className="border-t border-[var(--border-subtle)] divide-y divide-[#F1F5F9]">
                             {catServices.map((service, idx) => {
                               const sel = formData.service_ids.includes(service.id);
                               const cleanName = service.name.replace(/^\d+\s*/, '');
@@ -2016,17 +2016,17 @@ export default function PlanningPage() {
                                 <button key={service.id} type="button"
                                   onClick={() => toggleService(service.id)}
                                   className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-all ${
-                                    sel ? 'bg-[#0EA5E9]/5' : 'hover:bg-[#F8FAFC]'
+                                    sel ? 'bg-[var(--gold)]/5' : 'hover:bg-[var(--bg-elevated)]'
                                   }`}>
                                   <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${
-                                    sel ? 'border-[#0EA5E9] bg-[#0EA5E9]' : 'border-[#CBD5E1]'
+                                    sel ? 'border-[var(--gold)] bg-[var(--gold)]' : 'border-[var(--border-subtle)]'
                                   }`}>
                                     {sel && <Check className="w-2.5 h-2.5 text-white" />}
                                   </div>
-                                  <span className="text-[10px] font-bold text-[#94A3B8] w-4 flex-shrink-0">{idx + 1}.</span>
-                                  <span className={`flex-1 text-sm ${sel ? 'font-bold text-[#0EA5E9]' : 'text-[#0F172A]'}`}>{cleanName}</span>
-                                  <span className={`text-sm font-bold flex-shrink-0 ${sel ? 'text-[#0EA5E9]' : 'text-[#334155]'}`}>{'\u20AC'}{service.price}</span>
-                                  <span className="text-[10px] text-[#94A3B8] flex-shrink-0 w-12 text-right">{service.duration} min</span>
+                                  <span className="text-[10px] font-bold text-[var(--text-muted)] w-4 flex-shrink-0">{idx + 1}.</span>
+                                  <span className={`flex-1 text-sm ${sel ? 'font-bold text-[var(--gold)]' : 'text-[var(--text-primary)]'}`}>{cleanName}</span>
+                                  <span className={`text-sm font-bold flex-shrink-0 ${sel ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]'}`}>{'\u20AC'}{service.price}</span>
+                                  <span className="text-[10px] text-[var(--text-muted)] flex-shrink-0 w-12 text-right">{service.duration} min</span>
                                 </button>
                               );
                             })}
@@ -2043,13 +2043,13 @@ export default function PlanningPage() {
                       if (!svc) return null;
                       return (
                         <span key={id}
-                          className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#0EA5E9]/10 text-[#0EA5E9] cursor-pointer hover:bg-[#0EA5E9]/20"
+                          className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--gold)]/10 text-[var(--gold)] cursor-pointer hover:bg-[var(--gold)]/20"
                           onClick={() => toggleService(id)}>
                           {svc.name} <X className="w-2.5 h-2.5" />
                         </span>
                       );
                     })}
-                    <span className="text-[10px] font-bold text-[#0F172A] ml-auto self-center">
+                    <span className="text-[10px] font-bold text-[var(--text-primary)] ml-auto self-center">
                       {formData.service_ids.reduce((sum, id) => { const s = services.find(sv => sv.id === id); return sum + (s?.duration || 0); }, 0)} min · {'\u20AC'}{formData.service_ids.reduce((sum, id) => { const s = services.find(sv => sv.id === id); return sum + (s?.price || 0); }, 0)}
                     </span>
                   </div>
@@ -2057,12 +2057,12 @@ export default function PlanningPage() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[#0F172A] font-semibold">Note appuntamento</Label>
+                <Label className="text-[var(--text-primary)] font-semibold">Note appuntamento</Label>
                 <Input
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   placeholder="Note aggiuntive..."
-                  className="bg-white border-2 border-[#E2E8F0]"
+                  className="bg-[var(--bg-card)] border-2 border-[var(--border-subtle)]"
                 />
               </div>
 
@@ -2083,11 +2083,11 @@ export default function PlanningPage() {
                   </div>
                 </div>
               ) : !checkoutMode ? (
-                <div className="pt-4 border-t-2 border-[#E2E8F0]">
+                <div className="pt-4 border-t-2 border-[var(--border-subtle)]">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-semibold text-[#0F172A]">Totale servizi</p>
-                      <p className="text-2xl font-black text-[#0EA5E9]">€{calculateTotal().toFixed(2)}</p>
+                      <p className="text-sm font-semibold text-[var(--text-primary)]">Totale servizi</p>
+                      <p className="text-2xl font-black text-[var(--gold)]">€{calculateTotal().toFixed(2)}</p>
                     </div>
                     <Button
                       type="button"
@@ -2141,7 +2141,7 @@ export default function PlanningPage() {
                   
                   {/* Payment Method */}
                   <div className="space-y-2 mb-4">
-                    <Label className="text-[#0F172A] font-bold">Metodo di pagamento</Label>
+                    <Label className="text-[var(--text-primary)] font-bold">Metodo di pagamento</Label>
                     <div className="grid grid-cols-2 gap-2">
                       <Button
                         type="button"
@@ -2169,16 +2169,16 @@ export default function PlanningPage() {
                           clientCards.map(card => (
                             <button key={card.id} type="button"
                               onClick={() => setSelectedCardId(card.id)}
-                              className={`w-full p-3 rounded-lg border-2 text-left transition-all ${selectedCardId === card.id ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-400'}`}
+                              className={`w-full p-3 rounded-lg border-2 text-left transition-all ${selectedCardId === card.id ? 'border-green-500 bg-green-50' : 'border-[var(--border-subtle)] hover:border-gray-400'}`}
                               data-testid={`select-card-${card.id}`}>
                               <div className="flex justify-between items-center">
                                 <div>
                                   <p className="font-bold text-sm">{card.name}</p>
-                                  <p className="text-xs text-gray-500">{card.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}</p>
+                                  <p className="text-xs text-[var(--text-secondary)]">{card.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}</p>
                                 </div>
                                 <div className="text-right">
                                   <p className="font-black text-green-600">{'\u20AC'}{card.remaining_value?.toFixed(2)}</p>
-                                  {card.total_services && <p className="text-xs text-gray-500">{card.used_services}/{card.total_services} servizi</p>}
+                                  {card.total_services && <p className="text-xs text-[var(--text-secondary)]">{card.used_services}/{card.total_services} servizi</p>}
                                 </div>
                               </div>
                             </button>
@@ -2195,10 +2195,10 @@ export default function PlanningPage() {
                     <div className="mb-4">
                       <button type="button"
                         onClick={() => setUseLoyaltyPoints(!useLoyaltyPoints)}
-                        className={`w-full p-3 rounded-lg border-2 flex items-center justify-between transition-all ${useLoyaltyPoints ? 'border-amber-500 bg-amber-50' : 'border-gray-200 hover:border-amber-300'}`}
+                        className={`w-full p-3 rounded-lg border-2 flex items-center justify-between transition-all ${useLoyaltyPoints ? 'border-amber-500 bg-amber-50' : 'border-[var(--border-subtle)] hover:border-amber-300'}`}
                         data-testid="use-loyalty-btn">
                         <div className="flex items-center gap-2">
-                          <Star className={`w-5 h-5 ${useLoyaltyPoints ? 'text-amber-500 fill-amber-500' : 'text-gray-400'}`} />
+                          <Star className={`w-5 h-5 ${useLoyaltyPoints ? 'text-amber-500 fill-amber-500' : 'text-[var(--text-muted)]'}`} />
                           <span className="font-bold text-sm">Usa punti fedeltà</span>
                         </div>
                         <span className="font-black text-amber-600">{clientLoyalty.points} punti</span>
@@ -2209,7 +2209,7 @@ export default function PlanningPage() {
                   {/* Eligible Promotions */}
                   {eligiblePromos.length > 0 && (
                     <div className="mb-4">
-                      <Label className="text-[#0F172A] font-bold flex items-center gap-2 mb-2">
+                      <Label className="text-[var(--text-primary)] font-bold flex items-center gap-2 mb-2">
                         <Gift className="w-4 h-4 text-pink-500" /> Promozioni Disponibili
                       </Label>
                       <div className="space-y-2">
@@ -2219,17 +2219,17 @@ export default function PlanningPage() {
                             className={`w-full p-3 rounded-lg border-2 text-left transition-all ${
                               selectedPromo?.id === promo.id
                                 ? 'border-pink-500 bg-pink-50'
-                                : 'border-gray-200 hover:border-pink-300'
+                                : 'border-[var(--border-subtle)] hover:border-pink-300'
                             }`}
                             data-testid={`select-promo-${promo.id}`}>
                             <div className="flex items-center justify-between">
                               <div>
-                                <p className="font-bold text-sm text-[#0F172A]">{promo.name}</p>
+                                <p className="font-bold text-sm text-[var(--text-primary)]">{promo.name}</p>
                                 <p className="text-xs text-pink-600 font-semibold mt-0.5">
                                   OMAGGIO: {promo.free_service_name}
                                 </p>
                               </div>
-                              <Gift className={`w-5 h-5 ${selectedPromo?.id === promo.id ? 'text-pink-500' : 'text-gray-300'}`} />
+                              <Gift className={`w-5 h-5 ${selectedPromo?.id === promo.id ? 'text-pink-500' : 'text-[var(--text-muted)]'}`} />
                             </div>
                           </button>
                         ))}
@@ -2239,7 +2239,7 @@ export default function PlanningPage() {
 
                   {/* Discount */}
                   <div className="space-y-2 mb-4">
-                    <Label className="text-[#0F172A] font-bold">Sconto</Label>
+                    <Label className="text-[var(--text-primary)] font-bold">Sconto</Label>
                     <div className="flex gap-2">
                       <Select value={discountType} onValueChange={setDiscountType}>
                         <SelectTrigger className="w-40 border-2">
@@ -2264,7 +2264,7 @@ export default function PlanningPage() {
                   </div>
 
                   {/* Summary */}
-                  <div className="bg-white rounded-lg p-4 border-2 border-green-200 space-y-2">
+                  <div className="bg-[var(--bg-card)] rounded-lg p-4 border-2 border-green-200 space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="font-semibold">Subtotale:</span>
                       <span>&euro;{calculateTotal().toFixed(2)}</span>
@@ -2345,14 +2345,14 @@ export default function PlanningPage() {
                       setEditingAppointment(null);
                       resetCheckout();
                     }}
-                    className="border-[#E2E8F0]"
+                    className="border-[var(--border-subtle)]"
                   >
                     Annulla
                   </Button>
                   <Button
                     type="submit"
                     disabled={saving}
-                    className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white font-semibold"
+                    className="bg-[var(--gold)] hover:bg-[var(--gold)] text-white font-semibold"
                     data-testid="update-appointment-btn"
                   >
                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Edit3 className="w-4 h-4 mr-1" /> Salva</>}
@@ -2372,7 +2372,7 @@ export default function PlanningPage() {
                 Traguardo Fedeltà Raggiunto!
               </DialogTitle>
               <DialogDescription>
-                <span className="font-bold text-[#0F172A]">{loyaltyAlertData?.clientName}</span> ha raggiunto{' '}
+                <span className="font-bold text-[var(--text-primary)]">{loyaltyAlertData?.clientName}</span> ha raggiunto{' '}
                 <span className="font-black text-amber-600">{loyaltyAlertData?.totalPoints} punti</span> fedeltà!
               </DialogDescription>
             </DialogHeader>
@@ -2384,13 +2384,13 @@ export default function PlanningPage() {
                   <p>Ha diritto ad uno <strong>sconto di €10,00</strong> sui servizi di colpi di sole e schiariture.</p>
                 )}
               </div>
-              <p className="text-sm text-[#334155]">Vuoi avvisare il cliente su WhatsApp?</p>
+              <p className="text-sm text-[var(--text-secondary)]">Vuoi avvisare il cliente su WhatsApp?</p>
             </div>
             <DialogFooter className="flex gap-2 sm:gap-2">
               <Button
                 variant="outline"
                 onClick={() => setLoyaltyAlertOpen(false)}
-                className="flex-1 border-[#E2E8F0]"
+                className="flex-1 border-[var(--border-subtle)]"
               >
                 Chiudi
               </Button>

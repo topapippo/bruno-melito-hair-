@@ -298,15 +298,15 @@ export default function ClientsPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="font-playfair text-3xl font-medium text-[#0F172A]">Clienti</h1>
-            <p className="text-[#334155] mt-1 font-manrope">{clients.length} clienti totali</p>
+            <h1 className="font-playfair text-3xl font-medium text-[var(--text-primary)]">Clienti</h1>
+            <p className="text-[var(--text-secondary)] mt-1 font-manrope">{clients.length} clienti totali</p>
           </div>
           <div className="flex items-center gap-2">
             <Button 
               onClick={() => fileInputRef.current?.click()}
               variant="outline"
               data-testid="import-excel-btn"
-              className="border-[#E2E8F0] text-[#0F172A] hover:bg-[#FAF5F2]"
+              className="border-[var(--border-subtle)] text-[var(--text-primary)] hover:bg-[#FAF5F2]"
             >
               <Upload className="w-5 h-5 mr-2" />
               Importa Excel
@@ -314,7 +314,7 @@ export default function ClientsPage() {
             <Button 
               onClick={openNewDialog}
               data-testid="new-client-btn"
-              className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white shadow-lg shadow-[#0EA5E9]/20"
+              className="bg-[var(--gold)] hover:bg-[var(--gold)] text-white shadow-lg shadow-[var(--gold)]/20"
             >
               <Plus className="w-5 h-5 mr-2" />
               Nuovo Cliente
@@ -324,14 +324,14 @@ export default function ClientsPage() {
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#334155]" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-secondary)]" />
           <Input
             type="search"
             placeholder="Cerca cliente per nome, telefono o email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             data-testid="search-clients-input"
-            className="pl-10 bg-white border-[#E2E8F0]/50 focus:border-[#0EA5E9] h-12"
+            className="pl-10 bg-[var(--bg-card)] border-[var(--border-subtle)]/50 focus:border-[var(--gold)] h-12"
           />
         </div>
 
@@ -348,19 +348,19 @@ export default function ClientsPage() {
               <Card
                 key={client.id}
                 data-testid={`client-card-${client.id}`}
-                className="bg-white border-[#E2E8F0]/30 hover:border-[#0EA5E9]/30 transition-all duration-300 hover:-translate-y-1 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]"
+                className="bg-[var(--bg-card)] border-[var(--border-subtle)]/30 hover:border-[var(--gold)]/30 transition-all duration-300 hover:-translate-y-1 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]"
               >
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-[#0EA5E9]/10 flex items-center justify-center">
-                        <span className="text-lg font-playfair text-[#0EA5E9]">
+                      <div className="w-12 h-12 rounded-full bg-[var(--gold)]/10 flex items-center justify-center">
+                        <span className="text-lg font-playfair text-[var(--gold)]">
                           {client.name.charAt(0).toUpperCase()}
                         </span>
                       </div>
                       <div>
-                        <h3 className="font-medium text-[#0F172A]">{client.name}</h3>
-                        <div className="flex items-center gap-1 text-xs text-[#334155]">
+                        <h3 className="font-medium text-[var(--text-primary)]">{client.name}</h3>
+                        <div className="flex items-center gap-1 text-xs text-[var(--text-secondary)]">
                           <History className="w-3 h-3" />
                           {client.total_visits} visite
                         </div>
@@ -371,7 +371,7 @@ export default function ClientsPage() {
                         size="icon"
                         variant="ghost"
                         onClick={() => handleEdit(client)}
-                        className="text-[#334155] hover:text-[#0EA5E9]"
+                        className="text-[var(--text-secondary)] hover:text-[var(--gold)]"
                       >
                         <Edit2 className="w-4 h-4" />
                       </Button>
@@ -382,7 +382,7 @@ export default function ClientsPage() {
                           setClientToDelete(client.id);
                           setDeleteDialogOpen(true);
                         }}
-                        className="text-[#334155] hover:text-[#E76F51]"
+                        className="text-[var(--text-secondary)] hover:text-[#E76F51]"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -391,7 +391,7 @@ export default function ClientsPage() {
 
                   <div className="space-y-2 text-sm">
                     {client.phone ? (
-                      <div className="flex items-center gap-2 text-[#334155]">
+                      <div className="flex items-center gap-2 text-[var(--text-secondary)]">
                         <Phone className="w-4 h-4" />
                         <span>{client.phone}</span>
                         {client.sms_reminder && (
@@ -405,25 +405,25 @@ export default function ClientsPage() {
                       </div>
                     )}
                     {client.email && (
-                      <div className="flex items-center gap-2 text-[#334155]">
+                      <div className="flex items-center gap-2 text-[var(--text-secondary)]">
                         <Mail className="w-4 h-4" />
                         <span className="truncate">{client.email}</span>
                       </div>
                     )}
                     {client.notes && (
-                      <p className="text-[#334155] text-xs mt-3 pt-3 border-t border-[#E2E8F0]/30 italic">
+                      <p className="text-[var(--text-secondary)] text-xs mt-3 pt-3 border-t border-[var(--border-subtle)]/30 italic">
                         "{client.notes.substring(0, 80)}{client.notes.length > 80 ? '...' : ''}"
                       </p>
                     )}
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex gap-2 mt-4 pt-3 border-t border-[#E2E8F0]/30">
+                  <div className="flex gap-2 mt-4 pt-3 border-t border-[var(--border-subtle)]/30">
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => openClientHistory(client)}
-                      className="flex-1 text-xs border-[#0EA5E9] text-[#0EA5E9] hover:bg-[#0EA5E9]/10"
+                      className="flex-1 text-xs border-[var(--gold)] text-[var(--gold)] hover:bg-[var(--gold)]/10"
                     >
                       <History className="w-3 h-3 mr-1" />
                       Storico
@@ -444,19 +444,19 @@ export default function ClientsPage() {
             ))}
           </div>
         ) : (
-          <Card className="bg-white border-[#E2E8F0]/30">
+          <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)]/30">
             <CardContent className="py-16 text-center">
               <Users className="w-16 h-16 mx-auto text-[#E2E8F0] mb-4" strokeWidth={1.5} />
-              <h3 className="font-playfair text-xl text-[#0F172A] mb-2">
+              <h3 className="font-playfair text-xl text-[var(--text-primary)] mb-2">
                 {search ? 'Nessun cliente trovato' : 'Nessun cliente'}
               </h3>
-              <p className="text-[#334155] mb-4">
+              <p className="text-[var(--text-secondary)] mb-4">
                 {search ? 'Prova con un termine diverso' : 'Aggiungi il tuo primo cliente'}
               </p>
               {!search && (
                 <Button
                   onClick={openNewDialog}
-                  className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white"
+                  className="bg-[var(--gold)] hover:bg-[var(--gold)] text-white"
                 >
                   <Plus className="w-4 h-4 mr-2" /> Aggiungi Cliente
                 </Button>
@@ -469,7 +469,7 @@ export default function ClientsPage() {
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle className="font-playfair text-2xl text-[#0F172A]">
+              <DialogTitle className="font-playfair text-2xl text-[var(--text-primary)]">
                 {editingClient ? 'Modifica Cliente' : 'Nuovo Cliente'}
               </DialogTitle>
             </DialogHeader>
@@ -481,7 +481,7 @@ export default function ClientsPage() {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Nome cliente"
                   data-testid="client-name-input"
-                  className="bg-[#F8FAFC] border-transparent focus:border-[#0EA5E9]"
+                  className="bg-[var(--bg-elevated)] border-transparent focus:border-[var(--gold)]"
                   required
                 />
               </div>
@@ -497,7 +497,7 @@ export default function ClientsPage() {
                   data-testid="client-phone-input"
                   className={`border-2 ${
                     formData.phone
-                      ? 'bg-[#F8FAFC] border-transparent focus:border-[#0EA5E9]'
+                      ? 'bg-[var(--bg-elevated)] border-transparent focus:border-[var(--gold)]'
                       : 'bg-orange-50 border-orange-300 focus:border-orange-400'
                   }`}
                 />
@@ -513,7 +513,7 @@ export default function ClientsPage() {
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="email@esempio.it"
                   data-testid="client-email-input"
-                  className="bg-[#F8FAFC] border-transparent focus:border-[#0EA5E9]"
+                  className="bg-[var(--bg-elevated)] border-transparent focus:border-[var(--gold)]"
                 />
               </div>
               <div className="space-y-2">
@@ -523,12 +523,12 @@ export default function ClientsPage() {
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   placeholder="Note aggiuntive..."
                   data-testid="client-notes-input"
-                  className="bg-[#F8FAFC] border-transparent focus:border-[#0EA5E9] min-h-[80px]"
+                  className="bg-[var(--bg-elevated)] border-transparent focus:border-[var(--gold)] min-h-[80px]"
                 />
               </div>
-              <div className="flex items-center justify-between p-3 rounded-lg bg-[#F8FAFC]">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--bg-elevated)]">
                 <div className="flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4 text-[#334155]" />
+                  <MessageSquare className="w-4 h-4 text-[var(--text-secondary)]" />
                   <Label className="font-normal">Promemoria SMS</Label>
                 </div>
                 <Switch
@@ -542,7 +542,7 @@ export default function ClientsPage() {
                   type="submit"
                   disabled={saving}
                   data-testid="save-client-btn"
-                  className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white"
+                  className="bg-[var(--gold)] hover:bg-[var(--gold)] text-white"
                 >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : editingClient ? 'Salva Modifiche' : 'Aggiungi Cliente'}
                 </Button>
@@ -576,8 +576,8 @@ export default function ClientsPage() {
         <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
-              <DialogTitle className="font-playfair text-2xl text-[#0F172A] flex items-center gap-2">
-                <FileSpreadsheet className="w-6 h-6 text-[#0EA5E9]" />
+              <DialogTitle className="font-playfair text-2xl text-[var(--text-primary)] flex items-center gap-2">
+                <FileSpreadsheet className="w-6 h-6 text-[var(--gold)]" />
                 Importa Clienti da Excel
               </DialogTitle>
               <DialogDescription>
@@ -587,46 +587,46 @@ export default function ClientsPage() {
             <div className="mt-4">
               {importPreview.length > 0 ? (
                 <>
-                  <div className="max-h-[300px] overflow-y-auto border border-[#E2E8F0]/30 rounded-lg">
+                  <div className="max-h-[300px] overflow-y-auto border border-[var(--border-subtle)]/30 rounded-lg">
                     <table className="w-full text-sm">
-                      <thead className="bg-[#F8FAFC] sticky top-0">
+                      <thead className="bg-[var(--bg-elevated)] sticky top-0">
                         <tr>
-                          <th className="text-left p-3 font-medium text-[#0F172A]">Nome</th>
-                          <th className="text-left p-3 font-medium text-[#0F172A]">Telefono</th>
-                          <th className="text-left p-3 font-medium text-[#0F172A]">Note</th>
+                          <th className="text-left p-3 font-medium text-[var(--text-primary)]">Nome</th>
+                          <th className="text-left p-3 font-medium text-[var(--text-primary)]">Telefono</th>
+                          <th className="text-left p-3 font-medium text-[var(--text-primary)]">Note</th>
                         </tr>
                       </thead>
                       <tbody>
                         {importPreview.map((client, idx) => (
-                          <tr key={idx} className="border-t border-[#E2E8F0]/20 hover:bg-[#FAF5F2]">
-                            <td className="p-3 text-[#0F172A]">{client.name}</td>
-                            <td className="p-3 text-[#334155]">{client.phone || '-'}</td>
-                            <td className="p-3 text-[#334155] text-xs max-w-[200px] truncate">{client.notes || '-'}</td>
+                          <tr key={idx} className="border-t border-[var(--border-subtle)]/20 hover:bg-[#FAF5F2]">
+                            <td className="p-3 text-[var(--text-primary)]">{client.name}</td>
+                            <td className="p-3 text-[var(--text-secondary)]">{client.phone || '-'}</td>
+                            <td className="p-3 text-[var(--text-secondary)] text-xs max-w-[200px] truncate">{client.notes || '-'}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
-                  <p className="text-sm text-[#334155] mt-3">
-                    Totale: <span className="font-medium text-[#0F172A]">{importPreview.length}</span> clienti da importare
+                  <p className="text-sm text-[var(--text-secondary)] mt-3">
+                    Totale: <span className="font-medium text-[var(--text-primary)]">{importPreview.length}</span> clienti da importare
                   </p>
                 </>
               ) : (
-                <p className="text-center text-[#334155] py-8">Nessun cliente trovato nel file</p>
+                <p className="text-center text-[var(--text-secondary)] py-8">Nessun cliente trovato nel file</p>
               )}
             </div>
             <DialogFooter className="mt-4">
               <Button
                 variant="outline"
                 onClick={() => setImportDialogOpen(false)}
-                className="border-[#E2E8F0]"
+                className="border-[var(--border-subtle)]"
               >
                 Annulla
               </Button>
               <Button
                 onClick={handleImport}
                 disabled={importing || importPreview.length === 0}
-                className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white"
+                className="bg-[var(--gold)] hover:bg-[var(--gold)] text-white"
               >
                 {importing ? (
                   <>
@@ -648,8 +648,8 @@ export default function ClientsPage() {
         <Dialog open={historyDialogOpen} onOpenChange={setHistoryDialogOpen}>
           <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="font-playfair text-2xl text-[#0F172A] flex items-center gap-2">
-                <History className="w-6 h-6 text-[#0EA5E9]" />
+              <DialogTitle className="font-playfair text-2xl text-[var(--text-primary)] flex items-center gap-2">
+                <History className="w-6 h-6 text-[var(--gold)]" />
                 Storico Cliente
               </DialogTitle>
               {clientHistory && (
@@ -668,21 +668,21 @@ export default function ClientsPage() {
               <div className="space-y-4">
                 {/* Stats */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div className="p-4 bg-[#0EA5E9]/10 rounded-lg text-center">
-                    <p className="text-2xl font-black text-[#0EA5E9]">{clientHistory.total_visits}</p>
-                    <p className="text-xs text-[#334155] font-semibold">Visite</p>
+                  <div className="p-4 bg-[var(--gold)]/10 rounded-lg text-center">
+                    <p className="text-2xl font-black text-[var(--gold)]">{clientHistory.total_visits}</p>
+                    <p className="text-xs text-[var(--text-secondary)] font-semibold">Visite</p>
                   </div>
                   <div className="p-4 bg-green-100 rounded-lg text-center">
                     <p className="text-2xl font-black text-green-600">€{clientHistory.total_spent.toFixed(0)}</p>
-                    <p className="text-xs text-[#334155] font-semibold">Totale Speso</p>
+                    <p className="text-xs text-[var(--text-secondary)] font-semibold">Totale Speso</p>
                   </div>
                   <div className="p-4 bg-amber-100 rounded-lg text-center">
                     <p className="text-2xl font-black text-amber-600">{clientHistory.loyalty_points ?? 0}</p>
-                    <p className="text-xs text-[#334155] font-semibold">Punti Fedeltà</p>
+                    <p className="text-xs text-[var(--text-secondary)] font-semibold">Punti Fedeltà</p>
                   </div>
                   <div className="p-4 bg-purple-100 rounded-lg text-center">
                     <p className="text-sm font-black text-purple-600">{fmtDate(clientHistory.last_visit) || '-'}</p>
-                    <p className="text-xs text-[#334155] font-semibold">Ultima Visita</p>
+                    <p className="text-xs text-[var(--text-secondary)] font-semibold">Ultima Visita</p>
                   </div>
                 </div>
 
@@ -702,17 +702,17 @@ export default function ClientsPage() {
 
                 {/* Appointments */}
                 <div>
-                  <h3 className="font-bold text-[#0F172A] mb-2">Appuntamenti</h3>
+                  <h3 className="font-bold text-[var(--text-primary)] mb-2">Appuntamenti</h3>
                   {clientHistory.appointments.length === 0 ? (
-                    <p className="text-[#334155] text-sm">Nessun appuntamento</p>
+                    <p className="text-[var(--text-secondary)] text-sm">Nessun appuntamento</p>
                   ) : (
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                       {clientHistory.appointments.slice(0, 20).map((apt) => (
-                        <div key={apt.id} className="p-3 bg-[#F8FAFC] rounded-lg border border-[#E2E8F0]">
+                        <div key={apt.id} className="p-3 bg-[var(--bg-elevated)] rounded-lg border border-[var(--border-subtle)]">
                           <div className="flex justify-between items-start">
                             <div>
-                              <p className="font-semibold text-[#0F172A]">{fmtDate(apt.date)} - {apt.time}</p>
-                              <p className="text-sm text-[#334155]">{apt.services?.map(s => s.name).join(', ')}</p>
+                              <p className="font-semibold text-[var(--text-primary)]">{fmtDate(apt.date)} - {apt.time}</p>
+                              <p className="text-sm text-[var(--text-secondary)]">{apt.services?.map(s => s.name).join(', ')}</p>
                             </div>
                             <div className="flex items-center gap-2">
                               <button
@@ -737,13 +737,13 @@ export default function ClientsPage() {
                 {/* Payments */}
                 {clientHistory.payments.length > 0 && (
                   <div>
-                    <h3 className="font-bold text-[#0F172A] mb-2">Pagamenti</h3>
+                    <h3 className="font-bold text-[var(--text-primary)] mb-2">Pagamenti</h3>
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                       {clientHistory.payments.slice(0, 10).map((pay) => (
                         <div key={pay.id} className="p-3 bg-green-50 rounded-lg flex justify-between items-center">
                           <div>
-                            <p className="font-semibold text-[#0F172A]">{fmtDate(pay.date)}</p>
-                            <p className="text-xs text-[#334155] capitalize">{pay.payment_method}</p>
+                            <p className="font-semibold text-[var(--text-primary)]">{fmtDate(pay.date)}</p>
+                            <p className="text-xs text-[var(--text-secondary)] capitalize">{pay.payment_method}</p>
                           </div>
                           <p className="font-black text-green-600">€{pay.total_paid.toFixed(2)}</p>
                         </div>

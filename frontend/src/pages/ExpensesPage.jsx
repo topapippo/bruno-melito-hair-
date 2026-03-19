@@ -39,7 +39,7 @@ const CATEGORIES = [
   { value: 'tasse', label: 'Tasse', color: 'bg-red-100 text-red-700' },
   { value: 'prodotti', label: 'Prodotti', color: 'bg-cyan-100 text-cyan-700' },
   { value: 'manutenzione', label: 'Manutenzione', color: 'bg-orange-100 text-orange-700' },
-  { value: 'altro', label: 'Altro', color: 'bg-gray-100 text-gray-700' },
+  { value: 'altro', label: 'Altro', color: 'bg-[var(--bg-elevated)] text-[var(--text-primary)]' },
 ];
 
 const RECURRENCES = [
@@ -191,11 +191,11 @@ export default function ExpensesPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-[#0F172A] flex items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl font-black text-[var(--text-primary)] flex items-center gap-3">
               <ArrowDownCircle className="w-7 h-7 text-red-500" />
               Registro Uscite
             </h1>
-            <p className="text-[#334155] mt-1">Gestisci spese e scadenze da pagare</p>
+            <p className="text-[var(--text-secondary)] mt-1">Gestisci spese e scadenze da pagare</p>
           </div>
           <Button
             onClick={() => { resetForm(); setDialogOpen(true); }}
@@ -234,7 +234,7 @@ export default function ExpensesPage() {
         </div>
 
         {/* Filters */}
-        <Card className="bg-white border-[#E2E8F0]/30">
+        <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)]/30">
           <CardContent className="p-4">
             <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
               <div className="flex gap-2">
@@ -248,7 +248,7 @@ export default function ExpensesPage() {
                     variant={filter === f.key ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setFilter(f.key)}
-                    className={filter === f.key ? 'bg-[#0EA5E9] text-white' : 'border-[#E2E8F0]'}
+                    className={filter === f.key ? 'bg-[var(--gold)] text-white' : 'border-[var(--border-subtle)]'}
                     data-testid={`filter-${f.key}`}
                   >
                     <f.icon className="w-3.5 h-3.5 mr-1" /> {f.label}
@@ -277,10 +277,10 @@ export default function ExpensesPage() {
             {[1, 2, 3].map(i => <Skeleton key={i} className="h-20" />)}
           </div>
         ) : filteredExpenses.length === 0 ? (
-          <Card className="bg-white border-[#E2E8F0]/30">
+          <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)]/30">
             <CardContent className="py-12 text-center">
               <Receipt className="w-12 h-12 mx-auto text-[#E2E8F0] mb-3" />
-              <p className="text-[#334155] font-semibold">Nessuna uscita registrata</p>
+              <p className="text-[var(--text-secondary)] font-semibold">Nessuna uscita registrata</p>
               <Button
                 onClick={() => { resetForm(); setDialogOpen(true); }}
                 className="mt-4 bg-red-500 hover:bg-red-600 text-white"
@@ -299,11 +299,11 @@ export default function ExpensesPage() {
               return (
                 <Card
                   key={exp.id}
-                  className={`bg-white border-2 transition-all ${
+                  className={`bg-[var(--bg-card)] border-2 transition-all ${
                     isOverdue ? 'border-red-300 bg-red-50/50' :
                     isDueSoon ? 'border-orange-200 bg-orange-50/30' :
                     exp.paid ? 'border-green-200 bg-green-50/30 opacity-70' :
-                    'border-[#E2E8F0]'
+                    'border-[var(--border-subtle)]'
                   }`}
                   data-testid={`expense-${exp.id}`}
                 >
@@ -311,10 +311,10 @@ export default function ExpensesPage() {
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <p className={`font-bold text-[#0F172A] ${exp.paid ? 'line-through' : ''}`}>{exp.description}</p>
+                          <p className={`font-bold text-[var(--text-primary)] ${exp.paid ? 'line-through' : ''}`}>{exp.description}</p>
                           <Badge className={catInfo.color}>{catInfo.label}</Badge>
                           {exp.is_recurring && (
-                            <Badge variant="outline" className="text-xs border-[#0EA5E9] text-[#0EA5E9]">
+                            <Badge variant="outline" className="text-xs border-[var(--gold)] text-[var(--gold)]">
                               <RotateCcw className="w-3 h-3 mr-1" />
                               {RECURRENCES.find(r => r.value === exp.recurrence)?.label || 'Ricorrente'}
                             </Badge>
@@ -329,7 +329,7 @@ export default function ExpensesPage() {
                             <Badge className="bg-green-500 text-white">PAGATA</Badge>
                           )}
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-[#334155] mt-1">
+                        <div className="flex items-center gap-4 text-sm text-[var(--text-secondary)] mt-1">
                           <span className="flex items-center gap-1">
                             <Calendar className="w-3.5 h-3.5" />
                             Scadenza: {fmtDate(exp.due_date)}
@@ -338,7 +338,7 @@ export default function ExpensesPage() {
                             <span className="text-green-600">Pagata il {fmtDate(exp.paid_date)}</span>
                           )}
                         </div>
-                        {exp.notes && <p className="text-xs text-[#64748B] mt-1">{exp.notes}</p>}
+                        {exp.notes && <p className="text-xs text-[var(--text-muted)] mt-1">{exp.notes}</p>}
                       </div>
                       <div className="flex items-center gap-3 shrink-0">
                         <p className="text-2xl font-black text-red-600">&euro;{exp.amount.toFixed(2)}</p>
@@ -367,7 +367,7 @@ export default function ExpensesPage() {
                             size="sm"
                             variant="ghost"
                             onClick={() => openEdit(exp)}
-                            className="text-[#334155] hover:text-[#0EA5E9]"
+                            className="text-[var(--text-secondary)] hover:text-[var(--gold)]"
                             data-testid={`edit-expense-${exp.id}`}
                           >
                             <Pencil className="w-4 h-4" />
@@ -376,7 +376,7 @@ export default function ExpensesPage() {
                             size="sm"
                             variant="ghost"
                             onClick={() => deleteExpense(exp.id)}
-                            className="text-[#334155] hover:text-red-500"
+                            className="text-[var(--text-secondary)] hover:text-red-500"
                             data-testid={`delete-expense-${exp.id}`}
                           >
                             <Trash2 className="w-4 h-4" />
@@ -395,7 +395,7 @@ export default function ExpensesPage() {
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="sm:max-w-[480px]">
             <DialogHeader>
-              <DialogTitle className="text-xl font-bold text-[#0F172A]">
+              <DialogTitle className="text-xl font-bold text-[var(--text-primary)]">
                 {editingExpense ? 'Modifica Uscita' : 'Nuova Uscita'}
               </DialogTitle>
             </DialogHeader>
@@ -460,14 +460,14 @@ export default function ExpensesPage() {
                     data-testid="expense-date-input"
                     className="absolute inset-0 opacity-0 cursor-pointer z-10"
                   />
-                  <div className="flex items-center h-10 px-3 border border-slate-200 rounded-md text-sm font-semibold bg-white cursor-pointer">
+                  <div className="flex items-center h-10 px-3 border border-[var(--border-subtle)] rounded-md text-sm font-semibold bg-[var(--bg-card)] cursor-pointer">
                     {fmtDate(formData.due_date)}
                   </div>
                 </div>
               </div>
-              <div className="flex items-center justify-between p-3 rounded-lg bg-[#F8FAFC]">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--bg-elevated)]">
                 <div className="flex items-center gap-2">
-                  <RotateCcw className="w-4 h-4 text-[#334155]" />
+                  <RotateCcw className="w-4 h-4 text-[var(--text-secondary)]" />
                   <Label className="font-normal">Pagamento ricorrente</Label>
                 </div>
                 <Switch

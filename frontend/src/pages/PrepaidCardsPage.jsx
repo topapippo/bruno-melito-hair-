@@ -312,16 +312,16 @@ export default function PrepaidCardsPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="font-playfair text-3xl font-medium text-[#0F172A]">
+            <h1 className="font-playfair text-3xl font-medium text-[var(--text-primary)]">
               Card & Abbonamenti
             </h1>
-            <p className="text-[#334155] mt-1 font-manrope">
+            <p className="text-[var(--text-secondary)] mt-1 font-manrope">
               Gestisci le card prepagate e gli abbonamenti dei clienti
             </p>
           </div>
           <Button
             onClick={() => setDialogOpen(true)}
-            className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white"
+            className="bg-[var(--gold)] hover:bg-[var(--gold)] text-white"
             data-testid="new-card-btn"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -330,23 +330,23 @@ export default function PrepaidCardsPage() {
         </div>
 
         {/* Filters */}
-        <Card className="bg-white border-[#E2E8F0]/30">
+        <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)]/30">
           <CardContent className="p-4">
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#334155]" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)]" />
                 <Input
                   placeholder="Cerca per cliente o nome card..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 bg-[#F8FAFC] border-[#E2E8F0]"
+                  className="pl-9 bg-[var(--bg-elevated)] border-[var(--border-subtle)]"
                   data-testid="search-cards-input"
                 />
               </div>
               <Button
                 variant="outline"
                 onClick={() => setShowInactive(!showInactive)}
-                className={`border-[#E2E8F0] ${showInactive ? 'bg-[#F8FAFC]' : ''}`}
+                className={`border-[var(--border-subtle)] ${showInactive ? 'bg-[var(--bg-elevated)]' : ''}`}
               >
                 {showInactive ? 'Nascondi inattive' : 'Mostra inattive'}
               </Button>
@@ -355,17 +355,17 @@ export default function PrepaidCardsPage() {
         </Card>
 
         {/* Pacchetti Preimpostati */}
-        <Card className="bg-white border-[#E2E8F0]/30">
+        <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)]/30">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-bold text-[#0F172A] flex items-center gap-2">
-                <Package className="w-5 h-5 text-[#0EA5E9]" />
+              <CardTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+                <Package className="w-5 h-5 text-[var(--gold)]" />
                 Pacchetti Preimpostati
               </CardTitle>
               <Button
                 onClick={() => openTemplateDialog()}
                 size="sm"
-                className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white"
+                className="bg-[var(--gold)] hover:bg-[var(--gold)] text-white"
                 data-testid="new-package-btn"
               >
                 <Plus className="w-4 h-4 mr-1" /> Nuovo Pacchetto
@@ -378,39 +378,39 @@ export default function PrepaidCardsPage() {
                 {cardTemplates.map((tmpl) => (
                   <div
                     key={tmpl.id}
-                    className="p-4 rounded-xl border-2 border-[#E2E8F0] bg-[#F8FAFC] hover:border-[#0EA5E9] transition-colors group"
+                    className="p-4 rounded-xl border-2 border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:border-[var(--gold)] transition-colors group"
                     data-testid={`package-${tmpl.id}`}
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div>
-                        <p className="font-bold text-[#0F172A] text-sm">{tmpl.name}</p>
+                        <p className="font-bold text-[var(--text-primary)] text-sm">{tmpl.name}</p>
                         <Badge className={getCardTypeColor(tmpl.card_type) + ' mt-1'}>
                           {getCardTypeLabel(tmpl.card_type)}
                         </Badge>
                       </div>
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-[#334155] hover:text-[#0EA5E9]" onClick={() => openTemplateDialog(tmpl)} data-testid={`edit-package-${tmpl.id}`}>
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-[var(--text-secondary)] hover:text-[var(--gold)]" onClick={() => openTemplateDialog(tmpl)} data-testid={`edit-package-${tmpl.id}`}>
                           <Pencil className="w-3.5 h-3.5" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-[#334155] hover:text-red-500" onClick={() => deleteCardTemplate(tmpl.id)} data-testid={`delete-package-${tmpl.id}`}>
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-[var(--text-secondary)] hover:text-red-500" onClick={() => deleteCardTemplate(tmpl.id)} data-testid={`delete-package-${tmpl.id}`}>
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
                       </div>
                     </div>
                     <div className="flex items-baseline gap-2 mb-1">
-                      <span className="text-2xl font-black text-[#0EA5E9]">&euro;{tmpl.total_value}</span>
+                      <span className="text-2xl font-black text-[var(--gold)]">&euro;{tmpl.total_value}</span>
                       {tmpl.total_services && (
-                        <span className="text-xs text-[#64748B]">{tmpl.total_services} servizi</span>
+                        <span className="text-xs text-[var(--text-muted)]">{tmpl.total_services} servizi</span>
                       )}
                     </div>
                     {tmpl.duration_months && (
-                      <p className="text-xs text-[#64748B] mb-2">Durata: {tmpl.duration_months} mesi</p>
+                      <p className="text-xs text-[var(--text-muted)] mb-2">Durata: {tmpl.duration_months} mesi</p>
                     )}
-                    {tmpl.notes && <p className="text-xs text-[#94A3B8] mb-2">{tmpl.notes}</p>}
+                    {tmpl.notes && <p className="text-xs text-[var(--text-muted)] mb-2">{tmpl.notes}</p>}
                     <Button
                       onClick={() => applyTemplate(tmpl)}
                       size="sm"
-                      className="w-full bg-[#0EA5E9] hover:bg-[#0284C7] text-white mt-1"
+                      className="w-full bg-[var(--gold)] hover:bg-[var(--gold)] text-white mt-1"
                       data-testid={`use-package-${tmpl.id}`}
                     >
                       <Plus className="w-3.5 h-3.5 mr-1" /> Assegna a Cliente
@@ -421,9 +421,9 @@ export default function PrepaidCardsPage() {
             ) : (
               <div className="text-center py-6">
                 <Package className="w-10 h-10 mx-auto text-[#E2E8F0] mb-2" />
-                <p className="text-sm text-[#334155]">Nessun pacchetto preimpostato</p>
-                <p className="text-xs text-[#94A3B8] mt-1">Crea pacchetti per assegnare rapidamente card ai clienti</p>
-                <Button onClick={() => openTemplateDialog()} size="sm" className="mt-3 bg-[#0EA5E9] hover:bg-[#0284C7] text-white">
+                <p className="text-sm text-[var(--text-secondary)]">Nessun pacchetto preimpostato</p>
+                <p className="text-xs text-[var(--text-muted)] mt-1">Crea pacchetti per assegnare rapidamente card ai clienti</p>
+                <Button onClick={() => openTemplateDialog()} size="sm" className="mt-3 bg-[var(--gold)] hover:bg-[var(--gold)] text-white">
                   <Plus className="w-4 h-4 mr-1" /> Crea il primo pacchetto
                 </Button>
               </div>
@@ -439,15 +439,15 @@ export default function PrepaidCardsPage() {
             ))}
           </div>
         ) : filteredCards.length === 0 ? (
-          <Card className="bg-white border-[#E2E8F0]/30">
+          <Card className="bg-[var(--bg-card)] border-[var(--border-subtle)]/30">
             <CardContent className="p-12 text-center">
-              <CreditCard className="w-12 h-12 mx-auto text-[#334155] mb-4" />
-              <p className="text-[#334155]">
+              <CreditCard className="w-12 h-12 mx-auto text-[var(--text-secondary)] mb-4" />
+              <p className="text-[var(--text-secondary)]">
                 {searchQuery ? 'Nessuna card trovata' : 'Nessuna card creata'}
               </p>
               <Button
                 onClick={() => setDialogOpen(true)}
-                className="mt-4 bg-[#0EA5E9] hover:bg-[#0284C7] text-white"
+                className="mt-4 bg-[var(--gold)] hover:bg-[var(--gold)] text-white"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Crea la prima card
@@ -459,23 +459,23 @@ export default function PrepaidCardsPage() {
             {filteredCards.map((card) => (
               <Card
                 key={card.id}
-                className={`bg-white border-[#E2E8F0]/30 overflow-hidden ${!card.active ? 'opacity-60' : ''}`}
+                className={`bg-[var(--bg-card)] border-[var(--border-subtle)]/30 overflow-hidden ${!card.active ? 'opacity-60' : ''}`}
                 data-testid={`card-${card.id}`}
               >
                 <CardContent className="p-0">
                   {/* Card Header */}
                   <div
-                    className="p-4 cursor-pointer hover:bg-[#F8FAFC]/50 transition-colors"
+                    className="p-4 cursor-pointer hover:bg-[var(--bg-elevated)]/50 transition-colors"
                     onClick={() => setExpandedCard(expandedCard === card.id ? null : card.id)}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-[#0EA5E9]/10 flex items-center justify-center">
-                          <CreditCard className="w-6 h-6 text-[#0EA5E9]" />
+                        <div className="w-12 h-12 rounded-full bg-[var(--gold)]/10 flex items-center justify-center">
+                          <CreditCard className="w-6 h-6 text-[var(--gold)]" />
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <h3 className="font-medium text-[#0F172A]">{card.name}</h3>
+                            <h3 className="font-medium text-[var(--text-primary)]">{card.name}</h3>
                             <Badge className={getCardTypeColor(card.card_type)}>
                               {getCardTypeLabel(card.card_type)}
                             </Badge>
@@ -483,7 +483,7 @@ export default function PrepaidCardsPage() {
                               <Badge variant="secondary">Inattiva</Badge>
                             )}
                           </div>
-                          <div className="flex items-center gap-4 mt-1 text-sm text-[#334155]">
+                          <div className="flex items-center gap-4 mt-1 text-sm text-[var(--text-secondary)]">
                             <span className="flex items-center gap-1">
                               <User className="w-3 h-3" />
                               {card.client_name}
@@ -500,19 +500,19 @@ export default function PrepaidCardsPage() {
 
                       <div className="flex items-center gap-6">
                         <div className="text-right">
-                          <p className="text-2xl font-semibold text-[#0F172A]">
+                          <p className="text-2xl font-semibold text-[var(--text-primary)]">
                             €{card.remaining_value.toFixed(2)}
                           </p>
-                          <p className="text-xs text-[#334155]">
+                          <p className="text-xs text-[var(--text-secondary)]">
                             di €{card.total_value.toFixed(2)}
                           </p>
                         </div>
                         {card.total_services && (
-                          <div className="text-right border-l border-[#E2E8F0]/30 pl-6">
-                            <p className="text-2xl font-semibold text-[#0F172A]">
+                          <div className="text-right border-l border-[var(--border-subtle)]/30 pl-6">
+                            <p className="text-2xl font-semibold text-[var(--text-primary)]">
                               {card.total_services - card.used_services}
                             </p>
-                            <p className="text-xs text-[#334155]">
+                            <p className="text-xs text-[var(--text-secondary)]">
                               di {card.total_services} servizi
                             </p>
                           </div>
@@ -526,7 +526,7 @@ export default function PrepaidCardsPage() {
                               setSelectedCard(card);
                               setRechargeDialogOpen(true);
                             }}
-                            className="text-[#334155] hover:text-[#0EA5E9]"
+                            className="text-[var(--text-secondary)] hover:text-[var(--gold)]"
                             data-testid={`recharge-btn-${card.id}`}
                           >
                             <RefreshCw className="w-4 h-4" />
@@ -538,15 +538,15 @@ export default function PrepaidCardsPage() {
                               e.stopPropagation();
                               handleDelete(card.id);
                             }}
-                            className="text-[#334155] hover:text-red-500"
+                            className="text-[var(--text-secondary)] hover:text-red-500"
                             data-testid={`delete-btn-${card.id}`}
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
                           {expandedCard === card.id ? (
-                            <ChevronUp className="w-5 h-5 text-[#334155]" />
+                            <ChevronUp className="w-5 h-5 text-[var(--text-secondary)]" />
                           ) : (
-                            <ChevronDown className="w-5 h-5 text-[#334155]" />
+                            <ChevronDown className="w-5 h-5 text-[var(--text-secondary)]" />
                           )}
                         </div>
                       </div>
@@ -556,7 +556,7 @@ export default function PrepaidCardsPage() {
                     <div className="mt-4">
                       <div className="w-full bg-[#E2E8F0]/30 rounded-full h-2">
                         <div
-                          className="bg-[#0EA5E9] h-2 rounded-full transition-all"
+                          className="bg-[var(--gold)] h-2 rounded-full transition-all"
                           style={{
                             width: `${Math.min((card.remaining_value / card.total_value) * 100, 100)}%`
                           }}
@@ -567,8 +567,8 @@ export default function PrepaidCardsPage() {
 
                   {/* Expanded Section - Transactions */}
                   {expandedCard === card.id && card.transactions && card.transactions.length > 0 && (
-                    <div className="border-t border-[#E2E8F0]/30 p-4 bg-[#F8FAFC]">
-                      <h4 className="font-medium text-[#0F172A] mb-3">Storico Transazioni</h4>
+                    <div className="border-t border-[var(--border-subtle)]/30 p-4 bg-[var(--bg-elevated)]">
+                      <h4 className="font-medium text-[var(--text-primary)] mb-3">Storico Transazioni</h4>
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -580,7 +580,7 @@ export default function PrepaidCardsPage() {
                         <TableBody>
                           {card.transactions.slice().reverse().map((tx, idx) => (
                             <TableRow key={idx}>
-                              <TableCell className="text-[#334155]">
+                              <TableCell className="text-[var(--text-secondary)]">
                                 {formatDate(tx.date)}
                               </TableCell>
                               <TableCell>{tx.description}</TableCell>
@@ -603,7 +603,7 @@ export default function PrepaidCardsPage() {
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle className="font-playfair text-2xl text-[#0F172A]">
+              <DialogTitle className="font-playfair text-2xl text-[var(--text-primary)]">
                 Nuova Card
               </DialogTitle>
               <DialogDescription>
@@ -624,11 +624,11 @@ export default function PrepaidCardsPage() {
                       if (!e.target.value) setFormData({ ...formData, client_id: '' });
                     }}
                     onFocus={() => setShowCardClientDropdown(true)}
-                    className="bg-white border-2 text-[#0F172A] font-medium"
+                    className="bg-[var(--bg-card)] border-2 text-[var(--text-primary)] font-medium"
                     data-testid="search-client-card"
                   />
                   {showCardClientDropdown && cardClientSearch.length > 0 && (
-                    <div className="absolute z-50 w-full mt-1 bg-white border-2 border-[#0EA5E9] rounded-lg shadow-xl max-h-48 overflow-auto">
+                    <div className="absolute z-50 w-full mt-1 bg-[var(--bg-card)] border-2 border-[var(--gold)] rounded-lg shadow-xl max-h-48 overflow-auto">
                       {clients
                         .filter(c => c.name.toLowerCase().includes(cardClientSearch.toLowerCase()))
                         .slice(0, 20)
@@ -636,8 +636,8 @@ export default function PrepaidCardsPage() {
                           <button
                             key={client.id}
                             type="button"
-                            className={`w-full px-3 py-2 text-left hover:bg-[#0EA5E9]/20 text-sm font-medium border-b border-[#E2E8F0]/30 last:border-0 ${
-                              formData.client_id === client.id ? 'bg-[#0EA5E9]/20 text-[#0EA5E9]' : 'text-[#0F172A]'
+                            className={`w-full px-3 py-2 text-left hover:bg-[var(--gold)]/20 text-sm font-medium border-b border-[var(--border-subtle)]/30 last:border-0 ${
+                              formData.client_id === client.id ? 'bg-[var(--gold)]/20 text-[var(--gold)]' : 'text-[var(--text-primary)]'
                             }`}
                             onClick={() => {
                               setFormData({ ...formData, client_id: client.id });
@@ -649,7 +649,7 @@ export default function PrepaidCardsPage() {
                           </button>
                         ))}
                       {clients.filter(c => c.name.toLowerCase().includes(cardClientSearch.toLowerCase())).length === 0 && (
-                        <div className="px-3 py-2 text-sm text-[#334155]">Nessun cliente trovato</div>
+                        <div className="px-3 py-2 text-sm text-[var(--text-secondary)]">Nessun cliente trovato</div>
                       )}
                     </div>
                   )}
@@ -679,7 +679,7 @@ export default function PrepaidCardsPage() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="es. Card 10 Pieghe"
-                    className="bg-[#F8FAFC]"
+                    className="bg-[var(--bg-elevated)]"
                     data-testid="card-name-input"
                   />
                 </div>
@@ -695,7 +695,7 @@ export default function PrepaidCardsPage() {
                     value={formData.total_value}
                     onChange={(e) => setFormData({ ...formData, total_value: e.target.value })}
                     placeholder="es. 200"
-                    className="bg-[#F8FAFC]"
+                    className="bg-[var(--bg-elevated)]"
                     data-testid="total-value-input"
                   />
                 </div>
@@ -708,7 +708,7 @@ export default function PrepaidCardsPage() {
                     value={formData.total_services}
                     onChange={(e) => setFormData({ ...formData, total_services: e.target.value })}
                     placeholder="es. 10"
-                    className="bg-[#F8FAFC]"
+                    className="bg-[var(--bg-elevated)]"
                     data-testid="total-services-input"
                   />
                 </div>
@@ -724,7 +724,7 @@ export default function PrepaidCardsPage() {
                     className="absolute inset-0 opacity-0 cursor-pointer z-10"
                     data-testid="valid-until-input"
                   />
-                  <div className="flex items-center h-10 px-3 bg-[#F8FAFC] border border-slate-200 rounded-md text-sm font-medium cursor-pointer">
+                  <div className="flex items-center h-10 px-3 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-md text-sm font-medium cursor-pointer">
                     {formData.valid_until ? formatDate(formData.valid_until) : 'Seleziona data'}
                   </div>
                 </div>
@@ -736,7 +736,7 @@ export default function PrepaidCardsPage() {
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   placeholder="Note aggiuntive..."
-                  className="bg-[#F8FAFC]"
+                  className="bg-[var(--bg-elevated)]"
                 />
               </div>
 
@@ -748,14 +748,14 @@ export default function PrepaidCardsPage() {
                     setDialogOpen(false);
                     resetForm();
                   }}
-                  className="border-[#E2E8F0]"
+                  className="border-[var(--border-subtle)]"
                 >
                   Annulla
                 </Button>
                 <Button
                   type="submit"
                   disabled={saving}
-                  className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white"
+                  className="bg-[var(--gold)] hover:bg-[var(--gold)] text-white"
                   data-testid="save-card-btn"
                 >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Crea Card'}
@@ -769,7 +769,7 @@ export default function PrepaidCardsPage() {
         <Dialog open={rechargeDialogOpen} onOpenChange={setRechargeDialogOpen}>
           <DialogContent className="sm:max-w-[400px]">
             <DialogHeader>
-              <DialogTitle className="font-playfair text-2xl text-[#0F172A]">
+              <DialogTitle className="font-playfair text-2xl text-[var(--text-primary)]">
                 Ricarica Card
               </DialogTitle>
               <DialogDescription>
@@ -778,9 +778,9 @@ export default function PrepaidCardsPage() {
             </DialogHeader>
             <div className="space-y-4 mt-4">
               {selectedCard && (
-                <div className="p-4 bg-[#F8FAFC] rounded-lg">
-                  <p className="text-sm text-[#334155]">Credito attuale</p>
-                  <p className="text-2xl font-semibold text-[#0F172A]">
+                <div className="p-4 bg-[var(--bg-elevated)] rounded-lg">
+                  <p className="text-sm text-[var(--text-secondary)]">Credito attuale</p>
+                  <p className="text-2xl font-semibold text-[var(--text-primary)]">
                     &euro;{selectedCard.remaining_value.toFixed(2)}
                   </p>
                 </div>
@@ -795,7 +795,7 @@ export default function PrepaidCardsPage() {
                   value={rechargeAmount}
                   onChange={(e) => setRechargeAmount(e.target.value)}
                   placeholder="es. 100"
-                  className="bg-[#F8FAFC]"
+                  className="bg-[var(--bg-elevated)]"
                   data-testid="recharge-amount-input"
                 />
               </div>
@@ -809,14 +809,14 @@ export default function PrepaidCardsPage() {
                     setRechargeAmount('');
                     setSelectedCard(null);
                   }}
-                  className="border-[#E2E8F0]"
+                  className="border-[var(--border-subtle)]"
                 >
                   Annulla
                 </Button>
                 <Button
                   onClick={handleRecharge}
                   disabled={saving}
-                  className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white"
+                  className="bg-[var(--gold)] hover:bg-[var(--gold)] text-white"
                   data-testid="confirm-recharge-btn"
                 >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Ricarica'}
@@ -830,7 +830,7 @@ export default function PrepaidCardsPage() {
         <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
           <DialogContent className="sm:max-w-[480px]">
             <DialogHeader>
-              <DialogTitle className="text-xl font-bold text-[#0F172A]">
+              <DialogTitle className="text-xl font-bold text-[var(--text-primary)]">
                 {editingTemplate ? 'Modifica Pacchetto' : 'Nuovo Pacchetto Preimpostato'}
               </DialogTitle>
             </DialogHeader>
@@ -911,7 +911,7 @@ export default function PrepaidCardsPage() {
               <Button
                 onClick={saveTemplate}
                 disabled={savingTemplate}
-                className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white"
+                className="bg-[var(--gold)] hover:bg-[var(--gold)] text-white"
                 data-testid="save-package-btn"
               >
                 {savingTemplate ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salva'}
@@ -935,15 +935,15 @@ export default function PrepaidCardsPage() {
             <div className="mt-4">
               {newlyCreatedCard && (
                 <div className="p-4 bg-green-50 border-2 border-green-200 rounded-xl mb-4">
-                  <p className="font-bold text-lg text-[#0F172A]">{newlyCreatedCard.name}</p>
-                  <p className="text-sm text-[#334155]">{newlyCreatedCard.card_type === 'subscription' ? 'Abbonamento' : 'Card Prepagata'}</p>
+                  <p className="font-bold text-lg text-[var(--text-primary)]">{newlyCreatedCard.name}</p>
+                  <p className="text-sm text-[var(--text-secondary)]">{newlyCreatedCard.card_type === 'subscription' ? 'Abbonamento' : 'Card Prepagata'}</p>
                   <p className="text-2xl font-black text-green-600 mt-2">€{newlyCreatedCard.total_value?.toFixed(2)}</p>
                   {newlyCreatedCard.total_services && (
-                    <p className="text-sm text-[#64748B]">{newlyCreatedCard.total_services} servizi inclusi</p>
+                    <p className="text-sm text-[var(--text-muted)]">{newlyCreatedCard.total_services} servizi inclusi</p>
                   )}
                 </div>
               )}
-              <p className="text-sm text-[#334155] mb-4">
+              <p className="text-sm text-[var(--text-secondary)] mb-4">
                 Vuoi andare in cassa per registrare l'acquisto di questa card?
               </p>
             </div>
