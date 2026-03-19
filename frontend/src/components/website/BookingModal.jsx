@@ -7,7 +7,7 @@ import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
 import {
   Scissors, Gift, Calendar, ArrowRight, X, AlertCircle,
-  CheckCircle, MessageSquare, Phone, Clock, Users
+  CheckCircle, MessageSquare, Phone, Clock, Users, ChevronDown
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -58,7 +58,7 @@ export default function BookingModal({ open, onClose, services, operators, promo
   const [showConflictOverlay, setShowConflictOverlay] = useState(false);
   const [availableOperators, setAvailableOperators] = useState([]);
   const [alternativeSlots, setAlternativeSlots] = useState([]);
-  const [activeCat, setActiveCat] = useState(null);
+  const [openCats, setOpenCats] = useState([]);
 
   const fetchBusySlots = useCallback(async (date) => {
     try {
@@ -82,17 +82,9 @@ export default function BookingModal({ open, onClose, services, operators, promo
       setSelectedPromo(null);
       setConflictModal(null);
       setShowConflictOverlay(false);
-      setActiveCat(null);
+      setOpenCats([]);
     }
   }, [open]);
-
-  // Set first category as active when services load
-  useEffect(() => {
-    if (services.length > 0 && activeCat === null) {
-      const firstCat = (services[0]?.category || 'altro').toLowerCase();
-      setActiveCat(firstCat);
-    }
-  }, [services, activeCat]);
 
   if (!open) return null;
 
@@ -187,9 +179,7 @@ export default function BookingModal({ open, onClose, services, operators, promo
     setTimeout(() => handleSubmitWithData(updatedForm), 500);
   };
 
-  // "Promo" pseudo-tab active
-  const isPromoTab = activeCat === '__promo__';
-  const showCats = promos.length > 0 ? [...cats, '__promo__'] : cats;
+  const toggleCat = (cat) => setOpenCats(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]);
 
   return (
     <>
@@ -342,148 +332,134 @@ export default function BookingModal({ open, onClose, services, operators, promo
                     </div>
                   ) : (
                     <>
-                      {/* Category Tabs - horizontal scrollable */}
-                      <div className="flex gap-2 overflow-x-auto pb-2 mb-3 -mx-1 px-1 scrollbar-hide" data-testid="category-tabs">
-                        {showCats.map(cat => {
-                          const isActive = activeCat === cat;
-                          const isPromo = cat === '__promo__';
-                          const label = isPromo ? 'Promo' : cat;
-                          const icon = isPromo ? '🎁' : getCatIcon(cat);
-                          const count = isPromo ? promos.length : (byCat[cat]?.length || 0);
-                          // Count selected in this cat
-                          const selCount = isPromo ? (selectedPromo ? 1 : 0)
-                            : (byCat[cat] || []).filter(s => selIds.includes(s.id)).length;
-
+                      {/* Accordion categories */}
+                      <div className="space-y-1.5" data-testid="services-accordion">
+                        {cats.length > 0 ? cats.map(cat => {
+                          const catSvcs = byCat[cat] || [];
+                          const isOpen = openCats.includes(cat);
+                          const selCount = catSvcs.filter(s => selIds.includes(s.id)).length;
                           return (
-                            <button key={cat}
-                              onClick={() => setActiveCat(cat)}
-                              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap border-2"
-                              style={isActive
-                                ? { background: isPromo ? COLORS.accent + '15' : COLORS.primary + '15', borderColor: isPromo ? COLORS.accent : COLORS.primary, color: isPromo ? COLORS.accent : COLORS.primary }
-                                : { background: '#fff', borderColor: '#e2e8f0', color: '#64748b' }}
-                              data-testid={`cat-tab-${cat}`}>
-                              <span>{icon}</span>
-                              <span className="capitalize">{label}</span>
-                              <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full"
-                                style={isActive
-                                  ? { background: isPromo ? COLORS.accent + '25' : COLORS.primary + '25' }
-                                  : { background: '#f1f5f9' }}>
-                                {count}
-                              </span>
-                              {selCount > 0 && (
-                                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: COLORS.accent }} />
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      {/* Services for active category */}
-                      {!isPromoTab && activeCat && byCat[activeCat] && (
-                        <div className="space-y-1.5" data-testid="services-list">
-                          {byCat[activeCat].map(svc => {
-                            const sel = selIds.includes(svc.id);
-                            return (
-                              <div key={svc.id}
-                                onClick={() => toggleSvc(svc)}
-                                className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border-2"
-                                style={sel
-                                  ? { borderColor: COLORS.primary, background: COLORS.primary + '08' }
-                                  : { borderColor: '#f1f5f9', background: '#fff' }}
-                                data-testid={`service-item-${svc.id}`}>
-                                <div className="w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
-                                  style={sel
-                                    ? { borderColor: COLORS.primary, background: COLORS.primary }
-                                    : { borderColor: '#cbd5e1' }}>
-                                  {sel && <CheckCircle className="w-3.5 h-3.5 text-white" />}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className={`font-bold text-sm leading-tight ${sel ? '' : 'text-slate-800'}`}
-                                    style={sel ? { color: COLORS.primary } : {}}>
-                                    {svc.name}
-                                  </p>
-                                  {svc.description && <p className="text-[11px] text-slate-400 truncate mt-0.5">{svc.description}</p>}
-                                </div>
-                                <div className="text-right flex-shrink-0">
-                                  <p className="font-black text-sm" style={sel ? { color: COLORS.primary } : { color: '#334155' }}>€{svc.price}</p>
-                                  <p className="text-[10px] text-slate-400">{svc.duration} min</p>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-
-                      {/* No services placeholder */}
-                      {!isPromoTab && (!activeCat || !byCat[activeCat] || byCat[activeCat].length === 0) && cats.length === 0 && (
-                        <div className="text-center py-8 text-slate-400">
-                          <Scissors className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                          <p className="font-medium text-sm">I servizi verranno caricati a breve</p>
-                          <p className="text-xs mt-1">Contattaci su WhatsApp per prenotare</p>
-                        </div>
-                      )}
-
-                      {/* Promos Tab Content */}
-                      {isPromoTab && (
-                        <div className="space-y-2" data-testid="promos-list">
-                          {promos.length === 0 ? (
-                            <p className="text-center text-sm text-slate-400 py-6">Nessuna promozione attiva</p>
-                          ) : promos.map((promo, i) => (
-                            <div key={promo.id || i}
-                              className="rounded-xl p-3 cursor-pointer transition-all border-2"
-                              style={{
-                                background: selectedPromo?.id === promo.id ? COLORS.accent + '10' : '#fff',
-                                borderColor: selectedPromo?.id === promo.id ? COLORS.accent : '#f1f5f9'
-                              }}
-                              onClick={() => {
-                                if (selectedPromo?.id === promo.id) {
-                                  setSelectedPromo(null);
-                                  setForm(f => ({ ...f, notes: f.notes.replace(`[PROMO: ${promo.promo_code || promo.name}] `, '') }));
-                                  toast('Promo rimossa');
-                                } else {
-                                  setSelectedPromo(promo);
-                                  const code = promo.promo_code || promo.name;
-                                  setForm(f => ({ ...f, notes: `[PROMO: ${code}] ${f.notes.replace(/\[PROMO: [^\]]+\] /g, '')}` }));
-                                  toast.success(`Promo "${promo.name}" applicata!`);
-                                }
-                              }}
-                              data-testid={`promo-card-${i}`}>
-                              <div className="flex items-start justify-between mb-1">
+                            <div key={cat} className="rounded-xl overflow-hidden border"
+                              style={{ borderColor: isOpen ? COLORS.primary + '40' : '#e2e8f0' }}>
+                              <button onClick={() => toggleCat(cat)}
+                                className="w-full flex items-center justify-between px-3 py-2.5 text-left transition-all"
+                                style={{ background: isOpen ? COLORS.primary + '06' : '#f8fafc' }}
+                                data-testid={`cat-accordion-${cat}`}>
                                 <div className="flex items-center gap-2">
-                                  <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
-                                    style={selectedPromo?.id === promo.id
-                                      ? { background: COLORS.accent, color: '#fff' }
-                                      : { background: COLORS.accent + '20' }}>
-                                    {selectedPromo?.id === promo.id
-                                      ? <CheckCircle className="w-3.5 h-3.5" />
-                                      : <Gift className="w-3 h-3" style={{ color: COLORS.accent }} />}
-                                  </div>
-                                  <p className="font-bold text-sm text-slate-800">{promo.name}</p>
+                                  <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                                    style={{ color: isOpen ? COLORS.primary : '#94a3b8' }} />
+                                  <span className="text-sm">{getCatIcon(cat)}</span>
+                                  <span className="font-bold text-sm text-slate-800 capitalize">{cat}</span>
+                                  <span className="text-[10px] font-bold bg-slate-200 text-slate-500 px-1.5 py-0.5 rounded-full">{catSvcs.length}</span>
                                 </div>
-                                <span className="text-white text-[9px] font-black px-2 py-0.5 rounded-full flex-shrink-0"
-                                  style={{ background: COLORS.accent }}>PROMO</span>
-                              </div>
-                              {promo.description && <p className="text-xs text-slate-500 ml-8">{promo.description}</p>}
-                              {promo.free_service_name && (
-                                <div className="flex items-center gap-1.5 ml-8 mt-1.5 px-2 py-1 rounded-lg" style={{ background: COLORS.accent + '10' }}>
-                                  <Gift className="w-3 h-3 flex-shrink-0" style={{ color: COLORS.accent }} />
-                                  <p className="text-xs font-bold" style={{ color: COLORS.accent }}>Omaggio: {promo.free_service_name}</p>
+                                {selCount > 0 && (
+                                  <span className="text-[10px] font-black text-white px-2 py-0.5 rounded-full"
+                                    style={{ background: COLORS.primary }}>{selCount} sel.</span>
+                                )}
+                              </button>
+                              {isOpen && (
+                                <div className="border-t divide-y" style={{ borderColor: '#f1f5f9' }}>
+                                  {catSvcs.map(svc => {
+                                    const sel = selIds.includes(svc.id);
+                                    return (
+                                      <button key={svc.id} onClick={() => toggleSvc(svc)}
+                                        className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-all"
+                                        style={{ background: sel ? COLORS.primary + '06' : '#fff' }}
+                                        data-testid={`service-item-${svc.id}`}>
+                                        <div className="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all"
+                                          style={sel
+                                            ? { borderColor: COLORS.primary, background: COLORS.primary }
+                                            : { borderColor: '#cbd5e1' }}>
+                                          {sel && <CheckCircle className="w-3 h-3 text-white" />}
+                                        </div>
+                                        <span className={`flex-1 text-sm ${sel ? 'font-bold' : 'text-slate-700'}`}
+                                          style={sel ? { color: COLORS.primary } : {}}>
+                                          {svc.name}
+                                        </span>
+                                        <span className="font-black text-sm flex-shrink-0"
+                                          style={sel ? { color: COLORS.primary } : { color: '#334155' }}>€{svc.price}</span>
+                                        <span className="text-[10px] text-slate-400 flex-shrink-0 w-12 text-right">{svc.duration} min</span>
+                                      </button>
+                                    );
+                                  })}
                                 </div>
-                              )}
-                              {promo.promo_code && (
-                                <p className="text-[10px] text-slate-400 ml-8 mt-1">
-                                  Codice: <span className="font-mono font-bold px-1 py-0.5 rounded" style={{ background: COLORS.accent + '20', color: COLORS.accent }}>{promo.promo_code}</span>
-                                </p>
                               )}
                             </div>
-                          ))}
-                        </div>
-                      )}
+                          );
+                        }) : (
+                          <div className="text-center py-8 text-slate-400">
+                            <Scissors className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                            <p className="font-medium text-sm">I servizi verranno caricati a breve</p>
+                          </div>
+                        )}
+
+                        {/* Promos accordion section */}
+                        {promos.length > 0 && (
+                          <div className="rounded-xl overflow-hidden border"
+                            style={{ borderColor: openCats.includes('__promo__') ? COLORS.accent + '40' : '#e2e8f0' }}>
+                            <button onClick={() => toggleCat('__promo__')}
+                              className="w-full flex items-center justify-between px-3 py-2.5 text-left transition-all"
+                              style={{ background: openCats.includes('__promo__') ? COLORS.accent + '06' : '#f8fafc' }}
+                              data-testid="cat-accordion-promo">
+                              <div className="flex items-center gap-2">
+                                <ChevronDown className={`w-4 h-4 transition-transform ${openCats.includes('__promo__') ? 'rotate-180' : ''}`}
+                                  style={{ color: openCats.includes('__promo__') ? COLORS.accent : '#94a3b8' }} />
+                                <span className="text-sm">🎁</span>
+                                <span className="font-bold text-sm" style={{ color: COLORS.accent }}>Promozioni</span>
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: COLORS.accent + '20', color: COLORS.accent }}>{promos.length}</span>
+                              </div>
+                              {selectedPromo && (
+                                <span className="text-[10px] font-black text-white px-2 py-0.5 rounded-full" style={{ background: COLORS.accent }}>1 sel.</span>
+                              )}
+                            </button>
+                            {openCats.includes('__promo__') && (
+                              <div className="border-t divide-y" style={{ borderColor: '#f1f5f9' }}>
+                                {promos.map((promo, i) => (
+                                  <button key={promo.id || i}
+                                    onClick={() => {
+                                      if (selectedPromo?.id === promo.id) {
+                                        setSelectedPromo(null);
+                                        setForm(f => ({ ...f, notes: f.notes.replace(`[PROMO: ${promo.promo_code || promo.name}] `, '') }));
+                                        toast('Promo rimossa');
+                                      } else {
+                                        setSelectedPromo(promo);
+                                        const code = promo.promo_code || promo.name;
+                                        setForm(f => ({ ...f, notes: `[PROMO: ${code}] ${f.notes.replace(/\[PROMO: [^\]]+\] /g, '')}` }));
+                                        toast.success(`Promo "${promo.name}" applicata!`);
+                                      }
+                                    }}
+                                    className="w-full px-3 py-2.5 text-left transition-all"
+                                    style={{ background: selectedPromo?.id === promo.id ? COLORS.accent + '08' : '#fff' }}
+                                    data-testid={`promo-card-${i}`}>
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0"
+                                        style={selectedPromo?.id === promo.id
+                                          ? { borderColor: COLORS.accent, background: COLORS.accent }
+                                          : { borderColor: '#cbd5e1' }}>
+                                        {selectedPromo?.id === promo.id && <CheckCircle className="w-3 h-3 text-white" />}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="font-bold text-sm text-slate-800">{promo.name}</p>
+                                        {promo.description && <p className="text-[11px] text-slate-400 truncate">{promo.description}</p>}
+                                        {promo.free_service_name && (
+                                          <p className="text-[11px] font-bold mt-0.5" style={{ color: COLORS.accent }}>Omaggio: {promo.free_service_name}</p>
+                                        )}
+                                      </div>
+                                      <span className="text-white text-[9px] font-black px-2 py-0.5 rounded-full flex-shrink-0"
+                                        style={{ background: COLORS.accent }}>PROMO</span>
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </>
                   )}
 
                   {/* Selected promo badge */}
-                  {selectedPromo && !isPromoTab && (
+                  {selectedPromo && (
                     <div className="mt-3 p-2.5 rounded-xl flex items-center justify-between" style={{ background: COLORS.accent + '10', border: `1.5px solid ${COLORS.accent}40` }} data-testid="selected-promo-badge">
                       <div className="flex items-center gap-2">
                         <Gift className="w-3.5 h-3.5" style={{ color: COLORS.accent }} />
