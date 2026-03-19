@@ -15,7 +15,6 @@ export default function PendingBookings() {
   const [actionLoading, setActionLoading] = useState(null);
 
   const fetchPending = useCallback(async () => {
-    // Non chiamare se non c'è token (utente non loggato)
     if (!axios.defaults.headers.common['Authorization']) return;
     try {
       const res = await axios.get(`${API}/appointments/pending-bookings`);
@@ -26,7 +25,6 @@ export default function PendingBookings() {
 
   useEffect(() => {
     fetchPending();
-    // Polling ogni 30 secondi
     const interval = setInterval(fetchPending, 30000);
     return () => clearInterval(interval);
   }, [fetchPending]);
@@ -35,7 +33,7 @@ export default function PendingBookings() {
     setActionLoading(id + status);
     try {
       await axios.put(`${API}/booking/${id}/confirm`, { status, note });
-      const label = status === 'scheduled' ? '✅ Confermata!' : '❌ Rifiutata';
+      const label = status === 'scheduled' ? 'Confermata!' : 'Rifiutata';
       toast.success(label);
       setPending(prev => prev.filter(p => p.id !== id));
     } catch (err) {
@@ -49,17 +47,17 @@ export default function PendingBookings() {
 
   return (
     <div className="mx-4 mb-2">
-      {/* Pulsante campanella */}
       <button
         onClick={() => setOpen(o => !o)}
-        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl border-2 transition-all font-semibold text-sm ${
+        className={`btn-animate w-full flex items-center justify-between px-3 py-2.5 rounded-xl border-2 transition-all font-semibold text-sm ${
           count > 0
-            ? 'border-amber-400 bg-amber-50 text-amber-700 animate-pulse'
-            : 'border-gray-200 bg-gray-50 text-gray-400'
+            ? 'border-amber-500/50 bg-amber-500/10 text-amber-400'
+            : 'border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-muted)]'
         }`}
+        data-testid="pending-bookings-btn"
       >
         <div className="flex items-center gap-2">
-          <Bell className={`w-4 h-4 ${count > 0 ? 'text-amber-500' : 'text-gray-400'}`} />
+          <Bell className={`w-4 h-4 ${count > 0 ? 'text-amber-400' : 'text-[var(--text-muted)]'}`} />
           <span>{count > 0 ? `${count} prenotazion${count === 1 ? 'e' : 'i'} in attesa` : 'Nessuna richiesta'}</span>
         </div>
         {count > 0 && (
@@ -70,39 +68,36 @@ export default function PendingBookings() {
         )}
       </button>
 
-      {/* Lista prenotazioni pending */}
       {open && count > 0 && (
         <div className="mt-2 space-y-2 max-h-80 overflow-y-auto">
           {pending.map((apt) => (
-            <div key={apt.id} className="bg-white border-2 border-amber-200 rounded-xl p-3 shadow-sm">
-              {/* Header */}
+            <div key={apt.id} className="glass border-2 border-amber-500/20 rounded-xl p-3" data-testid={`pending-${apt.id}`}>
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-                    <User className="w-4 h-4 text-amber-600" />
+                  <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
+                    <User className="w-4 h-4 text-amber-400" />
                   </div>
                   <div>
-                    <p className="font-black text-sm text-gray-800">{apt.client_name}</p>
-                    <p className="text-xs text-gray-400">{apt.client_phone}</p>
+                    <p className="font-black text-sm text-[var(--text-primary)]">{apt.client_name}</p>
+                    <p className="text-xs text-[var(--text-muted)]">{apt.client_phone}</p>
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-xs font-bold text-amber-600 flex items-center gap-1">
+                  <p className="text-xs font-bold text-amber-400 flex items-center gap-1">
                     <Calendar className="w-3 h-3" />
                     {apt.date ? format(new Date(apt.date), 'd MMM', { locale: it }) : apt.date}
                   </p>
-                  <p className="text-xs font-bold text-gray-600 flex items-center gap-1">
+                  <p className="text-xs font-bold text-[var(--text-secondary)] flex items-center gap-1">
                     <Clock className="w-3 h-3" />
                     {apt.time}
                   </p>
                 </div>
               </div>
 
-              {/* Servizi */}
               {apt.service_names?.length > 0 && (
                 <div className="flex flex-wrap gap-1 mb-2">
                   {apt.service_names.map((s, i) => (
-                    <span key={i} className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs font-semibold px-2 py-0.5 rounded-full">
+                    <span key={i} className="inline-flex items-center gap-1 bg-[var(--gold-dim)] text-[var(--gold)] text-xs font-semibold px-2 py-0.5 rounded-full">
                       <Scissors className="w-2.5 h-2.5" />{s}
                     </span>
                   ))}
@@ -110,16 +105,16 @@ export default function PendingBookings() {
               )}
 
               {apt.operator_name && (
-                <p className="text-xs text-gray-400 mb-2">👤 {apt.operator_name}</p>
+                <p className="text-xs text-[var(--text-muted)] mb-2">Operatore: {apt.operator_name}</p>
               )}
 
-              {/* Azioni */}
               <div className="flex gap-2">
                 <Button
                   size="sm"
                   onClick={() => handleAction(apt.id, 'scheduled')}
                   disabled={!!actionLoading}
-                  className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold h-8 text-xs"
+                  className="btn-gold flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold h-8 text-xs"
+                  data-testid={`confirm-${apt.id}`}
                 >
                   {actionLoading === apt.id + 'scheduled'
                     ? <Clock className="w-3 h-3 animate-spin" />
@@ -131,7 +126,8 @@ export default function PendingBookings() {
                   variant="outline"
                   onClick={() => handleAction(apt.id, 'rejected')}
                   disabled={!!actionLoading}
-                  className="flex-1 border-red-300 text-red-500 hover:bg-red-50 font-bold h-8 text-xs"
+                  className="btn-animate flex-1 border-red-500/30 text-red-400 hover:bg-red-500/10 font-bold h-8 text-xs"
+                  data-testid={`reject-${apt.id}`}
                 >
                   {actionLoading === apt.id + 'rejected'
                     ? <Clock className="w-3 h-3 animate-spin" />

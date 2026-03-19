@@ -60,6 +60,9 @@ Salon management application (React, FastAPI, MongoDB) deployed on Render. The a
 - **Admin theme API:** New GET/PUT /api/admin-theme endpoints for persistence in MongoDB
 - **Theme auto-load:** Admin theme preferences loaded at startup in Layout.jsx
 - **Testing:** Backend 12/12, Frontend 16/16 (iteration_11)
+- **Settings page fix:** toggleDay crash fix, Checkbox onCheckedChange + stopPropagation
+- **Pending bookings endpoint:** Created GET /api/appointments/pending-bookings and PUT /api/booking/{id}/confirm
+- **PendingBookings.jsx:** Rewritten with dark theme
 
 ## Architecture
 ```

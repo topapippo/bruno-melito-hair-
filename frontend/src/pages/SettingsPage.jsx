@@ -157,12 +157,15 @@ export default function SettingsPage() {
   };
 
   const toggleDay = (day) => {
-    setSettings(prev => ({
-      ...prev,
-      working_days: prev.working_days.includes(day)
-        ? prev.working_days.filter(d => d !== day)
-        : [...prev.working_days, day]
-    }));
+    setSettings(prev => {
+      const days = Array.isArray(prev.working_days) ? prev.working_days : [];
+      return {
+        ...prev,
+        working_days: days.includes(day)
+          ? days.filter(d => d !== day)
+          : [...days, day]
+      };
+    });
   };
 
   const handleChangePassword = async (e) => {
@@ -298,27 +301,32 @@ export default function SettingsPage() {
               <div className="space-y-3">
                 <Label>Giorni Lavorativi</Label>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {DAYS.map((day) => (
-                    <div
-                      key={day.value}
-                      className={`flex items-center space-x-2 p-3 rounded-lg border cursor-pointer transition-colors ${
-                        settings.working_days?.includes(day.value)
-                          ? 'bg-[var(--gold)]/10 border-[var(--gold)]'
-                          : 'bg-[var(--bg-elevated)] border-transparent hover:border-[var(--border-subtle)]'
-                      }`}
-                      onClick={() => toggleDay(day.value)}
-                    >
-                      <Checkbox
-                        checked={settings.working_days?.includes(day.value)}
-                        className="data-[state=checked]:bg-[var(--gold)] data-[state=checked]:border-[var(--gold)]"
-                      />
-                      <span className={`text-sm ${
-                        settings.working_days?.includes(day.value) ? 'text-[var(--gold)] font-medium' : 'text-[var(--text-primary)]'
-                      }`}>
-                        {day.label}
-                      </span>
-                    </div>
-                  ))}
+                  {DAYS.map((day) => {
+                    const isChecked = Array.isArray(settings.working_days) && settings.working_days.includes(day.value);
+                    return (
+                      <div
+                        key={day.value}
+                        className={`flex items-center space-x-2 p-3 rounded-lg border cursor-pointer transition-colors ${
+                          isChecked
+                            ? 'bg-[var(--gold)]/10 border-[var(--gold)]'
+                            : 'bg-[var(--bg-elevated)] border-transparent hover:border-[var(--border-subtle)]'
+                        }`}
+                        onClick={() => toggleDay(day.value)}
+                      >
+                        <Checkbox
+                          checked={isChecked}
+                          onCheckedChange={() => toggleDay(day.value)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="data-[state=checked]:bg-[var(--gold)] data-[state=checked]:border-[var(--gold)]"
+                        />
+                        <span className={`text-sm ${
+                          isChecked ? 'text-[var(--gold)] font-medium' : 'text-[var(--text-primary)]'
+                        }`}>
+                          {day.label}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </CardContent>

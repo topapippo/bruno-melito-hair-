@@ -154,6 +154,33 @@ async def get_appointments(
     ).sort([("date", 1), ("time", 1)]).to_list(1000)
 
 
+# ============== PENDING BOOKINGS ==============
+
+@router.get("/appointments/pending-bookings")
+async def get_pending_bookings(current_user: dict = Depends(get_current_user)):
+    """Get online bookings that are pending confirmation"""
+    bookings = await db.appointments.find(
+        {"user_id": current_user["id"], "status": "pending"},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(50)
+    
+    for booking in bookings:
+        if booking.get("service_ids"):
+            services = await db.services.find(
+                {"id": {"$in": booking["service_ids"]}, "user_id": current_user["id"]},
+                {"_id": 0, "name": 1}
+            ).to_list(100)
+            booking["service_names"] = [s["name"] for s in services]
+        if booking.get("operator_id"):
+            op = await db.operators.find_one(
+                {"id": booking["operator_id"], "user_id": current_user["id"]},
+                {"_id": 0, "name": 1}
+            )
+            booking["operator_name"] = op["name"] if op else None
+    
+    return bookings
+
+
 @router.get("/appointments/{appointment_id}", response_model=AppointmentResponse)
 async def get_appointment(appointment_id: str, current_user: dict = Depends(get_current_user)):
     appointment = await db.appointments.find_one(
@@ -365,3 +392,20 @@ async def create_recurring_appointments(data: RecurringAppointmentCreate, curren
         created_appointments.append({"id": appointment_id, "date": appointment_doc["date"], "time": appointment_doc["time"]})
 
     return {"created": len(created_appointments), "appointments": created_appointments}
+
+
+@router.put("/booking/{booking_id}/confirm")
+async def confirm_booking(booking_id: str, data: dict, current_user: dict = Depends(get_current_user)):
+    """Confirm or reject a pending booking"""
+    status = data.get("status", "scheduled")
+    if status not in ["scheduled", "rejected"]:
+        raise HTTPException(400, "Status must be 'scheduled' or 'rejected'")
+    
+    result = await db.appointments.update_one(
+        {"id": booking_id, "user_id": current_user["id"]},
+        {"$set": {"status": status, "confirmed_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    if result.modified_count == 0:
+        raise HTTPException(404, "Prenotazione non trovata")
+    
+    return {"status": "ok", "booking_id": booking_id, "new_status": status}
