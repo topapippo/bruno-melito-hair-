@@ -5,30 +5,30 @@
   "start_url": "/planning",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#F8FAFC",
-  "theme_color": "#0EA5E9",
+  "background_color": "#0B1120",
+  "theme_color": "#D4AF37",
   "orientation": "any",
   "categories": ["business", "productivity"],
+  "lang": "it",
   "icons": [
     {
-      "src": "/logo.png?v=4",
+      "src": "/logo.png?v=5",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-512x512.png?v=4",
+      "src": "/icons/icon-512x512.png?v=5",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/icons/icon-192x192.png?v=4",
+      "src": "/icons/icon-192x192.png?v=5",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     }
   ],
-  "screenshots": [],
   "prefer_related_applications": false
 }

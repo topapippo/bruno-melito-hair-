@@ -1,28 +1,25 @@
-const CACHE_NAME = 'salone-bella-donna-v1';
+const CACHE_NAME = 'bruno-melito-v2';
 const OFFLINE_URL = '/offline.html';
 
-// Files to cache immediately
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/offline.html',
   '/manifest.json',
+  '/logo.png',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png'
 ];
 
-// Install event - cache static assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('Caching static assets');
       return cache.addAll(STATIC_ASSETS);
     })
   );
   self.skipWaiting();
 });
 
-// Activate event - clean old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -36,23 +33,17 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch event - network first, fallback to cache
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip non-GET requests
   if (request.method !== 'GET') return;
-
-  // Skip external requests
   if (url.origin !== location.origin) return;
 
-  // API requests - network first, cache response
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          // Clone and cache successful API responses
           if (response.ok) {
             const responseClone = response.clone();
             caches.open(CACHE_NAME).then((cache) => {
@@ -62,12 +53,8 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() => {
-          // Return cached API response if offline
           return caches.match(request).then((cached) => {
-            if (cached) {
-              return cached;
-            }
-            // Return offline JSON response
+            if (cached) return cached;
             return new Response(
               JSON.stringify({ offline: true, message: 'Sei offline. Dati dalla cache.' }),
               { headers: { 'Content-Type': 'application/json' } }
@@ -78,11 +65,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static assets - cache first, network fallback
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) {
-        // Update cache in background
         fetch(request).then((response) => {
           if (response.ok) {
             caches.open(CACHE_NAME).then((cache) => {
@@ -104,7 +89,6 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() => {
-          // Return offline page for navigation requests
           if (request.mode === 'navigate') {
             return caches.match(OFFLINE_URL);
           }
@@ -113,15 +97,3 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
-
-// Background sync for offline appointments
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'sync-appointments') {
-    event.waitUntil(syncAppointments());
-  }
-});
-
-async function syncAppointments() {
-  // Get pending appointments from IndexedDB and sync when online
-  console.log('Syncing appointments...');
-}
