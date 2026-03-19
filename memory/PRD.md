@@ -21,7 +21,7 @@ Salon management application (React, FastAPI, MongoDB) deployed on Render. The a
 
 ## What's Been Implemented
 
-### Phase 1 - Previous Sessions
+### Phase 1 - Initial Build
 - Refactored WebsitePage.jsx into 8 section components (Navbar, Hero, Stats, About, CTA, Gallery, Reviews, Footer)
 - Booking flow moved to modal overlay
 - CMS enhanced with font size controls and 6 theme presets
@@ -31,91 +31,85 @@ Salon management application (React, FastAPI, MongoDB) deployed on Render. The a
 - Mobile UX fixes (login button visibility)
 
 ### Phase 2 - Mar 18, 2026
-- **Deployment Fix:** Removed yarn.lock, standardized on npm with package-lock.json
-- **Conflict Modal Bug Fix:** Fixed case-sensitive string comparison
-- **Backend Enhancement:** POST /api/public/booking returns HTTP 409 with structured conflict data
-- **Booking Modal Refactoring:** Extracted BookingModal.jsx and ManageAppointments.jsx from WebsitePage.jsx
-- **Lazy Loading:** All admin pages use React.lazy() for code splitting
-- **Date Formatting:** Standardized all dates to Italian dd/mm/yy format across 10+ pages
-- **Recurring Appointments:** Added "Repeat" feature to client history dialog
-- **Badge Removal:** Removed "Made with MBHS" badge
+- Deployment Fix, Conflict Modal Bug Fix, Backend HTTP 409 conflict response
+- BookingModal/ManageAppointments extraction, Lazy Loading, Date Formatting
+- Recurring Appointments, Badge Removal
 
 ### Phase 3 - Mar 19, 2026
-- **BookingModal Redesign (P0):** Complete mobile-first redesign with accordion-style service categories
-- **PlanningPage Dialog Redesign (P1):** Applied same category-tabbed service selection
-- **Animated Price Counter:** Real-time animated price on booking button
-- **Progressive Service Numbering:** Automatic numbering within categories
-- **Gallery Fix:** Shows ALL photos from CMS (no hardcoded limit)
-- **Dashboard Link Fix:** Corrected broken navigation link
-- **CSS Utility:** Added `.scrollbar-hide` class
+- BookingModal accordion-style service categories
+- PlanningPage accordion service selection
+- Animated Price Counter, Progressive Service Numbering
+- Gallery shows ALL photos (no limit), Dashboard Link Fix
 
-### Phase 4 - Mar 19, 2026 (Dark Theme & Customization)
-- **Complete Aesthetic Overhaul:** "Onyx & Gold" dark theme applied to entire app
-- **Customizable Admin Navigation:** NavConfigurator allows moving modules between sidebar and dashboard
-- **Nav Config Persistence:** Backend endpoints (GET/PUT /api/nav-config) save layout per user
-- **Dark Theme Design System:** CSS variables in :root for full theming
-- **Advanced CSS Animations:** Glassmorphism, gradient text, keyframe animations
+### Phase 4 - Mar 19, 2026 (Dark Theme)
+- Complete "Onyx & Gold" dark theme for entire app
+- Customizable Admin Navigation (NavConfigurator)
+- CSS Design System with variables, glassmorphism, keyframe animations
 
-### Verification - Mar 19, 2026
-- **Testing Agent Iteration 9:** Backend 100% (15/15), Frontend 100%
-- **No JavaScript errors, no SIGSEGV crashes**
-- **Gallery .slice(0,16) limit removed** — now shows all photos
-- **Fix "Gestione Sito" black page:** Path mismatch in navModules.js (`/website-admin` → `/gestione-sito`)
+### Phase 5 - Mar 19, 2026 (Current)
+- **BookingModal dark theme:** Full rewrite with CSS variables (--bg-card, --gold, etc.)
+- **Button animations:** btn-gold (glow + shine), btn-animate (radial + lift), btn-glass, dash-card
+- **Gestione Sito fix:** Path corrected /website-admin → /gestione-sito, 37+ colors converted
+- **Section reorder:** New "Ordine Sezioni" tab with up/down arrows, backend persistence
+- **Dynamic section rendering:** WebsitePage uses sectionMap/sectionOrder from config
+- **Success page + mobile CTA:** Converted to dark theme
+- **Testing:** Backend 13/13, Frontend 16/16 (iteration_10)
 
 ## Architecture
 ```
 /app/frontend/src/
 ├── App.js                          (Router + lazy loading)
+├── index.css                       (Dark theme design system + button animations)
 ├── pages/
-│   ├── WebsitePage.jsx             (main page orchestrator)
-│   ├── PlanningPage.jsx            (calendar + appointment management)
-│   ├── Dashboard.jsx               (dynamic module grid, dark theme)
+│   ├── WebsitePage.jsx             (dynamic section order from config)
+│   ├── WebsiteAdminPage.jsx        (CMS + new "Ordine Sezioni" tab)
+│   ├── PlanningPage.jsx            (calendar + accordion services)
+│   ├── Dashboard.jsx               (dynamic modules, dash-card class)
 │   └── [admin pages...]            (lazy loaded)
 ├── components/
 │   ├── Layout.jsx                  (dynamic sidebar, dark theme)
 │   ├── NavConfigurator.jsx         (layout customization UI)
 │   └── website/
-│       ├── BookingModal.jsx        (accordion services, animated price)
-│       ├── ManageAppointments.jsx
+│       ├── BookingModal.jsx        (dark theme, accordion, animated price)
+│       ├── HeroSection.jsx         (btn-gold class)
+│       ├── CTASection.jsx          (btn-gold + btn-animate)
+│       ├── Navbar.jsx              (btn-gold class)
 │       ├── GallerySection.jsx      (all photos, no limit)
 │       └── [other sections]
 ├── utils/
-│   ├── navModules.js               (module definitions)
+│   ├── navModules.js               (/gestione-sito path fixed)
 │   └── formatDate.js               (Italian date formatting)
-└── index.css                       (dark theme design system)
 
 /app/backend/
 ├── server.py
 ├── routes/
+│   ├── public.py                   (website config supports section_order)
 │   └── stats.py                    (nav-config endpoints)
-├── models.py
-├── database.py
-└── auth.py
+├── models.py, database.py, auth.py
 ```
 
 ## Key API Endpoints
-- GET /api/public/website - Public website data
-- GET /api/public/busy-slots - Fetch occupied time slots
+- GET /api/public/website - Public website data (includes section_order)
+- PUT /api/website/config - Save CMS config (including section_order)
+- GET /api/nav-config - User navigation layout
+- PUT /api/nav-config - Save navigation layout
 - POST /api/public/booking - Create booking (409 on conflict)
-- GET /api/appointments - Fetch appointments by date
-- POST /api/appointments - Create appointment
-- PUT /api/appointments/:id - Update appointment
-- GET /api/nav-config - Get user navigation layout
-- PUT /api/nav-config - Save user navigation layout
 
 ## Prioritized Backlog
 
-### P0
-- (None - all P0 items completed)
+### P0 - None (all completed)
 
 ### P1
 - WhatsApp Business API integration for automatic appointment reminders
-- User pushes to GitHub and redeploys on Render
+- Deploy to Render with latest changes
 
 ### P2
-- Drag-and-drop customization for public website sections
-- Performance optimization (bundle analysis, code splitting)
-- Investigate broken gallery image (5th position - external URL)
+- Performance optimization (bundle analysis, lazy image loading)
+- Advanced drag-and-drop for section reorder (currently uses arrows)
+
+### P3
+- Refactoring backend structure
+- Progressive Web App features
 
 ## Credentials
 - **Production:** melitobruno@gmail.com / mbhs637104
