@@ -46,7 +46,7 @@ Salon management application (React, FastAPI, MongoDB) deployed on Render. The a
 - Customizable Admin Navigation (NavConfigurator)
 - CSS Design System with variables, glassmorphism, keyframe animations
 
-### Phase 5 - Mar 19, 2026 (Current)
+### Phase 5 - Mar 19, 2026
 - **BookingModal dark theme:** Full rewrite with CSS variables (--bg-card, --gold, etc.)
 - **Button animations:** btn-gold (glow + shine), btn-animate (radial + lift), btn-glass, dash-card
 - **Gestione Sito fix:** Path corrected /website-admin → /gestione-sito, 37+ colors converted
@@ -63,6 +63,14 @@ Salon management application (React, FastAPI, MongoDB) deployed on Render. The a
 - **Settings page fix:** toggleDay crash fix, Checkbox onCheckedChange + stopPropagation
 - **Pending bookings endpoint:** Created GET /api/appointments/pending-bookings and PUT /api/booking/{id}/confirm
 - **PendingBookings.jsx:** Rewritten with dark theme
+
+### Phase 6 - Mar 19, 2026 (Public Website UI Enhancements)
+- **Floating WhatsApp button:** Green button fixed bottom-right, opens wa.me link
+- **Scroll-to-top button:** Gold button fixed bottom-left, appears after 400px scroll, smooth scroll to top
+- **Google Maps embed:** iframe in Contact section with dark-mode filter + "Apri in Google Maps" link
+- **Reviews carousel:** Auto-rotating (4.5s), touch swipe, dot navigation, 3 cards on desktop
+- **Social media links:** TikTok, YouTube, Instagram, Facebook in both Contact section and Footer
+- **Testing:** Frontend 14/14 (iteration_12) - all 5 features verified
 
 ## Architecture
 ```
@@ -109,15 +117,14 @@ Salon management application (React, FastAPI, MongoDB) deployed on Render. The a
 ### P0 - None (all completed)
 
 ### P1
-- WhatsApp Business API integration for automatic appointment reminders
 - Deploy to Render with latest changes
+- Performance optimization (bundle analysis, advanced code splitting)
 
 ### P2
-- Performance optimization (bundle analysis, lazy image loading)
 - Advanced drag-and-drop for section reorder (currently uses arrows)
 
 ### P3
-- Refactoring backend structure
+- Refactoring backend structure (routes, models, tests)
 - Progressive Web App features
 
 ## Credentials
