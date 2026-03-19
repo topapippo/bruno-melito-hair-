@@ -12,7 +12,7 @@ Salon management application (React, FastAPI, MongoDB) deployed on Render. The a
 - Reliable deployment to Render
 
 ## Tech Stack
-- **Frontend:** React, Tailwind CSS, Yarn
+- **Frontend:** React, Tailwind CSS, npm
 - **Backend:** Python, FastAPI
 - **Database:** MongoDB
 - **Deployment:** Render
@@ -30,13 +30,32 @@ Salon management application (React, FastAPI, MongoDB) deployed on Render. The a
 - SEO fixes (sitemap, robots.txt, canonical URLs, redirects)
 - Mobile UX fixes (login button visibility)
 
-### Phase 2 - Mar 18, 2026 (Current Session)
-- **Deployment Fix:** Removed yarn.lock from git (was causing `--frozen-lockfile` build failure on Render)
-- **Conflict Modal Bug Fix:** Fixed case-sensitive string comparison (`"orario"` vs `"Orario"`) that prevented the new conflict modal from showing
-- **Backend Enhancement:** POST /api/public/booking now returns HTTP 409 with structured conflict data (available_operators, alternative_slots)
-- **Booking Modal Refactoring:** Extracted BookingModal.jsx (656 lines) and ManageAppointments.jsx (166 lines) from WebsitePage.jsx, reducing it from 1310 to 276 lines (-79%)
-- **Lazy Loading:** All admin pages (Dashboard, Stats, Clients, Services, etc.) now use React.lazy() for code splitting
-- **Testing:** 100% pass rate - Backend 12/12, Frontend 22/22
+### Phase 2 - Mar 18, 2026
+- **Deployment Fix:** Removed yarn.lock, standardized on npm with package-lock.json
+- **Conflict Modal Bug Fix:** Fixed case-sensitive string comparison
+- **Backend Enhancement:** POST /api/public/booking returns HTTP 409 with structured conflict data
+- **Booking Modal Refactoring:** Extracted BookingModal.jsx and ManageAppointments.jsx from WebsitePage.jsx
+- **Lazy Loading:** All admin pages use React.lazy() for code splitting
+- **Date Formatting:** Standardized all dates to Italian dd/mm/yy format across 10+ pages
+- **Recurring Appointments:** Added "Repeat" feature to client history dialog
+- **Badge Removal:** Removed "Made with MBHS" badge
+
+### Phase 3 - Mar 19, 2026
+- **BookingModal Redesign (P0):** Complete mobile-first redesign of the booking modal
+  - Services grouped by category with horizontal scrollable tab pills
+  - Compact service items with checkbox, name, price, duration
+  - Selected services shown as dismissible chips with total summary
+  - Promotions accessible via dedicated "Promo" tab
+  - Fixed footer with action buttons always visible on mobile (no more hidden confirm button)
+  - Bottom-sheet style modal on mobile devices
+  - Step indicator redesigned as compact pill buttons
+- **PlanningPage Dialog Redesign (P1):** Applied same category-tabbed service selection
+  - New Appointment dialog: category tabs replace flat 2-column grid
+  - Edit Appointment dialog: same category-tabbed layout
+  - Selected services shown as chips with running total
+  - `_activeCat` UI state properly stripped before API calls
+- **CSS Utility:** Added `.scrollbar-hide` class for clean horizontal tab scrolling
+- **Testing:** 100% pass rate - 19/19 frontend tests passed
 
 ## Architecture
 ```
@@ -44,10 +63,11 @@ Salon management application (React, FastAPI, MongoDB) deployed on Render. The a
 ├── App.js                          (Router + lazy loading)
 ├── pages/
 │   ├── WebsitePage.jsx             (276 lines - main page orchestrator)
+│   ├── PlanningPage.jsx            (2400+ lines - calendar + appointment management)
 │   └── [admin pages...]            (lazy loaded)
 ├── components/
 │   └── website/
-│       ├── BookingModal.jsx        (656 lines - booking flow)
+│       ├── BookingModal.jsx        (480 lines - redesigned booking flow with category tabs)
 │       ├── ManageAppointments.jsx  (166 lines - user appointments)
 │       ├── Navbar.jsx
 │       ├── HeroSection.jsx
@@ -57,6 +77,9 @@ Salon management application (React, FastAPI, MongoDB) deployed on Render. The a
 │       ├── ReviewsSection.jsx
 │       ├── ContactSection.jsx (+ FooterSection)
 │       └── index.js
+├── utils/
+│   └── formatDate.js               (Central date formatting utility)
+└── index.css                        (Added .scrollbar-hide utility)
 ```
 
 ## Key API Endpoints
@@ -64,16 +87,20 @@ Salon management application (React, FastAPI, MongoDB) deployed on Render. The a
 - POST /api/public/booking - Create booking (returns 409 with conflict data if occupied)
 - PUT /api/website - Save CMS data (font_size, title_size)
 - GET /api/public/website - Public website data
+- GET /api/appointments - Fetch appointments by date
+- POST /api/appointments - Create appointment
+- PUT /api/appointments/:id - Update appointment
 
 ## Prioritized Backlog
 ### P0
-- User pushes to GitHub and redeploys on Render
+- (None - all P0 items completed)
 
 ### P1
-- Make GitHub repository private + add Render collaborator
+- User pushes to GitHub and redeploys on Render
 
 ### P2
-- Further performance optimization (bundle analysis)
+- Performance optimization (bundle analysis, code splitting)
+- Fully automatic WhatsApp reminders (requires WhatsApp Business API + Twilio)
 
 ## Credentials
 - **Production:** melitobruno@gmail.com / mbhs637104
