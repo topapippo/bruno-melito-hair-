@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Settings, Save, Loader2, Clock, Building2, User, Lock, Palette, Type, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
@@ -312,13 +311,19 @@ export default function SettingsPage() {
                             : 'bg-[var(--bg-elevated)] border-transparent hover:border-[var(--border-subtle)]'
                         }`}
                         onClick={() => toggleDay(day.value)}
+                        data-testid={`day-toggle-${day.value}`}
                       >
-                        <Checkbox
-                          checked={isChecked}
-                          onCheckedChange={() => toggleDay(day.value)}
-                          onClick={(e) => e.stopPropagation()}
-                          className="data-[state=checked]:bg-[var(--gold)] data-[state=checked]:border-[var(--gold)]"
-                        />
+                        <div className={`h-4 w-4 shrink-0 rounded-sm border shadow flex items-center justify-center transition-colors ${
+                          isChecked
+                            ? 'bg-[var(--gold)] border-[var(--gold)]'
+                            : 'border-gray-500'
+                        }`}>
+                          {isChecked && (
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3 text-black">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          )}
+                        </div>
                         <span className={`text-sm ${
                           isChecked ? 'text-[var(--gold)] font-medium' : 'text-[var(--text-primary)]'
                         }`}>
