@@ -19,25 +19,21 @@ import { toast } from 'sonner';
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const MODULES = [
-  { path: '/', label: 'Planning', desc: 'Vista giornaliera', icon: Calendar, color: '#0EA5E9' },
   { path: '/week', label: 'Settimanale', desc: 'Vista settimanale', icon: CalendarDays, color: '#789F8A' },
   { path: '/month', label: 'Mensile', desc: 'Vista mensile', icon: CalendarRange, color: '#E9C46A' },
-  { path: '/appointments', label: 'Appuntamenti', desc: 'Nuovo appuntamento', icon: Plus, color: '#0284C7' },
   { path: '/clients', label: 'Clienti', desc: 'Gestione clienti', icon: Users, color: '#334155' },
   { path: '/services', label: 'Servizi', desc: 'Listino prezzi', icon: Scissors, color: '#C084FC' },
   { path: '/operators', label: 'Operatori', desc: 'Gestione staff', icon: UserCheck, color: '#F59E0B' },
-  { path: '/stats', label: 'Statistiche', desc: 'Report e grafici', icon: BarChart3, color: '#EF4444' },
-  { path: '/incassi', label: 'Incassi', desc: 'Report pagamenti', icon: Euro, color: '#10B981' },
-  { path: '/daily-summary', label: 'Riepilogo', desc: 'Riepilogo giornaliero', icon: BarChart3, color: '#F43F5E' },
   { path: '/cards', label: 'Card Prepagate', desc: 'Abbonamenti', icon: CreditCard, color: '#6366F1' },
   { path: '/card-alerts', label: 'Avvisi Card', desc: 'Scadenze e notifiche', icon: AlertTriangle, color: '#F97316' },
   { path: '/loyalty', label: 'Fedeltà', desc: 'Programma punti', icon: Gift, color: '#EC4899' },
   { path: '/reminders', label: 'Promemoria', desc: 'Notifiche clienti', icon: Bell, color: '#F97316' },
-  { path: '/uscite', label: 'Uscite', desc: 'Registro spese', icon: TrendingUp, color: '#DC2626' },
   { path: '/promozioni', label: 'Promozioni', desc: 'Offerte e promo', icon: Gift, color: '#D946EF' },
+  { path: '/stats', label: 'Statistiche', desc: 'Report e grafici', icon: BarChart3, color: '#EF4444' },
+  { path: '/website-admin', label: 'Gestione Sito', desc: 'CMS e contenuti', icon: Globe, color: '#14B8A6' },
+  { path: '/history', label: 'Storico', desc: 'Archivio operazioni', icon: Clock, color: '#64748B' },
   { path: '/backup', label: 'Backup', desc: 'Esporta dati', icon: Download, color: '#64748B' },
-  { path: '/prenota', label: 'Booking Online', desc: 'Pagina pubblica', icon: Globe, color: '#14B8A6' },
-  { path: '/settings', label: 'Impostazioni', desc: 'Configurazione', icon: Settings, color: '#78716C' },
+  { path: '/prenota', label: 'Booking Online', desc: 'Pagina pubblica', icon: Globe, color: '#0EA5E9' },
 ];
 
 export default function Dashboard() {
