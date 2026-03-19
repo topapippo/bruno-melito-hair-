@@ -145,7 +145,7 @@ export default function BackupPage() {
               </Card>
             </div>
 
-            <Card className="bg-gradient-to-br from-[#0EA5E9] to-[#0284C7] text-white">
+            <Card className="bg-gradient-to-br from-[var(--gold)] to-amber-700 text-[var(--bg-deep)]">
               <CardContent className="p-8 text-center">
                 <FileSpreadsheet className="w-16 h-16 mx-auto mb-4" />
                 <h2 className="text-2xl font-black mb-2">Scarica Backup Completo</h2>
@@ -153,7 +153,7 @@ export default function BackupPage() {
                 <Button
                   onClick={exportAllData}
                   disabled={exporting}
-                  className="bg-[var(--bg-card)] text-[var(--gold)] hover:bg-blue-50 font-black text-lg px-8 py-6"
+                  className="bg-[var(--bg-card)] text-[var(--gold)] hover:bg-[var(--bg-elevated)] font-black text-lg px-8 py-6"
                 >
                   {exporting ? (
                     'Esportazione in corso...'
