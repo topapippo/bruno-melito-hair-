@@ -1,153 +1,76 @@
-# Bruno Melito Hair Salon - PRD
+# Bruno Melito Hair - Salon Management Application
 
 ## Original Problem Statement
-Salon management application (React, FastAPI, MongoDB) deployed on Render. The app manages bookings, CMS content, and the public-facing website for a hair salon.
-
-## Core Requirements
-- Stable, fully functional salon management app
-- CMS for site content, colors, and fonts
-- Intuitive booking flow with occupied slot feedback
-- Clean, modern homepage with booking in a modal
-- SEO compliance (Google Search Console)
-- Reliable deployment to Render
+Full-stack salon management application for Bruno Melito Hair salon in Santa Maria Capua Vetere, Italy. The application includes a public-facing website and an admin panel for managing appointments, clients, services, and business operations.
 
 ## Tech Stack
-- **Frontend:** React, Tailwind CSS, Shadcn UI
-- **Backend:** Python, FastAPI
-- **Database:** MongoDB
-- **Deployment:** Render
-- **Domain:** brunomelitohair.it
-- **Repository:** https://github.com/topapippo/bruno-melito-hair-
+- **Frontend:** React with Tailwind CSS, Shadcn/UI components
+- **Backend:** FastAPI (Python)
+- **Database:** MongoDB Atlas
+- **Hosting:** Render (Static Site for frontend, Web Service for backend)
+- **Theme:** Onyx & Gold dark theme
 
-## What's Been Implemented
+## Current State (March 20, 2026)
 
-### Phase 1 - Initial Build
-- Refactored WebsitePage.jsx into 8 section components (Navbar, Hero, Stats, About, CTA, Gallery, Reviews, Footer)
-- Booking flow moved to modal overlay
-- CMS enhanced with font size controls and 6 theme presets
-- Improved "Slot Occupied" modal with alternative suggestions
-- Promo click-to-apply with confirmation badge
-- SEO fixes (sitemap, robots.txt, canonical URLs, redirects)
-- Mobile UX fixes (login button visibility)
+### ✅ COMPLETED - Production Deployment Fixed
+- Recreated backend Web Service on Render
+- Configured environment variables (MONGO_URL, DB_NAME, JWT_SECRET, CORS_ORIGINS)
+- Migrated 232 documents from Emergent local MongoDB to MongoDB Atlas:
+  - 173 clients
+  - 21 services
+  - 7 promotions
+  - 6 reviews
+  - 5 appointments
+  - Website configuration, gallery, templates, etc.
 
-### Phase 2 - Mar 18, 2026
-- Deployment Fix, Conflict Modal Bug Fix, Backend HTTP 409 conflict response
-- BookingModal/ManageAppointments extraction, Lazy Loading, Date Formatting
-- Recurring Appointments, Badge Removal
+### ✅ COMPLETED - Critical Bug Fixes
+- Added missing `/api/admin-theme` endpoint for saving admin panel appearance
+- Added missing `/api/nav-config` endpoint for saving sidebar customization
+- Added `/api/payments` endpoint
+- Added health check endpoint at root `/` for Render
+- Manually updated `backend/routes/stats.py` on GitHub (signorfabozzi-glitch repo)
 
-### Phase 3 - Mar 19, 2026
-- BookingModal accordion-style service categories
-- PlanningPage accordion service selection
-- Animated Price Counter, Progressive Service Numbering
-- Gallery shows ALL photos (no limit), Dashboard Link Fix
-
-### Phase 4 - Mar 19, 2026 (Dark Theme)
-- Complete "Onyx & Gold" dark theme for entire app
-- Customizable Admin Navigation (NavConfigurator)
-- CSS Design System with variables, glassmorphism, keyframe animations
-
-### Phase 5 - Mar 19, 2026
-- **BookingModal dark theme:** Full rewrite with CSS variables (--bg-card, --gold, etc.)
-- **Button animations:** btn-gold (glow + shine), btn-animate (radial + lift), btn-glass, dash-card
-- **Gestione Sito fix:** Path corrected /website-admin → /gestione-sito, 37+ colors converted
-- **Section reorder:** New "Ordine Sezioni" tab with up/down arrows, backend persistence
-- **Dynamic section rendering:** WebsitePage uses sectionMap/sectionOrder from config
-- **Success page + mobile CTA:** Converted to dark theme
-- **Performance optimization:** Build fix, image lazy loading, prefers-reduced-motion, will-change, content-visibility
-- **Refactoring:** Cleaned 19 old test files (24→5), verified production build compiles
-- **Dark theme batch fix:** 23 admin pages converted from light to dark theme (sed batch replace)
-- **Admin appearance customization ("Aspetto Gestionale"):** New section in Settings with color pickers, font selector (6 options), font size (4 options), border radius (5 options), save/reset functionality
-- **Admin theme API:** New GET/PUT /api/admin-theme endpoints for persistence in MongoDB
-- **Theme auto-load:** Admin theme preferences loaded at startup in Layout.jsx
-- **Testing:** Backend 12/12, Frontend 16/16 (iteration_11)
-- **Settings page fix:** toggleDay crash fix, Checkbox onCheckedChange + stopPropagation
-- **Pending bookings endpoint:** Created GET /api/appointments/pending-bookings and PUT /api/booking/{id}/confirm
-- **PendingBookings.jsx:** Rewritten with dark theme
-
-### Phase 6 - Mar 19, 2026 (Public Website UI Enhancements)
-- **Floating WhatsApp button:** Green button fixed bottom-right, opens wa.me link
-- **Scroll-to-top button:** Gold button fixed bottom-left, appears after 400px scroll, smooth scroll to top
-- **Google Maps embed:** iframe in Contact section with dark-mode filter + "Apri in Google Maps" link
-- **Reviews carousel:** Auto-rotating (4.5s), touch swipe, dot navigation, 3 cards on desktop
-- **Social media links:** TikTok, YouTube, Instagram, Facebook in both Contact section and Footer
-- **Testing:** Frontend 14/14 (iteration_12) - all 5 features verified
-
-### Phase 7 - Mar 19, 2026 (Progressive Web App)
-- **manifest.json:** Updated with Onyx & Gold theme (#D4AF37 gold, #0B1120 dark bg), 9 icon sizes, standalone display, correct start_url
-- **Service Worker (sw.js):** Stale-while-revalidate caching, API caching, offline fallback, cache name 'bruno-melito-v2'
-- **offline.html:** Rebranded with Onyx & Gold dark theme, auto-reload on connectivity restore
-- **manifest-gestionale.json:** Updated colors for admin panel PWA
-- **Meta tags:** theme-color, apple-mobile-web-app-capable, apple-touch-icon
-- **Banner "Installa l'App":** Custom PWA install banner on mobile, appears via beforeinstallprompt, dismiss saved in localStorage
-- **Testing:** Backend 43/43 + Frontend 12/12 (iteration_13), Banner 9/9 + regression 5/5 (iteration_14)
-
-### Phase 8 - Mar 19, 2026 (Drag-and-Drop + Backend Refactoring)
-- **Drag-and-drop sezioni:** Sostituito frecce su/giù con HTML5 native drag-and-drop + icona GripVertical come handle di trascinamento
-- **Backend models refactoring:** Diviso models.py (285 righe) in pacchetto models/ con 4 file separati per dominio (auth, business, appointments, loyalty) + __init__.py per re-export
-- **CRITICAL BUG FIX: Settings page day toggles** — Risolto crash "Maximum update depth exceeded" causato da Radix Checkbox. Sostituito con indicatore visivo div puro (nessun conflitto di stato Radix)
-- **Testing:** Backend 14/14, Frontend 13/13 (iteration_15), Bug fix 12/12 (iteration_16)
-
-### Phase 9 - Mar 19, 2026 (Contrast/Readability Fix)
-- **Planning time column:** Sfondo da bianco a scuro (var(--bg-card)), orari in oro (var(--gold))
-- **Header gradient fix:** Da light gradient (#0EA5E9/10 → #E2E8F0/20) a dark gradient (var(--bg-elevated) → var(--bg-card))
-- **Badge colors batch fix:** 83+ badge convertiti da bg-X-100 (sfondo chiaro) a bg-X-500/10 (semi-trasparente scuro)
-- **Text colors batch fix:** 82+ testi convertiti da text-X-700/800 (scuro) a text-X-400 (chiaro, leggibile su scuro)
-- **Progress bars:** bg-[#E2E8F0] → bg-[var(--bg-elevated)] su PrepaidCards e Cards
-- **Testing:** Frontend 15/15 (iteration_17) - tutte le pagine admin verificate per contrasto
+### ✅ PREVIOUSLY COMPLETED Features
+- PWA (Progressive Web App) with install banner
+- Floating WhatsApp button
+- Scroll-to-top button
+- Google Maps integration
+- Reviews carousel
+- Drag-and-drop section reordering
+- Settings page crash fix
+- Dark theme contrast/readability fixes
 
 ## Architecture
-```
-/app/frontend/src/
-├── App.js                          (Router + lazy loading)
-├── index.css                       (Dark theme design system + button animations)
-├── pages/
-│   ├── WebsitePage.jsx             (dynamic section order from config)
-│   ├── WebsiteAdminPage.jsx        (CMS + new "Ordine Sezioni" tab)
-│   ├── PlanningPage.jsx            (calendar + accordion services)
-│   ├── Dashboard.jsx               (dynamic modules, dash-card class)
-│   └── [admin pages...]            (lazy loaded)
-├── components/
-│   ├── Layout.jsx                  (dynamic sidebar, dark theme)
-│   ├── NavConfigurator.jsx         (layout customization UI)
-│   └── website/
-│       ├── BookingModal.jsx        (dark theme, accordion, animated price)
-│       ├── HeroSection.jsx         (btn-gold class)
-│       ├── CTASection.jsx          (btn-gold + btn-animate)
-│       ├── Navbar.jsx              (btn-gold class)
-│       ├── GallerySection.jsx      (all photos, no limit)
-│       └── [other sections]
-├── utils/
-│   ├── navModules.js               (/gestione-sito path fixed)
-│   └── formatDate.js               (Italian date formatting)
 
-/app/backend/
-├── server.py
-├── routes/
-│   ├── public.py                   (website config supports section_order)
-│   └── stats.py                    (nav-config endpoints)
-├── models/                          (refactored from models.py)
-│   ├── __init__.py                 (re-exports all models)
-│   ├── auth.py                     (User, Token, Settings, SMS)
-│   ├── business.py                 (Operator, Client, Service)
-│   ├── appointments.py             (Appointment, Recurring, Booking, Checkout)
-│   └── loyalty.py                  (PrepaidCard, Loyalty, Rewards)
-├── database.py, auth.py
-```
+### Repositories
+- **Active (Render connected):** github.com/signorfabozzi-glitch/BRUNO-MELITO-HAIR
+- **Legacy:** github.com/topapippo/BRUNOMELITOHAIR
 
-## Key API Endpoints
-- GET /api/public/website - Public website data (includes section_order)
-- PUT /api/website/config - Save CMS config (including section_order)
-- GET /api/nav-config - User navigation layout
-- PUT /api/nav-config - Save navigation layout
-- POST /api/public/booking - Create booking (409 on conflict)
+### Production URLs
+- **Frontend:** brunomelitohair.it
+- **Backend API:** bruno-melito-hair-2497.onrender.com
 
-## Prioritized Backlog
+### Database
+- **MongoDB Atlas Cluster:** cluster0.glbiffm.mongodb.net
+- **Database Name:** mbhs
 
-### P0 - None (all completed)
+## Known Issues
 
-### P1
-- Deploy to Render con ultime modifiche
+### Repository Sync Issue
+- Emergent pushes to `topapippo` repository
+- Render deploys from `signorfabozzi-glitch` repository
+- Manual updates required on signorfabozzi-glitch when code changes are made
+
+### Data Loss from Fork
+- Some photos were lost during fork (had 20+ gallery photos, now 4)
+- 7 "About Us" photos were lost
+- User should re-upload photos via admin panel
 
 ## Credentials
-- **Production:** melitobruno@gmail.com / mbhs637104
-- **Local Admin:** admin@brunomelito.it / Admin123!
+- **Admin Login:** admin@brunomelito.it / Admin123!
+
+## Next Steps / Backlog
+1. Re-upload lost gallery photos (user task)
+2. Resolve repository sync issue between topapippo and signorfabozzi-glitch
+3. Set up UptimeRobot or similar to prevent Render free tier spin-down
+4. Investigate SIGSEGV browser crash (potential CSS animation issue)
