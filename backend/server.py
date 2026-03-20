@@ -9,6 +9,11 @@ from routes import all_routers
 # Create app
 app = FastAPI(title="MBHS SALON API")
 
+# Health check endpoint at root for Render
+@app.get("/")
+async def health_check():
+    return {"status": "ok", "message": "MBHS Salon API is running"}
+
 # API Router with /api prefix
 api_router = APIRouter(prefix="/api")
 
