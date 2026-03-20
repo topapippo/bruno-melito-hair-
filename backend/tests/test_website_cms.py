@@ -7,7 +7,7 @@ import requests
 import os
 import io
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://salon-ui-polish.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://hair-booking-fix.preview.emergentagent.com').rstrip('/')
 
 # Test credentials
 TEST_EMAIL = "melitobruno@gmail.com"
