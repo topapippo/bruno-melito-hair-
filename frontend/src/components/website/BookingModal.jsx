@@ -94,9 +94,10 @@ export default function BookingModal({ open, onClose, services, operators, promo
   const totPrice = selSvcs.reduce((s, v) => s + (v.price || 0), 0);
   const totDur = selSvcs.reduce((s, v) => s + (v.duration || 0), 0);
 
-  const cats = Array.from(new Set(services.map(s => (s.category || 'altro').toLowerCase())));
+  const sortedSvcs = [...services].sort((a, b) => (a.sort_order ?? 999) - (b.sort_order ?? 999));
+  const cats = Array.from(new Set(sortedSvcs.map(s => (s.category || 'altro').toLowerCase())));
   const byCat = cats.reduce((a, c) => {
-    a[c] = services.filter(s => (s.category || 'altro').toLowerCase() === c);
+    a[c] = sortedSvcs.filter(s => (s.category || 'altro').toLowerCase() === c);
     return a;
   }, {});
 
@@ -382,7 +383,6 @@ export default function BookingModal({ open, onClose, services, operators, promo
                                 <div className="border-t p-2 grid grid-cols-2 sm:grid-cols-3 gap-1.5" style={{ borderColor: 'var(--border-subtle)' }}>
                                   {catSvcs.map((svc) => {
                                     const sel = selIds.includes(svc.id);
-                                    const cleanName = svc.name.replace(/^\d+\s*/, '');
                                     return (
                                       <button key={svc.id} onClick={() => toggleSvc(svc)}
                                         className="btn-animate flex flex-col items-start rounded-lg px-2.5 py-2 text-left transition-all border"
@@ -399,7 +399,7 @@ export default function BookingModal({ open, onClose, services, operators, promo
                                             {sel && <CheckCircle className="w-2.5 h-2.5 text-[var(--bg-deep)]" />}
                                           </div>
                                           <span className={`flex-1 text-xs leading-tight ${sel ? 'font-bold text-[var(--gold)]' : 'text-[var(--text-secondary)]'}`}>
-                                            {cleanName}
+                                            {svc.name}
                                           </span>
                                         </div>
                                         <div className="flex items-center justify-between w-full mt-1 pl-5.5">

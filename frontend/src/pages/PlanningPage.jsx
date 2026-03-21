@@ -1594,7 +1594,6 @@ export default function PlanningPage() {
                           <div className="border-t border-[var(--border-subtle)] p-2 grid grid-cols-2 sm:grid-cols-3 gap-1.5">
                             {catServices.map((service) => {
                               const sel = formData.service_ids.includes(service.id);
-                              const cleanName = service.name.replace(/^\d+\s*/, '');
                               return (
                                 <button key={service.id} type="button"
                                   onClick={() => toggleService(service.id)}
@@ -1608,7 +1607,7 @@ export default function PlanningPage() {
                                     }`}>
                                       {sel && <Check className="w-2.5 h-2.5 text-white" />}
                                     </div>
-                                    <span className={`flex-1 text-xs leading-tight ${sel ? 'font-bold text-[var(--gold)]' : 'text-[var(--text-primary)]'}`}>{cleanName}</span>
+                                    <span className={`flex-1 text-xs leading-tight ${sel ? 'font-bold text-[var(--gold)]' : 'text-[var(--text-primary)]'}`}>{service.name}</span>
                                   </div>
                                   <div className="flex items-center justify-between w-full mt-1 pl-5.5">
                                     <span className={`text-xs font-bold ${sel ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]'}`}>{'\u20AC'}{service.price}</span>
@@ -2105,9 +2104,8 @@ export default function PlanningPage() {
                         </button>
                         {isOpen && (
                           <div className="border-t border-[var(--border-subtle)] divide-y divide-[#F1F5F9]">
-                            {catServices.map((service, idx) => {
+                            {catServices.map((service) => {
                               const sel = formData.service_ids.includes(service.id);
-                              const cleanName = service.name.replace(/^\d+\s*/, '');
                               return (
                                 <button key={service.id} type="button"
                                   onClick={() => toggleService(service.id)}
@@ -2119,8 +2117,7 @@ export default function PlanningPage() {
                                   }`}>
                                     {sel && <Check className="w-2.5 h-2.5 text-white" />}
                                   </div>
-                                  <span className="text-[10px] font-bold text-[var(--text-muted)] w-4 flex-shrink-0">{idx + 1}.</span>
-                                  <span className={`flex-1 text-sm ${sel ? 'font-bold text-[var(--gold)]' : 'text-[var(--text-primary)]'}`}>{cleanName}</span>
+                                  <span className={`flex-1 text-sm ${sel ? 'font-bold text-[var(--gold)]' : 'text-[var(--text-primary)]'}`}>{service.name}</span>
                                   <span className={`text-sm font-bold flex-shrink-0 ${sel ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]'}`}>{'\u20AC'}{service.price}</span>
                                   <span className="text-[10px] text-[var(--text-muted)] flex-shrink-0 w-12 text-right">{service.duration} min</span>
                                 </button>
