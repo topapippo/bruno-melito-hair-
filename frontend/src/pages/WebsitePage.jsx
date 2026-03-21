@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { format } from 'date-fns';
 import { toast, Toaster } from 'sonner';
-import { Scissors, CheckCircle, MessageSquare, ArrowUp, Download, X } from 'lucide-react';
+import { Scissors, CheckCircle, MessageSquare, ArrowUp, Download, X, Calendar } from 'lucide-react';
 import { it } from 'date-fns/locale';
 import {
   Navbar, HeroSection, StatsBar, AboutSection, CTASection,
@@ -378,11 +378,19 @@ export default function BookingPage() {
 
       {/* Mobile CTA */}
       <div className="fixed bottom-0 left-0 right-0 p-3 backdrop-blur-md border-t sm:hidden z-50" style={{ background: 'rgba(11,17,32,0.95)', borderColor: 'var(--border-subtle)' }}>
-        <button onClick={() => setBookingOpen(true)}
-          className="btn-gold w-full py-4 text-base font-black rounded-xl transition-all"
-          style={{ background: 'var(--gold)', color: '#0B1120' }}>
-          <Scissors className="w-5 h-5" />Prenota ora
-        </button>
+        <div className="flex gap-2">
+          <button onClick={() => setBookingOpen(true)}
+            className="btn-gold flex-1 py-3.5 text-sm font-black rounded-xl transition-all flex items-center justify-center gap-1.5"
+            style={{ background: 'var(--gold)', color: '#0B1120' }}>
+            <Scissors className="w-4 h-4" />Prenota ora
+          </button>
+          <button onClick={() => setManageOpen(true)}
+            className="py-3.5 px-4 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 border-2"
+            style={{ borderColor: 'var(--gold)', color: 'var(--gold)', background: 'transparent' }}
+            data-testid="mobile-manage-cta">
+            <Calendar className="w-4 h-4" />Gestisci
+          </button>
+        </div>
       </div>
 
       {/* Booking Modal */}

@@ -33,9 +33,11 @@ export function Navbar({ COLORS, bookRef, setManageOpen, goToAdminLogin, onBook 
           })}
           <button 
             onClick={() => setManageOpen(true)} 
-            className="nav-link hover:text-white transition-colors flex items-center gap-1.5 relative"
+            className="nav-link hover:text-white transition-colors flex items-center gap-1.5 relative px-3 py-1.5 rounded-lg border"
+            style={{ borderColor: 'var(--gold)', color: 'var(--gold)' }}
+            data-testid="manage-appointments-nav"
           >
-            <Calendar className="w-4 h-4" />I miei appuntamenti<span className="nul" />
+            <Calendar className="w-4 h-4" />Hai già prenotato?<span className="nul" />
           </button>
           <button 
             onClick={goToAdminLogin}
@@ -56,10 +58,12 @@ export function Navbar({ COLORS, bookRef, setManageOpen, goToAdminLogin, onBook 
           </button>
           <button 
             onClick={() => setManageOpen(true)} 
-            className="md:hidden p-2 rounded-xl transition-colors"
-            style={{ color: '#94A3B8' }}
+            className="md:hidden flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all"
+            style={{ borderColor: 'var(--gold)', color: 'var(--gold)' }}
+            data-testid="mobile-manage-btn"
           >
-            <Calendar className="w-5 h-5" />
+            <Calendar className="w-4 h-4" />
+            <span>Gestisci</span>
           </button>
           <button 
             onClick={onBook} 

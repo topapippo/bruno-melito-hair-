@@ -25,9 +25,11 @@ export function CTASection({ COLORS, bookRef, openWA, setManageOpen, onBook }) {
           </div>
           <button 
             onClick={() => setManageOpen(true)} 
-            className="w-full mt-4 text-slate-400 hover:text-white text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+            className="w-full mt-4 py-3.5 text-base font-bold rounded-xl transition-all flex items-center justify-center gap-2 border-2 hover:opacity-90"
+            style={{ borderColor: 'var(--gold)', color: 'var(--gold)', background: 'rgba(212,175,55,0.08)' }}
+            data-testid="cta-manage-btn"
           >
-            <Calendar className="w-4 h-4" />Gestisci il tuo appuntamento
+            <Calendar className="w-5 h-5" />Hai già prenotato? Modifica o cancella
           </button>
         </div>
       </div>
