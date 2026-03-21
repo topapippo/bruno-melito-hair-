@@ -2,13 +2,14 @@ import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { format } from 'date-fns';
 import { toast, Toaster } from 'sonner';
-import { Scissors, CheckCircle, MessageSquare, ArrowUp, Download, X, Calendar } from 'lucide-react';
+import { Scissors, CheckCircle, MessageSquare, ArrowUp, Download, X, Calendar, Bell } from 'lucide-react';
 import { it } from 'date-fns/locale';
 import {
   Navbar, HeroSection, StatsBar, AboutSection, CTASection,
   GallerySection, ReviewsSection, ContactSection, FooterSection,
   BookingModal, ManageAppointments
 } from '../components/website';
+import { initPushNotifications, isPushSubscribed } from '../utils/pushNotifications';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -237,10 +238,25 @@ export default function BookingPage() {
 
   const openWA = () => window.open(`https://wa.me/${cfg.whatsapp || '393397833526'}?text=Ciao, vorrei prenotare un appuntamento!`, '_blank');
 
-  const handleBookingSuccess = (formData) => {
+  const handleBookingSuccess = async (formData) => {
     setSuccessData(formData);
     setBookingOpen(false);
     setSuccess(true);
+
+    // Ask for push notifications after successful booking
+    const alreadySubscribed = await isPushSubscribed();
+    if (!alreadySubscribed) {
+      setTimeout(async () => {
+        try {
+          const result = await initPushNotifications();
+          if (result) {
+            toast.success('Notifiche attivate! Riceverai promemoria per i tuoi appuntamenti.');
+          }
+        } catch (e) {
+          // Silently fail - push is optional
+        }
+      }, 2000);
+    }
   };
 
   const getWhatsAppUrl = (data) => {

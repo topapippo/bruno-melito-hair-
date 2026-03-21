@@ -357,7 +357,7 @@ export default function BookingModal({ open, onClose, services, operators, promo
                     <>
                       {/* Accordion categories */}
                       <div className="space-y-1.5" data-testid="services-accordion">
-                        {/* Card Templates / Abbonamenti - prominent at top */}
+                        {/* Card Templates / Abbonamenti - grid layout matching admin */}
                         {cardTemplates.length > 0 && (
                           <div className="rounded-xl overflow-hidden border-2 transition-all"
                             style={{ borderColor: openCats.includes('__card__') ? 'rgba(168,85,247,0.4)' : 'rgba(168,85,247,0.2)' }}
@@ -370,7 +370,7 @@ export default function BookingModal({ open, onClose, services, operators, promo
                                 <ChevronDown className={`w-4 h-4 transition-transform ${openCats.includes('__card__') ? 'rotate-180' : ''}`}
                                   style={{ color: '#A855F7' }} />
                                 <CreditCard className="w-4 h-4" style={{ color: '#A855F7' }} />
-                                <span className="font-bold text-sm" style={{ color: '#A855F7' }}>Abbonamenti</span>
+                                <span className="font-bold text-sm" style={{ color: '#A855F7' }}>Abbonamenti & Card</span>
                                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(168,85,247,0.15)', color: '#A855F7' }}>{cardTemplates.length}</span>
                               </div>
                               {selectedCardTemplate && (
@@ -378,7 +378,7 @@ export default function BookingModal({ open, onClose, services, operators, promo
                               )}
                             </button>
                             {openCats.includes('__card__') && (
-                              <div className="border-t divide-y" style={{ borderColor: 'rgba(168,85,247,0.15)' }}>
+                              <div className="border-t p-2.5 grid grid-cols-1 sm:grid-cols-2 gap-1.5" style={{ borderColor: 'rgba(168,85,247,0.15)', background: 'rgba(168,85,247,0.04)' }}>
                                 {cardTemplates.map((tmpl, i) => (
                                   <button key={tmpl.id || i}
                                     onClick={() => {
@@ -393,38 +393,27 @@ export default function BookingModal({ open, onClose, services, operators, promo
                                         toast.success(`Abbonamento "${tmpl.name}" selezionato!`);
                                       }
                                     }}
-                                    className="btn-animate w-full px-3 py-2.5 text-left transition-all"
-                                    style={{ background: selectedCardTemplate?.id === tmpl.id ? 'rgba(168,85,247,0.08)' : 'var(--bg-card)' }}
+                                    className="btn-animate w-full p-2.5 rounded-lg border-2 text-left transition-all"
+                                    style={selectedCardTemplate?.id === tmpl.id
+                                      ? { borderColor: '#A855F7', background: 'rgba(168,85,247,0.10)' }
+                                      : { borderColor: 'rgba(168,85,247,0.2)', background: 'var(--bg-card)' }}
                                     data-testid={`card-template-${i}`}>
-                                    <div className="flex items-center gap-2">
-                                      <div className="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0"
-                                        style={selectedCardTemplate?.id === tmpl.id
-                                          ? { borderColor: '#A855F7', background: '#A855F7' }
-                                          : { borderColor: 'var(--text-muted)' }}>
-                                        {selectedCardTemplate?.id === tmpl.id && <CheckCircle className="w-3 h-3 text-white" />}
-                                      </div>
-                                      <div className="flex-1 min-w-0">
-                                        <p className="font-bold text-sm text-[var(--text-primary)]">{tmpl.name}</p>
-                                        <div className="flex items-center gap-2 mt-0.5">
-                                          <span className="text-[11px] font-bold" style={{ color: '#A855F7' }}>
-                                            {'\u20AC'}{tmpl.total_value}
-                                          </span>
-                                          {tmpl.total_services && (
-                                            <span className="text-[11px] text-[var(--text-muted)]">
-                                              {tmpl.total_services} servizi
-                                            </span>
-                                          )}
-                                          {tmpl.duration_months && (
-                                            <span className="text-[11px] text-[var(--text-muted)]">
-                                              {tmpl.duration_months} mesi
-                                            </span>
-                                          )}
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2">
+                                        <CreditCard className="w-4 h-4 flex-shrink-0" style={{ color: selectedCardTemplate?.id === tmpl.id ? '#A855F7' : 'var(--text-muted)' }} />
+                                        <div className="min-w-0">
+                                          <p className="font-bold text-sm text-[var(--text-primary)] truncate">{tmpl.name}</p>
+                                          <div className="flex items-center gap-2 mt-0.5">
+                                            {tmpl.total_services && (
+                                              <span className="text-[10px] text-[var(--text-muted)]">{tmpl.total_services} servizi</span>
+                                            )}
+                                            {tmpl.duration_months && (
+                                              <span className="text-[10px] text-[var(--text-muted)]">{tmpl.duration_months} mesi</span>
+                                            )}
+                                          </div>
                                         </div>
-                                        {tmpl.notes && <p className="text-[11px] text-[var(--text-muted)] truncate mt-0.5">{tmpl.notes}</p>}
                                       </div>
-                                      <span className="text-white text-[9px] font-black px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: '#A855F7' }}>
-                                        {tmpl.card_type === 'subscription' ? 'ABBON.' : 'CARD'}
-                                      </span>
+                                      <span className="font-black text-sm flex-shrink-0" style={{ color: '#A855F7' }}>{'\u20AC'}{tmpl.total_value}</span>
                                     </div>
                                   </button>
                                 ))}

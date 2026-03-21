@@ -56,3 +56,17 @@ async def startup_event():
         logger.info("Object storage initialized")
     except Exception as e:
         logger.warning(f"Object storage init deferred: {e}")
+
+    # Start background push reminder scheduler
+    import asyncio
+    async def push_reminder_loop():
+        while True:
+            try:
+                await asyncio.sleep(3600)  # every hour
+                from routes.push import send_push_reminders
+                result = await send_push_reminders()
+                if result.get("sent", 0) > 0:
+                    logger.info(f"Push reminders sent: {result}")
+            except Exception as e:
+                logger.warning(f"Push reminder error: {e}")
+    asyncio.get_event_loop().create_task(push_reminder_loop())
