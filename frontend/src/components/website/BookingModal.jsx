@@ -357,7 +357,133 @@ export default function BookingModal({ open, onClose, services, operators, promo
                     <>
                       {/* Accordion categories */}
                       <div className="space-y-1.5" data-testid="services-accordion">
-                        {/* Card Templates / Abbonamenti - grid layout matching admin */}
+                        {/* Service categories first (like admin) */}
+                        {cats.length > 0 ? cats.map(cat => {
+                          const catSvcs = byCat[cat] || [];
+                          const isOpen = openCats.includes(cat);
+                          const selCount = catSvcs.filter(s => selIds.includes(s.id)).length;
+                          return (
+                            <div key={cat} className="rounded-xl overflow-hidden border transition-all"
+                              style={{ borderColor: isOpen ? 'var(--border-gold)' : 'var(--border-subtle)' }}>
+                              <button onClick={() => toggleCat(cat)}
+                                className="btn-animate w-full flex items-center justify-between px-3 py-2.5 text-left transition-all"
+                                style={{ background: isOpen ? 'var(--gold-dim)' : 'var(--bg-elevated)' }}
+                                data-testid={`cat-accordion-${cat}`}>
+                                <div className="flex items-center gap-2">
+                                  <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                                    style={{ color: isOpen ? 'var(--gold)' : 'var(--text-muted)' }} />
+                                  <span className="text-sm">{getCatIcon(cat)}</span>
+                                  <span className="font-bold text-sm text-[var(--text-primary)] capitalize">{cat}</span>
+                                  <span className="text-[10px] font-bold bg-[var(--bg-deep)] text-[var(--text-muted)] px-1.5 py-0.5 rounded-full">{catSvcs.length}</span>
+                                </div>
+                                {selCount > 0 && (
+                                  <span className="text-[10px] font-black text-[var(--bg-deep)] px-2 py-0.5 rounded-full bg-[var(--gold)]">{selCount} sel.</span>
+                                )}
+                              </button>
+                              {isOpen && (
+                                <div className="border-t p-2 grid grid-cols-2 sm:grid-cols-3 gap-1.5" style={{ borderColor: 'var(--border-subtle)' }}>
+                                  {catSvcs.map((svc) => {
+                                    const sel = selIds.includes(svc.id);
+                                    return (
+                                      <button key={svc.id} onClick={() => toggleSvc(svc)}
+                                        className="btn-animate flex flex-col items-start rounded-lg px-2.5 py-2 text-left transition-all border"
+                                        style={{
+                                          background: sel ? 'var(--gold-dim)' : 'var(--bg-card)',
+                                          borderColor: sel ? 'var(--gold)' : 'var(--border-subtle)'
+                                        }}
+                                        data-testid={`service-item-${svc.id}`}>
+                                        <div className="flex items-center gap-1.5 w-full">
+                                          <div className="w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all"
+                                            style={sel
+                                              ? { borderColor: 'var(--gold)', background: 'var(--gold)' }
+                                              : { borderColor: 'var(--text-muted)' }}>
+                                            {sel && <CheckCircle className="w-2.5 h-2.5 text-[var(--bg-deep)]" />}
+                                          </div>
+                                          <span className={`flex-1 text-xs leading-tight ${sel ? 'font-bold text-[var(--gold)]' : 'text-[var(--text-secondary)]'}`}>
+                                            {svc.name}
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center justify-between w-full mt-1 pl-5.5">
+                                          <span className={`font-black text-xs ${sel ? 'text-[var(--gold)]' : 'text-[var(--text-primary)]'}`}>{'\u20AC'}{svc.price}</span>
+                                          <span className="text-[10px] text-[var(--text-muted)]">{svc.duration} min</span>
+                                        </div>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        }) : (
+                          <div className="text-center py-8 text-[var(--text-muted)]">
+                            <Scissors className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                            <p className="font-medium text-sm">I servizi verranno caricati a breve</p>
+                          </div>
+                        )}
+
+                        {/* Promozioni - after service categories (like admin) */}
+                        {promos.length > 0 && (
+                          <div className="rounded-xl overflow-hidden border-2 transition-all"
+                            style={{ borderColor: openCats.includes('__promo__') ? 'rgba(14,165,233,0.4)' : 'rgba(14,165,233,0.2)' }}>
+                            <button onClick={() => toggleCat('__promo__')}
+                              className="btn-animate w-full flex items-center justify-between px-3 py-3 text-left transition-all"
+                              style={{ background: openCats.includes('__promo__') ? 'rgba(14,165,233,0.12)' : 'rgba(14,165,233,0.05)' }}
+                              data-testid="cat-accordion-promo">
+                              <div className="flex items-center gap-2">
+                                <ChevronDown className={`w-4 h-4 transition-transform ${openCats.includes('__promo__') ? 'rotate-180' : ''}`}
+                                  style={{ color: openCats.includes('__promo__') ? 'var(--cyan)' : 'var(--text-muted)' }} />
+                                <Gift className="w-4 h-4 text-[var(--cyan)]" />
+                                <span className="font-bold text-sm text-[var(--cyan)]">Promozioni</span>
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--cyan)]/20 text-[var(--cyan)]">{promos.length}</span>
+                              </div>
+                              {selectedPromo && (
+                                <span className="text-[10px] font-black text-white px-2 py-0.5 rounded-full bg-[var(--cyan)]">1 sel.</span>
+                              )}
+                            </button>
+                            {openCats.includes('__promo__') && (
+                              <div className="border-t divide-y" style={{ borderColor: 'var(--border-subtle)' }}>
+                                {promos.map((promo, i) => (
+                                  <button key={promo.id || i}
+                                    onClick={() => {
+                                      if (selectedPromo?.id === promo.id) {
+                                        setSelectedPromo(null);
+                                        setForm(f => ({ ...f, notes: f.notes.replace(`[PROMO: ${promo.promo_code || promo.name}] `, '') }));
+                                        toast('Promo rimossa');
+                                      } else {
+                                        setSelectedPromo(promo);
+                                        setSelectedCardTemplate(null);
+                                        const code = promo.promo_code || promo.name;
+                                        setForm(f => ({ ...f, notes: `[PROMO: ${code}] ${f.notes.replace(/\[PROMO: [^\]]+\] /g, '').replace(/\[CARD: [^\]]+\] /g, '')}` }));
+                                        toast.success(`Promo "${promo.name}" applicata!`);
+                                      }
+                                    }}
+                                    className="btn-animate w-full px-3 py-2.5 text-left transition-all"
+                                    style={{ background: selectedPromo?.id === promo.id ? 'rgba(14,165,233,0.08)' : 'var(--bg-card)' }}
+                                    data-testid={`promo-card-${i}`}>
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0"
+                                        style={selectedPromo?.id === promo.id
+                                          ? { borderColor: 'var(--cyan)', background: 'var(--cyan)' }
+                                          : { borderColor: 'var(--text-muted)' }}>
+                                        {selectedPromo?.id === promo.id && <CheckCircle className="w-3 h-3 text-white" />}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="font-bold text-sm text-[var(--text-primary)]">{promo.name}</p>
+                                        {promo.description && <p className="text-[11px] text-[var(--text-muted)] truncate">{promo.description}</p>}
+                                        {promo.free_service_name && (
+                                          <p className="text-[11px] font-bold mt-0.5 text-[var(--cyan)]">Omaggio: {promo.free_service_name}</p>
+                                        )}
+                                      </div>
+                                      <span className="text-white text-[9px] font-black px-2 py-0.5 rounded-full flex-shrink-0 bg-[var(--cyan)]">PROMO</span>
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Abbonamenti & Card - after promos (like admin) */}
                         {cardTemplates.length > 0 && (
                           <div className="rounded-xl overflow-hidden border-2 transition-all"
                             style={{ borderColor: openCats.includes('__card__') ? 'rgba(168,85,247,0.4)' : 'rgba(168,85,247,0.2)' }}
@@ -419,132 +545,6 @@ export default function BookingModal({ open, onClose, services, operators, promo
                                 ))}
                               </div>
                             )}
-                          </div>
-                        )}
-
-                        {/* Promos - right after abbonamenti */}
-                        {promos.length > 0 && (
-                          <div className="rounded-xl overflow-hidden border-2 transition-all"
-                            style={{ borderColor: openCats.includes('__promo__') ? 'rgba(14,165,233,0.4)' : 'rgba(14,165,233,0.2)' }}>
-                            <button onClick={() => toggleCat('__promo__')}
-                              className="btn-animate w-full flex items-center justify-between px-3 py-3 text-left transition-all"
-                              style={{ background: openCats.includes('__promo__') ? 'rgba(14,165,233,0.12)' : 'rgba(14,165,233,0.05)' }}
-                              data-testid="cat-accordion-promo">
-                              <div className="flex items-center gap-2">
-                                <ChevronDown className={`w-4 h-4 transition-transform ${openCats.includes('__promo__') ? 'rotate-180' : ''}`}
-                                  style={{ color: openCats.includes('__promo__') ? 'var(--cyan)' : 'var(--text-muted)' }} />
-                                <span className="text-sm">🎁</span>
-                                <span className="font-bold text-sm text-[var(--cyan)]">Promozioni</span>
-                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--cyan)]/20 text-[var(--cyan)]">{promos.length}</span>
-                              </div>
-                              {selectedPromo && (
-                                <span className="text-[10px] font-black text-white px-2 py-0.5 rounded-full bg-[var(--cyan)]">1 sel.</span>
-                              )}
-                            </button>
-                            {openCats.includes('__promo__') && (
-                              <div className="border-t divide-y" style={{ borderColor: 'var(--border-subtle)' }}>
-                                {promos.map((promo, i) => (
-                                  <button key={promo.id || i}
-                                    onClick={() => {
-                                      if (selectedPromo?.id === promo.id) {
-                                        setSelectedPromo(null);
-                                        setForm(f => ({ ...f, notes: f.notes.replace(`[PROMO: ${promo.promo_code || promo.name}] `, '') }));
-                                        toast('Promo rimossa');
-                                      } else {
-                                        setSelectedPromo(promo);
-                                        setSelectedCardTemplate(null);
-                                        const code = promo.promo_code || promo.name;
-                                        setForm(f => ({ ...f, notes: `[PROMO: ${code}] ${f.notes.replace(/\[PROMO: [^\]]+\] /g, '').replace(/\[CARD: [^\]]+\] /g, '')}` }));
-                                        toast.success(`Promo "${promo.name}" applicata!`);
-                                      }
-                                    }}
-                                    className="btn-animate w-full px-3 py-2.5 text-left transition-all"
-                                    style={{ background: selectedPromo?.id === promo.id ? 'rgba(14,165,233,0.08)' : 'var(--bg-card)' }}
-                                    data-testid={`promo-card-${i}`}>
-                                    <div className="flex items-center gap-2">
-                                      <div className="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0"
-                                        style={selectedPromo?.id === promo.id
-                                          ? { borderColor: 'var(--cyan)', background: 'var(--cyan)' }
-                                          : { borderColor: 'var(--text-muted)' }}>
-                                        {selectedPromo?.id === promo.id && <CheckCircle className="w-3 h-3 text-white" />}
-                                      </div>
-                                      <div className="flex-1 min-w-0">
-                                        <p className="font-bold text-sm text-[var(--text-primary)]">{promo.name}</p>
-                                        {promo.description && <p className="text-[11px] text-[var(--text-muted)] truncate">{promo.description}</p>}
-                                        {promo.free_service_name && (
-                                          <p className="text-[11px] font-bold mt-0.5 text-[var(--cyan)]">Omaggio: {promo.free_service_name}</p>
-                                        )}
-                                      </div>
-                                      <span className="text-white text-[9px] font-black px-2 py-0.5 rounded-full flex-shrink-0 bg-[var(--cyan)]">PROMO</span>
-                                    </div>
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Service categories */}
-                        {cats.length > 0 ? cats.map(cat => {
-                          const catSvcs = byCat[cat] || [];
-                          const isOpen = openCats.includes(cat);
-                          const selCount = catSvcs.filter(s => selIds.includes(s.id)).length;
-                          return (
-                            <div key={cat} className="rounded-xl overflow-hidden border transition-all"
-                              style={{ borderColor: isOpen ? 'var(--border-gold)' : 'var(--border-subtle)' }}>
-                              <button onClick={() => toggleCat(cat)}
-                                className="btn-animate w-full flex items-center justify-between px-3 py-2.5 text-left transition-all"
-                                style={{ background: isOpen ? 'var(--gold-dim)' : 'var(--bg-elevated)' }}
-                                data-testid={`cat-accordion-${cat}`}>
-                                <div className="flex items-center gap-2">
-                                  <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-                                    style={{ color: isOpen ? 'var(--gold)' : 'var(--text-muted)' }} />
-                                  <span className="text-sm">{getCatIcon(cat)}</span>
-                                  <span className="font-bold text-sm text-[var(--text-primary)] capitalize">{cat}</span>
-                                  <span className="text-[10px] font-bold bg-[var(--bg-deep)] text-[var(--text-muted)] px-1.5 py-0.5 rounded-full">{catSvcs.length}</span>
-                                </div>
-                                {selCount > 0 && (
-                                  <span className="text-[10px] font-black text-[var(--bg-deep)] px-2 py-0.5 rounded-full bg-[var(--gold)]">{selCount} sel.</span>
-                                )}
-                              </button>
-                              {isOpen && (
-                                <div className="border-t p-2 grid grid-cols-2 sm:grid-cols-3 gap-1.5" style={{ borderColor: 'var(--border-subtle)' }}>
-                                  {catSvcs.map((svc) => {
-                                    const sel = selIds.includes(svc.id);
-                                    return (
-                                      <button key={svc.id} onClick={() => toggleSvc(svc)}
-                                        className="btn-animate flex flex-col items-start rounded-lg px-2.5 py-2 text-left transition-all border"
-                                        style={{
-                                          background: sel ? 'var(--gold-dim)' : 'var(--bg-card)',
-                                          borderColor: sel ? 'var(--gold)' : 'var(--border-subtle)'
-                                        }}
-                                        data-testid={`service-item-${svc.id}`}>
-                                        <div className="flex items-center gap-1.5 w-full">
-                                          <div className="w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all"
-                                            style={sel
-                                              ? { borderColor: 'var(--gold)', background: 'var(--gold)' }
-                                              : { borderColor: 'var(--text-muted)' }}>
-                                            {sel && <CheckCircle className="w-2.5 h-2.5 text-[var(--bg-deep)]" />}
-                                          </div>
-                                          <span className={`flex-1 text-xs leading-tight ${sel ? 'font-bold text-[var(--gold)]' : 'text-[var(--text-secondary)]'}`}>
-                                            {svc.name}
-                                          </span>
-                                        </div>
-                                        <div className="flex items-center justify-between w-full mt-1 pl-5.5">
-                                          <span className={`font-black text-xs ${sel ? 'text-[var(--gold)]' : 'text-[var(--text-primary)]'}`}>{'\u20AC'}{svc.price}</span>
-                                          <span className="text-[10px] text-[var(--text-muted)]">{svc.duration} min</span>
-                                        </div>
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        }) : (
-                          <div className="text-center py-8 text-[var(--text-muted)]">
-                            <Scissors className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                            <p className="font-medium text-sm">I servizi verranno caricati a breve</p>
                           </div>
                         )}
                       </div>
