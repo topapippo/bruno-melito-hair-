@@ -1,58 +1,78 @@
-# Bruno Melito Hair - Salon Management Application
+# Bruno Melito Hair - Salon Management App
 
-## Original Problem Statement
-Full-stack salon management application for Bruno Melito Hair salon. Public-facing booking website + admin panel for managing appointments, clients, services, and business operations.
+## Problem Statement
+Full-stack salon management app (React, FastAPI, MongoDB Atlas) for managing appointments, clients, services, subscriptions (Abbonamenti), promotions, and loyalty programs. Public website with online booking.
 
-## Tech Stack
-- **Frontend:** React with Tailwind CSS, Shadcn/UI
-- **Backend:** FastAPI (Python)
-- **Database:** MongoDB Atlas
-- **Hosting:** Render
-- **Object Storage:** Emergent Object Storage
-- **Theme:** Onyx & dynamic colors (configurable from admin)
+## Architecture
+- **Frontend**: React + Shadcn/UI + TailwindCSS
+- **Backend**: FastAPI + MongoDB Atlas
+- **Hosting**: Render (production), Emergent (preview)
+- **Object Storage**: Emergent LLM Key
+- **Language**: Italian (all UI and communications)
 
-## Credentials
-- **Admin Login:** admin@brunomelito.it / Admin123!
+## Code Structure
+```
+/app/
+├── backend/
+│   ├── routes/
+│   │   ├── public.py (public endpoints, booking, object storage)
+│   │   ├── appointments.py (CRUD, checkout, loyalty)
+│   │   ├── reminders.py (WhatsApp logic)
+│   ├── server.py, database.py
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── planning/
+│   │   │   │   ├── NewAppointmentDialog.jsx (534 lines)
+│   │   │   │   └── EditAppointmentDialog.jsx (623 lines)
+│   │   │   └── website/
+│   │   │       ├── BookingModal.jsx (public booking)
+│   │   │       └── ManageAppointments.jsx
+│   │   ├── pages/
+│   │   │   ├── PlanningPage.jsx (1240 lines, refactored from 2571)
+│   │   │   └── WebsitePage.jsx (dynamic colors)
+│   │   └── utils/formatDate.js
+```
 
-## All Implemented Features
+## Implemented Features (All Complete)
+- [x] Appointment management (CRUD, recurring, drag & drop)
+- [x] Client management with notes and phone tracking
+- [x] Services with categories and sort_order
+- [x] Abbonamenti (Card Templates) - 6 real packages
+- [x] Promozioni with free service tracking
+- [x] Checkout with payment methods (cash, prepaid cards)
+- [x] Loyalty points system with WhatsApp alerts
+- [x] Review request via WhatsApp after checkout
+- [x] Public website with online booking
+- [x] Dynamic CSS color theming
+- [x] Object Storage for media uploads
+- [x] 2-column layout for booking/appointment dialogs
+- [x] Operator conflict resolution with auto-assignment
+- [x] Services sorted by sort_order in all views
 
-### Core Platform
-- Planning page (day/week/month views, drag & drop)
-- Client management with appointment history
-- Recurring appointments, checkout/payment system
-- Loyalty points with WhatsApp notifications
-- Online booking notifications banner
-- Health check endpoint for UptimeRobot/Render
+## Recent Changes (2026-03-21)
+### Bug Fixes
+1. **Services order fixed** - Added `.sort("sort_order", 1)` to backend, assigned sort_order to 4 legacy services
+2. **Abbonamenti visibility** - Moved to top of public booking modal with distinct purple styling
+3. **Operator conflict** - Backend auto-assigns free operator when no preference; improved frontend partial-slot handling
 
-### Card Templates / Abbonamenti
-- Public BookingModal: Abbonamenti accordion (purple)
-- Admin PlanningPage: "Card, Promo & Abbonamenti" in dialog
-- Backend: promo_id and card_template_id on appointments
+### Refactoring
+- **PlanningPage.jsx**: 2571 → 1240 lines (-52%)
+- Extracted `NewAppointmentDialog.jsx` (534 lines)
+- Extracted `EditAppointmentDialog.jsx` (623 lines)
 
-### Layout & UI
-- Wider modals (4xl public, 900px admin)
-- Horizontal 3-column grid for services per category
-- Dynamic colors from admin config (CSS variables override)
-- All components use var(--gold) instead of hardcoded colors
+## Key API Endpoints
+- `POST /api/public/booking` - Create booking with auto-assign conflict resolution
+- `GET /api/public/services` - Sorted by sort_order
+- `GET /api/public/website` - Full website data including card_templates
+- `POST /api/appointments/{id}/checkout` - Checkout with loyalty/promo
 
-### Object Storage
-- Persistent remote file storage (EMERGENT_LLM_KEY)
-- Upload/serve endpoints
+## DB Schema
+- `card_templates`: {id, name, card_type, total_value, total_services, duration_months}
+- `loyalty`: {client_id, user_id, points}
+- `appointments`: {..., promo_id, card_id, card_template_id}
+- `services`: {..., category, sort_order, price, duration}
 
-### Cambia Operatore
-- Conflict detection excludes cancelled appointments
-- 409 response with available_operators and alternative_slots
-
-### WhatsApp Reminders & Notifications (Complete)
-- **Promemoria domani**: Lista appuntamenti domani con invio rapido WhatsApp
-- **Invio batch**: Un click per inviare tutti i promemoria via WhatsApp
-- **Clienti inattivi**: Richiamo automatico clienti assenti 60+ giorni
-- **Scadenza colore**: Avviso clienti con colore scaduto 30+ giorni
-- **Template messaggi personalizzabili**: Con variabili {nome}, {ora}, {servizi}, {giorni}
-- **Auto-check reminder**: Banner nella PlanningPage con conteggio pendenti
-- **Post-checkout review request**: Dialog WhatsApp dopo il pagamento per chiedere recensione
-- **Loyalty threshold alert**: Dialog WhatsApp quando cliente raggiunge soglia punti
-
-### Infrastructure
-- GitHub repo synced to Render
-- UptimeRobot health check
+## Backlog
+- No pending tasks. All PRD features complete.
+- Future consideration: Further component extraction from remaining large pages
