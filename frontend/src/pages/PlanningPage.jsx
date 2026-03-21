@@ -1582,94 +1582,79 @@ export default function PlanningPage() {
                 )}
               </div>
 
-              {/* Card & Promozioni del Cliente - Selezionabili per cassa */}
+              {/* Card & Promozioni del Cliente - COLLAPSIBLE */}
               {(dialogClientCards.length > 0 || dialogClientPromos.length > 0) && (
-                <div className="space-y-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-500/30 rounded-xl">
-                  <Label className="text-green-400 font-bold flex items-center gap-2">
-                    <Ticket className="w-4 h-4" /> Card & Promozioni Disponibili
-                  </Label>
-                  <p className="text-xs text-green-400 -mt-1">Seleziona per applicare automaticamente in cassa</p>
-                  
-                  {/* Client Cards */}
-                  {dialogClientCards.length > 0 && (
-                    <div className="space-y-2">
-                      <p className="text-xs font-semibold text-green-400 uppercase">Card/Abbonamenti</p>
-                      <div className="grid grid-cols-1 gap-2">
-                        {dialogClientCards.map(card => (
-                          <button
-                            key={card.id}
-                            type="button"
-                            onClick={() => setPreSelectedCardId(preSelectedCardId === card.id ? '' : card.id)}
-                            className={`w-full p-2.5 rounded-lg border-2 text-left transition-all ${
-                              preSelectedCardId === card.id 
-                                ? 'border-green-500 bg-green-500/100/10 ring-2 ring-green-400' 
-                                : 'border-green-500/30 bg-[var(--bg-card)] hover:border-green-400'
-                            }`}
-                            data-testid={`preselect-card-${card.id}`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <CreditCard className={`w-4 h-4 ${preSelectedCardId === card.id ? 'text-green-400' : 'text-[var(--text-muted)]'}`} />
-                                <div>
-                                  <p className="font-bold text-sm text-[var(--text-primary)]">{card.name}</p>
-                                  <p className="text-[10px] text-[var(--text-secondary)]">{card.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}</p>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <p className="font-black text-green-400 text-sm">€{card.remaining_value?.toFixed(2)}</p>
-                                {card.total_services && (
-                                  <p className="text-[10px] text-[var(--text-secondary)]">{card.total_services - card.used_services} servizi rimasti</p>
-                                )}
-                              </div>
-                            </div>
-                            {preSelectedCardId === card.id && (
-                              <div className="mt-1.5 flex items-center gap-1 text-xs text-green-400 font-semibold">
-                                <Check className="w-3 h-3" /> Verrà applicata in cassa
-                              </div>
-                            )}
-                          </button>
-                        ))}
-                      </div>
+                <details className="group">
+                  <summary className="cursor-pointer p-3 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-500/30 rounded-xl list-none">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-green-400 font-bold flex items-center gap-2 cursor-pointer">
+                        <Ticket className="w-4 h-4" /> Card & Promozioni ({dialogClientCards.length + dialogClientPromos.length})
+                        {(preSelectedCardId || preSelectedPromoId) && <Check className="w-4 h-4 text-green-500" />}
+                      </Label>
+                      <ChevronDown className="w-4 h-4 text-green-400 transition-transform group-open:rotate-180" />
                     </div>
-                  )}
+                  </summary>
+                  <div className="mt-2 p-3 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-t-0 border-green-500/30 rounded-b-xl space-y-3">
+                    <p className="text-xs text-green-400">Seleziona per applicare automaticamente in cassa</p>
+                    
+                    {/* Client Cards */}
+                    {dialogClientCards.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold text-green-400 uppercase">Card/Abbonamenti</p>
+                        <div className="grid grid-cols-1 gap-2">
+                          {dialogClientCards.map(card => (
+                            <button
+                              key={card.id}
+                              type="button"
+                              onClick={() => setPreSelectedCardId(preSelectedCardId === card.id ? '' : card.id)}
+                              className={`w-full p-2 rounded-lg border-2 text-left transition-all ${
+                                preSelectedCardId === card.id 
+                                  ? 'border-green-500 bg-green-500/10 ring-1 ring-green-400' 
+                                  : 'border-green-500/30 bg-[var(--bg-card)] hover:border-green-400'
+                              }`}
+                              data-testid={`preselect-card-${card.id}`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <CreditCard className={`w-4 h-4 ${preSelectedCardId === card.id ? 'text-green-400' : 'text-[var(--text-muted)]'}`} />
+                                  <span className="font-bold text-sm text-[var(--text-primary)]">{card.name}</span>
+                                </div>
+                                <span className="font-black text-green-400 text-sm">€{card.remaining_value?.toFixed(2)}</span>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
-                  {/* Client Promos */}
-                  {dialogClientPromos.length > 0 && (
-                    <div className="space-y-2">
-                      <p className="text-xs font-semibold text-pink-400 uppercase">Promozioni</p>
-                      <div className="grid grid-cols-1 gap-2">
-                        {dialogClientPromos.map(promo => (
-                          <button
-                            key={promo.id}
-                            type="button"
-                            onClick={() => setPreSelectedPromoId(preSelectedPromoId === promo.id ? '' : promo.id)}
-                            className={`w-full p-2.5 rounded-lg border-2 text-left transition-all ${
-                              preSelectedPromoId === promo.id 
-                                ? 'border-pink-500 bg-pink-500/10 ring-2 ring-pink-400' 
-                                : 'border-pink-200 bg-[var(--bg-card)] hover:border-pink-400'
-                            }`}
-                            data-testid={`preselect-promo-${promo.id}`}
-                          >
-                            <div className="flex items-center justify-between">
+                    {/* Client Promos */}
+                    {dialogClientPromos.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold text-pink-400 uppercase">Promozioni</p>
+                        <div className="grid grid-cols-1 gap-2">
+                          {dialogClientPromos.map(promo => (
+                            <button
+                              key={promo.id}
+                              type="button"
+                              onClick={() => setPreSelectedPromoId(preSelectedPromoId === promo.id ? '' : promo.id)}
+                              className={`w-full p-2 rounded-lg border-2 text-left transition-all ${
+                                preSelectedPromoId === promo.id 
+                                  ? 'border-pink-500 bg-pink-500/10 ring-1 ring-pink-400' 
+                                  : 'border-pink-200 bg-[var(--bg-card)] hover:border-pink-400'
+                              }`}
+                              data-testid={`preselect-promo-${promo.id}`}
+                            >
                               <div className="flex items-center gap-2">
                                 <Gift className={`w-4 h-4 ${preSelectedPromoId === promo.id ? 'text-pink-400' : 'text-[var(--text-muted)]'}`} />
-                                <div>
-                                  <p className="font-bold text-sm text-[var(--text-primary)]">{promo.name}</p>
-                                  <p className="text-[10px] text-pink-400 font-semibold">OMAGGIO: {promo.free_service_name}</p>
-                                </div>
+                                <span className="font-bold text-sm text-[var(--text-primary)]">{promo.name}</span>
                               </div>
-                            </div>
-                            {preSelectedPromoId === promo.id && (
-                              <div className="mt-1.5 flex items-center gap-1 text-xs text-pink-400 font-semibold">
-                                <Check className="w-3 h-3" /> Verrà applicata in cassa
-                              </div>
-                            )}
-                          </button>
-                        ))}
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
+                </details>
               )}
 
               <div className="space-y-2">
@@ -1682,16 +1667,17 @@ export default function PlanningPage() {
                 />
               </div>
 
-              <DialogFooter>
+              {/* FIXED SAVE BUTTON */}
+              <div className="sticky bottom-0 pt-3 pb-1 bg-[var(--bg-card)] border-t border-[var(--border-subtle)] -mx-6 px-6 -mb-6">
                 <Button
                   type="submit"
                   disabled={saving}
-                  className="bg-[var(--gold)] hover:bg-[var(--gold)] text-white"
+                  className="w-full bg-[var(--gold)] hover:bg-[var(--gold)] text-white font-bold py-3"
                   data-testid="save-appointment-btn"
                 >
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salva Appuntamento'}
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'SALVA APPUNTAMENTO'}
                 </Button>
-              </DialogFooter>
+              </div>
             </form>
           </DialogContent>
         </Dialog>
