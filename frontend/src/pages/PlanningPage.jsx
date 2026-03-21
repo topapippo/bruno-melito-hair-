@@ -118,6 +118,10 @@ export default function PlanningPage() {
   const [loyaltyAlertOpen, setLoyaltyAlertOpen] = useState(false);
   const [loyaltyAlertData, setLoyaltyAlertData] = useState(null);
 
+  // Review request after checkout
+  const [reviewAlertOpen, setReviewAlertOpen] = useState(false);
+  const [reviewAlertData, setReviewAlertData] = useState(null);
+
   // Reminder notifications
   const [pendingRemindersCount, setPendingRemindersCount] = useState(0);
   const [inactiveClientsCount, setInactiveClientsCount] = useState(0);
@@ -625,6 +629,18 @@ export default function PlanningPage() {
         });
         setLoyaltyAlertOpen(true);
       }
+
+      // Show review request dialog after checkout
+      const clientPhone = res.data.client_phone || editingAppointment?.client_phone;
+      const clientName = res.data.client_name || editingAppointment?.client_name;
+      if (clientPhone) {
+        // Delay if loyalty alert is also showing
+        const delay = res.data.loyalty_threshold_reached ? 1500 : 300;
+        setTimeout(() => {
+          setReviewAlertData({ clientName, clientPhone });
+          setReviewAlertOpen(true);
+        }, delay);
+      }
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Errore nel pagamento');
     } finally {
@@ -644,6 +660,21 @@ export default function PlanningPage() {
     );
     window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
     setLoyaltyAlertOpen(false);
+  };
+
+  const openReviewWhatsApp = () => {
+    if (!reviewAlertData?.clientPhone) {
+      toast.error('Numero di telefono non disponibile');
+      return;
+    }
+    let phone = reviewAlertData.clientPhone.replace(/[\s\-\+]/g, '');
+    if (!phone.startsWith('39')) phone = '39' + phone;
+    const siteUrl = window.location.origin;
+    const message = encodeURIComponent(
+      `Ciao ${reviewAlertData.clientName || ''}! Grazie per essere venuto/a da Bruno Melito Hair! Se ti è piaciuto il servizio, lasciaci una recensione qui: ${siteUrl} Grazie mille!`
+    );
+    window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+    setReviewAlertOpen(false);
   };
 
   // Reset checkout state
@@ -2468,6 +2499,44 @@ export default function PlanningPage() {
               >
                 <MessageSquare className="w-4 h-4 mr-2" />
                 Invia WhatsApp
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Review Request WhatsApp Alert */}
+        <Dialog open={reviewAlertOpen} onOpenChange={setReviewAlertOpen}>
+          <DialogContent className="sm:max-w-[420px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-xl font-black text-blue-500">
+                <Star className="w-6 h-6 text-blue-500" />
+                Chiedi una Recensione
+              </DialogTitle>
+              <DialogDescription>
+                Vuoi inviare un messaggio WhatsApp a <span className="font-bold text-[var(--text-primary)]">{reviewAlertData?.clientName}</span> per chiedergli/le una recensione?
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-2">
+              <div className="p-4 bg-blue-500/10 rounded-xl border border-blue-200 text-sm text-blue-400">
+                <p>Le recensioni aiutano a far crescere il business e attrarre nuovi clienti!</p>
+              </div>
+            </div>
+            <DialogFooter className="flex gap-2 sm:gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setReviewAlertOpen(false)}
+                className="flex-1 border-[var(--border-subtle)]"
+                data-testid="review-skip-btn"
+              >
+                Salta
+              </Button>
+              <Button
+                onClick={openReviewWhatsApp}
+                className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold"
+                data-testid="review-whatsapp-btn"
+              >
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Chiedi Recensione
               </Button>
             </DialogFooter>
           </DialogContent>

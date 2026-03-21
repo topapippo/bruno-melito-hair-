@@ -1,58 +1,58 @@
 # Bruno Melito Hair - Salon Management Application
 
 ## Original Problem Statement
-Full-stack salon management application for Bruno Melito Hair salon in Santa Maria Capua Vetere, Italy. Public-facing booking website + admin panel for managing appointments, clients, services, and business operations.
+Full-stack salon management application for Bruno Melito Hair salon. Public-facing booking website + admin panel for managing appointments, clients, services, and business operations.
 
 ## Tech Stack
-- **Frontend:** React with Tailwind CSS, Shadcn/UI components
+- **Frontend:** React with Tailwind CSS, Shadcn/UI
 - **Backend:** FastAPI (Python)
-- **Database:** MongoDB Atlas (cluster0.glbiffm.mongodb.net, DB: mbhs)
-- **Hosting:** Render (Static Site for frontend, Web Service for backend)
-- **Object Storage:** Emergent Object Storage (persistent media uploads)
-- **Theme:** Onyx & Gold dark theme (dynamic via admin config)
+- **Database:** MongoDB Atlas
+- **Hosting:** Render
+- **Object Storage:** Emergent Object Storage
+- **Theme:** Onyx & dynamic colors (configurable from admin)
 
 ## Credentials
 - **Admin Login:** admin@brunomelito.it / Admin123!
 
-## Implemented Features (All Complete)
+## All Implemented Features
 
 ### Core Platform
-- Planning page with day/week/month views, drag & drop
-- Client search with appointment history
+- Planning page (day/week/month views, drag & drop)
+- Client management with appointment history
 - Recurring appointments, checkout/payment system
-- Loyalty points system with WhatsApp notifications
+- Loyalty points with WhatsApp notifications
 - Online booking notifications banner
-- Back arrow navigation, scrollable/collapsible dialogs
 - Health check endpoint for UptimeRobot/Render
-- GitHub repo sync (topapippo → signorfabozzi-glitch)
 
 ### Card Templates / Abbonamenti
-- Public BookingModal: Abbonamenti accordion (purple #A855F7) with card templates
-- Admin PlanningPage: "Card, Promo & Abbonamenti" section in new appointment dialog
-- Backend: promo_id and card_template_id saved on appointments
+- Public BookingModal: Abbonamenti accordion (purple)
+- Admin PlanningPage: "Card, Promo & Abbonamenti" in dialog
+- Backend: promo_id and card_template_id on appointments
 
-### Horizontal Grid Layout
-- Public BookingModal: widened to sm:max-w-4xl, services in 2-3 column grid per category
-- Admin PlanningPage new dialog: widened to sm:max-w-[900px], same grid layout
-- Admin edit dialog: widened to sm:max-w-[900px]
-
-### Dynamic Colors
-- CSS variables (--gold, --gold-dim, --border-gold, --cyan) set dynamically from config
-- All website components updated from hardcoded #D4AF37 to var(--gold)
-- primary_color from admin config applies across entire public website
+### Layout & UI
+- Wider modals (4xl public, 900px admin)
+- Horizontal 3-column grid for services per category
+- Dynamic colors from admin config (CSS variables override)
+- All components use var(--gold) instead of hardcoded colors
 
 ### Object Storage
-- EMERGENT_LLM_KEY configured for Emergent Object Storage
-- Upload endpoint: /api/website/upload (auth required)
-- Serve endpoint: /api/website/files/{id} (public)
-- Remote persistent storage prevents data loss on container restart
+- Persistent remote file storage (EMERGENT_LLM_KEY)
+- Upload/serve endpoints
 
 ### Cambia Operatore
 - Conflict detection excludes cancelled appointments
-- Backend 409 response includes available_operators and alternative_slots
-- Frontend conflict overlay with operator + time alternatives
+- 409 response with available_operators and alternative_slots
+
+### WhatsApp Reminders & Notifications (Complete)
+- **Promemoria domani**: Lista appuntamenti domani con invio rapido WhatsApp
+- **Invio batch**: Un click per inviare tutti i promemoria via WhatsApp
+- **Clienti inattivi**: Richiamo automatico clienti assenti 60+ giorni
+- **Scadenza colore**: Avviso clienti con colore scaduto 30+ giorni
+- **Template messaggi personalizzabili**: Con variabili {nome}, {ora}, {servizi}, {giorni}
+- **Auto-check reminder**: Banner nella PlanningPage con conteggio pendenti
+- **Post-checkout review request**: Dialog WhatsApp dopo il pagamento per chiedere recensione
+- **Loyalty threshold alert**: Dialog WhatsApp quando cliente raggiunge soglia punti
 
 ### Infrastructure
-- UptimeRobot health check endpoint configured
-- GitHub repository synced to Render
-- SIGSEGV: known headless browser testing environment issue, not app bug
+- GitHub repo synced to Render
+- UptimeRobot health check
