@@ -84,9 +84,10 @@ export default function BookingModal({ open, onClose, services, operators, promo
       setSelectedCardTemplate(null);
       setConflictModal(null);
       setShowConflictOverlay(false);
-      setOpenCats([]);
+      const abbCat = (services || []).find(s => (s.category || '').toLowerCase().includes('abbonament'));
+      setOpenCats(abbCat && cardTemplates.length > 0 ? [abbCat.category.toLowerCase()] : []);
     }
-  }, [open]);
+  }, [open, services, cardTemplates]);
 
   if (!open) return null;
 
@@ -362,23 +363,29 @@ export default function BookingModal({ open, onClose, services, operators, promo
                           const catSvcs = byCat[cat] || [];
                           const isOpen = openCats.includes(cat);
                           const selCount = catSvcs.filter(s => selIds.includes(s.id)).length;
+                          const hasCards = cat.includes('abbonament') && cardTemplates.length > 0;
                           return (
                             <div key={cat} className="rounded-xl overflow-hidden border transition-all"
-                              style={{ borderColor: isOpen ? 'var(--border-gold)' : 'var(--border-subtle)' }}>
+                              style={{ borderColor: isOpen ? (hasCards ? 'rgba(168,85,247,0.4)' : 'var(--border-gold)') : (hasCards ? 'rgba(168,85,247,0.2)' : 'var(--border-subtle)') }}>
                               <button onClick={() => toggleCat(cat)}
                                 className="btn-animate w-full flex items-center justify-between px-3 py-2.5 text-left transition-all"
-                                style={{ background: isOpen ? 'var(--gold-dim)' : 'var(--bg-elevated)' }}
+                                style={{ background: isOpen ? (hasCards ? 'rgba(168,85,247,0.12)' : 'var(--gold-dim)') : (hasCards ? 'rgba(168,85,247,0.05)' : 'var(--bg-elevated)') }}
                                 data-testid={`cat-accordion-${cat}`}>
                                 <div className="flex items-center gap-2">
                                   <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-                                    style={{ color: isOpen ? 'var(--gold)' : 'var(--text-muted)' }} />
+                                    style={{ color: isOpen ? (hasCards ? '#A855F7' : 'var(--gold)') : 'var(--text-muted)' }} />
                                   <span className="text-sm">{getCatIcon(cat)}</span>
-                                  <span className="font-bold text-sm text-[var(--text-primary)] capitalize">{cat}</span>
-                                  <span className="text-[10px] font-bold bg-[var(--bg-deep)] text-[var(--text-muted)] px-1.5 py-0.5 rounded-full">{catSvcs.length}</span>
+                                  <span className="font-bold text-sm capitalize" style={{ color: hasCards ? '#A855F7' : 'var(--text-primary)' }}>{cat}</span>
+                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={hasCards ? { background: 'rgba(168,85,247,0.15)', color: '#A855F7' } : { background: 'var(--bg-deep)', color: 'var(--text-muted)' }}>{catSvcs.length + (hasCards ? cardTemplates.length : 0)}</span>
                                 </div>
-                                {selCount > 0 && (
-                                  <span className="text-[10px] font-black text-[var(--bg-deep)] px-2 py-0.5 rounded-full bg-[var(--gold)]">{selCount} sel.</span>
-                                )}
+                                <div className="flex items-center gap-1.5">
+                                  {selCount > 0 && (
+                                    <span className="text-[10px] font-black text-[var(--bg-deep)] px-2 py-0.5 rounded-full bg-[var(--gold)]">{selCount} sel.</span>
+                                  )}
+                                  {hasCards && selectedCardTemplate && (
+                                    <span className="text-[10px] font-black text-white px-2 py-0.5 rounded-full" style={{ background: '#A855F7' }}>1 card</span>
+                                  )}
+                                </div>
                               </button>
                               {isOpen && (
                                 <div className="border-t" style={{ borderColor: 'var(--border-subtle)' }}>
