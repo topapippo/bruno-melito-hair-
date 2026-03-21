@@ -8,6 +8,7 @@ Full-stack salon management app (React, FastAPI, MongoDB Atlas) for managing app
 - **Backend**: FastAPI + MongoDB Atlas
 - **Hosting**: Render (production), Emergent (preview)
 - **Object Storage**: Emergent LLM Key
+- **Push Notifications**: Web Push API (VAPID keys, pywebpush)
 - **Language**: Italian (all UI and communications)
 
 ## Code Structure
@@ -18,31 +19,38 @@ Full-stack salon management app (React, FastAPI, MongoDB Atlas) for managing app
 │   │   ├── public.py (public endpoints, booking, object storage)
 │   │   ├── appointments.py (CRUD, checkout, loyalty)
 │   │   ├── reminders.py (WhatsApp logic)
-│   ├── server.py, database.py
+│   │   ├── push.py (push notification subscribe, send-reminders)
+│   ├── server.py (background scheduler for push reminders)
+│   └── database.py
 ├── frontend/
+│   ├── public/sw-push.js (service worker for push)
 │   ├── src/
 │   │   ├── components/
 │   │   │   ├── planning/
-│   │   │   │   ├── NewAppointmentDialog.jsx (534 lines)
-│   │   │   │   └── EditAppointmentDialog.jsx (623 lines)
+│   │   │   │   ├── NewAppointmentDialog.jsx
+│   │   │   │   └── EditAppointmentDialog.jsx
 │   │   │   └── website/
-│   │   │       ├── BookingModal.jsx (public booking)
+│   │   │       ├── BookingModal.jsx (public booking, Abbonamenti grid)
 │   │   │       └── ManageAppointments.jsx
 │   │   ├── pages/
-│   │   │   ├── PlanningPage.jsx (1240 lines, refactored from 2571)
-│   │   │   └── WebsitePage.jsx (dynamic colors)
-│   │   └── utils/formatDate.js
+│   │   │   ├── PlanningPage.jsx (1240 lines, refactored)
+│   │   │   └── WebsitePage.jsx (push init after booking)
+│   │   └── utils/
+│   │       ├── formatDate.js
+│   │       └── pushNotifications.js
 ```
 
 ## Implemented Features (All Complete)
 - [x] Appointment management (CRUD, recurring, drag & drop)
 - [x] Client management with notes and phone tracking
 - [x] Services with categories and sort_order
-- [x] Abbonamenti (Card Templates) - 6 real packages
+- [x] Abbonamenti (Card Templates) - 6 real packages, grid layout on public + admin
 - [x] Promozioni with free service tracking
 - [x] Checkout with payment methods (cash, prepaid cards)
 - [x] Loyalty points system with WhatsApp alerts
 - [x] Review request via WhatsApp after checkout
+- [x] WhatsApp reminder notifications
+- [x] **Push Notifications** - automatic reminders 24h before appointments
 - [x] Public website with online booking
 - [x] Dynamic CSS color theming
 - [x] Object Storage for media uploads
@@ -51,28 +59,24 @@ Full-stack salon management app (React, FastAPI, MongoDB Atlas) for managing app
 - [x] Services sorted by sort_order in all views
 
 ## Recent Changes (2026-03-21)
-### Bug Fixes
-1. **Services order fixed** - Added `.sort("sort_order", 1)` to backend, assigned sort_order to 4 legacy services
-2. **Abbonamenti visibility** - Moved to top of public booking modal with distinct purple styling
-3. **Operator conflict** - Backend auto-assigns free operator when no preference; improved frontend partial-slot handling
+### New Features
+1. **Push Notifications** - VAPID keys, service worker, backend scheduler (hourly check), auto-subscribe after booking
+2. **Abbonamenti grid layout** - Public booking now matches admin with 2-column card grid + prices
+
+### Bug Fixes (from earlier this session)
+1. Services order fixed (sort_order ascending)
+2. Abbonamenti visibility (top of booking modal)
+3. Operator conflict (auto-assign free operator)
 
 ### Refactoring
-- **PlanningPage.jsx**: 2571 → 1240 lines (-52%)
-- Extracted `NewAppointmentDialog.jsx` (534 lines)
-- Extracted `EditAppointmentDialog.jsx` (623 lines)
+- PlanningPage.jsx: 2571 → 1240 lines (-52%)
+- Extracted NewAppointmentDialog.jsx and EditAppointmentDialog.jsx
 
 ## Key API Endpoints
-- `POST /api/public/booking` - Create booking with auto-assign conflict resolution
-- `GET /api/public/services` - Sorted by sort_order
-- `GET /api/public/website` - Full website data including card_templates
-- `POST /api/appointments/{id}/checkout` - Checkout with loyalty/promo
-
-## DB Schema
-- `card_templates`: {id, name, card_type, total_value, total_services, duration_months}
-- `loyalty`: {client_id, user_id, points}
-- `appointments`: {..., promo_id, card_id, card_template_id}
-- `services`: {..., category, sort_order, price, duration}
+- `POST /api/public/booking` - Create booking with auto-assign
+- `GET /api/push/vapid-key` - Get VAPID public key
+- `POST /api/push/subscribe` - Register push subscription
+- `POST /api/push/send-reminders` - Send push reminders (also runs hourly)
 
 ## Backlog
 - No pending tasks. All PRD features complete.
-- Future consideration: Further component extraction from remaining large pages
