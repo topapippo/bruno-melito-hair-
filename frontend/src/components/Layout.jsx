@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
-import { LogOut, Menu, Sliders } from 'lucide-react';
+import { LogOut, Menu, Sliders, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import PendingBookings from './PendingBookings';
 import NavConfigurator from './NavConfigurator';
@@ -174,6 +174,18 @@ export default function Layout({ children }) {
       {/* Main Content */}
       <main className="md:ml-64 min-h-screen pt-16 md:pt-0">
         <div className="p-6 md:p-8 lg:p-10">
+          {/* Back Button */}
+          {location.pathname !== '/dashboard' && (
+            <button
+              onClick={() => navigate(-1)}
+              className="mb-4 flex items-center gap-2 text-sm font-medium transition-all hover:text-[var(--gold)]"
+              style={{ color: 'var(--text-muted)' }}
+              data-testid="back-button"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Indietro</span>
+            </button>
+          )}
           {children}
         </div>
       </main>
