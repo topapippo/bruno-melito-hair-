@@ -44,7 +44,7 @@ const getCatIcon = (cat = '') => {
   return '✨';
 };
 
-export default function BookingModal({ open, onClose, services, operators, promos, COLORS, cfg, loading, onSuccess }) {
+export default function BookingModal({ open, onClose, services, operators, promos, cardTemplates = [], COLORS, cfg, loading, onSuccess }) {
   const [selIds, setSelIds] = useState([]);
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
@@ -54,6 +54,7 @@ export default function BookingModal({ open, onClose, services, operators, promo
   });
   const [busySlots, setBusySlots] = useState({});
   const [selectedPromo, setSelectedPromo] = useState(null);
+  const [selectedCardTemplate, setSelectedCardTemplate] = useState(null);
   const [conflictModal, setConflictModal] = useState(null);
   const [showConflictOverlay, setShowConflictOverlay] = useState(false);
   const [availableOperators, setAvailableOperators] = useState([]);

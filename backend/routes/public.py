@@ -545,6 +545,9 @@ async def public_get_website():
     # Public promotions (only active ones)
     promos = await db.promotions.find({"active": True}, {"_id": 0, "user_id": 0}).to_list(50)
     
+    # Public card templates (subscription packages)
+    card_templates = await db.card_templates.find({}, {"_id": 0, "user_id": 0}).to_list(50)
+    
     # Loyalty program info for public display
     loyalty_rewards = await db.loyalty_rewards.find({}, {"_id": 0, "user_id": 0}).to_list(10)
     loyalty_config = {
@@ -556,4 +559,4 @@ async def public_get_website():
         }
     }
     
-    return {"config": config, "reviews": reviews, "gallery": gallery, "services": services, "promos": promos, "loyalty": loyalty_config}
+    return {"config": config, "reviews": reviews, "gallery": gallery, "services": services, "promos": promos, "card_templates": card_templates, "loyalty": loyalty_config}
