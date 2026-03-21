@@ -165,6 +165,9 @@ export default function PlanningPage() {
   const [allCardTemplates, setAllCardTemplates] = useState([]);
   const [preSelectedTemplateId, setPreSelectedTemplateId] = useState('');
   
+  // Global promos for new appointment dialog
+  const [allPromos, setAllPromos] = useState([]);
+  
   // Categories to hide from service selection
   const HIDDEN_CATEGORIES = ['stiratura', 'permanente', 'styling'];
 
@@ -248,6 +251,11 @@ export default function PlanningPage() {
         const tmplRes = await axios.get(`${API}/card-templates`);
         setAllCardTemplates(tmplRes.data);
       } catch { setAllCardTemplates([]); }
+      // Fetch global promos
+      try {
+        const promoRes = await axios.get(`${API}/promotions`);
+        setAllPromos(promoRes.data.filter(p => p.active !== false));
+      } catch { setAllPromos([]); }
       // Set MBHS as default operator if form is empty
       if (!formData.operator_id) {
         const mbhs = activeOps.find(op => op.name.toUpperCase().includes('MBHS')) || activeOps[0];
@@ -1643,31 +1651,103 @@ export default function PlanningPage() {
                 )}
               </div>
 
-              {/* Card & Promozioni & Abbonamenti - COLLAPSIBLE */}
-              {(dialogClientCards.length > 0 || dialogClientPromos.length > 0 || allCardTemplates.length > 0) && (
-                <div className="space-y-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowCardPromoSection(!showCardPromoSection)}
-                    className="w-full cursor-pointer p-3 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-500/30 rounded-xl"
-                  >
+              {/* === PROMOZIONI — SEZIONE SEPARATA === */}
+              {allPromos.length > 0 && (
+                <div className="space-y-1">
+                  <button type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, _showPromos: !prev._showPromos }))}
+                    className="w-full cursor-pointer p-2.5 border-2 border-pink-500/30 bg-pink-50 rounded-xl">
                     <div className="flex items-center justify-between">
-                      <span className="text-green-400 font-bold flex items-center gap-2">
-                        <Ticket className="w-4 h-4" /> Card, Promo & Abbonamenti ({dialogClientCards.length + dialogClientPromos.length + allCardTemplates.length})
-                        {(preSelectedCardId || preSelectedPromoId || preSelectedTemplateId) && <Check className="w-4 h-4 text-green-500" />}
+                      <span className="text-pink-500 font-bold text-sm flex items-center gap-2">
+                        <Gift className="w-4 h-4" /> Promozioni ({allPromos.length})
+                        {preSelectedPromoId && <Check className="w-4 h-4 text-pink-500" />}
                       </span>
-                      <ChevronDown className={`w-4 h-4 text-green-400 transition-transform ${showCardPromoSection ? 'rotate-180' : ''}`} />
+                      <ChevronDown className={`w-4 h-4 text-pink-400 transition-transform ${formData._showPromos ? 'rotate-180' : ''}`} />
+                    </div>
+                  </button>
+                  {formData._showPromos && (
+                    <div className="p-2.5 bg-pink-50 border-2 border-t-0 border-pink-500/30 rounded-b-xl -mt-1 grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                      {allPromos.map(promo => (
+                        <button key={promo.id} type="button"
+                          onClick={() => setPreSelectedPromoId(preSelectedPromoId === promo.id ? '' : promo.id)}
+                          className={`w-full p-2 rounded-lg border-2 text-left transition-all ${
+                            preSelectedPromoId === promo.id
+                              ? 'border-pink-500 bg-pink-500/10 ring-1 ring-pink-400'
+                              : 'border-pink-200 bg-[var(--bg-card)] hover:border-pink-400'
+                          }`}
+                          data-testid={`preselect-promo-${promo.id}`}>
+                          <div className="flex items-center gap-2">
+                            <Gift className={`w-4 h-4 flex-shrink-0 ${preSelectedPromoId === promo.id ? 'text-pink-500' : 'text-[var(--text-muted)]'}`} />
+                            <div className="min-w-0">
+                              <span className="font-bold text-sm text-[var(--text-primary)] block truncate">{promo.name}</span>
+                              {promo.description && <span className="text-[10px] text-[var(--text-muted)] block truncate">{promo.description}</span>}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* === ABBONAMENTI / CARD — SEZIONE SEPARATA === */}
+              {(dialogClientCards.length > 0 || allCardTemplates.length > 0) && (
+                <div className="space-y-1">
+                  <button type="button"
+                    onClick={() => setShowCardPromoSection(!showCardPromoSection)}
+                    className="w-full cursor-pointer p-2.5 border-2 rounded-xl"
+                    style={{ borderColor: 'rgba(168,85,247,0.3)', background: 'rgba(168,85,247,0.04)' }}>
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-sm flex items-center gap-2" style={{ color: '#A855F7' }}>
+                        <CreditCard className="w-4 h-4" /> Abbonamenti & Card ({dialogClientCards.length + allCardTemplates.length})
+                        {(preSelectedCardId || preSelectedTemplateId) && <Check className="w-4 h-4 text-purple-500" />}
+                      </span>
+                      <ChevronDown className={`w-4 h-4 transition-transform ${showCardPromoSection ? 'rotate-180' : ''}`} style={{ color: '#A855F7' }} />
                     </div>
                   </button>
                   {showCardPromoSection && (
-                  <div className="p-3 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-t-0 border-green-500/30 rounded-b-xl space-y-3 -mt-2">
-                    <p className="text-xs text-green-400">Seleziona per applicare automaticamente in cassa</p>
+                  <div className="p-2.5 border-2 border-t-0 rounded-b-xl space-y-3 -mt-1" style={{ borderColor: 'rgba(168,85,247,0.3)', background: 'rgba(168,85,247,0.04)' }}>
                     
+                    {/* Card Templates / Abbonamenti */}
+                    {allCardTemplates.length > 0 && (
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-semibold uppercase" style={{ color: '#A855F7' }}>Abbonamenti Disponibili</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                          {allCardTemplates.map(tmpl => (
+                            <button
+                              key={tmpl.id}
+                              type="button"
+                              onClick={() => setPreSelectedTemplateId(preSelectedTemplateId === tmpl.id ? '' : tmpl.id)}
+                              className={`w-full p-2 rounded-lg border-2 text-left transition-all ${
+                                preSelectedTemplateId === tmpl.id 
+                                  ? 'border-purple-500 bg-purple-500/10 ring-1 ring-purple-400' 
+                                  : 'border-purple-200 bg-[var(--bg-card)] hover:border-purple-400'
+                              }`}
+                              data-testid={`preselect-template-${tmpl.id}`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <CreditCard className={`w-4 h-4 flex-shrink-0 ${preSelectedTemplateId === tmpl.id ? 'text-purple-500' : 'text-[var(--text-muted)]'}`} />
+                                  <div className="min-w-0">
+                                    <span className="font-bold text-sm text-[var(--text-primary)] block truncate">{tmpl.name}</span>
+                                    <span className="text-[10px] text-[var(--text-muted)]">
+                                      {tmpl.total_services ? `${tmpl.total_services} servizi` : ''}{tmpl.duration_months ? ` ${tmpl.duration_months} mesi` : ''}
+                                    </span>
+                                  </div>
+                                </div>
+                                <span className="font-black text-sm flex-shrink-0" style={{ color: '#A855F7' }}>{'\u20AC'}{tmpl.total_value}</span>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Client Cards */}
                     {dialogClientCards.length > 0 && (
-                      <div className="space-y-2">
+                      <div className="space-y-1.5">
                         <p className="text-xs font-semibold text-green-400 uppercase">Card del Cliente</p>
-                        <div className="grid grid-cols-1 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                           {dialogClientCards.map(card => (
                             <button
                               key={card.id}
@@ -1686,71 +1766,6 @@ export default function PlanningPage() {
                                   <span className="font-bold text-sm text-[var(--text-primary)]">{card.name}</span>
                                 </div>
                                 <span className="font-black text-green-400 text-sm">{'\u20AC'}{card.remaining_value?.toFixed(2)}</span>
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Card Templates / Abbonamenti */}
-                    {allCardTemplates.length > 0 && (
-                      <div className="space-y-2">
-                        <p className="text-xs font-semibold uppercase" style={{ color: '#A855F7' }}>Abbonamenti Disponibili</p>
-                        <div className="grid grid-cols-1 gap-2">
-                          {allCardTemplates.map(tmpl => (
-                            <button
-                              key={tmpl.id}
-                              type="button"
-                              onClick={() => setPreSelectedTemplateId(preSelectedTemplateId === tmpl.id ? '' : tmpl.id)}
-                              className={`w-full p-2 rounded-lg border-2 text-left transition-all ${
-                                preSelectedTemplateId === tmpl.id 
-                                  ? 'border-purple-500 bg-purple-500/10 ring-1 ring-purple-400' 
-                                  : 'border-purple-200 bg-[var(--bg-card)] hover:border-purple-400'
-                              }`}
-                              data-testid={`preselect-template-${tmpl.id}`}
-                            >
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <CreditCard className={`w-4 h-4 ${preSelectedTemplateId === tmpl.id ? 'text-purple-500' : 'text-[var(--text-muted)]'}`} />
-                                  <div>
-                                    <span className="font-bold text-sm text-[var(--text-primary)]">{tmpl.name}</span>
-                                    {tmpl.total_services && (
-                                      <span className="text-[10px] text-[var(--text-muted)] ml-2">{tmpl.total_services} servizi</span>
-                                    )}
-                                    {tmpl.duration_months && (
-                                      <span className="text-[10px] text-[var(--text-muted)] ml-2">{tmpl.duration_months} mesi</span>
-                                    )}
-                                  </div>
-                                </div>
-                                <span className="font-black text-sm" style={{ color: '#A855F7' }}>{'\u20AC'}{tmpl.total_value}</span>
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Client Promos */}
-                    {dialogClientPromos.length > 0 && (
-                      <div className="space-y-2">
-                        <p className="text-xs font-semibold text-pink-400 uppercase">Promozioni</p>
-                        <div className="grid grid-cols-1 gap-2">
-                          {dialogClientPromos.map(promo => (
-                            <button
-                              key={promo.id}
-                              type="button"
-                              onClick={() => setPreSelectedPromoId(preSelectedPromoId === promo.id ? '' : promo.id)}
-                              className={`w-full p-2 rounded-lg border-2 text-left transition-all ${
-                                preSelectedPromoId === promo.id 
-                                  ? 'border-pink-500 bg-pink-500/10 ring-1 ring-pink-400' 
-                                  : 'border-pink-200 bg-[var(--bg-card)] hover:border-pink-400'
-                              }`}
-                              data-testid={`preselect-promo-${promo.id}`}
-                            >
-                              <div className="flex items-center gap-2">
-                                <Gift className={`w-4 h-4 ${preSelectedPromoId === promo.id ? 'text-pink-400' : 'text-[var(--text-muted)]'}`} />
-                                <span className="font-bold text-sm text-[var(--text-primary)]">{promo.name}</span>
                               </div>
                             </button>
                           ))}
