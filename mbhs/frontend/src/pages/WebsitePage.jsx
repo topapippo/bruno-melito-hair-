@@ -56,6 +56,7 @@ export default function WebsitePage() {
   const contactRef = useRef(null);
 
   const [publicPromos, setPublicPromos] = useState([]);
+  const [cardTemplates, setCardTemplates] = useState([]);
 
   const [formData, setFormData] = useState({
     client_name: '', client_phone: '', service_ids: [], operator_id: '',
@@ -73,6 +74,7 @@ export default function WebsitePage() {
         setSiteData(siteRes.data);
         setOperators(opsRes.data);
         setBookingServices(svcRes.data);
+        setCardTemplates(siteRes.data?.card_templates || []);
         try {
           const promosRes = await axios.get(`${API}/public/promotions/all`);
           setPublicPromos(promosRes.data);
@@ -213,6 +215,54 @@ export default function WebsitePage() {
                         </div>
                       </div>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Abbonamenti & Card */}
+              {cardTemplates.length > 0 && (
+                <div className="mt-4">
+                  <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                    Abbonamenti & Card
+                  </h3>
+                  <div className="space-y-2">
+                    {cardTemplates.map((tmpl, i) => {
+                      const isSelected = formData.notes?.includes(`[CARD: ${tmpl.name}]`);
+                      return (
+                        <div key={tmpl.id || i}
+                          onClick={() => {
+                            if (isSelected) {
+                              setFormData(prev => ({ ...prev, notes: prev.notes.replace(`[CARD: ${tmpl.name}] `, '').replace(`[CARD: ${tmpl.name}]`, '') }));
+                              toast('Abbonamento rimosso');
+                            } else {
+                              const cleanNotes = (formData.notes || '').replace(/\[CARD: [^\]]+\] ?/g, '');
+                              setFormData(prev => ({ ...prev, notes: `[CARD: ${tmpl.name}] ${cleanNotes}`.trim() }));
+                              toast.success(`"${tmpl.name}" selezionato!`);
+                            }
+                          }}
+                          className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${isSelected ? 'border-purple-400 bg-purple-500/15 shadow-lg shadow-purple-500/10' : 'border-purple-500/30 bg-gradient-to-r from-purple-500/10 to-violet-500/10 hover:border-purple-400 hover:shadow-md'}`}
+                          data-testid={`website-card-template-${i}`}>
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-bold text-white">{tmpl.name}</p>
+                              <p className="text-sm text-purple-300">
+                                {tmpl.card_type === 'subscription' ? 'Abbonamento' : 'Card Prepagata'}
+                                {tmpl.total_services ? ` · ${tmpl.total_services} servizi` : ''}
+                                {tmpl.duration_months ? ` · ${tmpl.duration_months} mesi` : ''}
+                              </p>
+                              {tmpl.notes && <p className="text-xs text-purple-300/70 mt-1">{tmpl.notes}</p>}
+                            </div>
+                            <div className="text-right">
+                              <p className="font-black text-2xl text-purple-300">{'\u20AC'}{tmpl.total_value}</p>
+                              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isSelected ? 'bg-purple-400 text-white' : 'bg-purple-400/20 text-purple-300'}`}>
+                                {isSelected ? 'SELEZIONATO' : tmpl.card_type === 'subscription' ? 'ABBONAMENTO' : 'CARD'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}

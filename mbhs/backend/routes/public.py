@@ -467,6 +467,20 @@ async def public_get_website():
     gallery = await db.website_gallery.find({"is_deleted": {"$ne": True}}, {"_id": 0, "user_id": 0}).sort("sort_order", 1).to_list(100)
     services = await db.services.find({}, {"_id": 0}).sort("sort_order", 1).to_list(100)
     
+    # Card templates for public booking
+    card_templates_raw = await db.card_templates.find({"is_deleted": {"$ne": True}}, {"_id": 0}).to_list(100)
+    card_templates = []
+    for ct in card_templates_raw:
+        card_templates.append({
+            "id": ct.get("id", ""),
+            "name": ct.get("name", ""),
+            "card_type": ct.get("card_type", ""),
+            "total_value": ct.get("total_value", 0),
+            "total_services": ct.get("total_services", 0),
+            "duration_months": ct.get("duration_months", 0),
+            "notes": ct.get("notes", ""),
+        })
+
     # Loyalty program info for public display
     loyalty_rewards = await db.loyalty_rewards.find({}, {"_id": 0, "user_id": 0}).to_list(10)
     loyalty_config = {
@@ -478,4 +492,4 @@ async def public_get_website():
         }
     }
     
-    return {"config": config, "reviews": reviews, "gallery": gallery, "services": services, "loyalty": loyalty_config}
+    return {"config": config, "reviews": reviews, "gallery": gallery, "services": services, "card_templates": card_templates, "loyalty": loyalty_config}
