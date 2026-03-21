@@ -59,14 +59,23 @@ async def startup_event():
 
     # Start background push reminder scheduler
     import asyncio
+
     async def push_reminder_loop():
+        await asyncio.sleep(60)  # wait 1 min after startup
         while True:
             try:
-                await asyncio.sleep(3600)  # every hour
-                from routes.push import send_push_reminders
-                result = await send_push_reminders()
+                from routes.push import _send_push_reminders_core
+                result = await _send_push_reminders_core()
                 if result.get("sent", 0) > 0:
                     logger.info(f"Push reminders sent: {result}")
             except Exception as e:
                 logger.warning(f"Push reminder error: {e}")
-    asyncio.get_event_loop().create_task(push_reminder_loop())
+            await asyncio.sleep(3600)  # every hour
+
+    asyncio.ensure_future(push_reminder_loop())
+
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8001))
+    uvicorn.run("server:app", host="0.0.0.0", port=port, reload=False)

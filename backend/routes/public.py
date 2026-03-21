@@ -37,7 +37,7 @@ def init_storage():
     if _storage_key:
         return _storage_key
     try:
-        resp = http_requests.post(f"{STORAGE_URL}/init", json={"emergent_key": EMERGENT_KEY}, timeout=10)
+        resp = http_requests.post(f"{STORAGE_URL}/init", json={"emergent_key": EMERGENT_KEY}, timeout=5)
         resp.raise_for_status()
         _storage_key = resp.json()["storage_key"]
         return _storage_key

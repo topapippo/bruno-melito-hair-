@@ -47,14 +47,18 @@ async def unsubscribe_push(sub: PushSubscription):
 
 @router.post("/push/send-reminders")
 async def send_push_reminders():
-    """Send push reminders for appointments in the next 24 hours."""
+    return await _send_push_reminders_core()
+
+
+async def _send_push_reminders_core():
+    """Core logic for sending push reminders, callable from scheduler."""
     try:
-        from pywebpush import webpush, WebPushException
+        from pywebpush import webpush
     except ImportError:
-        raise HTTPException(status_code=500, detail="pywebpush not installed")
+        return {"sent": 0, "error": "pywebpush not installed"}
 
     if not VAPID_PRIVATE_KEY or not VAPID_PUBLIC_KEY:
-        raise HTTPException(status_code=500, detail="VAPID keys not configured")
+        return {"sent": 0, "error": "VAPID keys not configured"}
 
     now = datetime.now(timezone.utc)
     tomorrow = now + timedelta(hours=24)
