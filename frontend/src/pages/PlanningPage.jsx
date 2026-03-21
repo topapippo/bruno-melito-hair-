@@ -1348,9 +1348,9 @@ export default function PlanningPage() {
 
         {/* New Appointment Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="sm:max-w-[900px]">
+          <DialogContent className="sm:max-w-[900px] max-h-[85vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="font-playfair text-2xl text-[var(--text-primary)]">
+              <DialogTitle className="font-playfair text-xl text-[var(--text-primary)]">
                 Nuovo Appuntamento
               </DialogTitle>
               <DialogDescription>
@@ -1359,10 +1359,13 @@ export default function PlanningPage() {
                   : format(selectedDate, "EEEE d MMMM yyyy", { locale: it })} alle {formData.time}
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+            <form onSubmit={handleSubmit} className="space-y-3 mt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* LEFT COLUMN: Date, Time, Client, Operator */}
+                <div className="space-y-3">
               {/* Date Picker */}
-              <div className="space-y-2">
-                <Label className="text-[var(--text-primary)] font-semibold">Data</Label>
+              <div className="space-y-1">
+                <Label className="text-[var(--text-primary)] font-semibold text-xs">Data</Label>
                 <div className="relative">
                   <input
                     type="date"
@@ -1508,9 +1511,9 @@ export default function PlanningPage() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Orario</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Orario</Label>
                   <Select
                     value={formData.time}
                     onValueChange={(val) => setFormData({ ...formData, time: val })}
@@ -1528,8 +1531,8 @@ export default function PlanningPage() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Operatore</Label>
+                <div className="space-y-1">
+                  <Label className="text-xs">Operatore</Label>
                   <Select
                     value={formData.operator_id || operators[0]?.id || ""}
                     onValueChange={(val) => setFormData({ ...formData, operator_id: val })}
@@ -1553,9 +1556,13 @@ export default function PlanningPage() {
                   </Select>
                 </div>
               </div>
+                </div>
 
-              <div className="space-y-2">
-                <Label>Servizi</Label>
+                {/* RIGHT COLUMN: Services + Card/Promo */}
+                <div className="space-y-3">
+
+              <div className="space-y-1">
+                <Label className="text-xs">Servizi</Label>
                 {/* Accordion categories - horizontal grid */}
                 <div className="max-h-64 overflow-y-auto space-y-1 pr-0.5" data-testid="dialog-services-accordion">
                   {CATEGORY_ORDER.filter(cat => sortedServices.some(s => s.category === cat) && !HIDDEN_CATEGORIES.includes(cat.toLowerCase())).concat(
@@ -1756,8 +1763,12 @@ export default function PlanningPage() {
                 </div>
               )}
 
-              <div className="space-y-2">
-                <Label>Note (opzionale)</Label>
+                </div>
+              </div>
+              {/* END 2-COLUMN GRID */}
+
+              <div className="space-y-1">
+                <Label className="text-xs">Note (opzionale)</Label>
                 <Input
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
@@ -1915,7 +1926,7 @@ export default function PlanningPage() {
 
         {/* Edit/Delete Appointment Dialog */}
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-          <DialogContent className="sm:max-w-[900px]">
+          <DialogContent className="sm:max-w-[900px] max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="font-playfair text-2xl text-[var(--text-primary)]">
                 Modifica Appuntamento

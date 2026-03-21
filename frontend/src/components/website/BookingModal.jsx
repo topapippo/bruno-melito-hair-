@@ -260,25 +260,31 @@ export default function BookingModal({ open, onClose, services, operators, promo
       )}
 
       {/* Main Booking Modal */}
-      <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center" data-testid="booking-modal">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4" data-testid="booking-modal">
         <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-        <div className="relative w-full sm:max-w-4xl mx-0 sm:mx-4 flex flex-col sm:rounded-2xl rounded-t-2xl shadow-2xl border border-[var(--border-gold)]"
-          style={{ maxHeight: '92vh', height: 'auto', background: 'var(--bg-card)' }}>
+        <div className="relative w-full max-w-5xl flex flex-col rounded-2xl shadow-2xl border border-[var(--border-gold)]"
+          style={{ maxHeight: '88vh', background: 'var(--bg-card)' }}>
 
-          {/* Fixed Header */}
-          <div className="flex-shrink-0 px-5 pt-5 pb-3 border-b border-[var(--border-subtle)]">
-            <button onClick={onClose}
-              className="btn-animate absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-[var(--bg-elevated)] flex items-center justify-center hover:bg-[var(--gold-dim)] transition-colors"
-              data-testid="close-booking-btn">
-              <X className="w-4 h-4 text-[var(--text-muted)]" />
-            </button>
-            <p className="font-bold text-xs tracking-widest uppercase mb-1 text-[var(--gold)]">
-              Prenota appuntamento
-            </p>
-            <h2 className="fd text-2xl font-bold text-[var(--text-primary)]">Scegli e Prenota</h2>
-
-            {/* Step indicator */}
-            <div className="flex gap-1 mt-3">
+          {/* Header with back arrow */}
+          <div className="flex-shrink-0 px-4 pt-3 pb-2 border-b border-[var(--border-subtle)] flex items-center gap-3">
+            {step > 1 ? (
+              <button onClick={() => setStep(step - 1)}
+                className="btn-animate w-8 h-8 rounded-full bg-[var(--bg-elevated)] flex items-center justify-center hover:bg-[var(--gold-dim)] transition-colors"
+                data-testid="back-step-btn">
+                <ArrowRight className="w-4 h-4 text-[var(--text-muted)] rotate-180" />
+              </button>
+            ) : (
+              <button onClick={onClose}
+                className="btn-animate w-8 h-8 rounded-full bg-[var(--bg-elevated)] flex items-center justify-center hover:bg-[var(--gold-dim)] transition-colors"
+                data-testid="close-booking-btn">
+                <X className="w-4 h-4 text-[var(--text-muted)]" />
+              </button>
+            )}
+            <div className="flex-1 min-w-0">
+              <h2 className="fd text-lg font-bold text-[var(--text-primary)] truncate">Prenota Appuntamento</h2>
+            </div>
+            {/* Step indicator compact */}
+            <div className="flex gap-1">
               {[
                 { n: 1, l: 'Servizi' },
                 { n: 2, l: 'Data & Ora' },
@@ -286,7 +292,7 @@ export default function BookingModal({ open, onClose, services, operators, promo
               ].map(s => (
                 <button key={s.n}
                   onClick={() => { if (s.n < step || (s.n === 2 && selIds.length > 0)) setStep(s.n); }}
-                  className="btn-animate flex-1 flex items-center justify-center gap-1 py-2 text-xs font-bold rounded-lg transition-all"
+                  className="btn-animate flex items-center gap-1 px-2 py-1 text-[11px] font-bold rounded-lg transition-all"
                   style={step === s.n
                     ? { background: 'var(--gold-dim)', color: 'var(--gold)' }
                     : step > s.n
@@ -299,17 +305,22 @@ export default function BookingModal({ open, onClose, services, operators, promo
                       : step > s.n
                         ? { background: 'var(--cyan)', color: '#fff' }
                         : { background: 'var(--bg-elevated)', color: 'var(--text-muted)' }}>
-                    {step > s.n ? '✓' : s.n}
+                    {step > s.n ? '\u2713' : s.n}
                   </span>
                   <span className="hidden sm:inline">{s.l}</span>
                 </button>
               ))}
             </div>
+            <button onClick={onClose}
+              className="btn-animate w-8 h-8 rounded-full bg-[var(--bg-elevated)] flex items-center justify-center hover:bg-[var(--gold-dim)] transition-colors sm:flex hidden"
+              data-testid="close-booking-btn-2">
+              <X className="w-4 h-4 text-[var(--text-muted)]" />
+            </button>
           </div>
 
           {/* Scrollable Content */}
           <div className="flex-1 overflow-y-auto overscroll-contain" style={{ minHeight: 0 }}>
-            <div className="p-5">
+            <div className="p-4">
               {/* STEP 1: Services */}
               {step === 1 && (
                 <div>
