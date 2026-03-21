@@ -381,35 +381,100 @@ export default function BookingModal({ open, onClose, services, operators, promo
                                 )}
                               </button>
                               {isOpen && (
-                                <div className="border-t p-2 grid grid-cols-2 sm:grid-cols-3 gap-1.5" style={{ borderColor: 'var(--border-subtle)' }}>
-                                  {catSvcs.map((svc) => {
-                                    const sel = selIds.includes(svc.id);
-                                    return (
-                                      <button key={svc.id} onClick={() => toggleSvc(svc)}
-                                        className="btn-animate flex flex-col items-start rounded-lg px-2.5 py-2 text-left transition-all border"
-                                        style={{
-                                          background: sel ? 'var(--gold-dim)' : 'var(--bg-card)',
-                                          borderColor: sel ? 'var(--gold)' : 'var(--border-subtle)'
-                                        }}
-                                        data-testid={`service-item-${svc.id}`}>
-                                        <div className="flex items-center gap-1.5 w-full">
-                                          <div className="w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all"
-                                            style={sel
-                                              ? { borderColor: 'var(--gold)', background: 'var(--gold)' }
-                                              : { borderColor: 'var(--text-muted)' }}>
-                                            {sel && <CheckCircle className="w-2.5 h-2.5 text-[var(--bg-deep)]" />}
+                                <div className="border-t" style={{ borderColor: 'var(--border-subtle)' }}>
+                                  <div className="p-2 grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                                    {catSvcs.map((svc) => {
+                                      const sel = selIds.includes(svc.id);
+                                      return (
+                                        <button key={svc.id} onClick={() => toggleSvc(svc)}
+                                          className="btn-animate flex flex-col items-start rounded-lg px-2.5 py-2 text-left transition-all border"
+                                          style={{
+                                            background: sel ? 'var(--gold-dim)' : 'var(--bg-card)',
+                                            borderColor: sel ? 'var(--gold)' : 'var(--border-subtle)'
+                                          }}
+                                          data-testid={`service-item-${svc.id}`}>
+                                          <div className="flex items-center gap-1.5 w-full">
+                                            <div className="w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all"
+                                              style={sel
+                                                ? { borderColor: 'var(--gold)', background: 'var(--gold)' }
+                                                : { borderColor: 'var(--text-muted)' }}>
+                                              {sel && <CheckCircle className="w-2.5 h-2.5 text-[var(--bg-deep)]" />}
+                                            </div>
+                                            <span className={`flex-1 text-xs leading-tight ${sel ? 'font-bold text-[var(--gold)]' : 'text-[var(--text-secondary)]'}`}>
+                                              {svc.name}
+                                            </span>
                                           </div>
-                                          <span className={`flex-1 text-xs leading-tight ${sel ? 'font-bold text-[var(--gold)]' : 'text-[var(--text-secondary)]'}`}>
-                                            {svc.name}
-                                          </span>
-                                        </div>
-                                        <div className="flex items-center justify-between w-full mt-1 pl-5.5">
-                                          <span className={`font-black text-xs ${sel ? 'text-[var(--gold)]' : 'text-[var(--text-primary)]'}`}>{'\u20AC'}{svc.price}</span>
-                                          <span className="text-[10px] text-[var(--text-muted)]">{svc.duration} min</span>
-                                        </div>
-                                      </button>
-                                    );
-                                  })}
+                                          <div className="flex items-center justify-between w-full mt-1 pl-5.5">
+                                            <span className={`font-black text-xs ${sel ? 'text-[var(--gold)]' : 'text-[var(--text-primary)]'}`}>{'\u20AC'}{svc.price}</span>
+                                            <span className="text-[10px] text-[var(--text-muted)]">{svc.duration} min</span>
+                                          </div>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                  {/* Card templates inside ABBONAMENTO category */}
+                                  {cat.includes('abbonament') && cardTemplates.length > 0 && (
+                                    <div className="border-t p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5" style={{ borderColor: 'rgba(168,85,247,0.15)', background: 'rgba(168,85,247,0.04)' }} data-testid="card-templates-inside-abbonamento">
+                                      <div className="col-span-full flex items-center gap-2 mb-1">
+                                        <CreditCard className="w-4 h-4" style={{ color: '#A855F7' }} />
+                                        <span className="text-xs font-bold" style={{ color: '#A855F7' }}>Pacchetti & Card</span>
+                                      </div>
+                                      {cardTemplates.map((tmpl, i) => {
+                                        const isSel = selectedCardTemplate?.id === tmpl.id;
+                                        const isSubscription = tmpl.card_type === 'subscription';
+                                        return (
+                                          <button key={tmpl.id || i}
+                                            onClick={() => {
+                                              if (isSel) {
+                                                setSelectedCardTemplate(null);
+                                                setForm(f => ({ ...f, notes: f.notes.replace(/\[CARD: [^\]]+\] /g, '') }));
+                                                toast('Abbonamento rimosso');
+                                              } else {
+                                                setSelectedCardTemplate(tmpl);
+                                                setSelectedPromo(null);
+                                                setForm(f => ({ ...f, notes: `[CARD: ${tmpl.name}] ${f.notes.replace(/\[CARD: [^\]]+\] /g, '').replace(/\[PROMO: [^\]]+\] /g, '')}` }));
+                                                toast.success(`"${tmpl.name}" selezionato!`);
+                                              }
+                                            }}
+                                            className="btn-animate w-full rounded-xl border-2 text-left transition-all p-3 flex flex-col gap-2"
+                                            style={isSel
+                                              ? { borderColor: '#A855F7', background: 'rgba(168,85,247,0.12)', boxShadow: '0 0 0 1px rgba(168,85,247,0.3)' }
+                                              : { borderColor: 'rgba(168,85,247,0.15)', background: 'var(--bg-card)' }}
+                                            data-testid={`card-template-${i}`}>
+                                            <div>
+                                              <p className="font-bold text-sm text-[var(--text-primary)] leading-tight">{tmpl.name}</p>
+                                              <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
+                                                style={isSubscription
+                                                  ? { background: 'rgba(14,165,233,0.15)', color: '#0EA5E9' }
+                                                  : { background: 'rgba(234,179,8,0.15)', color: '#EAB308' }}>
+                                                {isSubscription ? 'Abbonamento' : 'Card Prepagata'}
+                                              </span>
+                                            </div>
+                                            <div className="flex items-baseline gap-1.5">
+                                              <span className="text-2xl font-black" style={{ color: '#A855F7' }}>{'\u20AC'}{tmpl.total_value}</span>
+                                              {tmpl.total_services && (
+                                                <span className="text-xs text-[var(--text-muted)]">{tmpl.total_services} servizi</span>
+                                              )}
+                                            </div>
+                                            {tmpl.duration_months && (
+                                              <p className="text-[11px] text-[var(--text-muted)]">Durata: {tmpl.duration_months} mesi</p>
+                                            )}
+                                            {tmpl.notes && (
+                                              <p className="text-[11px] text-[var(--text-secondary)] leading-tight">{tmpl.notes}</p>
+                                            )}
+                                            <div className="mt-auto pt-1">
+                                              <span className={`inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg w-full justify-center transition-all ${isSel ? 'text-white' : 'text-[var(--text-primary)]'}`}
+                                                style={isSel
+                                                  ? { background: '#A855F7' }
+                                                  : { background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.3)' }}>
+                                                {isSel ? (<><CheckCircle className="w-3.5 h-3.5" /> Selezionato</>) : (<><CreditCard className="w-3.5 h-3.5" /> Seleziona</>)}
+                                              </span>
+                                            </div>
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </div>
@@ -483,86 +548,7 @@ export default function BookingModal({ open, onClose, services, operators, promo
                           </div>
                         )}
 
-                        {/* Abbonamenti & Card - detailed card layout matching admin */}
-                        {cardTemplates.length > 0 && (
-                          <div className="rounded-xl overflow-hidden border-2 transition-all"
-                            style={{ borderColor: openCats.includes('__card__') ? 'rgba(168,85,247,0.4)' : 'rgba(168,85,247,0.2)' }}
-                            data-testid="card-templates-accordion">
-                            <button onClick={() => toggleCat('__card__')}
-                              className="btn-animate w-full flex items-center justify-between px-3 py-3 text-left transition-all"
-                              style={{ background: openCats.includes('__card__') ? 'rgba(168,85,247,0.12)' : 'rgba(168,85,247,0.05)' }}
-                              data-testid="cat-accordion-card">
-                              <div className="flex items-center gap-2">
-                                <ChevronDown className={`w-4 h-4 transition-transform ${openCats.includes('__card__') ? 'rotate-180' : ''}`}
-                                  style={{ color: '#A855F7' }} />
-                                <CreditCard className="w-4 h-4" style={{ color: '#A855F7' }} />
-                                <span className="font-bold text-sm" style={{ color: '#A855F7' }}>Abbonamenti & Card</span>
-                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(168,85,247,0.15)', color: '#A855F7' }}>{cardTemplates.length}</span>
-                              </div>
-                              {selectedCardTemplate && (
-                                <span className="text-[10px] font-black text-white px-2 py-0.5 rounded-full" style={{ background: '#A855F7' }}>1 sel.</span>
-                              )}
-                            </button>
-                            {openCats.includes('__card__') && (
-                              <div className="border-t p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5" style={{ borderColor: 'rgba(168,85,247,0.15)', background: 'rgba(168,85,247,0.04)' }}>
-                                {cardTemplates.map((tmpl, i) => {
-                                  const isSel = selectedCardTemplate?.id === tmpl.id;
-                                  const isSubscription = tmpl.card_type === 'subscription';
-                                  return (
-                                    <button key={tmpl.id || i}
-                                      onClick={() => {
-                                        if (isSel) {
-                                          setSelectedCardTemplate(null);
-                                          setForm(f => ({ ...f, notes: f.notes.replace(/\[CARD: [^\]]+\] /g, '') }));
-                                          toast('Abbonamento rimosso');
-                                        } else {
-                                          setSelectedCardTemplate(tmpl);
-                                          setSelectedPromo(null);
-                                          setForm(f => ({ ...f, notes: `[CARD: ${tmpl.name}] ${f.notes.replace(/\[CARD: [^\]]+\] /g, '').replace(/\[PROMO: [^\]]+\] /g, '')}` }));
-                                          toast.success(`"${tmpl.name}" selezionato!`);
-                                        }
-                                      }}
-                                      className="btn-animate w-full rounded-xl border-2 text-left transition-all p-3 flex flex-col gap-2"
-                                      style={isSel
-                                        ? { borderColor: '#A855F7', background: 'rgba(168,85,247,0.12)', boxShadow: '0 0 0 1px rgba(168,85,247,0.3)' }
-                                        : { borderColor: 'rgba(168,85,247,0.15)', background: 'var(--bg-card)' }}
-                                      data-testid={`card-template-${i}`}>
-                                      <div>
-                                        <p className="font-bold text-sm text-[var(--text-primary)] leading-tight">{tmpl.name}</p>
-                                        <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
-                                          style={isSubscription
-                                            ? { background: 'rgba(14,165,233,0.15)', color: '#0EA5E9' }
-                                            : { background: 'rgba(234,179,8,0.15)', color: '#EAB308' }}>
-                                          {isSubscription ? 'Abbonamento' : 'Card Prepagata'}
-                                        </span>
-                                      </div>
-                                      <div className="flex items-baseline gap-1.5">
-                                        <span className="text-2xl font-black" style={{ color: '#A855F7' }}>{'\u20AC'}{tmpl.total_value}</span>
-                                        {tmpl.total_services && (
-                                          <span className="text-xs text-[var(--text-muted)]">{tmpl.total_services} servizi</span>
-                                        )}
-                                      </div>
-                                      {tmpl.duration_months && (
-                                        <p className="text-[11px] text-[var(--text-muted)]">Durata: {tmpl.duration_months} mesi</p>
-                                      )}
-                                      {tmpl.notes && (
-                                        <p className="text-[11px] text-[var(--text-secondary)] leading-tight">{tmpl.notes}</p>
-                                      )}
-                                      <div className="mt-auto pt-1">
-                                        <span className={`inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg w-full justify-center transition-all ${isSel ? 'text-white' : 'text-[var(--text-primary)]'}`}
-                                          style={isSel
-                                            ? { background: '#A855F7' }
-                                            : { background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.3)' }}>
-                                          {isSel ? (<><CheckCircle className="w-3.5 h-3.5" /> Selezionato</>) : (<><CreditCard className="w-3.5 h-3.5" /> Seleziona</>)}
-                                        </span>
-                                      </div>
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </div>
-                        )}
+                        {/* Card templates are now inside ABBONAMENTO category */}
                       </div>
                     </>
                   )}
