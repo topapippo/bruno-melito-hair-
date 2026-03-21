@@ -204,7 +204,8 @@ async def create_public_booking(data: PublicBookingRequest):
 
     existing = await db.appointments.find_one({
         "user_id": user_id, "date": data.date, "time": data.time,
-        "operator_id": data.operator_id if data.operator_id else {"$exists": True}
+        "operator_id": data.operator_id if data.operator_id else {"$exists": True},
+        "status": {"$ne": "cancelled"}
     })
     if existing:
         # Find available operators for this time slot

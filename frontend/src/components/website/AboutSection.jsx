@@ -20,13 +20,13 @@ export function AboutSection({ COLORS, cfg, bookRef, dispSalon, iUrl, SALON_PH, 
                 </div>
               ))}
             </div>
-            <div className="absolute -bottom-5 -right-3 rounded-2xl p-4 shadow-xl hidden sm:block" style={{ background: '#D4AF37', color: '#0B1120' }}>
+            <div className="absolute -bottom-5 -right-3 rounded-2xl p-4 shadow-xl hidden sm:block" style={{ background: 'var(--gold)', color: '#0B1120' }}>
               <p className="fd text-3xl font-bold">40+</p>
               <p className="text-xs font-semibold opacity-85">anni di<br />esperienza</p>
             </div>
           </div>
           <div>
-            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: '#D4AF37' }}>Chi siamo</p>
+            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: 'var(--gold)' }}>Chi siamo</p>
             <h2 className="fd font-bold mb-6 leading-tight" style={{ fontSize: `${Math.round((titleSize || 48) * 0.75)}px`, color: '#F1F5F9' }}>
               {cfg.about_title || 'Passione per la bellezza'}
             </h2>
@@ -55,7 +55,7 @@ export function AboutSection({ COLORS, cfg, bookRef, dispSalon, iUrl, SALON_PH, 
               ]).map((f, i) => (
                 <div key={i} className="flex items-center gap-2.5">
                   <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(212,175,55,0.15)' }}>
-                    <CheckCircle className="w-3.5 h-3.5" style={{ color: '#D4AF37' }} />
+                    <CheckCircle className="w-3.5 h-3.5" style={{ color: 'var(--gold)' }} />
                   </div>
                   <span className="text-sm font-semibold" style={{ color: '#94A3B8' }}>{f}</span>
                 </div>
@@ -64,7 +64,7 @@ export function AboutSection({ COLORS, cfg, bookRef, dispSalon, iUrl, SALON_PH, 
             <button 
               onClick={onBook} 
               className="px-8 py-4 text-base rounded-xl transition-all font-bold"
-              style={{ background: '#D4AF37', color: '#0B1120' }}
+              style={{ background: 'var(--gold)', color: '#0B1120' }}
             >
               <Scissors className="w-5 h-5" />Prenota ora
             </button>

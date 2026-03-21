@@ -5,13 +5,13 @@ export function CTASection({ COLORS, bookRef, openWA, setManageOpen, onBook }) {
     <section className="py-16 sm:py-20" style={{ background: '#0B1120' }}>
       <div className="max-w-2xl mx-auto px-4 sm:px-6">
         <div className="rounded-3xl p-8 text-center" style={{ background: '#111827', border: '1px solid rgba(212,175,55,0.2)' }}>
-          <h3 className="fd text-3xl font-bold mb-3" style={{ color: '#D4AF37' }}>Pronta per il tuo look?</h3>
+          <h3 className="fd text-3xl font-bold mb-3" style={{ color: 'var(--gold)' }}>Pronta per il tuo look?</h3>
           <p className="mb-8 leading-relaxed" style={{ color: '#94A3B8' }}>Prenota il tuo appuntamento in pochi click, oppure contattaci direttamente.</p>
           <div className="space-y-3">
             <button 
               onClick={onBook} 
               className="btn-gold w-full py-4 text-base font-black rounded-xl transition-all hover:shadow-lg"
-              style={{ background: '#D4AF37', color: '#0B1120' }}
+              style={{ background: 'var(--gold)', color: '#0B1120' }}
               data-testid="cta-book-btn"
             >
               <Scissors className="w-5 h-5" />Scegli e Prenota

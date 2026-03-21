@@ -262,7 +262,7 @@ export default function BookingModal({ open, onClose, services, operators, promo
       {/* Main Booking Modal */}
       <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center" data-testid="booking-modal">
         <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-        <div className="relative w-full sm:max-w-lg mx-0 sm:mx-4 flex flex-col sm:rounded-2xl rounded-t-2xl shadow-2xl border border-[var(--border-gold)]"
+        <div className="relative w-full sm:max-w-4xl mx-0 sm:mx-4 flex flex-col sm:rounded-2xl rounded-t-2xl shadow-2xl border border-[var(--border-gold)]"
           style={{ maxHeight: '92vh', height: 'auto', background: 'var(--bg-card)' }}>
 
           {/* Fixed Header */}
@@ -368,27 +368,33 @@ export default function BookingModal({ open, onClose, services, operators, promo
                                 )}
                               </button>
                               {isOpen && (
-                                <div className="border-t divide-y" style={{ borderColor: 'var(--border-subtle)' }}>
-                                  {catSvcs.map((svc, idx) => {
+                                <div className="border-t p-2 grid grid-cols-2 sm:grid-cols-3 gap-1.5" style={{ borderColor: 'var(--border-subtle)' }}>
+                                  {catSvcs.map((svc) => {
                                     const sel = selIds.includes(svc.id);
                                     const cleanName = svc.name.replace(/^\d+\s*/, '');
                                     return (
                                       <button key={svc.id} onClick={() => toggleSvc(svc)}
-                                        className="btn-animate w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-all"
-                                        style={{ background: sel ? 'var(--gold-dim)' : 'var(--bg-card)' }}
+                                        className="btn-animate flex flex-col items-start rounded-lg px-2.5 py-2 text-left transition-all border"
+                                        style={{
+                                          background: sel ? 'var(--gold-dim)' : 'var(--bg-card)',
+                                          borderColor: sel ? 'var(--gold)' : 'var(--border-subtle)'
+                                        }}
                                         data-testid={`service-item-${svc.id}`}>
-                                        <div className="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all"
-                                          style={sel
-                                            ? { borderColor: 'var(--gold)', background: 'var(--gold)' }
-                                            : { borderColor: 'var(--text-muted)' }}>
-                                          {sel && <CheckCircle className="w-3 h-3 text-[var(--bg-deep)]" />}
+                                        <div className="flex items-center gap-1.5 w-full">
+                                          <div className="w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all"
+                                            style={sel
+                                              ? { borderColor: 'var(--gold)', background: 'var(--gold)' }
+                                              : { borderColor: 'var(--text-muted)' }}>
+                                            {sel && <CheckCircle className="w-2.5 h-2.5 text-[var(--bg-deep)]" />}
+                                          </div>
+                                          <span className={`flex-1 text-xs leading-tight ${sel ? 'font-bold text-[var(--gold)]' : 'text-[var(--text-secondary)]'}`}>
+                                            {cleanName}
+                                          </span>
                                         </div>
-                                        <span className="text-[10px] font-bold text-[var(--text-muted)] w-4 flex-shrink-0">{idx + 1}.</span>
-                                        <span className={`flex-1 text-sm ${sel ? 'font-bold text-[var(--gold)]' : 'text-[var(--text-secondary)]'}`}>
-                                          {cleanName}
-                                        </span>
-                                        <span className={`font-black text-sm flex-shrink-0 ${sel ? 'text-[var(--gold)]' : 'text-[var(--text-primary)]'}`}>€{svc.price}</span>
-                                        <span className="text-[10px] text-[var(--text-muted)] flex-shrink-0 w-12 text-right">{svc.duration} min</span>
+                                        <div className="flex items-center justify-between w-full mt-1 pl-5.5">
+                                          <span className={`font-black text-xs ${sel ? 'text-[var(--gold)]' : 'text-[var(--text-primary)]'}`}>{'\u20AC'}{svc.price}</span>
+                                          <span className="text-[10px] text-[var(--text-muted)]">{svc.duration} min</span>
+                                        </div>
                                       </button>
                                     );
                                   })}

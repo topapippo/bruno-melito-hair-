@@ -1,100 +1,65 @@
 # Bruno Melito Hair - Salon Management Application
 
 ## Original Problem Statement
-Full-stack salon management application for Bruno Melito Hair salon in Santa Maria Capua Vetere, Italy. The application includes a public-facing website and an admin panel for managing appointments, clients, services, and business operations.
+Full-stack salon management application for Bruno Melito Hair salon in Santa Maria Capua Vetere, Italy. Public-facing booking website + admin panel for managing appointments, clients, services, and business operations.
 
 ## Tech Stack
 - **Frontend:** React with Tailwind CSS, Shadcn/UI components
 - **Backend:** FastAPI (Python)
-- **Database:** MongoDB Atlas
+- **Database:** MongoDB Atlas (cluster0.glbiffm.mongodb.net, DB: mbhs)
 - **Hosting:** Render (Static Site for frontend, Web Service for backend)
-- **Theme:** Onyx & Gold dark theme
-
-## Architecture
-
-### Repositories
-- **Active (Render connected):** github.com/signorfabozzi-glitch/BRUNO-MELITO-HAIR
-- **Legacy:** github.com/topapippo/BRUNOMELITOHAIR
-
-### Production URLs
-- **Frontend:** brunomelitohair.it
-- **Backend API:** bruno-melito-hair-2497.onrender.com
-
-### Database
-- **MongoDB Atlas Cluster:** cluster0.glbiffm.mongodb.net
-- **Database Name:** mbhs
+- **Object Storage:** Emergent Object Storage (persistent media uploads)
+- **Theme:** Onyx & Gold dark theme (dynamic via admin config)
 
 ## Credentials
 - **Admin Login:** admin@brunomelito.it / Admin123!
 
 ## Implemented Features
 
-### Production Deployment (Completed)
-- Recreated backend Web Service on Render
-- Migrated local DB to MongoDB Atlas (232 documents)
-- Fixed missing endpoints (/api/admin-theme, /api/nav-config, /api/payments)
-- Health check endpoint at root /
-
-### Admin Panel Features (Completed)
-- Planning page with day/week/month views
-- Drag & drop appointment management
+### Core Platform
+- Planning page with day/week/month views, drag & drop
 - Client search with appointment history
-- Recurring appointments
-- Checkout/payment system (cash, prepaid cards)
+- Recurring appointments, checkout/payment system
 - Loyalty points system with WhatsApp notifications
 - Online booking notifications banner
-- Back arrow navigation
-- Scrollable/collapsible save dialog
+- Back arrow navigation, scrollable/collapsible dialogs
 
-### Public Website Features (Completed)
-- PWA with install banner
-- Floating WhatsApp button
-- Scroll-to-top button
-- Google Maps integration
-- Reviews carousel
-- Drag-and-drop section reordering
-- Booking modal with services, operators, time slots
+### Card Templates / Abbonamenti (March 21, 2026)
+- Public BookingModal: Abbonamenti accordion (purple #A855F7) with card templates
+- Admin PlanningPage: "Card, Promo & Abbonamenti" section in new appointment dialog
+- Backend: promo_id and card_template_id saved on appointments
 
-### Card Templates / Abbonamenti (Completed - March 21, 2026)
-- **Public BookingModal:** Abbonamenti accordion section with purple color scheme (#A855F7)
-  - Shows all card templates with name, price, services count, duration
-  - Clients can select a card template during booking
-  - Selection badge appears below the accordion
-  - Card template info appears in step 3 riepilogo
-  - Booking payload includes card_template_id
-- **Admin PlanningPage:** 
-  - "Card, Promo & Abbonamenti" collapsible section in new appointment dialog
-  - Shows available card templates with price and details
-  - Admin can pre-select a card template for checkout reference
-  - Card template indicator shown in checkout mode
-- **Backend:**
-  - PublicBookingRequest model accepts promo_id and card_template_id
-  - Appointment saves promo_id and card_template_id
-  - /api/public/website returns card_templates array
-  - /api/card-templates CRUD endpoints (auth required)
+### Horizontal Grid Layout (March 21, 2026)
+- Public BookingModal: widened to sm:max-w-4xl, services in 2-3 column grid per category
+- Admin PlanningPage new dialog: widened to sm:max-w-[900px], same grid layout
+- Admin edit dialog: widened to sm:max-w-[900px]
+
+### Dynamic Colors (March 21, 2026)
+- CSS variables (--gold, --gold-dim, --border-gold, --cyan) set dynamically from config
+- All website components updated from hardcoded #D4AF37 to var(--gold)
+- primary_color from admin config applies across entire public website
+
+### Object Storage (March 21, 2026)
+- EMERGENT_LLM_KEY configured for Emergent Object Storage
+- Upload endpoint: /api/website/upload (auth required)
+- Serve endpoint: /api/website/files/{id} (public)
+- Remote persistent storage prevents data loss on container restart
+
+### Cambia Operatore Fix (March 21, 2026)
+- Conflict detection excludes cancelled appointments (status != cancelled)
+- Backend 409 response includes available_operators and alternative_slots
+- Frontend conflict overlay shows operator alternatives and time alternatives
 
 ## Known Issues
-
-### Repository Sync Issue
-- Emergent pushes to `topapippo` repository
-- Render deploys from `signorfabozzi-glitch` repository
-- Manual updates required on signorfabozzi-glitch when code changes
+### Repository Sync
+- Emergent pushes to `topapippo` repo, Render deploys from `signorfabozzi-glitch`
+- Manual sync required
 
 ### Data Loss from Fork
 - Some gallery/about photos lost during container fork
-- User should re-upload photos via admin panel
+- User can now re-upload via admin panel (persistent Object Storage)
 
-### Dynamic Colors (PAUSED)
-- Public website theme colors not updating dynamically
-- User paused this to save credits
-
-### Cambia Operatore (P1)
-- Backend already returns available_operators and alternative_slots in 409 conflict response
-- Frontend handles the conflict overlay - needs verification
-
-## Backlog / Next Steps
-1. (P1) Fix "Cambia Operatore" conflict response verification
-2. (P1) Re-investigate public website dynamic color changes
-3. (P1) Implement Object Storage for media uploads (prevent data loss)
-4. (P2) Set up UptimeRobot for Render
-5. (P2) Investigate SIGSEGV browser crash in testing
+## Backlog
+1. (P2) Set up UptimeRobot for Render
+2. (P2) Investigate SIGSEGV browser crash in automated testing
+3. (P2) Sync GitHub repositories

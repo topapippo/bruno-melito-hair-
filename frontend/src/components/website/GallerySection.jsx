@@ -6,7 +6,7 @@ export function GallerySection({ COLORS, galTab, setGalTab, dispWork, dispSalon,
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-12">
           <div>
-            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: '#D4AF37' }}>Galleria</p>
+            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: 'var(--gold)' }}>Galleria</p>
             <h2 className="fd text-4xl sm:text-5xl font-bold" style={{ color: '#F1F5F9' }}>
               {galTab === 'lavori' ? 'I nostri lavori' : 'Il salone'}
             </h2>
@@ -20,7 +20,7 @@ export function GallerySection({ COLORS, galTab, setGalTab, dispWork, dispSalon,
                 key={t.id}
                 onClick={() => setGalTab(t.id)}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all"
-                style={galTab === t.id ? { background: '#D4AF37', color: '#0B1120' } : { color: '#64748B' }}
+                style={galTab === t.id ? { background: 'var(--gold)', color: '#0B1120' } : { color: '#64748B' }}
               >
                 <t.icon className="w-4 h-4" />{t.label}
               </button>

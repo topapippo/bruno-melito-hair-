@@ -1317,7 +1317,7 @@ export default function PlanningPage() {
 
         {/* New Appointment Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[900px]">
             <DialogHeader>
               <DialogTitle className="font-playfair text-2xl text-[var(--text-primary)]">
                 Nuovo Appuntamento
@@ -1525,8 +1525,8 @@ export default function PlanningPage() {
 
               <div className="space-y-2">
                 <Label>Servizi</Label>
-                {/* Accordion categories */}
-                <div className="max-h-52 overflow-y-auto space-y-1 pr-0.5" data-testid="dialog-services-accordion">
+                {/* Accordion categories - horizontal grid */}
+                <div className="max-h-64 overflow-y-auto space-y-1 pr-0.5" data-testid="dialog-services-accordion">
                   {CATEGORY_ORDER.filter(cat => sortedServices.some(s => s.category === cat) && !HIDDEN_CATEGORIES.includes(cat.toLowerCase())).concat(
                     [...new Set(sortedServices.map(s => s.category).filter(c => c && !CATEGORY_ORDER.includes(c) && !HIDDEN_CATEGORIES.includes(c.toLowerCase())))]
                   ).map(cat => {
@@ -1553,26 +1553,29 @@ export default function PlanningPage() {
                           )}
                         </button>
                         {isOpen && (
-                          <div className="border-t border-[var(--border-subtle)] divide-y divide-[#F1F5F9]">
-                            {catServices.map((service, idx) => {
+                          <div className="border-t border-[var(--border-subtle)] p-2 grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                            {catServices.map((service) => {
                               const sel = formData.service_ids.includes(service.id);
                               const cleanName = service.name.replace(/^\d+\s*/, '');
                               return (
                                 <button key={service.id} type="button"
                                   onClick={() => toggleService(service.id)}
-                                  className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-all ${
-                                    sel ? 'bg-[var(--gold)]/5' : 'hover:bg-[var(--bg-elevated)]'
+                                  className={`flex flex-col items-start rounded-lg px-2.5 py-2 text-left transition-all border ${
+                                    sel ? 'bg-[var(--gold)]/5 border-[var(--gold)]' : 'hover:bg-[var(--bg-elevated)] border-[var(--border-subtle)]'
                                   }`}
                                   data-testid={`dialog-service-${service.id}`}>
-                                  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${
-                                    sel ? 'border-[var(--gold)] bg-[var(--gold)]' : 'border-[var(--border-subtle)]'
-                                  }`}>
-                                    {sel && <Check className="w-2.5 h-2.5 text-white" />}
+                                  <div className="flex items-center gap-1.5 w-full">
+                                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                                      sel ? 'border-[var(--gold)] bg-[var(--gold)]' : 'border-[var(--border-subtle)]'
+                                    }`}>
+                                      {sel && <Check className="w-2.5 h-2.5 text-white" />}
+                                    </div>
+                                    <span className={`flex-1 text-xs leading-tight ${sel ? 'font-bold text-[var(--gold)]' : 'text-[var(--text-primary)]'}`}>{cleanName}</span>
                                   </div>
-                                  <span className="text-[10px] font-bold text-[var(--text-muted)] w-4 flex-shrink-0">{idx + 1}.</span>
-                                  <span className={`flex-1 text-sm ${sel ? 'font-bold text-[var(--gold)]' : 'text-[var(--text-primary)]'}`}>{cleanName}</span>
-                                  <span className={`text-sm font-bold flex-shrink-0 ${sel ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]'}`}>{'\u20AC'}{service.price}</span>
-                                  <span className="text-[10px] text-[var(--text-muted)] flex-shrink-0 w-12 text-right">{service.duration} min</span>
+                                  <div className="flex items-center justify-between w-full mt-1 pl-5.5">
+                                    <span className={`text-xs font-bold ${sel ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]'}`}>{'\u20AC'}{service.price}</span>
+                                    <span className="text-[10px] text-[var(--text-muted)]">{service.duration} min</span>
+                                  </div>
                                 </button>
                               );
                             })}
@@ -1881,7 +1884,7 @@ export default function PlanningPage() {
 
         {/* Edit/Delete Appointment Dialog */}
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-          <DialogContent className="sm:max-w-[550px]">
+          <DialogContent className="sm:max-w-[900px]">
             <DialogHeader>
               <DialogTitle className="font-playfair text-2xl text-[var(--text-primary)]">
                 Modifica Appuntamento

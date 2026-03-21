@@ -20,7 +20,7 @@ export function ContactSection({ COLORS, cfg }) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-20 items-start">
           <div>
-            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: '#D4AF37' }}>Dove siamo</p>
+            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: 'var(--gold)' }}>Dove siamo</p>
             <h2 className="fd text-4xl sm:text-5xl font-bold mb-10" style={{ color: '#F1F5F9' }}>Vieni a trovarci</h2>
             <div className="space-y-6">
               {[
@@ -106,7 +106,7 @@ export function ContactSection({ COLORS, cfg }) {
               target="_blank"
               rel="noopener noreferrer"
               className="btn-gold flex items-center justify-center gap-2 py-3 font-bold text-sm transition-all"
-              style={{ background: '#D4AF37', color: '#0B1120' }}
+              style={{ background: 'var(--gold)', color: '#0B1120' }}
               data-testid="map-directions-btn"
             >
               <MapPin className="w-4 h-4" /> Apri in Google Maps
@@ -125,7 +125,7 @@ export function FooterSection() {
         <div className="flex items-center gap-3">
           <img src="/logo.png?v=4" alt="Bruno Melito Hair" className="w-10 h-10 rounded-xl hs" loading="lazy" />
           <div>
-            <p className="fd font-bold" style={{ color: '#D4AF37' }}>BRUNO MELITO HAIR</p>
+            <p className="fd font-bold" style={{ color: 'var(--gold)' }}>BRUNO MELITO HAIR</p>
           </div>
         </div>
         <p className="text-sm" style={{ color: '#334155' }}>© {new Date().getFullYear()} Bruno Melito Hair · Tutti i diritti riservati</p>
@@ -137,7 +137,7 @@ export function FooterSection() {
               target="_blank" 
               rel="noopener noreferrer" 
               title={s.label}
-              className="btn-animate si2 text-[#64748B] hover:text-[#D4AF37] transition-colors"
+              className="btn-animate si2 text-[#64748B] hover:text-[var(--gold)] transition-colors"
               data-testid={`footer-${s.label.toLowerCase()}`}
             >
               <s.icon className="w-4 h-4" />

@@ -47,10 +47,10 @@ export function ReviewsSection({ COLORS, reviews }) {
     <section id="recensioni" className="py-20 sm:py-28" style={{ background: '#111827' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="text-center mb-14">
-          <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: '#D4AF37' }}>Recensioni</p>
+          <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: 'var(--gold)' }}>Recensioni</p>
           <h2 className="fd text-4xl sm:text-5xl font-bold mb-3" style={{ color: '#F1F5F9' }}>Cosa dicono di noi</h2>
           <div className="flex justify-center gap-0.5 mt-3">
-            {[...Array(5)].map((_, i) => <Star key={i} className="w-5 h-5 fill-current" style={{ color: '#D4AF37' }} />)}
+            {[...Array(5)].map((_, i) => <Star key={i} className="w-5 h-5 fill-current" style={{ color: 'var(--gold)' }} />)}
             <span className="text-sm font-semibold ml-2 self-center" style={{ color: '#64748B' }}>5.0 · Clienti verificate</span>
           </div>
         </div>
@@ -68,13 +68,13 @@ export function ReviewsSection({ COLORS, reviews }) {
                 style={{ background: '#0B1120', border: '1px solid rgba(148,163,184,0.1)' }}>
                 <div className="flex gap-0.5 mb-4">
                   {[...Array(rev.rating || 5)].map((_, j) => (
-                    <Star key={j} className="w-4 h-4 fill-current" style={{ color: '#D4AF37' }} />
+                    <Star key={j} className="w-4 h-4 fill-current" style={{ color: 'var(--gold)' }} />
                   ))}
                 </div>
                 <p className="leading-relaxed mb-5 text-sm italic" style={{ color: '#94A3B8' }}>"{rev.text}"</p>
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-full flex items-center justify-center font-black text-sm"
-                       style={{ background: 'linear-gradient(135deg, #D4AF37, #A855F7)', color: '#0B1120' }}>
+                       style={{ background: 'linear-gradient(135deg, var(--gold), #A855F7)', color: '#0B1120' }}>
                     {(rev.name || 'A')[0]}
                   </div>
                   <div>
@@ -98,7 +98,7 @@ export function ReviewsSection({ COLORS, reviews }) {
                     width: current === i ? '24px' : '8px',
                     height: '8px',
                     borderRadius: '4px',
-                    background: current === i ? '#D4AF37' : 'rgba(148,163,184,0.3)',
+                    background: current === i ? 'var(--gold)' : 'rgba(148,163,184,0.3)',
                   }}
                   data-testid={`dot-${i}`}
                   aria-label={`Recensione ${i + 1}`}

@@ -317,7 +317,16 @@ export default function BookingPage() {
   );
 
   return (
-    <div className="min-h-screen pb" style={{ background: '#0B1120', color: '#F1F5F9' }}>
+    <div className="min-h-screen pb" style={{
+      background: COLORS.bg || '#0B1120',
+      color: COLORS.text || '#F1F5F9',
+      '--gold': COLORS.primary,
+      '--gold-light': COLORS.primary + 'CC',
+      '--gold-dim': COLORS.primary + '22',
+      '--glow-gold': `0 0 20px ${COLORS.primary}40`,
+      '--border-gold': COLORS.primary + '40',
+      '--cyan': COLORS.accent
+    }}>
       <style>{GStyles}</style>
       <Toaster position="top-center" />
 
@@ -333,7 +342,7 @@ export default function BookingPage() {
           <style>{`@keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`}</style>
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(212,175,55,0.15)' }}>
-              <Download className="w-5 h-5" style={{ color: '#D4AF37' }} />
+              <Download className="w-5 h-5" style={{ color: 'var(--gold)' }} />
             </div>
             <div className="min-w-0">
               <p className="font-bold text-sm truncate" style={{ color: '#F1F5F9' }}>Installa l'App</p>
@@ -344,7 +353,7 @@ export default function BookingPage() {
             <button
               onClick={handleInstall}
               className="px-4 py-2 rounded-lg text-sm font-bold transition-all hover:opacity-90"
-              style={{ background: '#D4AF37', color: '#0B1120' }}
+              style={{ background: 'var(--gold)', color: '#0B1120' }}
               data-testid="pwa-install-btn"
             >
               Installa
@@ -371,7 +380,7 @@ export default function BookingPage() {
       <div className="fixed bottom-0 left-0 right-0 p-3 backdrop-blur-md border-t sm:hidden z-50" style={{ background: 'rgba(11,17,32,0.95)', borderColor: 'var(--border-subtle)' }}>
         <button onClick={() => setBookingOpen(true)}
           className="btn-gold w-full py-4 text-base font-black rounded-xl transition-all"
-          style={{ background: '#D4AF37', color: '#0B1120' }}>
+          style={{ background: 'var(--gold)', color: '#0B1120' }}>
           <Scissors className="w-5 h-5" />Prenota ora
         </button>
       </div>
@@ -408,7 +417,7 @@ export default function BookingPage() {
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           className="fixed bottom-20 sm:bottom-6 left-4 z-50 w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl"
-          style={{ background: '#D4AF37', color: '#0B1120', animation: 'fadeIn 0.3s ease' }}
+          style={{ background: 'var(--gold)', color: '#0B1120', animation: 'fadeIn 0.3s ease' }}
           data-testid="scroll-to-top-btn"
           aria-label="Torna su"
         >
