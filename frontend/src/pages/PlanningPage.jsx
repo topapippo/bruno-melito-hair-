@@ -155,6 +155,10 @@ export default function PlanningPage() {
   const [dialogClientPromos, setDialogClientPromos] = useState([]);
   const [preSelectedCardId, setPreSelectedCardId] = useState('');
   const [preSelectedPromoId, setPreSelectedPromoId] = useState('');
+  const [showCardPromoSection, setShowCardPromoSection] = useState(false);
+  
+  // Categories to hide from service selection
+  const HIDDEN_CATEGORIES = ['stiratura', 'permanente', 'styling'];
 
   // New online booking notifications
   const [newOnlineBookings, setNewOnlineBookings] = useState([]);
@@ -1506,8 +1510,8 @@ export default function PlanningPage() {
                 <Label>Servizi</Label>
                 {/* Accordion categories */}
                 <div className="max-h-52 overflow-y-auto space-y-1 pr-0.5" data-testid="dialog-services-accordion">
-                  {CATEGORY_ORDER.filter(cat => sortedServices.some(s => s.category === cat)).concat(
-                    [...new Set(sortedServices.map(s => s.category).filter(c => c && !CATEGORY_ORDER.includes(c)))]
+                  {CATEGORY_ORDER.filter(cat => sortedServices.some(s => s.category === cat) && !HIDDEN_CATEGORIES.includes(cat.toLowerCase())).concat(
+                    [...new Set(sortedServices.map(s => s.category).filter(c => c && !CATEGORY_ORDER.includes(c) && !HIDDEN_CATEGORIES.includes(c.toLowerCase())))]
                   ).map(cat => {
                     const catServices = sortedServices.filter(s => s.category === cat);
                     const selCount = catServices.filter(s => formData.service_ids.includes(s.id)).length;
@@ -1584,17 +1588,22 @@ export default function PlanningPage() {
 
               {/* Card & Promozioni del Cliente - COLLAPSIBLE */}
               {(dialogClientCards.length > 0 || dialogClientPromos.length > 0) && (
-                <details className="group">
-                  <summary className="cursor-pointer p-3 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-500/30 rounded-xl list-none">
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowCardPromoSection(!showCardPromoSection)}
+                    className="w-full cursor-pointer p-3 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-500/30 rounded-xl"
+                  >
                     <div className="flex items-center justify-between">
-                      <Label className="text-green-400 font-bold flex items-center gap-2 cursor-pointer">
+                      <span className="text-green-400 font-bold flex items-center gap-2">
                         <Ticket className="w-4 h-4" /> Card & Promozioni ({dialogClientCards.length + dialogClientPromos.length})
                         {(preSelectedCardId || preSelectedPromoId) && <Check className="w-4 h-4 text-green-500" />}
-                      </Label>
-                      <ChevronDown className="w-4 h-4 text-green-400 transition-transform group-open:rotate-180" />
+                      </span>
+                      <ChevronDown className={`w-4 h-4 text-green-400 transition-transform ${showCardPromoSection ? 'rotate-180' : ''}`} />
                     </div>
-                  </summary>
-                  <div className="mt-2 p-3 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-t-0 border-green-500/30 rounded-b-xl space-y-3">
+                  </button>
+                  {showCardPromoSection && (
+                  <div className="p-3 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-t-0 border-green-500/30 rounded-b-xl space-y-3 -mt-2">
                     <p className="text-xs text-green-400">Seleziona per applicare automaticamente in cassa</p>
                     
                     {/* Client Cards */}
@@ -1654,7 +1663,8 @@ export default function PlanningPage() {
                       </div>
                     )}
                   </div>
-                </details>
+                  )}
+                </div>
               )}
 
               <div className="space-y-2">
@@ -1968,8 +1978,8 @@ export default function PlanningPage() {
                 <Label className="text-[var(--text-primary)] font-semibold">Servizi</Label>
                 {/* Accordion categories for edit dialog */}
                 <div className="max-h-52 overflow-y-auto space-y-1 pr-0.5">
-                  {CATEGORY_ORDER.filter(cat => sortedServices.some(s => s.category === cat)).concat(
-                    [...new Set(sortedServices.map(s => s.category).filter(c => c && !CATEGORY_ORDER.includes(c)))]
+                  {CATEGORY_ORDER.filter(cat => sortedServices.some(s => s.category === cat) && !HIDDEN_CATEGORIES.includes(cat.toLowerCase())).concat(
+                    [...new Set(sortedServices.map(s => s.category).filter(c => c && !CATEGORY_ORDER.includes(c) && !HIDDEN_CATEGORIES.includes(c.toLowerCase())))]
                   ).map(cat => {
                     const catServices = sortedServices.filter(s => s.category === cat);
                     const selCount = catServices.filter(s => formData.service_ids.includes(s.id)).length;
