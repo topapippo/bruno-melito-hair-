@@ -542,6 +542,9 @@ async def public_get_website():
     gallery = await db.website_gallery.find({"is_deleted": {"$ne": True}}, {"_id": 0, "user_id": 0}).sort("sort_order", 1).to_list(100)
     services = await db.services.find({}, {"_id": 0}).sort("sort_order", 1).to_list(100)
     
+    # Public promotions (only active ones)
+    promos = await db.promotions.find({"active": True}, {"_id": 0, "user_id": 0}).to_list(50)
+    
     # Loyalty program info for public display
     loyalty_rewards = await db.loyalty_rewards.find({}, {"_id": 0, "user_id": 0}).to_list(10)
     loyalty_config = {
@@ -553,4 +556,4 @@ async def public_get_website():
         }
     }
     
-    return {"config": config, "reviews": reviews, "gallery": gallery, "services": services, "loyalty": loyalty_config}
+    return {"config": config, "reviews": reviews, "gallery": gallery, "services": services, "promos": promos, "loyalty": loyalty_config}
