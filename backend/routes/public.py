@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Request
 from fastapi.responses import Response, FileResponse
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import uuid
 import os
 import requests as http_requests
@@ -332,6 +332,34 @@ async def public_lookup_appointments(phone: str):
     return [{"id": a["id"], "date": a["date"], "time": a["time"],
              "services": [s["name"] for s in a.get("services", [])],
              "operator_name": a.get("operator_name", ""), "booking_code": a["id"][:8].upper()} for a in appointments]
+
+
+@router.get("/public/my-history")
+async def public_lookup_history(phone: str):
+    user = await db.users.find_one({"email": "melitobruno@gmail.com"}, {"_id": 0})
+    if not user:
+        user = await db.users.find_one({}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=400, detail="Salone non configurato")
+    phone_clean = phone.replace(" ", "").replace("-", "").replace("+", "")
+    client = await db.clients.find_one(
+        {"user_id": user["id"], "$or": [{"phone": phone}, {"phone": phone_clean}]}, {"_id": 0}
+    )
+    if not client:
+        return {"history": [], "loyalty_points": 0}
+    # Last 2 months
+    two_months_ago = (datetime.now(timezone.utc) - timedelta(days=60)).strftime("%Y-%m-%d")
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    appointments = await db.appointments.find(
+        {"user_id": user["id"], "client_id": client["id"], "date": {"$gte": two_months_ago, "$lt": today}, "status": "completed"},
+        {"_id": 0, "user_id": 0}
+    ).sort("date", -1).to_list(50)
+    # Loyalty points
+    loyalty = await db.loyalty.find_one({"client_id": client["id"], "user_id": user["id"]}, {"_id": 0})
+    total_points = loyalty.get("points", 0) if loyalty else 0
+    history = [{"date": a["date"], "time": a.get("time", ""),
+                "services": [s["name"] for s in a.get("services", [])]} for a in appointments]
+    return {"history": history, "loyalty_points": total_points, "client_name": client.get("name", "")}
 
 
 @router.put("/public/appointments/{appointment_id}")
