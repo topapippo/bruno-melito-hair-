@@ -362,6 +362,8 @@ export default function BookingModal({ open, onClose, services, operators, promo
                           const catSvcs = byCat[cat] || [];
                           const isOpen = openCats.includes(cat);
                           const selCount = catSvcs.filter(s => selIds.includes(s.id)).length;
+                          const isAbbon = cat.includes('abbonament');
+                          const displayCount = isAbbon ? catSvcs.length + cardTemplates.length : catSvcs.length;
                           return (
                             <div key={cat} className="rounded-xl overflow-hidden border transition-all"
                               style={{ borderColor: isOpen ? 'var(--border-gold)' : 'var(--border-subtle)' }}>
@@ -374,7 +376,7 @@ export default function BookingModal({ open, onClose, services, operators, promo
                                     style={{ color: isOpen ? 'var(--gold)' : 'var(--text-muted)' }} />
                                   <span className="text-sm">{getCatIcon(cat)}</span>
                                   <span className="font-bold text-sm text-[var(--text-primary)] capitalize">{cat}</span>
-                                  <span className="text-[10px] font-bold bg-[var(--bg-deep)] text-[var(--text-muted)] px-1.5 py-0.5 rounded-full">{catSvcs.length}</span>
+                                  <span className="text-[10px] font-bold bg-[var(--bg-deep)] text-[var(--text-muted)] px-1.5 py-0.5 rounded-full">{displayCount}</span>
                                 </div>
                                 {selCount > 0 && (
                                   <span className="text-[10px] font-black text-[var(--bg-deep)] px-2 py-0.5 rounded-full bg-[var(--gold)]">{selCount} sel.</span>
