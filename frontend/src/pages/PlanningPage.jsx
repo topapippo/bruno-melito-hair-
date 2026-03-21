@@ -26,6 +26,8 @@ import { format, addDays, subDays, startOfWeek, endOfWeek, addWeeks, subWeeks, s
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { fmtDate } from '../utils/formatDate';
+import NewAppointmentDialog from '../components/planning/NewAppointmentDialog';
+import EditAppointmentDialog from '../components/planning/EditAppointmentDialog';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -62,29 +64,20 @@ export default function PlanningPage() {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState('day'); // day, week, month
+  const [viewMode, setViewMode] = useState('day');
   const [weekAppointments, setWeekAppointments] = useState({});
   const [monthAppointments, setMonthAppointments] = useState({});
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [selectedSlot, setSelectedSlot] = useState(null);
-  const [selectedOperator, setSelectedOperator] = useState(null);
   const scrollRef = useRef(null);
 
-  const [formData, setFormData] = useState({
-    client_id: '',
-    service_ids: [],
-    operator_id: '',
-    time: '09:00',
-    notes: ''
-  });
+  // New Appointment Dialog
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogInitTime, setDialogInitTime] = useState('09:00');
+  const [dialogInitOperatorId, setDialogInitOperatorId] = useState('');
+  const [dialogInitDate, setDialogInitDate] = useState('');
 
-  // Edit date (separate from planning selectedDate)
-  const [editDate, setEditDate] = useState('');
-
-  // Client search in dialog
-  const [clientSearch, setClientSearch] = useState('');
-  const [showClientDropdown, setShowClientDropdown] = useState(false);
+  // Edit Dialog
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingAppointment, setEditingAppointment] = useState(null);
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -99,79 +92,30 @@ export default function PlanningPage() {
   const [recurringData, setRecurringData] = useState({ repeat_type: 'weeks', repeat_weeks: 3, repeat_months: 1, repeat_count: 4 });
   const [creatingRecurring, setCreatingRecurring] = useState(false);
 
-  // Edit/Delete appointment state
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [editingAppointment, setEditingAppointment] = useState(null);
-  const [deleting, setDeleting] = useState(false);
-
-  // Selected client info
-  const [selectedClientInfo, setSelectedClientInfo] = useState(null);
-
-  // Payment/Checkout state
-  const [checkoutMode, setCheckoutMode] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('cash');
-  const [discountType, setDiscountType] = useState('none');
-  const [discountValue, setDiscountValue] = useState('');
-  const [processing, setProcessing] = useState(false);
-
-  // Loyalty WhatsApp notification
+  // Loyalty & Review WhatsApp alerts
   const [loyaltyAlertOpen, setLoyaltyAlertOpen] = useState(false);
   const [loyaltyAlertData, setLoyaltyAlertData] = useState(null);
-
-  // Review request after checkout
   const [reviewAlertOpen, setReviewAlertOpen] = useState(false);
   const [reviewAlertData, setReviewAlertData] = useState(null);
 
-  // Reminder notifications
+  // Banners
   const [pendingRemindersCount, setPendingRemindersCount] = useState(0);
   const [inactiveClientsCount, setInactiveClientsCount] = useState(0);
-
-  // Upcoming expenses
   const [upcomingExpenses, setUpcomingExpenses] = useState([]);
-
-  // Auto-reminder check
   const [autoReminderPending, setAutoReminderPending] = useState(0);
 
-  // Promotions at checkout
-  const [eligiblePromos, setEligiblePromos] = useState([]);
-  const [selectedPromo, setSelectedPromo] = useState(null);
-
-  // Drag & Drop state
+  // Drag & Drop
   const [draggedApt, setDraggedApt] = useState(null);
   const [dragOverSlot, setDragOverSlot] = useState(null);
-
-  // Client cards & loyalty for checkout
-  const [clientCards, setClientCards] = useState([]);
-  const [selectedCardId, setSelectedCardId] = useState('');
-  const [clientLoyalty, setClientLoyalty] = useState({ points: 0 });
-  const [useLoyaltyPoints, setUseLoyaltyPoints] = useState(false);
-
-  // New client mode
-  const [newClientMode, setNewClientMode] = useState(false);
-  const [newClientName, setNewClientName] = useState('');
-  const [newClientPhone, setNewClientPhone] = useState('');
 
   // Touch swipe
   const touchStartRef = useRef(null);
 
-  // Card/Promo selection in new appointment dialog
-  const [dialogClientCards, setDialogClientCards] = useState([]);
-  const [dialogClientPromos, setDialogClientPromos] = useState([]);
-  const [preSelectedCardId, setPreSelectedCardId] = useState('');
-  const [preSelectedPromoId, setPreSelectedPromoId] = useState('');
-  const [showCardPromoSection, setShowCardPromoSection] = useState(false);
-  
-  // Card templates (global abbonamenti) for new appointment dialog
+  // Data for dialog props
   const [allCardTemplates, setAllCardTemplates] = useState([]);
-  const [preSelectedTemplateId, setPreSelectedTemplateId] = useState('');
-  
-  // Global promos for new appointment dialog
   const [allPromos, setAllPromos] = useState([]);
-  
-  // Categories to hide from service selection
-  const HIDDEN_CATEGORIES = ['stiratura', 'permanente', 'styling'];
 
-  // New online booking notifications
+  // Online bookings
   const [newOnlineBookings, setNewOnlineBookings] = useState([]);
 
   useEffect(() => {
@@ -256,11 +200,6 @@ export default function PlanningPage() {
         const promoRes = await axios.get(`${API}/promotions`);
         setAllPromos(promoRes.data.filter(p => p.active !== false));
       } catch { setAllPromos([]); }
-      // Set MBHS as default operator if form is empty
-      if (!formData.operator_id) {
-        const mbhs = activeOps.find(op => op.name.toUpperCase().includes('MBHS')) || activeOps[0];
-        if (mbhs) setFormData(prev => ({ ...prev, operator_id: mbhs.id }));
-      }
     } catch (err) {
       console.error('Error fetching data:', err);
       toast.error('Errore nel caricamento dei dati');
@@ -325,119 +264,23 @@ export default function PlanningPage() {
 
 
   const handleSlotClick = (time, operatorId) => {
-    setSelectedSlot(time);
-    setSelectedOperator(operatorId);
-    setClientSearch('');
-    setShowClientDropdown(false);
-    setDialogClientCards([]);
-    setDialogClientPromos([]);
-    setPreSelectedCardId('');
-    setPreSelectedPromoId('');
-    setPreSelectedTemplateId('');
-    setSelectedClientInfo(null);
-    setFormData({
-      ...formData,
-      client_id: '',
-      service_ids: [],
-      time: time,
-      operator_id: operatorId || mbhsOperator?.id || '',
-      date: format(selectedDate, 'yyyy-MM-dd'),
-      notes: ''
-    });
+    setDialogInitTime(time);
+    setDialogInitOperatorId(operatorId || mbhsOperator?.id || '');
+    setDialogInitDate(format(selectedDate, 'yyyy-MM-dd'));
     setDialogOpen(true);
   };
 
   const openNewAppointmentForDate = (date) => {
-    setClientSearch('');
-    setShowClientDropdown(false);
-    setDialogClientCards([]);
-    setDialogClientPromos([]);
-    setPreSelectedCardId('');
-    setPreSelectedPromoId('');
-    setPreSelectedTemplateId('');
-    setSelectedClientInfo(null);
-    setFormData({
-      client_id: '', service_ids: [], operator_id: mbhsOperator?.id || '', time: '09:00', notes: '',
-      date: format(date, 'yyyy-MM-dd')
-    });
+    setDialogInitTime('09:00');
+    setDialogInitOperatorId(mbhsOperator?.id || '');
+    setDialogInitDate(format(date, 'yyyy-MM-dd'));
     setDialogOpen(true);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const hasClient = formData.client_id || newClientMode;
-    if (!hasClient || formData.service_ids.length === 0) {
-      toast.error('Seleziona un cliente e almeno un servizio');
-      return;
-    }
-
-    setSaving(true);
-    try {
-      const { _activeCat, _openCats, ...cleanFormData } = formData;
-      const payload = {
-        ...cleanFormData,
-        date: formData.date || format(selectedDate, 'yyyy-MM-dd'),
-        operator_id: formData.operator_id || null
-      };
-      if (newClientMode && !formData.client_id) {
-        payload.client_id = null;
-        payload.client_name = newClientName || 'Cliente Occasionale';
-        payload.client_phone = newClientPhone || '';
-      }
-      // Add pre-selected card/promo/template info to notes for reference
-      if (preSelectedCardId || preSelectedPromoId || preSelectedTemplateId) {
-        const notes = [];
-        if (preSelectedCardId) {
-          const card = dialogClientCards.find(c => c.id === preSelectedCardId);
-          if (card) notes.push(`[CARD: ${card.name}]`);
-        }
-        if (preSelectedPromoId) {
-          const promo = dialogClientPromos.find(p => p.id === preSelectedPromoId);
-          if (promo) notes.push(`[PROMO: ${promo.name}]`);
-        }
-        if (preSelectedTemplateId) {
-          const tmpl = allCardTemplates.find(t => t.id === preSelectedTemplateId);
-          if (tmpl) notes.push(`[ABBON: ${tmpl.name}]`);
-        }
-        if (notes.length > 0) {
-          payload.notes = (payload.notes ? payload.notes + ' ' : '') + notes.join(' ');
-        }
-        // Save promo_id/card_id/card_template_id on the appointment for checkout pre-selection
-        payload.promo_id = preSelectedPromoId || null;
-        payload.card_id = preSelectedCardId || null;
-        payload.card_template_id = preSelectedTemplateId || null;
-      }
-      await axios.post(`${API}/appointments`, payload);
-      toast.success('Appuntamento creato!' + (preSelectedCardId || preSelectedPromoId || preSelectedTemplateId ? ' Card/Promo/Abbonamento salvati.' : ''));
-      setDialogOpen(false);
-      setFormData({ client_id: '', service_ids: [], operator_id: mbhsOperator?.id || '', time: '09:00', notes: '', date: '' });
-      setNewClientMode(false);
-      setNewClientName('');
-      setNewClientPhone('');
-      setClientSearch('');
-      setDialogClientCards([]);
-      setDialogClientPromos([]);
-      setPreSelectedCardId('');
-      setPreSelectedPromoId('');
-      setPreSelectedTemplateId('');
-      setSelectedClientInfo(null);
-      fetchData();
-      if (viewMode === 'week') fetchWeekData();
-      if (viewMode === 'month') fetchMonthData();
-    } catch (err) {
-      toast.error(err.response?.data?.detail || 'Errore nella creazione');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const toggleService = (serviceId) => {
-    setFormData(prev => ({
-      ...prev,
-      service_ids: prev.service_ids.includes(serviceId)
-        ? prev.service_ids.filter(id => id !== serviceId)
-        : [...prev.service_ids, serviceId]
-    }));
+  // Open edit dialog for appointment
+  const openEditDialog = (apt) => {
+    setEditingAppointment(apt);
+    setEditDialogOpen(true);
   };
 
   // Search handler
@@ -447,7 +290,6 @@ export default function PlanningPage() {
       setSearchResults({ clients: [], appointments: [] });
       return;
     }
-    
     setSearching(true);
     try {
       const res = await axios.get(`${API}/clients/search/appointments?query=${encodeURIComponent(query)}`);
@@ -464,196 +306,11 @@ export default function PlanningPage() {
     setSearchOpen(false);
     setSearchQuery('');
     setSearchResults({ clients: [], appointments: [] });
-    
-    // Auto-clear highlight after 5 seconds
     setTimeout(() => setHighlightedClientId(null), 5000);
   };
 
   const clearHighlight = () => {
     setHighlightedClientId(null);
-  };
-
-  // Get client info when selected
-  const handleClientSelect = async (clientId, clientName) => {
-    setFormData({ ...formData, client_id: clientId });
-    setClientSearch(clientName);
-    setShowClientDropdown(false);
-    
-    // Find client info
-    const client = clients.find(c => c.id === clientId);
-    setSelectedClientInfo(client);
-    
-    // Load client's cards and eligible promos for pre-selection
-    if (clientId && clientId !== 'generic') {
-      try {
-        const [cardsRes, promosRes] = await Promise.all([
-          axios.get(`${API}/cards?client_id=${clientId}`),
-          axios.get(`${API}/promotions/check/${clientId}`)
-        ]);
-        setDialogClientCards(cardsRes.data.filter(c => c.active && c.remaining_value > 0));
-        setDialogClientPromos(promosRes.data);
-      } catch {
-        setDialogClientCards([]);
-        setDialogClientPromos([]);
-      }
-    } else {
-      setDialogClientCards([]);
-      setDialogClientPromos([]);
-    }
-  };
-
-  // Open edit dialog for appointment
-  const openEditDialog = async (apt) => {
-    setEditingAppointment(apt);
-    setEditDate(apt.date);
-    setFormData({
-      client_id: apt.client_id,
-      service_ids: apt.services.map(s => s.id),
-      operator_id: apt.operator_id || '',
-      time: apt.time,
-      notes: apt.notes || ''
-    });
-    setClientSearch(apt.client_name);
-    const client = clients.find(c => c.id === apt.client_id);
-    setSelectedClientInfo(client);
-    setEditDialogOpen(true);
-    // Load client cards and loyalty points
-    if (apt.client_id && apt.client_id !== 'generic') {
-      try {
-        const [cardsRes, loyaltyRes] = await Promise.all([
-          axios.get(`${API}/clients/${apt.client_id}/cards`),
-          axios.get(`${API}/clients/${apt.client_id}/loyalty`)
-        ]);
-        setClientCards(cardsRes.data);
-        setClientLoyalty(loyaltyRes.data);
-      } catch { setClientCards([]); setClientLoyalty({ points: 0 }); }
-    } else {
-      setClientCards([]);
-      setClientLoyalty({ points: 0 });
-    }
-  };
-
-  // Update appointment
-  const handleUpdateAppointment = async (e) => {
-    e.preventDefault();
-    if (!editingAppointment) return;
-    
-    setSaving(true);
-    try {
-      const { _activeCat: _ac, _openCats: _oc, ...cleanData } = formData;
-      await axios.put(`${API}/appointments/${editingAppointment.id}`, {
-        ...cleanData,
-        date: editDate || format(selectedDate, 'yyyy-MM-dd')
-      });
-      toast.success('Appuntamento aggiornato!');
-      setEditDialogOpen(false);
-      setEditingAppointment(null);
-      fetchData();
-    } catch (err) {
-      toast.error(err.response?.data?.detail || 'Errore nell\'aggiornamento');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Delete appointment
-  const handleDeleteAppointment = async () => {
-    if (!editingAppointment) return;
-    if (!window.confirm('Sei sicuro di voler eliminare questo appuntamento?')) return;
-    
-    setDeleting(true);
-    try {
-      await axios.delete(`${API}/appointments/${editingAppointment.id}`);
-      toast.success('Appuntamento eliminato!');
-      setEditDialogOpen(false);
-      setEditingAppointment(null);
-      fetchData();
-    } catch (err) {
-      toast.error(err.response?.data?.detail || 'Errore nell\'eliminazione');
-    } finally {
-      setDeleting(false);
-    }
-  };
-
-  // Calculate total for appointment
-  const calculateTotal = () => {
-    if (!editingAppointment) return 0;
-    const servicesTotal = editingAppointment.services.reduce((sum, s) => sum + (s.price || 0), 0);
-    return servicesTotal;
-  };
-
-  // Calculate discount
-  const calculateDiscount = () => {
-    const total = calculateTotal();
-    if (discountType === 'none' || !discountValue) return 0;
-    
-    const value = parseFloat(discountValue) || 0;
-    if (discountType === 'percent') {
-      return (total * value) / 100;
-    }
-    return value; // fixed amount
-  };
-
-  // Calculate final amount
-  const calculateFinalAmount = () => {
-    return Math.max(0, calculateTotal() - calculateDiscount());
-  };
-
-  // Process payment
-  const handleCheckout = async () => {
-    if (!editingAppointment) return;
-    
-    setProcessing(true);
-    try {
-      const loyaltyPointsUsed = useLoyaltyPoints ? clientLoyalty.points : 0;
-      const res = await axios.post(`${API}/appointments/${editingAppointment.id}/checkout`, {
-        payment_method: paymentMethod,
-        discount_type: discountType,
-        discount_value: discountType !== 'none' ? parseFloat(discountValue) || 0 : 0,
-        total_paid: calculateFinalAmount(),
-        card_id: paymentMethod === 'prepaid' ? selectedCardId : null,
-        loyalty_points_used: loyaltyPointsUsed,
-        promo_id: selectedPromo?.id || null,
-        promo_free_service: selectedPromo?.free_service_name || null
-      });
-      const pointsEarned = res.data.loyalty_points_earned || 0;
-      const msg = pointsEarned > 0
-        ? `Pagamento registrato! +${pointsEarned} punti fedeltà`
-        : 'Pagamento registrato con successo!';
-      toast.success(msg);
-      setEditDialogOpen(false);
-      setEditingAppointment(null);
-      setCheckoutMode(false);
-      resetCheckout();
-      fetchData();
-
-      // Check if loyalty threshold reached → show WhatsApp popup
-      if (res.data.loyalty_threshold_reached) {
-        setLoyaltyAlertData({
-          clientName: res.data.client_name,
-          clientPhone: res.data.client_phone,
-          threshold: res.data.loyalty_threshold_reached,
-          totalPoints: res.data.loyalty_total_points
-        });
-        setLoyaltyAlertOpen(true);
-      }
-
-      // Show review request dialog after checkout
-      const clientPhone = res.data.client_phone || editingAppointment?.client_phone;
-      const clientName = res.data.client_name || editingAppointment?.client_name;
-      if (clientPhone) {
-        // Delay if loyalty alert is also showing
-        const delay = res.data.loyalty_threshold_reached ? 1500 : 300;
-        setTimeout(() => {
-          setReviewAlertData({ clientName, clientPhone });
-          setReviewAlertOpen(true);
-        }, delay);
-      }
-    } catch (err) {
-      toast.error(err.response?.data?.detail || 'Errore nel pagamento');
-    } finally {
-      setProcessing(false);
-    }
   };
 
   const openLoyaltyWhatsApp = () => {
@@ -685,16 +342,10 @@ export default function PlanningPage() {
     setReviewAlertOpen(false);
   };
 
-  // Reset checkout state
-  const resetCheckout = () => {
-    setCheckoutMode(false);
-    setPaymentMethod('cash');
-    setDiscountType('none');
-    setDiscountValue('');
-    setSelectedCardId('');
-    setUseLoyaltyPoints(false);
-    setSelectedPromo(null);
-    setEligiblePromos([]);
+  const handleRefreshData = () => {
+    fetchData();
+    if (viewMode === 'week') fetchWeekData();
+    if (viewMode === 'month') fetchMonthData();
   };
 
   // Recurring appointments handler
@@ -1355,456 +1006,19 @@ export default function PlanningPage() {
 
 
         {/* New Appointment Dialog */}
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="sm:max-w-[900px] max-h-[85vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="font-playfair text-xl text-[var(--text-primary)]">
-                Nuovo Appuntamento
-              </DialogTitle>
-              <DialogDescription>
-                {formData.date
-                  ? format(new Date(formData.date + 'T00:00:00'), "EEEE d MMMM yyyy", { locale: it })
-                  : format(selectedDate, "EEEE d MMMM yyyy", { locale: it })} alle {formData.time}
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-3 mt-2">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* LEFT COLUMN: Date, Time, Client, Operator */}
-                <div className="space-y-3">
-              {/* Date Picker */}
-              <div className="space-y-1">
-                <Label className="text-[var(--text-primary)] font-semibold text-xs">Data</Label>
-                <div className="relative">
-                  <input
-                    type="date"
-                    value={formData.date || format(selectedDate, 'yyyy-MM-dd')}
-                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                    data-testid="appointment-date-input"
-                  />
-                  <div className="flex items-center h-10 px-3 bg-[var(--bg-card)] border-2 border-[var(--border-subtle)] rounded-md text-sm text-[var(--text-primary)] font-medium cursor-pointer">
-                    {fmtDate(formData.date || format(selectedDate, 'yyyy-MM-dd'))}
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-[var(--text-primary)] font-semibold">Cliente</Label>
-                  <div className="flex gap-1">
-                    <Button type="button" variant="ghost" size="sm" className="text-xs h-7 text-amber-600"
-                      onClick={() => {
-                        setNewClientMode(false);
-                        setNewClientName('');
-                        setFormData({ ...formData, client_id: 'generic' });
-                        setClientSearch('Cliente Occasionale');
-                        setSelectedClientInfo(null);
-                      }}
-                      data-testid="generic-client-btn">
-                      <User className="w-3 h-3 mr-1" /> Occasionale
-                    </Button>
-                    <Button type="button" variant="ghost" size="sm" className="text-xs h-7 text-emerald-400"
-                      onClick={() => {
-                        setNewClientMode(true);
-                        setFormData({ ...formData, client_id: '' });
-                        setClientSearch('');
-                        setSelectedClientInfo(null);
-                      }}
-                      data-testid="new-client-btn">
-                      <UserPlus className="w-3 h-3 mr-1" /> Nuovo
-                    </Button>
-                  </div>
-                </div>
-                {newClientMode ? (
-                  <div className="space-y-2 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
-                    <Input
-                      type="text"
-                      placeholder="Nome e Cognome *"
-                      value={newClientName}
-                      onChange={(e) => setNewClientName(e.target.value)}
-                      className="bg-[var(--bg-card)] border-2 border-emerald-300 text-[var(--text-primary)] font-medium"
-                      data-testid="new-client-name-input"
-                    />
-                    <div className="relative">
-                      <Input
-                        type="text"
-                        placeholder="Telefono (importante per promemoria!)"
-                        value={newClientPhone}
-                        onChange={(e) => setNewClientPhone(e.target.value)}
-                        className={`bg-[var(--bg-card)] border-2 text-[var(--text-primary)] font-medium ${
-                          newClientPhone ? 'border-emerald-300' : 'border-orange-400 ring-1 ring-orange-300'
-                        }`}
-                        data-testid="new-client-phone-input"
-                      />
-                      {!newClientPhone && (
-                        <p className="text-xs text-orange-400 font-semibold mt-1 flex items-center gap-1">
-                          <Bell className="w-3 h-3" /> Inserisci il numero per inviare promemoria WhatsApp
-                        </p>
-                      )}
-                    </div>
-                    <button type="button" className="text-xs text-[var(--text-secondary)] hover:text-red-500" onClick={() => { setNewClientMode(false); setNewClientName(''); setNewClientPhone(''); }}>
-                      Annulla nuovo cliente
-                    </button>
-                  </div>
-                ) : (
-                <div className="relative">
-                  <Input
-                    type="text"
-                    placeholder="Digita nome cliente..."
-                    value={clientSearch}
-                    onChange={(e) => {
-                      setClientSearch(e.target.value);
-                      setShowClientDropdown(true);
-                      if (!e.target.value) {
-                        setFormData({ ...formData, client_id: '' });
-                        setSelectedClientInfo(null);
-                      }
-                    }}
-                    onFocus={() => setShowClientDropdown(true)}
-                    className="bg-[var(--bg-card)] border-2 border-[var(--border-subtle)] text-[var(--text-primary)] font-medium"
-                    data-testid="search-client-dialog"
-                  />
-                  {showClientDropdown && clientSearch.length > 0 && (
-                    <div className="absolute z-50 w-full mt-1 bg-[var(--bg-card)] border-2 border-[var(--gold)] rounded-lg shadow-xl max-h-48 overflow-auto">
-                      {clients
-                        .filter(c => c.name.toLowerCase().includes(clientSearch.toLowerCase()))
-                        .slice(0, 20)
-                        .map((client) => (
-                          <button
-                            key={client.id}
-                            type="button"
-                            className={`w-full px-3 py-2 text-left hover:bg-[var(--gold)]/20 text-sm font-medium border-b border-[var(--border-subtle)]/30 last:border-0 ${
-                              formData.client_id === client.id ? 'bg-[var(--gold)]/20 text-[var(--gold)]' : 'text-[var(--text-primary)]'
-                            }`}
-                            onClick={() => handleClientSelect(client.id, client.name)}
-                          >
-                            <div className="flex items-center justify-between">
-                              <span>{client.name}</span>
-                              {!client.phone && (
-                                <span className="text-[10px] bg-red-500/10 text-red-400 px-1.5 py-0.5 rounded-full font-bold ml-2">TEL MANCANTE</span>
-                              )}
-                            </div>
-                          </button>
-                        ))}
-                      {clients.filter(c => c.name.toLowerCase().includes(clientSearch.toLowerCase())).length === 0 && (
-                        <div className="px-3 py-2 text-sm text-[var(--text-secondary)]">Nessun cliente trovato</div>
-                      )}
-                    </div>
-                  )}
-                </div>
-                )}
-              </div>
-
-              {/* Client Info Card */}
-              {selectedClientInfo && (
-                <div className={`p-3 rounded-lg border-2 ${!selectedClientInfo.phone ? 'bg-red-50 border-red-400' : 'bg-[#FEF3C7] border-[#F59E0B]'}`}>
-                  <div className="flex items-start gap-2">
-                    <User className={`w-5 h-5 flex-shrink-0 mt-0.5 ${!selectedClientInfo.phone ? 'text-red-500' : 'text-[#F59E0B]'}`} />
-                    <div className="flex-1">
-                      <p className={`font-bold ${!selectedClientInfo.phone ? 'text-red-400' : 'text-[var(--gold)]'}`}>{selectedClientInfo.name}</p>
-                      {selectedClientInfo.phone ? (
-                        <p className="text-sm text-[var(--gold)]">Tel: {selectedClientInfo.phone}</p>
-                      ) : (
-                        <p className="text-sm text-red-400 font-semibold flex items-center gap-1">
-                          <Bell className="w-3.5 h-3.5" /> Telefono mancante! Inseriscilo nella scheda cliente
-                        </p>
-                      )}
-                      {selectedClientInfo.notes && (
-                        <p className="text-sm text-[var(--gold)] mt-1 whitespace-pre-wrap">{selectedClientInfo.notes}</p>
-                      )}
-                      {!selectedClientInfo.notes && selectedClientInfo.phone && (
-                        <p className="text-sm text-[var(--gold)]/60 italic">Nessuna nota</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label className="text-xs">Orario</Label>
-                  <Select
-                    value={formData.time}
-                    onValueChange={(val) => setFormData({ ...formData, time: val })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[200px]">
-                      {getAvailableTimeSlots(format(selectedDate, 'yyyy-MM-dd')).map((time) => (
-                        <SelectItem key={time} value={time}>
-                          {time}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-1">
-                  <Label className="text-xs">Operatore</Label>
-                  <Select
-                    value={formData.operator_id || operators[0]?.id || ""}
-                    onValueChange={(val) => setFormData({ ...formData, operator_id: val })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleziona..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {operators.map((op) => (
-                        <SelectItem key={op.id} value={op.id}>
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="w-3 h-3 rounded-full"
-                              style={{ backgroundColor: op.color }}
-                            />
-                            {op.name}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-                </div>
-
-                {/* RIGHT COLUMN: Services + Card/Promo */}
-                <div className="space-y-3">
-
-              <div className="space-y-1">
-                <Label className="text-xs">Servizi</Label>
-                {/* Accordion categories - horizontal grid */}
-                <div className="max-h-64 overflow-y-auto space-y-1 pr-0.5" data-testid="dialog-services-accordion">
-                  {CATEGORY_ORDER.filter(cat => sortedServices.some(s => s.category === cat) && !HIDDEN_CATEGORIES.includes(cat.toLowerCase())).concat(
-                    [...new Set(sortedServices.map(s => s.category).filter(c => c && !CATEGORY_ORDER.includes(c) && !HIDDEN_CATEGORIES.includes(c.toLowerCase())))]
-                  ).map(cat => {
-                    const catServices = sortedServices.filter(s => s.category === cat);
-                    const selCount = catServices.filter(s => formData.service_ids.includes(s.id)).length;
-                    const isOpen = formData._openCats?.includes(cat);
-                    return (
-                      <div key={cat} className="border border-[var(--border-subtle)] rounded-lg overflow-hidden" data-testid={`dialog-cat-${cat}`}>
-                        <button type="button"
-                          onClick={() => setFormData(prev => {
-                            const open = prev._openCats || [];
-                            return { ...prev, _openCats: open.includes(cat) ? open.filter(c => c !== cat) : [...open, cat] };
-                          })}
-                          className={`w-full flex items-center justify-between px-3 py-2 text-left transition-all ${
-                            isOpen ? 'bg-[var(--gold)]/5' : 'bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated)]'
-                          }`}>
-                          <div className="flex items-center gap-2">
-                            <ChevronDown className={`w-4 h-4 text-[var(--text-muted)] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-                            <span className="font-bold text-sm text-[var(--text-primary)] capitalize">{cat}</span>
-                            <span className="text-[10px] font-bold bg-[var(--bg-elevated)] text-[var(--text-muted)] px-1.5 py-0.5 rounded-full">{catServices.length}</span>
-                          </div>
-                          {selCount > 0 && (
-                            <span className="text-[10px] font-black bg-[var(--gold)] text-white px-2 py-0.5 rounded-full">{selCount} sel.</span>
-                          )}
-                        </button>
-                        {isOpen && (
-                          <div className="border-t border-[var(--border-subtle)] p-2 grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-                            {catServices.map((service) => {
-                              const sel = formData.service_ids.includes(service.id);
-                              return (
-                                <button key={service.id} type="button"
-                                  onClick={() => toggleService(service.id)}
-                                  className={`flex flex-col items-start rounded-lg px-2.5 py-2 text-left transition-all border ${
-                                    sel ? 'bg-[var(--gold)]/5 border-[var(--gold)]' : 'hover:bg-[var(--bg-elevated)] border-[var(--border-subtle)]'
-                                  }`}
-                                  data-testid={`dialog-service-${service.id}`}>
-                                  <div className="flex items-center gap-1.5 w-full">
-                                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${
-                                      sel ? 'border-[var(--gold)] bg-[var(--gold)]' : 'border-[var(--border-subtle)]'
-                                    }`}>
-                                      {sel && <Check className="w-2.5 h-2.5 text-white" />}
-                                    </div>
-                                    <span className={`flex-1 text-xs leading-tight ${sel ? 'font-bold text-[var(--gold)]' : 'text-[var(--text-primary)]'}`}>{service.name}</span>
-                                  </div>
-                                  <div className="flex items-center justify-between w-full mt-1 pl-5.5">
-                                    <span className={`text-xs font-bold ${sel ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]'}`}>{'\u20AC'}{service.price}</span>
-                                    <span className="text-[10px] text-[var(--text-muted)]">{service.duration} min</span>
-                                  </div>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-                {/* Selected services summary */}
-                {formData.service_ids.length > 0 && (
-                  <div className="flex flex-wrap gap-1 pt-1" data-testid="dialog-selected-services">
-                    {formData.service_ids.map(id => {
-                      const svc = services.find(s => s.id === id);
-                      if (!svc) return null;
-                      return (
-                        <span key={id}
-                          className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--gold)]/10 text-[var(--gold)] cursor-pointer hover:bg-[var(--gold)]/20"
-                          onClick={() => toggleService(id)}>
-                          {svc.name} <X className="w-2.5 h-2.5" />
-                        </span>
-                      );
-                    })}
-                    <span className="text-[10px] font-bold text-[var(--text-primary)] ml-auto self-center">
-                      {formData.service_ids.reduce((sum, id) => { const s = services.find(sv => sv.id === id); return sum + (s?.duration || 0); }, 0)} min · {'\u20AC'}{formData.service_ids.reduce((sum, id) => { const s = services.find(sv => sv.id === id); return sum + (s?.price || 0); }, 0)}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* === PROMOZIONI — SEZIONE SEPARATA === */}
-              {allPromos.length > 0 && (
-                <div className="space-y-1">
-                  <button type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, _showPromos: !prev._showPromos }))}
-                    className="w-full cursor-pointer p-2.5 border-2 border-pink-500/30 bg-pink-50 rounded-xl">
-                    <div className="flex items-center justify-between">
-                      <span className="text-pink-500 font-bold text-sm flex items-center gap-2">
-                        <Gift className="w-4 h-4" /> Promozioni ({allPromos.length})
-                        {preSelectedPromoId && <Check className="w-4 h-4 text-pink-500" />}
-                      </span>
-                      <ChevronDown className={`w-4 h-4 text-pink-400 transition-transform ${formData._showPromos ? 'rotate-180' : ''}`} />
-                    </div>
-                  </button>
-                  {formData._showPromos && (
-                    <div className="p-2.5 bg-pink-50 border-2 border-t-0 border-pink-500/30 rounded-b-xl -mt-1 grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                      {allPromos.map(promo => (
-                        <button key={promo.id} type="button"
-                          onClick={() => setPreSelectedPromoId(preSelectedPromoId === promo.id ? '' : promo.id)}
-                          className={`w-full p-2 rounded-lg border-2 text-left transition-all ${
-                            preSelectedPromoId === promo.id
-                              ? 'border-pink-500 bg-pink-500/10 ring-1 ring-pink-400'
-                              : 'border-pink-200 bg-[var(--bg-card)] hover:border-pink-400'
-                          }`}
-                          data-testid={`preselect-promo-${promo.id}`}>
-                          <div className="flex items-center gap-2">
-                            <Gift className={`w-4 h-4 flex-shrink-0 ${preSelectedPromoId === promo.id ? 'text-pink-500' : 'text-[var(--text-muted)]'}`} />
-                            <div className="min-w-0">
-                              <span className="font-bold text-sm text-[var(--text-primary)] block truncate">{promo.name}</span>
-                              {promo.description && <span className="text-[10px] text-[var(--text-muted)] block truncate">{promo.description}</span>}
-                            </div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* === ABBONAMENTI / CARD — SEZIONE SEPARATA === */}
-              {(dialogClientCards.length > 0 || allCardTemplates.length > 0) && (
-                <div className="space-y-1">
-                  <button type="button"
-                    onClick={() => setShowCardPromoSection(!showCardPromoSection)}
-                    className="w-full cursor-pointer p-2.5 border-2 rounded-xl"
-                    style={{ borderColor: 'rgba(168,85,247,0.3)', background: 'rgba(168,85,247,0.04)' }}>
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-sm flex items-center gap-2" style={{ color: '#A855F7' }}>
-                        <CreditCard className="w-4 h-4" /> Abbonamenti & Card ({dialogClientCards.length + allCardTemplates.length})
-                        {(preSelectedCardId || preSelectedTemplateId) && <Check className="w-4 h-4 text-purple-500" />}
-                      </span>
-                      <ChevronDown className={`w-4 h-4 transition-transform ${showCardPromoSection ? 'rotate-180' : ''}`} style={{ color: '#A855F7' }} />
-                    </div>
-                  </button>
-                  {showCardPromoSection && (
-                  <div className="p-2.5 border-2 border-t-0 rounded-b-xl space-y-3 -mt-1" style={{ borderColor: 'rgba(168,85,247,0.3)', background: 'rgba(168,85,247,0.04)' }}>
-                    
-                    {/* Card Templates / Abbonamenti */}
-                    {allCardTemplates.length > 0 && (
-                      <div className="space-y-1.5">
-                        <p className="text-xs font-semibold uppercase" style={{ color: '#A855F7' }}>Abbonamenti Disponibili</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                          {allCardTemplates.map(tmpl => (
-                            <button
-                              key={tmpl.id}
-                              type="button"
-                              onClick={() => setPreSelectedTemplateId(preSelectedTemplateId === tmpl.id ? '' : tmpl.id)}
-                              className={`w-full p-2 rounded-lg border-2 text-left transition-all ${
-                                preSelectedTemplateId === tmpl.id 
-                                  ? 'border-purple-500 bg-purple-500/10 ring-1 ring-purple-400' 
-                                  : 'border-purple-200 bg-[var(--bg-card)] hover:border-purple-400'
-                              }`}
-                              data-testid={`preselect-template-${tmpl.id}`}
-                            >
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <CreditCard className={`w-4 h-4 flex-shrink-0 ${preSelectedTemplateId === tmpl.id ? 'text-purple-500' : 'text-[var(--text-muted)]'}`} />
-                                  <div className="min-w-0">
-                                    <span className="font-bold text-sm text-[var(--text-primary)] block truncate">{tmpl.name}</span>
-                                    <span className="text-[10px] text-[var(--text-muted)]">
-                                      {tmpl.total_services ? `${tmpl.total_services} servizi` : ''}{tmpl.duration_months ? ` ${tmpl.duration_months} mesi` : ''}
-                                    </span>
-                                  </div>
-                                </div>
-                                <span className="font-black text-sm flex-shrink-0" style={{ color: '#A855F7' }}>{'\u20AC'}{tmpl.total_value}</span>
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Client Cards */}
-                    {dialogClientCards.length > 0 && (
-                      <div className="space-y-1.5">
-                        <p className="text-xs font-semibold text-green-400 uppercase">Card del Cliente</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                          {dialogClientCards.map(card => (
-                            <button
-                              key={card.id}
-                              type="button"
-                              onClick={() => setPreSelectedCardId(preSelectedCardId === card.id ? '' : card.id)}
-                              className={`w-full p-2 rounded-lg border-2 text-left transition-all ${
-                                preSelectedCardId === card.id 
-                                  ? 'border-green-500 bg-green-500/10 ring-1 ring-green-400' 
-                                  : 'border-green-500/30 bg-[var(--bg-card)] hover:border-green-400'
-                              }`}
-                              data-testid={`preselect-card-${card.id}`}
-                            >
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <CreditCard className={`w-4 h-4 ${preSelectedCardId === card.id ? 'text-green-400' : 'text-[var(--text-muted)]'}`} />
-                                  <span className="font-bold text-sm text-[var(--text-primary)]">{card.name}</span>
-                                </div>
-                                <span className="font-black text-green-400 text-sm">{'\u20AC'}{card.remaining_value?.toFixed(2)}</span>
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  )}
-                </div>
-              )}
-
-                </div>
-              </div>
-              {/* END 2-COLUMN GRID */}
-
-              <div className="space-y-1">
-                <Label className="text-xs">Note (opzionale)</Label>
-                <Input
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="Note aggiuntive..."
-                  className="bg-[var(--bg-elevated)]"
-                />
-              </div>
-
-              {/* FIXED SAVE BUTTON */}
-              <div className="sticky bottom-0 pt-3 pb-1 bg-[var(--bg-card)] border-t border-[var(--border-subtle)] -mx-6 px-6 -mb-6">
-                <Button
-                  type="submit"
-                  disabled={saving}
-                  className="w-full bg-[var(--gold)] hover:bg-[var(--gold)] text-white font-bold py-3"
-                  data-testid="save-appointment-btn"
-                >
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'SALVA APPUNTAMENTO'}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <NewAppointmentDialog
+          open={dialogOpen}
+          onClose={() => setDialogOpen(false)}
+          initialDate={dialogInitDate}
+          initialTime={dialogInitTime}
+          initialOperatorId={dialogInitOperatorId}
+          operators={operators}
+          clients={clients}
+          services={services}
+          allCardTemplates={allCardTemplates}
+          allPromos={allPromos}
+          onSuccess={handleRefreshData}
+        />
 
         {/* Recurring Appointment Dialog */}
         <Dialog open={recurringDialogOpen} onOpenChange={setRecurringDialogOpen}>
@@ -1939,550 +1153,17 @@ export default function PlanningPage() {
         </Dialog>
 
         {/* Edit/Delete Appointment Dialog */}
-        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-          <DialogContent className="sm:max-w-[900px] max-h-[85vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="font-playfair text-2xl text-[var(--text-primary)]">
-                Modifica Appuntamento
-              </DialogTitle>
-              <DialogDescription>
-                {editingAppointment && `${editingAppointment.date} alle ${editingAppointment.time}`}
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleUpdateAppointment} className="space-y-4 mt-4">
-              {/* Client Info */}
-              {selectedClientInfo && (
-                <div className="p-3 bg-[#FEF3C7] border-2 border-[#F59E0B] rounded-lg">
-                  <div className="flex items-start gap-2">
-                    <User className="w-5 h-5 text-[#F59E0B] flex-shrink-0 mt-0.5" />
-                    <div className="flex-1">
-                      <p className="font-bold text-[var(--gold)]">{selectedClientInfo.name}</p>
-                      {selectedClientInfo.phone && (
-                        <p className="text-sm text-[var(--gold)]">Tel: {selectedClientInfo.phone}</p>
-                      )}
-                      {selectedClientInfo.notes && (
-                        <p className="text-sm text-[var(--gold)] mt-1 whitespace-pre-wrap">{selectedClientInfo.notes}</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Loyalty Points Display */}
-              {editingAppointment?.client_id && editingAppointment.client_id !== 'generic' && (
-                <div className="p-3 bg-amber-500/10 border-2 border-amber-200 rounded-lg" data-testid="loyalty-points-display">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
-                      <span className="font-bold text-amber-400">Punti Fedelta: {clientLoyalty.points}</span>
-                    </div>
-                    <div className="flex gap-1">
-                      <Button type="button" variant="outline" size="sm"
-                        className="h-7 text-xs border-green-500/30 text-green-400 hover:bg-green-500/100/10"
-                        onClick={async () => {
-                          const pts = prompt('Quanti punti aggiungere?', '10');
-                          if (pts && !isNaN(pts)) {
-                            try {
-                              const res = await axios.put(`${API}/loyalty/${editingAppointment.client_id}/adjust-points`, { points: parseInt(pts), reason: 'Aggiunta manuale' });
-                              setClientLoyalty({ ...clientLoyalty, points: res.data.new_points });
-                              toast.success(`+${pts} punti aggiunti`);
-                            } catch { toast.error('Errore'); }
-                          }
-                        }}
-                        data-testid="add-points-btn">
-                        <Plus className="w-3 h-3 mr-1" /> Aggiungi
-                      </Button>
-                      <Button type="button" variant="outline" size="sm"
-                        className="h-7 text-xs border-red-300 text-red-400 hover:bg-red-50"
-                        onClick={async () => {
-                          const pts = prompt('Quanti punti rimuovere?', '10');
-                          if (pts && !isNaN(pts)) {
-                            try {
-                              const res = await axios.put(`${API}/loyalty/${editingAppointment.client_id}/adjust-points`, { points: -parseInt(pts), reason: 'Rimozione manuale' });
-                              setClientLoyalty({ ...clientLoyalty, points: res.data.new_points });
-                              toast.success(`-${pts} punti rimossi`);
-                            } catch { toast.error('Errore'); }
-                          }
-                        }}
-                        data-testid="remove-points-btn">
-                        <Trash2 className="w-3 h-3 mr-1" /> Rimuovi
-                      </Button>
-                      <Button type="button" variant="outline" size="sm"
-                        className="h-7 text-xs border-orange-300 text-orange-400 hover:bg-orange-50"
-                        onClick={async () => {
-                          if (!window.confirm('Azzerare tutti i punti di questo cliente?')) return;
-                          try {
-                            const currentPts = clientLoyalty.points;
-                            const res = await axios.put(`${API}/loyalty/${editingAppointment.client_id}/adjust-points`, { points: -currentPts, reason: 'Azzeramento manuale' });
-                            setClientLoyalty({ ...clientLoyalty, points: 0 });
-                            toast.success('Punti azzerati');
-                          } catch { toast.error('Errore'); }
-                        }}
-                        data-testid="reset-points-btn">
-                        <X className="w-3 h-3 mr-1" /> Azzera
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="grid grid-cols-3 gap-3">
-                <div className="space-y-2">
-                  <Label className="text-[var(--text-primary)] font-semibold">Data</Label>
-                  <div className="relative">
-                    <input
-                      type="date"
-                      value={editDate}
-                      onChange={(e) => setEditDate(e.target.value)}
-                      className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                      data-testid="edit-appointment-date"
-                    />
-                    <div className="flex items-center h-10 px-3 border-2 border-[var(--border-subtle)] rounded-md text-sm text-[var(--text-primary)] font-medium cursor-pointer">
-                      {fmtDate(editDate)}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-[var(--text-primary)] font-semibold">Orario</Label>
-                  <Select
-                    value={formData.time}
-                    onValueChange={(val) => setFormData({ ...formData, time: val })}
-                  >
-                    <SelectTrigger className="border-2 border-[var(--border-subtle)]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[200px]">
-                      {getAvailableTimeSlots(editDate).map((time) => (
-                        <SelectItem key={time} value={time}>
-                          {time}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-[var(--text-primary)] font-semibold">Operatore</Label>
-                  <Select
-                    value={formData.operator_id || operators[0]?.id || ""}
-                    onValueChange={(val) => setFormData({ ...formData, operator_id: val })}
-                  >
-                    <SelectTrigger className="border-2 border-[var(--border-subtle)]">
-                      <SelectValue placeholder="Seleziona..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {operators.map((op) => (
-                        <SelectItem key={op.id} value={op.id}>
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="w-3 h-3 rounded-full"
-                              style={{ backgroundColor: op.color }}
-                            />
-                            {op.name}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-[var(--text-primary)] font-semibold">Servizi</Label>
-                {/* Accordion categories for edit dialog */}
-                <div className="max-h-52 overflow-y-auto space-y-1 pr-0.5">
-                  {CATEGORY_ORDER.filter(cat => sortedServices.some(s => s.category === cat) && !HIDDEN_CATEGORIES.includes(cat.toLowerCase())).concat(
-                    [...new Set(sortedServices.map(s => s.category).filter(c => c && !CATEGORY_ORDER.includes(c) && !HIDDEN_CATEGORIES.includes(c.toLowerCase())))]
-                  ).map(cat => {
-                    const catServices = sortedServices.filter(s => s.category === cat);
-                    const selCount = catServices.filter(s => formData.service_ids.includes(s.id)).length;
-                    const isOpen = formData._openCats?.includes(cat);
-                    return (
-                      <div key={cat} className="border border-[var(--border-subtle)] rounded-lg overflow-hidden">
-                        <button type="button"
-                          onClick={() => setFormData(prev => {
-                            const open = prev._openCats || [];
-                            return { ...prev, _openCats: open.includes(cat) ? open.filter(c => c !== cat) : [...open, cat] };
-                          })}
-                          className={`w-full flex items-center justify-between px-3 py-2 text-left transition-all ${
-                            isOpen ? 'bg-[var(--gold)]/5' : 'bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated)]'
-                          }`}>
-                          <div className="flex items-center gap-2">
-                            <ChevronDown className={`w-4 h-4 text-[var(--text-muted)] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-                            <span className="font-bold text-sm text-[var(--text-primary)] capitalize">{cat}</span>
-                            <span className="text-[10px] font-bold bg-[var(--bg-elevated)] text-[var(--text-muted)] px-1.5 py-0.5 rounded-full">{catServices.length}</span>
-                          </div>
-                          {selCount > 0 && (
-                            <span className="text-[10px] font-black bg-[var(--gold)] text-white px-2 py-0.5 rounded-full">{selCount} sel.</span>
-                          )}
-                        </button>
-                        {isOpen && (
-                          <div className="border-t border-[var(--border-subtle)] divide-y divide-[#F1F5F9]">
-                            {catServices.map((service) => {
-                              const sel = formData.service_ids.includes(service.id);
-                              return (
-                                <button key={service.id} type="button"
-                                  onClick={() => toggleService(service.id)}
-                                  className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-all ${
-                                    sel ? 'bg-[var(--gold)]/5' : 'hover:bg-[var(--bg-elevated)]'
-                                  }`}>
-                                  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${
-                                    sel ? 'border-[var(--gold)] bg-[var(--gold)]' : 'border-[var(--border-subtle)]'
-                                  }`}>
-                                    {sel && <Check className="w-2.5 h-2.5 text-white" />}
-                                  </div>
-                                  <span className={`flex-1 text-sm ${sel ? 'font-bold text-[var(--gold)]' : 'text-[var(--text-primary)]'}`}>{service.name}</span>
-                                  <span className={`text-sm font-bold flex-shrink-0 ${sel ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]'}`}>{'\u20AC'}{service.price}</span>
-                                  <span className="text-[10px] text-[var(--text-muted)] flex-shrink-0 w-12 text-right">{service.duration} min</span>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-                {formData.service_ids.length > 0 && (
-                  <div className="flex flex-wrap gap-1 pt-1">
-                    {formData.service_ids.map(id => {
-                      const svc = services.find(s => s.id === id);
-                      if (!svc) return null;
-                      return (
-                        <span key={id}
-                          className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--gold)]/10 text-[var(--gold)] cursor-pointer hover:bg-[var(--gold)]/20"
-                          onClick={() => toggleService(id)}>
-                          {svc.name} <X className="w-2.5 h-2.5" />
-                        </span>
-                      );
-                    })}
-                    <span className="text-[10px] font-bold text-[var(--text-primary)] ml-auto self-center">
-                      {formData.service_ids.reduce((sum, id) => { const s = services.find(sv => sv.id === id); return sum + (s?.duration || 0); }, 0)} min · {'\u20AC'}{formData.service_ids.reduce((sum, id) => { const s = services.find(sv => sv.id === id); return sum + (s?.price || 0); }, 0)}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-[var(--text-primary)] font-semibold">Note appuntamento</Label>
-                <Input
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="Note aggiuntive..."
-                  className="bg-[var(--bg-card)] border-2 border-[var(--border-subtle)]"
-                />
-              </div>
-
-              {/* Checkout Section */}
-              {editingAppointment?.status === 'completed' ? (
-                <div className="pt-4 border-t-2 border-emerald-300 bg-emerald-50 -mx-6 px-6 pb-4 rounded-b-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-emerald-500/10 rounded-full flex items-center justify-center">
-                      <CheckCircle className="w-6 h-6 text-emerald-400" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-emerald-400">Pagamento completato</p>
-                      <p className="text-sm text-emerald-400">
-                        {editingAppointment.payment_method === 'cash' ? 'Contanti' : editingAppointment.payment_method === 'card' ? 'Carta' : editingAppointment.payment_method || 'N/A'}
-                        {editingAppointment.amount_paid ? ` - \u20AC${editingAppointment.amount_paid.toFixed(2)}` : ''}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ) : !checkoutMode ? (
-                <div className="pt-4 border-t-2 border-[var(--border-subtle)]">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-[var(--text-primary)]">Totale servizi</p>
-                      <p className="text-2xl font-black text-[var(--gold)]">€{calculateTotal().toFixed(2)}</p>
-                    </div>
-                    <Button
-                      type="button"
-                      onClick={() => {
-                        setCheckoutMode(true);
-                        // Fetch eligible promotions
-                        if (editingAppointment?.client_id) {
-                          axios.get(`${API}/promotions/check/${editingAppointment.client_id}`)
-                            .then(res => {
-                              setEligiblePromos(res.data);
-                              // Pre-select saved promo from appointment, or first eligible
-                              if (editingAppointment.promo_id) {
-                                const savedPromo = res.data.find(p => p.id === editingAppointment.promo_id);
-                                if (savedPromo) setSelectedPromo(savedPromo);
-                                else if (res.data.length > 0) setSelectedPromo(res.data[0]);
-                              } else if (res.data.length > 0) {
-                                setSelectedPromo(res.data[0]);
-                              }
-                            })
-                            .catch(() => {});
-                        }
-                        // Pre-select saved card from appointment, or first active card
-                        if (editingAppointment?.card_id) {
-                          const savedCard = clientCards.find(c => c.id === editingAppointment.card_id && c.remaining_value > 0);
-                          if (savedCard) {
-                            setPaymentMethod('prepaid');
-                            setSelectedCardId(savedCard.id);
-                          }
-                        } else if (clientCards.length > 0) {
-                          const activeCard = clientCards.find(c => c.remaining_value > 0);
-                          if (activeCard) {
-                            setPaymentMethod('prepaid');
-                            setSelectedCardId(activeCard.id);
-                          }
-                        }
-                      }}
-                      className="bg-green-600 hover:bg-green-700 text-white font-bold px-6"
-                      data-testid="open-checkout-btn"
-                    >
-                      <Euro className="w-4 h-4 mr-2" />
-                      INCASSA
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="pt-4 border-t-2 border-green-500 bg-green-500/10 -mx-6 px-6 pb-4 rounded-b-lg">
-                  <h3 className="text-lg font-black text-green-400 mb-4 flex items-center gap-2">
-                    <Euro className="w-5 h-5" />
-                    INCASSO
-                  </h3>
-
-                  {/* Card Template pre-selected indicator */}
-                  {editingAppointment?.card_template_id && (
-                    <div className="mb-4 p-3 rounded-xl border-2 flex items-center gap-3" style={{ borderColor: '#A855F7', background: 'rgba(168,85,247,0.08)' }} data-testid="card-template-indicator">
-                      <CreditCard className="w-5 h-5 flex-shrink-0" style={{ color: '#A855F7' }} />
-                      <div className="flex-1">
-                        <p className="font-bold text-sm" style={{ color: '#A855F7' }}>Abbonamento richiesto dal cliente</p>
-                        <p className="text-xs text-[var(--text-secondary)]">
-                          {editingAppointment.notes?.match(/\[ABBON: ([^\]]+)\]/)?.[1] || editingAppointment.notes?.match(/\[CARD: ([^\]]+)\]/)?.[1] || 'Abbonamento selezionato'}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Payment Method */}
-                  <div className="space-y-2 mb-4">
-                    <Label className="text-[var(--text-primary)] font-bold">Metodo di pagamento</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        type="button"
-                        variant={paymentMethod === 'cash' ? 'default' : 'outline'}
-                        className={paymentMethod === 'cash' ? 'bg-green-600 text-white' : 'border-2'}
-                        onClick={() => { setPaymentMethod('cash'); setSelectedCardId(''); }}
-                      >
-                        <Banknote className="w-4 h-4 mr-2" />
-                        Contanti
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={paymentMethod === 'prepaid' ? 'default' : 'outline'}
-                        className={paymentMethod === 'prepaid' ? 'bg-green-600 text-white' : 'border-2'}
-                        onClick={() => setPaymentMethod('prepaid')}
-                      >
-                        <Ticket className="w-4 h-4 mr-2" />
-                        Abbonamento / Prepagata
-                      </Button>
-                    </div>
-                    {/* Show client's active cards when prepaid selected */}
-                    {paymentMethod === 'prepaid' && (
-                      <div className="space-y-2 mt-2">
-                        {clientCards.length > 0 ? (
-                          clientCards.map(card => (
-                            <button key={card.id} type="button"
-                              onClick={() => setSelectedCardId(card.id)}
-                              className={`w-full p-3 rounded-lg border-2 text-left transition-all ${selectedCardId === card.id ? 'border-green-500 bg-green-500/10' : 'border-[var(--border-subtle)] hover:border-gray-400'}`}
-                              data-testid={`select-card-${card.id}`}>
-                              <div className="flex justify-between items-center">
-                                <div>
-                                  <p className="font-bold text-sm">{card.name}</p>
-                                  <p className="text-xs text-[var(--text-secondary)]">{card.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}</p>
-                                </div>
-                                <div className="text-right">
-                                  <p className="font-black text-green-400">{'\u20AC'}{card.remaining_value?.toFixed(2)}</p>
-                                  {card.total_services && <p className="text-xs text-[var(--text-secondary)]">{card.used_services}/{card.total_services} servizi</p>}
-                                </div>
-                              </div>
-                            </button>
-                          ))
-                        ) : (
-                          <p className="text-sm text-amber-600 p-2 bg-amber-500/10 rounded-lg">Nessun abbonamento/card attiva per questo cliente</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Loyalty Points */}
-                  {clientLoyalty.points > 0 && (
-                    <div className="mb-4">
-                      <button type="button"
-                        onClick={() => setUseLoyaltyPoints(!useLoyaltyPoints)}
-                        className={`w-full p-3 rounded-lg border-2 flex items-center justify-between transition-all ${useLoyaltyPoints ? 'border-amber-500 bg-amber-500/10' : 'border-[var(--border-subtle)] hover:border-amber-300'}`}
-                        data-testid="use-loyalty-btn">
-                        <div className="flex items-center gap-2">
-                          <Star className={`w-5 h-5 ${useLoyaltyPoints ? 'text-amber-500 fill-amber-500' : 'text-[var(--text-muted)]'}`} />
-                          <span className="font-bold text-sm">Usa punti fedeltà</span>
-                        </div>
-                        <span className="font-black text-amber-600">{clientLoyalty.points} punti</span>
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Eligible Promotions */}
-                  {eligiblePromos.length > 0 && (
-                    <div className="mb-4">
-                      <Label className="text-[var(--text-primary)] font-bold flex items-center gap-2 mb-2">
-                        <Gift className="w-4 h-4 text-pink-500" /> Promozioni Disponibili
-                      </Label>
-                      <div className="space-y-2">
-                        {eligiblePromos.map(promo => (
-                          <button key={promo.id} type="button"
-                            onClick={() => setSelectedPromo(selectedPromo?.id === promo.id ? null : promo)}
-                            className={`w-full p-3 rounded-lg border-2 text-left transition-all ${
-                              selectedPromo?.id === promo.id
-                                ? 'border-pink-500 bg-pink-50'
-                                : 'border-[var(--border-subtle)] hover:border-pink-300'
-                            }`}
-                            data-testid={`select-promo-${promo.id}`}>
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="font-bold text-sm text-[var(--text-primary)]">{promo.name}</p>
-                                <p className="text-xs text-pink-400 font-semibold mt-0.5">
-                                  OMAGGIO: {promo.free_service_name}
-                                </p>
-                              </div>
-                              <Gift className={`w-5 h-5 ${selectedPromo?.id === promo.id ? 'text-pink-500' : 'text-[var(--text-muted)]'}`} />
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Discount */}
-                  <div className="space-y-2 mb-4">
-                    <Label className="text-[var(--text-primary)] font-bold">Sconto</Label>
-                    <div className="flex gap-2">
-                      <Select value={discountType} onValueChange={setDiscountType}>
-                        <SelectTrigger className="w-40 border-2">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Nessuno</SelectItem>
-                          <SelectItem value="percent">Percentuale %</SelectItem>
-                          <SelectItem value="fixed">Importo fisso €</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      {discountType !== 'none' && (
-                        <Input
-                          type="number"
-                          placeholder={discountType === 'percent' ? 'es. 10%' : 'es. 5€'}
-                          value={discountValue}
-                          onChange={(e) => setDiscountValue(e.target.value)}
-                          className="flex-1 border-2"
-                        />
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Summary */}
-                  <div className="bg-[var(--bg-card)] rounded-lg p-4 border-2 border-green-500/30 space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="font-semibold">Subtotale:</span>
-                      <span>&euro;{calculateTotal().toFixed(2)}</span>
-                    </div>
-                    {selectedPromo && (
-                      <div className="flex justify-between text-sm text-pink-400">
-                        <span className="font-semibold flex items-center gap-1"><Gift className="w-3.5 h-3.5" /> Omaggio:</span>
-                        <span>{selectedPromo.free_service_name}</span>
-                      </div>
-                    )}
-                    {discountType !== 'none' && calculateDiscount() > 0 && (
-                      <div className="flex justify-between text-sm text-red-400">
-                        <span className="font-semibold">Sconto:</span>
-                        <span>-&euro;{calculateDiscount().toFixed(2)}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between text-xl font-black pt-2 border-t border-green-500/30">
-                      <span>TOTALE:</span>
-                      <span className="text-green-400">€{calculateFinalAmount().toFixed(2)}</span>
-                    </div>
-                    {calculateFinalAmount() >= 10 && (
-                      <div className="flex items-center gap-1.5 text-sm text-amber-600 pt-1" data-testid="loyalty-points-preview">
-                        <Star className="w-4 h-4 text-amber-500" />
-                        <span className="font-semibold">
-                          +{Math.floor(calculateFinalAmount() / 10)} punti fedeltà
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Checkout Actions */}
-                  <div className="flex gap-2 mt-4">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={resetCheckout}
-                      className="flex-1 border-2"
-                    >
-                      Annulla
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={handleCheckout}
-                      disabled={processing}
-                      className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold"
-                      data-testid="confirm-checkout-btn"
-                    >
-                      {processing ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <>
-                          <CheckCircle className="w-4 h-4 mr-2" />
-                          CONFERMA PAGAMENTO
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {!checkoutMode && (
-                <DialogFooter className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    onClick={handleDeleteAppointment}
-                    disabled={deleting}
-                    className="mr-auto"
-                    data-testid="delete-appointment-btn"
-                  >
-                    {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Trash2 className="w-4 h-4 mr-1" /> Elimina</>}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setEditDialogOpen(false);
-                      setEditingAppointment(null);
-                      resetCheckout();
-                    }}
-                    className="border-[var(--border-subtle)]"
-                  >
-                    Annulla
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={saving}
-                    className="bg-[var(--gold)] hover:bg-[var(--gold)] text-white font-semibold"
-                    data-testid="update-appointment-btn"
-                  >
-                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Edit3 className="w-4 h-4 mr-1" /> Salva</>}
-                  </Button>
-                </DialogFooter>
-              )}
-            </form>
-          </DialogContent>
-        </Dialog>
+        <EditAppointmentDialog
+          open={editDialogOpen}
+          onClose={() => { setEditDialogOpen(false); setEditingAppointment(null); }}
+          appointment={editingAppointment}
+          operators={operators}
+          clients={clients}
+          services={services}
+          onSuccess={handleRefreshData}
+          onLoyaltyAlert={(data) => { setLoyaltyAlertData(data); setLoyaltyAlertOpen(true); }}
+          onReviewAlert={(data) => { setReviewAlertData(data); setReviewAlertOpen(true); }}
+        />
 
         {/* Loyalty WhatsApp Alert */}
         <Dialog open={loyaltyAlertOpen} onOpenChange={setLoyaltyAlertOpen}>
@@ -2502,28 +1183,21 @@ export default function PlanningPage() {
                 {loyaltyAlertData?.totalPoints >= 10 ? (
                   <p>Ha diritto ad un <strong>taglio gratis</strong> o uno <strong>sconto di €10,00</strong> sui servizi di colpi di sole e schiariture.</p>
                 ) : (
-                  <p>Ha diritto ad uno <strong>sconto di €10,00</strong> sui servizi di colpi di sole e schiariture.</p>
+                  <p>Continuando ad accumulare punti avrà diritto a sconti e servizi gratuiti.</p>
                 )}
               </div>
-              <p className="text-sm text-[var(--text-secondary)]">Vuoi avvisare il cliente su WhatsApp?</p>
+              <p className="text-sm text-[var(--text-secondary)]">
+                Vuoi inviare un messaggio WhatsApp per avvisarlo/a?
+              </p>
             </div>
-            <DialogFooter className="flex gap-2 sm:gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setLoyaltyAlertOpen(false)}
-                className="flex-1 border-[var(--border-subtle)]"
-              >
+            <div className="flex gap-2 pt-2">
+              <Button variant="outline" className="flex-1 border-2" onClick={() => setLoyaltyAlertOpen(false)}>
                 Chiudi
               </Button>
-              <Button
-                onClick={openLoyaltyWhatsApp}
-                className="flex-1 bg-green-500/100 hover:bg-green-600 text-white font-bold"
-                data-testid="loyalty-whatsapp-btn"
-              >
-                <MessageSquare className="w-4 h-4 mr-2" />
-                Invia WhatsApp
+              <Button className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold" onClick={openLoyaltyWhatsApp} data-testid="loyalty-whatsapp-btn">
+                <MessageSquare className="w-4 h-4 mr-2" /> Invia WhatsApp
               </Button>
-            </DialogFooter>
+            </div>
           </DialogContent>
         </Dialog>
 
@@ -2545,21 +1219,13 @@ export default function PlanningPage() {
               </div>
             </div>
             <DialogFooter className="flex gap-2 sm:gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setReviewAlertOpen(false)}
-                className="flex-1 border-[var(--border-subtle)]"
-                data-testid="review-skip-btn"
-              >
+              <Button variant="outline" onClick={() => setReviewAlertOpen(false)}
+                className="flex-1 border-[var(--border-subtle)]" data-testid="review-skip-btn">
                 Salta
               </Button>
-              <Button
-                onClick={openReviewWhatsApp}
-                className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold"
-                data-testid="review-whatsapp-btn"
-              >
-                <MessageSquare className="w-4 h-4 mr-2" />
-                Chiedi Recensione
+              <Button onClick={openReviewWhatsApp}
+                className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold" data-testid="review-whatsapp-btn">
+                <MessageSquare className="w-4 h-4 mr-2" /> Chiedi Recensione
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -2568,3 +1234,4 @@ export default function PlanningPage() {
     </Layout>
   );
 }
+

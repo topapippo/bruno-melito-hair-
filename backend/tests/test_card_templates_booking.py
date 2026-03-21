@@ -7,7 +7,7 @@ import requests
 import os
 from datetime import datetime, timedelta
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://booking-widget-v2.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://salon-booking-fix-6.preview.emergentagent.com').rstrip('/')
 
 class TestPublicWebsiteEndpoint:
     """Test /api/public/website returns card_templates array"""

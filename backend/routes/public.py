@@ -152,7 +152,7 @@ async def get_public_services():
         user = await db.users.find_one({}, {"_id": 0, "id": 1})
     if not user:
         return []
-    return await db.services.find({"user_id": user["id"]}, {"_id": 0, "user_id": 0}).to_list(100)
+    return await db.services.find({"user_id": user["id"]}, {"_id": 0, "user_id": 0}).sort("sort_order", 1).to_list(100)
 
 
 @router.get("/public/operators")
@@ -202,23 +202,31 @@ async def create_public_booking(data: PublicBookingRequest):
         raise HTTPException(status_code=400, detail="Salone non configurato")
     user_id = user["id"]
 
-    existing = await db.appointments.find_one({
-        "user_id": user_id, "date": data.date, "time": data.time,
-        "operator_id": data.operator_id if data.operator_id else {"$exists": True},
-        "status": {"$ne": "cancelled"}
-    })
-    if existing:
-        # Find available operators for this time slot
-        busy_at_time = await db.appointments.find(
-            {"user_id": user_id, "date": data.date, "time": data.time, "status": {"$ne": "cancelled"}},
-            {"_id": 0, "operator_id": 1}
-        ).to_list(50)
-        busy_op_ids = [a.get("operator_id") for a in busy_at_time if a.get("operator_id")]
-        all_operators = await db.operators.find(
-            {"user_id": user_id, "active": True}, {"_id": 0, "id": 1, "name": 1}
-        ).to_list(50)
-        available_operators = [{"id": o["id"], "name": o["name"]} for o in all_operators if o["id"] not in busy_op_ids]
+    # Check for conflicts at requested time slot
+    busy_at_time = await db.appointments.find(
+        {"user_id": user_id, "date": data.date, "time": data.time, "status": {"$ne": "cancelled"}},
+        {"_id": 0, "operator_id": 1}
+    ).to_list(50)
+    busy_op_ids = [a.get("operator_id") for a in busy_at_time if a.get("operator_id")]
+    all_operators = await db.operators.find(
+        {"user_id": user_id, "active": True}, {"_id": 0, "id": 1, "name": 1}
+    ).to_list(50)
+    available_operators = [{"id": o["id"], "name": o["name"]} for o in all_operators if o["id"] not in busy_op_ids]
 
+    has_conflict = False
+    if data.operator_id:
+        # Specific operator requested - check if busy
+        if data.operator_id in busy_op_ids:
+            has_conflict = True
+    else:
+        # No operator preference - auto-assign a free operator if possible
+        if len(busy_at_time) > 0:
+            if available_operators:
+                data.operator_id = available_operators[0]["id"]
+            else:
+                has_conflict = True
+
+    if has_conflict:
         # Find alternative free time slots nearby
         all_apts = await db.appointments.find(
             {"user_id": user_id, "date": data.date, "status": {"$ne": "cancelled"}},

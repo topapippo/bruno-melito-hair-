@@ -4,7 +4,7 @@
 import requests
 import sys
 
-API_URL = "https://booking-widget-v2.preview.emergentagent.com/api"
+API_URL = "https://salon-booking-fix-6.preview.emergentagent.com/api"
 
 # Client notes extracted from Memo.xlsx
 # Format: client name -> notes (combining all memo data)
