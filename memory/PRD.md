@@ -10,36 +10,6 @@ Full-stack salon management application for Bruno Melito Hair salon in Santa Mar
 - **Hosting:** Render (Static Site for frontend, Web Service for backend)
 - **Theme:** Onyx & Gold dark theme
 
-## Current State (March 20, 2026)
-
-### ✅ COMPLETED - Production Deployment Fixed
-- Recreated backend Web Service on Render
-- Configured environment variables (MONGO_URL, DB_NAME, JWT_SECRET, CORS_ORIGINS)
-- Migrated 232 documents from Emergent local MongoDB to MongoDB Atlas:
-  - 173 clients
-  - 21 services
-  - 7 promotions
-  - 6 reviews
-  - 5 appointments
-  - Website configuration, gallery, templates, etc.
-
-### ✅ COMPLETED - Critical Bug Fixes
-- Added missing `/api/admin-theme` endpoint for saving admin panel appearance
-- Added missing `/api/nav-config` endpoint for saving sidebar customization
-- Added `/api/payments` endpoint
-- Added health check endpoint at root `/` for Render
-- Manually updated `backend/routes/stats.py` on GitHub (signorfabozzi-glitch repo)
-
-### ✅ PREVIOUSLY COMPLETED Features
-- PWA (Progressive Web App) with install banner
-- Floating WhatsApp button
-- Scroll-to-top button
-- Google Maps integration
-- Reviews carousel
-- Drag-and-drop section reordering
-- Settings page crash fix
-- Dark theme contrast/readability fixes
-
 ## Architecture
 
 ### Repositories
@@ -54,23 +24,77 @@ Full-stack salon management application for Bruno Melito Hair salon in Santa Mar
 - **MongoDB Atlas Cluster:** cluster0.glbiffm.mongodb.net
 - **Database Name:** mbhs
 
+## Credentials
+- **Admin Login:** admin@brunomelito.it / Admin123!
+
+## Implemented Features
+
+### Production Deployment (Completed)
+- Recreated backend Web Service on Render
+- Migrated local DB to MongoDB Atlas (232 documents)
+- Fixed missing endpoints (/api/admin-theme, /api/nav-config, /api/payments)
+- Health check endpoint at root /
+
+### Admin Panel Features (Completed)
+- Planning page with day/week/month views
+- Drag & drop appointment management
+- Client search with appointment history
+- Recurring appointments
+- Checkout/payment system (cash, prepaid cards)
+- Loyalty points system with WhatsApp notifications
+- Online booking notifications banner
+- Back arrow navigation
+- Scrollable/collapsible save dialog
+
+### Public Website Features (Completed)
+- PWA with install banner
+- Floating WhatsApp button
+- Scroll-to-top button
+- Google Maps integration
+- Reviews carousel
+- Drag-and-drop section reordering
+- Booking modal with services, operators, time slots
+
+### Card Templates / Abbonamenti (Completed - March 21, 2026)
+- **Public BookingModal:** Abbonamenti accordion section with purple color scheme (#A855F7)
+  - Shows all card templates with name, price, services count, duration
+  - Clients can select a card template during booking
+  - Selection badge appears below the accordion
+  - Card template info appears in step 3 riepilogo
+  - Booking payload includes card_template_id
+- **Admin PlanningPage:** 
+  - "Card, Promo & Abbonamenti" collapsible section in new appointment dialog
+  - Shows available card templates with price and details
+  - Admin can pre-select a card template for checkout reference
+  - Card template indicator shown in checkout mode
+- **Backend:**
+  - PublicBookingRequest model accepts promo_id and card_template_id
+  - Appointment saves promo_id and card_template_id
+  - /api/public/website returns card_templates array
+  - /api/card-templates CRUD endpoints (auth required)
+
 ## Known Issues
 
 ### Repository Sync Issue
 - Emergent pushes to `topapippo` repository
 - Render deploys from `signorfabozzi-glitch` repository
-- Manual updates required on signorfabozzi-glitch when code changes are made
+- Manual updates required on signorfabozzi-glitch when code changes
 
 ### Data Loss from Fork
-- Some photos were lost during fork (had 20+ gallery photos, now 4)
-- 7 "About Us" photos were lost
+- Some gallery/about photos lost during container fork
 - User should re-upload photos via admin panel
 
-## Credentials
-- **Admin Login:** admin@brunomelito.it / Admin123!
+### Dynamic Colors (PAUSED)
+- Public website theme colors not updating dynamically
+- User paused this to save credits
 
-## Next Steps / Backlog
-1. Re-upload lost gallery photos (user task)
-2. Resolve repository sync issue between topapippo and signorfabozzi-glitch
-3. Set up UptimeRobot or similar to prevent Render free tier spin-down
-4. Investigate SIGSEGV browser crash (potential CSS animation issue)
+### Cambia Operatore (P1)
+- Backend already returns available_operators and alternative_slots in 409 conflict response
+- Frontend handles the conflict overlay - needs verification
+
+## Backlog / Next Steps
+1. (P1) Fix "Cambia Operatore" conflict response verification
+2. (P1) Re-investigate public website dynamic color changes
+3. (P1) Implement Object Storage for media uploads (prevent data loss)
+4. (P2) Set up UptimeRobot for Render
+5. (P2) Investigate SIGSEGV browser crash in testing
