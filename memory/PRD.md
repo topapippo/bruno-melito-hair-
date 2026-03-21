@@ -61,11 +61,11 @@ Full-stack salon management app (React, FastAPI, MongoDB Atlas) for managing app
 ## Recent Changes (2026-03-21)
 ### New Features
 1. **Push Notifications** - VAPID keys, service worker, backend scheduler (hourly check), auto-subscribe after booking
-2. **Abbonamenti grid layout** - Public booking now matches admin with 2-column card grid + prices
+2. **Abbonamenti inside ABBONAMENTO tab** - 6 card templates (subscriptions + prepaid) displayed inside the "Abbonamento" service category accordion with detailed layout (name, type, price, duration, notes). Separate "Abbonamenti & Card" accordion removed.
 
 ### Bug Fixes (from earlier this session)
 1. Services order fixed (sort_order ascending)
-2. Abbonamenti visibility (top of booking modal)
+2. Abbonamenti moved inside ABBONAMENTO tab per user request
 3. Operator conflict (auto-assign free operator)
 
 ### Refactoring
@@ -79,4 +79,5 @@ Full-stack salon management app (React, FastAPI, MongoDB Atlas) for managing app
 - `POST /api/push/send-reminders` - Send push reminders (also runs hourly)
 
 ## Backlog
-- No pending tasks. All PRD features complete.
+- Render deployment verification (user must confirm deploy works)
+- Client statistics dashboard (charts: visit frequency, avg spend, top services)
