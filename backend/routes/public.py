@@ -303,6 +303,7 @@ async def create_public_booking(data: PublicBookingRequest):
         "total_duration": total_duration, "total_price": total_price,
         "status": "scheduled",
         "notes": f"[Online] {data.notes}" if data.notes else "[Prenotazione Online]",
+        "promo_id": data.promo_id, "card_template_id": data.card_template_id,
         "source": "online", "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.appointments.insert_one(appointment)

@@ -63,6 +63,8 @@ class PublicBookingRequest(BaseModel):
     date: str
     time: str
     notes: Optional[str] = ""
+    promo_id: Optional[str] = None
+    card_template_id: Optional[str] = None
 
 class CheckoutData(BaseModel):
     payment_method: str

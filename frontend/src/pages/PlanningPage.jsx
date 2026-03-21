@@ -157,6 +157,10 @@ export default function PlanningPage() {
   const [preSelectedPromoId, setPreSelectedPromoId] = useState('');
   const [showCardPromoSection, setShowCardPromoSection] = useState(false);
   
+  // Card templates (global abbonamenti) for new appointment dialog
+  const [allCardTemplates, setAllCardTemplates] = useState([]);
+  const [preSelectedTemplateId, setPreSelectedTemplateId] = useState('');
+  
   // Categories to hide from service selection
   const HIDDEN_CATEGORIES = ['stiratura', 'permanente', 'styling'];
 
@@ -235,6 +239,11 @@ export default function PlanningPage() {
       setOperators(activeOps);
       setClients(clientsRes.data);
       setServices(servicesRes.data);
+      // Fetch card templates
+      try {
+        const tmplRes = await axios.get(`${API}/card-templates`);
+        setAllCardTemplates(tmplRes.data);
+      } catch { setAllCardTemplates([]); }
       // Set MBHS as default operator if form is empty
       if (!formData.operator_id) {
         const mbhs = activeOps.find(op => op.name.toUpperCase().includes('MBHS')) || activeOps[0];
@@ -312,6 +321,7 @@ export default function PlanningPage() {
     setDialogClientPromos([]);
     setPreSelectedCardId('');
     setPreSelectedPromoId('');
+    setPreSelectedTemplateId('');
     setSelectedClientInfo(null);
     setFormData({
       ...formData,
@@ -332,6 +342,7 @@ export default function PlanningPage() {
     setDialogClientPromos([]);
     setPreSelectedCardId('');
     setPreSelectedPromoId('');
+    setPreSelectedTemplateId('');
     setSelectedClientInfo(null);
     setFormData({
       client_id: '', service_ids: [], operator_id: mbhsOperator?.id || '', time: '09:00', notes: '',
@@ -361,8 +372,8 @@ export default function PlanningPage() {
         payload.client_name = newClientName || 'Cliente Occasionale';
         payload.client_phone = newClientPhone || '';
       }
-      // Add pre-selected card/promo info to notes for reference
-      if (preSelectedCardId || preSelectedPromoId) {
+      // Add pre-selected card/promo/template info to notes for reference
+      if (preSelectedCardId || preSelectedPromoId || preSelectedTemplateId) {
         const notes = [];
         if (preSelectedCardId) {
           const card = dialogClientCards.find(c => c.id === preSelectedCardId);
@@ -372,15 +383,20 @@ export default function PlanningPage() {
           const promo = dialogClientPromos.find(p => p.id === preSelectedPromoId);
           if (promo) notes.push(`[PROMO: ${promo.name}]`);
         }
+        if (preSelectedTemplateId) {
+          const tmpl = allCardTemplates.find(t => t.id === preSelectedTemplateId);
+          if (tmpl) notes.push(`[ABBON: ${tmpl.name}]`);
+        }
         if (notes.length > 0) {
           payload.notes = (payload.notes ? payload.notes + ' ' : '') + notes.join(' ');
         }
-        // Save promo_id/card_id on the appointment for checkout pre-selection
+        // Save promo_id/card_id/card_template_id on the appointment for checkout pre-selection
         payload.promo_id = preSelectedPromoId || null;
         payload.card_id = preSelectedCardId || null;
+        payload.card_template_id = preSelectedTemplateId || null;
       }
       await axios.post(`${API}/appointments`, payload);
-      toast.success('Appuntamento creato!' + (preSelectedCardId || preSelectedPromoId ? ' Card/Promo salvate nelle note.' : ''));
+      toast.success('Appuntamento creato!' + (preSelectedCardId || preSelectedPromoId || preSelectedTemplateId ? ' Card/Promo/Abbonamento salvati.' : ''));
       setDialogOpen(false);
       setFormData({ client_id: '', service_ids: [], operator_id: mbhsOperator?.id || '', time: '09:00', notes: '', date: '' });
       setNewClientMode(false);
@@ -391,6 +407,7 @@ export default function PlanningPage() {
       setDialogClientPromos([]);
       setPreSelectedCardId('');
       setPreSelectedPromoId('');
+      setPreSelectedTemplateId('');
       setSelectedClientInfo(null);
       fetchData();
       if (viewMode === 'week') fetchWeekData();
@@ -1586,8 +1603,8 @@ export default function PlanningPage() {
                 )}
               </div>
 
-              {/* Card & Promozioni del Cliente - COLLAPSIBLE */}
-              {(dialogClientCards.length > 0 || dialogClientPromos.length > 0) && (
+              {/* Card & Promozioni & Abbonamenti - COLLAPSIBLE */}
+              {(dialogClientCards.length > 0 || dialogClientPromos.length > 0 || allCardTemplates.length > 0) && (
                 <div className="space-y-2">
                   <button
                     type="button"
@@ -1596,8 +1613,8 @@ export default function PlanningPage() {
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-green-400 font-bold flex items-center gap-2">
-                        <Ticket className="w-4 h-4" /> Card & Promozioni ({dialogClientCards.length + dialogClientPromos.length})
-                        {(preSelectedCardId || preSelectedPromoId) && <Check className="w-4 h-4 text-green-500" />}
+                        <Ticket className="w-4 h-4" /> Card, Promo & Abbonamenti ({dialogClientCards.length + dialogClientPromos.length + allCardTemplates.length})
+                        {(preSelectedCardId || preSelectedPromoId || preSelectedTemplateId) && <Check className="w-4 h-4 text-green-500" />}
                       </span>
                       <ChevronDown className={`w-4 h-4 text-green-400 transition-transform ${showCardPromoSection ? 'rotate-180' : ''}`} />
                     </div>
@@ -1609,7 +1626,7 @@ export default function PlanningPage() {
                     {/* Client Cards */}
                     {dialogClientCards.length > 0 && (
                       <div className="space-y-2">
-                        <p className="text-xs font-semibold text-green-400 uppercase">Card/Abbonamenti</p>
+                        <p className="text-xs font-semibold text-green-400 uppercase">Card del Cliente</p>
                         <div className="grid grid-cols-1 gap-2">
                           {dialogClientCards.map(card => (
                             <button
@@ -1628,7 +1645,45 @@ export default function PlanningPage() {
                                   <CreditCard className={`w-4 h-4 ${preSelectedCardId === card.id ? 'text-green-400' : 'text-[var(--text-muted)]'}`} />
                                   <span className="font-bold text-sm text-[var(--text-primary)]">{card.name}</span>
                                 </div>
-                                <span className="font-black text-green-400 text-sm">€{card.remaining_value?.toFixed(2)}</span>
+                                <span className="font-black text-green-400 text-sm">{'\u20AC'}{card.remaining_value?.toFixed(2)}</span>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Card Templates / Abbonamenti */}
+                    {allCardTemplates.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold uppercase" style={{ color: '#A855F7' }}>Abbonamenti Disponibili</p>
+                        <div className="grid grid-cols-1 gap-2">
+                          {allCardTemplates.map(tmpl => (
+                            <button
+                              key={tmpl.id}
+                              type="button"
+                              onClick={() => setPreSelectedTemplateId(preSelectedTemplateId === tmpl.id ? '' : tmpl.id)}
+                              className={`w-full p-2 rounded-lg border-2 text-left transition-all ${
+                                preSelectedTemplateId === tmpl.id 
+                                  ? 'border-purple-500 bg-purple-500/10 ring-1 ring-purple-400' 
+                                  : 'border-purple-200 bg-[var(--bg-card)] hover:border-purple-400'
+                              }`}
+                              data-testid={`preselect-template-${tmpl.id}`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <CreditCard className={`w-4 h-4 ${preSelectedTemplateId === tmpl.id ? 'text-purple-500' : 'text-[var(--text-muted)]'}`} />
+                                  <div>
+                                    <span className="font-bold text-sm text-[var(--text-primary)]">{tmpl.name}</span>
+                                    {tmpl.total_services && (
+                                      <span className="text-[10px] text-[var(--text-muted)] ml-2">{tmpl.total_services} servizi</span>
+                                    )}
+                                    {tmpl.duration_months && (
+                                      <span className="text-[10px] text-[var(--text-muted)] ml-2">{tmpl.duration_months} mesi</span>
+                                    )}
+                                  </div>
+                                </div>
+                                <span className="font-black text-sm" style={{ color: '#A855F7' }}>{'\u20AC'}{tmpl.total_value}</span>
                               </div>
                             </button>
                           ))}
@@ -2134,6 +2189,19 @@ export default function PlanningPage() {
                     <Euro className="w-5 h-5" />
                     INCASSO
                   </h3>
+
+                  {/* Card Template pre-selected indicator */}
+                  {editingAppointment?.card_template_id && (
+                    <div className="mb-4 p-3 rounded-xl border-2 flex items-center gap-3" style={{ borderColor: '#A855F7', background: 'rgba(168,85,247,0.08)' }} data-testid="card-template-indicator">
+                      <CreditCard className="w-5 h-5 flex-shrink-0" style={{ color: '#A855F7' }} />
+                      <div className="flex-1">
+                        <p className="font-bold text-sm" style={{ color: '#A855F7' }}>Abbonamento richiesto dal cliente</p>
+                        <p className="text-xs text-[var(--text-secondary)]">
+                          {editingAppointment.notes?.match(/\[ABBON: ([^\]]+)\]/)?.[1] || editingAppointment.notes?.match(/\[CARD: ([^\]]+)\]/)?.[1] || 'Abbonamento selezionato'}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                   
                   {/* Payment Method */}
                   <div className="space-y-2 mb-4">

@@ -383,6 +383,7 @@ export default function BookingPage() {
         services={services}
         operators={operators}
         promos={promos}
+        cardTemplates={siteData?.card_templates || []}
         COLORS={COLORS}
         cfg={cfg}
         loading={loading}

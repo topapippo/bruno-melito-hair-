@@ -7,7 +7,7 @@ import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
 import {
   Scissors, Gift, Calendar, ArrowRight, X, AlertCircle,
-  CheckCircle, MessageSquare, Phone, Clock, Users, ChevronDown
+  CheckCircle, MessageSquare, Phone, Clock, Users, ChevronDown, CreditCard
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -81,6 +81,7 @@ export default function BookingModal({ open, onClose, services, operators, promo
         date: format(new Date(), 'yyyy-MM-dd'), time: '09:00', notes: ''
       });
       setSelectedPromo(null);
+      setSelectedCardTemplate(null);
       setConflictModal(null);
       setShowConflictOverlay(false);
       setOpenCats([]);
@@ -134,7 +135,9 @@ export default function BookingModal({ open, onClose, services, operators, promo
         operator_id: formData.operator_id || null,
         date: formData.date,
         time: formData.time,
-        notes: formData.notes || ''
+        notes: formData.notes || '',
+        promo_id: selectedPromo?.id || null,
+        card_template_id: selectedCardTemplate?.id || null
       });
       onSuccess({ ...formData, serviceNames: selSvcs.map(s => s.name), totalPrice: totPrice, totalDuration: totDur });
     } catch (err) {
@@ -430,8 +433,9 @@ export default function BookingModal({ open, onClose, services, operators, promo
                                         toast('Promo rimossa');
                                       } else {
                                         setSelectedPromo(promo);
+                                        setSelectedCardTemplate(null);
                                         const code = promo.promo_code || promo.name;
-                                        setForm(f => ({ ...f, notes: `[PROMO: ${code}] ${f.notes.replace(/\[PROMO: [^\]]+\] /g, '')}` }));
+                                        setForm(f => ({ ...f, notes: `[PROMO: ${code}] ${f.notes.replace(/\[PROMO: [^\]]+\] /g, '').replace(/\[CARD: [^\]]+\] /g, '')}` }));
                                         toast.success(`Promo "${promo.name}" applicata!`);
                                       }
                                     }}
@@ -460,6 +464,82 @@ export default function BookingModal({ open, onClose, services, operators, promo
                             )}
                           </div>
                         )}
+
+                        {/* Card Templates / Abbonamenti accordion section */}
+                        {cardTemplates.length > 0 && (
+                          <div className="rounded-xl overflow-hidden border transition-all"
+                            style={{ borderColor: openCats.includes('__card__') ? 'rgba(168,85,247,0.3)' : 'var(--border-subtle)' }}
+                            data-testid="card-templates-accordion">
+                            <button onClick={() => toggleCat('__card__')}
+                              className="btn-animate w-full flex items-center justify-between px-3 py-2.5 text-left transition-all"
+                              style={{ background: openCats.includes('__card__') ? 'rgba(168,85,247,0.08)' : 'var(--bg-elevated)' }}
+                              data-testid="cat-accordion-card">
+                              <div className="flex items-center gap-2">
+                                <ChevronDown className={`w-4 h-4 transition-transform ${openCats.includes('__card__') ? 'rotate-180' : ''}`}
+                                  style={{ color: openCats.includes('__card__') ? '#A855F7' : 'var(--text-muted)' }} />
+                                <CreditCard className="w-4 h-4" style={{ color: openCats.includes('__card__') ? '#A855F7' : 'var(--text-muted)' }} />
+                                <span className="font-bold text-sm" style={{ color: '#A855F7' }}>Abbonamenti</span>
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(168,85,247,0.15)', color: '#A855F7' }}>{cardTemplates.length}</span>
+                              </div>
+                              {selectedCardTemplate && (
+                                <span className="text-[10px] font-black text-white px-2 py-0.5 rounded-full" style={{ background: '#A855F7' }}>1 sel.</span>
+                              )}
+                            </button>
+                            {openCats.includes('__card__') && (
+                              <div className="border-t divide-y" style={{ borderColor: 'var(--border-subtle)' }}>
+                                {cardTemplates.map((tmpl, i) => (
+                                  <button key={tmpl.id || i}
+                                    onClick={() => {
+                                      if (selectedCardTemplate?.id === tmpl.id) {
+                                        setSelectedCardTemplate(null);
+                                        setForm(f => ({ ...f, notes: f.notes.replace(/\[CARD: [^\]]+\] /g, '') }));
+                                        toast('Abbonamento rimosso');
+                                      } else {
+                                        setSelectedCardTemplate(tmpl);
+                                        setSelectedPromo(null);
+                                        setForm(f => ({ ...f, notes: `[CARD: ${tmpl.name}] ${f.notes.replace(/\[CARD: [^\]]+\] /g, '').replace(/\[PROMO: [^\]]+\] /g, '')}` }));
+                                        toast.success(`Abbonamento "${tmpl.name}" selezionato!`);
+                                      }
+                                    }}
+                                    className="btn-animate w-full px-3 py-2.5 text-left transition-all"
+                                    style={{ background: selectedCardTemplate?.id === tmpl.id ? 'rgba(168,85,247,0.08)' : 'var(--bg-card)' }}
+                                    data-testid={`card-template-${i}`}>
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0"
+                                        style={selectedCardTemplate?.id === tmpl.id
+                                          ? { borderColor: '#A855F7', background: '#A855F7' }
+                                          : { borderColor: 'var(--text-muted)' }}>
+                                        {selectedCardTemplate?.id === tmpl.id && <CheckCircle className="w-3 h-3 text-white" />}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="font-bold text-sm text-[var(--text-primary)]">{tmpl.name}</p>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                          <span className="text-[11px] font-bold" style={{ color: '#A855F7' }}>
+                                            {'\u20AC'}{tmpl.total_value}
+                                          </span>
+                                          {tmpl.total_services && (
+                                            <span className="text-[11px] text-[var(--text-muted)]">
+                                              {tmpl.total_services} servizi
+                                            </span>
+                                          )}
+                                          {tmpl.duration_months && (
+                                            <span className="text-[11px] text-[var(--text-muted)]">
+                                              {tmpl.duration_months} mesi
+                                            </span>
+                                          )}
+                                        </div>
+                                        {tmpl.notes && <p className="text-[11px] text-[var(--text-muted)] truncate mt-0.5">{tmpl.notes}</p>}
+                                      </div>
+                                      <span className="text-white text-[9px] font-black px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: '#A855F7' }}>
+                                        {tmpl.card_type === 'subscription' ? 'ABBON.' : 'CARD'}
+                                      </span>
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </>
                   )}
@@ -473,6 +553,23 @@ export default function BookingModal({ open, onClose, services, operators, promo
                       </div>
                       <button onClick={(e) => { e.stopPropagation(); setSelectedPromo(null); setForm(f => ({ ...f, notes: f.notes.replace(/\[PROMO: [^\]]+\] /g, '') })); }}
                         className="btn-animate text-[10px] font-bold px-2 py-0.5 rounded-lg hover:bg-white/10 text-[var(--cyan)]">
+                        Rimuovi
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Selected card template badge */}
+                  {selectedCardTemplate && (
+                    <div className="mt-3 p-2.5 rounded-xl flex items-center justify-between border" style={{ background: 'rgba(168,85,247,0.08)', borderColor: 'rgba(168,85,247,0.3)' }} data-testid="selected-card-badge">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="w-3.5 h-3.5" style={{ color: '#A855F7' }} />
+                        <div>
+                          <p className="text-xs font-bold" style={{ color: '#A855F7' }}>{selectedCardTemplate.name}</p>
+                          <p className="text-[10px]" style={{ color: '#A855F7' }}>{'\u20AC'}{selectedCardTemplate.total_value}</p>
+                        </div>
+                      </div>
+                      <button onClick={(e) => { e.stopPropagation(); setSelectedCardTemplate(null); setForm(f => ({ ...f, notes: f.notes.replace(/\[CARD: [^\]]+\] /g, '') })); }}
+                        className="btn-animate text-[10px] font-bold px-2 py-0.5 rounded-lg hover:bg-white/10" style={{ color: '#A855F7' }}>
                         Rimuovi
                       </button>
                     </div>
@@ -641,6 +738,12 @@ export default function BookingModal({ open, onClose, services, operators, promo
                       <div className="flex justify-between text-xs">
                         <span className="text-[var(--cyan)]">Promo</span>
                         <span className="font-bold text-[var(--cyan)]">{selectedPromo.name}</span>
+                      </div>
+                    )}
+                    {selectedCardTemplate && (
+                      <div className="flex justify-between text-xs">
+                        <span style={{ color: '#A855F7' }}>Abbonamento</span>
+                        <span className="font-bold" style={{ color: '#A855F7' }}>{selectedCardTemplate.name} - {'\u20AC'}{selectedCardTemplate.total_value}</span>
                       </div>
                     )}
                     <div className="flex justify-between font-black text-[var(--text-primary)] pt-1.5 border-t border-[var(--border-subtle)]">
