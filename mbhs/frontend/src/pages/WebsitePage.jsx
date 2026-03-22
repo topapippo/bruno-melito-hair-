@@ -100,11 +100,24 @@ export default function WebsitePage() {
   const totalPrice = selectedServices.reduce((sum, s) => sum + (s.price || 0), 0);
   const totalDuration = selectedServices.reduce((sum, s) => sum + (s.duration || 0), 0);
 
+  const [conflictData, setConflictData] = useState(null);
+
   const handleSubmit = async () => {
     if (!formData.client_name || !formData.client_phone) { toast.error('Inserisci nome e telefono'); return; }
     setSubmitting(true);
-    try { await axios.post(`${API}/public/booking`, formData); setSuccess(true); }
-    catch (err) { toast.error(err.response?.data?.detail || 'Errore nella prenotazione'); }
+    setConflictData(null);
+    try { 
+      await axios.post(`${API}/public/booking`, formData); 
+      setSuccess(true); 
+    }
+    catch (err) {
+      if (err.response?.status === 409 && err.response?.data?.detail?.conflict) {
+        setConflictData(err.response.data.detail);
+        toast.error('Orario occupato! Scegli un operatore disponibile o un orario alternativo.');
+      } else {
+        toast.error(err.response?.data?.detail || 'Errore nella prenotazione');
+      }
+    }
     finally { setSubmitting(false); }
   };
 
@@ -174,17 +187,36 @@ export default function WebsitePage() {
           {step === 1 && (
             <div className="space-y-4">
               <h2 className="text-xl font-black text-white">Scegli i Servizi</h2>
-              <div className="space-y-2">
-                {bookingServices.map(service => (
-                  <div key={service.id} onClick={() => toggleService(service.id)}
-                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${formData.service_ids.includes(service.id) ? 'border-[#D4A847] bg-[#D4A847]/15' : 'border-[#3A2A1A] bg-[#2A1A0E] hover:border-[#6A4A2A]'}`}
-                    data-testid={`website-service-${service.id}`}>
-                    <div className="flex justify-between items-center">
-                      <div><p className="font-bold text-white">{service.name}</p><p className="text-sm text-[#8A6A4A]">{service.duration} min</p></div>
-                      <p className="font-black text-white">{'\u20AC'}{service.price}</p>
-                    </div>
+              {(() => {
+                const byCat = {};
+                bookingServices.forEach(s => {
+                  const cat = (s.category || 'altro').toLowerCase();
+                  if (!byCat[cat]) byCat[cat] = [];
+                  byCat[cat].push(s);
+                });
+                const cats = Object.keys(byCat).sort();
+                return (
+                  <div className="space-y-3">
+                    {cats.map(cat => (
+                      <div key={cat}>
+                        <h3 className="text-sm font-bold text-[#D4A847] uppercase tracking-wider mb-2">{cat}</h3>
+                        <div className="space-y-2">
+                          {byCat[cat].map(service => (
+                            <div key={service.id} onClick={() => toggleService(service.id)}
+                              className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${formData.service_ids.includes(service.id) ? 'border-[#D4A847] bg-[#D4A847]/15' : 'border-[#3A2A1A] bg-[#2A1A0E] hover:border-[#6A4A2A]'}`}
+                              data-testid={`website-service-${service.id}`}>
+                              <div className="flex justify-between items-center">
+                                <div><p className="font-bold text-white">{service.name}</p><p className="text-sm text-[#8A6A4A]">{service.duration} min</p></div>
+                                <p className="font-black text-white">{'\u20AC'}{service.price}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                );
+              })()}
               </div>
               
               {/* Promozioni & Card cliccabili */}
@@ -322,6 +354,39 @@ export default function WebsitePage() {
                   {submitting ? <Clock className="w-4 h-4 animate-spin" /> : 'Conferma Prenotazione'}
                 </Button>
               </div>
+              {conflictData && (
+                <div className="mt-4 p-4 rounded-xl border-2 border-red-500/40 bg-red-500/10 space-y-3" data-testid="conflict-panel">
+                  <p className="text-red-300 font-bold text-sm">Orario occupato!</p>
+                  {conflictData.available_operators?.length > 0 && (
+                    <div>
+                      <p className="text-xs text-[#B89A7A] mb-2">Operatori disponibili per lo stesso orario:</p>
+                      <div className="space-y-1.5">
+                        {conflictData.available_operators.map(op => (
+                          <button key={op.id} onClick={() => { setFormData(prev => ({...prev, operator_id: op.id})); setConflictData(null); toast.success(`Operatore "${op.name}" selezionato`); }}
+                            className="w-full p-3 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-bold text-sm text-left hover:bg-emerald-500/25 transition-all"
+                            data-testid={`conflict-op-${op.id}`}>
+                            {op.name} - disponibile
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {conflictData.alternative_slots?.length > 0 && (
+                    <div>
+                      <p className="text-xs text-[#B89A7A] mb-2">Orari alternativi:</p>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {conflictData.alternative_slots.map((slot, i) => (
+                          <button key={i} onClick={() => { setFormData(prev => ({...prev, time: slot.time, operator_id: slot.operator_id || prev.operator_id})); setConflictData(null); toast.success(`Orario ${slot.time} selezionato`); }}
+                            className="p-2 rounded-lg bg-sky-500/15 border border-sky-500/30 text-sky-300 font-bold text-sm text-center hover:bg-sky-500/25 transition-all"
+                            data-testid={`conflict-slot-${i}`}>
+                            {slot.time}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>

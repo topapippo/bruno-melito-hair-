@@ -166,12 +166,66 @@ async def create_public_booking(data: PublicBookingRequest):
         raise HTTPException(status_code=400, detail="Salone non configurato")
     user_id = user["id"]
 
-    existing = await db.appointments.find_one({
-        "user_id": user_id, "date": data.date, "time": data.time,
-        "operator_id": data.operator_id if data.operator_id else {"$exists": True}
-    })
-    if existing:
-        raise HTTPException(status_code=400, detail="Orario già occupato. Scegli un altro orario.")
+    # Check for conflicts at requested time slot
+    busy_at_time = await db.appointments.find(
+        {"user_id": user_id, "date": data.date, "time": data.time, "status": {"$ne": "cancelled"}},
+        {"_id": 0, "operator_id": 1}
+    ).to_list(50)
+    busy_op_ids = [a.get("operator_id") for a in busy_at_time if a.get("operator_id")]
+
+    all_operators = await db.operators.find(
+        {"user_id": user_id, "active": True}, {"_id": 0, "id": 1, "name": 1}
+    ).to_list(50)
+    available_operators = [{"id": o["id"], "name": o["name"]} for o in all_operators if o["id"] not in busy_op_ids]
+
+    has_conflict = False
+    if data.operator_id:
+        if data.operator_id in busy_op_ids:
+            has_conflict = True
+    else:
+        if len(busy_at_time) > 0:
+            if available_operators:
+                data.operator_id = available_operators[0]["id"]
+            else:
+                has_conflict = True
+
+    if has_conflict:
+        all_apts = await db.appointments.find(
+            {"user_id": user_id, "date": data.date, "status": {"$ne": "cancelled"}},
+            {"_id": 0, "time": 1, "operator_id": 1}
+        ).to_list(200)
+        busy_times_for_op = set()
+        target_op = data.operator_id
+        for a in all_apts:
+            if not target_op or a.get("operator_id") == target_op:
+                busy_times_for_op.add(a.get("time"))
+
+        h, m = map(int, data.time.split(":"))
+        base = h * 60 + m
+        alternative_slots = []
+        for offset in range(-120, 121, 15):
+            t_min = base + offset
+            if t_min < 480 or t_min > 1200 or offset == 0:
+                continue
+            t_str = f"{t_min // 60:02d}:{t_min % 60:02d}"
+            if t_str not in busy_times_for_op:
+                op_name = None
+                if target_op:
+                    op = next((o for o in all_operators if o["id"] == target_op), None)
+                    op_name = op["name"] if op else None
+                alternative_slots.append({"date": data.date, "time": t_str, "operator_id": target_op or "", "operator_name": op_name or "Disponibile"})
+                if len(alternative_slots) >= 4:
+                    break
+
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "message": "Orario già occupato. Scegli un altro orario.",
+                "conflict": True,
+                "available_operators": available_operators,
+                "alternative_slots": alternative_slots
+            }
+        )
 
     client = await db.clients.find_one({"phone": data.client_phone, "user_id": user_id}, {"_id": 0})
     if not client:

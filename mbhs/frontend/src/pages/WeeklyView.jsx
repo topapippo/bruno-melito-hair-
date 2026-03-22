@@ -45,14 +45,14 @@ export default function WeeklyView() {
     setLoading(true);
     try {
       const startDate = format(weekStart, 'yyyy-MM-dd');
-      const endDate = format(addDays(weekStart, 5), 'yyyy-MM-dd');
+      const endDate = format(addDays(weekStart, 6), 'yyyy-MM-dd');
       const res = await axios.get(`${API}/appointments?start_date=${startDate}&end_date=${endDate}`);
       setAppointments(res.data);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
 
-  const weekDays = Array.from({ length: 6 }, (_, i) => addDays(weekStart, i));
+  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
   const getAppointmentsForDay = (date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
