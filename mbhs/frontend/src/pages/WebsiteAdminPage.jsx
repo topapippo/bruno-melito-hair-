@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import { getMediaUrl } from '../lib/mediaUrl';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
@@ -12,8 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Save, Plus, Trash2, Upload, Image, Star, Globe, Eye, Loader2, X, GripVertical } from 'lucide-react';
 import { toast } from 'sonner';
-
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export default function WebsiteAdminPage() {
   const [config, setConfig] = useState(null);
@@ -32,9 +30,9 @@ export default function WebsiteAdminPage() {
   const fetchAll = async () => {
     try {
       const [configRes, reviewsRes, galleryRes] = await Promise.all([
-        axios.get(`${API}/website/config`),
-        axios.get(`${API}/website/reviews`),
-        axios.get(`${API}/website/gallery`)
+        api.get('/website/config'),
+        api.get('/website/reviews'),
+        api.get('/website/gallery')
       ]);
       setConfig(configRes.data);
       setReviews(reviewsRes.data);
@@ -46,7 +44,7 @@ export default function WebsiteAdminPage() {
   const saveConfig = async () => {
     setSaving(true);
     try {
-      const res = await axios.put(`${API}/website/config`, config);
+      const res = await api.put('/website/config', config);
       setConfig(res.data);
       toast.success('Configurazione salvata!');
     } catch (err) { toast.error('Errore nel salvataggio'); }
@@ -72,12 +70,12 @@ export default function WebsiteAdminPage() {
   const saveReview = async () => {
     try {
       if (editReview) {
-        await axios.put(`${API}/website/reviews/${editReview.id}`, reviewForm);
+        await api.put(`/website/reviews/${editReview.id}`, reviewForm);
       } else {
-        await axios.post(`${API}/website/reviews`, reviewForm);
+        await api.post('/website/reviews', reviewForm);
       }
       setReviewDialog(false);
-      const res = await axios.get(`${API}/website/reviews`);
+      const res = await api.get('/website/reviews');
       setReviews(res.data);
       toast.success('Recensione salvata!');
     } catch (err) { toast.error('Errore'); }
@@ -86,7 +84,7 @@ export default function WebsiteAdminPage() {
   const deleteReview = async (id) => {
     if (!window.confirm('Eliminare questa recensione?')) return;
     try {
-      await axios.delete(`${API}/website/reviews/${id}`);
+      await api.delete(`/website/reviews/${id}`);
       setReviews(prev => prev.filter(r => r.id !== id));
       toast.success('Recensione eliminata');
     } catch (err) { toast.error('Errore'); }
@@ -101,11 +99,11 @@ export default function WebsiteAdminPage() {
       for (const file of files) {
         const formData = new FormData();
         formData.append('file', file);
-        const uploadRes = await axios.post(`${API}/website/upload`, formData, {
+        const uploadRes = await api.post('/website/upload', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
         const fileType = uploadRes.data.file_type || (file.type.startsWith('video') ? 'video' : 'image');
-        await axios.post(`${API}/website/gallery`, {
+        await api.post('/website/gallery', {
           image_url: uploadRes.data.url,
           label: file.name.split('.')[0],
           tag: '',
@@ -113,7 +111,7 @@ export default function WebsiteAdminPage() {
           file_type: fileType
         });
       }
-      const res = await axios.get(`${API}/website/gallery`);
+      const res = await api.get('/website/gallery');
       setGallery(res.data);
       const videoCount = files.filter(f => f.type.startsWith('video')).length;
       const imageCount = files.length - videoCount;
@@ -127,7 +125,7 @@ export default function WebsiteAdminPage() {
 
   const updateGalleryItem = async (id, field, value) => {
     try {
-      await axios.put(`${API}/website/gallery/${id}`, { [field]: value });
+      await api.put(`/website/gallery/${id}`, { [field]: value });
       setGallery(prev => prev.map(g => g.id === id ? { ...g, [field]: value } : g));
     } catch (err) { toast.error('Errore'); }
   };
@@ -135,7 +133,7 @@ export default function WebsiteAdminPage() {
   const deleteGalleryItem = async (id) => {
     if (!window.confirm('Eliminare questa foto?')) return;
     try {
-      await axios.delete(`${API}/website/gallery/${id}`);
+      await api.delete(`/website/gallery/${id}`);
       setGallery(prev => prev.filter(g => g.id !== id));
       toast.success('Foto eliminata');
     } catch (err) { toast.error('Errore'); }
@@ -203,6 +201,21 @@ export default function WebsiteAdminPage() {
 
   if (loading) {
     return <Layout><div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-[#C8617A]" /></div></Layout>;
+  }
+
+  // Handle case when config failed to load (e.g., auth error)
+  if (!config) {
+    return (
+      <Layout>
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <p className="text-red-500 font-bold mb-4">Errore nel caricamento della configurazione</p>
+          <p className="text-[#7C5C4A] mb-4">Potrebbe essere un problema di autenticazione. Prova a effettuare nuovamente il login.</p>
+          <Button onClick={fetchAll} className="bg-[#C8617A] hover:bg-[#A0404F] text-white">
+            Riprova
+          </Button>
+        </div>
+      </Layout>
+    );
   }
 
   const salonPhotos = gallery.filter(g => g.section === 'salon');

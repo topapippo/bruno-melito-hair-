@@ -299,3 +299,4 @@ frontend/node_modules/.cache/default-development/8.pack
 # Environment files
 *.env
 *.env.*
+mbhs/frontend/node_modules/.cache/default-development/1.pack

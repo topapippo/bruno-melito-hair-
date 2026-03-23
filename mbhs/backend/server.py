@@ -42,6 +42,22 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Errore creazione indici MongoDB: {e}")
 
+    # Start push notification scheduler
+    import asyncio
+    try:
+        from routes.push import _send_push_reminders_core
+        async def push_reminder_loop():
+            while True:
+                try:
+                    await _send_push_reminders_core()
+                except Exception as e:
+                    logger.error(f"Push reminder error: {e}")
+                await asyncio.sleep(3600)
+        asyncio.ensure_future(push_reminder_loop())
+        logger.info("Push notification scheduler avviato")
+    except Exception as e:
+        logger.warning(f"Push scheduler non avviato: {e}")
+
     yield
 
     # Shutdown
