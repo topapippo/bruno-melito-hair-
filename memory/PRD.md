@@ -6,44 +6,46 @@ Full-stack salon management app (React + FastAPI + MongoDB Atlas) deployed on Re
 - Backend: Render Web Service (root: `mbhs/backend`)
 - Database: MongoDB Atlas
 
-## CRITICAL: Two Codebases
-- `/app/frontend/` + `/app/backend/` → Preview environment (Emergent)
-- `/app/mbhs/frontend/` + `/app/mbhs/backend/` → PRODUCTION (Render)
-- **ALL production changes MUST go in `/app/mbhs/`**
+## UNIFIED CODEBASE (2026-03-23)
+- `/app/frontend/` → symlink to `/app/mbhs/frontend/`
+- `/app/backend/` → symlink to `/app/mbhs/backend/`
+- **Single codebase**: all changes go to `/app/mbhs/`
+- Preview and Production use the SAME code
 
 ## Architecture
-- Backend: FastAPI + Motor (MongoDB async)
+- Backend: FastAPI + Motor (MongoDB async) + pywebpush
 - Frontend: React (CRA via craco) + Tailwind + shadcn/ui
 - Auth: JWT-based
 - Storage: Emergent Object Storage (via direct HTTP requests)
+- Push Notifications: VAPID keys + Service Worker
 
-## Key API Endpoints (Production)
-- `GET /api/public/website` → salon config, services, card_templates, loyalty
-- `POST /api/public/booking` → create booking (with 409 conflict + alternatives)
+## Key API Endpoints
+- `GET /api/public/website` → config, services, card_templates, loyalty
+- `POST /api/public/booking` → create booking (409 conflict + alternatives)
 - `GET /api/public/operators` → active operators
 - `GET /api/public/services` → all services
 - `GET /api/public/promotions/all` → active promotions
+- `GET /api/push/vapid-key` → VAPID public key
+- `POST /api/push/subscribe` → register push subscription
 
-## Recent Changes (2026-03-21)
-### Session 1 (Preview codebase /app/)
-- Refactored PlanningPage.jsx (2500+ → 1240 lines)
-- Push Notifications (VAPID, service worker, backend scheduler)
-- Card templates in BookingModal.jsx
-
-### Session 2 (Production codebase /app/mbhs/)
-- **Backend**: Added card_templates to /api/public/website response
-- **Backend**: Booking conflict resolution with 409 + available operators + alternative slots
-- **Frontend**: Services grouped by category in booking form
-- **Frontend**: Card templates ("Abbonamenti & Card") section in booking
-- **Frontend**: Time slots respect admin hours (closed days blocked)
-- **Frontend**: Conflict panel with alternative operators/times
-- **WeeklyView**: 7 days (Mon-Sun) instead of 6
-- **Build fix**: CI=false in .env to prevent eslint warnings blocking Render build
+## Completed Features
+1. Admin Planning page (refactored)
+2. Admin sidebar with all sections
+3. Public website with booking form
+4. Services grouped by category in booking
+5. Card templates (6) in booking ("Abbonamenti & Card")
+6. Promozioni in booking
+7. Booking conflict resolution (409 + alternative operators/times)
+8. Weekly view (7 days Mon-Sun)
+9. Time slots respect admin hours (closed days blocked)
+10. Push notifications (VAPID + service worker + scheduler)
+11. WebsiteAdminPage fixed (auth interceptor)
+12. Codebase unified (symlinks)
 
 ## Admin Credentials
-- Email: admin@brunomelito.it / melitobruno@gmail.com
+- Email: admin@brunomelito.it
+- Password: admin123
 
 ## Backlog
-- Verify Render deployment after latest changes
-- Dashboard content editing verification (may already work)
-- Client statistics dashboard (charts)
+- Dashboard statistiche clienti
+- Verify all admin pages work with unified codebase
