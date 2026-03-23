@@ -31,7 +31,8 @@ export default function WeeklyView() {
   const scrollRef = useRef(null);
   const navigate = useNavigate();
 
-  useEffect(() => { fetchAppointments(); }, [weekStart]);
+  useEffect(() => { fetchAppointments(); // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [weekStart]);
 
   useEffect(() => {
     if (scrollRef.current) {

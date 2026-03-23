@@ -28,7 +28,7 @@ export default function ReportIncassiPage() {
 
   useEffect(() => {
     fetchPayments();
-  }, [period]);
+  }, [period]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const getDateRange = () => {
     const now = new Date();

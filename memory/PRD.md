@@ -1,83 +1,49 @@
-# Bruno Melito Hair - Salon Management App
+# Bruno Melito Hair Salon - PRD
 
-## Problem Statement
-Full-stack salon management app (React, FastAPI, MongoDB Atlas) for managing appointments, clients, services, subscriptions (Abbonamenti), promotions, and loyalty programs. Public website with online booking.
+## Project Overview
+Full-stack salon management app (React + FastAPI + MongoDB Atlas) deployed on Render.
+- Frontend: Render Static Site (root: `mbhs/frontend`)
+- Backend: Render Web Service (root: `mbhs/backend`)
+- Database: MongoDB Atlas
+
+## CRITICAL: Two Codebases
+- `/app/frontend/` + `/app/backend/` → Preview environment (Emergent)
+- `/app/mbhs/frontend/` + `/app/mbhs/backend/` → PRODUCTION (Render)
+- **ALL production changes MUST go in `/app/mbhs/`**
 
 ## Architecture
-- **Frontend**: React + Shadcn/UI + TailwindCSS
-- **Backend**: FastAPI + MongoDB Atlas
-- **Hosting**: Render (production), Emergent (preview)
-- **Object Storage**: Emergent LLM Key
-- **Push Notifications**: Web Push API (VAPID keys, pywebpush)
-- **Language**: Italian (all UI and communications)
+- Backend: FastAPI + Motor (MongoDB async)
+- Frontend: React (CRA via craco) + Tailwind + shadcn/ui
+- Auth: JWT-based
+- Storage: Emergent Object Storage (via direct HTTP requests)
 
-## Code Structure
-```
-/app/
-├── backend/
-│   ├── routes/
-│   │   ├── public.py (public endpoints, booking, object storage)
-│   │   ├── appointments.py (CRUD, checkout, loyalty)
-│   │   ├── reminders.py (WhatsApp logic)
-│   │   ├── push.py (push notification subscribe, send-reminders)
-│   ├── server.py (background scheduler for push reminders)
-│   └── database.py
-├── frontend/
-│   ├── public/sw-push.js (service worker for push)
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── planning/
-│   │   │   │   ├── NewAppointmentDialog.jsx
-│   │   │   │   └── EditAppointmentDialog.jsx
-│   │   │   └── website/
-│   │   │       ├── BookingModal.jsx (public booking, Abbonamenti grid)
-│   │   │       └── ManageAppointments.jsx
-│   │   ├── pages/
-│   │   │   ├── PlanningPage.jsx (1240 lines, refactored)
-│   │   │   └── WebsitePage.jsx (push init after booking)
-│   │   └── utils/
-│   │       ├── formatDate.js
-│   │       └── pushNotifications.js
-```
-
-## Implemented Features (All Complete)
-- [x] Appointment management (CRUD, recurring, drag & drop)
-- [x] Client management with notes and phone tracking
-- [x] Services with categories and sort_order
-- [x] Abbonamenti (Card Templates) - 6 real packages, grid layout on public + admin
-- [x] Promozioni with free service tracking
-- [x] Checkout with payment methods (cash, prepaid cards)
-- [x] Loyalty points system with WhatsApp alerts
-- [x] Review request via WhatsApp after checkout
-- [x] WhatsApp reminder notifications
-- [x] **Push Notifications** - automatic reminders 24h before appointments
-- [x] Public website with online booking
-- [x] Dynamic CSS color theming
-- [x] Object Storage for media uploads
-- [x] 2-column layout for booking/appointment dialogs
-- [x] Operator conflict resolution with auto-assignment
-- [x] Services sorted by sort_order in all views
+## Key API Endpoints (Production)
+- `GET /api/public/website` → salon config, services, card_templates, loyalty
+- `POST /api/public/booking` → create booking (with 409 conflict + alternatives)
+- `GET /api/public/operators` → active operators
+- `GET /api/public/services` → all services
+- `GET /api/public/promotions/all` → active promotions
 
 ## Recent Changes (2026-03-21)
-### New Features
-1. **Push Notifications** - VAPID keys, service worker, backend scheduler (hourly check), auto-subscribe after booking
-2. **Abbonamenti inside ABBONAMENTO tab** - 6 card templates (subscriptions + prepaid) displayed inside the "Abbonamento" service category accordion with detailed layout (name, type, price, duration, notes). Separate "Abbonamenti & Card" accordion removed.
+### Session 1 (Preview codebase /app/)
+- Refactored PlanningPage.jsx (2500+ → 1240 lines)
+- Push Notifications (VAPID, service worker, backend scheduler)
+- Card templates in BookingModal.jsx
 
-### Bug Fixes (from earlier this session)
-1. Services order fixed (sort_order ascending)
-2. Abbonamenti moved inside ABBONAMENTO tab per user request
-3. Operator conflict (auto-assign free operator)
+### Session 2 (Production codebase /app/mbhs/)
+- **Backend**: Added card_templates to /api/public/website response
+- **Backend**: Booking conflict resolution with 409 + available operators + alternative slots
+- **Frontend**: Services grouped by category in booking form
+- **Frontend**: Card templates ("Abbonamenti & Card") section in booking
+- **Frontend**: Time slots respect admin hours (closed days blocked)
+- **Frontend**: Conflict panel with alternative operators/times
+- **WeeklyView**: 7 days (Mon-Sun) instead of 6
+- **Build fix**: CI=false in .env to prevent eslint warnings blocking Render build
 
-### Refactoring
-- PlanningPage.jsx: 2571 → 1240 lines (-52%)
-- Extracted NewAppointmentDialog.jsx and EditAppointmentDialog.jsx
-
-## Key API Endpoints
-- `POST /api/public/booking` - Create booking with auto-assign
-- `GET /api/push/vapid-key` - Get VAPID public key
-- `POST /api/push/subscribe` - Register push subscription
-- `POST /api/push/send-reminders` - Send push reminders (also runs hourly)
+## Admin Credentials
+- Email: admin@brunomelito.it / melitobruno@gmail.com
 
 ## Backlog
-- Render deployment verification (user must confirm deploy works)
-- Client statistics dashboard (charts: visit frequency, avg spend, top services)
+- Verify Render deployment after latest changes
+- Dashboard content editing verification (may already work)
+- Client statistics dashboard (charts)

@@ -26,7 +26,31 @@ for (let h = 8; h <= 20; h++) {
   }
 }
 
-const getAvailableSlotsForDate = (dateStr) => {
+const getAvailableSlotsForDate = (dateStr, hoursConfig) => {
+  if (hoursConfig) {
+    const dayMap = { 0: 'dom', 1: 'lun', 2: 'mar', 3: 'mer', 4: 'gio', 5: 'ven', 6: 'sab' };
+    const d = new Date(dateStr + 'T12:00:00');
+    const dayKey = dayMap[d.getDay()];
+    const dayHours = (hoursConfig[dayKey] || '').toLowerCase();
+    if (!dayHours || dayHours === 'chiuso' || dayHours === '-') return [];
+    const match = dayHours.match(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/);
+    if (match) {
+      const openMin = parseInt(match[1]) * 60 + parseInt(match[2]);
+      const closeMin = parseInt(match[3]) * 60 + parseInt(match[4]);
+      const slots = TIME_SLOTS.filter(slot => {
+        const [h, m] = slot.split(':').map(Number);
+        const t = h * 60 + m;
+        return t >= openMin && t < closeMin;
+      });
+      const today = format(new Date(), 'yyyy-MM-dd');
+      if (dateStr === today) {
+        const now = new Date();
+        const cur = now.getHours() * 60 + now.getMinutes();
+        return slots.filter(slot => { const [h, m] = slot.split(':').map(Number); return h * 60 + m >= cur; });
+      }
+      return slots;
+    }
+  }
   const today = format(new Date(), 'yyyy-MM-dd');
   if (dateStr !== today) return TIME_SLOTS;
   const now = new Date();
@@ -217,7 +241,6 @@ export default function WebsitePage() {
                   </div>
                 );
               })()}
-              </div>
               
               {/* Promozioni & Card cliccabili */}
               {publicPromos.length > 0 && (
@@ -314,9 +337,13 @@ export default function WebsitePage() {
                 <div><label className="text-sm text-[#B89A7A] font-semibold mb-1 block">Data</label>
                   <Input type="date" value={formData.date} min={format(new Date(), 'yyyy-MM-dd')} onChange={(e) => setFormData({...formData, date: e.target.value})} className="bg-[#2A1A0E] border-[#3A2A1A] text-white" /></div>
                 <div><label className="text-sm text-[#B89A7A] font-semibold mb-1 block">Ora</label>
-                  <select value={formData.time} onChange={(e) => setFormData({...formData, time: e.target.value})} className="w-full p-3 bg-[#2A1A0E] border border-[#3A2A1A] rounded-lg text-white">
-                    {getAvailableSlotsForDate(formData.date).map(t => <option key={t} value={t}>{t}</option>)}
-                  </select></div>
+                  {getAvailableSlotsForDate(formData.date, config.hours).length === 0 ? (
+                    <p className="text-red-400 font-bold text-sm p-3 bg-red-500/10 rounded-lg border border-red-500/30">Giorno chiuso. Scegli un altro giorno.</p>
+                  ) : (
+                    <select value={formData.time} onChange={(e) => setFormData({...formData, time: e.target.value})} className="w-full p-3 bg-[#2A1A0E] border border-[#3A2A1A] rounded-lg text-white">
+                      {getAvailableSlotsForDate(formData.date, config.hours).map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  )}</div>
                 {operators.length > 0 && (
                   <div><label className="text-sm text-[#B89A7A] font-semibold mb-1 block">Operatore (opzionale)</label>
                     <select value={formData.operator_id} onChange={(e) => setFormData({...formData, operator_id: e.target.value})} className="w-full p-3 bg-[#2A1A0E] border border-[#3A2A1A] rounded-lg text-white">

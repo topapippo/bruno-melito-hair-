@@ -96,7 +96,7 @@ export default function PrepaidCardsPage() {
 
   useEffect(() => {
     fetchData();
-  }, [showInactive]);
+  }, [showInactive]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchData = async () => {
     setLoading(true);
