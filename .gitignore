@@ -308,3 +308,7 @@ mbhs/frontend/node_modules/.cache/default-development/1.pack
 # Don't push local env files
 mbhs/backend/.env
 mbhs/frontend/node_modules/.cache/default-development/2.pack
+-e 
+# Environment files
+*.env
+*.env.*
