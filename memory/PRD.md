@@ -15,34 +15,34 @@
 - Gestione servizi per categorie condivise (/src/lib/categories.js)
 - Gestione clienti (181+)
 - Prenotazione pubblica (/sito) con servizi progressivi per categoria
-- Card/Abbonamenti/Prepagate (visibili come categoria in landing + booking + planning)
-- Promozioni e programma fedeltà (Sconto 5%=5pt, Sconto 10%=10pt, Omaggio=35pt)
+- Card/Abbonamenti/Prepagate (visibili come categoria)
+- Promozioni e programma fedeltà (5%=5pt, 10%=10pt, Omaggio=35pt)
 - Report incassi e registro uscite
 - Backup dati
 - Push notifications (VAPID)
-- Promemoria WhatsApp
-- Operatore alternativo su conflitto orario (409 + scelta operatore disponibile)
-- Bottone conferma sempre visibile (sticky) in booking e planning
+- Operatore alternativo su conflitto orario
+- Bottone conferma sempre visibile (sticky)
 
-### Categorie Servizi (ordine condiviso)
-1. Taglio 2. Piega 3. Trattamenti 4. Colore 5. Permanente 6. Stiratura 7. Extra 8. Abbonamenti/Card 9. Altro 10. Prodotti
+### CMS Editor (/gestione-sito)
+- Tab Generale: nome salone, sottotitolo, descrizione, about
+- Tab Aspetto: colori (primario, accento, sfondo, testo), font (titoli, corpo), dimensioni
+- Tab Servizi: categorie aggiuntive
+- Tab Foto Salone, Gallery Lavori, Recensioni
+- Tab Orari & Contatti
+- Bottone "Salva e Vedi Live" + "Anteprima Sito"
 
-### Correzioni 24/03/2026
-- Landing page usa servizi REALI dal database (non più CMS statico)
-- Rimosso styling (spostato in piega)
-- Rimossi duplicati modellanti (ondulazione/permanente, anticrespo/stiratura)
-- Card & Abbonamenti come categoria nella landing + booking + planning
-- Programma fedeltà hardcoded: 5%=5pt, 10%=10pt, Omaggio colore=35pt
-- Logo leggibile su sfondo scuro
-- Fix auth su tutte le pagine admin (axios → api con interceptor)
-- Pulizia .gitignore corrotto
-- Operatore alternativo VISIBILE al cliente (non più auto-assegnato silenziosamente)
+### Messaggistica WhatsApp (tutte attive)
+1. Conferma prenotazione online → bottone WhatsApp dopo booking
+2. Promemoria appuntamento domani → RemindersPage
+3. Scadenza colore 30+ giorni → RemindersPage
+4. Scadenza abbonamento/card → CardAlertsPage
+5. Cliente inattivo 60+ giorni → RemindersPage
+6. Templates messaggi personalizzabili
 
 ### Deploy Render
-- yarn.lock tracciato ✓
-- .gitignore pulito ✓
+- yarn.lock tracciato, .gitignore pulito
 - Build: DISABLE_ESLINT_PLUGIN=true craco build
-- "Save to GitHub" → redeploy Render con Clear build cache
+- "Save to GitHub" → redeploy con Clear build cache
 
 ### Backlog
 - P2: Dashboard statistiche clienti

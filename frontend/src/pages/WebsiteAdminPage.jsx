@@ -10,8 +10,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Save, Plus, Trash2, Upload, Image, Star, Globe, Eye, Loader2, X, GripVertical } from 'lucide-react';
+import { Save, Plus, Trash2, Upload, Image, Star, Globe, Eye, Loader2, X, GripVertical, Palette, Type } from 'lucide-react';
 import { toast } from 'sonner';
+
+const FONT_OPTIONS = [
+  'Cormorant Garamond', 'Playfair Display', 'Lora', 'Merriweather', 'Libre Baskerville',
+  'Montserrat', 'Nunito', 'Poppins', 'Raleway', 'Open Sans', 'Roboto', 'Inter',
+  'DM Sans', 'Work Sans', 'Outfit', 'Josefin Sans',
+];
 
 export default function WebsiteAdminPage() {
   const [config, setConfig] = useState(null);
@@ -231,6 +237,9 @@ export default function WebsiteAdminPage() {
             <p className="text-sm text-[#7C5C4A]">Modifica i contenuti della tua pagina web pubblica</p>
           </div>
           <div className="flex gap-2">
+            <Button onClick={async () => { await saveConfig(); window.open('/sito', '_blank'); }} variant="outline" className="border-[#0EA5E9] text-[#0EA5E9]" data-testid="preview-live-btn">
+              <Globe className="w-4 h-4 mr-2" /> Salva e Vedi Live
+            </Button>
             <a href="/sito" target="_blank" rel="noopener noreferrer">
               <Button variant="outline" className="border-[#C8617A] text-[#C8617A]" data-testid="preview-site-btn">
                 <Eye className="w-4 h-4 mr-2" /> Anteprima Sito
@@ -246,6 +255,7 @@ export default function WebsiteAdminPage() {
         <Tabs defaultValue="general" className="space-y-4">
           <TabsList className="bg-white border shadow-sm flex-wrap h-auto gap-1 p-1">
             <TabsTrigger value="general" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Generale</TabsTrigger>
+            <TabsTrigger value="aspetto" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Aspetto</TabsTrigger>
             <TabsTrigger value="services" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Servizi</TabsTrigger>
             <TabsTrigger value="photos" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Foto Salone</TabsTrigger>
             <TabsTrigger value="gallery" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Gallery Lavori</TabsTrigger>
@@ -292,6 +302,100 @@ export default function WebsiteAdminPage() {
             </Card>
           </TabsContent>
 
+          {/* ASPETTO (Colori, Font, Dimensioni) */}
+          <TabsContent value="aspetto">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Colori */}
+              <Card>
+                <CardHeader><CardTitle className="flex items-center gap-2"><Palette className="w-5 h-5" /> Colori</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-semibold">Colore Primario</Label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <input type="color" value={config.primary_color || '#ff3366'} onChange={e => updateField('primary_color', e.target.value)} className="w-10 h-10 rounded border cursor-pointer" />
+                        <Input value={config.primary_color || '#ff3366'} onChange={e => updateField('primary_color', e.target.value)} className="font-mono text-sm" data-testid="config-primary-color" />
+                      </div>
+                      <p className="text-xs text-gray-400 mt-1">Pulsanti, link, elementi principali</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-semibold">Colore Accento</Label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <input type="color" value={config.accent_color || '#33CC99'} onChange={e => updateField('accent_color', e.target.value)} className="w-10 h-10 rounded border cursor-pointer" />
+                        <Input value={config.accent_color || '#33CC99'} onChange={e => updateField('accent_color', e.target.value)} className="font-mono text-sm" />
+                      </div>
+                      <p className="text-xs text-gray-400 mt-1">Badge, etichette, accenti</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-semibold">Sfondo Pagina</Label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <input type="color" value={config.bg_color || '#F0F4FF'} onChange={e => updateField('bg_color', e.target.value)} className="w-10 h-10 rounded border cursor-pointer" />
+                        <Input value={config.bg_color || '#F0F4FF'} onChange={e => updateField('bg_color', e.target.value)} className="font-mono text-sm" />
+                      </div>
+                      <p className="text-xs text-gray-400 mt-1">Colore di sfondo del sito</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-semibold">Colore Testo</Label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <input type="color" value={config.text_color || '#2D3047'} onChange={e => updateField('text_color', e.target.value)} className="w-10 h-10 rounded border cursor-pointer" />
+                        <Input value={config.text_color || '#2D3047'} onChange={e => updateField('text_color', e.target.value)} className="font-mono text-sm" />
+                      </div>
+                      <p className="text-xs text-gray-400 mt-1">Testo corpo, paragrafi</p>
+                    </div>
+                  </div>
+                  {/* Preview colori */}
+                  <div className="border rounded-xl p-4 space-y-2" style={{ backgroundColor: config.bg_color || '#F0F4FF' }}>
+                    <p className="text-xs font-bold text-gray-400 uppercase">Anteprima</p>
+                    <h3 className="text-lg font-bold" style={{ color: config.primary_color || '#ff3366' }}>Titolo di Esempio</h3>
+                    <p style={{ color: config.text_color || '#2D3047' }}>Testo del corpo con il colore selezionato.</p>
+                    <span className="inline-block text-xs font-bold px-3 py-1 rounded-full text-white" style={{ backgroundColor: config.accent_color || '#33CC99' }}>BADGE ACCENTO</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Font e Dimensioni */}
+              <Card>
+                <CardHeader><CardTitle className="flex items-center gap-2"><Type className="w-5 h-5" /> Font & Dimensioni</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label className="text-sm font-semibold">Font Titoli</Label>
+                    <select value={config.font_display || 'Cormorant Garamond'} onChange={e => updateField('font_display', e.target.value)} className="w-full mt-1 p-2 border rounded-lg text-sm" data-testid="config-font-display">
+                      {FONT_OPTIONS.map(f => <option key={f} value={f} style={{ fontFamily: f }}>{f}</option>)}
+                    </select>
+                    <p className="text-lg mt-2 border rounded-lg p-3" style={{ fontFamily: config.font_display || 'Cormorant Garamond' }}>
+                      Anteprima: {config.salon_name || 'Bruno Melito Hair'}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-semibold">Font Corpo</Label>
+                    <select value={config.font_body || 'Nunito'} onChange={e => updateField('font_body', e.target.value)} className="w-full mt-1 p-2 border rounded-lg text-sm" data-testid="config-font-body">
+                      {FONT_OPTIONS.map(f => <option key={f} value={f} style={{ fontFamily: f }}>{f}</option>)}
+                    </select>
+                    <p className="mt-2 border rounded-lg p-3" style={{ fontFamily: config.font_body || 'Nunito' }}>
+                      Anteprima: Testo del corpo con questo font selezionato.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-semibold">Dimensione Titoli (px)</Label>
+                      <Input type="number" value={config.title_size || '48'} onChange={e => updateField('title_size', e.target.value)} min="24" max="96" data-testid="config-title-size" />
+                      <input type="range" min="24" max="96" value={config.title_size || 48} onChange={e => updateField('title_size', e.target.value)} className="w-full mt-1" />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-semibold">Dimensione Testo (px)</Label>
+                      <Input type="number" value={config.font_size || '16'} onChange={e => updateField('font_size', e.target.value)} min="12" max="24" data-testid="config-font-size" />
+                      <input type="range" min="12" max="24" value={config.font_size || 16} onChange={e => updateField('font_size', e.target.value)} className="w-full mt-1" />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-semibold">Slogan / Motto</Label>
+                    <Input value={config.slogan || ''} onChange={e => updateField('slogan', e.target.value)} placeholder="es. Metti la testa a posto!!" data-testid="config-slogan" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
           {/* SERVICES */}
           <TabsContent value="services">
             <Card>
@@ -300,6 +404,9 @@ export default function WebsiteAdminPage() {
                   <CardTitle>Categorie Servizi (Listino Pubblico)</CardTitle>
                   <Button variant="outline" size="sm" onClick={addCategory}><Plus className="w-4 h-4 mr-1" /> Categoria</Button>
                 </div>
+                <p className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-3 mt-2">
+                  Il listino servizi della pagina pubblica viene generato automaticamente dai servizi inseriti nel gestionale (pagina Servizi). Qui puoi aggiungere categorie aggiuntive personalizzate se necessario.
+                </p>
               </CardHeader>
               <CardContent className="space-y-6">
                 {(config.service_categories || []).map((cat, catIdx) => (
