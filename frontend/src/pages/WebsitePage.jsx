@@ -210,17 +210,22 @@ export default function WebsitePage() {
             ))}
           </div>
           {step === 1 && (
-            <div className="space-y-4">
-              <h2 className="text-xl font-black text-white">Scegli i Servizi</h2>
+            <div className="flex flex-col" style={{ maxHeight: '70vh' }}>
+              <h2 className="text-xl font-black text-white mb-3">Scegli i Servizi</h2>
+              {/* Scrollable service list */}
+              <div className="flex-1 overflow-y-auto space-y-3 pr-1 pb-2">
               {(() => {
                 const { groups: byCat, orderedKeys: cats } = groupServicesByCategory(bookingServices);
+                // Merge card templates into the list as a category
+                const allCats = [...cats];
+                const hasCardCat = cardTemplates.length > 0;
                 return (
-                  <div className="space-y-3">
-                    {cats.map(cat => {
+                  <>
+                    {allCats.map(cat => {
                       const catInfo = getCategoryInfo(cat);
                       return (
                         <div key={cat}>
-                          <h3 className="text-sm font-bold uppercase tracking-wider mb-2" style={{ color: catInfo.color }}>{catInfo.label}</h3>
+                          <h3 className="text-sm font-bold uppercase tracking-wider mb-2 sticky top-0 bg-[#1C1008] py-1 z-10" style={{ color: catInfo.color }}>{catInfo.label}</h3>
                           <div className="space-y-2">
                             {byCat[cat].map(service => (
                               <div key={service.id} onClick={() => toggleService(service.id)}
@@ -236,98 +241,95 @@ export default function WebsitePage() {
                         </div>
                       );
                     })}
-                  </div>
-                );
-              })()}
-              
-              {/* Abbonamenti & Card Templates */}
-              {cardTemplates.length > 0 && (
-                <div className="mt-4">
-                  <h3 className="text-sm font-bold uppercase tracking-wider mb-2" style={{ color: '#6366F1' }}>
-                    Abbonamenti & Card Prepagate
-                  </h3>
-                  <div className="space-y-2">
-                    {cardTemplates.map((tmpl, i) => {
-                      const isSelected = formData.notes?.includes(`[CARD: ${tmpl.name}]`);
-                      return (
-                        <div key={tmpl.id || i}
-                          onClick={() => {
-                            if (isSelected) {
-                              setFormData(prev => ({ ...prev, notes: prev.notes.replace(`[CARD: ${tmpl.name}] `, '').replace(`[CARD: ${tmpl.name}]`, '') }));
-                              toast('Abbonamento rimosso');
-                            } else {
-                              const cleanNotes = (formData.notes || '').replace(/\[CARD: [^\]]+\] ?/g, '');
-                              setFormData(prev => ({ ...prev, notes: `[CARD: ${tmpl.name}] ${cleanNotes}`.trim() }));
-                              toast.success(`"${tmpl.name}" selezionato!`);
-                            }
-                          }}
-                          className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${isSelected ? 'border-[#6366F1] bg-[#6366F1]/15 shadow-lg shadow-[#6366F1]/10' : 'border-[#6366F1]/30 bg-gradient-to-r from-[#6366F1]/10 to-[#8B5CF6]/10 hover:border-[#6366F1] hover:shadow-md'}`}
-                          data-testid={`website-card-template-${i}`}>
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <p className="font-bold text-white flex items-center gap-2">
-                                <CreditCard className="w-4 h-4 text-[#6366F1]" />
-                                {tmpl.name}
-                              </p>
-                              <p className="text-sm text-[#8B5CF6]">
-                                {tmpl.card_type === 'subscription' ? 'Abbonamento' : 'Card Prepagata'}
-                                {tmpl.total_services ? ` · ${tmpl.total_services} servizi` : ''}
-                                {tmpl.duration_months ? ` · ${tmpl.duration_months} mesi` : ''}
-                              </p>
-                              {tmpl.notes && <p className="text-xs text-[#8B5CF6]/70 mt-1">{tmpl.notes}</p>}
-                            </div>
-                            <div className="text-right">
-                              <p className="font-black text-2xl text-[#8B5CF6]">{'\u20AC'}{tmpl.total_value}</p>
-                              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isSelected ? 'bg-[#6366F1] text-white' : 'bg-[#6366F1]/20 text-[#8B5CF6]'}`}>
-                                {isSelected ? 'SELEZIONATO' : tmpl.card_type === 'subscription' ? 'ABBONAMENTO' : 'CARD'}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
 
-              {/* Promozioni attive */}
-              {publicPromos.length > 0 && (
-                <div className="mt-4">
-                  <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
-                    <Gift className="w-5 h-5 text-amber-400" /> Promozioni Attive
-                  </h3>
-                  <div className="space-y-2">
-                    {publicPromos.map((promo) => (
-                      <div key={promo.id}
-                        onClick={() => {
-                          if (promo.free_service_id && !formData.service_ids.includes(promo.free_service_id)) {
-                            setFormData(prev => ({ ...prev, service_ids: [...prev.service_ids, promo.free_service_id], notes: (prev.notes ? prev.notes + ' ' : '') + `[PROMO: ${promo.name}]` }));
-                          } else {
-                            setFormData(prev => ({ ...prev, notes: (prev.notes ? prev.notes + ' ' : '') + `[PROMO: ${promo.name}]` }));
-                          }
-                          toast.success(`Promo "${promo.name}" aggiunta!`);
-                        }}
-                        className="p-4 rounded-xl border-2 border-amber-500/30 bg-gradient-to-r from-amber-500/10 to-orange-500/10 cursor-pointer transition-all hover:border-amber-400 hover:shadow-md"
-                        data-testid={`website-promo-${promo.id}`}>
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <p className="font-bold text-white">{promo.name}</p>
-                            <p className="text-sm text-amber-300">{promo.free_service_name || promo.description || 'Clicca per applicare'}</p>
-                          </div>
-                          <div className="bg-amber-400 text-[#1C1008] text-xs font-bold px-3 py-1 rounded-full">PROMO</div>
+                    {/* Card & Abbonamenti come categoria */}
+                    {hasCardCat && (
+                      <div>
+                        <h3 className="text-sm font-bold uppercase tracking-wider mb-2 sticky top-0 bg-[#1C1008] py-1 z-10 flex items-center gap-2" style={{ color: '#6366F1' }}>
+                          <CreditCard className="w-4 h-4" /> Card & Abbonamenti
+                        </h3>
+                        <div className="space-y-2">
+                          {cardTemplates.map((tmpl, i) => {
+                            const isSelected = formData.notes?.includes(`[CARD: ${tmpl.name}]`);
+                            return (
+                              <div key={tmpl.id || i}
+                                onClick={() => {
+                                  if (isSelected) {
+                                    setFormData(prev => ({ ...prev, notes: prev.notes.replace(`[CARD: ${tmpl.name}] `, '').replace(`[CARD: ${tmpl.name}]`, '') }));
+                                    toast('Card rimossa');
+                                  } else {
+                                    const cleanNotes = (formData.notes || '').replace(/\[CARD: [^\]]+\] ?/g, '');
+                                    setFormData(prev => ({ ...prev, notes: `[CARD: ${tmpl.name}] ${cleanNotes}`.trim() }));
+                                    toast.success(`"${tmpl.name}" selezionato!`);
+                                  }
+                                }}
+                                className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${isSelected ? 'border-[#6366F1] bg-[#6366F1]/15' : 'border-[#3A2A1A] bg-[#2A1A0E] hover:border-[#6366F1]/60'}`}
+                                data-testid={`website-card-template-${i}`}>
+                                <div className="flex justify-between items-center">
+                                  <div>
+                                    <p className="font-bold text-white">{tmpl.name}</p>
+                                    <p className="text-sm text-[#8B5CF6]">
+                                      {tmpl.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}
+                                      {tmpl.total_services ? ` · ${tmpl.total_services} servizi` : ''}
+                                    </p>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="font-black text-white">{'\u20AC'}{tmpl.total_value}</p>
+                                    {isSelected && <span className="text-xs font-bold text-[#6366F1]">SELEZIONATO</span>}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                    )}
 
-              {formData.service_ids.length > 0 && (
-                <div className="bg-[#2A1A0E] p-4 rounded-xl border border-[#3A2A1A]">
-                  <p className="font-bold text-white">Riepilogo: {totalDuration} min - {'\u20AC'}{totalPrice}</p>
-                </div>
-              )}
-              <Button onClick={() => setStep(2)} disabled={formData.service_ids.length === 0} className="w-full bg-gradient-to-r from-[#C8617A] to-[#A0404F] text-white hover:bg-gray-200 font-bold py-6" data-testid="website-step1-next">Continua <ArrowRight className="w-4 h-4 ml-2" /></Button>
+                    {/* Promozioni attive */}
+                    {publicPromos.length > 0 && (
+                      <div>
+                        <h3 className="text-sm font-bold uppercase tracking-wider mb-2 sticky top-0 bg-[#1C1008] py-1 z-10 flex items-center gap-2 text-amber-400">
+                          <Gift className="w-4 h-4" /> Promozioni Attive
+                        </h3>
+                        <div className="space-y-2">
+                          {publicPromos.map((promo) => (
+                            <div key={promo.id}
+                              onClick={() => {
+                                if (promo.free_service_id && !formData.service_ids.includes(promo.free_service_id)) {
+                                  setFormData(prev => ({ ...prev, service_ids: [...prev.service_ids, promo.free_service_id], notes: (prev.notes ? prev.notes + ' ' : '') + `[PROMO: ${promo.name}]` }));
+                                } else {
+                                  setFormData(prev => ({ ...prev, notes: (prev.notes ? prev.notes + ' ' : '') + `[PROMO: ${promo.name}]` }));
+                                }
+                                toast.success(`Promo "${promo.name}" aggiunta!`);
+                              }}
+                              className="p-4 rounded-xl border-2 border-amber-500/30 bg-[#2A1A0E] cursor-pointer transition-all hover:border-amber-400"
+                              data-testid={`website-promo-${promo.id}`}>
+                              <div className="flex justify-between items-center">
+                                <div>
+                                  <p className="font-bold text-white">{promo.name}</p>
+                                  <p className="text-sm text-amber-300">{promo.free_service_name || promo.description || 'Clicca per applicare'}</p>
+                                </div>
+                                <div className="bg-amber-400 text-[#1C1008] text-xs font-bold px-3 py-1 rounded-full">PROMO</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+              </div>
+
+              {/* Sticky bottom: riepilogo + bottone sempre visibile */}
+              <div className="sticky bottom-0 bg-[#1C1008] pt-3 border-t border-[#3A2A1A] mt-2 space-y-2">
+                {formData.service_ids.length > 0 && (
+                  <div className="bg-[#2A1A0E] p-3 rounded-xl border border-[#3A2A1A]">
+                    <p className="font-bold text-white text-sm">Riepilogo: {totalDuration} min - {'\u20AC'}{totalPrice}</p>
+                  </div>
+                )}
+                <Button onClick={() => setStep(2)} disabled={formData.service_ids.length === 0} className="w-full bg-gradient-to-r from-[#C8617A] to-[#A0404F] text-white hover:bg-gray-200 font-bold py-6" data-testid="website-step1-next">Continua <ArrowRight className="w-4 h-4 ml-2" /></Button>
+              </div>
             </div>
           )}
           {step === 2 && (

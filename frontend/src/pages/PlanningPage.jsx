@@ -1294,7 +1294,7 @@ export default function PlanningPage() {
 
         {/* New Appointment Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[500px] max-h-[90vh] flex flex-col">
             <DialogHeader>
               <DialogTitle className="font-display text-2xl text-[#2D1B14]">
                 Nuovo Appuntamento
@@ -1305,7 +1305,8 @@ export default function PlanningPage() {
                   : format(selectedDate, "EEEE d MMMM yyyy", { locale: it })} alle {formData.time}
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+            <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 mt-4">
+              <div className="flex-1 overflow-y-auto space-y-4 pr-1 pb-2">
               {/* Date Picker */}
               <div className="space-y-2">
                 <Label className="text-[#2D1B14] font-semibold">Data</Label>
@@ -1503,7 +1504,7 @@ export default function PlanningPage() {
                     const catServices = sortedServices.groups[catKey];
                     return (
                       <div key={catKey}>
-                        <p className="text-xs font-bold uppercase tracking-wider mb-1.5 flex items-center gap-1.5" style={{ color: catInfo.color }}>
+                        <p className="text-xs font-bold uppercase tracking-wider mb-1.5 flex items-center gap-1.5 sticky top-0 bg-white py-1 z-10" style={{ color: catInfo.color }}>
                           <span className="w-2 h-2 rounded-full" style={{ backgroundColor: catInfo.color }} />
                           {catInfo.label}
                         </p>
@@ -1534,20 +1535,26 @@ export default function PlanningPage() {
                       </div>
                     );
                   })}
-                  {/* Card Templates in Planning */}
+                  {/* Card & Abbonamenti come categoria */}
                   {cardTemplates.length > 0 && (
                     <div>
-                      <p className="text-xs font-bold uppercase tracking-wider mb-1.5 flex items-center gap-1.5" style={{ color: '#6366F1' }}>
+                      <p className="text-xs font-bold uppercase tracking-wider mb-1.5 flex items-center gap-1.5 sticky top-0 bg-white py-1 z-10" style={{ color: '#6366F1' }}>
                         <CreditCard className="w-3 h-3" />
-                        Abbonamenti & Card
+                        Card & Abbonamenti
                       </p>
-                      <div className="grid grid-cols-1 gap-1.5">
+                      <div className="grid grid-cols-2 gap-1.5">
                         {cardTemplates.map((tmpl, i) => {
                           const isSelected = formData.notes?.includes(`[CARD: ${tmpl.name}]`);
                           return (
-                            <button
+                            <Button
                               key={tmpl.id || i}
                               type="button"
+                              variant="outline"
+                              className={`justify-start h-auto py-2 px-3 ${
+                                isSelected
+                                  ? 'ring-2 ring-offset-1 ring-[#6366F1] border-[#6366F1] text-[#6366F1] bg-[#6366F1]/10'
+                                  : 'border-[#F0E6DC]'
+                              }`}
                               onClick={() => {
                                 if (isSelected) {
                                   setFormData(prev => ({ ...prev, notes: prev.notes.replace(`[CARD: ${tmpl.name}] `, '').replace(`[CARD: ${tmpl.name}]`, '') }));
@@ -1557,32 +1564,16 @@ export default function PlanningPage() {
                                   toast.success(`"${tmpl.name}" selezionato`);
                                 }
                               }}
-                              className={`w-full p-2.5 rounded-xl border-2 text-left transition-all ${
-                                isSelected
-                                  ? 'border-[#6366F1] bg-[#6366F1]/10 ring-2 ring-[#6366F1]/50'
-                                  : 'border-[#6366F1]/30 bg-white hover:border-[#6366F1]/60'
-                              }`}
                               data-testid={`planning-card-template-${i}`}
                             >
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <CreditCard className={`w-4 h-4 ${isSelected ? 'text-[#6366F1]' : 'text-gray-400'}`} />
-                                  <div>
-                                    <p className="font-bold text-sm text-[#2D1B14]">{tmpl.name}</p>
-                                    <p className="text-[10px] text-[#6366F1]">
-                                      {tmpl.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}
-                                      {tmpl.total_services ? ` · ${tmpl.total_services} servizi` : ''}
-                                    </p>
-                                  </div>
+                              <div className="flex items-center gap-2 text-left">
+                                <CreditCard className="w-3 h-3 shrink-0" style={{ color: '#6366F1' }} />
+                                <div>
+                                  <p className="font-medium text-sm">{tmpl.name}</p>
+                                  <p className="text-xs opacity-70">{tmpl.card_type === 'subscription' ? 'Abb.' : 'Prep.'} - {'\u20AC'}{tmpl.total_value}</p>
                                 </div>
-                                <p className="font-black text-[#6366F1] text-sm">{'\u20AC'}{tmpl.total_value}</p>
                               </div>
-                              {isSelected && (
-                                <p className="mt-1 text-xs text-[#6366F1] font-semibold flex items-center gap-1">
-                                  <Check className="w-3 h-3" /> Selezionato
-                                </p>
-                              )}
-                            </button>
+                            </Button>
                           );
                         })}
                       </div>
@@ -1691,16 +1682,19 @@ export default function PlanningPage() {
                 />
               </div>
 
-              <DialogFooter>
+              </div>
+
+              {/* Sticky footer - sempre visibile */}
+              <div className="sticky bottom-0 bg-white pt-3 border-t border-[#F0E6DC] mt-2">
                 <Button
                   type="submit"
                   disabled={saving}
-                  className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-[0_4px_12px_rgba(200,97,122,0.3)]"
+                  className="w-full bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-[0_4px_12px_rgba(200,97,122,0.3)]"
                   data-testid="save-appointment-btn"
                 >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salva Appuntamento'}
                 </Button>
-              </DialogFooter>
+              </div>
             </form>
           </DialogContent>
         </Dialog>
@@ -1839,7 +1833,7 @@ export default function PlanningPage() {
 
         {/* Edit/Delete Appointment Dialog */}
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-          <DialogContent className="sm:max-w-[550px]">
+          <DialogContent className="sm:max-w-[550px] max-h-[90vh] flex flex-col">
             <DialogHeader>
               <DialogTitle className="font-display text-2xl text-[#2D1B14]">
                 Modifica Appuntamento
@@ -1848,7 +1842,8 @@ export default function PlanningPage() {
                 {editingAppointment && `${editingAppointment.date} alle ${editingAppointment.time}`}
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleUpdateAppointment} className="space-y-4 mt-4">
+            <form onSubmit={handleUpdateAppointment} className="flex flex-col flex-1 min-h-0 mt-4">
+              <div className="flex-1 overflow-y-auto space-y-4 pr-1 pb-2">
               {/* Client Info */}
               {selectedClientInfo && (
                 <div className="p-3 bg-[#FEF3C7] border-2 border-[#F59E0B] rounded-xl">
@@ -2293,8 +2288,10 @@ export default function PlanningPage() {
                 </div>
               )}
 
+              </div>
+
               {!checkoutMode && (
-                <DialogFooter className="flex gap-2">
+                <div className="sticky bottom-0 bg-white pt-3 border-t border-[#F0E6DC] mt-2 flex gap-2 justify-end">
                   <Button
                     type="button"
                     variant="destructive"
@@ -2325,7 +2322,7 @@ export default function PlanningPage() {
                   >
                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Edit3 className="w-4 h-4 mr-1" /> Salva</>}
                   </Button>
-                </DialogFooter>
+                </div>
               )}
             </form>
           </DialogContent>
