@@ -25,47 +25,30 @@ App gestionale per salone parrucchiere. Include prenotazione pubblica, planning 
 - Push notifications (VAPID)
 - Promemoria WhatsApp
 
-### Ultime Modifiche (24/03/2026)
-- **Servizi progressivi per categoria**: ordine identico su pagina pubblica, planning e gestionale (Taglio → Piega → Styling → Trattamenti → Colore → Modellanti → Permanente → Stiratura → Abbonamenti/Card → Prodotti → Altro)
-- **Card & Abbonamenti come categoria cliccabile**: visibile sia nella prenotazione pubblica sia nel planning, con sotto-servizi identici alle altre categorie
-- **Bottone "Continua"/"Salva" sempre visibile**: sticky in basso sia nella pagina prenotazione pubblica sia nei dialog del planning (nuovo e modifica appuntamento)
-- **Fix auth su tutte le pagine admin**: sostituito `axios` diretto con `api` instance (interceptor con token Bearer) su TUTTE le 20+ pagine admin
-- **Pulizia .gitignore**: file root corrotto (336 righe di spazzatura) → ripulito
-- **Operatore alternativo su conflitto**: backend restituisce 409 con operatori disponibili e slot alternativi
+### Modifiche Sessione 24/03/2026
+- Servizi in ordine progressivo per categoria (condiviso pagina pubblica + planning + gestionale)
+- Card & Abbonamenti come categoria cliccabile con sotto-servizi (uguale alle altre categorie)
+- Bottone "Continua"/"Salva" sempre visibile (sticky bottom) su prenotazione pubblica e dialog planning
+- Fix auth su tutte le pagine admin (axios → api con interceptor Bearer)
+- Pulizia .gitignore root corrotto
+- Operatore alternativo su conflitto orario (409 + alternative)
 
 ## Categorie Servizi (ordine condiviso)
 File: `/app/frontend/src/lib/categories.js`
-1. Taglio (blu)
-2. Piega (giallo)
-3. Styling (arancione)
-4. Trattamenti (grigio scuro)
-5. Colore (verde)
-6. Modellanti (viola)
-7. Permanente (viola scuro)
-8. Stiratura (magenta)
-9. Abbonamenti/Card (indigo)
-10. Prodotti e Varie (arancione)
-11. Altro (grigio)
+1. Taglio 2. Piega 3. Styling 4. Trattamenti 5. Colore 6. Modellanti 7. Permanente 8. Stiratura 9. Abbonamenti/Card 10. Prodotti e Varie 11. Altro
 
 ## API Principali
 - `POST /api/public/booking` → 409 con alternative se conflitto
 - `GET /api/public/website` → servizi + card_templates + config
 - `GET /api/public/services` → lista servizi pubblici
-- `GET /api/services` → servizi (auth richiesta)
-- `GET /api/appointments?date=YYYY-MM-DD` → appuntamenti giornata
+- `GET /api/services` → servizi (auth)
+- `GET /api/appointments?date=YYYY-MM-DD` → appuntamenti
 
-## Problemi Noti
-- **Render deployment**: build frontend fallisce (risolto .gitignore + yarn.lock tracciato). Utente deve fare "Save to GitHub" e poi redeploy con Clear build cache.
-- **DB produzione vuoto**: card templates vanno creati manualmente dal pannello admin di produzione
+## Deploy Render
+- yarn.lock tracciato da git ✓
+- .gitignore pulito ✓
+- Build script: `DISABLE_ESLINT_PLUGIN=true craco build`
+- Fare "Save to GitHub" poi redeploy con Clear build cache
 
 ## Backlog
-- P1: Verifica deploy Render dopo fix
-- P2: Dashboard statistiche clienti (grafici frequenza visite, spesa media, servizi più richiesti)
-
-## File Chiave
-- `/app/frontend/src/lib/categories.js` - categorie condivise
-- `/app/frontend/src/lib/api.js` - axios interceptor auth
-- `/app/frontend/src/pages/WebsitePage.jsx` - pagina pubblica + prenotazione
-- `/app/frontend/src/pages/PlanningPage.jsx` - planning admin
-- `/app/frontend/src/pages/ServicesPage.jsx` - gestionale servizi
-- `/app/backend/routes/public.py` - API pubblica con conflitti
+- P2: Dashboard statistiche clienti
