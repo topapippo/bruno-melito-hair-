@@ -1,54 +1,48 @@
 # Bruno Melito Hair - PRD
 
-## Problema Originale
-App gestionale per salone parrucchiere. Include prenotazione pubblica, planning operatori, gestione servizi/clienti/card/promozioni, dashboard.
+## App gestionale per salone parrucchiere
 
-## Architettura
-- **Frontend**: React + craco (porta 3000)
-- **Backend**: FastAPI + Python (porta 8001)
-- **Database**: MongoDB Atlas
-- **Hosting Produzione**: Render
+### Architettura
+- Frontend: React + craco (porta 3000)
+- Backend: FastAPI + Python (porta 8001)
+- Database: MongoDB Atlas
+- Hosting: Render
 
-## Funzionalità Implementate
-
-### Core
+### Funzionalità Complete
 - Login/Register admin
-- Dashboard con statistiche e promemoria
-- Planning giornaliero/settimanale/mensile (2 operatori: BRUNO, MBHS)
-- Gestione servizi con categorie condivise (`/src/lib/categories.js`)
-- Gestione clienti con ricerca e note
-- Prenotazione pubblica dal sito (`/sito`)
-- Card/Abbonamenti/Prepagate
-- Promozioni e programma fedeltà
+- Dashboard con statistiche
+- Planning giornaliero/settimanale/mensile (BRUNO + MBHS)
+- Gestione servizi per categorie condivise (/src/lib/categories.js)
+- Gestione clienti (181+)
+- Prenotazione pubblica (/sito) con servizi progressivi per categoria
+- Card/Abbonamenti/Prepagate (visibili come categoria in landing + booking + planning)
+- Promozioni e programma fedeltà (Sconto 5%=5pt, Sconto 10%=10pt, Omaggio=35pt)
 - Report incassi e registro uscite
 - Backup dati
 - Push notifications (VAPID)
 - Promemoria WhatsApp
+- Operatore alternativo su conflitto orario (409 + scelta operatore disponibile)
+- Bottone conferma sempre visibile (sticky) in booking e planning
 
-### Modifiche Sessione 24/03/2026
-- Servizi in ordine progressivo per categoria (condiviso pagina pubblica + planning + gestionale)
-- Card & Abbonamenti come categoria cliccabile con sotto-servizi (uguale alle altre categorie)
-- Bottone "Continua"/"Salva" sempre visibile (sticky bottom) su prenotazione pubblica e dialog planning
-- Fix auth su tutte le pagine admin (axios → api con interceptor Bearer)
-- Pulizia .gitignore root corrotto
-- Operatore alternativo su conflitto orario (409 + alternative)
+### Categorie Servizi (ordine condiviso)
+1. Taglio 2. Piega 3. Trattamenti 4. Colore 5. Permanente 6. Stiratura 7. Extra 8. Abbonamenti/Card 9. Altro 10. Prodotti
 
-## Categorie Servizi (ordine condiviso)
-File: `/app/frontend/src/lib/categories.js`
-1. Taglio 2. Piega 3. Styling 4. Trattamenti 5. Colore 6. Modellanti 7. Permanente 8. Stiratura 9. Abbonamenti/Card 10. Prodotti e Varie 11. Altro
+### Correzioni 24/03/2026
+- Landing page usa servizi REALI dal database (non più CMS statico)
+- Rimosso styling (spostato in piega)
+- Rimossi duplicati modellanti (ondulazione/permanente, anticrespo/stiratura)
+- Card & Abbonamenti come categoria nella landing + booking + planning
+- Programma fedeltà hardcoded: 5%=5pt, 10%=10pt, Omaggio colore=35pt
+- Logo leggibile su sfondo scuro
+- Fix auth su tutte le pagine admin (axios → api con interceptor)
+- Pulizia .gitignore corrotto
+- Operatore alternativo VISIBILE al cliente (non più auto-assegnato silenziosamente)
 
-## API Principali
-- `POST /api/public/booking` → 409 con alternative se conflitto
-- `GET /api/public/website` → servizi + card_templates + config
-- `GET /api/public/services` → lista servizi pubblici
-- `GET /api/services` → servizi (auth)
-- `GET /api/appointments?date=YYYY-MM-DD` → appuntamenti
-
-## Deploy Render
-- yarn.lock tracciato da git ✓
+### Deploy Render
+- yarn.lock tracciato ✓
 - .gitignore pulito ✓
-- Build script: `DISABLE_ESLINT_PLUGIN=true craco build`
-- Fare "Save to GitHub" poi redeploy con Clear build cache
+- Build: DISABLE_ESLINT_PLUGIN=true craco build
+- "Save to GitHub" → redeploy Render con Clear build cache
 
-## Backlog
+### Backlog
 - P2: Dashboard statistiche clienti

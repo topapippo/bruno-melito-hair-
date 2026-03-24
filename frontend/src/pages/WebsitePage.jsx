@@ -127,12 +127,13 @@ export default function WebsitePage() {
 
   const [conflictData, setConflictData] = useState(null);
 
-  const handleSubmit = async () => {
-    if (!formData.client_name || !formData.client_phone) { toast.error('Inserisci nome e telefono'); return; }
+  const handleSubmit = async (e, overrideOperatorId) => {
+    if (!overrideOperatorId && (!formData.client_name || !formData.client_phone)) { toast.error('Inserisci nome e telefono'); return; }
     setSubmitting(true);
     setConflictData(null);
+    const bookingData = overrideOperatorId ? { ...formData, operator_id: overrideOperatorId } : formData;
     try { 
-      await api.post(`${API}/public/booking`, formData); 
+      await api.post(`${API}/public/booking`, bookingData); 
       setSuccess(true); 
     }
     catch (err) {
@@ -145,6 +146,8 @@ export default function WebsitePage() {
     }
     finally { setSubmitting(false); }
   };
+
+  const handleBookingSubmit = (e, operatorId) => handleSubmit(e, operatorId);
 
   const scrollTo = (ref) => { ref.current?.scrollIntoView({ behavior: 'smooth' }); };
   const openWhatsApp = () => {
@@ -384,17 +387,18 @@ export default function WebsitePage() {
                 </Button>
               </div>
               {conflictData && (
-                <div className="mt-4 p-4 rounded-xl border-2 border-red-500/40 bg-red-500/10 space-y-3" data-testid="conflict-panel">
-                  <p className="text-red-300 font-bold text-sm">Orario occupato!</p>
+                <div className="mt-4 p-4 rounded-xl border-2 border-amber-500/40 bg-amber-500/10 space-y-3" data-testid="conflict-panel">
+                  <p className="text-amber-300 font-bold text-sm">{conflictData.message || 'Orario occupato!'}</p>
                   {conflictData.available_operators?.length > 0 && (
                     <div>
-                      <p className="text-xs text-[#B89A7A] mb-2">Operatori disponibili per lo stesso orario:</p>
+                      <p className="text-xs text-white/70 mb-2 font-semibold">Scegli un operatore disponibile:</p>
                       <div className="space-y-1.5">
                         {conflictData.available_operators.map(op => (
-                          <button key={op.id} onClick={() => { setFormData(prev => ({...prev, operator_id: op.id})); setConflictData(null); toast.success(`Operatore "${op.name}" selezionato`); }}
-                            className="w-full p-3 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-bold text-sm text-left hover:bg-emerald-500/25 transition-all"
+                          <button key={op.id} onClick={() => { setFormData(prev => ({...prev, operator_id: op.id})); setConflictData(null); handleBookingSubmit(null, op.id); }}
+                            className="w-full p-3 rounded-lg bg-emerald-500/20 border-2 border-emerald-500/40 text-emerald-300 font-bold text-sm text-left hover:bg-emerald-500/30 transition-all flex items-center justify-between"
                             data-testid={`conflict-op-${op.id}`}>
-                            {op.name} - disponibile
+                            <span>{op.name}</span>
+                            <span className="text-xs bg-emerald-500/30 px-2 py-1 rounded-full">DISPONIBILE</span>
                           </button>
                         ))}
                       </div>
@@ -402,7 +406,7 @@ export default function WebsitePage() {
                   )}
                   {conflictData.alternative_slots?.length > 0 && (
                     <div>
-                      <p className="text-xs text-[#B89A7A] mb-2">Orari alternativi:</p>
+                      <p className="text-xs text-white/70 mb-2 font-semibold">Oppure scegli un orario alternativo:</p>
                       <div className="grid grid-cols-2 gap-1.5">
                         {conflictData.alternative_slots.map((slot, i) => (
                           <button key={i} onClick={() => { setFormData(prev => ({...prev, time: slot.time, operator_id: slot.operator_id || prev.operator_id})); setConflictData(null); toast.success(`Orario ${slot.time} selezionato`); }}
@@ -424,9 +428,11 @@ export default function WebsitePage() {
   }
 
   // ==================== WEBSITE LANDING PAGE ====================
-  const serviceCategories = config.service_categories || [];
   const hours = config.hours || {};
   const phones = config.phones || [];
+
+  // Servizi reali dal database, raggruppati per categoria
+  const landingServiceGroups = groupServicesByCategory(bookingServices);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#FFF8F0] via-[#FEF3E2] to-[#F0F4FF] text-[#1e293b]" data-testid="website-landing">
@@ -459,19 +465,17 @@ export default function WebsitePage() {
 
       {/* HERO */}
       <section className="relative min-h-screen flex items-center pt-16">
-        <div className="absolute inset-0">
-          <img src="/logo.png?v=4" alt={config.salon_name} className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-[#FFF8F0]" />
-        </div>
+        <div className="absolute inset-0 bg-[#1a0e08]" />
         <div className="relative max-w-6xl mx-auto px-4 py-20 sm:py-32 w-full">
           <div className="text-center max-w-3xl mx-auto">
             <div className="flex justify-center mb-8">
-              <img src="/logo.png?v=4" alt={config.salon_name} className="w-48 h-48 sm:w-64 sm:h-64 lg:w-80 lg:h-80 object-contain drop-shadow-2xl rounded-3xl border-2 border-white/30 shadow-2xl" />
+              <img src="/logo.png?v=4" alt={config.salon_name} className="w-48 h-48 sm:w-64 sm:h-64 object-contain drop-shadow-2xl rounded-3xl border-2 border-white/20 shadow-2xl" />
             </div>
-            <div className="inline-block bg-[#0EA5E9]/10 backdrop-blur-sm text-[#0EA5E9] text-xs font-bold px-4 py-2 rounded-full border border-[#0EA5E9]/30 mb-6">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white mb-4 tracking-tight">{config.salon_name || 'BRUNO MELITO HAIR'}</h1>
+            <div className="inline-block bg-[#0EA5E9]/20 backdrop-blur-sm text-[#0EA5E9] text-xs font-bold px-4 py-2 rounded-full border border-[#0EA5E9]/40 mb-6">
               {config.subtitle || 'SOLO PER APPUNTAMENTO'}
             </div>
-            <p className="text-base sm:text-lg text-[#475569] max-w-lg mx-auto mb-8 leading-relaxed">
+            <p className="text-base sm:text-lg text-white/70 max-w-lg mx-auto mb-8 leading-relaxed">
               {config.hero_description || ''}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center mb-10">
@@ -484,12 +488,12 @@ export default function WebsitePage() {
             </div>
             <div className="flex flex-col sm:flex-row gap-4 text-sm justify-center">
               {phones.map((p, i) => (
-                <a key={i} href={`tel:${p.replace(/\s/g, '')}`} className="flex items-center gap-2 text-[#64748B] hover:text-[#0EA5E9] transition-colors justify-center">
+                <a key={i} href={`tel:${p.replace(/\s/g, '')}`} className="flex items-center gap-2 text-white/60 hover:text-[#0EA5E9] transition-colors justify-center">
                   <Phone className="w-4 h-4" /> {p}
                 </a>
               ))}
               {config.address && (
-                <a href={config.maps_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[#64748B] hover:text-[#0EA5E9] transition-colors justify-center">
+                <a href={config.maps_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-white/60 hover:text-[#0EA5E9] transition-colors justify-center">
                   <MapPin className="w-4 h-4" /> {config.address}
                 </a>
               )}
@@ -506,7 +510,7 @@ export default function WebsitePage() {
       </section>
 
       {/* SERVICES */}
-      {serviceCategories.length > 0 && (
+      {bookingServices.length > 0 && (
         <section ref={servicesRef} className="py-20 sm:py-28 relative">
           <div className="max-w-6xl mx-auto px-4">
             <button onClick={() => setShowServices(!showServices)} className="w-full text-center mb-4 group">
@@ -518,20 +522,52 @@ export default function WebsitePage() {
             </button>
             {showServices && (
               <div className="space-y-6 mt-8 animate-in fade-in duration-300">
-                {serviceCategories.map((cat, idx) => (
-                  <div key={idx} className={`bg-white border border-gray-200 rounded-3xl p-6 transition-all duration-300 hover:shadow-xl hover:scale-[1.01]`}>
-                    <h3 className="text-xl font-black text-[#1e293b] mb-1">{cat.title}</h3>
-                    {cat.desc && <p className="text-sm text-[#64748B] mb-4">{cat.desc}</p>}
+                {landingServiceGroups.orderedKeys.map((catKey) => {
+                  const catInfo = getCategoryInfo(catKey);
+                  const catServices = landingServiceGroups.groups[catKey];
+                  return (
+                    <div key={catKey} className="bg-white border border-gray-200 rounded-3xl p-6 transition-all duration-300 hover:shadow-xl hover:scale-[1.01]">
+                      <h3 className="text-xl font-black mb-3 flex items-center gap-2" style={{ color: catInfo.color }}>
+                        <span className="w-3 h-3 rounded-full" style={{ backgroundColor: catInfo.color }} />
+                        {catInfo.label}
+                      </h3>
+                      <div className="space-y-3">
+                        {catServices.map((service) => (
+                          <div key={service.id} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
+                            <div>
+                              <span className="font-bold text-[#334155]">{service.name}</span>
+                              <span className="text-xs text-[#94A3B8] ml-2">{service.duration} min</span>
+                            </div>
+                            <span className="font-black text-lg shrink-0 ml-4" style={{ color: catInfo.color }}>{'\u20AC'}{service.price}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+                {/* Card & Abbonamenti nella landing */}
+                {cardTemplates.length > 0 && (
+                  <div className="bg-white border-2 border-[#6366F1]/30 rounded-3xl p-6 transition-all duration-300 hover:shadow-xl hover:scale-[1.01]">
+                    <h3 className="text-xl font-black mb-3 flex items-center gap-2 text-[#6366F1]">
+                      <CreditCard className="w-5 h-5" />
+                      Card & Abbonamenti
+                    </h3>
                     <div className="space-y-3">
-                      {(cat.items || []).map((item, i) => (
-                        <div key={i} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
-                          <span className="font-bold text-[#334155]">{item.name}</span>
-                          <span className="font-black text-[#0EA5E9] text-lg shrink-0 ml-4">{'\u20AC'} {item.price}</span>
+                      {cardTemplates.map((tmpl, i) => (
+                        <div key={tmpl.id || i} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
+                          <div>
+                            <span className="font-bold text-[#334155]">{tmpl.name}</span>
+                            <span className="text-xs text-[#6366F1] ml-2">
+                              {tmpl.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}
+                              {tmpl.total_services ? ` · ${tmpl.total_services} servizi` : ''}
+                            </span>
+                          </div>
+                          <span className="font-black text-[#6366F1] text-lg shrink-0 ml-4">{'\u20AC'}{tmpl.total_value}</span>
                         </div>
                       ))}
                     </div>
                   </div>
-                ))}
+                )}
                 <div className="text-center">
                   <Button onClick={() => setShowBooking(true)} className="bg-[#0EA5E9] text-white hover:bg-[#0284C7] font-bold px-8 py-6 rounded-xl shadow-lg shadow-[#0EA5E9]/30">
                     <Scissors className="w-4 h-4 mr-2" /> PRENOTA ORA
@@ -709,38 +745,48 @@ export default function WebsitePage() {
       )}
 
       {/* LOYALTY PROGRAM */}
-      {siteData?.loyalty && (
+      {/* PROGRAMMA FEDELTÀ */}
       <section className="py-20 sm:py-28 bg-gradient-to-br from-amber-50 via-white to-amber-50">
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center mb-12">
             <p className="text-amber-500 font-bold text-sm tracking-widest uppercase mb-3">Programma Fedeltà</p>
             <h2 className="text-3xl sm:text-4xl font-black text-[#1e293b]">Ogni Visita Vale di Più</h2>
-            <p className="text-[#94A3B8] mt-3 max-w-xl mx-auto">Accumula punti ad ogni appuntamento e sblocca premi esclusivi. <strong>1 punto ogni €{siteData.loyalty.points_per_euro || 10} spesi</strong>.</p>
+            <p className="text-[#94A3B8] mt-3 max-w-xl mx-auto">Accumula punti ad ogni appuntamento e sblocca premi esclusivi. <strong>1 punto ogni {'\u20AC'}10 spesi</strong>.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
-            {Object.entries(siteData.loyalty.rewards || {}).map(([key, reward], idx) => {
-              const icons = [Gift, Star, Scissors];
-              const colors = ['from-amber-400 to-orange-400', 'from-rose-400 to-pink-400', 'from-teal-400 to-emerald-400'];
-              const bgColors = ['bg-amber-100', 'bg-rose-100', 'bg-teal-100'];
-              const textColors = ['text-amber-600', 'text-rose-600', 'text-teal-600'];
-              const Icon = icons[idx % 3];
-              return (
-                <div key={key} className="bg-white rounded-3xl p-6 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.03] text-center">
-                  <div className={`w-16 h-16 ${bgColors[idx % 3]} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
-                    <Icon className={`w-8 h-8 ${textColors[idx % 3]}`} />
-                  </div>
-                  <h3 className="font-bold text-lg text-[#1e293b] mb-2">{reward.name}</h3>
-                  <div className={`inline-block bg-gradient-to-r ${colors[idx % 3]} text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3`}>
-                    {reward.points_required} punti
-                  </div>
-                  <p className="text-[#64748B] text-sm">
-                    {reward.discount_percent === 100 ? 'Un servizio completamente gratuito!' : 
-                     reward.discount_percent ? `Sconto del ${reward.discount_percent}% sul prossimo servizio` :
-                     reward.name}
-                  </p>
-                </div>
-              );
-            })}
+            {/* Sconto 5% */}
+            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.03] text-center">
+              <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Gift className="w-8 h-8 text-amber-600" />
+              </div>
+              <h3 className="font-bold text-lg text-[#1e293b] mb-2">Sconto 5%</h3>
+              <div className="inline-block bg-gradient-to-r from-amber-400 to-orange-400 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3">
+                5 punti
+              </div>
+              <p className="text-[#64748B] text-sm">Sconto del 5% sul prossimo servizio</p>
+            </div>
+            {/* Sconto 10% */}
+            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.03] text-center">
+              <div className="w-16 h-16 bg-rose-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Star className="w-8 h-8 text-rose-600" />
+              </div>
+              <h3 className="font-bold text-lg text-[#1e293b] mb-2">Sconto 10%</h3>
+              <div className="inline-block bg-gradient-to-r from-rose-400 to-pink-400 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3">
+                10 punti
+              </div>
+              <p className="text-[#64748B] text-sm">Sconto del 10% sul prossimo servizio</p>
+            </div>
+            {/* Servizio Omaggio */}
+            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.03] text-center">
+              <div className="w-16 h-16 bg-teal-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Scissors className="w-8 h-8 text-teal-600" />
+              </div>
+              <h3 className="font-bold text-lg text-[#1e293b] mb-2">Servizio Omaggio</h3>
+              <div className="inline-block bg-gradient-to-r from-teal-400 to-emerald-400 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3">
+                35 punti
+              </div>
+              <p className="text-[#64748B] text-sm">Un servizio colore gratuito!</p>
+            </div>
           </div>
           <div className="text-center mt-10">
             <Button onClick={() => setShowBooking(true)} className="bg-gradient-to-r from-amber-400 to-orange-400 text-white hover:from-amber-500 hover:to-orange-500 font-bold px-8 py-6 rounded-xl shadow-lg">
@@ -749,7 +795,6 @@ export default function WebsitePage() {
           </div>
         </div>
       </section>
-      )}
 
 
       {/* CONTACT */}

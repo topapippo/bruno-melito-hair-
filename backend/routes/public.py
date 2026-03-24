@@ -184,10 +184,8 @@ async def create_public_booking(data: PublicBookingRequest):
             has_conflict = True
     else:
         if len(busy_at_time) > 0:
-            if available_operators:
-                data.operator_id = available_operators[0]["id"]
-            else:
-                has_conflict = True
+            # Mostra sempre gli operatori disponibili come scelta quando almeno uno è occupato
+            has_conflict = True
 
     if has_conflict:
         all_apts = await db.appointments.find(
@@ -217,10 +215,14 @@ async def create_public_booking(data: PublicBookingRequest):
                 if len(alternative_slots) >= 4:
                     break
 
+        conflict_msg = "Orario già occupato. Scegli un altro orario."
+        if available_operators:
+            names = ", ".join([o["name"] for o in available_operators])
+            conflict_msg = f"Orario occupato da un operatore. Disponibili: {names}. Scegli un operatore o un orario alternativo."
         raise HTTPException(
             status_code=409,
             detail={
-                "message": "Orario già occupato. Scegli un altro orario.",
+                "message": conflict_msg,
                 "conflict": True,
                 "available_operators": available_operators,
                 "alternative_slots": alternative_slots
