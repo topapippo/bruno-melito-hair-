@@ -487,21 +487,25 @@ export default function WebsitePage() {
             <img src="/logo.png?v=4" alt={config.salon_name} className="w-10 h-10 rounded-lg" />
             <span className="font-black text-sm sm:text-base tracking-tight">{config.salon_name || 'BRUNO MELITO HAIR'}</span>
           </div>
-          <div className="hidden sm:flex items-center gap-6 text-sm text-[#64748B]">
-            <button onClick={() => { setShowServices(true); setTimeout(() => scrollTo(servicesRef), 100); }} className="hover:text-[#0EA5E9] transition-colors font-semibold">Servizi</button>
-            <button onClick={() => scrollTo(contactRef)} className="hover:text-[#0EA5E9] transition-colors font-semibold">Contatti</button>
-            <div className="flex items-center gap-3 border-l border-gray-300 pl-4">
-              {SOCIAL_LINKS.map((link, i) => (
-                <a key={i} href={link.url} target="_blank" rel="noopener noreferrer" className={`text-[#B89A7A] ${link.color} transition-colors`} title={link.label}>
-                  <link.icon className="w-4 h-4" />
-                </a>
-              ))}
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className="hidden sm:flex items-center gap-6 text-sm text-[#64748B]">
+              <button onClick={() => { setShowServices(true); setTimeout(() => scrollTo(servicesRef), 100); }} className="hover:text-[#0EA5E9] transition-colors font-semibold">Servizi</button>
+              <button onClick={() => scrollTo(contactRef)} className="hover:text-[#0EA5E9] transition-colors font-semibold">Contatti</button>
+              <div className="flex items-center gap-3 border-l border-gray-300 pl-4">
+                {SOCIAL_LINKS.map((link, i) => (
+                  <a key={i} href={link.url} target="_blank" rel="noopener noreferrer" className={`text-[#B89A7A] ${link.color} transition-colors`} title={link.label}>
+                    <link.icon className="w-4 h-4" />
+                  </a>
+                ))}
+              </div>
             </div>
-            <a href="/login" className="hover:text-[#0EA5E9] transition-colors font-semibold">Area Riservata</a>
+            <a href="/login" className="text-[#64748B] hover:text-[#0EA5E9] transition-colors" title="Area Riservata" data-testid="admin-link">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+            </a>
+            <Button onClick={() => setShowBooking(true)} className="bg-[#0EA5E9] text-white hover:bg-[#0284C7] font-bold text-sm px-4 sm:px-6" data-testid="website-book-btn">
+              PRENOTA ORA
+            </Button>
           </div>
-          <Button onClick={() => setShowBooking(true)} className="bg-[#0EA5E9] text-white hover:bg-[#0284C7] font-bold text-sm px-4 sm:px-6" data-testid="website-book-btn">
-            PRENOTA ORA
-          </Button>
         </div>
       </nav>
 
