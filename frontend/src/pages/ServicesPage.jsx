@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
@@ -34,20 +34,9 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Scissors, Plus, Clock, Euro, Edit2, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { CATEGORIES, CATEGORY_ORDER, getCategoryInfo } from '../lib/categories';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
-
-const CATEGORIES = [
-  { value: 'taglio', label: 'Taglio', color: '#0EA5E9' },
-  { value: 'piega', label: 'Piega', color: '#E9C46A' },
-  { value: 'trattamento', label: 'Trattamenti', color: '#334155' },
-  { value: 'colore', label: 'Colore', color: '#789F8A' },
-  { value: 'modellanti', label: 'Modellanti', color: '#C084FC' },
-  { value: 'abbonamenti', label: 'Abbonamenti/Prepagate', color: '#6366F1' },
-  { value: 'prodotti', label: 'Prodotti e Varie', color: '#F97316' },
-];
-
-const CATEGORY_ORDER = CATEGORIES.map(c => c.value);
 
 const COLOR_PRESETS = [
   '#0EA5E9', '#0284C7', '#789F8A', '#10B981', '#E9C46A', '#F59E0B',
@@ -78,7 +67,7 @@ export default function ServicesPage() {
 
   const fetchServices = async () => {
     try {
-      const res = await axios.get(`${API}/services`);
+      const res = await api.get(`${API}/services`);
       setServices(res.data);
     } catch (err) {
       console.error('Error fetching services:', err);
@@ -98,10 +87,10 @@ export default function ServicesPage() {
     setSaving(true);
     try {
       if (editingService) {
-        await axios.put(`${API}/services/${editingService.id}`, formData);
+        await api.put(`${API}/services/${editingService.id}`, formData);
         toast.success('Servizio aggiornato!');
       } else {
-        await axios.post(`${API}/services`, formData);
+        await api.post(`${API}/services`, formData);
         toast.success('Servizio aggiunto!');
       }
       setDialogOpen(false);
@@ -130,7 +119,7 @@ export default function ServicesPage() {
   const handleDelete = async () => {
     if (!serviceToDelete) return;
     try {
-      await axios.delete(`${API}/services/${serviceToDelete}`);
+      await api.delete(`${API}/services/${serviceToDelete}`);
       toast.success('Servizio eliminato');
       setDeleteDialogOpen(false);
       setServiceToDelete(null);
@@ -144,10 +133,6 @@ export default function ServicesPage() {
     setEditingService(null);
     setFormData({ name: '', category: 'taglio', duration: 30, price: 0 });
     setDialogOpen(true);
-  };
-
-  const getCategoryInfo = (category) => {
-    return CATEGORIES.find(c => c.value === category) || CATEGORIES[4];
   };
 
   // Sort services by sort_order (or number prefix) and group by category
@@ -164,8 +149,11 @@ export default function ServicesPage() {
     return acc;
   }, {});
 
-  // Sort categories in the defined order
-  const sortedCategories = CATEGORY_ORDER.filter(cat => groupedServices[cat]);
+  // Sort categories in the defined order, including unknown categories at end
+  const sortedCategories = [
+    ...CATEGORY_ORDER.filter(cat => groupedServices[cat]),
+    ...Object.keys(groupedServices).filter(cat => !CATEGORY_ORDER.includes(cat))
+  ];
 
   return (
     <Layout>
@@ -196,7 +184,7 @@ export default function ServicesPage() {
         ) : services.length > 0 ? (
           <div className="space-y-8">
             {sortedCategories.map((catValue) => {
-              const category = CATEGORIES.find(c => c.value === catValue);
+              const category = getCategoryInfo(catValue);
               const categoryServices = groupedServices[catValue];
               if (!categoryServices || categoryServices.length === 0) return null;
               

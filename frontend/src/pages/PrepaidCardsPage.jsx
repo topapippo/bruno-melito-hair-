@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -102,9 +102,9 @@ export default function PrepaidCardsPage() {
     setLoading(true);
     try {
       const [cardsRes, clientsRes, templatesRes] = await Promise.all([
-        axios.get(`${API}/cards?active_only=${!showInactive}`),
-        axios.get(`${API}/clients`),
-        axios.get(`${API}/card-templates`)
+        api.get(`${API}/cards?active_only=${!showInactive}`),
+        api.get(`${API}/clients`),
+        api.get(`${API}/card-templates`)
       ]);
       setCards(cardsRes.data);
       setClients(clientsRes.data);
@@ -126,7 +126,7 @@ export default function PrepaidCardsPage() {
 
     setSaving(true);
     try {
-      const response = await axios.post(`${API}/cards`, {
+      const response = await api.post(`${API}/cards`, {
         ...formData,
         total_value: parseFloat(formData.total_value),
         total_services: formData.total_services ? parseInt(formData.total_services) : null,
@@ -151,7 +151,7 @@ export default function PrepaidCardsPage() {
     if (!window.confirm('Sei sicuro di voler eliminare questa card?')) return;
     
     try {
-      await axios.delete(`${API}/cards/${cardId}`);
+      await api.delete(`${API}/cards/${cardId}`);
       toast.success('Card eliminata');
       fetchData();
     } catch (err) {
@@ -167,7 +167,7 @@ export default function PrepaidCardsPage() {
 
     setSaving(true);
     try {
-      await axios.post(`${API}/cards/${selectedCard.id}/recharge?amount=${parseFloat(rechargeAmount)}`);
+      await api.post(`${API}/cards/${selectedCard.id}/recharge?amount=${parseFloat(rechargeAmount)}`);
       toast.success('Card ricaricata con successo!');
       setRechargeDialogOpen(false);
       setRechargeAmount('');
@@ -182,7 +182,7 @@ export default function PrepaidCardsPage() {
 
   const toggleCardActive = async (card) => {
     try {
-      await axios.put(`${API}/cards/${card.id}`, { active: !card.active });
+      await api.put(`${API}/cards/${card.id}`, { active: !card.active });
       toast.success(card.active ? 'Card disattivata' : 'Card riattivata');
       fetchData();
     } catch (err) {
@@ -256,10 +256,10 @@ export default function PrepaidCardsPage() {
         notes: templateForm.notes
       };
       if (editingTemplate) {
-        await axios.put(`${API}/card-templates/${editingTemplate.id}`, payload);
+        await api.put(`${API}/card-templates/${editingTemplate.id}`, payload);
         toast.success('Pacchetto aggiornato');
       } else {
-        await axios.post(`${API}/card-templates`, payload);
+        await api.post(`${API}/card-templates`, payload);
         toast.success('Pacchetto creato');
       }
       setTemplateDialogOpen(false);
@@ -273,7 +273,7 @@ export default function PrepaidCardsPage() {
   const deleteCardTemplate = async (id) => {
     if (!window.confirm('Eliminare questo pacchetto?')) return;
     try {
-      await axios.delete(`${API}/card-templates/${id}`);
+      await api.delete(`${API}/card-templates/${id}`);
       toast.success('Pacchetto eliminato');
       fetchData();
     } catch (err) {

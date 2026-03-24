@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import { getMediaUrl } from '../lib/mediaUrl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -75,14 +75,14 @@ export default function BookingPage() {
   const fetchData = async () => {
     try {
       const [servicesRes, operatorsRes, siteRes] = await Promise.all([
-        axios.get(`${API}/public/services`), 
-        axios.get(`${API}/public/operators`),
-        axios.get(`${API}/public/website`)
+        api.get(`${API}/public/services`), 
+        api.get(`${API}/public/operators`),
+        api.get(`${API}/public/website`)
       ]);
       setServices(servicesRes.data); setOperators(operatorsRes.data);
       setSiteData(siteRes.data);
       try {
-        const promosRes = await axios.get(`${API}/public/promotions/all`);
+        const promosRes = await api.get(`${API}/public/promotions/all`);
         setPublicPromos(promosRes.data);
       } catch (e) { /* promos not critical */ }
     } catch (err) { console.error(err); }
@@ -111,7 +111,7 @@ export default function BookingPage() {
   const handleSubmit = async () => {
     if (!formData.client_name || !formData.client_phone) { toast.error('Inserisci nome e telefono'); return; }
     setSubmitting(true);
-    try { await axios.post(`${API}/public/booking`, formData); setSuccess(true); }
+    try { await api.post(`${API}/public/booking`, formData); setSuccess(true); }
     catch (err) { toast.error(err.response?.data?.detail || 'Errore nella prenotazione'); }
     finally { setSubmitting(false); }
   };
@@ -126,7 +126,7 @@ export default function BookingPage() {
     if (!managePhone) { toast.error('Inserisci il tuo numero di telefono'); return; }
     setLookingUp(true);
     try {
-      const res = await axios.get(`${API}/public/my-appointments?phone=${encodeURIComponent(managePhone)}`);
+      const res = await api.get(`${API}/public/my-appointments?phone=${encodeURIComponent(managePhone)}`);
       setMyAppointments(res.data);
       if (res.data.length === 0) toast.info('Nessun appuntamento trovato con questo numero');
     } catch { toast.error('Errore nella ricerca'); }
@@ -136,7 +136,7 @@ export default function BookingPage() {
   const cancelAppointment = async (aptId) => {
     if (!window.confirm('Sei sicura di voler cancellare questo appuntamento?')) return;
     try {
-      await axios.delete(`${API}/public/appointments/${aptId}?phone=${encodeURIComponent(managePhone)}`);
+      await api.delete(`${API}/public/appointments/${aptId}?phone=${encodeURIComponent(managePhone)}`);
       setMyAppointments(prev => prev.filter(a => a.id !== aptId));
       toast.success('Appuntamento cancellato');
     } catch (err) { toast.error(err.response?.data?.detail || 'Errore'); }
@@ -145,7 +145,7 @@ export default function BookingPage() {
   const updateAppointment = async () => {
     if (!editingApt) return;
     try {
-      await axios.put(`${API}/public/appointments/${editingApt.id}`, { phone: managePhone, date: editDate, time: editTime });
+      await api.put(`${API}/public/appointments/${editingApt.id}`, { phone: managePhone, date: editDate, time: editTime });
       setMyAppointments(prev => prev.map(a => a.id === editingApt.id ? { ...a, date: editDate, time: editTime } : a));
       setEditingApt(null);
       toast.success('Appuntamento modificato!');

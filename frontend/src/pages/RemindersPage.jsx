@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -63,10 +63,10 @@ export default function RemindersPage() {
   const fetchData = async () => {
     try {
       const [remRes, inactRes, templRes, colorRes] = await Promise.all([
-        axios.get(`${API}/reminders/tomorrow`),
-        axios.get(`${API}/reminders/inactive-clients`),
-        axios.get(`${API}/reminders/templates`),
-        axios.get(`${API}/reminders/color-expiry`).catch(() => ({ data: [] }))
+        api.get(`${API}/reminders/tomorrow`),
+        api.get(`${API}/reminders/inactive-clients`),
+        api.get(`${API}/reminders/templates`),
+        api.get(`${API}/reminders/color-expiry`).catch(() => ({ data: [] }))
       ]);
       setTomorrowReminders(remRes.data);
       setInactiveClients(inactRes.data);
@@ -82,7 +82,7 @@ export default function RemindersPage() {
 
   const checkAutoReminder = async () => {
     try {
-      const res = await axios.get(`${API}/reminders/auto-check`);
+      const res = await api.get(`${API}/reminders/auto-check`);
       setAutoCheck(res.data);
     } catch (err) {
       // silent
@@ -124,7 +124,7 @@ export default function RemindersPage() {
     // Mark all as sent
     if (sentIds.length > 0) {
       try {
-        await axios.post(`${API}/reminders/batch-mark-sent`, { appointment_ids: sentIds });
+        await api.post(`${API}/reminders/batch-mark-sent`, { appointment_ids: sentIds });
         toast.success(`${sentIds.length} promemoria inviati!`);
         fetchData();
         checkAutoReminder();
@@ -221,13 +221,13 @@ export default function RemindersPage() {
     setSendingId(id);
     try {
       if (type === 'appointment') {
-        await axios.post(`${API}/reminders/appointment/${data.id}/mark-sent`);
+        await api.post(`${API}/reminders/appointment/${data.id}/mark-sent`);
         setTomorrowReminders(prev =>
           prev.map(r => r.id === data.id ? { ...r, reminded: true } : r)
         );
         toast.success(`Promemoria inviato a ${data.client_name}`);
       } else {
-        await axios.post(`${API}/reminders/inactive/${data.client_id}/mark-sent`);
+        await api.post(`${API}/reminders/inactive/${data.client_id}/mark-sent`);
         setInactiveClients(prev =>
           prev.map(c => c.client_id === data.client_id ? { ...c, already_recalled: true } : c)
         );
@@ -244,13 +244,13 @@ export default function RemindersPage() {
     setResettingId(id);
     try {
       if (type === 'appointment') {
-        await axios.delete(`${API}/reminders/appointment/${id}/reset`);
+        await api.delete(`${API}/reminders/appointment/${id}/reset`);
         setTomorrowReminders(prev =>
           prev.map(r => r.id === id ? { ...r, reminded: false } : r)
         );
         toast.success('Promemoria resettato, puoi reinviarlo');
       } else {
-        await axios.delete(`${API}/reminders/inactive/${id}/reset`);
+        await api.delete(`${API}/reminders/inactive/${id}/reset`);
         setInactiveClients(prev =>
           prev.map(c => c.client_id === id ? { ...c, already_recalled: false } : c)
         );
@@ -283,13 +283,13 @@ export default function RemindersPage() {
     setSavingTemplate(true);
     try {
       if (editingTemplate) {
-        await axios.put(`${API}/reminders/templates/${editingTemplate.id}`, {
+        await api.put(`${API}/reminders/templates/${editingTemplate.id}`, {
           name: templateForm.name,
           text: templateForm.text
         });
         toast.success('Template aggiornato');
       } else {
-        await axios.post(`${API}/reminders/templates`, templateForm);
+        await api.post(`${API}/reminders/templates`, templateForm);
         toast.success('Template creato');
       }
       setTemplateDialog(false);
@@ -303,7 +303,7 @@ export default function RemindersPage() {
   const deleteTemplate = async (id) => {
     if (!window.confirm('Eliminare questo template?')) return;
     try {
-      await axios.delete(`${API}/reminders/templates/${id}`);
+      await api.delete(`${API}/reminders/templates/${id}`);
       toast.success('Template eliminato');
       fetchData();
     } catch (err) {
@@ -742,7 +742,7 @@ export default function RemindersPage() {
                         <Button variant="outline" size="sm"
                           onClick={async () => {
                             try {
-                              await axios.delete(`${API}/reminders/color-expiry/${cr.client_id}/reset`);
+                              await api.delete(`${API}/reminders/color-expiry/${cr.client_id}/reset`);
                               setColorReminders(prev => prev.map(c => c.client_id === cr.client_id ? {...c, already_sent: false} : c));
                               toast.success('Annullato');
                             } catch { toast.error('Errore'); }
@@ -758,7 +758,7 @@ export default function RemindersPage() {
                             const phone = formatPhone(cr.phone);
                             const msg = encodeURIComponent(`Ciao ${cr.client_name}! Sono passati ${cr.days_ago} giorni dal tuo ultimo colore. E' il momento di rinfrescare il look! Prenota su Bruno Melito Hair.`);
                             window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
-                            axios.post(`${API}/reminders/color-expiry/${cr.client_id}/mark-sent`)
+                            api.post(`${API}/reminders/color-expiry/${cr.client_id}/mark-sent`)
                               .then(() => {
                                 setColorReminders(prev => prev.map(c => c.client_id === cr.client_id ? {...c, already_sent: true} : c));
                                 toast.success(`Promemoria colore inviato a ${cr.client_name}`);

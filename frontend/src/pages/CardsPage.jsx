@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -72,8 +72,8 @@ export default function CardsPage() {
     setLoading(true);
     try {
       const [cardsRes, clientsRes] = await Promise.all([
-        axios.get(`${API}/cards?active_only=${!showInactive}`),
-        axios.get(`${API}/clients`)
+        api.get(`${API}/cards?active_only=${!showInactive}`),
+        api.get(`${API}/clients`)
       ]);
       setCards(cardsRes.data);
       setClients(clientsRes.data);
@@ -94,7 +94,7 @@ export default function CardsPage() {
 
     setSaving(true);
     try {
-      await axios.post(`${API}/cards`, {
+      await api.post(`${API}/cards`, {
         client_id: formData.client_id,
         card_type: formData.card_type,
         name: formData.name,
@@ -127,7 +127,7 @@ export default function CardsPage() {
     
     setSaving(true);
     try {
-      await axios.post(`${API}/cards/${selectedCard.id}/recharge?amount=${parseFloat(rechargeAmount)}`);
+      await api.post(`${API}/cards/${selectedCard.id}/recharge?amount=${parseFloat(rechargeAmount)}`);
       toast.success('Ricarica effettuata!');
       setRechargeDialogOpen(false);
       setRechargeAmount('');
@@ -143,7 +143,7 @@ export default function CardsPage() {
   const handleDelete = async () => {
     if (!selectedCard) return;
     try {
-      await axios.delete(`${API}/cards/${selectedCard.id}`);
+      await api.delete(`${API}/cards/${selectedCard.id}`);
       toast.success('Card eliminata');
       setDeleteDialogOpen(false);
       setSelectedCard(null);

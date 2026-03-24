@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -77,7 +77,7 @@ export default function ExpensesPage() {
       let url = `${API}/expenses`;
       if (filter === 'unpaid') url += '?paid=false';
       else if (filter === 'paid') url += '?paid=true';
-      const res = await axios.get(url);
+      const res = await api.get(url);
       setExpenses(res.data);
     } catch (err) {
       console.error(err);
@@ -101,10 +101,10 @@ export default function ExpensesPage() {
         recurrence: formData.is_recurring ? formData.recurrence : null,
       };
       if (editingExpense) {
-        await axios.put(`${API}/expenses/${editingExpense.id}`, payload);
+        await api.put(`${API}/expenses/${editingExpense.id}`, payload);
         toast.success('Uscita aggiornata');
       } else {
-        await axios.post(`${API}/expenses`, payload);
+        await api.post(`${API}/expenses`, payload);
         toast.success('Uscita registrata');
       }
       setDialogOpen(false);
@@ -118,7 +118,7 @@ export default function ExpensesPage() {
 
   const markPaid = async (id) => {
     try {
-      await axios.post(`${API}/expenses/${id}/pay`);
+      await api.post(`${API}/expenses/${id}/pay`);
       toast.success('Segnata come pagata');
       fetchExpenses();
     } catch (err) {
@@ -128,7 +128,7 @@ export default function ExpensesPage() {
 
   const markUnpaid = async (id) => {
     try {
-      await axios.post(`${API}/expenses/${id}/unpay`);
+      await api.post(`${API}/expenses/${id}/unpay`);
       toast.success('Riportata a da pagare');
       fetchExpenses();
     } catch (err) {
@@ -139,7 +139,7 @@ export default function ExpensesPage() {
   const deleteExpense = async (id) => {
     if (!window.confirm('Eliminare questa uscita?')) return;
     try {
-      await axios.delete(`${API}/expenses/${id}`);
+      await api.delete(`${API}/expenses/${id}`);
       toast.success('Uscita eliminata');
       fetchExpenses();
     } catch (err) {

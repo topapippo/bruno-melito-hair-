@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import * as XLSX from 'xlsx';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
@@ -24,9 +24,9 @@ export default function BackupPage() {
   const fetchStats = async () => {
     try {
       const [clients, appointments, services] = await Promise.all([
-        axios.get(`${API}/clients`),
-        axios.get(`${API}/appointments`),
-        axios.get(`${API}/services`)
+        api.get(`${API}/clients`),
+        api.get(`${API}/appointments`),
+        api.get(`${API}/services`)
       ]);
       setStats({
         clients: clients.data.length,
@@ -45,10 +45,10 @@ export default function BackupPage() {
     setExporting(true);
     try {
       const [clientsRes, appointmentsRes, servicesRes, paymentsRes] = await Promise.all([
-        axios.get(`${API}/clients`),
-        axios.get(`${API}/appointments`),
-        axios.get(`${API}/services`),
-        axios.get(`${API}/payments?start=2020-01-01&end=2030-12-31`)
+        api.get(`${API}/clients`),
+        api.get(`${API}/appointments`),
+        api.get(`${API}/services`),
+        api.get(`${API}/payments?start=2020-01-01&end=2030-12-31`)
       ]);
 
       const wb = XLSX.utils.book_new();

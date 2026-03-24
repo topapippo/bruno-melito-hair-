@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
@@ -83,10 +83,10 @@ export default function AppointmentsPage() {
     try {
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
       const [appointmentsRes, clientsRes, servicesRes, operatorsRes] = await Promise.all([
-        axios.get(`${API}/appointments?date=${dateStr}`),
-        axios.get(`${API}/clients`),
-        axios.get(`${API}/services`),
-        axios.get(`${API}/operators`)
+        api.get(`${API}/appointments?date=${dateStr}`),
+        api.get(`${API}/clients`),
+        api.get(`${API}/services`),
+        api.get(`${API}/operators`)
       ]);
       setAppointments(appointmentsRes.data);
       setClients(clientsRes.data);
@@ -106,7 +106,7 @@ export default function AppointmentsPage() {
         d.setDate(d.getDate() + i);
         const ds = format(d, 'yyyy-MM-dd');
         try {
-          const res = await axios.get(`${API}/appointments?date=${ds}`);
+          const res = await api.get(`${API}/appointments?date=${ds}`);
           if (res.data.length > 0) {
             upcoming.push({ date: ds, dateObj: d, appointments: res.data });
           }
@@ -123,14 +123,14 @@ export default function AppointmentsPage() {
 
   const fetchAlerts = async () => {
     try {
-      const res = await axios.get(`${API}/cards/alerts/all?days=30&threshold_percent=20`);
+      const res = await api.get(`${API}/cards/alerts/all?days=30&threshold_percent=20`);
       setCardAlerts(res.data);
     } catch (e) { /* alerts not critical */ }
   };
 
   const fetchExpenses = async () => {
     try {
-      const res = await axios.get(`${API}/expenses?paid=false`);
+      const res = await api.get(`${API}/expenses?paid=false`);
       const today = new Date();
       const in30Days = new Date(today);
       in30Days.setDate(in30Days.getDate() + 30);
@@ -145,7 +145,7 @@ export default function AppointmentsPage() {
 
   const checkSmsStatus = async () => {
     try {
-      const res = await axios.get(`${API}/sms/status`);
+      const res = await api.get(`${API}/sms/status`);
       setSmsStatus(res.data);
     } catch (err) {
       console.error('Error checking SMS status:', err);
@@ -161,7 +161,7 @@ export default function AppointmentsPage() {
     
     setSaving(true);
     try {
-      await axios.post(`${API}/appointments`, {
+      await api.post(`${API}/appointments`, {
         ...formData,
         date: format(selectedDate, 'yyyy-MM-dd'),
         operator_id: formData.operator_id || null
@@ -179,7 +179,7 @@ export default function AppointmentsPage() {
 
   const handleStatusChange = async (id, status) => {
     try {
-      await axios.put(`${API}/appointments/${id}`, { status });
+      await api.put(`${API}/appointments/${id}`, { status });
       toast.success(status === 'completed' ? 'Appuntamento completato!' : 'Appuntamento annullato');
       fetchData();
     } catch (err) {
@@ -190,7 +190,7 @@ export default function AppointmentsPage() {
   const handleDelete = async () => {
     if (!appointmentToDelete) return;
     try {
-      await axios.delete(`${API}/appointments/${appointmentToDelete}`);
+      await api.delete(`${API}/appointments/${appointmentToDelete}`);
       toast.success('Appuntamento eliminato');
       setDeleteDialogOpen(false);
       setAppointmentToDelete(null);
@@ -204,7 +204,7 @@ export default function AppointmentsPage() {
     if (!appointmentForSms) return;
     setSendingSms(true);
     try {
-      const res = await axios.post(`${API}/sms/send-reminder`, {
+      const res = await api.post(`${API}/sms/send-reminder`, {
         appointment_id: appointmentForSms.id,
         message: smsMessage || null
       });

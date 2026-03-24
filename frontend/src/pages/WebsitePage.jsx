@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import { getMediaUrl, getMediaType } from '../lib/mediaUrl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Clock, Scissors, CheckCircle, ArrowLeft, MapPin, Phone, Mail, Star, MessageSquare, ChevronDown, ChevronUp, ArrowRight, Instagram, Facebook, Globe, Youtube, Gift } from 'lucide-react';
+import { Clock, Scissors, CheckCircle, ArrowLeft, MapPin, Phone, Mail, Star, MessageSquare, ChevronDown, ChevronUp, ArrowRight, Instagram, Facebook, Globe, Youtube, Gift, CreditCard } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast, Toaster } from 'sonner';
+import { CATEGORY_ORDER, getCategoryInfo, groupServicesByCategory } from '../lib/categories';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -91,16 +92,16 @@ export default function WebsitePage() {
     const fetchAll = async () => {
       try {
         const [siteRes, opsRes, svcRes] = await Promise.all([
-          axios.get(`${API}/public/website`),
-          axios.get(`${API}/public/operators`).catch(() => ({ data: [] })),
-          axios.get(`${API}/public/services`).catch(() => ({ data: [] }))
+          api.get(`${API}/public/website`),
+          api.get(`${API}/public/operators`).catch(() => ({ data: [] })),
+          api.get(`${API}/public/services`).catch(() => ({ data: [] }))
         ]);
         setSiteData(siteRes.data);
         setOperators(opsRes.data);
         setBookingServices(svcRes.data);
         setCardTemplates(siteRes.data?.card_templates || []);
         try {
-          const promosRes = await axios.get(`${API}/public/promotions/all`);
+          const promosRes = await api.get(`${API}/public/promotions/all`);
           setPublicPromos(promosRes.data);
         } catch (e) { /* promos not critical */ }
       } catch (err) { console.error(err); }
@@ -131,7 +132,7 @@ export default function WebsitePage() {
     setSubmitting(true);
     setConflictData(null);
     try { 
-      await axios.post(`${API}/public/booking`, formData); 
+      await api.post(`${API}/public/booking`, formData); 
       setSuccess(true); 
     }
     catch (err) {
@@ -212,41 +213,88 @@ export default function WebsitePage() {
             <div className="space-y-4">
               <h2 className="text-xl font-black text-white">Scegli i Servizi</h2>
               {(() => {
-                const byCat = {};
-                bookingServices.forEach(s => {
-                  const cat = (s.category || 'altro').toLowerCase();
-                  if (!byCat[cat]) byCat[cat] = [];
-                  byCat[cat].push(s);
-                });
-                const cats = Object.keys(byCat).sort();
+                const { groups: byCat, orderedKeys: cats } = groupServicesByCategory(bookingServices);
                 return (
                   <div className="space-y-3">
-                    {cats.map(cat => (
-                      <div key={cat}>
-                        <h3 className="text-sm font-bold text-[#D4A847] uppercase tracking-wider mb-2">{cat}</h3>
-                        <div className="space-y-2">
-                          {byCat[cat].map(service => (
-                            <div key={service.id} onClick={() => toggleService(service.id)}
-                              className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${formData.service_ids.includes(service.id) ? 'border-[#D4A847] bg-[#D4A847]/15' : 'border-[#3A2A1A] bg-[#2A1A0E] hover:border-[#6A4A2A]'}`}
-                              data-testid={`website-service-${service.id}`}>
-                              <div className="flex justify-between items-center">
-                                <div><p className="font-bold text-white">{service.name}</p><p className="text-sm text-[#8A6A4A]">{service.duration} min</p></div>
-                                <p className="font-black text-white">{'\u20AC'}{service.price}</p>
+                    {cats.map(cat => {
+                      const catInfo = getCategoryInfo(cat);
+                      return (
+                        <div key={cat}>
+                          <h3 className="text-sm font-bold uppercase tracking-wider mb-2" style={{ color: catInfo.color }}>{catInfo.label}</h3>
+                          <div className="space-y-2">
+                            {byCat[cat].map(service => (
+                              <div key={service.id} onClick={() => toggleService(service.id)}
+                                className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${formData.service_ids.includes(service.id) ? 'border-[#D4A847] bg-[#D4A847]/15' : 'border-[#3A2A1A] bg-[#2A1A0E] hover:border-[#6A4A2A]'}`}
+                                data-testid={`website-service-${service.id}`}>
+                                <div className="flex justify-between items-center">
+                                  <div><p className="font-bold text-white">{service.name}</p><p className="text-sm text-[#8A6A4A]">{service.duration} min</p></div>
+                                  <p className="font-black text-white">{'\u20AC'}{service.price}</p>
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 );
               })()}
               
-              {/* Promozioni & Card cliccabili */}
+              {/* Abbonamenti & Card Templates */}
+              {cardTemplates.length > 0 && (
+                <div className="mt-4">
+                  <h3 className="text-sm font-bold uppercase tracking-wider mb-2" style={{ color: '#6366F1' }}>
+                    Abbonamenti & Card Prepagate
+                  </h3>
+                  <div className="space-y-2">
+                    {cardTemplates.map((tmpl, i) => {
+                      const isSelected = formData.notes?.includes(`[CARD: ${tmpl.name}]`);
+                      return (
+                        <div key={tmpl.id || i}
+                          onClick={() => {
+                            if (isSelected) {
+                              setFormData(prev => ({ ...prev, notes: prev.notes.replace(`[CARD: ${tmpl.name}] `, '').replace(`[CARD: ${tmpl.name}]`, '') }));
+                              toast('Abbonamento rimosso');
+                            } else {
+                              const cleanNotes = (formData.notes || '').replace(/\[CARD: [^\]]+\] ?/g, '');
+                              setFormData(prev => ({ ...prev, notes: `[CARD: ${tmpl.name}] ${cleanNotes}`.trim() }));
+                              toast.success(`"${tmpl.name}" selezionato!`);
+                            }
+                          }}
+                          className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${isSelected ? 'border-[#6366F1] bg-[#6366F1]/15 shadow-lg shadow-[#6366F1]/10' : 'border-[#6366F1]/30 bg-gradient-to-r from-[#6366F1]/10 to-[#8B5CF6]/10 hover:border-[#6366F1] hover:shadow-md'}`}
+                          data-testid={`website-card-template-${i}`}>
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-bold text-white flex items-center gap-2">
+                                <CreditCard className="w-4 h-4 text-[#6366F1]" />
+                                {tmpl.name}
+                              </p>
+                              <p className="text-sm text-[#8B5CF6]">
+                                {tmpl.card_type === 'subscription' ? 'Abbonamento' : 'Card Prepagata'}
+                                {tmpl.total_services ? ` · ${tmpl.total_services} servizi` : ''}
+                                {tmpl.duration_months ? ` · ${tmpl.duration_months} mesi` : ''}
+                              </p>
+                              {tmpl.notes && <p className="text-xs text-[#8B5CF6]/70 mt-1">{tmpl.notes}</p>}
+                            </div>
+                            <div className="text-right">
+                              <p className="font-black text-2xl text-[#8B5CF6]">{'\u20AC'}{tmpl.total_value}</p>
+                              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isSelected ? 'bg-[#6366F1] text-white' : 'bg-[#6366F1]/20 text-[#8B5CF6]'}`}>
+                                {isSelected ? 'SELEZIONATO' : tmpl.card_type === 'subscription' ? 'ABBONAMENTO' : 'CARD'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Promozioni attive */}
               {publicPromos.length > 0 && (
                 <div className="mt-4">
                   <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
-                    <Gift className="w-5 h-5 text-amber-400" /> Promozioni & Card
+                    <Gift className="w-5 h-5 text-amber-400" /> Promozioni Attive
                   </h3>
                   <div className="space-y-2">
                     {publicPromos.map((promo) => (
@@ -270,54 +318,6 @@ export default function WebsitePage() {
                         </div>
                       </div>
                     ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Abbonamenti & Card */}
-              {cardTemplates.length > 0 && (
-                <div className="mt-4">
-                  <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-                    Abbonamenti & Card
-                  </h3>
-                  <div className="space-y-2">
-                    {cardTemplates.map((tmpl, i) => {
-                      const isSelected = formData.notes?.includes(`[CARD: ${tmpl.name}]`);
-                      return (
-                        <div key={tmpl.id || i}
-                          onClick={() => {
-                            if (isSelected) {
-                              setFormData(prev => ({ ...prev, notes: prev.notes.replace(`[CARD: ${tmpl.name}] `, '').replace(`[CARD: ${tmpl.name}]`, '') }));
-                              toast('Abbonamento rimosso');
-                            } else {
-                              const cleanNotes = (formData.notes || '').replace(/\[CARD: [^\]]+\] ?/g, '');
-                              setFormData(prev => ({ ...prev, notes: `[CARD: ${tmpl.name}] ${cleanNotes}`.trim() }));
-                              toast.success(`"${tmpl.name}" selezionato!`);
-                            }
-                          }}
-                          className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${isSelected ? 'border-purple-400 bg-purple-500/15 shadow-lg shadow-purple-500/10' : 'border-purple-500/30 bg-gradient-to-r from-purple-500/10 to-violet-500/10 hover:border-purple-400 hover:shadow-md'}`}
-                          data-testid={`website-card-template-${i}`}>
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <p className="font-bold text-white">{tmpl.name}</p>
-                              <p className="text-sm text-purple-300">
-                                {tmpl.card_type === 'subscription' ? 'Abbonamento' : 'Card Prepagata'}
-                                {tmpl.total_services ? ` · ${tmpl.total_services} servizi` : ''}
-                                {tmpl.duration_months ? ` · ${tmpl.duration_months} mesi` : ''}
-                              </p>
-                              {tmpl.notes && <p className="text-xs text-purple-300/70 mt-1">{tmpl.notes}</p>}
-                            </div>
-                            <div className="text-right">
-                              <p className="font-black text-2xl text-purple-300">{'\u20AC'}{tmpl.total_value}</p>
-                              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isSelected ? 'bg-purple-400 text-white' : 'bg-purple-400/20 text-purple-300'}`}>
-                                {isSelected ? 'SELEZIONATO' : tmpl.card_type === 'subscription' ? 'ABBONAMENTO' : 'CARD'}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
                   </div>
                 </div>
               )}

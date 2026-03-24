@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
@@ -26,6 +26,7 @@ import { ChevronLeft, ChevronRight, Plus, Clock, Loader2, Search, X, Repeat, Che
 import { format, addDays, subDays, startOfWeek, endOfWeek, addWeeks, subWeeks, startOfMonth, endOfMonth, addMonths, subMonths, eachDayOfInterval, isSameDay, isSameMonth, isToday } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { getCategoryInfo, groupServicesByCategory } from '../lib/categories';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -158,6 +159,9 @@ export default function PlanningPage() {
 
   // New online booking notifications
   const [newOnlineBookings, setNewOnlineBookings] = useState([]);
+  
+  // Card templates for booking dialog
+  const [cardTemplates, setCardTemplates] = useState([]);
 
   useEffect(() => {
     fetchData();
@@ -174,7 +178,7 @@ export default function PlanningPage() {
   useEffect(() => {
     const checkNewBookings = async () => {
       try {
-        const res = await axios.get(`${API}/notifications/new-bookings`);
+        const res = await api.get(`${API}/notifications/new-bookings`);
         const unseen = res.data.filter(b => !b.seen_at);
         setNewOnlineBookings(unseen);
       } catch { /* silent */ }
@@ -186,7 +190,7 @@ export default function PlanningPage() {
 
   const dismissOnlineBooking = async (aptId) => {
     try {
-      await axios.post(`${API}/notifications/mark-seen`, { appointment_ids: [aptId] });
+      await api.post(`${API}/notifications/mark-seen`, { appointment_ids: [aptId] });
       setNewOnlineBookings(prev => prev.filter(b => b.id !== aptId));
     } catch { /* silent */ }
   };
@@ -194,7 +198,7 @@ export default function PlanningPage() {
   const dismissAllOnlineBookings = async () => {
     try {
       const ids = newOnlineBookings.map(b => b.id);
-      await axios.post(`${API}/notifications/mark-seen`, { appointment_ids: ids });
+      await api.post(`${API}/notifications/mark-seen`, { appointment_ids: ids });
       setNewOnlineBookings([]);
     } catch { /* silent */ }
   };
@@ -220,17 +224,19 @@ export default function PlanningPage() {
     setLoading(true);
     try {
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
-      const [appointmentsRes, operatorsRes, clientsRes, servicesRes] = await Promise.all([
-        axios.get(`${API}/appointments?date=${dateStr}`),
-        axios.get(`${API}/operators`),
-        axios.get(`${API}/clients`),
-        axios.get(`${API}/services`)
+      const [appointmentsRes, operatorsRes, clientsRes, servicesRes, cardTemplatesRes] = await Promise.all([
+        api.get(`${API}/appointments?date=${dateStr}`),
+        api.get(`${API}/operators`),
+        api.get(`${API}/clients`),
+        api.get(`${API}/services`),
+        api.get(`${API}/public/website`).then(r => ({ data: r.data?.card_templates || [] })).catch(() => ({ data: [] }))
       ]);
       setAppointments(appointmentsRes.data);
       const activeOps = operatorsRes.data.filter(op => op.active);
       setOperators(activeOps);
       setClients(clientsRes.data);
       setServices(servicesRes.data);
+      setCardTemplates(cardTemplatesRes.data);
       // Set MBHS as default operator if form is empty
       if (!formData.operator_id) {
         const mbhs = activeOps.find(op => op.name.toUpperCase().includes('MBHS')) || activeOps[0];
@@ -247,9 +253,9 @@ export default function PlanningPage() {
   const fetchReminderCounts = async () => {
     try {
       const [remRes, inactRes, autoRes] = await Promise.all([
-        axios.get(`${API}/reminders/tomorrow`),
-        axios.get(`${API}/reminders/inactive-clients`),
-        axios.get(`${API}/reminders/auto-check`)
+        api.get(`${API}/reminders/tomorrow`),
+        api.get(`${API}/reminders/inactive-clients`),
+        api.get(`${API}/reminders/auto-check`)
       ]);
       setPendingRemindersCount(remRes.data.filter(r => !r.reminded).length);
       setInactiveClientsCount(inactRes.data.filter(c => !c.already_recalled).length);
@@ -261,7 +267,7 @@ export default function PlanningPage() {
 
   const fetchUpcomingExpenses = async () => {
     try {
-      const res = await axios.get(`${API}/expenses/upcoming?days=7`);
+      const res = await api.get(`${API}/expenses/upcoming?days=7`);
       setUpcomingExpenses(res.data);
     } catch (err) {
       // silent fail
@@ -276,7 +282,7 @@ export default function PlanningPage() {
     await Promise.all(days.map(async (day) => {
       const dateStr = format(day, 'yyyy-MM-dd');
       try {
-        const res = await axios.get(`${API}/appointments?date=${dateStr}`);
+        const res = await api.get(`${API}/appointments?date=${dateStr}`);
         results[dateStr] = res.data;
       } catch { results[dateStr] = []; }
     }));
@@ -291,7 +297,7 @@ export default function PlanningPage() {
     await Promise.all(days.map(async (day) => {
       const dateStr = format(day, 'yyyy-MM-dd');
       try {
-        const res = await axios.get(`${API}/appointments?date=${dateStr}`);
+        const res = await api.get(`${API}/appointments?date=${dateStr}`);
         results[dateStr] = res.data;
       } catch { results[dateStr] = []; }
     }));
@@ -374,7 +380,7 @@ export default function PlanningPage() {
         payload.promo_id = preSelectedPromoId || null;
         payload.card_id = preSelectedCardId || null;
       }
-      await axios.post(`${API}/appointments`, payload);
+      await api.post(`${API}/appointments`, payload);
       toast.success('Appuntamento creato!' + (preSelectedCardId || preSelectedPromoId ? ' Card/Promo salvate nelle note.' : ''));
       setDialogOpen(false);
       setFormData({ client_id: '', service_ids: [], operator_id: mbhsOperator?.id || '', time: '09:00', notes: '', date: '' });
@@ -416,7 +422,7 @@ export default function PlanningPage() {
     
     setSearching(true);
     try {
-      const res = await axios.get(`${API}/clients/search/appointments?query=${encodeURIComponent(query)}`);
+      const res = await api.get(`${API}/clients/search/appointments?query=${encodeURIComponent(query)}`);
       setSearchResults(res.data);
     } catch (err) {
       console.error('Search error:', err);
@@ -453,8 +459,8 @@ export default function PlanningPage() {
     if (clientId && clientId !== 'generic') {
       try {
         const [cardsRes, promosRes] = await Promise.all([
-          axios.get(`${API}/cards?client_id=${clientId}`),
-          axios.get(`${API}/promotions/check/${clientId}`)
+          api.get(`${API}/cards?client_id=${clientId}`),
+          api.get(`${API}/promotions/check/${clientId}`)
         ]);
         setDialogClientCards(cardsRes.data.filter(c => c.active && c.remaining_value > 0));
         setDialogClientPromos(promosRes.data);
@@ -487,8 +493,8 @@ export default function PlanningPage() {
     if (apt.client_id && apt.client_id !== 'generic') {
       try {
         const [cardsRes, loyaltyRes] = await Promise.all([
-          axios.get(`${API}/clients/${apt.client_id}/cards`),
-          axios.get(`${API}/clients/${apt.client_id}/loyalty`)
+          api.get(`${API}/clients/${apt.client_id}/cards`),
+          api.get(`${API}/clients/${apt.client_id}/loyalty`)
         ]);
         setClientCards(cardsRes.data);
         setClientLoyalty(loyaltyRes.data);
@@ -506,7 +512,7 @@ export default function PlanningPage() {
     
     setSaving(true);
     try {
-      await axios.put(`${API}/appointments/${editingAppointment.id}`, {
+      await api.put(`${API}/appointments/${editingAppointment.id}`, {
         ...formData,
         date: editDate || format(selectedDate, 'yyyy-MM-dd')
       });
@@ -528,7 +534,7 @@ export default function PlanningPage() {
     
     setDeleting(true);
     try {
-      await axios.delete(`${API}/appointments/${editingAppointment.id}`);
+      await api.delete(`${API}/appointments/${editingAppointment.id}`);
       toast.success('Appuntamento eliminato!');
       setEditDialogOpen(false);
       setEditingAppointment(null);
@@ -571,7 +577,7 @@ export default function PlanningPage() {
     setProcessing(true);
     try {
       const loyaltyPointsUsed = useLoyaltyPoints ? clientLoyalty.points : 0;
-      const res = await axios.post(`${API}/appointments/${editingAppointment.id}/checkout`, {
+      const res = await api.post(`${API}/appointments/${editingAppointment.id}/checkout`, {
         payment_method: paymentMethod,
         discount_type: discountType,
         discount_value: discountType !== 'none' ? parseFloat(discountValue) || 0 : 0,
@@ -653,7 +659,7 @@ export default function PlanningPage() {
         repeat_weeks: recurringData.repeat_type === 'weeks' ? recurringData.repeat_weeks : 0,
         repeat_months: recurringData.repeat_type === 'months' ? recurringData.repeat_months : 0
       };
-      const res = await axios.post(`${API}/appointments/recurring`, payload);
+      const res = await api.post(`${API}/appointments/recurring`, payload);
       toast.success(`Creati ${res.data.created} appuntamenti ricorrenti!`);
       setRecurringDialogOpen(false);
       fetchData();
@@ -699,7 +705,7 @@ export default function PlanningPage() {
       if (colId !== draggedApt.operator_id) {
         updateData.operator_id = colId || '';
       }
-      await axios.put(`${API}/appointments/${draggedApt.id}`, updateData);
+      await api.put(`${API}/appointments/${draggedApt.id}`, updateData);
       toast.success(`Spostato a ${time}`);
       fetchData();
     } catch (err) {
@@ -708,14 +714,8 @@ export default function PlanningPage() {
     setDraggedApt(null);
   };
 
-  // Sort services by sort_order for consistent category ordering
-  const CATEGORY_ORDER = ['taglio', 'piega', 'trattamento', 'colore', 'modellanti', 'abbonamenti', 'prodotti'];
-  const sortedServices = [...services].sort((a, b) => {
-    const catA = CATEGORY_ORDER.indexOf(a.category);
-    const catB = CATEGORY_ORDER.indexOf(b.category);
-    if (catA !== catB) return (catA === -1 ? 99 : catA) - (catB === -1 ? 99 : catB);
-    return (a.sort_order || 999) - (b.sort_order || 999);
-  });
+  // Sort services by category order using shared categories
+  const sortedServices = groupServicesByCategory(services);
 
   const getAppointmentStyle = (apt) => {
     const [startHour, startMin] = apt.time.split(':').map(Number);
@@ -1497,29 +1497,97 @@ export default function PlanningPage() {
 
               <div className="space-y-2">
                 <Label>Servizi</Label>
-                <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
-                  {sortedServices.map((service) => (
-                    <Button
-                      key={service.id}
-                      type="button"
-                      variant="outline"
-                      className={`justify-start h-auto py-2 px-3 ${
-                        formData.service_ids.includes(service.id)
-                          ? 'ring-2 ring-offset-1'
-                          : 'border-[#F0E6DC]'
-                      }`}
-                      style={formData.service_ids.includes(service.id) ? { borderColor: service.color || '#0EA5E9', color: service.color || '#0EA5E9', backgroundColor: `${service.color || '#0EA5E9'}15`, ringColor: service.color } : {}}
-                      onClick={() => toggleService(service.id)}
-                    >
-                      <div className="flex items-center gap-2 text-left">
-                        <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: service.color || '#0EA5E9' }} />
-                        <div>
-                          <p className="font-medium text-sm">{service.name}</p>
-                          <p className="text-xs opacity-70">{service.duration} min - {'\u20AC'}{service.price}</p>
+                <div className="max-h-52 overflow-y-auto space-y-3 pr-1">
+                  {sortedServices.orderedKeys.map(catKey => {
+                    const catInfo = getCategoryInfo(catKey);
+                    const catServices = sortedServices.groups[catKey];
+                    return (
+                      <div key={catKey}>
+                        <p className="text-xs font-bold uppercase tracking-wider mb-1.5 flex items-center gap-1.5" style={{ color: catInfo.color }}>
+                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: catInfo.color }} />
+                          {catInfo.label}
+                        </p>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {catServices.map(service => (
+                            <Button
+                              key={service.id}
+                              type="button"
+                              variant="outline"
+                              className={`justify-start h-auto py-2 px-3 ${
+                                formData.service_ids.includes(service.id)
+                                  ? 'ring-2 ring-offset-1'
+                                  : 'border-[#F0E6DC]'
+                              }`}
+                              style={formData.service_ids.includes(service.id) ? { borderColor: service.color || catInfo.color, color: service.color || catInfo.color, backgroundColor: `${service.color || catInfo.color}15`, ringColor: service.color || catInfo.color } : {}}
+                              onClick={() => toggleService(service.id)}
+                            >
+                              <div className="flex items-center gap-2 text-left">
+                                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: service.color || catInfo.color }} />
+                                <div>
+                                  <p className="font-medium text-sm">{service.name}</p>
+                                  <p className="text-xs opacity-70">{service.duration} min - {'\u20AC'}{service.price}</p>
+                                </div>
+                              </div>
+                            </Button>
+                          ))}
                         </div>
                       </div>
-                    </Button>
-                  ))}
+                    );
+                  })}
+                  {/* Card Templates in Planning */}
+                  {cardTemplates.length > 0 && (
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wider mb-1.5 flex items-center gap-1.5" style={{ color: '#6366F1' }}>
+                        <CreditCard className="w-3 h-3" />
+                        Abbonamenti & Card
+                      </p>
+                      <div className="grid grid-cols-1 gap-1.5">
+                        {cardTemplates.map((tmpl, i) => {
+                          const isSelected = formData.notes?.includes(`[CARD: ${tmpl.name}]`);
+                          return (
+                            <button
+                              key={tmpl.id || i}
+                              type="button"
+                              onClick={() => {
+                                if (isSelected) {
+                                  setFormData(prev => ({ ...prev, notes: prev.notes.replace(`[CARD: ${tmpl.name}] `, '').replace(`[CARD: ${tmpl.name}]`, '') }));
+                                } else {
+                                  const cleanNotes = (formData.notes || '').replace(/\[CARD: [^\]]+\] ?/g, '');
+                                  setFormData(prev => ({ ...prev, notes: `[CARD: ${tmpl.name}] ${cleanNotes}`.trim() }));
+                                  toast.success(`"${tmpl.name}" selezionato`);
+                                }
+                              }}
+                              className={`w-full p-2.5 rounded-xl border-2 text-left transition-all ${
+                                isSelected
+                                  ? 'border-[#6366F1] bg-[#6366F1]/10 ring-2 ring-[#6366F1]/50'
+                                  : 'border-[#6366F1]/30 bg-white hover:border-[#6366F1]/60'
+                              }`}
+                              data-testid={`planning-card-template-${i}`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <CreditCard className={`w-4 h-4 ${isSelected ? 'text-[#6366F1]' : 'text-gray-400'}`} />
+                                  <div>
+                                    <p className="font-bold text-sm text-[#2D1B14]">{tmpl.name}</p>
+                                    <p className="text-[10px] text-[#6366F1]">
+                                      {tmpl.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}
+                                      {tmpl.total_services ? ` · ${tmpl.total_services} servizi` : ''}
+                                    </p>
+                                  </div>
+                                </div>
+                                <p className="font-black text-[#6366F1] text-sm">{'\u20AC'}{tmpl.total_value}</p>
+                              </div>
+                              {isSelected && (
+                                <p className="mt-1 text-xs text-[#6366F1] font-semibold flex items-center gap-1">
+                                  <Check className="w-3 h-3" /> Selezionato
+                                </p>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1814,7 +1882,7 @@ export default function PlanningPage() {
                           const pts = prompt('Quanti punti aggiungere?', '10');
                           if (pts && !isNaN(pts)) {
                             try {
-                              const res = await axios.put(`${API}/loyalty/${editingAppointment.client_id}/adjust-points`, { points: parseInt(pts), reason: 'Aggiunta manuale' });
+                              const res = await api.put(`${API}/loyalty/${editingAppointment.client_id}/adjust-points`, { points: parseInt(pts), reason: 'Aggiunta manuale' });
                               setClientLoyalty({ ...clientLoyalty, points: res.data.new_points });
                               toast.success(`+${pts} punti aggiunti`);
                             } catch { toast.error('Errore'); }
@@ -1829,7 +1897,7 @@ export default function PlanningPage() {
                           const pts = prompt('Quanti punti rimuovere?', '10');
                           if (pts && !isNaN(pts)) {
                             try {
-                              const res = await axios.put(`${API}/loyalty/${editingAppointment.client_id}/adjust-points`, { points: -parseInt(pts), reason: 'Rimozione manuale' });
+                              const res = await api.put(`${API}/loyalty/${editingAppointment.client_id}/adjust-points`, { points: -parseInt(pts), reason: 'Rimozione manuale' });
                               setClientLoyalty({ ...clientLoyalty, points: res.data.new_points });
                               toast.success(`-${pts} punti rimossi`);
                             } catch { toast.error('Errore'); }
@@ -1844,7 +1912,7 @@ export default function PlanningPage() {
                           if (!window.confirm('Azzerare tutti i punti di questo cliente?')) return;
                           try {
                             const currentPts = clientLoyalty.points;
-                            const res = await axios.put(`${API}/loyalty/${editingAppointment.client_id}/adjust-points`, { points: -currentPts, reason: 'Azzeramento manuale' });
+                            const res = await api.put(`${API}/loyalty/${editingAppointment.client_id}/adjust-points`, { points: -currentPts, reason: 'Azzeramento manuale' });
                             setClientLoyalty({ ...clientLoyalty, points: 0 });
                             toast.success('Punti azzerati');
                           } catch { toast.error('Errore'); }
@@ -1916,29 +1984,43 @@ export default function PlanningPage() {
 
               <div className="space-y-2">
                 <Label className="text-[#2D1B14] font-semibold">Servizi</Label>
-                <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
-                  {sortedServices.map((service) => (
-                    <Button
-                      key={service.id}
-                      type="button"
-                      variant="outline"
-                      className={`justify-start h-auto py-2 px-3 ${
-                        formData.service_ids.includes(service.id)
-                          ? 'ring-2 ring-offset-1 font-semibold'
-                          : 'border-2 border-[#F0E6DC] text-[#2D1B14]'
-                      }`}
-                      style={formData.service_ids.includes(service.id) ? { borderColor: service.color || '#0EA5E9', color: service.color || '#0EA5E9', backgroundColor: `${service.color || '#0EA5E9'}15` } : {}}
-                      onClick={() => toggleService(service.id)}
-                    >
-                      <div className="flex items-center gap-2 text-left">
-                        <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: service.color || '#0EA5E9' }} />
-                        <div>
-                          <p className="font-medium text-sm">{service.name}</p>
-                          <p className="text-xs opacity-70">{service.duration} min - {'\u20AC'}{service.price}</p>
+                <div className="max-h-52 overflow-y-auto space-y-3 pr-1">
+                  {sortedServices.orderedKeys.map(catKey => {
+                    const catInfo = getCategoryInfo(catKey);
+                    const catServices = sortedServices.groups[catKey];
+                    return (
+                      <div key={catKey}>
+                        <p className="text-xs font-bold uppercase tracking-wider mb-1.5 flex items-center gap-1.5" style={{ color: catInfo.color }}>
+                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: catInfo.color }} />
+                          {catInfo.label}
+                        </p>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {catServices.map(service => (
+                            <Button
+                              key={service.id}
+                              type="button"
+                              variant="outline"
+                              className={`justify-start h-auto py-2 px-3 ${
+                                formData.service_ids.includes(service.id)
+                                  ? 'ring-2 ring-offset-1 font-semibold'
+                                  : 'border-2 border-[#F0E6DC] text-[#2D1B14]'
+                              }`}
+                              style={formData.service_ids.includes(service.id) ? { borderColor: service.color || catInfo.color, color: service.color || catInfo.color, backgroundColor: `${service.color || catInfo.color}15` } : {}}
+                              onClick={() => toggleService(service.id)}
+                            >
+                              <div className="flex items-center gap-2 text-left">
+                                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: service.color || catInfo.color }} />
+                                <div>
+                                  <p className="font-medium text-sm">{service.name}</p>
+                                  <p className="text-xs opacity-70">{service.duration} min - {'\u20AC'}{service.price}</p>
+                                </div>
+                              </div>
+                            </Button>
+                          ))}
                         </div>
                       </div>
-                    </Button>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
@@ -1981,7 +2063,7 @@ export default function PlanningPage() {
                         setCheckoutMode(true);
                         // Fetch eligible promotions
                         if (editingAppointment?.client_id) {
-                          axios.get(`${API}/promotions/check/${editingAppointment.client_id}`)
+                          api.get(`${API}/promotions/check/${editingAppointment.client_id}`)
                             .then(res => {
                               setEligiblePromos(res.data);
                               // Pre-select saved promo from appointment, or first eligible
