@@ -4,7 +4,7 @@
 import requests
 import sys
 
-API_URL = "https://abbonamenti-cards.preview.emergentagent.com/api"
+API_URL = "https://hair-deploy-preview.preview.emergentagent.com/api"
 
 # Services to import from Trattamenti.xml
 SERVICES = [
