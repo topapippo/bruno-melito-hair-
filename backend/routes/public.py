@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Request
 from fastapi.responses import Response, FileResponse
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import uuid
 import os
 import requests as http_requests
@@ -295,15 +295,23 @@ async def public_lookup_appointments(phone: str):
         {"user_id": user["id"], "$or": [{"phone": phone}, {"phone": phone_clean}]}, {"_id": 0}
     )
     if not client:
-        return []
+        return {"upcoming": [], "history": []}
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    appointments = await db.appointments.find(
+    three_months_ago = (datetime.now(timezone.utc) - timedelta(days=90)).strftime("%Y-%m-%d")
+    upcoming = await db.appointments.find(
         {"user_id": user["id"], "client_id": client["id"], "date": {"$gte": today}, "status": {"$ne": "cancelled"}},
         {"_id": 0, "user_id": 0}
     ).sort("date", 1).to_list(20)
-    return [{"id": a["id"], "date": a["date"], "time": a["time"],
-             "services": [s["name"] for s in a.get("services", [])],
-             "operator_name": a.get("operator_name", ""), "booking_code": a["id"][:8].upper()} for a in appointments]
+    history = await db.appointments.find(
+        {"user_id": user["id"], "client_id": client["id"], "date": {"$lt": today, "$gte": three_months_ago}},
+        {"_id": 0, "user_id": 0}
+    ).sort("date", -1).to_list(50)
+    def fmt(a):
+        return {"id": a["id"], "date": a["date"], "time": a["time"],
+                "services": [s["name"] for s in a.get("services", [])],
+                "operator_name": a.get("operator_name", ""), "status": a.get("status", "scheduled"),
+                "total_price": a.get("total_price", 0), "booking_code": a["id"][:8].upper()}
+    return {"upcoming": [fmt(a) for a in upcoming], "history": [fmt(a) for a in history], "client_name": client.get("name", "")}
 
 
 @router.put("/public/appointments/{appointment_id}")
