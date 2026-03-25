@@ -399,6 +399,13 @@ export default function WebsiteAdminPage() {
                   </div>
                 </div>
                 <p className="text-xs text-gray-500 mt-4">Le modifiche all'ordine saranno visibili sul sito dopo aver cliccato "Salva Modifiche".</p>
+                <Button variant="outline" size="sm" onClick={() => {
+                  updateField('section_order', ALL_SECTIONS.map(s => s.id));
+                  updateField('hidden_sections', []);
+                  toast.success('Ordine predefinito ripristinato');
+                }} className="mt-3 text-[#7C5C4A] border-[#7C5C4A]/30" data-testid="reset-section-order-btn">
+                  Ripristina ordine predefinito
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>
