@@ -295,7 +295,7 @@ async def public_lookup_appointments(phone: str):
         {"user_id": user["id"], "$or": [{"phone": phone}, {"phone": phone_clean}]}, {"_id": 0}
     )
     if not client:
-        return {"upcoming": [], "history": []}
+        return {"upcoming": [], "history": [], "client_name": ""}
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     three_months_ago = (datetime.now(timezone.utc) - timedelta(days=90)).strftime("%Y-%m-%d")
     upcoming = await db.appointments.find(
