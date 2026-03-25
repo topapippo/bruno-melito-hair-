@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Save, Plus, Trash2, Upload, Image, Star, Globe, Eye, Loader2, X, GripVertical, Palette, Type } from 'lucide-react';
+import { Save, Plus, Trash2, Upload, Image, Star, Globe, Eye, Loader2, X, GripVertical, Palette, Type, ArrowUp, ArrowDown, LayoutGrid, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 const FONT_OPTIONS = [
@@ -205,6 +205,43 @@ export default function WebsiteAdminPage() {
   const addFeature = () => updateField('about_features', [...(config.about_features || []), '']);
   const removeFeature = (idx) => updateField('about_features', (config.about_features || []).filter((_, i) => i !== idx));
 
+  // Section ordering
+  const ALL_SECTIONS = [
+    { id: 'services', label: 'Servizi', desc: 'Listino servizi con categorie' },
+    { id: 'salon', label: 'Foto Salone', desc: 'Galleria foto e video del salone' },
+    { id: 'about', label: 'Chi Siamo', desc: 'Storia e punti di forza' },
+    { id: 'promotions', label: 'Promozioni', desc: 'Offerte speciali attive' },
+    { id: 'reviews', label: 'Recensioni', desc: 'Testimonianze dei clienti' },
+    { id: 'gallery', label: 'Gallery Lavori', desc: 'Portfolio acconciature' },
+    { id: 'loyalty', label: 'Programma Fedeltà', desc: 'Raccolta punti e premi' },
+    { id: 'contact', label: 'Contatti', desc: 'Orari, indirizzo, telefono' },
+  ];
+
+  const sectionOrder = config?.section_order || ALL_SECTIONS.map(s => s.id);
+
+  const moveSectionUp = (idx) => {
+    if (idx <= 0) return;
+    const order = [...sectionOrder];
+    [order[idx - 1], order[idx]] = [order[idx], order[idx - 1]];
+    updateField('section_order', order);
+  };
+
+  const moveSectionDown = (idx) => {
+    if (idx >= sectionOrder.length - 1) return;
+    const order = [...sectionOrder];
+    [order[idx], order[idx + 1]] = [order[idx + 1], order[idx]];
+    updateField('section_order', order);
+  };
+
+  const toggleSectionVisibility = (sectionId) => {
+    const hidden = config?.hidden_sections || [];
+    if (hidden.includes(sectionId)) {
+      updateField('hidden_sections', hidden.filter(s => s !== sectionId));
+    } else {
+      updateField('hidden_sections', [...hidden, sectionId]);
+    }
+  };
+
   if (loading) {
     return <Layout><div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-[#C8617A]" /></div></Layout>;
   }
@@ -255,6 +292,7 @@ export default function WebsiteAdminPage() {
         <Tabs defaultValue="general" className="space-y-4">
           <TabsList className="bg-white border shadow-sm flex-wrap h-auto gap-1 p-1">
             <TabsTrigger value="general" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Generale</TabsTrigger>
+            <TabsTrigger value="layout" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Layout</TabsTrigger>
             <TabsTrigger value="aspetto" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Aspetto</TabsTrigger>
             <TabsTrigger value="services" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Servizi</TabsTrigger>
             <TabsTrigger value="photos" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Foto Salone</TabsTrigger>
@@ -298,6 +336,69 @@ export default function WebsiteAdminPage() {
                   <div><Label>Titolo Gallery</Label><Input value={config.gallery_title || ''} onChange={e => updateField('gallery_title', e.target.value)} /></div>
                   <div><Label>Sottotitolo Gallery</Label><Input value={config.gallery_subtitle || ''} onChange={e => updateField('gallery_subtitle', e.target.value)} /></div>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* LAYOUT - Section Reordering */}
+          <TabsContent value="layout">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><LayoutGrid className="w-5 h-5" /> Ordine Sezioni del Sito</CardTitle>
+                <p className="text-sm text-[#7C5C4A] mt-1">Riordina le sezioni della pagina pubblica. La Hero è sempre in cima e il Footer in fondo. Usa le frecce per spostare, o nascondi le sezioni che non vuoi mostrare.</p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2" data-testid="section-order-list">
+                  {/* Fixed Hero */}
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-100 border border-gray-200 opacity-60">
+                    <div className="w-8 h-8 bg-[#C8617A] text-white rounded-lg flex items-center justify-center text-xs font-bold">1</div>
+                    <div className="flex-1"><p className="font-bold text-sm text-[#2D1B14]">Hero</p><p className="text-xs text-[#7C5C4A]">Intestazione principale (sempre prima)</p></div>
+                    <span className="text-xs text-[#7C5C4A] font-semibold bg-gray-200 px-2 py-1 rounded">FISSO</span>
+                  </div>
+
+                  {sectionOrder.map((sectionId, idx) => {
+                    const info = ALL_SECTIONS.find(s => s.id === sectionId);
+                    if (!info) return null;
+                    const isHidden = (config?.hidden_sections || []).includes(sectionId);
+                    return (
+                      <div key={sectionId} className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${isHidden ? 'bg-gray-50 border-gray-200 opacity-50' : 'bg-white border-gray-200 hover:border-[#C8617A]/40 hover:shadow-sm'}`}
+                        data-testid={`section-item-${sectionId}`}>
+                        <div className="w-8 h-8 bg-[#C8617A]/10 text-[#C8617A] rounded-lg flex items-center justify-center text-xs font-bold">{idx + 2}</div>
+                        <GripVertical className="w-4 h-4 text-gray-300" />
+                        <div className="flex-1">
+                          <p className={`font-bold text-sm ${isHidden ? 'line-through text-gray-400' : 'text-[#2D1B14]'}`}>{info.label}</p>
+                          <p className="text-xs text-[#7C5C4A]">{info.desc}</p>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => toggleSectionVisibility(sectionId)}
+                            className={`h-8 w-8 ${isHidden ? 'text-gray-400' : 'text-[#7C5C4A]'}`}
+                            title={isHidden ? 'Mostra sezione' : 'Nascondi sezione'}
+                            data-testid={`section-toggle-${sectionId}`}>
+                            {isHidden ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => moveSectionUp(idx)} disabled={idx === 0}
+                            className="h-8 w-8 text-[#7C5C4A] disabled:opacity-30"
+                            data-testid={`section-up-${sectionId}`}>
+                            <ArrowUp className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => moveSectionDown(idx)} disabled={idx === sectionOrder.length - 1}
+                            className="h-8 w-8 text-[#7C5C4A] disabled:opacity-30"
+                            data-testid={`section-down-${sectionId}`}>
+                            <ArrowDown className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* Fixed Footer */}
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-100 border border-gray-200 opacity-60">
+                    <div className="w-8 h-8 bg-[#C8617A] text-white rounded-lg flex items-center justify-center text-xs font-bold">{sectionOrder.length + 2}</div>
+                    <div className="flex-1"><p className="font-bold text-sm text-[#2D1B14]">Footer</p><p className="text-xs text-[#7C5C4A]">Piè di pagina (sempre ultimo)</p></div>
+                    <span className="text-xs text-[#7C5C4A] font-semibold bg-gray-200 px-2 py-1 rounded">FISSO</span>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-4">Le modifiche all'ordine saranno visibili sul sito dopo aver cliccato "Salva Modifiche".</p>
               </CardContent>
             </Card>
           </TabsContent>

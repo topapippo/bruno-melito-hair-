@@ -131,7 +131,8 @@ DEFAULT_WEBSITE_CONFIG = {
         {"title": "Modellanti", "desc": "", "items": [{"name": "Permanente / Ondulazione / Anticrespo / Stiratura Classica", "price": "Da 40"}]}
     ],
     "gallery_title": "Tendenze P/E 2026",
-    "gallery_subtitle": "Lasciati ispirare dalle ultime tendenze Primavera Estate 2026."
+    "gallery_subtitle": "Lasciati ispirare dalle ultime tendenze Primavera Estate 2026.",
+    "section_order": ["services", "salon", "about", "promotions", "reviews", "gallery", "loyalty", "contact"]
 }
 
 
