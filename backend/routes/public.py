@@ -63,31 +63,49 @@ def put_object(path: str, data: bytes, content_type: str) -> dict:
                 resp.raise_for_status()
                 return resp.json()
         except Exception as e:
-            logger.warning(f"Remote storage failed, falling back to local: {e}")
+            logger.warning(f"Remote storage failed, falling back to MongoDB: {e}")
             _use_local_storage = True
     
-    # Fallback to local storage
+    # Fallback to MongoDB storage (survives Render redeploys)
+    import base64
     filename = path.split("/")[-1]
-    local_path = os.path.join(LOCAL_UPLOAD_DIR, filename)
-    with open(local_path, "wb") as f:
-        f.write(data)
-    return {"path": f"local://{filename}", "size": len(data)}
+    from database import db as sync_db
+    import asyncio
+    loop = asyncio.get_event_loop()
+    b64_data = base64.b64encode(data).decode('utf-8')
+    # Store will happen in the upload handler via db directly
+    return {"path": f"mongo://{filename}", "size": len(data), "_mongo_data": b64_data, "_content_type": content_type}
 
 
 def get_object(path: str):
     global _use_local_storage
     
-    # Check if it's a local file
-    if path.startswith("local://"):
-        filename = path.replace("local://", "")
-        local_path = os.path.join(LOCAL_UPLOAD_DIR, filename)
-        if os.path.exists(local_path):
-            with open(local_path, "rb") as f:
-                data = f.read()
-            # Determine content type from extension
-            ext = filename.split(".")[-1].lower()
-            mime_map = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png", "gif": "image/gif", "webp": "image/webp"}
-            return data, mime_map.get(ext, "application/octet-stream")
+    # Check MongoDB storage
+    if path.startswith("mongo://") or path.startswith("local://"):
+        import base64
+        filename = path.replace("mongo://", "").replace("local://", "")
+        file_id = filename.split(".")[0]
+        
+        # Try to get from MongoDB first (for mongo:// and migrated local:// files)
+        import asyncio
+        loop = asyncio.get_event_loop()
+        # Use sync pymongo for this
+        from database import sync_db
+        record = sync_db.website_files.find_one({"id": file_id})
+        if record and record.get("file_data"):
+            data = base64.b64decode(record["file_data"])
+            ct = record.get("content_type", "application/octet-stream")
+            return data, ct
+        
+        # Fallback to local filesystem (old files)
+        if path.startswith("local://"):
+            local_path = os.path.join(LOCAL_UPLOAD_DIR, filename)
+            if os.path.exists(local_path):
+                with open(local_path, "rb") as f:
+                    data = f.read()
+                ext = filename.split(".")[-1].lower()
+                mime_map = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png", "gif": "image/gif", "webp": "image/webp"}
+                return data, mime_map.get(ext, "application/octet-stream")
         raise HTTPException(status_code=404, detail="File non trovato")
     
     # Try remote storage
@@ -386,12 +404,20 @@ async def website_upload_file(file: UploadFile = File(...), current_user: dict =
     if len(data) > max_size:
         raise HTTPException(status_code=400, detail=f"File troppo grande. Max {'50MB' if file_type == 'video' else '10MB'}.")
     result = put_object(path, data, mime_map.get(ext, "application/octet-stream"))
+    
+    # Store file data in MongoDB if using mongo:// fallback
+    mongo_data = result.pop("_mongo_data", None)
+    mongo_ct = result.pop("_content_type", None)
+    
     doc = {
         "id": file_id, "storage_path": result["path"], "original_filename": file.filename,
         "content_type": mime_map.get(ext, "application/octet-stream"), "size": result.get("size", len(data)),
         "file_type": file_type, "is_deleted": False, "user_id": current_user["id"],
         "created_at": datetime.now(timezone.utc).isoformat()
     }
+    if mongo_data:
+        doc["file_data"] = mongo_data
+    
     await db.website_files.insert_one(doc)
     return {"id": file_id, "path": result["path"], "url": f"/api/website/files/{file_id}", "file_type": file_type}
 
