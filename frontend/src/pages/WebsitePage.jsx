@@ -875,8 +875,9 @@ export default function WebsitePage() {
                 ))}
               </div>
             </div>
-            <a href="/login" className="text-[#64748B] hover:text-[#0EA5E9] transition-colors" title="Area Riservata" data-testid="admin-link">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+            <a href="/login" className="flex items-center gap-1.5 text-[#64748B] hover:text-[#0EA5E9] transition-colors bg-gray-100 hover:bg-gray-200 rounded-lg px-2.5 py-1.5 sm:px-3 sm:py-2" title="Area Riservata" data-testid="admin-link">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+              <span className="text-xs font-bold hidden xs:inline sm:inline">Accedi</span>
             </a>
             <Button onClick={() => setShowBooking(true)} className="bg-[#0EA5E9] text-white hover:bg-[#0284C7] font-bold text-sm px-4 sm:px-6" data-testid="website-book-btn">
               PRENOTA ORA
