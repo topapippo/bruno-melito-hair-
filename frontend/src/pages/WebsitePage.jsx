@@ -68,14 +68,14 @@ const AVATAR_BGS = ['bg-amber-400/15', 'bg-rose-400/15', 'bg-teal-400/15', 'bg-v
 const AVATAR_TEXTS = ['text-amber-400', 'text-rose-400', 'text-teal-400', 'text-violet-400'];
 
 // Section Components for dynamic reordering
-function ServicesSection({ servicesRef, showServices, setShowServices, landingServiceGroups, cardTemplates, setShowBooking }) {
+function ServicesSection({ servicesRef, showServices, setShowServices, landingServiceGroups, cardTemplates, setShowBooking, T }) {
   return (
     <section ref={servicesRef} className="py-20 sm:py-28 relative">
       <div className="max-w-6xl mx-auto px-4">
         <button onClick={() => setShowServices(!showServices)} className="w-full text-center mb-4 group">
-          <p className="text-amber-400 font-bold text-sm tracking-widest uppercase mb-3">I Nostri Servizi</p>
-          <h2 className="text-3xl sm:text-4xl font-black">Servizi Professionali</h2>
-          <div className="flex items-center justify-center gap-2 text-amber-400 font-bold mt-4">
+          <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>I Nostri Servizi</p>
+          <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>Servizi Professionali</h2>
+          <div className="flex items-center justify-center gap-2 font-bold mt-4" style={{ color: T.accent }}>
             {showServices ? <><span>Nascondi listino</span><ChevronUp className="w-5 h-5" /></> : <><span>Mostra listino</span><ChevronDown className="w-5 h-5" /></>}
           </div>
         </button>
@@ -94,7 +94,7 @@ function ServicesSection({ servicesRef, showServices, setShowServices, landingSe
                     {catServices.map((service) => (
                       <div key={service.id} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
                         <div>
-                          <span className="font-bold text-[#334155]">{service.name}</span>
+                          <span className="font-bold" style={{ color: T.text }}>{service.name}</span>
                           <span className="text-xs text-[#94A3B8] ml-2">{service.duration} min</span>
                         </div>
                         <span className="font-black text-lg shrink-0 ml-4" style={{ color: catInfo.color }}>{'\u20AC'}{service.price}</span>
@@ -113,7 +113,7 @@ function ServicesSection({ servicesRef, showServices, setShowServices, landingSe
                   {cardTemplates.map((tmpl, i) => (
                     <div key={tmpl.id || i} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
                       <div>
-                        <span className="font-bold text-[#334155]">{tmpl.name}</span>
+                        <span className="font-bold" style={{ color: T.text }}>{tmpl.name}</span>
                         <span className="text-xs text-[#6366F1] ml-2">{tmpl.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}{tmpl.total_services ? ` · ${tmpl.total_services} servizi` : ''}</span>
                       </div>
                       <span className="font-black text-[#6366F1] text-lg shrink-0 ml-4">{'\u20AC'}{tmpl.total_value}</span>
@@ -123,7 +123,7 @@ function ServicesSection({ servicesRef, showServices, setShowServices, landingSe
               </div>
             )}
             <div className="text-center">
-              <Button onClick={() => setShowBooking(true)} className="bg-[#0EA5E9] text-white hover:bg-[#0284C7] font-bold px-8 py-6 rounded-xl shadow-lg shadow-[#0EA5E9]/30">
+              <Button onClick={() => setShowBooking(true)} style={{ backgroundColor: T.primary }} className="text-white hover:opacity-90 font-bold px-8 py-6 rounded-xl shadow-lg">
                 <Scissors className="w-4 h-4 mr-2" /> PRENOTA ORA
               </Button>
             </div>
@@ -134,13 +134,13 @@ function ServicesSection({ servicesRef, showServices, setShowServices, landingSe
   );
 }
 
-function SalonSection({ salonPhotos }) {
+function SalonSection({ salonPhotos, T }) {
   return (
     <section className="py-20 sm:py-28 bg-white/60">
       <div className="max-w-6xl mx-auto px-4">
         <div className="text-center mb-12">
-          <p className="text-[#0EA5E9] font-bold text-sm tracking-widest uppercase mb-3">Il Nostro Salone</p>
-          <h2 className="text-3xl sm:text-4xl font-black text-[#1e293b]">Dove Nasce la Bellezza</h2>
+          <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.primary }}>Il Nostro Salone</p>
+          <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>Dove Nasce la Bellezza</h2>
         </div>
         <div className={`grid gap-4 ${salonPhotos.length === 1 ? 'grid-cols-1 max-w-lg mx-auto' : salonPhotos.length === 2 ? 'grid-cols-2' : salonPhotos.length === 3 ? 'grid-cols-3' : 'grid-cols-2 lg:grid-cols-4'}`}>
           {salonPhotos.map((item, idx) => (
@@ -161,7 +161,7 @@ function SalonSection({ salonPhotos }) {
   );
 }
 
-function AboutSection({ config, salonPhotos }) {
+function AboutSection({ config, salonPhotos, T }) {
   return (
     <section className="py-20 sm:py-28">
       <div className="max-w-6xl mx-auto px-4">
@@ -172,8 +172,8 @@ function AboutSection({ config, salonPhotos }) {
             </div>
           )}
           <div>
-            <p className="text-rose-500 font-bold text-sm tracking-widest uppercase mb-3">Chi Siamo</p>
-            <h2 className="text-3xl sm:text-4xl font-black text-[#1e293b] mb-6">{config.about_title}</h2>
+            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Chi Siamo</p>
+            <h2 className="text-3xl sm:text-4xl font-black mb-6" style={{ color: T.text, fontFamily: T.fontDisplay }}>{config.about_title}</h2>
             {config.about_text && <p className="text-[#64748B] leading-relaxed mb-6">{config.about_text}</p>}
             {config.about_text_2 && <p className="text-[#B89A7A] leading-relaxed mb-8">{config.about_text_2}</p>}
             {config.about_features && config.about_features.length > 0 && (
@@ -193,13 +193,13 @@ function AboutSection({ config, salonPhotos }) {
   );
 }
 
-function PromotionsSection({ publicPromos, setShowBooking }) {
+function PromotionsSection({ publicPromos, setShowBooking, T }) {
   return (
-    <section className="py-20 sm:py-28 bg-gradient-to-br from-[#0EA5E9]/5 via-white to-amber-50/30">
+    <section className="py-20 sm:py-28" style={{ backgroundColor: `${T.primary}08` }}>
       <div className="max-w-6xl mx-auto px-4">
         <div className="text-center mb-12">
-          <p className="text-[#0EA5E9] font-bold text-sm tracking-widest uppercase mb-3">Offerte Speciali</p>
-          <h2 className="text-3xl sm:text-4xl font-black text-[#1e293b]">Promozioni Attive</h2>
+          <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.primary }}>Offerte Speciali</p>
+          <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>Promozioni Attive</h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {publicPromos.map((promo, idx) => {
@@ -225,7 +225,7 @@ function PromotionsSection({ publicPromos, setShowBooking }) {
           })}
         </div>
         <div className="text-center mt-8">
-          <Button onClick={() => setShowBooking(true)} className="bg-[#0EA5E9] text-white hover:bg-[#0284C7] font-bold px-8 py-6 rounded-xl shadow-lg shadow-[#0EA5E9]/30">
+          <Button onClick={() => setShowBooking(true)} style={{ backgroundColor: T.primary }} className="text-white hover:opacity-90 font-bold px-8 py-6 rounded-xl shadow-lg">
             <Scissors className="w-4 h-4 mr-2" /> APPROFITTA ORA
           </Button>
         </div>
@@ -234,13 +234,13 @@ function PromotionsSection({ publicPromos, setShowBooking }) {
   );
 }
 
-function ReviewsSection({ reviews }) {
+function ReviewsSection({ reviews, T }) {
   return (
     <section className="py-20 sm:py-28">
       <div className="max-w-6xl mx-auto px-4">
         <div className="text-center mb-12">
-          <p className="text-teal-400 font-bold text-sm tracking-widest uppercase mb-3">Recensioni</p>
-          <h2 className="text-3xl sm:text-4xl font-black">Cosa Dicono di Noi</h2>
+          <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Recensioni</p>
+          <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>Cosa Dicono di Noi</h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {reviews.map((review, idx) => (
@@ -263,13 +263,13 @@ function ReviewsSection({ reviews }) {
   );
 }
 
-function GallerySection({ config, hairstylePhotos, setShowBooking }) {
+function GallerySection({ config, hairstylePhotos, setShowBooking, T }) {
   return (
     <section className="py-20 sm:py-28 bg-white/60">
       <div className="max-w-6xl mx-auto px-4">
         <div className="text-center mb-12">
-          <p className="text-rose-500 font-bold text-sm tracking-widest uppercase mb-3">{config.gallery_title || 'I Nostri Lavori'}</p>
-          <h2 className="text-3xl sm:text-4xl font-black text-[#1e293b]">I Nostri Lavori</h2>
+          <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>{config.gallery_title || 'I Nostri Lavori'}</p>
+          <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>I Nostri Lavori</h2>
           {config.gallery_subtitle && <p className="text-[#64748B] mt-3 max-w-xl mx-auto">{config.gallery_subtitle}</p>}
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
@@ -291,7 +291,7 @@ function GallerySection({ config, hairstylePhotos, setShowBooking }) {
           ))}
         </div>
         <div className="text-center mt-8">
-          <Button onClick={() => setShowBooking(true)} className="bg-[#0EA5E9] text-white hover:bg-[#0284C7] font-bold px-8 py-6 rounded-xl shadow-lg shadow-[#0EA5E9]/30">
+          <Button onClick={() => setShowBooking(true)} style={{ backgroundColor: T.primary }} className="text-white hover:opacity-90 font-bold px-8 py-6 rounded-xl shadow-lg">
             <Scissors className="w-4 h-4 mr-2" /> PRENOTA ORA
           </Button>
         </div>
@@ -300,13 +300,13 @@ function GallerySection({ config, hairstylePhotos, setShowBooking }) {
   );
 }
 
-function LoyaltySection({ setShowBooking }) {
+function LoyaltySection({ setShowBooking, T }) {
   return (
-    <section className="py-20 sm:py-28 bg-gradient-to-br from-amber-50 via-white to-amber-50">
+    <section className="py-20 sm:py-28" style={{ backgroundColor: `${T.accent}10` }}>
       <div className="max-w-6xl mx-auto px-4">
         <div className="text-center mb-12">
-          <p className="text-amber-500 font-bold text-sm tracking-widest uppercase mb-3">Programma Fedeltà</p>
-          <h2 className="text-3xl sm:text-4xl font-black text-[#1e293b]">Ogni Visita Vale di Più</h2>
+          <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Programma Fedeltà</p>
+          <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>Ogni Visita Vale di Più</h2>
           <p className="text-[#94A3B8] mt-3 max-w-xl mx-auto">Accumula punti ad ogni appuntamento e sblocca premi esclusivi. <strong>1 punto ogni {'\u20AC'}10 spesi</strong>.</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
@@ -339,13 +339,13 @@ function LoyaltySection({ setShowBooking }) {
   );
 }
 
-function ContactSection({ contactRef, config, hours, phones, setShowBooking, openWhatsApp }) {
+function ContactSection({ contactRef, config, hours, phones, setShowBooking, openWhatsApp, T }) {
   return (
     <section ref={contactRef} className="py-20 sm:py-28">
       <div className="max-w-6xl mx-auto px-4">
         <div className="text-center mb-12">
-          <p className="text-violet-500 font-bold text-sm tracking-widest uppercase mb-3">Contattaci</p>
-          <h2 className="text-3xl sm:text-4xl font-black text-[#1e293b]">Prenota il Tuo Appuntamento</h2>
+          <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.primary }}>Contattaci</p>
+          <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>Prenota il Tuo Appuntamento</h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
           {config.address && (
@@ -396,7 +396,7 @@ function ContactSection({ contactRef, config, hours, phones, setShowBooking, ope
           ))}
         </div>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Button onClick={() => setShowBooking(true)} className="bg-[#0EA5E9] text-white hover:bg-[#0284C7] font-black text-base px-10 py-6 rounded-2xl w-full sm:w-auto shadow-lg shadow-[#0EA5E9]/30" data-testid="website-contact-book-btn">
+          <Button onClick={() => setShowBooking(true)} style={{ backgroundColor: T.primary }} className="text-white hover:opacity-90 font-black text-base px-10 py-6 rounded-2xl w-full sm:w-auto shadow-lg" data-testid="website-contact-book-btn">
             <Scissors className="w-5 h-5 mr-2" /> PRENOTA ORA
           </Button>
           <Button onClick={openWhatsApp} className="bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-base px-10 py-6 rounded-2xl w-full sm:w-auto shadow-lg shadow-green-400/20" data-testid="website-whatsapp-btn">
@@ -484,6 +484,15 @@ export default function WebsitePage() {
     '--theme-text': config.text_color || '#1e293b',
     '--theme-font-display': config.font_display || 'Cormorant Garamond, serif',
     '--theme-font-body': config.font_body || 'Nunito, sans-serif',
+  };
+
+  const T = {
+    primary: config.primary_color || '#0EA5E9',
+    accent: config.accent_color || '#D4A847',
+    bg: config.bg_color || '#FFF8F0',
+    text: config.text_color || '#1e293b',
+    fontDisplay: config.font_display || 'Cormorant Garamond, serif',
+    fontBody: config.font_body || 'Nunito, sans-serif',
   };
 
   const toggleService = (id) => {
@@ -871,21 +880,21 @@ export default function WebsitePage() {
     if (hiddenSections.includes(sectionId)) return null;
     switch (sectionId) {
       case 'services':
-        return bookingServices.length > 0 ? <ServicesSection key="services" {...{ servicesRef, showServices, setShowServices, landingServiceGroups, cardTemplates, setShowBooking }} /> : null;
+        return bookingServices.length > 0 ? <ServicesSection key="services" {...{ servicesRef, showServices, setShowServices, landingServiceGroups, cardTemplates, setShowBooking, T }} /> : null;
       case 'salon':
-        return salonPhotos.length > 0 ? <SalonSection key="salon" salonPhotos={salonPhotos} /> : null;
+        return salonPhotos.length > 0 ? <SalonSection key="salon" salonPhotos={salonPhotos} T={T} /> : null;
       case 'about':
-        return config.about_title ? <AboutSection key="about" config={config} salonPhotos={salonPhotos} /> : null;
+        return config.about_title ? <AboutSection key="about" config={config} salonPhotos={salonPhotos} T={T} /> : null;
       case 'promotions':
-        return publicPromos.length > 0 ? <PromotionsSection key="promotions" publicPromos={publicPromos} setShowBooking={setShowBooking} /> : null;
+        return publicPromos.length > 0 ? <PromotionsSection key="promotions" publicPromos={publicPromos} setShowBooking={setShowBooking} T={T} /> : null;
       case 'reviews':
-        return reviews.length > 0 ? <ReviewsSection key="reviews" reviews={reviews} /> : null;
+        return reviews.length > 0 ? <ReviewsSection key="reviews" reviews={reviews} T={T} /> : null;
       case 'gallery':
-        return hairstylePhotos.length > 0 ? <GallerySection key="gallery" config={config} hairstylePhotos={hairstylePhotos} setShowBooking={setShowBooking} /> : null;
+        return hairstylePhotos.length > 0 ? <GallerySection key="gallery" config={config} hairstylePhotos={hairstylePhotos} setShowBooking={setShowBooking} T={T} /> : null;
       case 'loyalty':
-        return <LoyaltySection key="loyalty" setShowBooking={setShowBooking} />;
+        return <LoyaltySection key="loyalty" setShowBooking={setShowBooking} T={T} />;
       case 'contact':
-        return <ContactSection key="contact" {...{ contactRef, config, hours, phones, setShowBooking, openWhatsApp }} />;
+        return <ContactSection key="contact" {...{ contactRef, config, hours, phones, setShowBooking, openWhatsApp, T }} />;
       default:
         return null;
     }
@@ -921,7 +930,7 @@ export default function WebsitePage() {
             <Button variant="outline" onClick={() => setShowMyAppts(true)} className="border-amber-300 text-amber-600 hover:bg-amber-50 font-bold text-xs px-2.5 py-1.5 sm:px-4 sm:text-sm rounded-lg" data-testid="my-appointments-btn">
               <CalendarDays className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" /> <span className="hidden sm:inline">I Miei</span> Appuntamenti
             </Button>
-            <Button onClick={() => setShowBooking(true)} className="bg-[#0EA5E9] text-white hover:bg-[#0284C7] font-bold text-sm px-4 sm:px-6" data-testid="website-book-btn">
+            <Button onClick={() => setShowBooking(true)} style={{ backgroundColor: T.primary }} className="text-white font-bold text-sm px-4 sm:px-6 hover:opacity-90" data-testid="website-book-btn">
               PRENOTA ORA
             </Button>
           </div>
@@ -937,17 +946,17 @@ export default function WebsitePage() {
               <img src="/logo.png?v=4" alt={config.salon_name} className="w-48 h-48 sm:w-64 sm:h-64 object-contain drop-shadow-2xl rounded-3xl border-2 border-white/20 shadow-2xl" />
             </div>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white mb-4 tracking-tight" style={{ fontFamily: `var(--theme-font-display)` }}>{config.salon_name || 'BRUNO MELITO HAIR'}</h1>
-            <div className="inline-block bg-[#0EA5E9]/20 backdrop-blur-sm text-[#0EA5E9] text-xs font-bold px-4 py-2 rounded-full border border-[#0EA5E9]/40 mb-6">
+            <div className="inline-block backdrop-blur-sm text-xs font-bold px-4 py-2 rounded-full border mb-6" style={{ backgroundColor: `${T.primary}20`, color: T.primary, borderColor: `${T.primary}40` }}>
               {config.subtitle || 'SOLO PER APPUNTAMENTO'}
             </div>
             <p className="text-base sm:text-lg text-white/70 max-w-lg mx-auto mb-8 leading-relaxed">
               {config.hero_description || ''}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center mb-10">
-              <Button onClick={() => setShowBooking(true)} className="bg-[#0EA5E9] text-white hover:bg-[#0284C7] font-black text-base px-8 py-6 rounded-xl shadow-lg shadow-[#0EA5E9]/30" data-testid="website-hero-book-btn">
+              <Button onClick={() => setShowBooking(true)} style={{ backgroundColor: T.primary }} className="text-white hover:opacity-90 font-black text-base px-8 py-6 rounded-xl shadow-lg" data-testid="website-hero-book-btn">
                 <Scissors className="w-5 h-5 mr-2" /> PRENOTA ORA
               </Button>
-              <Button onClick={() => { setShowServices(true); setTimeout(() => scrollTo(servicesRef), 100); }} variant="outline" className="border-[#0EA5E9]/30 text-[#0EA5E9] hover:bg-[#0EA5E9]/10 font-bold text-base px-8 py-6 rounded-xl">
+              <Button onClick={() => { setShowServices(true); setTimeout(() => scrollTo(servicesRef), 100); }} variant="outline" style={{ borderColor: `${T.primary}30`, color: T.primary }} className="hover:opacity-80 font-bold text-base px-8 py-6 rounded-xl">
                 Scopri i Servizi <ChevronDown className="w-4 h-4 ml-2" />
               </Button>
             </div>
@@ -1007,7 +1016,7 @@ export default function WebsitePage() {
       </footer>
 
       <div className="fixed bottom-0 left-0 right-0 p-3 bg-white/95 backdrop-blur-md border-t border-gray-200 sm:hidden z-50">
-        <Button onClick={() => setShowBooking(true)} className="w-full bg-[#0EA5E9] text-white hover:bg-[#0284C7] font-black py-5 rounded-2xl shadow-lg" data-testid="website-mobile-book-btn">
+        <Button onClick={() => setShowBooking(true)} style={{ backgroundColor: T.primary }} className="w-full text-white hover:opacity-90 font-black py-5 rounded-2xl shadow-lg" data-testid="website-mobile-book-btn">
           <Scissors className="w-5 h-5 mr-2" /> PRENOTA ORA
         </Button>
       </div>
