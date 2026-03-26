@@ -183,6 +183,13 @@ async def update_settings(data: SettingsUpdate, current_user: dict = Depends(get
                         salon_name=user["salon_name"], created_at=user["created_at"])
 
 
+@router.put("/settings/admin-theme")
+async def update_admin_theme(data: dict, current_user: dict = Depends(get_current_user)):
+    theme = data.get("admin_theme", {})
+    await db.users.update_one({"id": current_user["id"]}, {"$set": {"admin_theme": theme}})
+    return {"success": True, "admin_theme": theme}
+
+
 @router.get("/settings")
 async def get_settings(current_user: dict = Depends(get_current_user)):
     return {
@@ -191,7 +198,11 @@ async def get_settings(current_user: dict = Depends(get_current_user)):
         "opening_time": current_user.get("opening_time", "09:00"),
         "closing_time": current_user.get("closing_time", "19:00"),
         "working_days": current_user.get("working_days", ["lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato"]),
-        "twilio_configured": twilio_client is not None
+        "twilio_configured": twilio_client is not None,
+        "admin_theme": current_user.get("admin_theme", {
+            "primary": "#C8617A", "sidebar_bg": "#FAF7F2", "sidebar_text": "#2D1B14",
+            "accent": "#D4A847", "font_display": "Cormorant Garamond", "font_body": "Poppins"
+        })
     }
 
 

@@ -939,7 +939,16 @@ export default function WebsitePage() {
 
       {/* HERO */}
       <section className="relative min-h-screen flex items-center pt-16">
-        <div className="absolute inset-0 bg-[#1a0e08]" />
+        {config.hero_image ? (
+          <>
+            <div className="absolute inset-0">
+              <img src={getMediaUrl(config.hero_image)} alt="" className="w-full h-full object-cover" />
+            </div>
+            <div className="absolute inset-0 bg-black/60" />
+          </>
+        ) : (
+          <div className="absolute inset-0 bg-[#1a0e08]" />
+        )}
         <div className="relative max-w-6xl mx-auto px-4 py-20 sm:py-32 w-full">
           <div className="text-center max-w-3xl mx-auto">
             <div className="flex justify-center mb-8">

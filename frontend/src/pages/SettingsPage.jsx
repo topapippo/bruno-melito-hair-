@@ -8,11 +8,25 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Settings, Save, Loader2, Clock, Building2, User, Lock } from 'lucide-react';
+import { Settings, Save, Loader2, Clock, Building2, User, Lock, Palette, Type, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
+const ADMIN_FONTS = [
+  'Cormorant Garamond', 'Playfair Display', 'Montserrat', 'Poppins', 'Inter',
+  'Lora', 'Raleway', 'Roboto', 'Open Sans', 'DM Sans', 'Nunito'
+];
+
+const ADMIN_PRESETS = [
+  { name: 'Rosa Classico', primary: '#C8617A', sidebar_bg: '#FAF7F2', sidebar_text: '#2D1B14', accent: '#D4A847' },
+  { name: 'Blu Elegante', primary: '#2563EB', sidebar_bg: '#F0F4FF', sidebar_text: '#0F172A', accent: '#F59E0B' },
+  { name: 'Verde Natura', primary: '#059669', sidebar_bg: '#F0FDF4', sidebar_text: '#14532D', accent: '#A3E635' },
+  { name: 'Viola Lusso', primary: '#7C3AED', sidebar_bg: '#FAF5FF', sidebar_text: '#1E1B4B', accent: '#F472B6' },
+  { name: 'Grigio Moderno', primary: '#475569', sidebar_bg: '#F1F5F9', sidebar_text: '#0F172A', accent: '#0EA5E9' },
+  { name: 'Scuro', primary: '#C8617A', sidebar_bg: '#1E1B14', sidebar_text: '#FAF7F2', accent: '#D4A847' },
+];
 
 const DAYS = [
   { value: 'lunedì', label: 'Lunedì' },
@@ -31,6 +45,11 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [changingPw, setChangingPw] = useState(false);
   const [pwForm, setPwForm] = useState({ current_password: '', new_password: '', confirm_password: '' });
+  const [adminTheme, setAdminTheme] = useState({
+    primary: '#C8617A', sidebar_bg: '#FAF7F2', sidebar_text: '#2D1B14',
+    accent: '#D4A847', font_display: 'Cormorant Garamond', font_body: 'Poppins'
+  });
+  const [savingTheme, setSavingTheme] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -40,12 +59,35 @@ export default function SettingsPage() {
     try {
       const res = await api.get(`${API}/settings`);
       setSettings(res.data);
+      if (res.data.admin_theme) setAdminTheme(res.data.admin_theme);
     } catch (err) {
       console.error('Error fetching settings:', err);
       toast.error('Errore nel caricamento delle impostazioni');
     } finally {
       setLoading(false);
     }
+  };
+
+  const applyAdminTheme = (theme) => {
+    localStorage.setItem('adminTheme', JSON.stringify(theme));
+  };
+
+  const saveAdminTheme = async () => {
+    setSavingTheme(true);
+    try {
+      await api.put(`${API}/settings/admin-theme`, { admin_theme: adminTheme });
+      applyAdminTheme(adminTheme);
+      toast.success('Tema gestionale salvato!');
+    } catch { toast.error('Errore nel salvataggio tema'); }
+    finally { setSavingTheme(false); }
+  };
+
+  const applyPreset = (preset) => {
+    const newTheme = { ...adminTheme, ...preset };
+    delete newTheme.name;
+    setAdminTheme(newTheme);
+    applyAdminTheme(newTheme);
+    toast.success(`Preset "${preset.name}" applicato — salva per confermare`);
   };
 
   const handleSubmit = async (e) => {
@@ -255,6 +297,107 @@ export default function SettingsPage() {
             </Button>
           </div>
         </form>
+
+        {/* Admin Theme Customization */}
+        <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+          <CardHeader>
+            <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
+              <Palette className="w-5 h-5 text-[#C8617A]" />
+              Aspetto Gestionale
+            </CardTitle>
+            <p className="text-sm text-[#7C5C4A] mt-1">Personalizza colori e font del pannello di amministrazione</p>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Presets */}
+            <div>
+              <Label className="text-sm font-bold text-[#2D1B14] mb-2 block">Temi Rapidi</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+                {ADMIN_PRESETS.map((preset, idx) => (
+                  <button key={idx} onClick={() => applyPreset(preset)}
+                    className="p-2 rounded-xl border-2 hover:shadow-md transition-all text-center group"
+                    style={{ borderColor: adminTheme.primary === preset.primary && adminTheme.sidebar_bg === preset.sidebar_bg ? preset.primary : '#F0E6DC' }}
+                    data-testid={`admin-preset-${idx}`}>
+                    <div className="flex gap-1 justify-center mb-1.5">
+                      <div className="w-5 h-5 rounded-full border" style={{ backgroundColor: preset.primary }} />
+                      <div className="w-5 h-5 rounded-full border" style={{ backgroundColor: preset.sidebar_bg }} />
+                      <div className="w-5 h-5 rounded-full border" style={{ backgroundColor: preset.accent }} />
+                    </div>
+                    <p className="text-[10px] font-bold text-[#2D1B14] group-hover:text-[#C8617A]">{preset.name}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Colors */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">Colore Principale</Label>
+                <div className="flex items-center gap-2">
+                  <input type="color" value={adminTheme.primary} onChange={e => { setAdminTheme(t => ({...t, primary: e.target.value})); applyAdminTheme({...adminTheme, primary: e.target.value}); }}
+                    className="w-10 h-10 rounded-lg border-2 cursor-pointer" data-testid="admin-theme-primary" />
+                  <Input value={adminTheme.primary} onChange={e => setAdminTheme(t => ({...t, primary: e.target.value}))} className="font-mono text-xs h-10" />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">Sfondo Sidebar</Label>
+                <div className="flex items-center gap-2">
+                  <input type="color" value={adminTheme.sidebar_bg} onChange={e => { setAdminTheme(t => ({...t, sidebar_bg: e.target.value})); applyAdminTheme({...adminTheme, sidebar_bg: e.target.value}); }}
+                    className="w-10 h-10 rounded-lg border-2 cursor-pointer" data-testid="admin-theme-sidebar-bg" />
+                  <Input value={adminTheme.sidebar_bg} onChange={e => setAdminTheme(t => ({...t, sidebar_bg: e.target.value}))} className="font-mono text-xs h-10" />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">Testo Sidebar</Label>
+                <div className="flex items-center gap-2">
+                  <input type="color" value={adminTheme.sidebar_text} onChange={e => { setAdminTheme(t => ({...t, sidebar_text: e.target.value})); applyAdminTheme({...adminTheme, sidebar_text: e.target.value}); }}
+                    className="w-10 h-10 rounded-lg border-2 cursor-pointer" data-testid="admin-theme-sidebar-text" />
+                  <Input value={adminTheme.sidebar_text} onChange={e => setAdminTheme(t => ({...t, sidebar_text: e.target.value}))} className="font-mono text-xs h-10" />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">Accento</Label>
+                <div className="flex items-center gap-2">
+                  <input type="color" value={adminTheme.accent} onChange={e => { setAdminTheme(t => ({...t, accent: e.target.value})); applyAdminTheme({...adminTheme, accent: e.target.value}); }}
+                    className="w-10 h-10 rounded-lg border-2 cursor-pointer" data-testid="admin-theme-accent" />
+                  <Input value={adminTheme.accent} onChange={e => setAdminTheme(t => ({...t, accent: e.target.value}))} className="font-mono text-xs h-10" />
+                </div>
+              </div>
+            </div>
+
+            {/* Fonts */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold flex items-center gap-1"><Type className="w-3 h-3" /> Font Titoli</Label>
+                <select value={adminTheme.font_display} onChange={e => { setAdminTheme(t => ({...t, font_display: e.target.value})); applyAdminTheme({...adminTheme, font_display: e.target.value}); }}
+                  className="w-full p-2.5 border rounded-lg text-sm" data-testid="admin-theme-font-display">
+                  {ADMIN_FONTS.map(f => <option key={f} value={f} style={{ fontFamily: f }}>{f}</option>)}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold flex items-center gap-1"><Type className="w-3 h-3" /> Font Corpo</Label>
+                <select value={adminTheme.font_body} onChange={e => { setAdminTheme(t => ({...t, font_body: e.target.value})); applyAdminTheme({...adminTheme, font_body: e.target.value}); }}
+                  className="w-full p-2.5 border rounded-lg text-sm" data-testid="admin-theme-font-body">
+                  {ADMIN_FONTS.map(f => <option key={f} value={f} style={{ fontFamily: f }}>{f}</option>)}
+                </select>
+              </div>
+            </div>
+
+            {/* Save / Reset */}
+            <div className="flex items-center gap-3">
+              <Button onClick={saveAdminTheme} disabled={savingTheme}
+                className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white px-8" data-testid="save-admin-theme-btn">
+                {savingTheme ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-2" /> Salva Tema</>}
+              </Button>
+              <Button variant="outline" onClick={() => {
+                const def = { primary: '#C8617A', sidebar_bg: '#FAF7F2', sidebar_text: '#2D1B14', accent: '#D4A847', font_display: 'Cormorant Garamond', font_body: 'Poppins' };
+                setAdminTheme(def); applyAdminTheme(def);
+                toast.success('Tema ripristinato — salva per confermare');
+              }} className="text-[#7C5C4A]" data-testid="reset-admin-theme-btn">
+                <RotateCcw className="w-4 h-4 mr-2" /> Ripristina Default
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Change Password */}
         <Card className="border-2 border-[#F0E6DC]">

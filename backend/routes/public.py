@@ -131,6 +131,7 @@ DEFAULT_WEBSITE_CONFIG = {
     "slogan": "Metti la testa a posto!!",
     "subtitle": "SOLO PER APPUNTAMENTO",
     "hero_description": "Scopri l'eccellenza dell'hair styling al Bruno Melito Hair. Dove ogni taglio e' un'opera d'arte e ogni cliente e' unica.",
+    "hero_image": "",
     "about_title": "Dal 1983 con Passione",
     "about_text": "Dal 1983 con grande soddisfazione nostra e delle clienti che ci seguono, siamo un punto di riferimento per chi cerca qualita' e professionalita' nell'hair styling.",
     "about_text_2": "Abbiamo introdotto una nuova linea di prodotti altamente curativi, di ultima generazione: shampoo, maschere e finishing, senza parabeni, solfati e sale. Le colorazioni e le schiariture sono senza ammoniaca, ma con cheratina, olio di semi di lino, proteine della seta e olio di argan.",

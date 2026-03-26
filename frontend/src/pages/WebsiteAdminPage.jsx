@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import api from '../lib/api';
 import { getMediaUrl } from '../lib/mediaUrl';
 import Layout from '../components/Layout';
@@ -31,6 +31,21 @@ export default function WebsiteAdminPage() {
   const [reviewForm, setReviewForm] = useState({ name: '', text: '', rating: 5 });
   const [uploadSection, setUploadSection] = useState('gallery');
   const [allServices, setAllServices] = useState([]);
+  const heroInputRef = useRef(null);
+
+  const handleHeroImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const uploadRes = await api.post('/website/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      updateField('hero_image', uploadRes.data.url);
+      toast.success('Immagine hero caricata!');
+    } catch (err) { toast.error('Errore upload immagine hero'); }
+    finally { setUploading(false); }
+  };
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -310,10 +325,46 @@ export default function WebsiteAdminPage() {
             <Card>
               <CardHeader><CardTitle>Informazioni Generali</CardTitle></CardHeader>
               <CardContent className="space-y-4">
+                {/* Hero Section */}
+                <div className="p-4 border-2 border-dashed border-[#C8617A]/30 rounded-xl bg-[#C8617A]/5">
+                  <Label className="text-sm font-bold text-[#2D1B14] flex items-center gap-2 mb-3"><Image className="w-4 h-4 text-[#C8617A]" /> Copertina Hero</Label>
+                  <div className="flex flex-col md:flex-row gap-4 items-start">
+                    {/* Preview */}
+                    <div className="relative w-full md:w-64 h-36 rounded-xl overflow-hidden bg-[#1a0e08] shrink-0">
+                      {config.hero_image ? (
+                        <img src={getMediaUrl(config.hero_image)} alt="Hero" className="w-full h-full object-cover opacity-70" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-white/40 text-sm">Nessuna immagine</div>
+                      )}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <p className="text-white font-bold text-lg drop-shadow-lg">{config.salon_name || 'BRUNO MELITO'}</p>
+                      </div>
+                    </div>
+                    {/* Controls */}
+                    <div className="flex-1 space-y-2">
+                      <p className="text-xs text-[#7C5C4A]">Questa immagine appare come sfondo della sezione Hero del sito pubblico, come una copertina social.</p>
+                      <div className="flex gap-2">
+                        <input ref={heroInputRef} type="file" accept="image/*" className="hidden" onChange={handleHeroImageUpload} />
+                        <Button variant="outline" size="sm" onClick={() => heroInputRef.current?.click()} disabled={uploading}
+                          className="border-[#C8617A] text-[#C8617A] hover:bg-[#C8617A]/10" data-testid="hero-image-upload-btn">
+                          <Upload className="w-4 h-4 mr-1" /> {config.hero_image ? 'Cambia Immagine' : 'Carica Immagine'}
+                        </Button>
+                        {config.hero_image && (
+                          <Button variant="ghost" size="sm" onClick={() => updateField('hero_image', '')} className="text-red-500">
+                            <Trash2 className="w-4 h-4 mr-1" /> Rimuovi
+                          </Button>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-[#94A3B8]">Consigliato: 1920x1080px, formato orizzontale</p>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div><Label>Nome Salone</Label><Input value={config.salon_name || ''} onChange={e => updateField('salon_name', e.target.value)} data-testid="config-salon-name" /></div>
                   <div><Label>Sottotitolo (badge hero)</Label><Input value={config.subtitle || ''} onChange={e => updateField('subtitle', e.target.value)} /></div>
                 </div>
+                <div><Label>Slogan Hero</Label><Input value={config.hero_slogan || ''} onChange={e => updateField('hero_slogan', e.target.value)} placeholder="es. Metti la testa a posto!!" data-testid="config-hero-slogan" /></div>
                 <div><Label>Descrizione Hero</Label><Textarea value={config.hero_description || ''} onChange={e => updateField('hero_description', e.target.value)} rows={3} /></div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div><Label>Titolo Chi Siamo</Label><Input value={config.about_title || ''} onChange={e => updateField('about_title', e.target.value)} /></div>
