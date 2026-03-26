@@ -144,3 +144,24 @@ async def change_password(data: ChangePasswordRequest, current_user: dict = Depe
     )
     logger.info(f"Password aggiornata per utente: {current_user['email']}")
     return {"success": True, "message": "Password aggiornata con successo"}
+
+
+# ── Admin Password Reset (protetto da chiave segreta) ─────────────────────────
+@router.post("/auth/admin-reset")
+async def admin_reset_password(request: Request):
+    body = await request.json()
+    secret = body.get("secret")
+    email = body.get("email")
+    new_password = body.get("new_password")
+    if secret != "mbhs-admin-reset-2024-secure":
+        raise HTTPException(status_code=403, detail="Non autorizzato")
+    if not email or not new_password:
+        raise HTTPException(status_code=400, detail="Email e new_password richiesti")
+    user = await db.users.find_one({"email": email}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="Utente non trovato")
+    await db.users.update_one(
+        {"email": email},
+        {"$set": {"password": hash_password(new_password)}}
+    )
+    return {"success": True, "message": f"Password resettata per {email}"}
