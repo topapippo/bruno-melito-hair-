@@ -313,6 +313,47 @@ export default function RemindersPage() {
 
   const pendingReminders = tomorrowReminders.filter(r => !r.reminded);
   const pendingRecalls = inactiveClients.filter(c => !c.already_recalled);
+  const pendingColors = colorReminders.filter(c => !c.already_sent);
+
+  const batchSendColors = async () => {
+    if (pendingColors.length === 0) return;
+    setBatchSending(true);
+    const colorTemplate = templates.find(t => t.template_type === 'color_expiry');
+    for (let i = 0; i < pendingColors.length; i++) {
+      const cr = pendingColors[i];
+      if (!cr.phone) continue;
+      const phone = formatPhone(cr.phone);
+      let msg = colorTemplate
+        ? colorTemplate.text.replace('{nome}', cr.client_name || '').replace('{giorni}', String(cr.days_ago || ''))
+        : `Ciao ${cr.client_name}! Sono passati ${cr.days_ago} giorni dal tuo ultimo colore. E' il momento di rinfrescare il look! Prenota da Bruno Melito Hair.`;
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+      try { await api.post(`${API}/reminders/color-expiry/${cr.client_id}/mark-sent`); } catch {}
+      if (i < pendingColors.length - 1) await new Promise(r => setTimeout(r, 1500));
+    }
+    toast.success(`${pendingColors.length} promemoria colore inviati!`);
+    fetchData();
+    setBatchSending(false);
+  };
+
+  const batchSendInactive = async () => {
+    if (pendingRecalls.length === 0) return;
+    setBatchSending(true);
+    const recallTemplate = templates.find(t => t.template_type === 'recall');
+    for (let i = 0; i < pendingRecalls.length; i++) {
+      const client = pendingRecalls[i];
+      if (!client.client_phone) continue;
+      const phone = formatPhone(client.client_phone);
+      let msg = recallTemplate
+        ? recallTemplate.text.replace('{nome}', client.client_name || '').replace('{giorni}', String(client.days_ago || '')).replace('{servizi}', client.last_services?.join(', ') || '')
+        : `Ciao ${client.client_name}! Sono passati ${client.days_ago} giorni dalla tua ultima visita presso Bruno Melito Hair. Torna a trovarci, ti aspettiamo!`;
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+      try { await api.post(`${API}/reminders/inactive/${client.client_id}/mark-sent`); } catch {}
+      if (i < pendingRecalls.length - 1) await new Promise(r => setTimeout(r, 1500));
+    }
+    toast.success(`${pendingRecalls.length} richiami inviati!`);
+    fetchData();
+    setBatchSending(false);
+  };
 
   if (loading) {
     return (
@@ -350,7 +391,7 @@ export default function RemindersPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
             <CardContent className="p-5">
               <div className="flex items-center gap-3">
@@ -367,6 +408,22 @@ export default function RemindersPage() {
               </div>
             </CardContent>
           </Card>
+          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-purple-500 rounded-xl">
+                  <Palette className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm text-purple-700 font-semibold">Scadenza Colore</p>
+                  <p className="text-3xl font-black text-purple-600" data-testid="pending-colors-count">
+                    {pendingColors.length}
+                    <span className="text-sm font-semibold text-purple-500 ml-1">/ {colorReminders.length}</span>
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
           <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
             <CardContent className="p-5">
               <div className="flex items-center gap-3">
@@ -374,7 +431,7 @@ export default function RemindersPage() {
                   <UserX className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <p className="text-sm text-orange-700 font-semibold">Clienti Inattivi (60+ giorni)</p>
+                  <p className="text-sm text-orange-700 font-semibold">Clienti Inattivi (60+g)</p>
                   <p className="text-3xl font-black text-orange-600" data-testid="inactive-clients-count">
                     {pendingRecalls.length}
                     <span className="text-sm font-semibold text-orange-500 ml-1">/ {inactiveClients.length}</span>
@@ -385,49 +442,41 @@ export default function RemindersPage() {
           </Card>
         </div>
 
-        {/* Auto-Send Banner */}
-        {autoCheck && autoCheck.pending.length > 0 && (
+        {/* Centro Invio Rapido */}
+        {(pendingReminders.length > 0 || pendingColors.length > 0 || pendingRecalls.length > 0) && (
           <Card className="border-2 border-green-400 bg-gradient-to-r from-green-50 to-emerald-50 shadow-md">
             <CardContent className="p-5">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <div className="p-2.5 bg-green-500 rounded-xl shrink-0">
-                    <Send className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="font-bold text-green-800 text-lg">
-                      Invio Automatico Promemoria
-                    </p>
-                    <p className="text-sm text-green-700 mt-0.5">
-                      {autoCheck.pending.length} clienti da avvisare per domani ({autoCheck.tomorrow_date}).
-                      {autoCheck.already_sent > 0 && (
-                        <span className="ml-1">({autoCheck.already_sent} già inviati)</span>
-                      )}
-                    </p>
-                    <div className="flex flex-wrap gap-1.5 mt-2">
-                      {autoCheck.pending.slice(0, 5).map((p, i) => (
-                        <span key={i} className="text-xs bg-white border border-green-200 text-green-800 px-2 py-0.5 rounded-full">
-                          {p.client_name} ({p.time})
-                        </span>
-                      ))}
-                      {autoCheck.pending.length > 5 && (
-                        <span className="text-xs text-green-600">+{autoCheck.pending.length - 5} altri</span>
-                      )}
-                    </div>
-                  </div>
+              <div className="flex items-start gap-3 mb-4">
+                <div className="p-2.5 bg-green-500 rounded-xl shrink-0">
+                  <Send className="w-5 h-5 text-white" />
                 </div>
-                <Button
-                  onClick={batchSendAll}
-                  disabled={batchSending}
-                  className="bg-green-500 hover:bg-green-600 text-white font-bold text-base px-6 py-3 h-auto shrink-0"
-                  data-testid="batch-send-btn"
-                >
-                  {batchSending ? (
-                    <><Loader2 className="w-5 h-5 animate-spin mr-2" /> Invio in corso...</>
-                  ) : (
-                    <><MessageSquare className="w-5 h-5 mr-2" /> Invia Tutti su WhatsApp</>
-                  )}
-                </Button>
+                <div>
+                  <p className="font-bold text-green-800 text-lg">Centro Invio WhatsApp</p>
+                  <p className="text-sm text-green-700">Invia tutti i messaggi per categoria con un click. Si apriranno le finestre WhatsApp in sequenza.</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {pendingReminders.length > 0 && (
+                  <Button onClick={batchSendAll} disabled={batchSending}
+                    className="bg-blue-500 hover:bg-blue-600 text-white font-bold h-auto py-3" data-testid="batch-send-appointments-btn">
+                    {batchSending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Calendar className="w-4 h-4 mr-2" />}
+                    Promemoria ({pendingReminders.length})
+                  </Button>
+                )}
+                {pendingColors.length > 0 && (
+                  <Button onClick={batchSendColors} disabled={batchSending}
+                    className="bg-purple-500 hover:bg-purple-600 text-white font-bold h-auto py-3" data-testid="batch-send-colors-btn">
+                    {batchSending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Palette className="w-4 h-4 mr-2" />}
+                    Scadenza Colore ({pendingColors.length})
+                  </Button>
+                )}
+                {pendingRecalls.length > 0 && (
+                  <Button onClick={batchSendInactive} disabled={batchSending}
+                    className="bg-orange-500 hover:bg-orange-600 text-white font-bold h-auto py-3" data-testid="batch-send-inactive-btn">
+                    {batchSending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <UserX className="w-4 h-4 mr-2" />}
+                    Clienti Inattivi ({pendingRecalls.length})
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -456,9 +505,11 @@ export default function RemindersPage() {
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                           tmpl.template_type === 'appointment'
                             ? 'bg-blue-100 text-blue-700'
+                            : tmpl.template_type === 'color_expiry'
+                            ? 'bg-purple-100 text-purple-700'
                             : 'bg-orange-100 text-orange-700'
                         }`}>
-                          {tmpl.template_type === 'appointment' ? 'Appuntamento' : 'Richiamo'}
+                          {tmpl.template_type === 'appointment' ? 'Appuntamento' : tmpl.template_type === 'color_expiry' ? 'Scadenza Colore' : 'Richiamo'}
                         </span>
                       </div>
                       <p className="text-xs text-[#64748B] mt-1 truncate">{tmpl.text}</p>
@@ -872,6 +923,7 @@ export default function RemindersPage() {
                     <SelectContent>
                       <SelectItem value="appointment">Promemoria Appuntamento</SelectItem>
                       <SelectItem value="recall">Richiamo Cliente</SelectItem>
+                      <SelectItem value="color_expiry">Scadenza Colore</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

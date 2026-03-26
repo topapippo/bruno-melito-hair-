@@ -44,9 +44,10 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [cardAlerts, setCardAlerts] = useState({ expiring: [], low_balance: [], total: 0 });
   const [showAlerts, setShowAlerts] = useState(true);
+  const [whatsappPending, setWhatsappPending] = useState({ reminders: 0, colors: 0, inactive: 0, total: 0 });
   const navigate = useNavigate();
 
-  useEffect(() => { fetchDashboardStats(); fetchCardAlerts(); }, []);
+  useEffect(() => { fetchDashboardStats(); fetchCardAlerts(); fetchWhatsappPending(); }, []);
 
   const fetchDashboardStats = async () => {
     try {
@@ -60,6 +61,20 @@ export default function Dashboard() {
     try {
       const res = await api.get(`${API}/cards/alerts/all?days=7&threshold_percent=20`);
       setCardAlerts({ expiring: res.data.expiring_cards || [], low_balance: res.data.low_balance_cards || [], total: res.data.total_alerts || 0 });
+    } catch {}
+  };
+
+  const fetchWhatsappPending = async () => {
+    try {
+      const [remRes, colorRes, inactRes] = await Promise.all([
+        api.get(`${API}/reminders/tomorrow`),
+        api.get(`${API}/reminders/color-expiry`).catch(() => ({ data: [] })),
+        api.get(`${API}/reminders/inactive-clients`)
+      ]);
+      const rem = (remRes.data || []).filter(r => !r.reminded).length;
+      const col = (colorRes.data || []).filter(c => !c.already_sent).length;
+      const ina = (inactRes.data || []).filter(c => !c.already_recalled).length;
+      setWhatsappPending({ reminders: rem, colors: col, inactive: ina, total: rem + col + ina });
     } catch {}
   };
 
@@ -151,6 +166,33 @@ export default function Dashboard() {
                   <X className="w-3.5 h-3.5 text-amber-600" />
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── WhatsApp Pending Banner ─────────────────────────────────────── */}
+        {whatsappPending.total > 0 && (
+          <div className="relative overflow-hidden rounded-2xl border border-green-200 bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 p-4 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => navigate('/reminders')} data-testid="whatsapp-pending-banner">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-green-500 flex items-center justify-center shrink-0">
+                  <MessageCircle className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <p className="font-semibold text-green-800 text-sm flex items-center gap-2">
+                    {whatsappPending.total} Messaggi WhatsApp da inviare
+                  </p>
+                  <div className="flex items-center gap-3 mt-0.5">
+                    {whatsappPending.reminders > 0 && <span className="text-xs text-blue-600 font-medium">{whatsappPending.reminders} promemoria</span>}
+                    {whatsappPending.colors > 0 && <span className="text-xs text-purple-600 font-medium">{whatsappPending.colors} scadenza colore</span>}
+                    {whatsappPending.inactive > 0 && <span className="text-xs text-orange-600 font-medium">{whatsappPending.inactive} clienti inattivi</span>}
+                  </div>
+                </div>
+              </div>
+              <Button size="sm" className="bg-green-500 hover:bg-green-600 text-white text-xs h-7 rounded-lg shrink-0">
+                Vai ai Promemoria <ChevronRight className="w-3 h-3 ml-1" />
+              </Button>
             </div>
           </div>
         )}

@@ -106,7 +106,10 @@ async def get_message_templates(current_user: dict = Depends(get_current_user)):
              "template_type": "appointment", "created_at": datetime.now(timezone.utc).isoformat()},
             {"id": str(uuid.uuid4()), "user_id": current_user["id"], "name": "Richiamo Cliente Inattivo",
              "text": "Ciao {nome}! Sono passati {giorni} giorni dalla tua ultima visita presso MBHS SALON. Torna a trovarci, ti aspettiamo!",
-             "template_type": "recall", "created_at": datetime.now(timezone.utc).isoformat()}
+             "template_type": "recall", "created_at": datetime.now(timezone.utc).isoformat()},
+            {"id": str(uuid.uuid4()), "user_id": current_user["id"], "name": "Scadenza Colore",
+             "text": "Ciao {nome}! Sono passati {giorni} giorni dal tuo ultimo colore. E' il momento di rinfrescare il look! Prenota da Bruno Melito Hair.",
+             "template_type": "color_expiry", "created_at": datetime.now(timezone.utc).isoformat()}
         ]
         for d in defaults:
             await db.message_templates.insert_one(d)
