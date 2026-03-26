@@ -38,7 +38,7 @@
 - Tab Layout: riordinamento sezioni (su/giu), nascondi/mostra sezioni + Ripristina ordine predefinito
   - Sezioni: services, salon, about, promotions, reviews, gallery, loyalty, contact
   - Hero (fisso in cima) e Footer (fisso in fondo)
-- Tab Aspetto: colori (primario, accento, sfondo, testo), font (titoli, corpo)
+- Tab Aspetto: 10 temi preimpostati (Elegante Scuro, Rosa Classico, Blu Moderno, Oro & Nero, Verde Natura, Viola Lusso, Corallo, Minimal Bianco, Teal Fresco, Borgogna), colori (primario, accento, sfondo, testo), font (titoli, corpo), anteprima live in tempo reale
 - Tab Servizi, Foto Salone, Gallery Lavori, Recensioni, Orari & Contatti
 
 ### Sito Pubblico (/sito)
