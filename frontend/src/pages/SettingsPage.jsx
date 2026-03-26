@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Settings, Save, Loader2, Clock, Building2, User, Lock, Palette, Type, RotateCcw } from 'lucide-react';
+import { Settings, Save, Loader2, Clock, Building2, User, Lock, Palette, Type, RotateCcw, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 
@@ -50,9 +50,13 @@ export default function SettingsPage() {
     accent: '#D4A847', font_display: 'Cormorant Garamond', font_body: 'Poppins'
   });
   const [savingTheme, setSavingTheme] = useState(false);
+  const [blockedSlots, setBlockedSlots] = useState([]);
+  const [newBlock, setNewBlock] = useState({ type: 'recurring', day_of_week: 'lunedì', date: '', start_time: '13:00', end_time: '14:00', reason: '' });
+  const [savingBlock, setSavingBlock] = useState(false);
 
   useEffect(() => {
     fetchSettings();
+    fetchBlockedSlots();
   }, []);
 
   const fetchSettings = async () => {
@@ -88,6 +92,32 @@ export default function SettingsPage() {
     setAdminTheme(newTheme);
     applyAdminTheme(newTheme);
     toast.success(`Preset "${preset.name}" applicato — salva per confermare`);
+  };
+
+  const fetchBlockedSlots = async () => {
+    try {
+      const res = await api.get(`${API}/blocked-slots`);
+      setBlockedSlots(res.data || []);
+    } catch {}
+  };
+
+  const addBlockedSlot = async () => {
+    setSavingBlock(true);
+    try {
+      await api.post(`${API}/blocked-slots`, newBlock);
+      toast.success('Blocco orario aggiunto!');
+      fetchBlockedSlots();
+      setNewBlock({ type: 'recurring', day_of_week: 'lunedì', date: '', start_time: '13:00', end_time: '14:00', reason: '' });
+    } catch (err) { toast.error(err.response?.data?.detail || 'Errore'); }
+    finally { setSavingBlock(false); }
+  };
+
+  const deleteBlockedSlot = async (id) => {
+    try {
+      await api.delete(`${API}/blocked-slots/${id}`);
+      toast.success('Blocco rimosso!');
+      fetchBlockedSlots();
+    } catch { toast.error('Errore nella rimozione'); }
   };
 
   const handleSubmit = async (e) => {
@@ -275,6 +305,100 @@ export default function SettingsPage() {
                   ))}
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Blocked Slots */}
+          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+            <CardHeader>
+              <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
+                <Lock className="w-5 h-5 text-red-500" />
+                Blocco Orari
+              </CardTitle>
+              <p className="text-sm text-[#7C5C4A] mt-1">Blocca fasce orarie specifiche o ricorrenti per impedire le prenotazioni</p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Add new block */}
+              <div className="p-4 border-2 border-dashed border-red-200 rounded-xl bg-red-50/50 space-y-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div>
+                    <Label className="text-xs font-semibold">Tipo</Label>
+                    <select value={newBlock.type} onChange={e => setNewBlock({...newBlock, type: e.target.value})}
+                      className="w-full p-2 border rounded-lg text-sm" data-testid="block-type-select">
+                      <option value="recurring">Ricorrente (ogni settimana)</option>
+                      <option value="one-time">Singolo (una data)</option>
+                    </select>
+                  </div>
+                  {newBlock.type === 'recurring' ? (
+                    <div>
+                      <Label className="text-xs font-semibold">Giorno</Label>
+                      <select value={newBlock.day_of_week} onChange={e => setNewBlock({...newBlock, day_of_week: e.target.value})}
+                        className="w-full p-2 border rounded-lg text-sm" data-testid="block-day-select">
+                        {DAYS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+                      </select>
+                    </div>
+                  ) : (
+                    <div>
+                      <Label className="text-xs font-semibold">Data</Label>
+                      <Input type="date" value={newBlock.date} onChange={e => setNewBlock({...newBlock, date: e.target.value})}
+                        className="text-sm" data-testid="block-date-input" />
+                    </div>
+                  )}
+                  <div>
+                    <Label className="text-xs font-semibold">Da</Label>
+                    <Input type="time" value={newBlock.start_time} onChange={e => setNewBlock({...newBlock, start_time: e.target.value})}
+                      className="text-sm" data-testid="block-start-time" />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-semibold">A</Label>
+                    <Input type="time" value={newBlock.end_time} onChange={e => setNewBlock({...newBlock, end_time: e.target.value})}
+                      className="text-sm" data-testid="block-end-time" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Input placeholder="Motivo (opzionale, es. Pausa pranzo)" value={newBlock.reason}
+                    onChange={e => setNewBlock({...newBlock, reason: e.target.value})}
+                    className="flex-1 text-sm" data-testid="block-reason-input" />
+                  <Button onClick={addBlockedSlot} disabled={savingBlock}
+                    className="bg-red-500 hover:bg-red-600 text-white shrink-0" data-testid="add-block-btn">
+                    {savingBlock ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4 mr-1" /> Blocca</>}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Existing blocks */}
+              {blockedSlots.length === 0 ? (
+                <p className="text-center text-sm text-gray-400 py-4">Nessun orario bloccato</p>
+              ) : (
+                <div className="space-y-2" data-testid="blocked-slots-list">
+                  {blockedSlots.map(slot => (
+                    <div key={slot.id} className="flex items-center justify-between p-3 rounded-xl border bg-white hover:bg-red-50/50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-2 h-2 rounded-full ${slot.type === 'recurring' ? 'bg-orange-400' : 'bg-red-400'}`} />
+                        <div>
+                          <p className="text-sm font-bold text-[#2D1B14]">
+                            {slot.type === 'recurring'
+                              ? <span className="capitalize">{slot.day_of_week}</span>
+                              : slot.date}
+                            {' '}
+                            <span className="text-[#C8617A]">{slot.start_time} - {slot.end_time}</span>
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${slot.type === 'recurring' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'}`}>
+                              {slot.type === 'recurring' ? 'Ogni settimana' : 'Una tantum'}
+                            </span>
+                            {slot.reason && <span className="text-xs text-[#7C5C4A]">{slot.reason}</span>}
+                          </div>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => deleteBlockedSlot(slot.id)}
+                        className="text-red-500 hover:bg-red-100 h-8 w-8 p-0" data-testid={`delete-block-${slot.id}`}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 

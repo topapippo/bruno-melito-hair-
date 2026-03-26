@@ -90,5 +90,18 @@
 - Anteprima live della sidebar
 - Salva/Ripristina tema
 
+### Blocco Orari
+- Blocco orari ricorrenti (ogni settimana) e singoli (una data)
+- Gestione da Impostazioni: form tipo/giorno/da/a/motivo + lista blocchi con eliminazione
+- Planning: click destro per bloccare, indicatore visivo rosso
+- Prenotazione: orari bloccati filtrati automaticamente + validazione backend 409
+
+### Festività Italiane nel Planning
+- 12 festività nazionali calcolate automaticamente (inclusa Pasqua mobile)
+- Vista mese: celle rosse con nome festività
+- Vista settimana: header rosso con nome festività
+- Vista giorno: badge rosso con nome festività
+- Legenda aggiornata con indicatore "Festivo" e "Bloccato"
+
 ### Backlog
 - P2: Dashboard statistiche clienti (grafici frequenza visite, spesa media, servizi piu richiesti)

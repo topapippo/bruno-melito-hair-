@@ -28,6 +28,44 @@ import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { getCategoryInfo, groupServicesByCategory } from '../lib/categories';
 
+// Italian Public Holidays
+const computeEaster = (year) => {
+  const a = year % 19, b = Math.floor(year / 100), c = year % 100;
+  const d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4), k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(year, month - 1, day);
+};
+
+const getItalianHolidays = (year) => {
+  const easter = computeEaster(year);
+  const easterMonday = addDays(easter, 1);
+  return [
+    { date: new Date(year, 0, 1), name: 'Capodanno' },
+    { date: new Date(year, 0, 6), name: 'Epifania' },
+    { date: easter, name: 'Pasqua' },
+    { date: easterMonday, name: "Lunedì dell'Angelo" },
+    { date: new Date(year, 3, 25), name: 'Festa della Liberazione' },
+    { date: new Date(year, 4, 1), name: 'Festa del Lavoro' },
+    { date: new Date(year, 5, 2), name: 'Festa della Repubblica' },
+    { date: new Date(year, 7, 15), name: 'Ferragosto' },
+    { date: new Date(year, 10, 1), name: 'Tutti i Santi' },
+    { date: new Date(year, 11, 8), name: 'Immacolata Concezione' },
+    { date: new Date(year, 11, 25), name: 'Natale' },
+    { date: new Date(year, 11, 26), name: 'Santo Stefano' },
+  ];
+};
+
+const isHoliday = (date) => {
+  const holidays = getItalianHolidays(date.getFullYear());
+  return holidays.find(h => isSameDay(h.date, date));
+};
+
+
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 // Time slots from 08:00 to 20:00 every 15 minutes
@@ -70,6 +108,9 @@ export default function PlanningPage() {
   const [saving, setSaving] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [selectedOperator, setSelectedOperator] = useState(null);
+  const [blockedSlots, setBlockedSlots] = useState([]);
+  const [blockDialogOpen, setBlockDialogOpen] = useState(false);
+  const [blockForm, setBlockForm] = useState({ start_time: '', end_time: '', reason: '', type: 'one-time', date: '' });
   const scrollRef = useRef(null);
 
   const [formData, setFormData] = useState({
@@ -237,6 +278,11 @@ export default function PlanningPage() {
       setClients(clientsRes.data);
       setServices(servicesRes.data);
       setCardTemplates(cardTemplatesRes.data);
+      // Fetch blocked slots for this date
+      try {
+        const blockedRes = await api.get(`${API}/public/blocked-slots/${dateStr}`);
+        setBlockedSlots(blockedRes.data || []);
+      } catch { setBlockedSlots([]); }
       // Set MBHS as default operator if form is empty
       if (!formData.operator_id) {
         const mbhs = activeOps.find(op => op.name.toUpperCase().includes('MBHS')) || activeOps[0];
@@ -306,6 +352,11 @@ export default function PlanningPage() {
 
 
   const handleSlotClick = (time, operatorId) => {
+    // If slot is blocked, offer to unblock instead
+    if (blockedSlots.includes(time)) {
+      toast.error('Questo orario è bloccato. Rimuovi il blocco dalle Impostazioni.');
+      return;
+    }
     setSelectedSlot(time);
     setSelectedOperator(operatorId);
     setClientSearch('');
@@ -326,6 +377,31 @@ export default function PlanningPage() {
     });
     setDialogOpen(true);
   };
+
+  const handleSlotRightClick = (e, time) => {
+    e.preventDefault();
+    if (blockedSlots.includes(time)) return;
+    const endH = parseInt(time.split(':')[0]);
+    const endM = parseInt(time.split(':')[1]) + 30;
+    const endTime = `${Math.floor((endH * 60 + endM) / 60).toString().padStart(2, '0')}:${((endH * 60 + endM) % 60).toString().padStart(2, '0')}`;
+    setBlockForm({ start_time: time, end_time: endTime, reason: '', type: 'one-time', date: format(selectedDate, 'yyyy-MM-dd') });
+    setBlockDialogOpen(true);
+  };
+
+  const handleBlockSlot = async () => {
+    const data = {...blockForm};
+    if (data.type === 'recurring') {
+      const dayNames = ["domenica", "lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato"];
+      data.day_of_week = dayNames[new Date(data.date).getDay()];
+    }
+    try {
+      await api.post(`${API}/blocked-slots`, data);
+      toast.success(`Orario ${blockForm.start_time}-${blockForm.end_time} bloccato!`);
+      setBlockDialogOpen(false);
+      fetchData();
+    } catch (err) { toast.error(err.response?.data?.detail || 'Errore'); }
+  };
+
 
   const openNewAppointmentForDate = (date) => {
     setClientSearch('');
@@ -872,6 +948,11 @@ export default function PlanningPage() {
               <h1 className="text-4xl font-black text-black">Planning</h1>
               <p className="text-[#C8617A] mt-1 font-bold text-lg">
                 {format(selectedDate, "EEEE d MMMM yyyy", { locale: it })}
+                {isHoliday(selectedDate) && (
+                  <span className="ml-2 inline-flex items-center gap-1 bg-red-100 text-red-600 text-xs font-black px-2.5 py-1 rounded-full align-middle" data-testid="holiday-badge">
+                    {isHoliday(selectedDate).name}
+                  </span>
+                )}
               </p>
             </div>
             {/* Date Navigation */}
@@ -1099,20 +1180,29 @@ export default function PlanningPage() {
                         {TIME_SLOTS.map((time) => (
                           <div
                             key={time}
-                            onClick={() => !isSlotOccupied(time, col.id) && handleSlotClick(time, col.id)}
+                            onClick={() => !isSlotOccupied(time, col.id) && !blockedSlots.includes(time) && handleSlotClick(time, col.id)}
+                            onContextMenu={(e) => handleSlotRightClick(e, time)}
                             onDragOver={(e) => handleDragOver(e, time, col.id)}
                             onDragLeave={handleDragLeave}
                             onDrop={(e) => handleDrop(e, time, col.id)}
                             className={`h-12 border-b border-[#F0E6DC]/20 transition-colors ${
-                              time.endsWith(':00') ? 'bg-white' : 'bg-[#FAF7F2]/50'
+                              blockedSlots.includes(time)
+                                ? 'bg-red-100/80 cursor-not-allowed'
+                                : time.endsWith(':00') ? 'bg-white' : 'bg-[#FAF7F2]/50'
                             } ${
                               dragOverSlot === `${time}-${col.id}` ? 'bg-[#C8617A]/30 ring-2 ring-[#C8617A] ring-inset' : ''
                             } ${
-                              !isSlotOccupied(time, col.id) 
+                              !isSlotOccupied(time, col.id) && !blockedSlots.includes(time)
                                 ? 'hover:bg-[#C8617A]/20 cursor-pointer' 
                                 : ''
                             }`}
-                          />
+                          >
+                            {blockedSlots.includes(time) && col.id === columns[0]?.id && (
+                              <div className="h-full flex items-center px-2">
+                                <span className="text-[10px] text-red-400 font-bold uppercase tracking-wider">Bloccato</span>
+                              </div>
+                            )}
+                          </div>
                         ))}
 
                         {/* Appointments overlay */}
@@ -1179,18 +1269,20 @@ export default function PlanningPage() {
                   const dateStr = format(day, 'yyyy-MM-dd');
                   const dayApts = weekAppointments[dateStr] || [];
                   const isT = isToday(day);
+                  const holiday = isHoliday(day);
                   return (
                     <div key={dateStr}
-                      className={`p-3 border-r border-[#F0E6DC] cursor-pointer hover:bg-[#C8617A]/5 transition-colors ${isT ? 'bg-[#C8617A]/10' : ''}`}
+                      className={`p-3 border-r border-[#F0E6DC] cursor-pointer hover:bg-[#C8617A]/5 transition-colors ${isT ? 'bg-[#C8617A]/10' : ''} ${holiday ? 'bg-red-50' : ''}`}
                       data-testid={`week-day-${dateStr}`}>
                       <div className="flex items-center justify-between">
                         <div className="text-center flex-1" onClick={() => { setSelectedDate(day); setViewMode('day'); }}>
-                          <p className={`text-xs font-bold uppercase ${isT ? 'text-[#C8617A]' : 'text-[#64748B]'}`}>
+                          <p className={`text-xs font-bold uppercase ${holiday ? 'text-red-500' : isT ? 'text-[#C8617A]' : 'text-[#64748B]'}`}>
                             {format(day, 'EEE', { locale: it })}
                           </p>
-                          <p className={`text-2xl font-black ${isT ? 'text-[#C8617A]' : 'text-[#2D1B14]'}`}>
+                          <p className={`text-2xl font-black ${holiday ? 'text-red-500' : isT ? 'text-[#C8617A]' : 'text-[#2D1B14]'}`}>
                             {format(day, 'd')}
                           </p>
+                          {holiday && <p className="text-[8px] font-bold text-red-400 leading-tight">{holiday.name}</p>}
                         </div>
                         <Button
                           variant="ghost" size="icon"
@@ -1255,14 +1347,20 @@ export default function PlanningPage() {
                     const dayApts = monthAppointments[dateStr] || [];
                     const inMonth = isSameMonth(day, selectedDate);
                     const isT = isToday(day);
+                    const holiday = isHoliday(day);
                     return (
                       <div key={dateStr}
-                        className={`border-r border-b border-[#F0E6DC] p-1.5 min-h-[80px] cursor-pointer hover:bg-[#C8617A]/5 transition-colors ${!inMonth ? 'bg-gray-50' : ''} ${isT ? 'bg-[#C8617A]/10' : ''}`}
+                        className={`border-r border-b border-[#F0E6DC] p-1.5 min-h-[80px] cursor-pointer hover:bg-[#C8617A]/5 transition-colors ${!inMonth ? 'bg-gray-50' : ''} ${isT ? 'bg-[#C8617A]/10' : ''} ${holiday && inMonth ? 'bg-red-50' : ''}`}
                         onClick={() => { setSelectedDate(day); setViewMode('day'); }}
                         data-testid={`month-day-${dateStr}`}>
-                        <p className={`text-sm font-bold ${isT ? 'text-[#C8617A]' : inMonth ? 'text-[#2D1B14]' : 'text-[#CBD5E1]'}`}>
-                          {format(day, 'd')}
-                        </p>
+                        <div className="flex items-center gap-1">
+                          <p className={`text-sm font-bold ${holiday && inMonth ? 'text-red-500' : isT ? 'text-[#C8617A]' : inMonth ? 'text-[#2D1B14]' : 'text-[#CBD5E1]'}`}>
+                            {format(day, 'd')}
+                          </p>
+                          {holiday && inMonth && (
+                            <span className="text-[8px] font-bold text-red-400 truncate leading-tight">{holiday.name}</span>
+                          )}
+                        </div>
                         {dayApts.length > 0 && (
                           <div className="mt-1">
                             <span className="inline-block bg-[#C8617A] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
@@ -1289,6 +1387,8 @@ export default function PlanningPage() {
         <div className="flex items-center gap-4 text-xs text-[#7C5C4A]">
           <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-[#C8617A]" /> Da fare</div>
           <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-emerald-500" /> Completato</div>
+          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-red-100 border border-red-300" /> Festivo</div>
+          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-red-200 border border-red-400" /> Bloccato</div>
         </div>
 
 
@@ -2366,6 +2466,51 @@ export default function PlanningPage() {
               >
                 <MessageSquare className="w-4 h-4 mr-2" />
                 Invia WhatsApp
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Block Slot Dialog */}
+        <Dialog open={blockDialogOpen} onOpenChange={setBlockDialogOpen}>
+          <DialogContent className="sm:max-w-md bg-white">
+            <DialogHeader>
+              <DialogTitle className="font-display text-xl text-[#2D1B14]">Blocca Orario</DialogTitle>
+              <DialogDescription className="text-sm text-[#7C5C4A]">
+                Blocca questo orario per impedire le prenotazioni
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs font-semibold">Da</Label>
+                  <Input type="time" value={blockForm.start_time}
+                    onChange={e => setBlockForm({...blockForm, start_time: e.target.value})} />
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold">A</Label>
+                  <Input type="time" value={blockForm.end_time}
+                    onChange={e => setBlockForm({...blockForm, end_time: e.target.value})} />
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs font-semibold">Tipo</Label>
+                <select value={blockForm.type} onChange={e => setBlockForm({...blockForm, type: e.target.value})}
+                  className="w-full p-2 border rounded-lg text-sm" data-testid="block-dialog-type">
+                  <option value="one-time">Solo {blockForm.date}</option>
+                  <option value="recurring">Ogni settimana (stesso giorno)</option>
+                </select>
+              </div>
+              <div>
+                <Label className="text-xs font-semibold">Motivo (opzionale)</Label>
+                <Input placeholder="es. Pausa pranzo, Riunione..." value={blockForm.reason}
+                  onChange={e => setBlockForm({...blockForm, reason: e.target.value})} data-testid="block-dialog-reason" />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setBlockDialogOpen(false)}>Annulla</Button>
+              <Button onClick={handleBlockSlot} className="bg-red-500 hover:bg-red-600 text-white" data-testid="confirm-block-btn">
+                Blocca Orario
               </Button>
             </DialogFooter>
           </DialogContent>

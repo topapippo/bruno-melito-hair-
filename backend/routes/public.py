@@ -188,6 +188,27 @@ async def create_public_booking(data: PublicBookingRequest):
         raise HTTPException(status_code=400, detail="Salone non configurato")
     user_id = user["id"]
 
+    # Check if time is blocked
+    day_names = ["lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato", "domenica"]
+    from datetime import datetime as dt
+    try:
+        booking_date = dt.strptime(data.date, "%Y-%m-%d")
+        day_of_week = day_names[booking_date.weekday()]
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Data non valida")
+    blocked_one = await db.blocked_slots.find_one(
+        {"user_id": user_id, "type": "one-time", "date": data.date,
+         "start_time": {"$lte": data.time}, "end_time": {"$gt": data.time}}, {"_id": 0})
+    blocked_rec = await db.blocked_slots.find_one(
+        {"user_id": user_id, "type": "recurring", "day_of_week": day_of_week,
+         "start_time": {"$lte": data.time}, "end_time": {"$gt": data.time}}, {"_id": 0})
+    if blocked_one or blocked_rec:
+        reason = (blocked_one or blocked_rec).get("reason", "")
+        raise HTTPException(status_code=409, detail={
+            "message": f"Questo orario è bloccato{': ' + reason if reason else ''}. Scegli un altro orario.",
+            "conflict": True, "blocked": True, "available_operators": [], "alternative_slots": []
+        })
+
     # Check for conflicts at requested time slot
     busy_at_time = await db.appointments.find(
         {"user_id": user_id, "date": data.date, "time": data.time, "status": {"$ne": "cancelled"}},

@@ -12,6 +12,7 @@ from routes.promotions import router as promotions_router
 from routes.notifications import router as notifications_router
 from routes.public import router as public_router
 from routes.push import router as push_router
+from routes.blocked_slots import router as blocked_slots_router
 
 all_routers = [
     auth_router,
@@ -28,4 +29,5 @@ all_routers = [
     notifications_router,
     public_router,
     push_router,
+    blocked_slots_router,
 ]

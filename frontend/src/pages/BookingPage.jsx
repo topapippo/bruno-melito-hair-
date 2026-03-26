@@ -29,15 +29,21 @@ for (let h = 8; h <= 20; h++) {
   }
 }
 
-const getAvailableSlotsForDate = (dateStr) => {
+const getAvailableSlotsForDate = (dateStr, blocked = []) => {
   const today = format(new Date(), 'yyyy-MM-dd');
-  if (dateStr !== today) return TIME_SLOTS;
-  const now = new Date();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
-  return TIME_SLOTS.filter(slot => {
-    const [h, m] = slot.split(':').map(Number);
-    return h * 60 + m >= currentMinutes;
-  });
+  let slots = TIME_SLOTS;
+  if (dateStr === today) {
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    slots = slots.filter(slot => {
+      const [h, m] = slot.split(':').map(Number);
+      return h * 60 + m >= currentMinutes;
+    });
+  }
+  if (blocked.length > 0) {
+    slots = slots.filter(slot => !blocked.includes(slot));
+  }
+  return slots;
 };
 
 export default function BookingPage() {
@@ -73,8 +79,15 @@ export default function BookingPage() {
   const [upsellingSuggestions, setUpsellingSuggestions] = useState([]);
   const [addingUpsell, setAddingUpsell] = useState(null);
   const [addedUpsells, setAddedUpsells] = useState([]);
+  const [blockedSlots, setBlockedSlots] = useState([]);
 
   useEffect(() => { fetchData(); }, []);
+
+  useEffect(() => {
+    if (formData.date) {
+      api.get(`${API}/public/blocked-slots/${formData.date}`).then(res => setBlockedSlots(res.data || [])).catch(() => setBlockedSlots([]));
+    }
+  }, [formData.date]);
 
   const fetchData = async () => {
     try {
@@ -439,7 +452,7 @@ export default function BookingPage() {
                   <Input type="date" value={formData.date} min={format(new Date(), 'yyyy-MM-dd')} onChange={(e) => setFormData({...formData, date: e.target.value})} className="bg-gray-50 border-gray-200 text-[#1e293b]" /></div>
                 <div><label className="text-sm text-[#64748B] font-semibold mb-1 block">Ora</label>
                   <select value={formData.time} onChange={(e) => setFormData({...formData, time: e.target.value})} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg text-[#1e293b]">
-                    {getAvailableSlotsForDate(formData.date).map(t => <option key={t} value={t}>{t}</option>)}
+                    {getAvailableSlotsForDate(formData.date, blockedSlots).map(t => <option key={t} value={t}>{t}</option>)}
                   </select></div>
                 {operators.length > 0 && (
                   <div><label className="text-sm text-[#64748B] font-semibold mb-1 block">Operatore (opzionale)</label>
