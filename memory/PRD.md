@@ -40,6 +40,7 @@
   - Hero (fisso in cima) e Footer (fisso in fondo)
 - Tab Aspetto: 10 temi preimpostati (Elegante Scuro, Rosa Classico, Blu Moderno, Oro & Nero, Verde Natura, Viola Lusso, Corallo, Minimal Bianco, Teal Fresco, Borgogna), colori (primario, accento, sfondo, testo), font (titoli, corpo), anteprima live in tempo reale
 - Tab Servizi, Foto Salone, Gallery Lavori, Recensioni, Orari & Contatti
+- Tab Upselling: configura regole upselling (servizio trigger → servizi suggeriti), sconto percentuale globale
 
 ### Sito Pubblico (/sito)
 - Rendering dinamico sezioni basato su section_order e hidden_sections dal CMS
@@ -60,6 +61,15 @@
 
 ### Problemi Noti
 - Il dominio brunomelitohair.it potrebbe servire versione cached. Verificare su bruno-melito-hair.onrender.com per la versione aggiornata. La cache CDN si aggiorna da sola.
+
+### Upselling Servizi (NUOVO)
+- Dopo la prenotazione, suggerisce servizi complementari con sconto
+- Admin configura regole nel CMS: servizio trigger → servizi suggeriti
+- Sconto percentuale globale configurabile (default 15%)
+- Il cliente vede suggerimenti nella pagina di conferma con prezzo scontato
+- Un click per aggiungere il servizio all'appuntamento
+- API: GET /api/public/upselling?service_ids=XXX
+- API: POST /api/public/appointments/{id}/add-service
 
 ### Backlog
 - P2: Dashboard statistiche clienti (grafici frequenza visite, spesa media, servizi piu richiesti)
