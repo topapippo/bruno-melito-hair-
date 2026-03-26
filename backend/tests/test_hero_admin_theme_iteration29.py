@@ -7,7 +7,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://salon-theme-preview.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://salon-cms-system.preview.emergentagent.com').rstrip('/')
 
 class TestAuthAndSettings:
     """Authentication and Settings API tests"""

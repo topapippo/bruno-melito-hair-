@@ -1,143 +1,133 @@
-<analysis>original_problem_statement: 
-The user is building a salon management app. The core issues involved a broken production deployment on Render, missing features from previous sessions (appointment history, alternative operators), loss of uploaded images due to ephemeral disk storage, and the inability of the CMS to properly apply custom colors/fonts to the public site.
+<analysis>Here is the handover summary for the next agent:
 
-PRODUCT REQUIREMENTS:
-- Section reordering in the CMS (Aspetto/Layout).
-- I Miei Appuntamenti feature allowing clients to view/cancel future appointments and see a 3-month history via their phone number.
-- Explicit alternative operator suggestions when a booking conflict occurs.
-- Dynamic theme application (colors/fonts) from the CMS to all sections of the public website.
-- Redesign of the Aspetto (Appearance) CMS tab to include pre-configured themes (presets) and a live preview panel.
-- Permanent storage of uploaded salon/gallery images.
-- Resolution of the custom domain () routing to the correct Render service.
+original_problem_statement: 
+The user is building a comprehensive salon management app (Bruno Melito Hair). The application requires a public-facing booking site and a secured admin dashboard (CMS, Planning, Stats). Core requirements included advanced CMS customization (themes, hero images), upselling during booking, WhatsApp batch reminders, blocking specific time slots/days, displaying Italian holidays, and resolving production deployment/DNS issues.
 
 **User's preferred language**: Italian
-*(INSTRUCTION FOR NEXT AGENT: You MUST respond to the user strictly in Italian. The user is extremely frustrated, has escalated to support multiple times for refunds, and feels they are paying credits to redo lost work. Maintain a highly professional, definitive, apologetic, and action-oriented tone. Do not make excuses. Test thoroughly before asking the user to check anything.)*
+*(INSTRUCT NEXT AGENT: You MUST respond to the user strictly in Italian. Maintain a highly professional, definitive, and supportive tone. The user easily gets frustrated with deployment cache issues and login bugs. Always verify functionality thoroughly before asking the user to check.)*
 
 **what currently exists?** 
-A full-stack React and FastAPI application. The production frontend and backend are successfully deployed on Render. Uploaded files have been migrated from ephemeral disk storage to MongoDB binary storage to prevent deletion during deploys. The public website dynamically reads CSS variables from the CMS for styling.
+A full-stack React and FastAPI application deployed on Render. The custom domain () is fully propagated with SSL. Extensive features have been completed: dynamic CSS theming for both public and admin sites, a robust booking system with upselling, visual planning calendar with Italian holidays and blocked slots, and WhatsApp batch-message generation for reminders/inactive clients.
 
 **Last working item**:
-    - Last item agent was working: Redesigning the Aspetto (Appearance) tab in . The user provided an image requesting the tab be converted into a panel with pre-configured color/font themes and a live preview. The agent executed a  to update this section but did not finish or test it.
-    - Status: IN PROGRESS
-    - Agent Testing Done: N
-    - Which testing method agent to use? Screenshot tool (to verify the new UI layout) followed by Frontend testing agent.
-    - User Testing Done: N
+    - Last item agent was working: Debugging a critical production login issue. The user deployed to Render, but reports they cannot log in (Credenziali non valide or no action) across phone, tablet, and PC. The agent verified the MongoDB Atlas database is populated, reset the password for  to , and successfully logged in via the Playwright screenshot tool on the live production URL. The discrepancy between the agent's successful test and the user's failing devices is unresolved.
+    - Status: USER VERIFICATION PENDING / BLOCKED (Needs debugging on real-device behavior vs. automated browser).
+    - Agent Testing Done: Y (Playwright showed 200 OK and successful redirect to the dashboard).
+    - Which testing method agent to use? Screenshot tool / manual testing by curl to verify headers/CORS.
+    - User Testing Done: Y (User stated it fails on all personal devices).
 
 **All Pending/In progress Issue list**:
-  Issue 1: Redesign CMS Aspetto Tab (P0)
-     - Attempted fixes: Agent initiated a  in  to add theme presets and a live preview panel.
-     - Next debug checklist: Check  around line 413. Verify that the pre-configured themes successfully update the  state and that the live preview correctly reflects , , etc.
-     - Why fix this issue and what will be achieved with the fix? This is the exact task the user requested in their last message.
-     - Status: IN PROGRESS
+  Issue 1: Production Login Fails on Physical Devices (P0)
+     - Attempted fixes: Verified Atlas DB connection. Reset user password. Removed hardcoded old URLs from  and . Confirmed backend returns 200 OK with valid JWT.
+     - Next debug checklist: 
+        1. Ask the user for the exact behavior (Does it say Credenziali non valide or does the button do nothing? Does the page refresh?).
+        2. Check  and  to ensure the JWT token is being saved to  correctly and isn't being blocked by mobile browser privacy policies (e.g., Safari ITP).
+        3. Verify CORS settings in  to ensure  is fully allowed without stripping Authorization headers.
+     - Why fix this issue and what will be achieved with the fix? The user is completely locked out of their production system. Resolving this is critical for business operations.
+     - Status: IN PROGRESS / BLOCKED
      - Is recurring issue? N
-     - Should Test frontend/backend/both after fix? Frontend
+     - Should Test frontend/backend/both after fix? Both
      - Blocked on other issue: None
 
-  Issue 2: Custom Domain Resolution () (P1)
-     - Attempted fixes: The domain is locked to an old, inaccessible Render account. Agent set up an OVH DNS redirect to the new Render  URL as a temporary mitigation. A support ticket has been opened with Render.
-     - Next debug checklist: Ask the user if Render Support has replied to their ticket regarding releasing . Once released, guide them to add it to the Render Frontend service -> Custom Domains.
-     - Why fix this issue and what will be achieved with the fix? The client needs their official domain to work with HTTPS directly, rather than relying on an OVH redirect.
-     - Status: BLOCKED (Waiting on Render Support)
-     - Is recurring issue? Y
-     - Should Test frontend/backend/both after fix? Frontend
-     - Blocked on other issue: Render Support Action
-
 **In progress Task List**:
-  Task 1: CMS Theme Presets & Live Preview
-     - Where to resume: 
-     - What will be achieved with this? User can click a pre-made theme and instantly see how it looks before saving.
-     - Status: IN PROGRESS
-     - Should Test frontend/backend/both after fix? Frontend
-     - Blocked on something: None
+  *(None. All active feature requests were completed in the last session).*
 
 **Upcoming and Future Tasks**
-    - P2: Dashboard statistiche clienti (Client statistics dashboard with charts on visit frequency, average spend, and most requested services).
+    - P1: Client statistics dashboard expansion (Add charts for visit frequency, average spend, and most requested services per client).
+    - P2: Client card with photo history (Allow operators to see photos of previous haircuts on the client's file).
+    - P2: Automatic birthday discounts/messages.
+    - P3: Smart waiting list (notify clients if a slot opens up).
+    - P3: Heat map of busy hours.
+    - P3: Operator performance comparison.
 
 **Completed work in this session**
-- CMS section reordering implemented (Layout tab).
-- Made with Emergent badge removed from .
-- Implemented I Miei Appuntamenti (Appointment history and cancellation via phone number) in  and backend public routes.
-- Added alternative operator UI suggestions for booking conflicts.
-- Render SPA routing fixed ( rule added to Render dashboard).
-- **CRITICAL MIGRATION:** Migrated file uploads () to store binary data directly in MongoDB instead of local ephemeral storage.
-- Synced Preview DB to Production DB (Operators, Reviews, Config).
-- Refactored  and all section components to strictly use CSS variables (, etc.) mapped from the CMS configuration.
+- Tested and completed the CMS Aspetto Tab (presets, live preview).
+- Custom Domain DNS resolution and SSL certificate provisioning (brunomelitohair.it is live).
+- Upselling Services: Backend APIs and UI added to suggest discounted services after a booking is confirmed.
+- Annual Revenue stat card added to the Dashboard.
+- WhatsApp Batch Reminders: Added Invia Tutti buttons for 24h reminders, color expiries, and inactive clients via , plus a Dashboard notification banner.
+- CMS Hero Customization: Added image upload, slogan, and description editing for the public landing page.
+- Admin Theme Customization: Added Aspetto Gestionale to settings, allowing the user to change dashboard colors/fonts with live CSS variable preview.
+- Blocked Time Slots: Full CRUD in Settings, visual indication, and context-menu blocking directly on the Planning grid. Booking system respects blocked slots.
+- Italian Holidays: Integrated  to highlight Italian national holidays in red on the Planning calendars.
 
 **Earlier issues found/mentioned but not fixed**
-   - None (All user-reported functional bugs were addressed).
+   - None.
 
 **Known issue recurrence from previous fork**
-  - Issue recurrence in previous fork: Render Deployment Cache and Lost Work.
-  - Recurrence count: 4
-  - Status: RESOLVED (Agent established a strict Save to Github - Cache - Both Services workflow with the user).
-  - Note: User is highly sensitive to this. If you make code changes, you MUST explicitly tell them to Save to Github and redeploy Render, otherwise they will check the live site, see no changes, and get angry.
+  - Issue recurrence in previous fork: Render Deployment Cache. 
+  - Recurrence count: 5
+  - Status: RESOLVED (But needs constant monitoring).
+  - Note: The user frequently triggers Render deploys without clearing the build cache, causing the frontend to point to outdated backend URLs. Always explicitly remind the user to use **Manual Deploy -> Clear build cache and deploy**.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- React, FastAPI, MongoDB.
-- Dynamic CSS Theming: The public site injects a  tag mapping  values to CSS variables (e.g., ).
-- MongoDB Binary Storage: Files are saved as bytes directly in the  collection to survive Render server restarts.
+- React, FastAPI, MongoDB Atlas.
+- Dynamic CSS Theming: Admin dashboard now uses CSS variables (e.g., ) updated via Settings and saved to  / DB.
+- Italian Holidays: Computed dynamically on the frontend using .
 
 **key DB schema**
-  - : Stores colors, fonts, and .
   - : 
+  - : Custom colors/fonts for the admin UI.
+  - : Now contains  and .
 
 **changes in tech stack**
-  - Ephemeral disk storage removed. All uploads now utilize MongoDB binary storage natively.
+  - None.
 
 **All files of reference** 
--  (Currently heavily modified for the live preview task).
--  (Reference for how themes are applied).
--  (File handling).
+-  (Updated heavily with holidays and block slots).
+-  (Added Admin Themes and Block Slots UI).
+-  (New file for managing calendar blocks).
+-  (Updated for upselling and filtering blocked slots).
+-  (Axios configuration - crucial for debugging the current login issue).
 
 **Areas that need refactoring**:
-- None at the moment. Focus purely on finishing the CMS Admin UI task.
+-  is over 2500 lines long. Extracting the calendar grid, dialogs, and helper functions into separate components would improve maintainability.
 
 **key api endpoints**
-- : Returns binary file from MongoDB.
-- : Returns config, reviews, gallery, services.
-- : Looks up client appointments by phone.
+- : Authentication.
+- : Fetches blocked intervals.
+- : Adds upsell service to a booking.
 
 **Critical Info for New Agent** 
-- **DO NOT revert the file storage logic.** It was carefully moved to MongoDB because Render wipes local storage on every deploy.
-- **Workflow for User:** Every time you make a change that needs to go to production, you MUST instruct the user to: 1. Click Save to GitHub, 2. Go to Render, 3. Manual Deploy -> Clear build cache and deploy (for BOTH frontend and backend services). 
-- **Production Credentials:**  / 
+- **Production DB:** The app uses MongoDB Atlas for production. DO NOT evaluate the local MongoDB instance when debugging user-reported production issues.
+- **Production Credentials:** Email:  / Password: .
+- **Current Blocker:** The agent can log in perfectly fine using the automated Playwright browser on the live URL, but the user is failing to log in on physical mobile/tablet/PC devices. This implies a client-side environmental issue (e.g., Safari blocking , CORS missing a header, or a stale Service Worker/cache on the user's devices).
 
 **documents and test reports created in this job** 
   - 
-  - 
-  - 
+  -  to  (Passed).
 
 **Last 10 User Messages and any pending HUMAN messages** 
- - 10. User states the changes are not visible in incognito.
- - 9. Agent explains the need to Save to Github and Deploy to Render.
- - 8. User provides screenshot of CMS showing colors, but notes public site isn't updating.
- - 7. Agent explains they need to deploy *both* frontend and backend.
- - 6. User says they did it 3 times.
- - 5. Agent checks backend, confirms the deployment worked.
- - 4. Agent asks user to check the direct  URL.
- - 3. User asks if agent is using the right repository, provides a screenshot of Render dashboard.
- - 2. Agent proves with a screenshot that the direct Render URL *is* successfully updated.
- - 1. User provides an image of a CMS UI concept and asks to replace the current Aspetto tab with a panel containing pre-configured themes and a live preview. (IN PROGRESS)
+ - 10. User confirms SSL certificate obtained, asks if they need to clear build cache.
+ - 9. Agent confirms to do a clear build cache deploy.
+ - 8. User asks for links and instructions for setting up a fresh DB instance for their brother's salon.
+ - 7. User panics, says the database is completely empty and credentials changed.
+ - 6. Agent explains the  on Render might be pointing to localhost.
+ - 5. User provides their MongoDB Atlas connection string.
+ - 4. Agent queries Atlas, proves it is NOT empty, finds the correct email/hash, resets password to .
+ - 3. User says credentials still invalid. Agent discovers frontend is pointing to an old Render backend URL. Hardcoded URLs removed.
+ - 2. User says it still doesn't work on phone, tablet, or PC.
+ - 1. Agent tests login via Playwright on production URL. It works perfectly and returns 200 OK. Agent shares screenshot. (PENDING USER RESPONSE).
 
 **Project Health Check:**
-- Broken:  Custom Domain routing (Pending Render Support action).
+- Broken: Production login flow works in automated testing but fails on actual physical user devices.
 
 **3rd Party Integrations** 
  - Render (Hosting)
- - MongoDB Atlas (Database) - requires User ENV Key
+ - MongoDB Atlas (Database) — requires User ENV Key
  - OVH (DNS)
 
 **Testing status**
-  - Testing agent used after significant changes: YES (Iterations 24 and 25 passed).
+  - Testing agent used after significant changes: YES (Iterations 26-30).
   - Troubleshoot agent used after agent stuck in loop: NO
   - Test files created: None
-  - Known regressions: None known, but the  edit is currently mid-flight and untested.
+  - Known regressions: Login behavior discrepancy between automated chromium and actual user browsers.
 
 **Credentials to test flow:**
 - Production Admin:  / 
 
 **What agent forgot to execute**
-- The agent started the  for the Aspetto tab redesign but the conversation ended before they could verify if the code compiled, test the UI with a screenshot, or ensure the themes apply correctly to the live preview.</analysis>
+- The agent successfully tested the login via Playwright but didn't verify if  interceptors or browser-specific local storage behaviors might be silently dropping the token on mobile devices, leading to the user's persistent issue.</analysis>

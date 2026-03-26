@@ -4,7 +4,7 @@
 import requests
 import sys
 
-API_URL = "https://salon-theme-preview.preview.emergentagent.com/api"
+API_URL = "https://salon-cms-system.preview.emergentagent.com/api"
 
 # Client notes extracted from Memo.xlsx
 # Format: client name -> notes (combining all memo data)

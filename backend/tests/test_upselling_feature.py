@@ -8,7 +8,7 @@ import os
 import random
 import string
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://salon-theme-preview.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://salon-cms-system.preview.emergentagent.com')
 
 # Test data
 TAGLIO_DONNA_ID = "7188fb89-2029-449a-8c09-a322104355bc"
