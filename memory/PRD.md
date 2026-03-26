@@ -71,5 +71,12 @@
 - API: GET /api/public/upselling?service_ids=XXX
 - API: POST /api/public/appointments/{id}/add-service
 
+### Promemoria WhatsApp (Migliorato)
+- Centro Invio WhatsApp con 3 categorie: Promemoria Domani (24h), Scadenza Colore (30g), Clienti Inattivi (60+g ripetuto ogni 30g)
+- Bottoni "Invia Tutti" per ogni categoria (batch send via wa.me)
+- Banner sulla Dashboard con conteggio messaggi pendenti
+- Template personalizzabili per ogni tipo (appointment, recall, color_expiry)
+- Numero WhatsApp Business: +39 3281283016
+
 ### Backlog
 - P2: Dashboard statistiche clienti (grafici frequenza visite, spesa media, servizi piu richiesti)
