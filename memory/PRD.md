@@ -78,5 +78,17 @@
 - Template personalizzabili per ogni tipo (appointment, recall, color_expiry)
 - Numero WhatsApp Business: +39 3281283016
 
+### Personalizzazione Hero (CMS)
+- Upload immagine copertina Hero (come copertina social)
+- Campi: Slogan Hero, Descrizione Hero
+- Anteprima live con overlay nome salone
+
+### Tema Gestionale (Impostazioni)
+- 6 preset rapidi: Rosa Classico, Blu Elegante, Verde Natura, Viola Lusso, Grigio Moderno, Scuro
+- Colori personalizzabili: primario, sfondo sidebar, testo sidebar, accento
+- Font personalizzabili: titoli e corpo
+- Anteprima live della sidebar
+- Salva/Ripristina tema
+
 ### Backlog
 - P2: Dashboard statistiche clienti (grafici frequenza visite, spesa media, servizi piu richiesti)
