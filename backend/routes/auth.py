@@ -165,3 +165,43 @@ async def admin_reset_password(request: Request):
         {"$set": {"password": hash_password(new_password)}}
     )
     return {"success": True, "message": f"Password resettata per {email}"}
+
+
+# ── Trasferimento dati tra utenti (protetto da chiave segreta) ────────────────
+@router.post("/auth/admin-transfer-data")
+async def admin_transfer_data(request: Request):
+    body = await request.json()
+    secret = body.get("secret")
+    from_email = body.get("from_email")
+    to_email = body.get("to_email")
+    if secret != "mbhs-admin-reset-2024-secure":
+        raise HTTPException(status_code=403, detail="Non autorizzato")
+
+    from_user = await db.users.find_one({"email": from_email}, {"_id": 0})
+    to_user = await db.users.find_one({"email": to_email}, {"_id": 0})
+    if not from_user or not to_user:
+        raise HTTPException(status_code=404, detail="Uno o entrambi gli utenti non trovati")
+
+    from_id = from_user["id"]
+    to_id = to_user["id"]
+    results = {}
+
+    collections = ["clients", "services", "operators", "appointments", "cards",
+                    "payments", "loyalty", "expenses", "promotions", "website_config",
+                    "admin_themes", "blocked_slots", "push_subscriptions", "reminders"]
+
+    for coll_name in collections:
+        coll = db[coll_name]
+        result = await coll.update_many(
+            {"user_id": from_id},
+            {"$set": {"user_id": to_id}}
+        )
+        results[coll_name] = result.modified_count
+
+    # Copy user settings (opening_time, closing_time, working_days)
+    settings_fields = {k: v for k, v in from_user.items()
+                       if k in ("opening_time", "closing_time", "working_days", "salon_name")}
+    if settings_fields:
+        await db.users.update_one({"id": to_id}, {"$set": settings_fields})
+
+    return {"success": True, "from": from_email, "to": to_email, "transferred": results}
