@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Save, Plus, Trash2, Upload, Image, Star, Globe, Eye, Loader2, X, GripVertical, Palette, Type, ArrowUp, ArrowDown, LayoutGrid, EyeOff } from 'lucide-react';
+import { Save, Plus, Trash2, Upload, Image, Star, Globe, Eye, Loader2, X, GripVertical, Palette, Type, ArrowUp, ArrowDown, LayoutGrid, EyeOff, TrendingUp, Percent } from 'lucide-react';
 import { toast } from 'sonner';
 
 const FONT_OPTIONS = [
@@ -30,19 +30,22 @@ export default function WebsiteAdminPage() {
   const [editReview, setEditReview] = useState(null);
   const [reviewForm, setReviewForm] = useState({ name: '', text: '', rating: 5 });
   const [uploadSection, setUploadSection] = useState('gallery');
+  const [allServices, setAllServices] = useState([]);
 
   useEffect(() => { fetchAll(); }, []);
 
   const fetchAll = async () => {
     try {
-      const [configRes, reviewsRes, galleryRes] = await Promise.all([
+      const [configRes, reviewsRes, galleryRes, servicesRes] = await Promise.all([
         api.get('/website/config'),
         api.get('/website/reviews'),
-        api.get('/website/gallery')
+        api.get('/website/gallery'),
+        api.get('/services')
       ]);
       setConfig(configRes.data);
       setReviews(reviewsRes.data);
       setGallery(galleryRes.data);
+      setAllServices(servicesRes.data || []);
     } catch (err) { console.error(err); toast.error('Errore caricamento dati'); }
     finally { setLoading(false); }
   };
@@ -298,6 +301,7 @@ export default function WebsiteAdminPage() {
             <TabsTrigger value="photos" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Foto Salone</TabsTrigger>
             <TabsTrigger value="gallery" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Gallery Lavori</TabsTrigger>
             <TabsTrigger value="reviews" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Recensioni</TabsTrigger>
+            <TabsTrigger value="upselling" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Upselling</TabsTrigger>
             <TabsTrigger value="hours" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Orari & Contatti</TabsTrigger>
           </TabsList>
 
@@ -750,6 +754,105 @@ export default function WebsiteAdminPage() {
                         </div>
                       </div>
                     ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* UPSELLING */}
+          <TabsContent value="upselling">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2"><TrendingUp className="w-5 h-5" /> Upselling Servizi</CardTitle>
+                    <p className="text-sm text-[#7C5C4A] mt-1">Dopo la prenotazione, suggerisci servizi complementari con uno sconto. Il cliente può aggiungerli con un click.</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Sconto globale */}
+                <div className="flex items-center gap-4 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+                  <Percent className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <div className="flex-1">
+                    <label className="text-sm font-bold text-[#2D1B14]">Sconto Upselling</label>
+                    <p className="text-xs text-[#7C5C4A]">Sconto applicato ai servizi suggeriti dopo la prenotazione</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input type="number" min={0} max={50} value={config.upselling_discount || 15}
+                      onChange={e => updateField('upselling_discount', parseInt(e.target.value) || 0)}
+                      className="w-20 text-center font-bold" data-testid="upselling-discount-input" />
+                    <span className="text-sm font-bold text-emerald-600">%</span>
+                  </div>
+                </div>
+
+                {/* Regole */}
+                <div className="space-y-4" data-testid="upselling-rules">
+                  {(config.upselling_rules || []).map((rule, ruleIdx) => (
+                    <div key={ruleIdx} className="border rounded-xl p-4 space-y-3 bg-white hover:shadow-sm transition-shadow">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-bold text-[#7C5C4A] uppercase tracking-wider">Regola {ruleIdx + 1}</p>
+                        <Button variant="ghost" size="icon" onClick={() => {
+                          const rules = (config.upselling_rules || []).filter((_, i) => i !== ruleIdx);
+                          updateField('upselling_rules', rules);
+                        }} className="text-red-500 h-8 w-8" data-testid={`upselling-rule-delete-${ruleIdx}`}><Trash2 className="w-4 h-4" /></Button>
+                      </div>
+                      {/* Trigger service */}
+                      <div>
+                        <label className="text-xs font-semibold text-[#2D1B14] mb-1 block">Quando il cliente prenota:</label>
+                        <select value={rule.trigger_service_id || ''} onChange={e => {
+                          const rules = [...(config.upselling_rules || [])];
+                          const svc = allServices.find(s => s.id === e.target.value);
+                          rules[ruleIdx] = { ...rules[ruleIdx], trigger_service_id: e.target.value, trigger_service_name: svc?.name || '' };
+                          updateField('upselling_rules', rules);
+                        }} className="w-full p-2 border rounded-lg text-sm" data-testid={`upselling-trigger-${ruleIdx}`}>
+                          <option value="">-- Seleziona servizio --</option>
+                          {allServices.map(s => <option key={s.id} value={s.id}>{s.name} ({'\u20AC'}{s.price})</option>)}
+                        </select>
+                      </div>
+                      {/* Suggested services */}
+                      <div>
+                        <label className="text-xs font-semibold text-[#2D1B14] mb-1 block">Suggerisci questi servizi:</label>
+                        <div className="space-y-2">
+                          {allServices.filter(s => s.id !== rule.trigger_service_id).map(s => {
+                            const isSelected = (rule.suggested_service_ids || []).includes(s.id);
+                            return (
+                              <label key={s.id} className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${isSelected ? 'bg-[#C8617A]/10 border border-[#C8617A]/30' : 'hover:bg-gray-50'}`}>
+                                <input type="checkbox" checked={isSelected} onChange={() => {
+                                  const rules = [...(config.upselling_rules || [])];
+                                  const current = rules[ruleIdx].suggested_service_ids || [];
+                                  const currentNames = rules[ruleIdx].suggested_service_names || [];
+                                  if (isSelected) {
+                                    rules[ruleIdx] = { ...rules[ruleIdx], suggested_service_ids: current.filter(id => id !== s.id), suggested_service_names: currentNames.filter(n => n !== s.name) };
+                                  } else {
+                                    rules[ruleIdx] = { ...rules[ruleIdx], suggested_service_ids: [...current, s.id], suggested_service_names: [...currentNames, s.name] };
+                                  }
+                                  updateField('upselling_rules', rules);
+                                }} className="accent-[#C8617A]" />
+                                <span className="text-sm flex-1">{s.name}</span>
+                                <span className="text-xs text-[#7C5C4A]">{'\u20AC'}{s.price}</span>
+                                {isSelected && <span className="text-xs font-bold text-emerald-600">{'\u2192'} {'\u20AC'}{(s.price * (1 - (config.upselling_discount || 15) / 100)).toFixed(2)}</span>}
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <Button variant="outline" onClick={() => {
+                  updateField('upselling_rules', [...(config.upselling_rules || []), { trigger_service_id: '', trigger_service_name: '', suggested_service_ids: [], suggested_service_names: [] }]);
+                }} className="w-full border-dashed border-2 border-[#C8617A]/30 text-[#C8617A] hover:bg-[#C8617A]/5" data-testid="add-upselling-rule-btn">
+                  <Plus className="w-4 h-4 mr-2" /> Aggiungi Regola Upselling
+                </Button>
+
+                {(config.upselling_rules || []).length === 0 && (
+                  <div className="text-center py-8 text-gray-400">
+                    <TrendingUp className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <p className="text-sm">Nessuna regola di upselling configurata.</p>
+                    <p className="text-xs mt-1">Aggiungi regole per suggerire servizi complementari dopo le prenotazioni.</p>
                   </div>
                 )}
               </CardContent>

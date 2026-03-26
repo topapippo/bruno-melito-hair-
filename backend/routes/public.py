@@ -150,7 +150,9 @@ DEFAULT_WEBSITE_CONFIG = {
     ],
     "gallery_title": "Tendenze P/E 2026",
     "gallery_subtitle": "Lasciati ispirare dalle ultime tendenze Primavera Estate 2026.",
-    "section_order": ["services", "salon", "about", "promotions", "reviews", "gallery", "loyalty", "contact"]
+    "section_order": ["services", "salon", "about", "promotions", "reviews", "gallery", "loyalty", "contact"],
+    "upselling_rules": [],
+    "upselling_discount": 15
 }
 
 
@@ -299,6 +301,91 @@ async def create_public_booking(data: PublicBookingRequest):
     }
     await db.appointments.insert_one(appointment)
     return {"success": True, "appointment_id": appointment_id, "booking_code": appointment_id[:8].upper()}
+
+
+
+@router.get("/public/upselling")
+async def get_upselling_suggestions(service_ids: str):
+    """Get upselling suggestions based on booked service IDs."""
+    user = await db.users.find_one({"email": "melitobruno@gmail.com"}, {"_id": 0})
+    if not user:
+        user = await db.users.find_one({}, {"_id": 0})
+    if not user:
+        return []
+    user_id = user["id"]
+    booked_ids = [s.strip() for s in service_ids.split(",") if s.strip()]
+    config = await db.website_config.find_one({"user_id": user_id}, {"_id": 0})
+    if not config:
+        return []
+    rules = config.get("upselling_rules", [])
+    discount = config.get("upselling_discount", 15)
+    suggested_ids = set()
+    for rule in rules:
+        if rule.get("trigger_service_id") in booked_ids:
+            for sid in rule.get("suggested_service_ids", []):
+                if sid not in booked_ids:
+                    suggested_ids.add(sid)
+    if not suggested_ids:
+        return []
+    services = await db.services.find(
+        {"id": {"$in": list(suggested_ids)}, "user_id": user_id},
+        {"_id": 0, "user_id": 0}
+    ).to_list(20)
+    for s in services:
+        s["original_price"] = s["price"]
+        s["discounted_price"] = round(s["price"] * (1 - discount / 100), 2)
+        s["discount_percent"] = discount
+    return services
+
+
+@router.post("/public/appointments/{appointment_id}/add-service")
+async def add_service_to_appointment(appointment_id: str, data: dict):
+    """Add an upselling service to an existing appointment with discount."""
+    service_id = data.get("service_id")
+    phone = data.get("phone")
+    if not service_id or not phone:
+        raise HTTPException(status_code=400, detail="Servizio e telefono richiesti")
+    user = await db.users.find_one({"email": "melitobruno@gmail.com"}, {"_id": 0})
+    if not user:
+        user = await db.users.find_one({}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=400, detail="Salone non configurato")
+    user_id = user["id"]
+    apt = await db.appointments.find_one({"id": appointment_id, "user_id": user_id}, {"_id": 0})
+    if not apt:
+        raise HTTPException(status_code=404, detail="Appuntamento non trovato")
+    if apt.get("client_phone") != phone and apt.get("client_name", "").lower() != phone.lower():
+        client = await db.clients.find_one({"id": apt.get("client_id")}, {"_id": 0})
+        if not client or client.get("phone") != phone:
+            raise HTTPException(status_code=403, detail="Telefono non corrisponde")
+    service = await db.services.find_one({"id": service_id, "user_id": user_id}, {"_id": 0, "user_id": 0})
+    if not service:
+        raise HTTPException(status_code=404, detail="Servizio non trovato")
+    config = await db.website_config.find_one({"user_id": user_id}, {"_id": 0})
+    discount = (config or {}).get("upselling_discount", 15)
+    discounted_price = round(service["price"] * (1 - discount / 100), 2)
+    service_entry = {**service, "price": discounted_price, "original_price": service["price"], "upselling": True}
+    existing_ids = apt.get("service_ids", [])
+    if service_id in existing_ids:
+        raise HTTPException(status_code=400, detail="Servizio già presente nell'appuntamento")
+    new_services = apt.get("services", []) + [service_entry]
+    new_service_ids = existing_ids + [service_id]
+    new_total_price = apt.get("total_price", 0) + discounted_price
+    new_total_duration = apt.get("total_duration", 0) + service.get("duration", 0)
+    start_hour, start_min = map(int, apt["time"].split(":"))
+    end_minutes = start_hour * 60 + start_min + new_total_duration
+    new_end_time = f"{end_minutes // 60:02d}:{end_minutes % 60:02d}"
+    await db.appointments.update_one(
+        {"id": appointment_id},
+        {"$set": {
+            "services": new_services, "service_ids": new_service_ids,
+            "total_price": new_total_price, "total_duration": new_total_duration,
+            "end_time": new_end_time,
+            "notes": (apt.get("notes", "") + f" [Upselling: {service['name']} -{discount}%]").strip()
+        }}
+    )
+    return {"success": True, "service_name": service["name"], "discounted_price": discounted_price, "new_total": new_total_price}
+
 
 
 @router.get("/public/my-appointments")

@@ -69,6 +69,10 @@ export default function BookingPage() {
     client_name: '', client_phone: '', service_ids: [], operator_id: '',
     date: format(new Date(), 'yyyy-MM-dd'), time: '09:00', notes: ''
   });
+  const [appointmentId, setAppointmentId] = useState(null);
+  const [upsellingSuggestions, setUpsellingSuggestions] = useState([]);
+  const [addingUpsell, setAddingUpsell] = useState(null);
+  const [addedUpsells, setAddedUpsells] = useState([]);
 
   useEffect(() => { fetchData(); }, []);
 
@@ -111,9 +115,43 @@ export default function BookingPage() {
   const handleSubmit = async () => {
     if (!formData.client_name || !formData.client_phone) { toast.error('Inserisci nome e telefono'); return; }
     setSubmitting(true);
-    try { await api.post(`${API}/public/booking`, formData); setSuccess(true); }
-    catch (err) { toast.error(err.response?.data?.detail || 'Errore nella prenotazione'); }
+    try {
+      const res = await api.post(`${API}/public/booking`, formData);
+      const aptId = res.data.appointment_id;
+      setAppointmentId(aptId);
+      setSuccess(true);
+      // Fetch upselling suggestions
+      try {
+        const upsellRes = await api.get(`${API}/public/upselling?service_ids=${formData.service_ids.join(',')}`);
+        setUpsellingSuggestions(upsellRes.data || []);
+      } catch { /* upselling not critical */ }
+    }
+    catch (err) {
+      const detail = err.response?.data?.detail;
+      // Handle conflict response (409) which returns an object with message
+      if (detail && typeof detail === 'object' && detail.message) {
+        toast.error(detail.message);
+      } else if (typeof detail === 'string') {
+        toast.error(detail);
+      } else {
+        toast.error('Errore nella prenotazione');
+      }
+    }
     finally { setSubmitting(false); }
+  };
+
+  const addUpsellService = async (service) => {
+    if (!appointmentId) return;
+    setAddingUpsell(service.id);
+    try {
+      await api.post(`${API}/public/appointments/${appointmentId}/add-service`, {
+        service_id: service.id, phone: formData.client_phone
+      });
+      setAddedUpsells(prev => [...prev, service.id]);
+      setUpsellingSuggestions(prev => prev.filter(s => s.id !== service.id));
+      toast.success(`${service.name} aggiunto con ${service.discount_percent}% di sconto!`);
+    } catch (err) { toast.error(err.response?.data?.detail || 'Errore'); }
+    finally { setAddingUpsell(null); }
   };
 
   const scrollTo = (ref) => { ref.current?.scrollIntoView({ behavior: 'smooth' }); };
@@ -157,13 +195,57 @@ export default function BookingPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#FFF8F0] via-[#FEF3E2] to-[#F0F4FF] flex items-center justify-center p-4">
         <Toaster position="top-center" />
-        <div className="max-w-md w-full text-center">
-          <CheckCircle className="w-20 h-20 mx-auto text-emerald-400 mb-6" />
-          <h1 className="text-3xl font-black text-[#1e293b] mb-3">Prenotazione Confermata!</h1>
-          <p className="text-[#D4B89A] mb-2">Ti aspettiamo il <span className="text-[#1e293b] font-bold">{format(new Date(formData.date), 'd MMMM yyyy', { locale: it })}</span> alle <span className="text-[#1e293b] font-bold">{formData.time}</span></p>
-          <p className="text-sm text-[#94A3B8] mb-8">Riceverai un promemoria prima dell'appuntamento.</p>
-          <Button onClick={() => { setSuccess(false); setShowBooking(false); setStep(1); setFormData({ client_name: '', client_phone: '', service_ids: [], operator_id: '', date: format(new Date(), 'yyyy-MM-dd'), time: '09:00', notes: '' }); }}
-            className="bg-[#0EA5E9] text-white hover:bg-gray-200 font-bold px-8" data-testid="booking-back-home-btn">Torna alla Home</Button>
+        <div className="max-w-md w-full">
+          <div className="text-center">
+            <CheckCircle className="w-20 h-20 mx-auto text-emerald-400 mb-6" />
+            <h1 className="text-3xl font-black text-[#1e293b] mb-3">Prenotazione Confermata!</h1>
+            <p className="text-[#D4B89A] mb-2">Ti aspettiamo il <span className="text-[#1e293b] font-bold">{format(new Date(formData.date), 'd MMMM yyyy', { locale: it })}</span> alle <span className="text-[#1e293b] font-bold">{formData.time}</span></p>
+            <p className="text-sm text-[#94A3B8] mb-6">Riceverai un promemoria prima dell'appuntamento.</p>
+          </div>
+
+          {/* Upselling Suggestions */}
+          {upsellingSuggestions.length > 0 && (
+            <div className="mt-2 mb-6" data-testid="upselling-suggestions">
+              <div className="bg-white rounded-2xl border border-amber-200 shadow-lg overflow-hidden">
+                <div className="bg-gradient-to-r from-amber-50 to-orange-50 px-5 py-3 border-b border-amber-100">
+                  <p className="text-sm font-black text-[#1e293b] flex items-center gap-2">
+                    <Gift className="w-4 h-4 text-amber-500" /> Completa il tuo look!
+                  </p>
+                  <p className="text-xs text-amber-600 mt-0.5">Aggiungi un servizio con uno sconto esclusivo</p>
+                </div>
+                <div className="p-4 space-y-3">
+                  {upsellingSuggestions.map(svc => (
+                    <div key={svc.id} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-amber-50/50 transition-colors" data-testid={`upsell-item-${svc.id}`}>
+                      <div className="flex-1">
+                        <p className="font-bold text-sm text-[#1e293b]">{svc.name}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs text-gray-400 line-through">{'\u20AC'}{svc.original_price}</span>
+                          <span className="text-sm font-black text-emerald-600">{'\u20AC'}{svc.discounted_price}</span>
+                          <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">-{svc.discount_percent}%</span>
+                        </div>
+                      </div>
+                      <Button size="sm" onClick={() => addUpsellService(svc)} disabled={addingUpsell === svc.id}
+                        className="bg-[#C8617A] hover:bg-[#A0404F] text-white text-xs font-bold px-4 shrink-0" data-testid={`upsell-add-${svc.id}`}>
+                        {addingUpsell === svc.id ? <Clock className="w-3 h-3 animate-spin" /> : 'Aggiungi'}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Added upsells confirmation */}
+          {addedUpsells.length > 0 && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-6 text-center">
+              <p className="text-sm font-bold text-emerald-700">{addedUpsells.length} {addedUpsells.length === 1 ? 'servizio aggiunto' : 'servizi aggiunti'} al tuo appuntamento!</p>
+            </div>
+          )}
+
+          <div className="text-center">
+            <Button onClick={() => { setSuccess(false); setShowBooking(false); setStep(1); setAppointmentId(null); setUpsellingSuggestions([]); setAddedUpsells([]); setFormData({ client_name: '', client_phone: '', service_ids: [], operator_id: '', date: format(new Date(), 'yyyy-MM-dd'), time: '09:00', notes: '' }); }}
+              className="bg-[#0EA5E9] text-white hover:bg-gray-200 font-bold px-8" data-testid="booking-back-home-btn">Torna alla Home</Button>
+          </div>
         </div>
       </div>
     );
