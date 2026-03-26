@@ -3,7 +3,7 @@
 
 import requests
 
-API_URL = "https://hair-booking-37.preview.emergentagent.com/api"
+API_URL = "https://salon-theme-preview.preview.emergentagent.com/api"
 
 # All clients with notes from Memo.xlsx
 CLIENTS = [

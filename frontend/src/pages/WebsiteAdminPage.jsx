@@ -412,92 +412,167 @@ export default function WebsiteAdminPage() {
 
           {/* ASPETTO (Colori, Font, Dimensioni) */}
           <TabsContent value="aspetto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Colori */}
-              <Card>
-                <CardHeader><CardTitle className="flex items-center gap-2"><Palette className="w-5 h-5" /> Colori</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm font-semibold">Colore Primario</Label>
-                      <div className="flex items-center gap-2 mt-1">
-                        <input type="color" value={config.primary_color || '#ff3366'} onChange={e => updateField('primary_color', e.target.value)} className="w-10 h-10 rounded border cursor-pointer" />
-                        <Input value={config.primary_color || '#ff3366'} onChange={e => updateField('primary_color', e.target.value)} className="font-mono text-sm" data-testid="config-primary-color" />
+            {/* TEMI PREIMPOSTATI */}
+            <Card className="mb-6">
+              <CardHeader><CardTitle className="flex items-center gap-2"><Palette className="w-5 h-5" /> Temi Preimpostati</CardTitle>
+                <p className="text-sm text-[#7C5C4A]">Seleziona un tema per applicare colori e font automaticamente</p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3" data-testid="theme-presets">
+                  {[
+                    { name: 'Elegante Scuro', primary: '#C8617A', accent: '#D4A847', bg: '#1A1A2E', text: '#F5F5F5', fontD: 'Playfair Display', fontB: 'Nunito' },
+                    { name: 'Rosa Classico', primary: '#E91E63', accent: '#FF9800', bg: '#FFF8F0', text: '#1e293b', fontD: 'Cormorant Garamond', fontB: 'Nunito' },
+                    { name: 'Blu Moderno', primary: '#2563EB', accent: '#10B981', bg: '#F8FAFC', text: '#0F172A', fontD: 'Montserrat', fontB: 'Inter' },
+                    { name: 'Oro & Nero', primary: '#D4A847', accent: '#C8617A', bg: '#0A0A0A', text: '#F5F5F5', fontD: 'Playfair Display', fontB: 'Lato' },
+                    { name: 'Verde Natura', primary: '#059669', accent: '#D97706', bg: '#FEFCE8', text: '#1C1917', fontD: 'Merriweather', fontB: 'Source Sans 3' },
+                    { name: 'Viola Lusso', primary: '#7C3AED', accent: '#F59E0B', bg: '#FAF5FF', text: '#1E1B4B', fontD: 'Cormorant Garamond', fontB: 'Quicksand' },
+                    { name: 'Corallo', primary: '#EF4444', accent: '#06B6D4', bg: '#FFFBEB', text: '#292524', fontD: 'Poppins', fontB: 'Nunito' },
+                    { name: 'Minimal Bianco', primary: '#18181B', accent: '#A1A1AA', bg: '#FFFFFF', text: '#18181B', fontD: 'Inter', fontB: 'Inter' },
+                    { name: 'Teal Fresco', primary: '#0D9488', accent: '#EC4899', bg: '#F0FDFA', text: '#134E4A', fontD: 'Raleway', fontB: 'Open Sans' },
+                    { name: 'Borgogna', primary: '#9F1239', accent: '#CA8A04', bg: '#FFF1F2', text: '#1C1917', fontD: 'Playfair Display', fontB: 'Lato' },
+                  ].map((theme, i) => (
+                    <button key={i} onClick={() => {
+                      updateField('primary_color', theme.primary);
+                      updateField('accent_color', theme.accent);
+                      updateField('bg_color', theme.bg);
+                      updateField('text_color', theme.text);
+                      updateField('font_display', theme.fontD);
+                      updateField('font_body', theme.fontB);
+                      toast.success(`Tema "${theme.name}" applicato`);
+                    }} className="group relative rounded-xl border-2 border-gray-200 hover:border-[#C8617A] p-3 transition-all hover:shadow-lg text-left" data-testid={`theme-preset-${i}`}>
+                      <div className="flex gap-1 mb-2">
+                        <div className="w-6 h-6 rounded-full border" style={{ backgroundColor: theme.primary }} />
+                        <div className="w-6 h-6 rounded-full border" style={{ backgroundColor: theme.accent }} />
+                        <div className="w-6 h-6 rounded-full border" style={{ backgroundColor: theme.bg }} />
+                        <div className="w-6 h-6 rounded-full border" style={{ backgroundColor: theme.text }} />
                       </div>
-                      <p className="text-xs text-gray-400 mt-1">Pulsanti, link, elementi principali</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-semibold">Colore Accento</Label>
-                      <div className="flex items-center gap-2 mt-1">
-                        <input type="color" value={config.accent_color || '#33CC99'} onChange={e => updateField('accent_color', e.target.value)} className="w-10 h-10 rounded border cursor-pointer" />
-                        <Input value={config.accent_color || '#33CC99'} onChange={e => updateField('accent_color', e.target.value)} className="font-mono text-sm" />
-                      </div>
-                      <p className="text-xs text-gray-400 mt-1">Badge, etichette, accenti</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-semibold">Sfondo Pagina</Label>
-                      <div className="flex items-center gap-2 mt-1">
-                        <input type="color" value={config.bg_color || '#F0F4FF'} onChange={e => updateField('bg_color', e.target.value)} className="w-10 h-10 rounded border cursor-pointer" />
-                        <Input value={config.bg_color || '#F0F4FF'} onChange={e => updateField('bg_color', e.target.value)} className="font-mono text-sm" />
-                      </div>
-                      <p className="text-xs text-gray-400 mt-1">Colore di sfondo del sito</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-semibold">Colore Testo</Label>
-                      <div className="flex items-center gap-2 mt-1">
-                        <input type="color" value={config.text_color || '#2D3047'} onChange={e => updateField('text_color', e.target.value)} className="w-10 h-10 rounded border cursor-pointer" />
-                        <Input value={config.text_color || '#2D3047'} onChange={e => updateField('text_color', e.target.value)} className="font-mono text-sm" />
-                      </div>
-                      <p className="text-xs text-gray-400 mt-1">Testo corpo, paragrafi</p>
-                    </div>
-                  </div>
-                  {/* Preview colori */}
-                  <div className="border rounded-xl p-4 space-y-2" style={{ backgroundColor: config.bg_color || '#F0F4FF' }}>
-                    <p className="text-xs font-bold text-gray-400 uppercase">Anteprima</p>
-                    <h3 className="text-lg font-bold" style={{ color: config.primary_color || '#ff3366' }}>Titolo di Esempio</h3>
-                    <p style={{ color: config.text_color || '#2D3047' }}>Testo del corpo con il colore selezionato.</p>
-                    <span className="inline-block text-xs font-bold px-3 py-1 rounded-full text-white" style={{ backgroundColor: config.accent_color || '#33CC99' }}>BADGE ACCENTO</span>
-                  </div>
-                </CardContent>
-              </Card>
+                      <p className="text-xs font-bold text-[#2D1B14] truncate">{theme.name}</p>
+                      <p className="text-[10px] text-gray-400">{theme.fontD}</p>
+                    </button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
 
-              {/* Font e Dimensioni */}
-              <Card>
-                <CardHeader><CardTitle className="flex items-center gap-2"><Type className="w-5 h-5" /> Font & Dimensioni</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label className="text-sm font-semibold">Font Titoli</Label>
-                    <select value={config.font_display || 'Cormorant Garamond'} onChange={e => updateField('font_display', e.target.value)} className="w-full mt-1 p-2 border rounded-lg text-sm" data-testid="config-font-display">
-                      {FONT_OPTIONS.map(f => <option key={f} value={f} style={{ fontFamily: f }}>{f}</option>)}
-                    </select>
-                    <p className="text-lg mt-2 border rounded-lg p-3" style={{ fontFamily: config.font_display || 'Cormorant Garamond' }}>
-                      Anteprima: {config.salon_name || 'Bruno Melito Hair'}
-                    </p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-semibold">Font Corpo</Label>
-                    <select value={config.font_body || 'Nunito'} onChange={e => updateField('font_body', e.target.value)} className="w-full mt-1 p-2 border rounded-lg text-sm" data-testid="config-font-body">
-                      {FONT_OPTIONS.map(f => <option key={f} value={f} style={{ fontFamily: f }}>{f}</option>)}
-                    </select>
-                    <p className="mt-2 border rounded-lg p-3" style={{ fontFamily: config.font_body || 'Nunito' }}>
-                      Anteprima: Testo del corpo con questo font selezionato.
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Colori + Font */}
+              <div className="lg:col-span-1 space-y-6">
+                <Card>
+                  <CardHeader><CardTitle className="flex items-center gap-2 text-base"><Palette className="w-4 h-4" /> Colori</CardTitle></CardHeader>
+                  <CardContent className="space-y-3">
+                    {[
+                      { label: 'Primario', key: 'primary_color', def: '#ff3366', desc: 'Pulsanti, link' },
+                      { label: 'Accento', key: 'accent_color', def: '#33CC99', desc: 'Badge, etichette' },
+                      { label: 'Sfondo', key: 'bg_color', def: '#F0F4FF', desc: 'Sfondo pagina' },
+                      { label: 'Testo', key: 'text_color', def: '#2D3047', desc: 'Testo corpo' },
+                    ].map(c => (
+                      <div key={c.key} className="flex items-center gap-2">
+                        <input type="color" value={config[c.key] || c.def} onChange={e => updateField(c.key, e.target.value)} className="w-8 h-8 rounded border cursor-pointer shrink-0" />
+                        <div className="flex-1">
+                          <Input value={config[c.key] || c.def} onChange={e => updateField(c.key, e.target.value)} className="font-mono text-xs h-8" data-testid={`config-${c.key.replace('_','-')}`} />
+                        </div>
+                        <span className="text-[10px] text-gray-400 w-16 shrink-0">{c.label}</span>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader><CardTitle className="flex items-center gap-2 text-base"><Type className="w-4 h-4" /> Font</CardTitle></CardHeader>
+                  <CardContent className="space-y-3">
                     <div>
-                      <Label className="text-sm font-semibold">Dimensione Titoli (px)</Label>
-                      <Input type="number" value={config.title_size || '48'} onChange={e => updateField('title_size', e.target.value)} min="24" max="96" data-testid="config-title-size" />
-                      <input type="range" min="24" max="96" value={config.title_size || 48} onChange={e => updateField('title_size', e.target.value)} className="w-full mt-1" />
+                      <Label className="text-xs font-semibold">Font Titoli</Label>
+                      <select value={config.font_display || 'Cormorant Garamond'} onChange={e => updateField('font_display', e.target.value)} className="w-full mt-1 p-2 border rounded-lg text-sm" data-testid="config-font-display">
+                        {FONT_OPTIONS.map(f => <option key={f} value={f}>{f}</option>)}
+                      </select>
                     </div>
                     <div>
-                      <Label className="text-sm font-semibold">Dimensione Testo (px)</Label>
-                      <Input type="number" value={config.font_size || '16'} onChange={e => updateField('font_size', e.target.value)} min="12" max="24" data-testid="config-font-size" />
-                      <input type="range" min="12" max="24" value={config.font_size || 16} onChange={e => updateField('font_size', e.target.value)} className="w-full mt-1" />
+                      <Label className="text-xs font-semibold">Font Corpo</Label>
+                      <select value={config.font_body || 'Nunito'} onChange={e => updateField('font_body', e.target.value)} className="w-full mt-1 p-2 border rounded-lg text-sm" data-testid="config-font-body">
+                        {FONT_OPTIONS.map(f => <option key={f} value={f}>{f}</option>)}
+                      </select>
                     </div>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-semibold">Slogan / Motto</Label>
-                    <Input value={config.slogan || ''} onChange={e => updateField('slogan', e.target.value)} placeholder="es. Metti la testa a posto!!" data-testid="config-slogan" />
+                    <div>
+                      <Label className="text-xs font-semibold">Slogan / Motto</Label>
+                      <Input value={config.slogan || ''} onChange={e => updateField('slogan', e.target.value)} placeholder="es. Metti la testa a posto!!" className="text-sm" data-testid="config-slogan" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* ANTEPRIMA LIVE */}
+              <Card className="lg:col-span-2">
+                <CardHeader><CardTitle className="flex items-center gap-2">Anteprima Live</CardTitle></CardHeader>
+                <CardContent>
+                  <div className="rounded-2xl overflow-hidden border-2 border-gray-200 shadow-lg" data-testid="live-preview-panel">
+                    {/* Preview Navbar */}
+                    <div className="flex items-center justify-between px-4 py-3" style={{ backgroundColor: config.text_color || '#2D3047' }}>
+                      <span className="text-white font-bold text-sm" style={{ fontFamily: config.font_display || 'Cormorant Garamond' }}>{config.salon_name || 'BRUNO MELITO HAIR'}</span>
+                      <div className="flex gap-2">
+                        <span className="text-white/60 text-xs">Servizi</span>
+                        <span className="text-white/60 text-xs">Contatti</span>
+                        <span className="text-xs font-bold px-3 py-1 rounded text-white" style={{ backgroundColor: config.primary_color || '#ff3366' }}>PRENOTA</span>
+                      </div>
+                    </div>
+                    {/* Preview Hero */}
+                    <div className="py-12 px-6 text-center" style={{ backgroundColor: config.bg_color || '#F0F4FF' }}>
+                      <h2 className="text-3xl font-black mb-3" style={{ color: config.text_color || '#2D3047', fontFamily: config.font_display || 'Cormorant Garamond' }}>
+                        {config.salon_name || 'BRUNO MELITO HAIR'}
+                      </h2>
+                      <p className="text-sm mb-2" style={{ color: config.primary_color || '#ff3366', fontFamily: config.font_body || 'Nunito' }}>
+                        {config.slogan || config.subtitle || 'SOLO PER APPUNTAMENTO'}
+                      </p>
+                      <p className="text-sm mb-5 max-w-md mx-auto" style={{ color: `${config.text_color || '#2D3047'}99`, fontFamily: config.font_body || 'Nunito' }}>
+                        Scopri l'eccellenza dell'hair styling dove ogni taglio è un'opera d'arte.
+                      </p>
+                      <div className="flex justify-center gap-3">
+                        <span className="px-5 py-2 rounded-lg text-white text-sm font-bold" style={{ backgroundColor: config.primary_color || '#ff3366' }}>PRENOTA ORA</span>
+                        <span className="px-5 py-2 rounded-lg text-sm font-bold border" style={{ borderColor: config.primary_color || '#ff3366', color: config.primary_color || '#ff3366' }}>Scopri i Servizi</span>
+                      </div>
+                    </div>
+                    {/* Preview Sections */}
+                    <div className="px-6 py-6" style={{ backgroundColor: config.bg_color || '#F0F4FF' }}>
+                      <div className="grid grid-cols-2 gap-4">
+                        {/* Services preview */}
+                        <div className="bg-white rounded-xl p-4 border">
+                          <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: config.accent_color || '#33CC99' }}>I Nostri Servizi</p>
+                          <h3 className="text-base font-black mb-3" style={{ color: config.text_color || '#2D3047', fontFamily: config.font_display }}>Servizi Professionali</h3>
+                          {['Taglio Uomo', 'Colore', 'Piega'].map((s, i) => (
+                            <div key={i} className="flex justify-between py-1 border-b border-gray-100 last:border-0">
+                              <span className="text-xs" style={{ color: config.text_color || '#2D3047', fontFamily: config.font_body }}>{s}</span>
+                              <span className="text-xs font-bold" style={{ color: config.primary_color || '#ff3366' }}>{'\u20AC'}{[18, 45, 25][i]}</span>
+                            </div>
+                          ))}
+                        </div>
+                        {/* Reviews preview */}
+                        <div className="rounded-xl p-4" style={{ backgroundColor: `${config.text_color || '#2D3047'}E6` }}>
+                          <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: config.accent_color || '#33CC99' }}>Recensioni</p>
+                          <p className="text-xs text-white/70 italic mb-2" style={{ fontFamily: config.font_body }}>"Servizio eccellente, ambiente accogliente"</p>
+                          <div className="flex gap-0.5">
+                            {[1,2,3,4,5].map(i => <span key={i} className="text-amber-400 text-xs">&#9733;</span>)}
+                          </div>
+                          <p className="text-[10px] text-white/50 mt-1">- Maria R.</p>
+                        </div>
+                      </div>
+                      {/* Loyalty preview */}
+                      <div className="mt-4 rounded-xl p-4 text-center" style={{ backgroundColor: `${config.accent_color || '#33CC99'}15` }}>
+                        <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: config.accent_color || '#33CC99' }}>Programma Fedeltà</p>
+                        <h3 className="text-base font-black" style={{ color: config.text_color || '#2D3047', fontFamily: config.font_display }}>Ogni Visita Vale di Più</h3>
+                        <div className="flex justify-center gap-3 mt-3">
+                          {['5%', '10%', 'Omaggio'].map((r, i) => (
+                            <span key={i} className="text-xs font-bold px-3 py-1 rounded-full text-white" style={{ backgroundColor: [config.accent_color, config.primary_color, '#059669'][i] || '#33CC99' }}>{r}</span>
+                          ))}
+                        </div>
+                      </div>
+                      {/* Contact preview */}
+                      <div className="mt-4 text-center">
+                        <span className="px-6 py-2 rounded-lg text-white text-sm font-bold" style={{ backgroundColor: config.primary_color || '#ff3366' }}>PRENOTA ORA</span>
+                        <span className="ml-2 px-6 py-2 rounded-lg text-white text-sm font-bold bg-[#25D366]">WHATSAPP</span>
+                      </div>
+                    </div>
+                    {/* Preview Footer */}
+                    <div className="px-4 py-3 text-center" style={{ backgroundColor: config.text_color || '#2D3047' }}>
+                      <span className="text-white/40 text-xs" style={{ fontFamily: config.font_body }}>&copy; 2026 {config.salon_name || 'Bruno Melito Hair'}</span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
