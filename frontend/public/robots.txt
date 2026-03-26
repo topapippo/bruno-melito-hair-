@@ -18,4 +18,4 @@ Disallow: /expenses
 Disallow: /dashboard
 Disallow: /card-alerts
 
-Sitemap: https://mbhssalon.onrender.com/sitemap.xml
+Sitemap: https://brunomelitohair.it/sitemap.xml
