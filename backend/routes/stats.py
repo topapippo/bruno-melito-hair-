@@ -31,6 +31,13 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
         {"_id": 0}
     ).to_list(1000)
     monthly_revenue = sum(a.get("total_price", 0) for a in monthly_appointments)
+    first_of_year = datetime.now(timezone.utc).replace(month=1, day=1).strftime("%Y-%m-%d")
+    last_of_year = datetime.now(timezone.utc).replace(month=12, day=31).strftime("%Y-%m-%d")
+    yearly_appointments = await db.appointments.find(
+        {"user_id": current_user["id"], "date": {"$gte": first_of_year, "$lte": last_of_year}, "status": "completed"},
+        {"_id": 0}
+    ).to_list(10000)
+    yearly_revenue = sum(a.get("total_price", 0) for a in yearly_appointments)
     next_week = (datetime.now(timezone.utc) + timedelta(days=7)).strftime("%Y-%m-%d")
     upcoming = await db.appointments.find(
         {"user_id": current_user["id"], "date": {"$gte": today, "$lte": next_week}, "status": "scheduled"},
@@ -41,6 +48,7 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
         "today_revenue": sum(a.get("total_price", 0) for a in today_appointments if a.get("status") == "completed"),
         "total_clients": total_clients, "total_operators": total_operators,
         "monthly_revenue": monthly_revenue, "monthly_appointments": len(monthly_appointments),
+        "yearly_revenue": yearly_revenue, "yearly_appointments": len(yearly_appointments),
         "upcoming_appointments": upcoming
     }
 

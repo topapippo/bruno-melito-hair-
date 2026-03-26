@@ -10,7 +10,7 @@
 
 ### Funzionalita Complete
 - Login/Register admin (admin@brunomelito.it / mbhs637104)
-- Dashboard con statistiche
+- Dashboard con statistiche (giornaliero, mensile, annuale)
 - Planning giornaliero/settimanale/mensile (BRUNO + MBHS)
 - Gestione servizi per categorie condivise (/src/lib/categories.js)
 - Gestione clienti (181+)

@@ -156,12 +156,13 @@ export default function Dashboard() {
         )}
 
         {/* ── Stats Row ──────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {[
             { title: "Appuntamenti Oggi", value: stats?.today_appointments_count || 0, icon: Calendar, from: '#C8617A', to: '#E8A0B0', suffix: '' },
             { title: "Clienti Totali", value: stats?.total_clients || 0, icon: Users, from: '#7C9B7A', to: '#A0C49A', suffix: '' },
             { title: "Incasso Mensile", value: (stats?.monthly_revenue || 0).toFixed(0), icon: Euro, from: '#D4A847', to: '#F0CC7A', prefix: '€', sub: `${stats?.monthly_appointments||0} appuntamenti` },
-            { title: "Prossimi 7 Giorni", value: stats?.upcoming_appointments?.length || 0, icon: TrendingUp, from: '#7C5C4A', to: '#A07060', suffix: '' },
+            { title: "Incasso Annuale", value: (stats?.yearly_revenue || 0).toFixed(0), icon: TrendingUp, from: '#A04040', to: '#D07070', prefix: '€', sub: `${stats?.yearly_appointments||0} appuntamenti` },
+            { title: "Prossimi 7 Giorni", value: stats?.upcoming_appointments?.length || 0, icon: Clock, from: '#7C5C4A', to: '#A07060', suffix: '' },
           ].map((s, i) => (
             <div key={i} className="bg-white rounded-2xl p-5 shadow-sm border border-[#F0E6DC] card-lift">
               <div className="flex items-start justify-between">
