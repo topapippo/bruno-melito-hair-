@@ -29,10 +29,14 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(loginData.email, loginData.password);
-      toast.success('Bentornata! ✨');
+      toast.success('Bentornata!');
       navigate('/');
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Credenziali non valide');
+      if (err.code === 'ECONNABORTED' || !err.response) {
+        toast.error('Il server si sta avviando, riprova tra qualche secondo...');
+      } else {
+        toast.error(err.response?.data?.detail || 'Credenziali non valide');
+      }
     } finally { setLoading(false); }
   };
 

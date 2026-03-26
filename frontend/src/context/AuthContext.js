@@ -33,12 +33,25 @@ export function AuthProvider({ children }) {
   };
 
   const login = async (email, password) => {
-    const res = await api.post('/auth/login', { email, password });
-    const { access_token, user: userData } = res.data;
-    localStorage.setItem('token', access_token);
-    setToken(access_token);
-    setUser(userData);
-    return userData;
+    const maxRetries = 2;
+    let lastError;
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const res = await api.post('/auth/login', { email, password });
+        const { access_token, user: userData } = res.data;
+        localStorage.setItem('token', access_token);
+        setToken(access_token);
+        setUser(userData);
+        return userData;
+      } catch (err) {
+        lastError = err;
+        if (err.code === 'ECONNABORTED' || !err.response) {
+          if (attempt < maxRetries) continue;
+        }
+        break;
+      }
+    }
+    throw lastError;
   };
 
   const register = async (email, password, name, salon_name) => {
