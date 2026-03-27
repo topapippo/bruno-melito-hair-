@@ -1147,6 +1147,7 @@ export default function WebsitePage() {
 
             <p className="text-[#94A3B8] text-xs">{config.address}</p>
             <p className="text-[#CBD5E1] text-xs">&copy; {new Date().getFullYear()} {config.salon_name || 'Bruno Melito Hair'}. Tutti i diritti riservati.</p>
+            <p className="text-[#E2E8F0] text-[9px] opacity-30" data-testid="build-version">v2.1-27mar</p>
           </div>
         </div>
       </footer>
