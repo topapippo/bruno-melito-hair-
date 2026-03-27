@@ -1,107 +1,86 @@
 # Bruno Melito Hair - PRD
 
-## App gestionale per salone parrucchiere
+## CONFIGURAZIONE PRODUZIONE — NON MODIFICARE MAI
+### ⚠️ ISTRUZIONI CRITICHE PER TUTTI GLI AGENTI ⚠️
+**LEGGERE PRIMA DI QUALSIASI MODIFICA**
 
-### Architettura
+- **Repository GitHub UNICO:** `topapippo/bruno-melito-hair-` (branch: main)
+- **Render Frontend:** `bruno-melito-hair.onrender.com` → Custom domain: `brunomelitohair.it`
+- **Render Backend:** `bruno-melito-hair-2497.onrender.com`
+- **Database:** MongoDB Atlas (NON localhost!)
+- **Account Produzione:** `admin@brunomelito.it` / `mbhs637104`
+- **UptimeRobot:** DEVE puntare a `https://bruno-melito-hair-2497.onrender.com/api/health`
+- **DNS OVH:** brunomelitohair.it → CNAME verso Render
+
+### REGOLE ASSOLUTE
+1. **MAI** creare nuovi repository o servizi Render
+2. **MAI** cambiare URL del backend nel frontend (.env o codice)
+3. **MAI** toccare le credenziali di produzione senza motivo
+4. **MAI** aggiungere endpoint admin/reset temporanei e lasciarli in produzione
+5. **SEMPRE** usare `REACT_APP_BACKEND_URL` per le chiamate API
+6. **SEMPRE** ricordare: Build command Render Frontend = `REACT_APP_BACKEND_URL=https://bruno-melito-hair-2497.onrender.com yarn build`
+7. **SEMPRE** dopo Save to GitHub → Manual Deploy → **Clear build cache and deploy** (sia frontend che backend)
+
+### VARIABILI RENDER BACKEND
+```
+MONGO_URL=<stringa Atlas dell'utente>
+DB_NAME=mbhs
+JWT_SECRET=mbhs-secret-key-2024-secure
+CORS_ORIGINS=*
+EMERGENT_LLM_KEY=<chiave emergent>
+VAPID_PUBLIC_KEY=<chiave pubblica>
+VAPID_PRIVATE_KEY=<chiave privata>
+```
+
+### VARIABILI RENDER FRONTEND (Build)
+```
+REACT_APP_BACKEND_URL=https://bruno-melito-hair-2497.onrender.com
+```
+
+---
+
+## Architettura
 - Frontend: React + craco (porta 3000)
 - Backend: FastAPI + Python (porta 8001)
-- Database: MongoDB (locale: mbhs)
+- Database: MongoDB Atlas (produzione) / localhost (sviluppo)
 - Hosting: Render
+- DNS: OVH → brunomelitohair.it
 
-### Funzionalita Complete
-- Login/Register admin (admin@brunomelito.it / mbhs637104)
+## Funzionalità Complete
+- Login/Register admin
 - Dashboard con statistiche (giornaliero, mensile, annuale)
 - Planning giornaliero/settimanale/mensile (BRUNO + MBHS)
-- Gestione servizi per categorie condivise (/src/lib/categories.js)
-- Gestione clienti (181+)
+- Gestione servizi per categorie condivise
+- Gestione clienti (166+)
 - Prenotazione pubblica (/sito) con servizi progressivi per categoria
-- Card/Abbonamenti/Prepagate (visibili come categoria)
-- Promozioni e programma fedelta (5%=5pt, 10%=10pt, Omaggio=35pt)
+- Card/Abbonamenti/Prepagate
+- Promozioni e programma fedeltà (5%=5pt, 10%=10pt, Omaggio=35pt)
 - Report incassi e registro uscite
 - Backup dati
 - Push notifications (VAPID)
-- Operatore alternativo su conflitto orario (panel con DISPONIBILE + orari alternativi)
-- Bottone conferma sempre visibile (sticky)
+- Operatore alternativo su conflitto orario
+- I Miei Appuntamenti (cliente verifica/modifica/annulla tramite telefono)
+- CMS Editor completo (Generale, Layout, Aspetto, Servizi, Foto, Gallery, Recensioni, Orari)
+- Upselling Servizi post-prenotazione
+- Promemoria WhatsApp batch (24h, scadenza colore, clienti inattivi)
+- Hero Customization (immagine, slogan, descrizione)
+- Tema Gestionale personalizzabile (6 preset + colori/font custom)
+- Blocco Orari (ricorrenti e singoli, visivi nel Planning)
+- Festività Italiane nel Planning (12 festività + Pasqua mobile)
 
-### I Miei Appuntamenti (NUOVO)
-- Bottone "Appuntamenti" nel navbar del sito pubblico
-- La cliente inserisce il numero di telefono
-- Vede appuntamenti futuri con possibilita di MODIFICARE data/ora o ANNULLARE
-- Vede storico ultimi 3 mesi con stato e prezzo
-- Verifica telefono per sicurezza (403 se non corrisponde)
-- API: GET /api/public/my-appointments?phone=XXX
-- API: PUT /api/public/appointments/{id} (modifica)
-- API: DELETE /api/public/appointments/{id}?phone=XXX (annulla)
+## Fix Applicati (Marzo 2026)
+- Service Worker rimosso (causava cache vecchia sui dispositivi)
+- Timeout API aumentato da 15s a 90s con retry automatico
+- Endpoint /api/health per UptimeRobot
+- Migrazione dati da account vecchio (melitobruno@gmail.com) a admin@brunomelito.it
 
-### CMS Editor (/gestione-sito)
-- Tab Generale: nome salone, sottotitolo, descrizione, about
-- Tab Layout: riordinamento sezioni (su/giu), nascondi/mostra sezioni + Ripristina ordine predefinito
-  - Sezioni: services, salon, about, promotions, reviews, gallery, loyalty, contact
-  - Hero (fisso in cima) e Footer (fisso in fondo)
-- Tab Aspetto: 10 temi preimpostati (Elegante Scuro, Rosa Classico, Blu Moderno, Oro & Nero, Verde Natura, Viola Lusso, Corallo, Minimal Bianco, Teal Fresco, Borgogna), colori (primario, accento, sfondo, testo), font (titoli, corpo), anteprima live in tempo reale
-- Tab Servizi, Foto Salone, Gallery Lavori, Recensioni, Orari & Contatti
-- Tab Upselling: configura regole upselling (servizio trigger → servizi suggeriti), sconto percentuale globale
+## Backlog
+- P1: Dashboard statistiche clienti (grafici frequenza visite, spesa media, servizi più richiesti)
+- P2: Scheda cliente con storico foto tagli
+- P2: Sconti/messaggi automatici compleanno
+- P3: Lista d'attesa intelligente
+- P3: Heat map ore più occupate
+- P3: Confronto performance operatori
 
-### Sito Pubblico (/sito)
-- Rendering dinamico sezioni basato su section_order e hidden_sections dal CMS
-- Hero, Servizi, Foto Salone, Chi Siamo, Promozioni, Recensioni, Gallery, Fedelta, Contatti, Footer
-- Badge "Made with Emergent" RIMOSSO
-- Bottone "Accedi" (Area Riservata) visibile su mobile con sfondo grigio
-- Bottone "Appuntamenti" per verifica appuntamenti della cliente
-
-### Deploy Render
-- GitHub Repo: topapippo/bruno-melito-hair-
-- Render Frontend: bruno-melito-hair- (brunomelitohair.it) - Static Site
-- Render Backend: BRUNO-MELITO-HAIR (bruno-melito-hair-2497.onrender.com)
-- Build: REACT_APP_BACKEND_URL=https://bruno-melito-hair-2497.onrender.com yarn build
-- Root Directory: frontend
-- Publish Directory: build
-- Redirects/Rewrites: /* -> /index.html (Rewrite) - NECESSARIO per React SPA
-- IMPORTANTE: Dopo ogni Save to GitHub, fare Manual Deploy con Clear build cache
-
-### Problemi Noti
-- Il dominio brunomelitohair.it potrebbe servire versione cached. Verificare su bruno-melito-hair.onrender.com per la versione aggiornata. La cache CDN si aggiorna da sola.
-
-### Upselling Servizi (NUOVO)
-- Dopo la prenotazione, suggerisce servizi complementari con sconto
-- Admin configura regole nel CMS: servizio trigger → servizi suggeriti
-- Sconto percentuale globale configurabile (default 15%)
-- Il cliente vede suggerimenti nella pagina di conferma con prezzo scontato
-- Un click per aggiungere il servizio all'appuntamento
-- API: GET /api/public/upselling?service_ids=XXX
-- API: POST /api/public/appointments/{id}/add-service
-
-### Promemoria WhatsApp (Migliorato)
-- Centro Invio WhatsApp con 3 categorie: Promemoria Domani (24h), Scadenza Colore (30g), Clienti Inattivi (60+g ripetuto ogni 30g)
-- Bottoni "Invia Tutti" per ogni categoria (batch send via wa.me)
-- Banner sulla Dashboard con conteggio messaggi pendenti
-- Template personalizzabili per ogni tipo (appointment, recall, color_expiry)
-- Numero WhatsApp Business: +39 3281283016
-
-### Personalizzazione Hero (CMS)
-- Upload immagine copertina Hero (come copertina social)
-- Campi: Slogan Hero, Descrizione Hero
-- Anteprima live con overlay nome salone
-
-### Tema Gestionale (Impostazioni)
-- 6 preset rapidi: Rosa Classico, Blu Elegante, Verde Natura, Viola Lusso, Grigio Moderno, Scuro
-- Colori personalizzabili: primario, sfondo sidebar, testo sidebar, accento
-- Font personalizzabili: titoli e corpo
-- Anteprima live della sidebar
-- Salva/Ripristina tema
-
-### Blocco Orari
-- Blocco orari ricorrenti (ogni settimana) e singoli (una data)
-- Gestione da Impostazioni: form tipo/giorno/da/a/motivo + lista blocchi con eliminazione
-- Planning: click destro per bloccare, indicatore visivo rosso
-- Prenotazione: orari bloccati filtrati automaticamente + validazione backend 409
-
-### Festività Italiane nel Planning
-- 12 festività nazionali calcolate automaticamente (inclusa Pasqua mobile)
-- Vista mese: celle rosse con nome festività
-- Vista settimana: header rosso con nome festività
-- Vista giorno: badge rosso con nome festività
-- Legenda aggiornata con indicatore "Festivo" e "Bloccato"
-
-### Backlog
-- P2: Dashboard statistiche clienti (grafici frequenza visite, spesa media, servizi piu richiesti)
+## Refactoring Necessario
+- PlanningPage.jsx (>2500 righe) → suddividere in sotto-componenti
