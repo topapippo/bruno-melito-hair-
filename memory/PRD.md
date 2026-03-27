@@ -73,6 +73,9 @@ REACT_APP_BACKEND_URL=https://bruno-melito-hair-2497.onrender.com
 - Banner festività prominente nella vista giornaliera del Planning
 - Rimossi endpoint temporanei admin-reset e admin-transfer
 - **Refactoring PlanningPage.jsx COMPLETATO** (27 Marzo 2026): da 2534 righe → 744 righe + 9 sotto-componenti modulari. 45/45 test superati, zero regressioni.
+- **Fix Upselling** (27 Marzo 2026): Corretta email hardcoded nel backend da melitobruno@gmail.com → admin@brunomelito.it. Suggerimenti upselling ora funzionanti.
+- **Promo/Card nel gestionale** (27 Marzo 2026): Promozioni attive ora visibili nel dialogo nuovo appuntamento del Planning, senza dover prima selezionare un cliente.
+- **Servizi in categorie cliccabili** (27 Marzo 2026): Pagina prenotazione pubblica e landing page ora mostrano servizi raggruppati in categorie collassabili (accordion). Card & Abbonamenti visibili nella prenotazione.
 
 ## Struttura Componenti Planning (dopo refactoring)
 ```
