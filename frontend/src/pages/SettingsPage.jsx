@@ -20,12 +20,12 @@ const ADMIN_FONTS = [
 ];
 
 const ADMIN_PRESETS = [
-  { name: 'Rosa Classico', primary: '#C8617A', sidebar_bg: '#FAF7F2', sidebar_text: '#2D1B14', accent: '#D4A847' },
-  { name: 'Blu Elegante', primary: '#2563EB', sidebar_bg: '#F0F4FF', sidebar_text: '#0F172A', accent: '#F59E0B' },
-  { name: 'Verde Natura', primary: '#059669', sidebar_bg: '#F0FDF4', sidebar_text: '#14532D', accent: '#A3E635' },
-  { name: 'Viola Lusso', primary: '#7C3AED', sidebar_bg: '#FAF5FF', sidebar_text: '#1E1B4B', accent: '#F472B6' },
-  { name: 'Grigio Moderno', primary: '#475569', sidebar_bg: '#F1F5F9', sidebar_text: '#0F172A', accent: '#0EA5E9' },
-  { name: 'Scuro', primary: '#C8617A', sidebar_bg: '#1E1B14', sidebar_text: '#FAF7F2', accent: '#D4A847' },
+  { name: 'Rosa Classico', primary: '#C8617A', sidebar_bg: '#FAF7F2', sidebar_text: '#2D1B14', accent: '#D4A847', content_bg: '#F8F5F0', content_text: '#2D1B14' },
+  { name: 'Blu Elegante', primary: '#2563EB', sidebar_bg: '#F0F4FF', sidebar_text: '#0F172A', accent: '#F59E0B', content_bg: '#F8FAFC', content_text: '#0F172A' },
+  { name: 'Verde Natura', primary: '#059669', sidebar_bg: '#F0FDF4', sidebar_text: '#14532D', accent: '#A3E635', content_bg: '#F7FDF9', content_text: '#14532D' },
+  { name: 'Viola Lusso', primary: '#7C3AED', sidebar_bg: '#FAF5FF', sidebar_text: '#1E1B4B', accent: '#F472B6', content_bg: '#FDFAFF', content_text: '#1E1B4B' },
+  { name: 'Grigio Moderno', primary: '#475569', sidebar_bg: '#F1F5F9', sidebar_text: '#0F172A', accent: '#0EA5E9', content_bg: '#F8FAFC', content_text: '#0F172A' },
+  { name: 'Scuro', primary: '#C8617A', sidebar_bg: '#1E1B14', sidebar_text: '#FAF7F2', accent: '#D4A847', content_bg: '#292524', content_text: '#FAF7F2' },
 ];
 
 const DAYS = [
@@ -47,7 +47,8 @@ export default function SettingsPage() {
   const [pwForm, setPwForm] = useState({ current_password: '', new_password: '', confirm_password: '' });
   const [adminTheme, setAdminTheme] = useState({
     primary: '#C8617A', sidebar_bg: '#FAF7F2', sidebar_text: '#2D1B14',
-    accent: '#D4A847', font_display: 'Cormorant Garamond', font_body: 'Poppins'
+    accent: '#D4A847', font_display: 'Cormorant Garamond', font_body: 'Poppins',
+    content_bg: '#F8F5F0', content_text: '#2D1B14'
   });
   const [savingTheme, setSavingTheme] = useState(false);
   const [blockedSlots, setBlockedSlots] = useState([]);
@@ -453,7 +454,7 @@ export default function SettingsPage() {
             </div>
 
             {/* Colors */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold">Colore Principale</Label>
                 <div className="flex items-center gap-2">
@@ -486,6 +487,22 @@ export default function SettingsPage() {
                   <Input value={adminTheme.accent} onChange={e => setAdminTheme(t => ({...t, accent: e.target.value}))} className="font-mono text-xs h-10" />
                 </div>
               </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">Sfondo Pagina</Label>
+                <div className="flex items-center gap-2">
+                  <input type="color" value={adminTheme.content_bg || '#F8F5F0'} onChange={e => { setAdminTheme(t => ({...t, content_bg: e.target.value})); applyAdminTheme({...adminTheme, content_bg: e.target.value}); }}
+                    className="w-10 h-10 rounded-lg border-2 cursor-pointer" data-testid="admin-theme-content-bg" />
+                  <Input value={adminTheme.content_bg || '#F8F5F0'} onChange={e => setAdminTheme(t => ({...t, content_bg: e.target.value}))} className="font-mono text-xs h-10" />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">Testo Pagina</Label>
+                <div className="flex items-center gap-2">
+                  <input type="color" value={adminTheme.content_text || '#2D1B14'} onChange={e => { setAdminTheme(t => ({...t, content_text: e.target.value})); applyAdminTheme({...adminTheme, content_text: e.target.value}); }}
+                    className="w-10 h-10 rounded-lg border-2 cursor-pointer" data-testid="admin-theme-content-text" />
+                  <Input value={adminTheme.content_text || '#2D1B14'} onChange={e => setAdminTheme(t => ({...t, content_text: e.target.value}))} className="font-mono text-xs h-10" />
+                </div>
+              </div>
             </div>
 
             {/* Fonts */}
@@ -513,7 +530,7 @@ export default function SettingsPage() {
                 {savingTheme ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-2" /> Salva Tema</>}
               </Button>
               <Button variant="outline" onClick={() => {
-                const def = { primary: '#C8617A', sidebar_bg: '#FAF7F2', sidebar_text: '#2D1B14', accent: '#D4A847', font_display: 'Cormorant Garamond', font_body: 'Poppins' };
+                const def = { primary: '#C8617A', sidebar_bg: '#FAF7F2', sidebar_text: '#2D1B14', accent: '#D4A847', font_display: 'Cormorant Garamond', font_body: 'Poppins', content_bg: '#F8F5F0', content_text: '#2D1B14' };
                 setAdminTheme(def); applyAdminTheme(def);
                 toast.success('Tema ripristinato — salva per confermare');
               }} className="text-[#7C5C4A]" data-testid="reset-admin-theme-btn">

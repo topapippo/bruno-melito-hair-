@@ -63,8 +63,8 @@ export default function Layout({ children }) {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [adminTheme, setAdminTheme] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('adminTheme')) || { primary: '#C8617A', sidebar_bg: '#FAF7F2', sidebar_text: '#2D1B14', accent: '#D4A847' }; }
-    catch { return { primary: '#C8617A', sidebar_bg: '#FAF7F2', sidebar_text: '#2D1B14', accent: '#D4A847' }; }
+    try { return JSON.parse(localStorage.getItem('adminTheme')) || { primary: '#C8617A', sidebar_bg: '#FAF7F2', sidebar_text: '#2D1B14', accent: '#D4A847', content_bg: '#F8F5F0', content_text: '#2D1B14' }; }
+    catch { return { primary: '#C8617A', sidebar_bg: '#FAF7F2', sidebar_text: '#2D1B14', accent: '#D4A847', content_bg: '#F8F5F0', content_text: '#2D1B14' }; }
   });
   const themeRef = useRef(adminTheme);
 
@@ -117,7 +117,7 @@ export default function Layout({ children }) {
   };
 
   const SidebarContent = ({ mobile = false }) => (
-    <div className="flex flex-col h-full" style={{ backgroundColor: t.sidebar_bg }}>
+    <div className="flex flex-col h-full" style={{ backgroundColor: t.sidebar_bg, fontFamily: `${t.font_body || 'Poppins'}, sans-serif` }}>
       {/* Logo / Brand */}
       <div className="p-5" style={{ borderBottom: `1px solid ${t.sidebar_text}15` }}>
         <div className="flex items-center gap-3">
@@ -129,7 +129,7 @@ export default function Layout({ children }) {
             </div>
           </div>
           <div>
-            <h1 className="font-display text-lg font-semibold leading-tight" style={{ color: t.sidebar_text }}>BRUNO MELITO</h1>
+            <h1 className="text-lg font-semibold leading-tight" style={{ color: t.sidebar_text, fontFamily: `${t.font_display || 'Cormorant Garamond'}, serif` }}>BRUNO MELITO</h1>
             <p className="text-xs mt-0.5" style={{ color: t.sidebar_text + '80' }}>{user?.salon_name || 'Hair Salon'}</p>
           </div>
         </div>
@@ -176,7 +176,17 @@ export default function Layout({ children }) {
   );
 
   return (
-    <div className="min-h-screen petal-bg">
+    <div className="min-h-screen" style={{
+      '--admin-primary': t.primary,
+      '--admin-accent': t.accent,
+      '--admin-sidebar-bg': t.sidebar_bg,
+      '--admin-sidebar-text': t.sidebar_text,
+      '--admin-content-bg': t.content_bg || '#F8F5F0',
+      '--admin-content-text': t.content_text || '#2D1B14',
+      fontFamily: `${t.font_body || 'Poppins'}, sans-serif`,
+      backgroundColor: t.content_bg || '#F8F5F0',
+      color: t.content_text || '#2D1B14',
+    }}>
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-60 h-screen fixed left-0 top-0" style={{ boxShadow: `4px 0 24px ${t.primary}12` }}>
         <SidebarContent />
@@ -187,7 +197,7 @@ export default function Layout({ children }) {
         style={{ backgroundColor: t.sidebar_bg + 'E6', borderColor: t.sidebar_text + '15' }}>
         <div className="flex items-center gap-2">
           <img src="/logo.png?v=4" alt="" className="w-8 h-8 rounded-lg object-cover" />
-          <h1 className="font-display text-lg font-semibold" style={{ color: t.sidebar_text }}>{user?.salon_name || 'Salone'}</h1>
+          <h1 className="text-lg font-semibold" style={{ fontFamily: `${t.font_display || 'Cormorant Garamond'}, serif`, color: t.sidebar_text }}>{user?.salon_name || 'Salone'}</h1>
         </div>
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
