@@ -69,6 +69,9 @@ const AVATAR_TEXTS = ['text-amber-400', 'text-rose-400', 'text-teal-400', 'text-
 
 // Section Components for dynamic reordering
 function ServicesSection({ servicesRef, showServices, setShowServices, landingServiceGroups, cardTemplates, setShowBooking, T }) {
+  const [openLandingCats, setOpenLandingCats] = useState({});
+  const toggleLCat = (key) => setOpenLandingCats(prev => ({ ...prev, [key]: !prev[key] }));
+
   return (
     <section ref={servicesRef} className="py-20 sm:py-28 relative">
       <div className="max-w-6xl mx-auto px-4">
@@ -80,49 +83,68 @@ function ServicesSection({ servicesRef, showServices, setShowServices, landingSe
           </div>
         </button>
         {showServices && (
-          <div className="space-y-6 mt-8 animate-in fade-in duration-300">
+          <div className="space-y-3 mt-8 animate-in fade-in duration-300 max-w-2xl mx-auto">
             {landingServiceGroups.orderedKeys.map((catKey) => {
               const catInfo = getCategoryInfo(catKey);
               const catServices = landingServiceGroups.groups[catKey];
+              const isOpen = openLandingCats[catKey];
               return (
-                <div key={catKey} className="bg-white border border-gray-200 rounded-3xl p-6 transition-all duration-300 hover:shadow-xl hover:scale-[1.01]">
-                  <h3 className="text-xl font-black mb-3 flex items-center gap-2" style={{ color: catInfo.color }}>
-                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: catInfo.color }} />
-                    {catInfo.label}
-                  </h3>
-                  <div className="space-y-3">
-                    {catServices.map((service) => (
-                      <div key={service.id} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
-                        <div>
-                          <span className="font-bold" style={{ color: T.text }}>{service.name}</span>
-                          <span className="text-xs text-[#94A3B8] ml-2">{service.duration} min</span>
+                <div key={catKey} data-testid={`landing-cat-${catKey}`}>
+                  <button type="button" onClick={() => toggleLCat(catKey)}
+                    className="w-full flex items-center justify-between px-6 py-4 rounded-2xl font-black text-white text-left transition-all hover:brightness-110 hover:shadow-lg active:scale-[0.98]"
+                    style={{ backgroundColor: catInfo.color }}>
+                    <span className="text-lg">{catInfo.label}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-normal opacity-80">{catServices.length} servizi</span>
+                      {isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                    </div>
+                  </button>
+                  {isOpen && (
+                    <div className="bg-white rounded-2xl mt-1 p-4 border border-gray-100 shadow-sm animate-in fade-in duration-200">
+                      {catServices.map((service) => (
+                        <div key={service.id} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0">
+                          <div>
+                            <span className="font-bold" style={{ color: T.text }}>{service.name}</span>
+                            <span className="text-xs text-[#94A3B8] ml-2">{service.duration} min</span>
+                          </div>
+                          <span className="font-black text-lg shrink-0 ml-4" style={{ color: catInfo.color }}>{'\u20AC'}{service.price}</span>
                         </div>
-                        <span className="font-black text-lg shrink-0 ml-4" style={{ color: catInfo.color }}>{'\u20AC'}{service.price}</span>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
             })}
-            {cardTemplates.length > 0 && (
-              <div className="bg-white border-2 border-[#6366F1]/30 rounded-3xl p-6 transition-all duration-300 hover:shadow-xl hover:scale-[1.01]">
-                <h3 className="text-xl font-black mb-3 flex items-center gap-2 text-[#6366F1]">
-                  <CreditCard className="w-5 h-5" /> Card & Abbonamenti
-                </h3>
-                <div className="space-y-3">
-                  {cardTemplates.map((tmpl, i) => (
-                    <div key={tmpl.id || i} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
-                      <div>
-                        <span className="font-bold" style={{ color: T.text }}>{tmpl.name}</span>
-                        <span className="text-xs text-[#6366F1] ml-2">{tmpl.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}{tmpl.total_services ? ` · ${tmpl.total_services} servizi` : ''}</span>
-                      </div>
-                      <span className="font-black text-[#6366F1] text-lg shrink-0 ml-4">{'\u20AC'}{tmpl.total_value}</span>
+            {cardTemplates.length > 0 && (() => {
+              const isOpen = openLandingCats['cards'];
+              return (
+                <div data-testid="landing-cat-cards">
+                  <button type="button" onClick={() => toggleLCat('cards')}
+                    className="w-full flex items-center justify-between px-6 py-4 rounded-2xl font-black text-white text-left transition-all hover:brightness-110 hover:shadow-lg active:scale-[0.98]"
+                    style={{ backgroundColor: '#6366F1' }}>
+                    <span className="flex items-center gap-2 text-lg"><CreditCard className="w-5 h-5" /> Card & Abbonamenti</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-normal opacity-80">{cardTemplates.length}</span>
+                      {isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                     </div>
-                  ))}
+                  </button>
+                  {isOpen && (
+                    <div className="bg-white rounded-2xl mt-1 p-4 border border-[#6366F1]/20 shadow-sm animate-in fade-in duration-200">
+                      {cardTemplates.map((tmpl, i) => (
+                        <div key={tmpl.id || i} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0">
+                          <div>
+                            <span className="font-bold" style={{ color: T.text }}>{tmpl.name}</span>
+                            <span className="text-xs text-[#6366F1] ml-2">{tmpl.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}{tmpl.total_services ? ` · ${tmpl.total_services} servizi` : ''}</span>
+                          </div>
+                          <span className="font-black text-[#6366F1] text-lg shrink-0 ml-4">{'\u20AC'}{tmpl.total_value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
-            <div className="text-center">
+              );
+            })()}
+            <div className="text-center pt-4">
               <Button onClick={() => setShowBooking(true)} style={{ backgroundColor: T.primary }} className="text-white hover:opacity-90 font-bold px-8 py-6 rounded-xl shadow-lg">
                 <Scissors className="w-4 h-4 mr-2" /> PRENOTA ORA
               </Button>
@@ -430,6 +452,7 @@ export default function WebsitePage() {
 
   const [publicPromos, setPublicPromos] = useState([]);
   const [cardTemplates, setCardTemplates] = useState([]);
+  const [openCats, setOpenCats] = useState({});
 
   const [formData, setFormData] = useState({
     client_name: '', client_phone: '', service_ids: [], operator_id: '',
@@ -657,74 +680,96 @@ export default function WebsitePage() {
               <div className="flex-1 overflow-y-auto space-y-3 pr-1 pb-2">
               {(() => {
                 const { groups: byCat, orderedKeys: cats } = groupServicesByCategory(bookingServices);
-                // Merge card templates into the list as a category
-                const allCats = [...cats];
                 const hasCardCat = cardTemplates.length > 0;
+                const toggleCat = (key) => setOpenCats(prev => ({ ...prev, [key]: !prev[key] }));
                 return (
                   <>
-                    {allCats.map(cat => {
+                    {cats.map(cat => {
                       const catInfo = getCategoryInfo(cat);
+                      const isOpen = openCats[`b_${cat}`];
+                      const selectedInCat = byCat[cat].filter(s => formData.service_ids.includes(s.id)).length;
                       return (
-                        <div key={cat}>
-                          <h3 className="text-sm font-bold uppercase tracking-wider mb-2 sticky top-0 bg-[#1C1008] py-1 z-10" style={{ color: catInfo.color }}>{catInfo.label}</h3>
-                          <div className="space-y-2">
-                            {byCat[cat].map(service => (
-                              <div key={service.id} onClick={() => toggleService(service.id)}
-                                className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${formData.service_ids.includes(service.id) ? 'border-[#D4A847] bg-[#D4A847]/15' : 'border-[#3A2A1A] bg-[#2A1A0E] hover:border-[#6A4A2A]'}`}
-                                data-testid={`website-service-${service.id}`}>
-                                <div className="flex justify-between items-center">
-                                  <div><p className="font-bold text-white">{service.name}</p><p className="text-sm text-[#8A6A4A]">{service.duration} min</p></div>
-                                  <p className="font-black text-white">{'\u20AC'}{service.price}</p>
+                        <div key={cat} data-testid={`booking-cat-${cat}`}>
+                          <button type="button" onClick={() => toggleCat(`b_${cat}`)}
+                            className="w-full flex items-center justify-between px-5 py-3.5 rounded-2xl font-black text-white text-left transition-all hover:brightness-110 active:scale-[0.98]"
+                            style={{ backgroundColor: catInfo.color }}>
+                            <span className="flex items-center gap-2">
+                              <span className="text-base">{catInfo.label}</span>
+                              {selectedInCat > 0 && <span className="bg-white/30 text-white text-xs font-bold px-2 py-0.5 rounded-full">{selectedInCat}</span>}
+                            </span>
+                            {isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                          </button>
+                          {isOpen && (
+                            <div className="mt-1 space-y-2 pb-2 animate-in fade-in duration-200">
+                              {byCat[cat].map(service => (
+                                <div key={service.id} onClick={() => toggleService(service.id)}
+                                  className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${formData.service_ids.includes(service.id) ? 'border-[#D4A847] bg-[#D4A847]/15' : 'border-[#3A2A1A] bg-[#2A1A0E] hover:border-[#6A4A2A]'}`}
+                                  data-testid={`website-service-${service.id}`}>
+                                  <div className="flex justify-between items-center">
+                                    <div><p className="font-bold text-white">{service.name}</p><p className="text-sm text-[#8A6A4A]">{service.duration} min</p></div>
+                                    <p className="font-black text-white">{'\u20AC'}{service.price}</p>
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
-                          </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
 
-                    {/* Card & Abbonamenti come categoria */}
-                    {hasCardCat && (
-                      <div>
-                        <h3 className="text-sm font-bold uppercase tracking-wider mb-2 sticky top-0 bg-[#1C1008] py-1 z-10 flex items-center gap-2" style={{ color: '#6366F1' }}>
-                          <CreditCard className="w-4 h-4" /> Card & Abbonamenti
-                        </h3>
-                        <div className="space-y-2">
-                          {cardTemplates.map((tmpl, i) => {
-                            const isSelected = formData.notes?.includes(`[CARD: ${tmpl.name}]`);
-                            return (
-                              <div key={tmpl.id || i}
-                                onClick={() => {
-                                  if (isSelected) {
-                                    setFormData(prev => ({ ...prev, notes: prev.notes.replace(`[CARD: ${tmpl.name}] `, '').replace(`[CARD: ${tmpl.name}]`, '') }));
-                                    toast('Card rimossa');
-                                  } else {
-                                    const cleanNotes = (formData.notes || '').replace(/\[CARD: [^\]]+\] ?/g, '');
-                                    setFormData(prev => ({ ...prev, notes: `[CARD: ${tmpl.name}] ${cleanNotes}`.trim() }));
-                                    toast.success(`"${tmpl.name}" selezionato!`);
-                                  }
-                                }}
-                                className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${isSelected ? 'border-[#6366F1] bg-[#6366F1]/15' : 'border-[#3A2A1A] bg-[#2A1A0E] hover:border-[#6366F1]/60'}`}
-                                data-testid={`website-card-template-${i}`}>
-                                <div className="flex justify-between items-center">
-                                  <div>
-                                    <p className="font-bold text-white">{tmpl.name}</p>
-                                    <p className="text-sm text-[#8B5CF6]">
-                                      {tmpl.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}
-                                      {tmpl.total_services ? ` · ${tmpl.total_services} servizi` : ''}
-                                    </p>
+                    {/* Card & Abbonamenti */}
+                    {hasCardCat && (() => {
+                      const isOpen = openCats['b_cards'];
+                      return (
+                        <div data-testid="booking-cat-cards">
+                          <button type="button" onClick={() => toggleCat('b_cards')}
+                            className="w-full flex items-center justify-between px-5 py-3.5 rounded-2xl font-black text-white text-left transition-all hover:brightness-110 active:scale-[0.98]"
+                            style={{ backgroundColor: '#6366F1' }}>
+                            <span className="flex items-center gap-2">
+                              <CreditCard className="w-4 h-4" />
+                              <span className="text-base">Card & Abbonamenti</span>
+                            </span>
+                            {isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                          </button>
+                          {isOpen && (
+                            <div className="mt-1 space-y-2 pb-2 animate-in fade-in duration-200">
+                              {cardTemplates.map((tmpl, i) => {
+                                const isSelected = formData.notes?.includes(`[CARD: ${tmpl.name}]`);
+                                return (
+                                  <div key={tmpl.id || i}
+                                    onClick={() => {
+                                      if (isSelected) {
+                                        setFormData(prev => ({ ...prev, notes: prev.notes.replace(`[CARD: ${tmpl.name}] `, '').replace(`[CARD: ${tmpl.name}]`, '') }));
+                                        toast('Card rimossa');
+                                      } else {
+                                        const cleanNotes = (formData.notes || '').replace(/\[CARD: [^\]]+\] ?/g, '');
+                                        setFormData(prev => ({ ...prev, notes: `[CARD: ${tmpl.name}] ${cleanNotes}`.trim() }));
+                                        toast.success(`"${tmpl.name}" selezionato!`);
+                                      }
+                                    }}
+                                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${isSelected ? 'border-[#6366F1] bg-[#6366F1]/15' : 'border-[#3A2A1A] bg-[#2A1A0E] hover:border-[#6366F1]/60'}`}
+                                    data-testid={`website-card-template-${i}`}>
+                                    <div className="flex justify-between items-center">
+                                      <div>
+                                        <p className="font-bold text-white">{tmpl.name}</p>
+                                        <p className="text-sm text-[#8B5CF6]">
+                                          {tmpl.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}
+                                          {tmpl.total_services ? ` · ${tmpl.total_services} servizi` : ''}
+                                        </p>
+                                      </div>
+                                      <div className="text-right">
+                                        <p className="font-black text-white">{'\u20AC'}{tmpl.total_value}</p>
+                                        {isSelected && <span className="text-xs font-bold text-[#6366F1]">SELEZIONATO</span>}
+                                      </div>
+                                    </div>
                                   </div>
-                                  <div className="text-right">
-                                    <p className="font-black text-white">{'\u20AC'}{tmpl.total_value}</p>
-                                    {isSelected && <span className="text-xs font-bold text-[#6366F1]">SELEZIONATO</span>}
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
 
                     {/* Promozioni attive */}
                     {publicPromos.length > 0 && (

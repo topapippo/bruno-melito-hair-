@@ -6,7 +6,7 @@ export const CATEGORIES = [
   { value: 'colore', label: 'Colore', color: '#789F8A' },
   { value: 'permanente', label: 'Permanente', color: '#8B5CF6' },
   { value: 'stiratura', label: 'Stiratura', color: '#D946EF' },
-  { value: 'abbonamento', label: 'Card & Abbonamenti', color: '#6366F1' },
+  { value: 'abbonamento', label: 'Abbonamenti', color: '#6366F1' },
   { value: 'altro', label: 'Altro', color: '#64748B' },
 ];
 
