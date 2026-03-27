@@ -59,6 +59,7 @@ export default function NewAppointmentDialog({
   const [dialogClientPromos, setDialogClientPromos] = useState([]);
   const [preSelectedCardId, setPreSelectedCardId] = useState('');
   const [preSelectedPromoId, setPreSelectedPromoId] = useState('');
+  const [allPromos, setAllPromos] = useState([]);
 
   const mbhsOperator = operators.find(op => op.name.toUpperCase().includes('MBHS')) || operators[0];
 
@@ -82,6 +83,8 @@ export default function NewAppointmentDialog({
         notes: '',
         date: initialDate || format(new Date(), 'yyyy-MM-dd')
       });
+      // Fetch all active promos
+      api.get(`${API}/promotions`).then(res => setAllPromos(res.data || [])).catch(() => setAllPromos([]));
     }
   }, [open, initialDate, initialTime, initialOperatorId]);
 
@@ -454,7 +457,46 @@ export default function NewAppointmentDialog({
               </div>
             </div>
 
-            {/* Card & Promozioni del Cliente */}
+            {/* Promozioni Attive (sempre visibili) */}
+            {allPromos.length > 0 && !formData.client_id && (
+              <div className="space-y-2 p-3 bg-gradient-to-r from-pink-50 to-rose-50 border-2 border-pink-200 rounded-xl">
+                <Label className="text-pink-800 font-bold flex items-center gap-2">
+                  <Gift className="w-4 h-4" /> Promozioni Attive
+                </Label>
+                <div className="grid grid-cols-1 gap-1.5">
+                  {allPromos.filter(p => p.active !== false).map(promo => (
+                    <button
+                      key={promo.id}
+                      type="button"
+                      onClick={() => setPreSelectedPromoId(preSelectedPromoId === promo.id ? '' : promo.id)}
+                      className={`w-full p-2 rounded-xl border-2 text-left transition-all ${
+                        preSelectedPromoId === promo.id
+                          ? 'border-pink-500 bg-pink-100 ring-2 ring-pink-400'
+                          : 'border-pink-200 bg-white hover:border-pink-400'
+                      }`}
+                      data-testid={`allpromo-${promo.id}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Gift className={`w-4 h-4 ${preSelectedPromoId === promo.id ? 'text-pink-600' : 'text-gray-400'}`} />
+                          <div>
+                            <p className="font-bold text-sm text-[#2D1B14]">{promo.name}</p>
+                            {promo.free_service_name && <p className="text-[10px] text-pink-600 font-semibold">OMAGGIO: {promo.free_service_name}</p>}
+                          </div>
+                        </div>
+                      </div>
+                      {preSelectedPromoId === promo.id && (
+                        <div className="mt-1 flex items-center gap-1 text-xs text-pink-700 font-semibold">
+                          <Check className="w-3 h-3" /> Selezionata
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Card & Promozioni del Cliente (dopo selezione) */}
             {(dialogClientCards.length > 0 || dialogClientPromos.length > 0) && (
               <div className="space-y-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl">
                 <Label className="text-green-800 font-bold flex items-center gap-2">

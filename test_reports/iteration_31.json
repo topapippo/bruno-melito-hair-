@@ -1,0 +1,81 @@
+{
+  "summary": "Iteration 31: 3 Bug Fixes Verified - All tests passed. 1) Upselling API fix (hardcoded email changed from melitobruno@gmail.com to admin@brunomelito.it) - working correctly, returns 2 suggestions with 15% discount. 2) Promos and Card/Abbonamenti visible in Planning page - NewAppointmentDialog fetches all active promos on open and displays Card templates. 3) Services on public booking page grouped by clickable categories using HTML <details> elements.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": [
+    "BACKEND API TESTS (8/8 passed):",
+    "1. test_public_services_returns_data - PASS (19 services found)",
+    "2. test_upselling_returns_suggestions - PASS (2 suggestions with discounted prices)",
+    "3. test_public_promotions_all_endpoint - PASS (7 promotions found)",
+    "4. test_public_website_includes_card_templates - PASS (6 card templates found)",
+    "5. test_promotions_endpoint - PASS (authenticated, 7 promos)",
+    "6. test_card_templates_endpoint - PASS (authenticated, 6 templates)",
+    "7. test_services_have_categories - PASS (categories: taglio, piega, colore, trattamento, etc.)",
+    "8. test_website_config_has_service_categories - PASS (3 categories in config)",
+    "",
+    "FRONTEND UI TESTS (Public Booking Page /prenota):",
+    "9. Landing page loads with booking-welcome data-testid - PASS",
+    "10. PRENOTA ORA button visible and clickable - PASS",
+    "11. Public service categories (collapsible accordions) on landing - PASS (3 found)",
+    "12. Public promos on landing page - PASS (7 found)",
+    "13. Booking form Step 1 shows service category accordions - PASS (9 categories)",
+    "14. Clicking category expands to show services - PASS (19 services visible)",
+    "15. Clicking service selects it (blue highlight) - PASS",
+    "16. Promozioni Attive section in booking form - PASS (7 promo items)",
+    "17. Card & Abbonamenti section in booking form - PASS (6 card items)"
+  ],
+  "failed_tests": [],
+  "test_report_links": [
+    "/app/backend/tests/test_iteration31_bug_fixes.py",
+    "/app/test_reports/pytest/pytest_iteration31.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Bug Fix 1 (Upselling): Backend public.py line 332 correctly uses admin@brunomelito.it instead of hardcoded melitobruno@gmail.com",
+    "Bug Fix 2 (Promos in Planning): NewAppointmentDialog.jsx line 87 fetches all promos on dialog open via api.get(`${API}/promotions`)",
+    "Bug Fix 3 (Category Grouping): BookingPage.jsx uses groupServicesByCategory() and <details> HTML elements for collapsible categories",
+    "All data-testid attributes present for testing: booking-cat-*, service-item-*, promo-item-*, booking-card-*, planning-card-template-*, allpromo-*"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration31_bug_fixes.py"
+  ],
+  "success_rate": {
+    "backend": "100% (8/8 tests passed)",
+    "frontend": "100% (9/9 UI checks passed)"
+  },
+  "test_credentials": {
+    "admin_email": "admin@brunomelito.it",
+    "admin_password": "mbhs637104"
+  },
+  "seed_data_creation": "None - used existing data",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 31 verified 3 bug fixes: 1) Upselling API now uses correct user email (admin@brunomelito.it), 2) NewAppointmentDialog in Planning page fetches and displays all active promos and card templates, 3) Public booking page (/prenota) groups services by clickable categories using HTML <details> elements. All backend APIs working correctly. Frontend UI verified via Playwright - categories expand/collapse, services selectable, promos and cards visible.",
+  "bug_fixes_verified": {
+    "upselling_email_fix": {
+      "file": "/app/backend/routes/public.py",
+      "line": 332,
+      "old_value": "melitobruno@gmail.com",
+      "new_value": "admin@brunomelito.it",
+      "status": "VERIFIED WORKING"
+    },
+    "promos_in_planning": {
+      "file": "/app/frontend/src/components/planning/NewAppointmentDialog.jsx",
+      "line": 87,
+      "change": "Added api.get(`${API}/promotions`) on dialog open",
+      "status": "VERIFIED WORKING"
+    },
+    "category_grouping": {
+      "file": "/app/frontend/src/pages/BookingPage.jsx",
+      "change": "Services grouped by category using <details> HTML elements",
+      "status": "VERIFIED WORKING"
+    }
+  }
+}

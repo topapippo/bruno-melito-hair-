@@ -139,7 +139,7 @@ DEFAULT_WEBSITE_CONFIG = {
     "years_experience": "40+",
     "year_founded": "1983",
     "phones": ["0823 18 78 320", "339 78 33 526"],
-    "email": "melitobruno@gmail.com",
+    "email": "admin@brunomelito.it",
     "address": "Via Vito Nicola Melorio 101, Santa Maria Capua Vetere (CE)",
     "maps_url": "https://maps.google.com/?q=Via+Vito+Nicola+Melorio+101+Santa+Maria+Capua+Vetere",
     "whatsapp": "393397833526",
@@ -161,7 +161,7 @@ DEFAULT_WEBSITE_CONFIG = {
 
 @router.get("/public/services")
 async def get_public_services():
-    user = await db.users.find_one({"email": "melitobruno@gmail.com"}, {"_id": 0, "id": 1})
+    user = await db.users.find_one({"email": "admin@brunomelito.it"}, {"_id": 0, "id": 1})
     if not user:
         user = await db.users.find_one({}, {"_id": 0, "id": 1})
     if not user:
@@ -171,7 +171,7 @@ async def get_public_services():
 
 @router.get("/public/operators")
 async def get_public_operators():
-    user = await db.users.find_one({"email": "melitobruno@gmail.com"}, {"_id": 0, "id": 1})
+    user = await db.users.find_one({"email": "admin@brunomelito.it"}, {"_id": 0, "id": 1})
     if not user:
         user = await db.users.find_one({}, {"_id": 0, "id": 1})
     if not user:
@@ -181,7 +181,7 @@ async def get_public_operators():
 
 @router.post("/public/booking")
 async def create_public_booking(data: PublicBookingRequest):
-    user = await db.users.find_one({"email": "melitobruno@gmail.com"}, {"_id": 0})
+    user = await db.users.find_one({"email": "admin@brunomelito.it"}, {"_id": 0})
     if not user:
         user = await db.users.find_one({}, {"_id": 0})
     if not user:
@@ -329,7 +329,7 @@ async def create_public_booking(data: PublicBookingRequest):
 @router.get("/public/upselling")
 async def get_upselling_suggestions(service_ids: str):
     """Get upselling suggestions based on booked service IDs."""
-    user = await db.users.find_one({"email": "melitobruno@gmail.com"}, {"_id": 0})
+    user = await db.users.find_one({"email": "admin@brunomelito.it"}, {"_id": 0})
     if not user:
         user = await db.users.find_one({}, {"_id": 0})
     if not user:
@@ -367,7 +367,7 @@ async def add_service_to_appointment(appointment_id: str, data: dict):
     phone = data.get("phone")
     if not service_id or not phone:
         raise HTTPException(status_code=400, detail="Servizio e telefono richiesti")
-    user = await db.users.find_one({"email": "melitobruno@gmail.com"}, {"_id": 0})
+    user = await db.users.find_one({"email": "admin@brunomelito.it"}, {"_id": 0})
     if not user:
         user = await db.users.find_one({}, {"_id": 0})
     if not user:
@@ -412,7 +412,7 @@ async def add_service_to_appointment(appointment_id: str, data: dict):
 
 @router.get("/public/my-appointments")
 async def public_lookup_appointments(phone: str):
-    user = await db.users.find_one({"email": "melitobruno@gmail.com"}, {"_id": 0})
+    user = await db.users.find_one({"email": "admin@brunomelito.it"}, {"_id": 0})
     if not user:
         user = await db.users.find_one({}, {"_id": 0})
     if not user:
@@ -446,7 +446,7 @@ async def public_update_appointment(appointment_id: str, data: dict):
     phone = data.get("phone", "")
     if not phone:
         raise HTTPException(status_code=400, detail="Numero di telefono richiesto")
-    user = await db.users.find_one({"email": "melitobruno@gmail.com"}, {"_id": 0})
+    user = await db.users.find_one({"email": "admin@brunomelito.it"}, {"_id": 0})
     if not user:
         user = await db.users.find_one({}, {"_id": 0})
     if not user:
@@ -472,7 +472,7 @@ async def public_update_appointment(appointment_id: str, data: dict):
 
 @router.delete("/public/appointments/{appointment_id}")
 async def public_cancel_appointment(appointment_id: str, phone: str):
-    user = await db.users.find_one({"email": "melitobruno@gmail.com"}, {"_id": 0})
+    user = await db.users.find_one({"email": "admin@brunomelito.it"}, {"_id": 0})
     if not user:
         user = await db.users.find_one({}, {"_id": 0})
     if not user:

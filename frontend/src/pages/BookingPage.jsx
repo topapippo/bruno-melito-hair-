@@ -4,7 +4,8 @@ import { getMediaUrl } from '../lib/mediaUrl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Clock, Scissors, CheckCircle, ArrowLeft, MapPin, Phone, Mail, Star, MessageSquare, ChevronDown, ChevronUp, ArrowRight, Instagram, Facebook, Globe, Youtube, Gift, Calendar, Pencil, Trash2 } from 'lucide-react';
+import { Clock, Scissors, CheckCircle, ArrowLeft, MapPin, Phone, Mail, Star, MessageSquare, ChevronDown, ChevronUp, ArrowRight, Instagram, Facebook, Globe, Youtube, Gift, Calendar, Pencil, Trash2, CreditCard } from 'lucide-react';
+import { getCategoryInfo, groupServicesByCategory } from '../lib/categories';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast, Toaster } from 'sonner';
@@ -48,7 +49,6 @@ const getAvailableSlotsForDate = (dateStr, blocked = []) => {
 
 export default function BookingPage() {
   const [showBooking, setShowBooking] = useState(false);
-  const [showServices, setShowServices] = useState(false);
   const [step, setStep] = useState(1);
   const [services, setServices] = useState([]);
   const [operators, setOperators] = useState([]);
@@ -397,35 +397,62 @@ export default function BookingPage() {
             <div className="space-y-4">
               <h2 className="text-xl font-black text-[#1e293b]">Scegli i Servizi</h2>
               {loading ? <div className="flex justify-center py-8"><Clock className="w-6 h-6 text-[#94A3B8] animate-spin" /></div> : (
-                <div className="space-y-2">
-                  {services.map(service => (
-                    <div key={service.id} onClick={() => toggleService(service.id)}
-                      className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${formData.service_ids.includes(service.id) ? 'border-[#0EA5E9] bg-[#0EA5E9]/10' : 'border-gray-200 bg-white hover:border-gray-300'}`}
-                      data-testid={`service-item-${service.id}`}>
-                      <div className="flex justify-between items-center">
-                        <div><p className="font-bold text-[#1e293b]">{service.name}</p><p className="text-sm text-[#94A3B8]">{service.duration} min</p></div>
-                        <p className="font-black text-[#1e293b]">{'\u20AC'}{service.price}</p>
-                      </div>
-                    </div>
-                  ))}
+                <div className="space-y-3">
+                  {(() => {
+                    const grouped = groupServicesByCategory(services);
+                    return grouped.orderedKeys.map(catKey => {
+                      const catInfo = getCategoryInfo(catKey);
+                      const catServices = grouped.groups[catKey];
+                      const selectedInCat = catServices.filter(s => formData.service_ids.includes(s.id)).length;
+                      return (
+                        <details key={catKey} className="group rounded-2xl border-2 overflow-hidden transition-all" style={{ borderColor: catInfo.color + '40' }} data-testid={`booking-cat-${catKey}`}>
+                          <summary className="flex items-center justify-between p-4 cursor-pointer select-none hover:bg-gray-50 transition-colors list-none [&::-webkit-details-marker]:hidden" style={{ backgroundColor: catInfo.color + '08' }}>
+                            <div className="flex items-center gap-3">
+                              <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: catInfo.color }} />
+                              <span className="font-black text-[#1e293b]">{catInfo.label}</span>
+                              <span className="text-xs text-gray-400 font-medium">{catServices.length} servizi</span>
+                              {selectedInCat > 0 && (
+                                <span className="text-xs font-bold text-white px-2 py-0.5 rounded-full" style={{ backgroundColor: catInfo.color }}>{selectedInCat} sel.</span>
+                              )}
+                            </div>
+                            <ChevronDown className="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform" />
+                          </summary>
+                          <div className="p-2 space-y-1.5 border-t" style={{ borderColor: catInfo.color + '20' }}>
+                            {catServices.map(service => (
+                              <div key={service.id} onClick={() => toggleService(service.id)}
+                                className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${formData.service_ids.includes(service.id) ? 'shadow-sm' : 'border-gray-100 bg-white hover:border-gray-200'}`}
+                                style={formData.service_ids.includes(service.id) ? { borderColor: catInfo.color, backgroundColor: catInfo.color + '10' } : {}}
+                                data-testid={`service-item-${service.id}`}>
+                                <div className="flex justify-between items-center">
+                                  <div>
+                                    <p className="font-bold text-[#1e293b] text-sm">{service.name}</p>
+                                    <p className="text-xs text-[#94A3B8]">{service.duration} min</p>
+                                  </div>
+                                  <p className="font-black text-[#1e293b] shrink-0 ml-2">{'\u20AC'}{service.price}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </details>
+                      );
+                    });
+                  })()}
                 </div>
               )}
               
               {/* Promozioni e Card/Abbonamenti cliccabili */}
               {publicPromos.length > 0 && (
-                <div className="mt-6">
+                <div className="mt-4">
                   <h3 className="text-lg font-bold text-[#1e293b] mb-3 flex items-center gap-2">
-                    <Gift className="w-5 h-5 text-amber-500" /> Promozioni & Card
+                    <Gift className="w-5 h-5 text-amber-500" /> Promozioni Attive
                   </h3>
                   <div className="space-y-2">
                     {publicPromos.map((promo) => (
                       <div key={promo.id} 
                         onClick={() => {
-                          // Add the promo's free service to selected services
                           if (promo.free_service_id && !formData.service_ids.includes(promo.free_service_id)) {
                             setFormData(prev => ({ ...prev, service_ids: [...prev.service_ids, promo.free_service_id], notes: (prev.notes ? prev.notes + ' ' : '') + `[PROMO: ${promo.name}]` }));
                           } else {
-                            // If no specific service, add as note
                             setFormData(prev => ({ ...prev, notes: (prev.notes ? prev.notes + ' ' : '') + `[PROMO: ${promo.name}]` }));
                           }
                           toast.success(`Promo "${promo.name}" aggiunta!`);
@@ -438,6 +465,37 @@ export default function BookingPage() {
                             <p className="text-sm text-amber-600">{promo.free_service_name || promo.description || 'Clicca per applicare'}</p>
                           </div>
                           <div className="bg-amber-400 text-white text-xs font-bold px-3 py-1 rounded-full">PROMO</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Card/Abbonamenti disponibili */}
+              {(siteData?.card_templates || []).length > 0 && (
+                <div className="mt-4">
+                  <h3 className="text-lg font-bold text-[#1e293b] mb-3 flex items-center gap-2">
+                    <CreditCard className="w-5 h-5 text-indigo-500" /> Card & Abbonamenti
+                  </h3>
+                  <div className="space-y-2">
+                    {(siteData?.card_templates || []).map((card, i) => (
+                      <div key={card.id || i}
+                        className="p-4 rounded-xl border-2 border-indigo-200 bg-gradient-to-r from-indigo-50 to-violet-50 cursor-pointer transition-all hover:border-indigo-400 hover:shadow-md"
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, notes: (prev.notes ? prev.notes + ' ' : '') + `[CARD: ${card.name}]` }));
+                          toast.success(`Card "${card.name}" annotata!`);
+                        }}
+                        data-testid={`booking-card-${card.id || i}`}>
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <p className="font-bold text-[#1e293b]">{card.name}</p>
+                            <p className="text-sm text-indigo-600">{card.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'} - {card.total_services > 0 ? `${card.total_services} servizi` : ''}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-black text-indigo-600">{'\u20AC'}{card.total_value}</p>
+                            <span className="bg-indigo-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">CARD</span>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -588,39 +646,83 @@ export default function BookingPage() {
       {/* SERVICES SECTION - Collapsible */}
       <section ref={servicesRef} className="py-20 sm:py-28 relative">
         <div className="max-w-6xl mx-auto px-4">
-          <button onClick={() => setShowServices(!showServices)} className="w-full text-center mb-4 group">
+          <div className="text-center mb-8">
             <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: tc.accent }}>I Nostri Servizi</p>
             <h2 className="text-3xl sm:text-4xl font-black" style={{ color: tc.text }}>Servizi Professionali</h2>
             <p className="mt-3 max-w-xl mx-auto" style={{ color: tc.text + '60' }}>Dal taglio classico alle tecniche più innovative.</p>
-            <div className="flex items-center justify-center gap-2 font-bold mt-4" style={{ color: tc.accent }}>
-              {showServices ? <><span>Nascondi listino</span><ChevronUp className="w-5 h-5" /></> : <><span>Mostra listino</span><ChevronDown className="w-5 h-5" /></>}
-            </div>
-          </button>
+          </div>
 
-          {showServices && serviceCategories.length > 0 && (
-            <div className="space-y-6 mt-8 animate-in fade-in duration-300">
+          {/* Categorie cliccabili dal CMS */}
+          {serviceCategories.length > 0 && (
+            <div className="space-y-3 mb-8">
               {serviceCategories.map((cat, idx) => (
-                <div key={idx} className="bg-white border border-gray-200 rounded-3xl p-6 transition-all duration-300 hover:shadow-xl hover:scale-[1.01]">
-                  <h3 className="text-xl font-black mb-1" style={{ color: tc.text }}>{cat.title}</h3>
-                  {cat.desc && <p className="text-sm mb-4" style={{ color: tc.text + '80' }}>{cat.desc}</p>}
-                  <div className="space-y-3">
-                    {(cat.items || []).map((item, i) => (
-                      <div key={i} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
-                        <span className="font-bold" style={{ color: tc.accent }}>{item.name}</span>
-                        <span className="font-black text-lg shrink-0 ml-4" style={{ color: tc.primary }}>{item.price}</span>
-                      </div>
-                    ))}
+                <details key={idx} className="group bg-white border border-gray-200 rounded-2xl overflow-hidden transition-all hover:shadow-lg" data-testid={`public-service-cat-${idx}`}>
+                  <summary className="flex items-center justify-between p-5 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden" style={{ backgroundColor: tc.primary + '05' }}>
+                    <div>
+                      <h3 className="text-xl font-black" style={{ color: tc.text }}>{cat.title}</h3>
+                      {cat.desc && <p className="text-sm mt-0.5" style={{ color: tc.text + '70' }}>{cat.desc}</p>}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0 ml-4">
+                      <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: tc.primary + '15', color: tc.primary }}>{(cat.items || []).length} servizi</span>
+                      <ChevronDown className="w-5 h-5 group-open:rotate-180 transition-transform" style={{ color: tc.primary }} />
+                    </div>
+                  </summary>
+                  <div className="px-5 pb-5 border-t" style={{ borderColor: tc.primary + '15' }}>
+                    <div className="space-y-0">
+                      {(cat.items || []).map((item, i) => (
+                        <div key={i} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0">
+                          <span className="font-bold" style={{ color: tc.accent }}>{item.name}</span>
+                          <span className="font-black text-lg shrink-0 ml-4" style={{ color: tc.primary }}>{item.price}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                </details>
               ))}
-              <div className="text-center">
-                <p className="text-sm mb-6" style={{ color: tc.text + '70' }}>Tutti i servizi includono consulenza personalizzata e prodotti professionali.</p>
-                <Button onClick={() => setShowBooking(true)} className="text-white font-bold px-8 py-6 rounded-xl" style={{ backgroundColor: tc.primary }}>
-                  <Scissors className="w-4 h-4 mr-2" /> PRENOTA ORA
-                </Button>
-              </div>
             </div>
           )}
+
+          {/* Servizi dal DB raggruppati per categoria */}
+          {services.length > 0 && serviceCategories.length === 0 && (
+            <div className="space-y-3 mb-8">
+              {(() => {
+                const grouped = groupServicesByCategory(services);
+                return grouped.orderedKeys.map(catKey => {
+                  const catInfo = getCategoryInfo(catKey);
+                  const catServices = grouped.groups[catKey];
+                  return (
+                    <details key={catKey} className="group bg-white border border-gray-200 rounded-2xl overflow-hidden transition-all hover:shadow-lg">
+                      <summary className="flex items-center justify-between p-5 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden" style={{ backgroundColor: tc.primary + '05' }}>
+                        <h3 className="text-xl font-black" style={{ color: tc.text }}>{catInfo.label}</h3>
+                        <div className="flex items-center gap-2 shrink-0 ml-4">
+                          <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: tc.primary + '15', color: tc.primary }}>{catServices.length}</span>
+                          <ChevronDown className="w-5 h-5 group-open:rotate-180 transition-transform" style={{ color: tc.primary }} />
+                        </div>
+                      </summary>
+                      <div className="px-5 pb-5 border-t" style={{ borderColor: tc.primary + '15' }}>
+                        {catServices.map(s => (
+                          <div key={s.id} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0">
+                            <div>
+                              <span className="font-bold" style={{ color: tc.accent }}>{s.name}</span>
+                              <span className="text-xs ml-2" style={{ color: tc.text + '50' }}>{s.duration} min</span>
+                            </div>
+                            <span className="font-black text-lg shrink-0 ml-4" style={{ color: tc.primary }}>{'\u20AC'}{s.price}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </details>
+                  );
+                });
+              })()}
+            </div>
+          )}
+
+          <div className="text-center">
+            <p className="text-sm mb-6" style={{ color: tc.text + '70' }}>Tutti i servizi includono consulenza personalizzata e prodotti professionali.</p>
+            <Button onClick={() => setShowBooking(true)} className="text-white font-bold px-8 py-6 rounded-xl" style={{ backgroundColor: tc.primary }}>
+              <Scissors className="w-4 h-4 mr-2" /> PRENOTA ORA
+            </Button>
+          </div>
         </div>
       </section>
 
