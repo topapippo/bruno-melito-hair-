@@ -97,6 +97,10 @@ api_router = APIRouter(prefix="/api")
 async def root():
     return {"message": "Salone Parrucchiera API", "status": "ok"}
 
+@api_router.get("/health")
+async def health():
+    return {"status": "alive"}
+
 for router in all_routers:
     api_router.include_router(router)
 
