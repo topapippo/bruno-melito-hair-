@@ -113,6 +113,16 @@ export default function BookingPage() {
   const hairstylePhotos = cmsGallery.filter(g => g.section === 'gallery' || g.section === 'works');
   const serviceCategories = config.service_categories || [];
 
+  // Dynamic theme colors from CMS
+  const tc = {
+    primary: config.primary_color || '#0EA5E9',
+    accent: config.accent_color || '#D4A847',
+    bg: config.bg_color || '#FFF8F0',
+    text: config.text_color || '#1e293b',
+    fontDisplay: config.font_display || 'Cormorant Garamond, serif',
+    fontBody: config.font_body || 'Nunito, sans-serif',
+  };
+
   // getMediaUrl importato da ../lib/mediaUrl
 
   const toggleService = (id) => {
@@ -206,31 +216,30 @@ export default function BookingPage() {
   // SUCCESS PAGE
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#FFF8F0] via-[#FEF3E2] to-[#F0F4FF] flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: tc.bg, color: tc.text, fontFamily: tc.fontBody }}>
         <Toaster position="top-center" />
         <div className="max-w-md w-full">
           <div className="text-center">
             <CheckCircle className="w-20 h-20 mx-auto text-emerald-400 mb-6" />
-            <h1 className="text-3xl font-black text-[#1e293b] mb-3">Prenotazione Confermata!</h1>
-            <p className="text-[#D4B89A] mb-2">Ti aspettiamo il <span className="text-[#1e293b] font-bold">{format(new Date(formData.date), 'd MMMM yyyy', { locale: it })}</span> alle <span className="text-[#1e293b] font-bold">{formData.time}</span></p>
-            <p className="text-sm text-[#94A3B8] mb-6">Riceverai un promemoria prima dell'appuntamento.</p>
+            <h1 className="text-3xl font-black mb-3" style={{ color: tc.text }}>Prenotazione Confermata!</h1>
+            <p className="mb-2" style={{ color: tc.accent }}>Ti aspettiamo il <span className="font-bold" style={{ color: tc.text }}>{format(new Date(formData.date), 'd MMMM yyyy', { locale: it })}</span> alle <span className="font-bold" style={{ color: tc.text }}>{formData.time}</span></p>
+            <p className="text-sm mb-6" style={{ color: tc.text + '60' }}>Riceverai un promemoria prima dell'appuntamento.</p>
           </div>
 
-          {/* Upselling Suggestions */}
           {upsellingSuggestions.length > 0 && (
             <div className="mt-2 mb-6" data-testid="upselling-suggestions">
-              <div className="bg-white rounded-2xl border border-amber-200 shadow-lg overflow-hidden">
-                <div className="bg-gradient-to-r from-amber-50 to-orange-50 px-5 py-3 border-b border-amber-100">
-                  <p className="text-sm font-black text-[#1e293b] flex items-center gap-2">
-                    <Gift className="w-4 h-4 text-amber-500" /> Completa il tuo look!
+              <div className="bg-white rounded-2xl border shadow-lg overflow-hidden" style={{ borderColor: tc.accent + '30' }}>
+                <div className="px-5 py-3 border-b" style={{ backgroundColor: tc.primary + '10', borderColor: tc.primary + '15' }}>
+                  <p className="text-sm font-black flex items-center gap-2" style={{ color: tc.text }}>
+                    <Gift className="w-4 h-4" style={{ color: tc.accent }} /> Completa il tuo look!
                   </p>
-                  <p className="text-xs text-amber-600 mt-0.5">Aggiungi un servizio con uno sconto esclusivo</p>
+                  <p className="text-xs mt-0.5" style={{ color: tc.primary }}>Aggiungi un servizio con uno sconto esclusivo</p>
                 </div>
                 <div className="p-4 space-y-3">
                   {upsellingSuggestions.map(svc => (
-                    <div key={svc.id} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-amber-50/50 transition-colors" data-testid={`upsell-item-${svc.id}`}>
+                    <div key={svc.id} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors" data-testid={`upsell-item-${svc.id}`}>
                       <div className="flex-1">
-                        <p className="font-bold text-sm text-[#1e293b]">{svc.name}</p>
+                        <p className="font-bold text-sm" style={{ color: tc.text }}>{svc.name}</p>
                         <div className="flex items-center gap-2 mt-1">
                           <span className="text-xs text-gray-400 line-through">{'\u20AC'}{svc.original_price}</span>
                           <span className="text-sm font-black text-emerald-600">{'\u20AC'}{svc.discounted_price}</span>
@@ -238,7 +247,7 @@ export default function BookingPage() {
                         </div>
                       </div>
                       <Button size="sm" onClick={() => addUpsellService(svc)} disabled={addingUpsell === svc.id}
-                        className="bg-[#C8617A] hover:bg-[#A0404F] text-white text-xs font-bold px-4 shrink-0" data-testid={`upsell-add-${svc.id}`}>
+                        className="text-white text-xs font-bold px-4 shrink-0" style={{ backgroundColor: tc.primary }} data-testid={`upsell-add-${svc.id}`}>
                         {addingUpsell === svc.id ? <Clock className="w-3 h-3 animate-spin" /> : 'Aggiungi'}
                       </Button>
                     </div>
@@ -257,7 +266,7 @@ export default function BookingPage() {
 
           <div className="text-center">
             <Button onClick={() => { setSuccess(false); setShowBooking(false); setStep(1); setAppointmentId(null); setUpsellingSuggestions([]); setAddedUpsells([]); setFormData({ client_name: '', client_phone: '', service_ids: [], operator_id: '', date: format(new Date(), 'yyyy-MM-dd'), time: '09:00', notes: '' }); }}
-              className="bg-[#0EA5E9] text-white hover:bg-gray-200 font-bold px-8" data-testid="booking-back-home-btn">Torna alla Home</Button>
+              className="text-white font-bold px-8" style={{ backgroundColor: tc.primary }} data-testid="booking-back-home-btn">Torna alla Home</Button>
           </div>
         </div>
       </div>
@@ -287,7 +296,7 @@ export default function BookingPage() {
               <div className="flex gap-2">
                 <Input value={managePhone} onChange={(e) => setManagePhone(e.target.value)}
                   placeholder="Es: 339 1234567" className="bg-gray-50 border-gray-200 text-[#1e293b] flex-1" data-testid="manage-phone-input" />
-                <Button onClick={lookupAppointments} disabled={lookingUp} className="bg-[#0EA5E9] text-white hover:bg-gray-200 font-bold" data-testid="lookup-btn">
+                <Button onClick={lookupAppointments} disabled={lookingUp} className="text-white font-bold" style={{ backgroundColor: tc.primary }} data-testid="lookup-btn">
                   {lookingUp ? <Clock className="w-4 h-4 animate-spin" /> : 'Cerca'}
                 </Button>
               </div>
@@ -500,7 +509,7 @@ export default function BookingPage() {
 
   // ==================== LANDING PAGE ====================
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#FFF8F0] via-[#FEF3E2] to-[#F0F4FF] text-[#1e293b]" data-testid="booking-welcome">
+    <div className="min-h-screen" style={{ backgroundColor: tc.bg, color: tc.text, fontFamily: tc.fontBody }} data-testid="booking-welcome">
       <Toaster position="top-center" />
 
       {/* NAVBAR */}
@@ -508,20 +517,20 @@ export default function BookingPage() {
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src="/logo.png?v=4" alt="Bruno Melito Hair" className="w-10 h-10 rounded-lg" />
-            <span className="font-black text-sm sm:text-base tracking-tight">BRUNO MELITO HAIR</span>
+            <span className="font-black text-sm sm:text-base tracking-tight" style={{ color: tc.text }}>{config.salon_name || 'BRUNO MELITO HAIR'}</span>
           </div>
-          <div className="hidden sm:flex items-center gap-6 text-sm text-[#64748B]">
-            <button onClick={() => { setShowServices(true); setTimeout(() => scrollTo(servicesRef), 100); }} className="hover:text-[#1e293b] transition-colors">Servizi</button>
-            <button onClick={() => scrollTo(contactRef)} className="hover:text-[#1e293b] transition-colors">Contatti</button>
-            <div className="flex items-center gap-3 border-l border-[#4A3020] pl-4">
+          <div className="hidden sm:flex items-center gap-6 text-sm" style={{ color: tc.text + '80' }}>
+            <button onClick={() => { setShowServices(true); setTimeout(() => scrollTo(servicesRef), 100); }} className="hover:opacity-80 transition-colors">Servizi</button>
+            <button onClick={() => scrollTo(contactRef)} className="hover:opacity-80 transition-colors">Contatti</button>
+            <div className="flex items-center gap-3 border-l pl-4" style={{ borderColor: tc.text + '20' }}>
               {SOCIAL_LINKS.map((link, i) => (
-                <a key={i} href={link.url} target="_blank" rel="noopener noreferrer" className={`text-[#94A3B8] ${link.color} transition-colors`} title={link.label}>
+                <a key={i} href={link.url} target="_blank" rel="noopener noreferrer" className="hover:opacity-70 transition-colors" style={{ color: tc.text + '60' }} title={link.label}>
                   <link.icon className="w-4 h-4" />
                 </a>
               ))}
             </div>
           </div>
-          <Button onClick={() => setShowBooking(true)} className="bg-[#0EA5E9] text-white hover:bg-gray-200 font-bold text-sm px-4 sm:px-6" data-testid="booking-start-btn">
+          <Button onClick={() => setShowBooking(true)} className="text-white font-bold text-sm px-4 sm:px-6" style={{ backgroundColor: tc.primary }} data-testid="booking-start-btn">
             PRENOTA ORA
           </Button>
         </div>
@@ -531,50 +540,47 @@ export default function BookingPage() {
       <section className="relative min-h-screen flex items-center pt-16">
         <div className="absolute inset-0">
           <img src={HERO_LOGO} alt="Bruno Melito Hair" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-[#FFF8F0]" />
+          <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.1), ${tc.bg})` }} />
         </div>
         <div className="relative max-w-6xl mx-auto px-4 py-20 sm:py-32 w-full">
           <div className="text-center max-w-3xl mx-auto">
-            {/* Logo hero */}
             <div className="flex justify-center mb-8">
               <img src={HERO_LOGO} alt="Bruno Melito Hair" className="w-48 h-48 sm:w-64 sm:h-64 lg:w-80 lg:h-80 object-contain drop-shadow-2xl rounded-3xl border-2 border-white/30 shadow-2xl" />
             </div>
-            <div className="inline-block bg-white/10 backdrop-blur-sm text-[#1e293b] text-xs font-bold px-4 py-2 rounded-full border border-amber-400/20 mb-6">
+            <div className="inline-block bg-white/10 backdrop-blur-sm text-xs font-bold px-4 py-2 rounded-full mb-6" style={{ color: tc.text, borderColor: tc.accent + '30', border: `1px solid ${tc.accent}30` }}>
               SOLO PER APPUNTAMENTO
             </div>
-            <p className="text-base sm:text-lg text-[#D4B89A] max-w-lg mx-auto mb-8 leading-relaxed">
-              Scopri l'eccellenza dell'hair styling al Bruno Melito Hair. Dove ogni taglio è un'opera d'arte e ogni cliente è unica.
+            <p className="text-base sm:text-lg max-w-lg mx-auto mb-8 leading-relaxed" style={{ color: tc.accent }}>
+              {config.slogan || "Scopri l'eccellenza dell'hair styling al Bruno Melito Hair. Dove ogni taglio è un'opera d'arte e ogni cliente è unica."}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center mb-10">
-              <Button onClick={() => setShowBooking(true)} className="bg-[#0EA5E9] text-white hover:bg-gray-200 font-black text-base px-8 py-6 rounded-xl">
+              <Button onClick={() => setShowBooking(true)} className="text-white font-black text-base px-8 py-6 rounded-xl" style={{ backgroundColor: tc.primary }}>
                 <Scissors className="w-5 h-5 mr-2" /> PRENOTA ORA
               </Button>
-              <Button onClick={() => { setShowServices(true); setTimeout(() => scrollTo(servicesRef), 100); }} variant="outline" className="border-white/20 text-[#1e293b] hover:bg-white/10 font-bold text-base px-8 py-6 rounded-xl">
+              <Button onClick={() => { setShowServices(true); setTimeout(() => scrollTo(servicesRef), 100); }} variant="outline" className="font-bold text-base px-8 py-6 rounded-xl" style={{ borderColor: tc.text + '20', color: tc.text }}>
                 Scopri i Servizi <ChevronDown className="w-4 h-4 ml-2" />
               </Button>
-              <Button onClick={() => setShowManage(true)} variant="outline" className="border-amber-400/30 text-amber-400 hover:bg-amber-400/10 font-bold text-base px-8 py-6 rounded-xl">
+              <Button onClick={() => setShowManage(true)} variant="outline" className="font-bold text-base px-8 py-6 rounded-xl" style={{ borderColor: tc.accent + '30', color: tc.accent }}>
                 <Calendar className="w-5 h-5 mr-2" /> Gestisci Appuntamento
               </Button>
             </div>
-            {/* Contact quick links */}
             <div className="flex flex-col sm:flex-row gap-4 text-sm justify-center">
-              <a href="tel:08231878320" className="flex items-center gap-2 text-[#64748B] hover:text-[#1e293b] transition-colors justify-center">
+              <a href="tel:08231878320" className="flex items-center gap-2 transition-colors justify-center" style={{ color: tc.text + '80' }}>
                 <Phone className="w-4 h-4" /> 0823 18 78 320
               </a>
-              <a href="tel:3397833526" className="flex items-center gap-2 text-[#64748B] hover:text-[#1e293b] transition-colors justify-center">
+              <a href="tel:3397833526" className="flex items-center gap-2 transition-colors justify-center" style={{ color: tc.text + '80' }}>
                 <Phone className="w-4 h-4" /> 339 78 33 526
               </a>
               <a href="https://maps.google.com/?q=Via+Vito+Nicola+Melorio+101+Santa+Maria+Capua+Vetere" target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-2 text-[#64748B] hover:text-[#1e293b] transition-colors justify-center">
+                className="flex items-center gap-2 transition-colors justify-center" style={{ color: tc.text + '80' }}>
                 <MapPin className="w-4 h-4" /> Via Vito Nicola Melorio 101, S.M.C.V.
               </a>
             </div>
           </div>
-          {/* Experience badge */}
-          <div className="absolute right-4 sm:right-8 bottom-20 sm:bottom-32 bg-white/5 backdrop-blur-md border border-rose-400/30 rounded-3xl p-5 text-center hidden md:block hover:shadow-lg hover:shadow-rose-400/20 transition-all duration-300">
-            <p className="text-4xl font-black text-rose-300">40+</p>
-            <p className="text-xs text-[#64748B] font-semibold">Anni di<br />Esperienza</p>
-            <p className="text-[10px] text-[#7A5A3A] mt-1">Dal 1983</p>
+          <div className="absolute right-4 sm:right-8 bottom-20 sm:bottom-32 bg-white/5 backdrop-blur-md rounded-3xl p-5 text-center hidden md:block hover:shadow-lg transition-all duration-300" style={{ borderColor: tc.primary + '30', border: `1px solid ${tc.primary}30` }}>
+            <p className="text-4xl font-black" style={{ color: tc.primary }}>40+</p>
+            <p className="text-xs font-semibold" style={{ color: tc.text + '80' }}>Anni di<br />Esperienza</p>
+            <p className="text-[10px] mt-1" style={{ color: tc.text + '60' }}>Dal 1983</p>
           </div>
         </div>
       </section>
@@ -583,10 +589,10 @@ export default function BookingPage() {
       <section ref={servicesRef} className="py-20 sm:py-28 relative">
         <div className="max-w-6xl mx-auto px-4">
           <button onClick={() => setShowServices(!showServices)} className="w-full text-center mb-4 group">
-            <p className="text-amber-400 font-bold text-sm tracking-widest uppercase mb-3">I Nostri Servizi</p>
-            <h2 className="text-3xl sm:text-4xl font-black">Servizi Professionali</h2>
-            <p className="text-[#94A3B8] mt-3 max-w-xl mx-auto">Dal taglio classico alle tecniche più innovative.</p>
-            <div className="flex items-center justify-center gap-2 text-amber-400 font-bold mt-4">
+            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: tc.accent }}>I Nostri Servizi</p>
+            <h2 className="text-3xl sm:text-4xl font-black" style={{ color: tc.text }}>Servizi Professionali</h2>
+            <p className="mt-3 max-w-xl mx-auto" style={{ color: tc.text + '60' }}>Dal taglio classico alle tecniche più innovative.</p>
+            <div className="flex items-center justify-center gap-2 font-bold mt-4" style={{ color: tc.accent }}>
               {showServices ? <><span>Nascondi listino</span><ChevronUp className="w-5 h-5" /></> : <><span>Mostra listino</span><ChevronDown className="w-5 h-5" /></>}
             </div>
           </button>
@@ -594,22 +600,22 @@ export default function BookingPage() {
           {showServices && serviceCategories.length > 0 && (
             <div className="space-y-6 mt-8 animate-in fade-in duration-300">
               {serviceCategories.map((cat, idx) => (
-                <div key={idx} className={`bg-white border border-gray-200 rounded-3xl p-6 transition-all duration-300 hover:shadow-xl hover:scale-[1.01]`}>
-                  <h3 className="text-xl font-black text-[#1e293b] mb-1">{cat.title}</h3>
-                  {cat.desc && <p className="text-sm text-[#64748B] mb-4">{cat.desc}</p>}
+                <div key={idx} className="bg-white border border-gray-200 rounded-3xl p-6 transition-all duration-300 hover:shadow-xl hover:scale-[1.01]">
+                  <h3 className="text-xl font-black mb-1" style={{ color: tc.text }}>{cat.title}</h3>
+                  {cat.desc && <p className="text-sm mb-4" style={{ color: tc.text + '80' }}>{cat.desc}</p>}
                   <div className="space-y-3">
                     {(cat.items || []).map((item, i) => (
-                      <div key={i} className="flex justify-between items-center py-2 border-b border-white/5 last:border-0">
-                        <span className="font-bold text-[#D4B89A]">{item.name}</span>
-                        <span className="font-black text-amber-400 text-lg shrink-0 ml-4">{item.price}</span>
+                      <div key={i} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
+                        <span className="font-bold" style={{ color: tc.accent }}>{item.name}</span>
+                        <span className="font-black text-lg shrink-0 ml-4" style={{ color: tc.primary }}>{item.price}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               ))}
               <div className="text-center">
-                <p className="text-[#7A5A3A] text-sm mb-6">Tutti i servizi includono consulenza personalizzata e prodotti professionali.</p>
-                <Button onClick={() => setShowBooking(true)} className="bg-[#0EA5E9] text-white hover:bg-gray-200 font-bold px-8 py-6 rounded-xl">
+                <p className="text-sm mb-6" style={{ color: tc.text + '70' }}>Tutti i servizi includono consulenza personalizzata e prodotti professionali.</p>
+                <Button onClick={() => setShowBooking(true)} className="text-white font-bold px-8 py-6 rounded-xl" style={{ backgroundColor: tc.primary }}>
                   <Scissors className="w-4 h-4 mr-2" /> PRENOTA ORA
                 </Button>
               </div>
@@ -621,49 +627,38 @@ export default function BookingPage() {
       {/* PROMOTIONS SECTION */}
       {publicPromos.length > 0 && (
         <section className="py-20 sm:py-28 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-pink-500/10 via-transparent to-amber-500/10" />
           <div className="max-w-6xl mx-auto px-4 relative">
             <div className="text-center mb-12">
-              <p className="text-pink-400 font-bold text-sm tracking-widest uppercase mb-3">Offerte Speciali</p>
-              <h2 className="text-3xl sm:text-4xl font-black">Promozioni Attive</h2>
-              <p className="text-[#64748B] mt-3 max-w-xl mx-auto">Servizi extra in omaggio per te!</p>
+              <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: tc.primary }}>Offerte Speciali</p>
+              <h2 className="text-3xl sm:text-4xl font-black" style={{ color: tc.text }}>Promozioni Attive</h2>
+              <p className="mt-3 max-w-xl mx-auto" style={{ color: tc.text + '80' }}>Servizi extra in omaggio per te!</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {publicPromos.map((promo, idx) => {
-                const gradients = [
-                  'from-pink-500/20 to-rose-500/10 border-pink-400/30 hover:shadow-pink-400/20',
-                  'from-amber-500/20 to-orange-500/10 border-amber-400/30 hover:shadow-amber-400/20',
-                  'from-teal-500/20 to-cyan-500/10 border-teal-400/30 hover:shadow-teal-400/20',
-                  'from-violet-500/20 to-purple-500/10 border-violet-400/30 hover:shadow-violet-400/20',
-                  'from-blue-500/20 to-indigo-500/10 border-blue-400/30 hover:shadow-blue-400/20',
-                  'from-emerald-500/20 to-green-500/10 border-emerald-400/30 hover:shadow-emerald-400/20',
-                ];
-                const g = gradients[idx % gradients.length];
-                return (
-                  <div key={promo.id || idx} className={`bg-gradient-to-br ${g} border rounded-3xl p-6 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]`}
-                    data-testid={`public-promo-${promo.id || idx}`}>
-                    <div className="flex items-center gap-2 mb-3">
-                      <Gift className="w-5 h-5 text-pink-400" />
-                      <h3 className="text-lg font-black text-[#1e293b]">{promo.name}</h3>
-                    </div>
-                    <p className="text-[#D4B89A] text-sm mb-4">{promo.description}</p>
-                    <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/10">
-                      <p className="text-pink-300 font-black text-sm flex items-center gap-2">
-                        <Gift className="w-4 h-4" /> IN OMAGGIO: {promo.free_service_name}
-                      </p>
-                    </div>
-                    {promo.promo_code && (
-                      <div className="mt-3 flex items-center gap-2">
-                        <span className="text-xs text-[#94A3B8]">Codice:</span>
-                        <span className="font-mono font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded text-sm">{promo.promo_code}</span>
-                      </div>
-                    )}
+              {publicPromos.map((promo, idx) => (
+                <div key={promo.id || idx} className="bg-white border rounded-3xl p-6 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
+                  style={{ borderColor: tc.primary + '30' }}
+                  data-testid={`public-promo-${promo.id || idx}`}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Gift className="w-5 h-5" style={{ color: tc.primary }} />
+                    <h3 className="text-lg font-black" style={{ color: tc.text }}>{promo.name}</h3>
                   </div>
-                );
-              })}
+                  <p className="text-sm mb-4" style={{ color: tc.accent }}>{promo.description}</p>
+                  <div className="rounded-xl p-3 border" style={{ backgroundColor: tc.primary + '10', borderColor: tc.primary + '20' }}>
+                    <p className="font-black text-sm flex items-center gap-2" style={{ color: tc.primary }}>
+                      <Gift className="w-4 h-4" /> IN OMAGGIO: {promo.free_service_name}
+                    </p>
+                  </div>
+                  {promo.promo_code && (
+                    <div className="mt-3 flex items-center gap-2">
+                      <span className="text-xs" style={{ color: tc.text + '60' }}>Codice:</span>
+                      <span className="font-mono font-bold px-2 py-0.5 rounded text-sm" style={{ color: tc.accent, backgroundColor: tc.accent + '15' }}>{promo.promo_code}</span>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
             <div className="text-center mt-10">
-              <Button onClick={() => setShowBooking(true)} className="bg-pink-500 hover:bg-pink-600 text-[#1e293b] font-black text-base px-8 py-6 rounded-xl">
+              <Button onClick={() => setShowBooking(true)} className="text-white font-black text-base px-8 py-6 rounded-xl" style={{ backgroundColor: tc.primary }}>
                 <Gift className="w-5 h-5 mr-2" /> PRENOTA CON PROMOZIONE
               </Button>
             </div>
@@ -676,8 +671,8 @@ export default function BookingPage() {
       <section className="py-20 sm:py-28 bg-white/60">
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center mb-12">
-            <p className="text-amber-400 font-bold text-sm tracking-widest uppercase mb-3">Il Nostro Salone</p>
-            <h2 className="text-3xl sm:text-4xl font-black">Dove Nasce la Bellezza</h2>
+            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: tc.accent }}>Il Nostro Salone</p>
+            <h2 className="text-3xl sm:text-4xl font-black" style={{ color: tc.text }}>Dove Nasce la Bellezza</h2>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {salonPhotos.slice(0, 4).map((item, idx) => {
@@ -718,13 +713,13 @@ export default function BookingPage() {
                 {config.about_text || 'Dal 1983 con grande soddisfazione nostra e delle clienti che ci seguono, siamo un punto di riferimento per chi cerca qualità e professionalità nell\'hair styling.'}
               </p>
               {config.about_text_2 && (
-                <p className="text-[#64748B] leading-relaxed mb-8">{config.about_text_2}</p>
+                <p className="leading-relaxed mb-8" style={{ color: tc.text + '80' }}>{config.about_text_2}</p>
               )}
               <div className="grid grid-cols-2 gap-3">
                 {(config.about_features || ["Dal 1983 nel settore", "Senza parabeni e solfati", "Colorazioni senza ammoniaca", "Cheratina e olio di argan"]).map((item, idx) => (
                   <div key={idx} className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-teal-400 shrink-0" />
-                    <span className="text-sm text-[#D4B89A]">{item}</span>
+                    <CheckCircle className="w-4 h-4 shrink-0" style={{ color: tc.primary }} />
+                    <span className="text-sm" style={{ color: tc.accent }}>{item}</span>
                   </div>
                 ))}
               </div>
@@ -738,28 +733,24 @@ export default function BookingPage() {
       <section className="py-20 sm:py-28">
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center mb-12">
-            <p className="text-teal-400 font-bold text-sm tracking-widest uppercase mb-3">Recensioni</p>
-            <h2 className="text-3xl sm:text-4xl font-black">Cosa Dicono di Noi</h2>
+            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: tc.primary }}>Recensioni</p>
+            <h2 className="text-3xl sm:text-4xl font-black" style={{ color: tc.text }}>Cosa Dicono di Noi</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {cmsReviews.map((review, idx) => {
-              const avatarBgs = ['bg-amber-400/15', 'bg-rose-400/15', 'bg-teal-400/15', 'bg-violet-400/15'];
-              const avatarTexts = ['text-amber-400', 'text-rose-400', 'text-teal-400', 'text-violet-400'];
-              return (
-              <div key={review.id || idx} className={`bg-white border border-gray-200 rounded-3xl p-5 transition-all duration-300 hover:shadow-xl hover:scale-[1.02]`}>
+            {cmsReviews.map((review, idx) => (
+              <div key={review.id || idx} className="bg-white border border-gray-200 rounded-3xl p-5 transition-all duration-300 hover:shadow-xl hover:scale-[1.02]">
                 <div className="flex gap-0.5 mb-3">
-                  {[...Array(review.rating || 5)].map((_, i) => (<Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />))}
+                  {[...Array(review.rating || 5)].map((_, i) => (<Star key={i} className="w-4 h-4 fill-current" style={{ color: tc.accent }} />))}
                 </div>
-                <p className="text-[#D4B89A] text-sm leading-relaxed mb-4">"{review.text}"</p>
+                <p className="text-sm leading-relaxed mb-4" style={{ color: tc.text + '80' }}>"{review.text}"</p>
                 <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 ${avatarBgs[idx % 4]} rounded-full flex items-center justify-center`}>
-                    <span className={`${avatarTexts[idx % 4]} font-bold text-sm`}>{(review.name || 'A')[0]}</span>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: tc.primary + '15' }}>
+                    <span className="font-bold text-sm" style={{ color: tc.primary }}>{(review.name || 'A')[0]}</span>
                   </div>
-                  <span className="text-sm text-[#64748B] font-semibold">{review.name}</span>
+                  <span className="text-sm font-semibold" style={{ color: tc.text + '80' }}>{review.name}</span>
                 </div>
               </div>
-              );
-            })}
+            ))}
           </div>
         </div>
       </section>
@@ -767,30 +758,27 @@ export default function BookingPage() {
 
       {/* LOYALTY PROGRAM */}
       {siteData?.loyalty && (
-      <section className="py-20 sm:py-28 bg-gradient-to-br from-amber-50 via-white to-amber-50">
+      <section className="py-20 sm:py-28">
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center mb-12">
-            <p className="text-amber-500 font-bold text-sm tracking-widest uppercase mb-3">Programma Fedeltà</p>
-            <h2 className="text-3xl sm:text-4xl font-black text-[#1e293b]">Ogni Visita Vale di Più</h2>
-            <p className="text-[#94A3B8] mt-3 max-w-xl mx-auto">Accumula punti ad ogni appuntamento e sblocca premi esclusivi. <strong>1 punto ogni €{siteData.loyalty.points_per_euro || 10} spesi</strong>.</p>
+            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: tc.accent }}>Programma Fedeltà</p>
+            <h2 className="text-3xl sm:text-4xl font-black" style={{ color: tc.text }}>Ogni Visita Vale di Più</h2>
+            <p className="mt-3 max-w-xl mx-auto" style={{ color: tc.text + '60' }}>Accumula punti ad ogni appuntamento e sblocca premi esclusivi. <strong>1 punto ogni €{siteData.loyalty.points_per_euro || 10} spesi</strong>.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
             {Object.entries(siteData.loyalty.rewards || {}).map(([key, reward], idx) => {
               const icons = [Gift, Star, Scissors];
-              const colors = ['from-amber-400 to-orange-400', 'from-rose-400 to-pink-400', 'from-teal-400 to-emerald-400'];
-              const bgColors = ['bg-amber-100', 'bg-rose-100', 'bg-teal-100'];
-              const textColors = ['text-amber-600', 'text-rose-600', 'text-teal-600'];
               const Icon = icons[idx % 3];
               return (
                 <div key={key} className="bg-white rounded-3xl p-6 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.03] text-center">
-                  <div className={`w-16 h-16 ${bgColors[idx % 3]} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
-                    <Icon className={`w-8 h-8 ${textColors[idx % 3]}`} />
+                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: tc.primary + '15' }}>
+                    <Icon className="w-8 h-8" style={{ color: tc.primary }} />
                   </div>
-                  <h3 className="font-bold text-lg text-[#1e293b] mb-2">{reward.name}</h3>
-                  <div className={`inline-block bg-gradient-to-r ${colors[idx % 3]} text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3`}>
+                  <h3 className="font-bold text-lg mb-2" style={{ color: tc.text }}>{reward.name}</h3>
+                  <div className="inline-block text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3" style={{ backgroundColor: tc.primary }}>
                     {reward.points_required} punti
                   </div>
-                  <p className="text-[#64748B] text-sm">
+                  <p className="text-sm" style={{ color: tc.text + '80' }}>
                     {reward.discount_percent === 100 ? 'Un servizio completamente gratuito!' : 
                      reward.discount_percent ? `Sconto del ${reward.discount_percent}% sul prossimo servizio` :
                      reward.name}
@@ -800,7 +788,7 @@ export default function BookingPage() {
             })}
           </div>
           <div className="text-center mt-10">
-            <Button onClick={() => setShowBooking(true)} className="bg-gradient-to-r from-amber-400 to-orange-400 text-white hover:from-amber-500 hover:to-orange-500 font-bold px-8 py-6 rounded-xl shadow-lg" data-testid="loyalty-cta-btn">
+            <Button onClick={() => setShowBooking(true)} className="text-white font-bold px-8 py-6 rounded-xl shadow-lg" style={{ backgroundColor: tc.accent }} data-testid="loyalty-cta-btn">
               <Gift className="w-4 h-4 mr-2" /> INIZIA A RACCOGLIERE PUNTI
             </Button>
           </div>
@@ -843,7 +831,7 @@ export default function BookingPage() {
             })}
           </div>
           <div className="text-center mt-8">
-            <Button onClick={() => setShowBooking(true)} className="bg-[#0EA5E9] text-white hover:bg-gray-200 font-bold px-8 py-6 rounded-xl">
+            <Button onClick={() => setShowBooking(true)} className="text-white font-bold px-8 py-6 rounded-xl" style={{ backgroundColor: tc.primary }}>
               <Scissors className="w-4 h-4 mr-2" /> PRENOTA ORA
             </Button>
           </div>
@@ -855,40 +843,40 @@ export default function BookingPage() {
       <section ref={contactRef} className="py-20 sm:py-28">
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center mb-12">
-            <p className="text-violet-400 font-bold text-sm tracking-widest uppercase mb-3">Contattaci</p>
-            <h2 className="text-3xl sm:text-4xl font-black">Prenota il Tuo Appuntamento</h2>
-            <p className="text-[#94A3B8] mt-3">Siamo pronti ad accoglierti nel nostro salone.</p>
+            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: tc.primary }}>Contattaci</p>
+            <h2 className="text-3xl sm:text-4xl font-black" style={{ color: tc.text }}>Prenota il Tuo Appuntamento</h2>
+            <p className="mt-3" style={{ color: tc.text + '60' }}>Siamo pronti ad accoglierti nel nostro salone.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
             <a href={`https://maps.google.com/?q=${encodeURIComponent(config.address || 'Via Vito Nicola Melorio 101 Santa Maria Capua Vetere')}`} target="_blank" rel="noopener noreferrer"
-              className="bg-white/60/80 border border-amber-400/25 rounded-3xl p-5 hover:border-amber-400/50 hover:shadow-lg hover:shadow-amber-400/20 transition-all duration-300 text-center" data-testid="contact-address">
-              <MapPin className="w-6 h-6 text-amber-400 mx-auto mb-3" />
-              <h3 className="font-bold text-[#1e293b] text-sm mb-1">Indirizzo</h3>
-              <p className="text-[#64748B] text-xs leading-relaxed">{config.address || 'Via Vito Nicola Melorio 101'}<br />{config.city || 'Santa Maria Capua Vetere (CE)'}</p>
+              className="bg-white border rounded-3xl p-5 hover:shadow-lg transition-all duration-300 text-center" style={{ borderColor: tc.primary + '25' }} data-testid="contact-address">
+              <MapPin className="w-6 h-6 mx-auto mb-3" style={{ color: tc.primary }} />
+              <h3 className="font-bold text-sm mb-1" style={{ color: tc.text }}>Indirizzo</h3>
+              <p className="text-xs leading-relaxed" style={{ color: tc.text + '80' }}>{config.address || 'Via Vito Nicola Melorio 101'}<br />{config.city || 'Santa Maria Capua Vetere (CE)'}</p>
             </a>
-            <div className="bg-white/60/80 border border-rose-400/25 rounded-3xl p-5 text-center hover:shadow-lg hover:shadow-rose-400/20 transition-all duration-300">
-              <Phone className="w-6 h-6 text-rose-400 mx-auto mb-3" />
-              <h3 className="font-bold text-[#1e293b] text-sm mb-1">Telefono</h3>
+            <div className="bg-white border rounded-3xl p-5 text-center hover:shadow-lg transition-all duration-300" style={{ borderColor: tc.accent + '25' }}>
+              <Phone className="w-6 h-6 mx-auto mb-3" style={{ color: tc.accent }} />
+              <h3 className="font-bold text-sm mb-1" style={{ color: tc.text }}>Telefono</h3>
               {(config.phones || ['0823 18 78 320', '339 78 33 526']).map((phone, i) => (
-                <a key={i} href={`tel:${phone.replace(/\s/g, '')}`} className="text-[#64748B] text-xs hover:text-[#1e293b] transition-colors block mt-1">{phone}</a>
+                <a key={i} href={`tel:${phone.replace(/\s/g, '')}`} className="text-xs transition-colors block mt-1" style={{ color: tc.text + '80' }}>{phone}</a>
               ))}
             </div>
-            <a href={`mailto:${config.email || 'melitobruno@gmail.com'}`} className="bg-white/60/80 border border-teal-400/25 rounded-3xl p-5 hover:border-teal-400/50 hover:shadow-lg hover:shadow-teal-400/20 transition-all duration-300 text-center">
-              <Mail className="w-6 h-6 text-teal-400 mx-auto mb-3" />
-              <h3 className="font-bold text-[#1e293b] text-sm mb-1">Email</h3>
-              <p className="text-[#64748B] text-xs">{config.email || 'melitobruno@gmail.com'}</p>
+            <a href={`mailto:${config.email || 'melitobruno@gmail.com'}`} className="bg-white border rounded-3xl p-5 hover:shadow-lg transition-all duration-300 text-center" style={{ borderColor: tc.primary + '25' }}>
+              <Mail className="w-6 h-6 mx-auto mb-3" style={{ color: tc.primary }} />
+              <h3 className="font-bold text-sm mb-1" style={{ color: tc.text }}>Email</h3>
+              <p className="text-xs" style={{ color: tc.text + '80' }}>{config.email || 'melitobruno@gmail.com'}</p>
             </a>
-            <div className="bg-white/60/80 border border-violet-400/25 rounded-3xl p-5 text-center hover:shadow-lg hover:shadow-violet-400/20 transition-all duration-300">
-              <Clock className="w-6 h-6 text-violet-400 mx-auto mb-3" />
-              <h3 className="font-bold text-[#1e293b] text-sm mb-1">Orari</h3>
+            <div className="bg-white border rounded-3xl p-5 text-center hover:shadow-lg transition-all duration-300" style={{ borderColor: tc.accent + '25' }}>
+              <Clock className="w-6 h-6 mx-auto mb-3" style={{ color: tc.accent }} />
+              <h3 className="font-bold text-sm mb-1" style={{ color: tc.text }}>Orari</h3>
               {config.hours ? (
                 Object.entries(config.hours).map(([day, time], i) => (
-                  <p key={i} className="text-[#64748B] text-xs">{day}: {time}</p>
+                  <p key={i} className="text-xs" style={{ color: tc.text + '80' }}>{day}: {time}</p>
                 ))
               ) : (
                 <>
-                  <p className="text-[#64748B] text-xs">Mar - Sab: 08:00 - 19:00</p>
-                  <p className="text-[#7A5A3A] text-xs mt-1">Dom - Lun: Chiuso</p>
+                  <p className="text-xs" style={{ color: tc.text + '80' }}>Mar - Sab: 08:00 - 19:00</p>
+                  <p className="text-xs mt-1" style={{ color: tc.text + '60' }}>Dom - Lun: Chiuso</p>
                 </>
               )}
             </div>
@@ -898,7 +886,7 @@ export default function BookingPage() {
           <div className="flex flex-wrap items-center justify-center gap-3 mb-10">
             {SOCIAL_LINKS.map((link, i) => (
               <a key={i} href={link.url} target="_blank" rel="noopener noreferrer"
-                className={`flex items-center gap-2 px-5 py-3 rounded-2xl bg-white/60/80 border border-white/10 text-[#64748B] ${link.color} transition-all hover:bg-white/5 hover:scale-105 hover:border-white/20`}>
+                className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-white border transition-all hover:scale-105" style={{ borderColor: tc.primary + '20', color: tc.text + '80' }}>
                 <link.icon className="w-5 h-5" />
                 <span className="text-sm font-semibold">{link.label}</span>
               </a>
@@ -906,14 +894,14 @@ export default function BookingPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button onClick={() => setShowBooking(true)} className="bg-[#0EA5E9] text-white hover:bg-[#0284C7] font-black text-base px-10 py-6 rounded-2xl w-full sm:w-auto shadow-lg shadow-[#0EA5E9]/30" data-testid="contact-book-btn">
+            <Button onClick={() => setShowBooking(true)} className="text-white font-black text-base px-10 py-6 rounded-2xl w-full sm:w-auto shadow-lg" style={{ backgroundColor: tc.primary }} data-testid="contact-book-btn">
               <Scissors className="w-5 h-5 mr-2" /> PRENOTA ORA
             </Button>
-            <Button onClick={openWhatsApp} className="bg-[#25D366] hover:bg-[#20bd5a] text-[#1e293b] font-bold text-base px-10 py-6 rounded-2xl w-full sm:w-auto shadow-lg shadow-green-400/20" data-testid="contact-whatsapp-btn">
+            <Button onClick={openWhatsApp} className="bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-base px-10 py-6 rounded-2xl w-full sm:w-auto shadow-lg" data-testid="contact-whatsapp-btn">
               <MessageSquare className="w-5 h-5 mr-2" /> WHATSAPP
             </Button>
             <a href="tel:08231878320" className="w-full sm:w-auto">
-              <Button variant="outline" className="border-rose-400/30 text-rose-300 hover:bg-rose-400/10 font-bold text-base px-10 py-6 rounded-2xl w-full" data-testid="contact-call-btn">
+              <Button variant="outline" className="font-bold text-base px-10 py-6 rounded-2xl w-full" style={{ borderColor: tc.accent + '30', color: tc.accent }} data-testid="contact-call-btn">
                 <Phone className="w-5 h-5 mr-2" /> CHIAMA
               </Button>
             </a>
@@ -922,38 +910,36 @@ export default function BookingPage() {
       </section>
 
       {/* FOOTER */}
-      <footer className="py-12 border-t border-amber-200/30">
+      <footer className="py-12 border-t" style={{ borderColor: tc.text + '15' }}>
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex flex-col items-center gap-6">
-            <img src="/logo.png?v=4" alt="Bruno Melito Hair" className="w-14 h-14 rounded-2xl border border-amber-400/20" />
-            <p className="text-[#64748B] text-sm font-bold">BRUNO MELITO HAIR</p>
+            <img src="/logo.png?v=4" alt="Bruno Melito Hair" className="w-14 h-14 rounded-2xl border" style={{ borderColor: tc.primary + '20' }} />
+            <p className="text-sm font-bold" style={{ color: tc.text + '80' }}>{config.salon_name || 'BRUNO MELITO HAIR'}</p>
             
-            {/* Social Links */}
             <div className="flex items-center gap-4">
               {SOCIAL_LINKS.map((link, i) => (
                 <a key={i} href={link.url} target="_blank" rel="noopener noreferrer"
-                  className={`w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[#94A3B8] ${link.color} transition-all hover:bg-white/10 hover:scale-110`}
+                  className="w-10 h-10 rounded-full border flex items-center justify-center transition-all hover:scale-110" style={{ borderColor: tc.text + '15', color: tc.text + '60' }}
                   title={link.label}>
                   <link.icon className="w-5 h-5" />
                 </a>
               ))}
             </div>
 
-            {/* Page Links */}
-            <div className="flex items-center gap-6 text-sm text-[#94A3B8]">
-              <a href="/prenota" className="hover:text-[#1e293b] transition-colors">Prenota Online</a>
-              <a href="/sito" className="hover:text-[#1e293b] transition-colors">Sito Web</a>
+            <div className="flex items-center gap-6 text-sm" style={{ color: tc.text + '60' }}>
+              <a href="/prenota" className="hover:opacity-80 transition-colors">Prenota Online</a>
+              <a href="/sito" className="hover:opacity-80 transition-colors">Sito Web</a>
             </div>
 
-            <p className="text-gray-700 text-xs">{config.address || 'Via Vito Nicola Melorio 101'}, {config.city || 'Santa Maria Capua Vetere (CE)'}</p>
-            <p className="text-gray-800 text-xs">&copy; {new Date().getFullYear()} Bruno Melito Hair. Tutti i diritti riservati.</p>
+            <p className="text-xs" style={{ color: tc.text + '60' }}>{config.address || 'Via Vito Nicola Melorio 101'}, {config.city || 'Santa Maria Capua Vetere (CE)'}</p>
+            <p className="text-xs" style={{ color: tc.text + '50' }}>&copy; {new Date().getFullYear()} {config.salon_name || 'Bruno Melito Hair'}. Tutti i diritti riservati.</p>
           </div>
         </div>
       </footer>
 
       {/* Fixed bottom CTA on mobile */}
       <div className="fixed bottom-0 left-0 right-0 p-3 bg-white/95 backdrop-blur-md border-t border-gray-200 sm:hidden z-50">
-        <Button onClick={() => setShowBooking(true)} className="w-full bg-[#0EA5E9] text-white hover:bg-[#0284C7] font-black py-5 rounded-2xl shadow-lg" data-testid="mobile-book-btn">
+        <Button onClick={() => setShowBooking(true)} className="w-full text-white font-black py-5 rounded-2xl shadow-lg" style={{ backgroundColor: tc.primary }} data-testid="mobile-book-btn">
           <Scissors className="w-5 h-5 mr-2" /> PRENOTA ORA
         </Button>
       </div>

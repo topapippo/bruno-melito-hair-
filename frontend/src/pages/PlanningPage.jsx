@@ -1107,6 +1107,19 @@ export default function PlanningPage() {
           </div>
         </div>
 
+        {/* Holiday Banner - Daily View */}
+        {viewMode === 'day' && isHoliday(selectedDate) && (
+          <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 flex items-center gap-3" data-testid="holiday-banner">
+            <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
+              <CalendarDays className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <p className="text-red-700 font-black text-lg">{isHoliday(selectedDate).name}</p>
+              <p className="text-red-500 text-sm font-medium">Giorno festivo - {format(selectedDate, "d MMMM yyyy", { locale: it })}</p>
+            </div>
+          </div>
+        )}
+
         {/* Planning Grid */}
         {loading ? (
           <Skeleton className="h-[600px] w-full" />

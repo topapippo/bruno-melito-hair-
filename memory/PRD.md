@@ -1,7 +1,7 @@
 # Bruno Melito Hair - PRD
 
 ## CONFIGURAZIONE PRODUZIONE — NON MODIFICARE MAI
-### ⚠️ ISTRUZIONI CRITICHE PER TUTTI GLI AGENTI ⚠️
+### ISTRUZIONI CRITICHE PER TUTTI GLI AGENTI
 **LEGGERE PRIMA DI QUALSIASI MODIFICA**
 
 - **Repository GitHub UNICO:** `topapippo/bruno-melito-hair-` (branch: main)
@@ -9,27 +9,25 @@
 - **Render Backend:** `bruno-melito-hair-2497.onrender.com`
 - **Database:** MongoDB Atlas (NON localhost!)
 - **Account Produzione:** `admin@brunomelito.it` / `mbhs637104`
+- **Account Secondario:** `melitobruno@gmail.com` / `mbhs637104`
 - **UptimeRobot:** DEVE puntare a `https://bruno-melito-hair-2497.onrender.com/api/health`
 - **DNS OVH:** brunomelitohair.it → CNAME verso Render
 
 ### REGOLE ASSOLUTE
-1. **MAI** creare nuovi repository o servizi Render
-2. **MAI** cambiare URL del backend nel frontend (.env o codice)
-3. **MAI** toccare le credenziali di produzione senza motivo
-4. **MAI** aggiungere endpoint admin/reset temporanei e lasciarli in produzione
-5. **SEMPRE** usare `REACT_APP_BACKEND_URL` per le chiamate API
-6. **SEMPRE** ricordare: Build command Render Frontend = `REACT_APP_BACKEND_URL=https://bruno-melito-hair-2497.onrender.com yarn build`
-7. **SEMPRE** dopo Save to GitHub → Manual Deploy → **Clear build cache and deploy** (sia frontend che backend)
+1. MAI creare nuovi repository o servizi Render
+2. MAI cambiare URL del backend nel frontend
+3. MAI toccare le credenziali di produzione senza motivo
+4. MAI aggiungere endpoint admin/reset temporanei
+5. SEMPRE usare `REACT_APP_BACKEND_URL` per le chiamate API
+6. SEMPRE: Build command Render Frontend = `REACT_APP_BACKEND_URL=https://bruno-melito-hair-2497.onrender.com yarn build`
+7. SEMPRE dopo Save to GitHub: Manual Deploy → Clear build cache and deploy
 
 ### VARIABILI RENDER BACKEND
 ```
-MONGO_URL=<stringa Atlas dell'utente>
+MONGO_URL=<stringa Atlas>
 DB_NAME=mbhs
 JWT_SECRET=mbhs-secret-key-2024-secure
 CORS_ORIGINS=*
-EMERGENT_LLM_KEY=<chiave emergent>
-VAPID_PUBLIC_KEY=<chiave pubblica>
-VAPID_PRIVATE_KEY=<chiave privata>
 ```
 
 ### VARIABILI RENDER FRONTEND (Build)
@@ -49,33 +47,34 @@ REACT_APP_BACKEND_URL=https://bruno-melito-hair-2497.onrender.com
 ## Funzionalità Complete
 - Login/Register admin
 - Dashboard con statistiche (giornaliero, mensile, annuale)
-- Planning giornaliero/settimanale/mensile (BRUNO + MBHS)
+- Planning giornaliero/settimanale/mensile (BRUNO + STAFF) con festività italiane
 - Gestione servizi per categorie condivise
 - Gestione clienti (166+)
-- Prenotazione pubblica (/sito) con servizi progressivi per categoria
+- Prenotazione pubblica (/sito) con CMS completamente dinamico
 - Card/Abbonamenti/Prepagate
-- Promozioni e programma fedeltà (5%=5pt, 10%=10pt, Omaggio=35pt)
+- Promozioni e programma fedeltà
 - Report incassi e registro uscite
-- Backup dati
 - Push notifications (VAPID)
-- Operatore alternativo su conflitto orario
-- I Miei Appuntamenti (cliente verifica/modifica/annulla tramite telefono)
-- CMS Editor completo (Generale, Layout, Aspetto, Servizi, Foto, Gallery, Recensioni, Orari)
+- CMS Editor completo con tema dinamico (colori, font, sfondo applicati a TUTTE le sezioni)
 - Upselling Servizi post-prenotazione
-- Promemoria WhatsApp batch (24h, scadenza colore, clienti inattivi)
-- Hero Customization (immagine, slogan, descrizione)
-- Tema Gestionale personalizzabile (6 preset + colori/font custom)
-- Blocco Orari (ricorrenti e singoli, visivi nel Planning)
-- Festività Italiane nel Planning (12 festività + Pasqua mobile)
+- Promemoria WhatsApp batch
+- Hero Customization
+- Tema Gestionale personalizzabile (6 preset + colori/font/sfondo/testo custom)
+- Blocco Orari (ricorrenti e singoli)
+- Festività Italiane (12 + Pasqua mobile) in tutte le viste Planning
 
-## Fix Applicati (Marzo 2026)
-- Service Worker rimosso (causava cache vecchia sui dispositivi)
-- Timeout API aumentato da 15s a 90s con retry automatico
+## Fix Applicati (27 Marzo 2026)
+- Service Worker rimosso (causava cache vecchia)
+- Timeout API: 15s → 90s con retry automatico
 - Endpoint /api/health per UptimeRobot
-- Migrazione dati da account vecchio (melitobruno@gmail.com) a admin@brunomelito.it
+- Migrazione dati completa da melitobruno@gmail.com a admin@brunomelito.it (clienti, servizi, operatori, gallery 33 foto, 6 recensioni, website config)
+- CMS sito pubblico: TUTTI i colori ora dinamici (navbar, hero, servizi, promozioni, gallery, recensioni, fedeltà, contatti, footer)
+- Tema admin: applicato a TUTTO il gestionale (non solo sidebar): sfondo pagina, testo pagina, font display, font body
+- Banner festività prominente nella vista giornaliera del Planning
+- Rimossi endpoint temporanei admin-reset e admin-transfer
 
 ## Backlog
-- P1: Dashboard statistiche clienti (grafici frequenza visite, spesa media, servizi più richiesti)
+- P1: Dashboard statistiche clienti (grafici frequenza visite, spesa media)
 - P2: Scheda cliente con storico foto tagli
 - P2: Sconti/messaggi automatici compleanno
 - P3: Lista d'attesa intelligente
