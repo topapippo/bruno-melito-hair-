@@ -76,6 +76,7 @@ REACT_APP_BACKEND_URL=https://bruno-melito-hair-2497.onrender.com
 - **Fix Upselling** (27 Marzo 2026): Corretta email hardcoded nel backend da melitobruno@gmail.com → admin@brunomelito.it. Suggerimenti upselling ora funzionanti.
 - **Promo/Card nel gestionale** (27 Marzo 2026): Promozioni attive ora visibili nel dialogo nuovo appuntamento del Planning, senza dover prima selezionare un cliente.
 - **Servizi in categorie cliccabili** (27 Marzo 2026): Pagina prenotazione pubblica e landing page ora mostrano servizi raggruppati in categorie collassabili (accordion). Card & Abbonamenti visibili nella prenotazione.
+- **Servizi aggiornati** (27 Marzo 2026): 26 servizi totali organizzati in 8 categorie DB (Styling 2, Piega 4, Trattamenti 6, Colore 6, Permanente 3, Stiratura 4, Card 1). CMS landing page con 4 macro-categorie: Styling (6), Trattamenti (6), Colorazione (6), Modellanti (7).
 
 ## Struttura Componenti Planning (dopo refactoring)
 ```
