@@ -1,99 +1,51 @@
-# Bruno Melito Hair - PRD
+# Bruno Melito Hair - Salon Management App
 
-## CONFIGURAZIONE PRODUZIONE — NON MODIFICARE MAI
-### ISTRUZIONI CRITICHE PER TUTTI GLI AGENTI
-**LEGGERE PRIMA DI QUALSIASI MODIFICA**
-
-- **Repository GitHub UNICO:** `topapippo/bruno-melito-hair-` (branch: main)
-- **Render Frontend:** `bruno-melito-hair.onrender.com` → Custom domain: `brunomelitohair.it`
-- **Render Backend:** `bruno-melito-hair-2497.onrender.com`
-- **Database:** MongoDB Atlas (NON localhost!)
-- **Account Produzione:** `admin@brunomelito.it` / `mbhs637104`
-- **Account Secondario:** `melitobruno@gmail.com` / `mbhs637104`
-- **UptimeRobot:** DEVE puntare a `https://bruno-melito-hair-2497.onrender.com/api/health`
-- **DNS OVH:** brunomelitohair.it → CNAME verso Render
-
-### REGOLE ASSOLUTE
-1. MAI creare nuovi repository o servizi Render
-2. MAI cambiare URL del backend nel frontend
-3. MAI toccare le credenziali di produzione senza motivo
-4. MAI aggiungere endpoint admin/reset temporanei
-5. SEMPRE usare `REACT_APP_BACKEND_URL` per le chiamate API
-6. SEMPRE: Build command Render Frontend = `REACT_APP_BACKEND_URL=https://bruno-melito-hair-2497.onrender.com yarn build`
-7. SEMPRE dopo Save to GitHub: Manual Deploy → Clear build cache and deploy
-
-### VARIABILI RENDER BACKEND
-```
-MONGO_URL=<stringa Atlas>
-DB_NAME=mbhs
-JWT_SECRET=mbhs-secret-key-2024-secure
-CORS_ORIGINS=*
-```
-
-### VARIABILI RENDER FRONTEND (Build)
-```
-REACT_APP_BACKEND_URL=https://bruno-melito-hair-2497.onrender.com
-```
-
----
+## Problema Originale
+App gestionale per salone (Bruno Melito Hair) con sito pubblico di prenotazione e dashboard admin (CMS, Planning, Statistiche).
 
 ## Architettura
-- Frontend: React + craco (porta 3000)
-- Backend: FastAPI + Python (porta 8001)
-- Database: MongoDB Atlas (produzione) / localhost (sviluppo)
-- Hosting: Render
-- DNS: OVH → brunomelitohair.it
+- **Frontend**: React + Shadcn UI (porta 3000)
+- **Backend**: FastAPI (porta 8001)
+- **Database**: MongoDB Atlas
+- **Hosting**: Render (produzione), Emergent Preview (sviluppo)
+- **Dominio**: brunomelitohair.it
 
-## Funzionalità Complete
-- Login/Register admin
-- Dashboard con statistiche (giornaliero, mensile, annuale)
-- Planning giornaliero/settimanale/mensile (BRUNO + STAFF) con festività italiane
-- Gestione servizi per categorie condivise
-- Gestione clienti (166+)
-- Prenotazione pubblica (/sito) con CMS completamente dinamico
-- Card/Abbonamenti/Prepagate
-- Promozioni e programma fedeltà
-- Report incassi e registro uscite
-- Push notifications (VAPID)
-- CMS Editor completo con tema dinamico (colori, font, sfondo applicati a TUTTE le sezioni)
-- Upselling Servizi post-prenotazione
-- Promemoria WhatsApp batch
-- Hero Customization
-- Tema Gestionale personalizzabile (6 preset + colori/font/sfondo/testo custom)
-- Blocco Orari (ricorrenti e singoli)
-- Festività Italiane (12 + Pasqua mobile) in tutte le viste Planning
+## Credenziali
+- Admin: admin@brunomelito.it / mbhs637104
 
-## Fix Applicati (27 Marzo 2026)
-- Service Worker rimosso (causava cache vecchia)
-- Timeout API: 15s → 90s con retry automatico
-- Endpoint /api/health per UptimeRobot
-- Migrazione dati completa da melitobruno@gmail.com a admin@brunomelito.it (clienti, servizi, operatori, gallery 33 foto, 6 recensioni, website config)
-- CMS sito pubblico: TUTTI i colori ora dinamici (navbar, hero, servizi, promozioni, gallery, recensioni, fedeltà, contatti, footer)
-- Tema admin: applicato a TUTTO il gestionale (non solo sidebar): sfondo pagina, testo pagina, font display, font body
-- Banner festività prominente nella vista giornaliera del Planning
-- Rimossi endpoint temporanei admin-reset e admin-transfer
-- **Refactoring PlanningPage.jsx COMPLETATO** (27 Marzo 2026): da 2534 righe → 744 righe + 9 sotto-componenti modulari. 45/45 test superati, zero regressioni.
-- **Fix Upselling** (27 Marzo 2026): Corretta email hardcoded nel backend da melitobruno@gmail.com → admin@brunomelito.it. Suggerimenti upselling ora funzionanti.
-- **Promo/Card nel gestionale** (27 Marzo 2026): Promozioni attive ora visibili nel dialogo nuovo appuntamento del Planning, senza dover prima selezionare un cliente.
-- **Servizi in categorie cliccabili** (27 Marzo 2026): Pagina prenotazione pubblica e landing page ora mostrano servizi raggruppati in categorie collassabili (accordion). Card & Abbonamenti visibili nella prenotazione.
-- **Servizi aggiornati** (27 Marzo 2026): 26 servizi totali organizzati in 8 categorie DB (Styling 2, Piega 4, Trattamenti 6, Colore 6, Permanente 3, Stiratura 4, Card 1). CMS landing page con 4 macro-categorie: Styling (6), Trattamenti (6), Colorazione (6), Modellanti (7).
-
-## Struttura Componenti Planning (dopo refactoring)
+## Struttura File Chiave
 ```
-/app/frontend/src/components/planning/
-├── holidays.js                  (37 righe - Utility festività italiane)
-├── DayView.jsx                  (179 righe - Vista giornaliera con griglia operatori)
-├── WeekView.jsx                 (84 righe - Vista settimanale)
-├── MonthView.jsx                (64 righe - Vista mensile)
-├── NewAppointmentDialog.jsx     (571 righe - Dialogo nuovo appuntamento)
-├── EditAppointmentDialog.jsx    (696 righe - Dialogo modifica + checkout)
-├── RecurringDialog.jsx          (173 righe - Dialogo appuntamento ricorrente)
-├── LoyaltyAlertDialog.jsx       (66 righe - Alert fedeltà WhatsApp)
-└── BlockSlotDialog.jsx          (93 righe - Dialogo blocco orario)
+/app/frontend/src/pages/WebsitePage.jsx  → Pagina pubblica + booking (/sito)
+/app/frontend/src/pages/BookingPage.jsx  → Pagina alternativa (/prenota - non usata)
+/app/frontend/src/pages/CardsPage.jsx    → Gestione Card & Abbonamenti
+/app/frontend/src/pages/PlanningPage.jsx → Calendario Planning (refactored)
+/app/frontend/src/components/planning/NewAppointmentDialog.jsx → Dialog nuovo appuntamento
+/app/frontend/src/lib/categories.js      → Definizione categorie servizi
+/app/backend/routes/cards.py             → API card templates e cards
+/app/backend/routes/services.py          → API servizi
+/app/backend/routes/public.py            → API pubbliche
 ```
 
-## Backlog
-- P1: Dashboard statistiche clienti (grafici frequenza visite, spesa media)
+## Funzionalità Completate
+- [x] CMS dinamico con temi e colori personalizzabili
+- [x] Sistema prenotazione pubblica con upselling
+- [x] Calendario Planning con festività italiane e slot bloccati
+- [x] Promemoria WhatsApp batch
+- [x] Hero CMS personalizzabile
+- [x] Temi admin personalizzabili
+- [x] Refactoring PlanningPage.jsx in componenti modulari
+- [x] Standardizzazione 26 servizi nel DB
+- [x] Pulsanti espandibili per categorie servizi (landing + booking step 1) - WebsitePage.jsx
+- [x] Pacchetti Preimpostati (Card Templates) visibili e gestibili nella pagina Card/Abbonamenti
+- [x] Abbonamenti visibili nel dialog Nuovo Appuntamento del Planning
+
+## Note Importanti
+- La rotta `/sito` usa WebsitePage.jsx (NON BookingPage.jsx)
+- Deploy su Render: sempre "Clear build cache and deploy"
+- Service Worker self-destructing attivo per cache
+
+## Task Futuri
+- P1: Dashboard statistiche clienti (grafici frequenza visite, spesa media, servizi più richiesti)
 - P2: Scheda cliente con storico foto tagli
 - P2: Sconti/messaggi automatici compleanno
 - P3: Lista d'attesa intelligente
