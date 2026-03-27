@@ -4,12 +4,11 @@ import { getMediaUrl, getMediaType } from '../lib/mediaUrl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Clock, Scissors, CheckCircle, ArrowLeft, MapPin, Phone, Mail, Star, MessageSquare, ChevronDown, ChevronUp, ArrowRight, Instagram, Facebook, Globe, Youtube, Gift, CreditCard, CalendarDays, X, Pencil, Trash2, Search, QrCode, Printer, Download } from 'lucide-react';
+import { Clock, Scissors, CheckCircle, ArrowLeft, MapPin, Phone, Mail, Star, MessageSquare, ChevronDown, ChevronUp, ArrowRight, Instagram, Facebook, Globe, Youtube, Gift, CreditCard, CalendarDays, X, Pencil, Trash2, Search, Printer, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast, Toaster } from 'sonner';
 import { CATEGORY_ORDER, getCategoryInfo, groupServicesByCategory } from '../lib/categories';
-import { QRCodeSVG } from 'qrcode.react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -1051,20 +1050,14 @@ export default function WebsitePage() {
           </div>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-8">
             <div className="bg-white rounded-3xl p-8 shadow-lg border border-gray-100 flex flex-col items-center" id="qr-print-area" data-testid="qr-code-card">
-              <div className="bg-white p-4 rounded-2xl border-2 border-gray-100">
-                <QRCodeSVG
-                  value={`${window.location.origin}/sito`}
-                  size={200}
-                  level="H"
-                  includeMargin={false}
-                  fgColor="#1C1008"
-                  bgColor="#FFFFFF"
-                  imageSettings={{
-                    src: "/logo.png?v=4",
-                    height: 40,
-                    width: 40,
-                    excavate: true,
-                  }}
+              <div className="bg-white p-3 rounded-2xl border-2 border-gray-100">
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(window.location.origin + '/sito')}&margin=8`}
+                  alt="QR Code Prenotazione"
+                  width={200}
+                  height={200}
+                  className="block"
+                  data-testid="qr-code-img"
                 />
               </div>
               <p className="font-black text-lg mt-4" style={{ color: T.text }}>{config.salon_name || 'BRUNO MELITO HAIR'}</p>
@@ -1075,6 +1068,7 @@ export default function WebsitePage() {
               <Button
                 onClick={() => {
                   const printContent = document.getElementById('qr-print-area');
+                  const imgSrc = printContent.querySelector('img')?.src || '';
                   const win = window.open('', '_blank');
                   win.document.write(`
                     <html><head><title>QR Code - ${config.salon_name || 'Bruno Melito Hair'}</title>
@@ -1086,10 +1080,10 @@ export default function WebsitePage() {
                       .card p { font-size: 16px; color: #64748B; margin: 4px 0; }
                       .card .addr { font-size: 13px; color: #94A3B8; }
                       .card .hint { font-size: 14px; color: #C8617A; font-weight: bold; margin-top: 16px; }
-                      svg { display: block; margin: 0 auto; }
+                      img { display: block; margin: 0 auto; }
                     </style></head><body>
                     <div class="card">
-                      ${printContent.querySelector('svg').parentElement.outerHTML}
+                      <img src="${imgSrc}" width="250" height="250" />
                       <h1>${config.salon_name || 'BRUNO MELITO HAIR'}</h1>
                       <p>Prenota il tuo appuntamento</p>
                       ${config.address ? `<p class="addr">${config.address}</p>` : ''}
@@ -1108,23 +1102,13 @@ export default function WebsitePage() {
               </Button>
               <Button
                 onClick={() => {
-                  const svg = document.querySelector('#qr-print-area svg');
-                  const svgData = new XMLSerializer().serializeToString(svg);
-                  const canvas = document.createElement('canvas');
-                  canvas.width = 600; canvas.height = 600;
-                  const ctx = canvas.getContext('2d');
-                  ctx.fillStyle = '#FFFFFF';
-                  ctx.fillRect(0, 0, 600, 600);
-                  const img = new Image();
-                  img.onload = () => {
-                    ctx.drawImage(img, 100, 100, 400, 400);
-                    const link = document.createElement('a');
-                    link.download = 'qr-code-bruno-melito.png';
-                    link.href = canvas.toDataURL('image/png');
-                    link.click();
-                    toast.success('QR Code scaricato!');
-                  };
-                  img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+                  const imgSrc = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(window.location.origin + '/sito')}&margin=20`;
+                  const link = document.createElement('a');
+                  link.href = imgSrc;
+                  link.download = 'qr-code-bruno-melito.png';
+                  link.target = '_blank';
+                  link.click();
+                  toast.success('QR Code scaricato!');
                 }}
                 variant="outline"
                 className="font-bold px-6 py-5 rounded-xl border-2"
