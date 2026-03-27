@@ -56,6 +56,7 @@ export default function BookingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [publicPromos, setPublicPromos] = useState([]);
+  const [openCats, setOpenCats] = useState({});
   const servicesRef = useRef(null);
   const contactRef = useRef(null);
 
@@ -397,109 +398,136 @@ export default function BookingPage() {
             <div className="space-y-4">
               <h2 className="text-xl font-black text-[#1e293b]">Scegli i Servizi</h2>
               {loading ? <div className="flex justify-center py-8"><Clock className="w-6 h-6 text-[#94A3B8] animate-spin" /></div> : (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {(() => {
                     const grouped = groupServicesByCategory(services);
+                    const toggleCat = (key) => setOpenCats(prev => ({ ...prev, [key]: !prev[key] }));
                     return grouped.orderedKeys.map(catKey => {
                       const catInfo = getCategoryInfo(catKey);
                       const catServices = grouped.groups[catKey];
                       const selectedInCat = catServices.filter(s => formData.service_ids.includes(s.id)).length;
+                      const isOpen = openCats[catKey];
                       return (
-                        <details key={catKey} className="group rounded-2xl border-2 overflow-hidden transition-all" style={{ borderColor: catInfo.color + '40' }} data-testid={`booking-cat-${catKey}`}>
-                          <summary className="flex items-center justify-between p-4 cursor-pointer select-none hover:bg-gray-50 transition-colors list-none [&::-webkit-details-marker]:hidden" style={{ backgroundColor: catInfo.color + '08' }}>
-                            <div className="flex items-center gap-3">
-                              <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: catInfo.color }} />
-                              <span className="font-black text-[#1e293b]">{catInfo.label}</span>
-                              <span className="text-xs text-gray-400 font-medium">{catServices.length} servizi</span>
+                        <div key={catKey} data-testid={`booking-cat-${catKey}`}>
+                          <button
+                            type="button"
+                            onClick={() => toggleCat(catKey)}
+                            className="w-full flex items-center justify-between px-5 py-3.5 rounded-2xl font-black text-white text-left transition-all hover:scale-[1.01] hover:shadow-lg active:scale-[0.99]"
+                            style={{ backgroundColor: catInfo.color }}
+                          >
+                            <span className="text-base">{catInfo.label}</span>
+                            <div className="flex items-center gap-2">
                               {selectedInCat > 0 && (
-                                <span className="text-xs font-bold text-white px-2 py-0.5 rounded-full" style={{ backgroundColor: catInfo.color }}>{selectedInCat} sel.</span>
+                                <span className="text-xs font-bold bg-white/30 px-2.5 py-0.5 rounded-full">{selectedInCat} sel.</span>
                               )}
+                              <span className="text-sm opacity-80">{catServices.length}</span>
+                              <ChevronDown className={`w-5 h-5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                             </div>
-                            <ChevronDown className="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform" />
-                          </summary>
-                          <div className="p-2 space-y-1.5 border-t" style={{ borderColor: catInfo.color + '20' }}>
-                            {catServices.map(service => (
-                              <div key={service.id} onClick={() => toggleService(service.id)}
-                                className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${formData.service_ids.includes(service.id) ? 'shadow-sm' : 'border-gray-100 bg-white hover:border-gray-200'}`}
-                                style={formData.service_ids.includes(service.id) ? { borderColor: catInfo.color, backgroundColor: catInfo.color + '10' } : {}}
-                                data-testid={`service-item-${service.id}`}>
-                                <div className="flex justify-between items-center">
-                                  <div>
-                                    <p className="font-bold text-[#1e293b] text-sm">{service.name}</p>
-                                    <p className="text-xs text-[#94A3B8]">{service.duration} min</p>
+                          </button>
+                          {isOpen && (
+                            <div className="mt-1 space-y-1 pl-1 pr-1 pb-1 animate-in fade-in slide-in-from-top-2 duration-200">
+                              {catServices.map(service => (
+                                <div key={service.id} onClick={() => toggleService(service.id)}
+                                  className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${formData.service_ids.includes(service.id) ? 'shadow-sm' : 'border-gray-100 bg-white hover:border-gray-200'}`}
+                                  style={formData.service_ids.includes(service.id) ? { borderColor: catInfo.color, backgroundColor: catInfo.color + '10' } : {}}
+                                  data-testid={`service-item-${service.id}`}>
+                                  <div className="flex justify-between items-center">
+                                    <div>
+                                      <p className="font-bold text-[#1e293b] text-sm">{service.name}</p>
+                                      <p className="text-xs text-[#94A3B8]">{service.duration} min</p>
+                                    </div>
+                                    <p className="font-black text-[#1e293b] shrink-0 ml-2">{'\u20AC'}{service.price}</p>
                                   </div>
-                                  <p className="font-black text-[#1e293b] shrink-0 ml-2">{'\u20AC'}{service.price}</p>
                                 </div>
-                              </div>
-                            ))}
-                          </div>
-                        </details>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       );
                     });
                   })()}
-                </div>
-              )}
-              
-              {/* Promozioni e Card/Abbonamenti cliccabili */}
-              {publicPromos.length > 0 && (
-                <div className="mt-4">
-                  <h3 className="text-lg font-bold text-[#1e293b] mb-3 flex items-center gap-2">
-                    <Gift className="w-5 h-5 text-amber-500" /> Promozioni Attive
-                  </h3>
-                  <div className="space-y-2">
-                    {publicPromos.map((promo) => (
-                      <div key={promo.id} 
-                        onClick={() => {
-                          if (promo.free_service_id && !formData.service_ids.includes(promo.free_service_id)) {
-                            setFormData(prev => ({ ...prev, service_ids: [...prev.service_ids, promo.free_service_id], notes: (prev.notes ? prev.notes + ' ' : '') + `[PROMO: ${promo.name}]` }));
-                          } else {
-                            setFormData(prev => ({ ...prev, notes: (prev.notes ? prev.notes + ' ' : '') + `[PROMO: ${promo.name}]` }));
-                          }
-                          toast.success(`Promo "${promo.name}" aggiunta!`);
-                        }}
-                        className="p-4 rounded-xl border-2 border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 cursor-pointer transition-all hover:border-amber-400 hover:shadow-md"
-                        data-testid={`promo-item-${promo.id}`}>
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <p className="font-bold text-[#1e293b]">{promo.name}</p>
-                            <p className="text-sm text-amber-600">{promo.free_service_name || promo.description || 'Clicca per applicare'}</p>
-                          </div>
-                          <div className="bg-amber-400 text-white text-xs font-bold px-3 py-1 rounded-full">PROMO</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
-              {/* Card/Abbonamenti disponibili */}
-              {(siteData?.card_templates || []).length > 0 && (
-                <div className="mt-4">
-                  <h3 className="text-lg font-bold text-[#1e293b] mb-3 flex items-center gap-2">
-                    <CreditCard className="w-5 h-5 text-indigo-500" /> Card & Abbonamenti
-                  </h3>
-                  <div className="space-y-2">
-                    {(siteData?.card_templates || []).map((card, i) => (
-                      <div key={card.id || i}
-                        className="p-4 rounded-xl border-2 border-indigo-200 bg-gradient-to-r from-indigo-50 to-violet-50 cursor-pointer transition-all hover:border-indigo-400 hover:shadow-md"
-                        onClick={() => {
-                          setFormData(prev => ({ ...prev, notes: (prev.notes ? prev.notes + ' ' : '') + `[CARD: ${card.name}]` }));
-                          toast.success(`Card "${card.name}" annotata!`);
-                        }}
-                        data-testid={`booking-card-${card.id || i}`}>
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <p className="font-bold text-[#1e293b]">{card.name}</p>
-                            <p className="text-sm text-indigo-600">{card.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'} - {card.total_services > 0 ? `${card.total_services} servizi` : ''}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-black text-indigo-600">{'\u20AC'}{card.total_value}</p>
-                            <span className="bg-indigo-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">CARD</span>
-                          </div>
+                  {/* Promozioni come pulsante espandibile */}
+                  {publicPromos.length > 0 && (
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => setOpenCats(prev => ({ ...prev, _promos: !prev._promos }))}
+                        className="w-full flex items-center justify-between px-5 py-3.5 rounded-2xl font-black text-white text-left transition-all hover:scale-[1.01] hover:shadow-lg active:scale-[0.99] bg-gradient-to-r from-amber-500 to-orange-500"
+                        data-testid="booking-promo-btn"
+                      >
+                        <span className="flex items-center gap-2"><Gift className="w-5 h-5" /> Promozioni</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm opacity-80">{publicPromos.length}</span>
+                          <ChevronDown className={`w-5 h-5 transition-transform ${openCats._promos ? 'rotate-180' : ''}`} />
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      </button>
+                      {openCats._promos && (
+                        <div className="mt-1 space-y-1 pl-1 pr-1 pb-1 animate-in fade-in slide-in-from-top-2 duration-200">
+                          {publicPromos.map((promo) => (
+                            <div key={promo.id}
+                              onClick={() => {
+                                if (promo.free_service_id && !formData.service_ids.includes(promo.free_service_id)) {
+                                  setFormData(prev => ({ ...prev, service_ids: [...prev.service_ids, promo.free_service_id], notes: (prev.notes ? prev.notes + ' ' : '') + `[PROMO: ${promo.name}]` }));
+                                } else {
+                                  setFormData(prev => ({ ...prev, notes: (prev.notes ? prev.notes + ' ' : '') + `[PROMO: ${promo.name}]` }));
+                                }
+                                toast.success(`Promo "${promo.name}" aggiunta!`);
+                              }}
+                              className="p-3 rounded-xl border-2 border-amber-200 bg-white cursor-pointer transition-all hover:border-amber-400 hover:bg-amber-50"
+                              data-testid={`promo-item-${promo.id}`}>
+                              <div className="flex justify-between items-center">
+                                <div>
+                                  <p className="font-bold text-[#1e293b] text-sm">{promo.name}</p>
+                                  <p className="text-xs text-amber-600">{promo.free_service_name || promo.description || ''}</p>
+                                </div>
+                                <span className="bg-amber-400 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ml-2">PROMO</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Card/Abbonamenti come pulsante espandibile */}
+                  {(siteData?.card_templates || []).length > 0 && (
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => setOpenCats(prev => ({ ...prev, _cards: !prev._cards }))}
+                        className="w-full flex items-center justify-between px-5 py-3.5 rounded-2xl font-black text-white text-left transition-all hover:scale-[1.01] hover:shadow-lg active:scale-[0.99] bg-gradient-to-r from-indigo-500 to-violet-500"
+                        data-testid="booking-card-btn"
+                      >
+                        <span className="flex items-center gap-2"><CreditCard className="w-5 h-5" /> Card & Abbonamenti</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm opacity-80">{(siteData?.card_templates || []).length}</span>
+                          <ChevronDown className={`w-5 h-5 transition-transform ${openCats._cards ? 'rotate-180' : ''}`} />
+                        </div>
+                      </button>
+                      {openCats._cards && (
+                        <div className="mt-1 space-y-1 pl-1 pr-1 pb-1 animate-in fade-in slide-in-from-top-2 duration-200">
+                          {(siteData?.card_templates || []).map((card, i) => (
+                            <div key={card.id || i}
+                              onClick={() => {
+                                setFormData(prev => ({ ...prev, notes: (prev.notes ? prev.notes + ' ' : '') + `[CARD: ${card.name}]` }));
+                                toast.success(`Card "${card.name}" annotata!`);
+                              }}
+                              className="p-3 rounded-xl border-2 border-indigo-200 bg-white cursor-pointer transition-all hover:border-indigo-400 hover:bg-indigo-50"
+                              data-testid={`booking-card-${card.id || i}`}>
+                              <div className="flex justify-between items-center">
+                                <div>
+                                  <p className="font-bold text-[#1e293b] text-sm">{card.name}</p>
+                                  <p className="text-xs text-indigo-600">{card.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}</p>
+                                </div>
+                                <p className="font-black text-indigo-600 shrink-0 ml-2">{'\u20AC'}{card.total_value}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -578,7 +606,7 @@ export default function BookingPage() {
             <span className="font-black text-sm sm:text-base tracking-tight" style={{ color: tc.text }}>{config.salon_name || 'BRUNO MELITO HAIR'}</span>
           </div>
           <div className="hidden sm:flex items-center gap-6 text-sm" style={{ color: tc.text + '80' }}>
-            <button onClick={() => { setShowServices(true); setTimeout(() => scrollTo(servicesRef), 100); }} className="hover:opacity-80 transition-colors">Servizi</button>
+            <button onClick={() => setTimeout(() => scrollTo(servicesRef), 100)} className="hover:opacity-80 transition-colors">Servizi</button>
             <button onClick={() => scrollTo(contactRef)} className="hover:opacity-80 transition-colors">Contatti</button>
             <div className="flex items-center gap-3 border-l pl-4" style={{ borderColor: tc.text + '20' }}>
               {SOCIAL_LINKS.map((link, i) => (
@@ -615,7 +643,7 @@ export default function BookingPage() {
               <Button onClick={() => setShowBooking(true)} className="text-white font-black text-base px-8 py-6 rounded-xl" style={{ backgroundColor: tc.primary }}>
                 <Scissors className="w-5 h-5 mr-2" /> PRENOTA ORA
               </Button>
-              <Button onClick={() => { setShowServices(true); setTimeout(() => scrollTo(servicesRef), 100); }} variant="outline" className="font-bold text-base px-8 py-6 rounded-xl" style={{ borderColor: tc.text + '20', color: tc.text }}>
+              <Button onClick={() => setTimeout(() => scrollTo(servicesRef), 100)} variant="outline" className="font-bold text-base px-8 py-6 rounded-xl" style={{ borderColor: tc.text + '20', color: tc.text }}>
                 Scopri i Servizi <ChevronDown className="w-4 h-4 ml-2" />
               </Button>
               <Button onClick={() => setShowManage(true)} variant="outline" className="font-bold text-base px-8 py-6 rounded-xl" style={{ borderColor: tc.accent + '30', color: tc.accent }}>
@@ -652,23 +680,28 @@ export default function BookingPage() {
             <p className="mt-3 max-w-xl mx-auto" style={{ color: tc.text + '60' }}>Dal taglio classico alle tecniche più innovative.</p>
           </div>
 
-          {/* Categorie cliccabili dal CMS */}
+          {/* Categorie come PULSANTI cliccabili */}
           {serviceCategories.length > 0 && (
-            <div className="space-y-3 mb-8">
+            <div className="space-y-2 mb-8">
               {serviceCategories.map((cat, idx) => (
-                <details key={idx} className="group bg-white border border-gray-200 rounded-2xl overflow-hidden transition-all hover:shadow-lg" data-testid={`public-service-cat-${idx}`}>
-                  <summary className="flex items-center justify-between p-5 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden" style={{ backgroundColor: tc.primary + '05' }}>
+                <div key={idx} data-testid={`public-service-cat-${idx}`}>
+                  <button
+                    type="button"
+                    onClick={() => setOpenCats(prev => ({ ...prev, [`landing_${idx}`]: !prev[`landing_${idx}`] }))}
+                    className="w-full flex items-center justify-between px-6 py-4 rounded-2xl font-black text-white text-left transition-all hover:scale-[1.01] hover:shadow-lg active:scale-[0.99]"
+                    style={{ backgroundColor: tc.primary }}
+                  >
                     <div>
-                      <h3 className="text-xl font-black" style={{ color: tc.text }}>{cat.title}</h3>
-                      {cat.desc && <p className="text-sm mt-0.5" style={{ color: tc.text + '70' }}>{cat.desc}</p>}
+                      <span className="text-lg">{cat.title}</span>
+                      {cat.desc && <span className="text-sm opacity-70 ml-3">{cat.desc}</span>}
                     </div>
                     <div className="flex items-center gap-2 shrink-0 ml-4">
-                      <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: tc.primary + '15', color: tc.primary }}>{(cat.items || []).length} servizi</span>
-                      <ChevronDown className="w-5 h-5 group-open:rotate-180 transition-transform" style={{ color: tc.primary }} />
+                      <span className="text-sm opacity-80">{(cat.items || []).length}</span>
+                      <ChevronDown className={`w-5 h-5 transition-transform ${openCats[`landing_${idx}`] ? 'rotate-180' : ''}`} />
                     </div>
-                  </summary>
-                  <div className="px-5 pb-5 border-t" style={{ borderColor: tc.primary + '15' }}>
-                    <div className="space-y-0">
+                  </button>
+                  {openCats[`landing_${idx}`] && (
+                    <div className="bg-white rounded-2xl mt-1 p-4 border border-gray-200 shadow-sm animate-in fade-in slide-in-from-top-2 duration-200">
                       {(cat.items || []).map((item, i) => (
                         <div key={i} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0">
                           <span className="font-bold" style={{ color: tc.accent }}>{item.name}</span>
@@ -676,41 +709,48 @@ export default function BookingPage() {
                         </div>
                       ))}
                     </div>
-                  </div>
-                </details>
+                  )}
+                </div>
               ))}
             </div>
           )}
 
-          {/* Servizi dal DB raggruppati per categoria */}
+          {/* Servizi dal DB se nessuna categoria CMS */}
           {services.length > 0 && serviceCategories.length === 0 && (
-            <div className="space-y-3 mb-8">
+            <div className="space-y-2 mb-8">
               {(() => {
                 const grouped = groupServicesByCategory(services);
                 return grouped.orderedKeys.map(catKey => {
                   const catInfo = getCategoryInfo(catKey);
                   const catServices = grouped.groups[catKey];
                   return (
-                    <details key={catKey} className="group bg-white border border-gray-200 rounded-2xl overflow-hidden transition-all hover:shadow-lg">
-                      <summary className="flex items-center justify-between p-5 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden" style={{ backgroundColor: tc.primary + '05' }}>
-                        <h3 className="text-xl font-black" style={{ color: tc.text }}>{catInfo.label}</h3>
+                    <div key={catKey}>
+                      <button
+                        type="button"
+                        onClick={() => setOpenCats(prev => ({ ...prev, [`db_${catKey}`]: !prev[`db_${catKey}`] }))}
+                        className="w-full flex items-center justify-between px-6 py-4 rounded-2xl font-black text-white text-left transition-all hover:scale-[1.01] hover:shadow-lg active:scale-[0.99]"
+                        style={{ backgroundColor: tc.primary }}
+                      >
+                        <span className="text-lg">{catInfo.label}</span>
                         <div className="flex items-center gap-2 shrink-0 ml-4">
-                          <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: tc.primary + '15', color: tc.primary }}>{catServices.length}</span>
-                          <ChevronDown className="w-5 h-5 group-open:rotate-180 transition-transform" style={{ color: tc.primary }} />
+                          <span className="text-sm opacity-80">{catServices.length}</span>
+                          <ChevronDown className={`w-5 h-5 transition-transform ${openCats[`db_${catKey}`] ? 'rotate-180' : ''}`} />
                         </div>
-                      </summary>
-                      <div className="px-5 pb-5 border-t" style={{ borderColor: tc.primary + '15' }}>
-                        {catServices.map(s => (
-                          <div key={s.id} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0">
-                            <div>
-                              <span className="font-bold" style={{ color: tc.accent }}>{s.name}</span>
-                              <span className="text-xs ml-2" style={{ color: tc.text + '50' }}>{s.duration} min</span>
+                      </button>
+                      {openCats[`db_${catKey}`] && (
+                        <div className="bg-white rounded-2xl mt-1 p-4 border border-gray-200 shadow-sm animate-in fade-in slide-in-from-top-2 duration-200">
+                          {catServices.map(s => (
+                            <div key={s.id} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0">
+                              <div>
+                                <span className="font-bold" style={{ color: tc.accent }}>{s.name}</span>
+                                <span className="text-xs ml-2" style={{ color: tc.text + '50' }}>{s.duration} min</span>
+                              </div>
+                              <span className="font-black text-lg shrink-0 ml-4" style={{ color: tc.primary }}>{'\u20AC'}{s.price}</span>
                             </div>
-                            <span className="font-black text-lg shrink-0 ml-4" style={{ color: tc.primary }}>{'\u20AC'}{s.price}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </details>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   );
                 });
               })()}
