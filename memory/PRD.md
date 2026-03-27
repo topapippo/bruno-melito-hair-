@@ -72,6 +72,21 @@ REACT_APP_BACKEND_URL=https://bruno-melito-hair-2497.onrender.com
 - Tema admin: applicato a TUTTO il gestionale (non solo sidebar): sfondo pagina, testo pagina, font display, font body
 - Banner festività prominente nella vista giornaliera del Planning
 - Rimossi endpoint temporanei admin-reset e admin-transfer
+- **Refactoring PlanningPage.jsx COMPLETATO** (27 Marzo 2026): da 2534 righe → 744 righe + 9 sotto-componenti modulari. 45/45 test superati, zero regressioni.
+
+## Struttura Componenti Planning (dopo refactoring)
+```
+/app/frontend/src/components/planning/
+├── holidays.js                  (37 righe - Utility festività italiane)
+├── DayView.jsx                  (179 righe - Vista giornaliera con griglia operatori)
+├── WeekView.jsx                 (84 righe - Vista settimanale)
+├── MonthView.jsx                (64 righe - Vista mensile)
+├── NewAppointmentDialog.jsx     (571 righe - Dialogo nuovo appuntamento)
+├── EditAppointmentDialog.jsx    (696 righe - Dialogo modifica + checkout)
+├── RecurringDialog.jsx          (173 righe - Dialogo appuntamento ricorrente)
+├── LoyaltyAlertDialog.jsx       (66 righe - Alert fedeltà WhatsApp)
+└── BlockSlotDialog.jsx          (93 righe - Dialogo blocco orario)
+```
 
 ## Backlog
 - P1: Dashboard statistiche clienti (grafici frequenza visite, spesa media)
@@ -80,6 +95,3 @@ REACT_APP_BACKEND_URL=https://bruno-melito-hair-2497.onrender.com
 - P3: Lista d'attesa intelligente
 - P3: Heat map ore più occupate
 - P3: Confronto performance operatori
-
-## Refactoring Necessario
-- PlanningPage.jsx (>2500 righe) → suddividere in sotto-componenti
