@@ -4,11 +4,12 @@ import { getMediaUrl, getMediaType } from '../lib/mediaUrl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Clock, Scissors, CheckCircle, ArrowLeft, MapPin, Phone, Mail, Star, MessageSquare, ChevronDown, ChevronUp, ArrowRight, Instagram, Facebook, Globe, Youtube, Gift, CreditCard, CalendarDays, X, Pencil, Trash2, Search } from 'lucide-react';
+import { Clock, Scissors, CheckCircle, ArrowLeft, MapPin, Phone, Mail, Star, MessageSquare, ChevronDown, ChevronUp, ArrowRight, Instagram, Facebook, Globe, Youtube, Gift, CreditCard, CalendarDays, X, Pencil, Trash2, Search, QrCode, Printer, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast, Toaster } from 'sonner';
 import { CATEGORY_ORDER, getCategoryInfo, groupServicesByCategory } from '../lib/categories';
+import { QRCodeSVG } from 'qrcode.react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -1039,6 +1040,103 @@ export default function WebsitePage() {
 
       {/* Dynamic sections based on CMS order */}
       {sectionOrder.map(id => renderSection(id))}
+
+      {/* QR CODE SECTION */}
+      <section className="py-16 sm:py-20 bg-gradient-to-b from-white/40 to-white/80" data-testid="qr-code-section">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="text-center mb-8">
+            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Prenota Subito</p>
+            <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>Inquadra e Prenota</h2>
+            <p className="text-[#64748B] mt-3 max-w-md mx-auto">Scansiona il QR Code con il tuo smartphone per prenotare direttamente il tuo prossimo appuntamento</p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-8">
+            <div className="bg-white rounded-3xl p-8 shadow-lg border border-gray-100 flex flex-col items-center" id="qr-print-area" data-testid="qr-code-card">
+              <div className="bg-white p-4 rounded-2xl border-2 border-gray-100">
+                <QRCodeSVG
+                  value={`${window.location.origin}/sito`}
+                  size={200}
+                  level="H"
+                  includeMargin={false}
+                  fgColor="#1C1008"
+                  bgColor="#FFFFFF"
+                  imageSettings={{
+                    src: "/logo.png?v=4",
+                    height: 40,
+                    width: 40,
+                    excavate: true,
+                  }}
+                />
+              </div>
+              <p className="font-black text-lg mt-4" style={{ color: T.text }}>{config.salon_name || 'BRUNO MELITO HAIR'}</p>
+              <p className="text-sm text-[#64748B] mt-1">Prenota il tuo appuntamento</p>
+              {config.address && <p className="text-xs text-[#94A3B8] mt-1">{config.address}</p>}
+            </div>
+            <div className="flex flex-col gap-3">
+              <Button
+                onClick={() => {
+                  const printContent = document.getElementById('qr-print-area');
+                  const win = window.open('', '_blank');
+                  win.document.write(`
+                    <html><head><title>QR Code - ${config.salon_name || 'Bruno Melito Hair'}</title>
+                    <style>
+                      @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap');
+                      body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #fff; }
+                      .card { text-align: center; padding: 60px 40px; }
+                      .card h1 { font-family: 'Playfair Display', serif; font-size: 28px; margin: 24px 0 8px; color: #1C1008; }
+                      .card p { font-size: 16px; color: #64748B; margin: 4px 0; }
+                      .card .addr { font-size: 13px; color: #94A3B8; }
+                      .card .hint { font-size: 14px; color: #C8617A; font-weight: bold; margin-top: 16px; }
+                      svg { display: block; margin: 0 auto; }
+                    </style></head><body>
+                    <div class="card">
+                      ${printContent.querySelector('svg').parentElement.outerHTML}
+                      <h1>${config.salon_name || 'BRUNO MELITO HAIR'}</h1>
+                      <p>Prenota il tuo appuntamento</p>
+                      ${config.address ? `<p class="addr">${config.address}</p>` : ''}
+                      <p class="hint">Inquadra il QR Code con la fotocamera</p>
+                    </div>
+                    </body></html>
+                  `);
+                  win.document.close();
+                  setTimeout(() => { win.print(); }, 500);
+                }}
+                className="text-white font-bold px-6 py-5 rounded-xl shadow-md hover:opacity-90"
+                style={{ backgroundColor: T.primary }}
+                data-testid="qr-print-btn"
+              >
+                <Printer className="w-5 h-5 mr-2" /> Stampa QR Code
+              </Button>
+              <Button
+                onClick={() => {
+                  const svg = document.querySelector('#qr-print-area svg');
+                  const svgData = new XMLSerializer().serializeToString(svg);
+                  const canvas = document.createElement('canvas');
+                  canvas.width = 600; canvas.height = 600;
+                  const ctx = canvas.getContext('2d');
+                  ctx.fillStyle = '#FFFFFF';
+                  ctx.fillRect(0, 0, 600, 600);
+                  const img = new Image();
+                  img.onload = () => {
+                    ctx.drawImage(img, 100, 100, 400, 400);
+                    const link = document.createElement('a');
+                    link.download = 'qr-code-bruno-melito.png';
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                    toast.success('QR Code scaricato!');
+                  };
+                  img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+                }}
+                variant="outline"
+                className="font-bold px-6 py-5 rounded-xl border-2"
+                style={{ borderColor: T.primary, color: T.primary }}
+                data-testid="qr-download-btn"
+              >
+                <Download className="w-5 h-5 mr-2" /> Scarica Immagine
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* FOOTER */}
       <footer className="py-12 border-t border-gray-200 bg-white/60">

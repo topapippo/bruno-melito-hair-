@@ -39,6 +39,8 @@ App gestionale per salone (Bruno Melito Hair) con sito pubblico di prenotazione 
 - [x] Pacchetti Preimpostati (Card Templates) visibili e gestibili nella pagina Card/Abbonamenti
 - [x] Abbonamenti visibili nel dialog Nuovo Appuntamento del Planning
 
+- [x] QR Code stampabile sulla pagina pubblica con pulsanti Stampa e Scarica
+
 ## Note Importanti
 - La rotta `/sito` usa WebsitePage.jsx (NON BookingPage.jsx)
 - Deploy su Render: sempre "Clear build cache and deploy"
