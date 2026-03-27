@@ -41,6 +41,8 @@ App gestionale per salone (Bruno Melito Hair) con sito pubblico di prenotazione 
 
 - [x] QR Code stampabile sulla pagina pubblica con pulsanti Stampa e Scarica
 
+- [x] Eliminazione 33 foto duplicate dal database Atlas di produzione (27 Mar 2026)
+
 ## Note Importanti
 - La rotta `/sito` usa WebsitePage.jsx (NON BookingPage.jsx)
 - Deploy su Render: sempre "Clear build cache and deploy"
