@@ -33,7 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { CreditCard, Plus, Euro, Calendar, Loader2, Trash2, RefreshCw, History } from 'lucide-react';
+import { CreditCard, Plus, Euro, Calendar, Loader2, Trash2, RefreshCw, History, Package, Pencil, ChevronDown, ChevronUp, Ticket } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -51,6 +51,16 @@ export default function CardsPage() {
   const [selectedCard, setSelectedCard] = useState(null);
   const [saving, setSaving] = useState(false);
   const [showInactive, setShowInactive] = useState(false);
+
+  // Card Templates (Pacchetti)
+  const [cardTemplates, setCardTemplates] = useState([]);
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState(null);
+  const [deleteTemplateDialogOpen, setDeleteTemplateDialogOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [templateForm, setTemplateForm] = useState({
+    name: '', card_type: 'prepaid', total_value: '', total_services: '', duration_months: '', notes: ''
+  });
   
   const [formData, setFormData] = useState({
     client_id: '',
@@ -66,6 +76,7 @@ export default function CardsPage() {
 
   useEffect(() => {
     fetchData();
+    fetchTemplates();
   }, [showInactive]);
 
   const fetchData = async () => {
@@ -83,6 +94,83 @@ export default function CardsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchTemplates = async () => {
+    try {
+      const res = await api.get(`${API}/card-templates`);
+      setCardTemplates(res.data || []);
+    } catch { setCardTemplates([]); }
+  };
+
+  const openNewTemplate = () => {
+    setEditingTemplate(null);
+    setTemplateForm({ name: '', card_type: 'prepaid', total_value: '', total_services: '', duration_months: '', notes: '' });
+    setTemplateDialogOpen(true);
+  };
+
+  const openEditTemplate = (tmpl) => {
+    setEditingTemplate(tmpl);
+    setTemplateForm({
+      name: tmpl.name, card_type: tmpl.card_type || 'prepaid',
+      total_value: tmpl.total_value?.toString() || '',
+      total_services: tmpl.total_services?.toString() || '',
+      duration_months: tmpl.duration_months?.toString() || '',
+      notes: tmpl.notes || ''
+    });
+    setTemplateDialogOpen(true);
+  };
+
+  const handleTemplateSubmit = async (e) => {
+    e.preventDefault();
+    if (!templateForm.name || !templateForm.total_value) { toast.error('Nome e valore obbligatori'); return; }
+    setSaving(true);
+    try {
+      const payload = {
+        name: templateForm.name, card_type: templateForm.card_type,
+        total_value: parseFloat(templateForm.total_value),
+        total_services: templateForm.total_services ? parseInt(templateForm.total_services) : null,
+        duration_months: templateForm.duration_months ? parseInt(templateForm.duration_months) : null,
+        notes: templateForm.notes
+      };
+      if (editingTemplate) {
+        await api.put(`${API}/card-templates/${editingTemplate.id}`, payload);
+        toast.success('Pacchetto aggiornato!');
+      } else {
+        await api.post(`${API}/card-templates`, payload);
+        toast.success('Pacchetto creato!');
+      }
+      setTemplateDialogOpen(false);
+      fetchTemplates();
+    } catch (err) { toast.error(err.response?.data?.detail || 'Errore'); }
+    finally { setSaving(false); }
+  };
+
+  const handleDeleteTemplate = async () => {
+    if (!selectedTemplate) return;
+    try {
+      await api.delete(`${API}/card-templates/${selectedTemplate.id}`);
+      toast.success('Pacchetto eliminato');
+      setDeleteTemplateDialogOpen(false);
+      setSelectedTemplate(null);
+      fetchTemplates();
+    } catch { toast.error("Errore nell'eliminazione"); }
+  };
+
+  const useTemplateForNewCard = (tmpl) => {
+    const validUntil = tmpl.duration_months
+      ? format(new Date(new Date().setMonth(new Date().getMonth() + tmpl.duration_months)), 'yyyy-MM-dd')
+      : '';
+    setFormData({
+      ...formData,
+      name: tmpl.name,
+      card_type: tmpl.card_type || 'prepaid',
+      total_value: tmpl.total_value?.toString() || '',
+      total_services: tmpl.total_services?.toString() || '',
+      valid_until: validUntil,
+      notes: tmpl.notes || ''
+    });
+    setDialogOpen(true);
   };
 
   const handleSubmit = async (e) => {
@@ -164,22 +252,19 @@ export default function CardsPage() {
     return ((card.total_value - card.remaining_value) / card.total_value) * 100;
   };
 
-  // Preset card templates
-  const presets = [
-    { name: 'Card 10 Pieghe', value: 200, services: 10, type: 'prepaid' },
-    { name: 'Card 5 Tagli', value: 150, services: 5, type: 'prepaid' },
-    { name: 'Abbonamento Mensile', value: 100, services: null, type: 'subscription' },
-    { name: 'Card Prepagata €50', value: 50, services: null, type: 'prepaid' },
-    { name: 'Card Prepagata €100', value: 100, services: null, type: 'prepaid' },
-  ];
-
-  const applyPreset = (preset) => {
+  // Presets from card templates DB
+  const applyPreset = (tmpl) => {
+    const validUntil = tmpl.duration_months
+      ? format(new Date(new Date().setMonth(new Date().getMonth() + tmpl.duration_months)), 'yyyy-MM-dd')
+      : '';
     setFormData({
       ...formData,
-      name: preset.name,
-      total_value: preset.value.toString(),
-      total_services: preset.services?.toString() || '',
-      card_type: preset.type
+      name: tmpl.name,
+      total_value: tmpl.total_value?.toString() || '',
+      total_services: tmpl.total_services?.toString() || '',
+      card_type: tmpl.card_type || 'prepaid',
+      valid_until: validUntil,
+      notes: tmpl.notes || ''
     });
   };
 
@@ -190,8 +275,8 @@ export default function CardsPage() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="font-display text-3xl font-medium text-[#2D1B14]">Card & Abbonamenti</h1>
-            <p className="text-[#7C5C4A] mt-1 ">
-              {cards.length} card {showInactive ? 'totali' : 'attive'}
+            <p className="text-[#7C5C4A] mt-1">
+              {cardTemplates.length} pacchetti &middot; {cards.length} card {showInactive ? 'totali' : 'attive'}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -200,7 +285,7 @@ export default function CardsPage() {
               onClick={() => setShowInactive(!showInactive)}
               className={`border-[#F0E6DC] ${showInactive ? 'bg-[#FAF5F2]' : ''}`}
             >
-              {showInactive ? 'Solo attive' : 'Mostra tutte'}
+              {showInactive ? 'Solo attive' : 'Mostra inattive'}
             </Button>
             <Button
               onClick={() => setDialogOpen(true)}
@@ -209,6 +294,86 @@ export default function CardsPage() {
             >
               <Plus className="w-5 h-5 mr-2" />
               Nuova Card
+            </Button>
+          </div>
+        </div>
+
+        {/* ===== PACCHETTI PREIMPOSTATI ===== */}
+        <Card className="bg-white border-[#F0E6DC]/30">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Package className="w-5 h-5 text-[#C8617A]" />
+                <h2 className="font-display text-xl text-[#2D1B14]">Pacchetti Preimpostati</h2>
+              </div>
+              <Button
+                size="sm"
+                onClick={openNewTemplate}
+                data-testid="new-template-btn"
+                className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white"
+              >
+                <Plus className="w-4 h-4 mr-1" /> Nuovo Pacchetto
+              </Button>
+            </div>
+            {cardTemplates.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {cardTemplates.map((tmpl) => (
+                  <div
+                    key={tmpl.id}
+                    data-testid={`template-${tmpl.id}`}
+                    className="group border-2 border-[#F0E6DC] rounded-xl p-4 hover:border-[#C8617A]/40 transition-all cursor-pointer relative"
+                    onClick={() => useTemplateForNewCard(tmpl)}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <Badge variant="outline" className={tmpl.card_type === 'subscription' ? 'border-[#789F8A] text-[#789F8A] text-[10px]' : 'border-[#C8617A] text-[#C8617A] text-[10px]'}>
+                          {tmpl.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}
+                        </Badge>
+                        <h3 className="font-semibold text-[#2D1B14] mt-1">{tmpl.name}</h3>
+                      </div>
+                      <p className="font-display text-xl font-bold text-[#C8617A]">{'\u20AC'}{tmpl.total_value}</p>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-[#7C5C4A]">
+                      {tmpl.total_services && <span>{tmpl.total_services} servizi</span>}
+                      {tmpl.duration_months && <span>{tmpl.duration_months} mesi</span>}
+                    </div>
+                    {tmpl.notes && <p className="text-xs text-[#7C5C4A] mt-1 italic">{tmpl.notes}</p>}
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1" onClick={(e) => e.stopPropagation()}>
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-[#7C5C4A] hover:text-[#2D1B14]" onClick={() => openEditTemplate(tmpl)} data-testid={`edit-template-${tmpl.id}`}>
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-[#7C5C4A] hover:text-[#E76F51]" onClick={() => { setSelectedTemplate(tmpl); setDeleteTemplateDialogOpen(true); }} data-testid={`delete-template-${tmpl.id}`}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                    <p className="text-[10px] text-[#C8617A] font-semibold mt-2 opacity-0 group-hover:opacity-100 transition-opacity">Clicca per assegnare a un cliente</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Package className="w-12 h-12 mx-auto text-[#E2E8F0] mb-3" strokeWidth={1.5} />
+                <p className="text-[#7C5C4A] mb-1">Nessun pacchetto preimpostato</p>
+                <p className="text-xs text-[#7C5C4A]/70 mb-4">Crea pacchetti per assegnare rapidamente card ai clienti</p>
+                <Button onClick={openNewTemplate} variant="outline" className="border-[#C8617A] text-[#C8617A] hover:bg-[#C8617A]/10">
+                  <Plus className="w-4 h-4 mr-1" /> Crea il primo pacchetto
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* ===== CARD CLIENTI ===== */}
+        <div className="flex items-center justify-between">
+          <h2 className="font-display text-xl text-[#2D1B14]">Card Clienti</h2>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowInactive(!showInactive)}
+              className={`border-[#F0E6DC] text-xs ${showInactive ? 'bg-[#FAF5F2]' : ''}`}
+            >
+              {showInactive ? 'Solo attive' : 'Mostra inattive'}
             </Button>
           </div>
         </div>
@@ -327,8 +492,8 @@ export default function CardsPage() {
           <Card className="bg-white border-[#F0E6DC]/30">
             <CardContent className="py-16 text-center">
               <CreditCard className="w-16 h-16 mx-auto text-[#E2E8F0] mb-4" strokeWidth={1.5} />
-              <h3 className="font-display text-xl text-[#2D1B14] mb-2">Nessuna card</h3>
-              <p className="text-[#7C5C4A] mb-4">Crea la prima card prepagata o abbonamento</p>
+              <h3 className="font-display text-xl text-[#2D1B14] mb-2">Nessuna card creata</h3>
+              <p className="text-[#7C5C4A] mb-4">Crea la prima card prepagata o abbonamento per un cliente</p>
               <Button
                 onClick={() => setDialogOpen(true)}
                 className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-[0_4px_12px_rgba(200,97,122,0.3)]"
@@ -351,21 +516,27 @@ export default function CardsPage() {
               </DialogDescription>
             </DialogHeader>
             
-            {/* Presets */}
-            <div className="flex flex-wrap gap-2 mb-4">
-              {presets.map((preset) => (
-                <Button
-                  key={preset.name}
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => applyPreset(preset)}
-                  className="border-[#F0E6DC] text-xs"
-                >
-                  {preset.name}
-                </Button>
-              ))}
-            </div>
+            {/* Presets from DB templates */}
+            {cardTemplates.length > 0 && (
+              <div>
+                <p className="text-xs text-[#7C5C4A] font-semibold mb-2">Usa un pacchetto preimpostato:</p>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {cardTemplates.map((tmpl) => (
+                    <Button
+                      key={tmpl.id}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => applyPreset(tmpl)}
+                      className="border-[#F0E6DC] text-xs"
+                      data-testid={`preset-${tmpl.id}`}
+                    >
+                      <Ticket className="w-3 h-3 mr-1" /> {tmpl.name} ({'\u20AC'}{tmpl.total_value})
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
@@ -556,7 +727,7 @@ export default function CardsPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Delete Dialog */}
+        {/* Delete Card Dialog */}
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
@@ -571,6 +742,79 @@ export default function CardsPage() {
                 onClick={handleDelete}
                 className="bg-[#E76F51] hover:bg-[#D55F41]"
               >
+                Elimina
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Template Dialog (Create/Edit Pacchetto) */}
+        <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
+          <DialogContent className="sm:max-w-[450px]">
+            <DialogHeader>
+              <DialogTitle className="font-display text-2xl text-[#2D1B14]">
+                {editingTemplate ? 'Modifica Pacchetto' : 'Nuovo Pacchetto'}
+              </DialogTitle>
+              <DialogDescription>
+                {editingTemplate ? 'Modifica i dettagli del pacchetto preimpostato' : 'Crea un pacchetto per assegnare rapidamente card ai clienti'}
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleTemplateSubmit} className="space-y-4 mt-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Nome *</Label>
+                  <Input value={templateForm.name} onChange={(e) => setTemplateForm({ ...templateForm, name: e.target.value })} placeholder="Es. Abb. Piega Corti" className="bg-[#FAF7F2]" required data-testid="template-name-input" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Tipo *</Label>
+                  <Select value={templateForm.card_type} onValueChange={(val) => setTemplateForm({ ...templateForm, card_type: val })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="prepaid">Prepagata</SelectItem>
+                      <SelectItem value="subscription">Abbonamento</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Valore ({'\u20AC'}) *</Label>
+                  <Input type="number" min="0" step="0.01" value={templateForm.total_value} onChange={(e) => setTemplateForm({ ...templateForm, total_value: e.target.value })} placeholder="65" className="bg-[#FAF7F2]" required data-testid="template-value-input" />
+                </div>
+                <div className="space-y-2">
+                  <Label>N° Servizi</Label>
+                  <Input type="number" min="1" value={templateForm.total_services} onChange={(e) => setTemplateForm({ ...templateForm, total_services: e.target.value })} placeholder="5" className="bg-[#FAF7F2]" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Durata (mesi)</Label>
+                  <Input type="number" min="1" value={templateForm.duration_months} onChange={(e) => setTemplateForm({ ...templateForm, duration_months: e.target.value })} placeholder="1" className="bg-[#FAF7F2]" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Note</Label>
+                <Input value={templateForm.notes} onChange={(e) => setTemplateForm({ ...templateForm, notes: e.target.value })} placeholder="Descrizione del pacchetto..." className="bg-[#FAF7F2]" />
+              </div>
+              <DialogFooter>
+                <Button type="submit" disabled={saving} className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white" data-testid="save-template-btn">
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : editingTemplate ? 'Salva Modifiche' : 'Crea Pacchetto'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Template Dialog */}
+        <AlertDialog open={deleteTemplateDialogOpen} onOpenChange={setDeleteTemplateDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Elimina Pacchetto</AlertDialogTitle>
+              <AlertDialogDescription>
+                Eliminare il pacchetto "{selectedTemplate?.name}"? Le card già create non saranno modificate.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annulla</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteTemplate} className="bg-[#E76F51] hover:bg-[#D55F41]">
                 Elimina
               </AlertDialogAction>
             </AlertDialogFooter>
