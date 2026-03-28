@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Settings, Save, Loader2, Clock, Building2, User, Lock, Palette, Type, RotateCcw, Plus, Trash2 } from 'lucide-react';
+import { Settings, Save, Loader2, Clock, Building2, User, Lock, Palette, Type, RotateCcw, Plus, Trash2, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 
@@ -283,27 +283,30 @@ export default function SettingsPage() {
               <div className="space-y-3">
                 <Label>Giorni Lavorativi</Label>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {DAYS.map((day) => (
-                    <div
-                      key={day.value}
-                      className={`flex items-center space-x-2 p-3 rounded-xl border cursor-pointer transition-colors ${
-                        settings.working_days?.includes(day.value)
-                          ? 'bg-[#C8617A]/10 border-[#C8617A]'
-                          : 'bg-[#FAF7F2] border-transparent hover:border-[#F0E6DC]'
-                      }`}
-                      onClick={() => toggleDay(day.value)}
-                    >
-                      <Checkbox
-                        checked={settings.working_days?.includes(day.value)}
-                        className="data-[state=checked]:bg-[#C8617A] data-[state=checked]:border-[#C8617A]"
-                      />
-                      <span className={`text-sm ${
-                        settings.working_days?.includes(day.value) ? 'text-[#C8617A] font-medium' : 'text-[#2D1B14]'
-                      }`}>
-                        {day.label}
-                      </span>
-                    </div>
-                  ))}
+                  {DAYS.map((day) => {
+                    const isActive = settings.working_days?.includes(day.value);
+                    return (
+                      <div
+                        key={day.value}
+                        className={`flex items-center space-x-2 p-3 rounded-xl border cursor-pointer transition-colors ${
+                          isActive
+                            ? 'bg-[#C8617A]/10 border-[#C8617A]'
+                            : 'bg-[#FAF7F2] border-transparent hover:border-[#F0E6DC]'
+                        }`}
+                        onClick={() => toggleDay(day.value)}
+                        data-testid={`day-toggle-${day.value}`}
+                      >
+                        <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${isActive ? 'bg-[#C8617A] border-[#C8617A]' : 'border-gray-300'}`}>
+                          {isActive && <Check className="w-3 h-3 text-white" />}
+                        </div>
+                        <span className={`text-sm ${
+                          isActive ? 'text-[#C8617A] font-medium' : 'text-[#2D1B14]'
+                        }`}>
+                          {day.label}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </CardContent>
