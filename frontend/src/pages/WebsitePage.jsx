@@ -27,7 +27,10 @@ for (let h = 8; h <= 20; h++) {
   }
 }
 
-const getAvailableSlotsForDate = (dateStr, hoursConfig) => {
+const getAvailableSlotsForDate = (dateStr, hoursConfig, blockedSlots = []) => {
+  const BUFFER_MINUTES = 30;
+  let slots = [];
+
   if (hoursConfig) {
     const dayMap = { 0: 'dom', 1: 'lun', 2: 'mar', 3: 'mer', 4: 'gio', 5: 'ven', 6: 'sab' };
     const d = new Date(dateStr + 'T12:00:00');
@@ -38,28 +41,36 @@ const getAvailableSlotsForDate = (dateStr, hoursConfig) => {
     if (match) {
       const openMin = parseInt(match[1]) * 60 + parseInt(match[2]);
       const closeMin = parseInt(match[3]) * 60 + parseInt(match[4]);
-      const slots = TIME_SLOTS.filter(slot => {
+      slots = TIME_SLOTS.filter(slot => {
         const [h, m] = slot.split(':').map(Number);
         const t = h * 60 + m;
         return t >= openMin && t < closeMin;
       });
-      const today = format(new Date(), 'yyyy-MM-dd');
-      if (dateStr === today) {
-        const now = new Date();
-        const cur = now.getHours() * 60 + now.getMinutes();
-        return slots.filter(slot => { const [h, m] = slot.split(':').map(Number); return h * 60 + m >= cur; });
-      }
-      return slots;
+    } else {
+      slots = [...TIME_SLOTS];
     }
+  } else {
+    slots = [...TIME_SLOTS];
   }
+
+  // Filter past times for today (with 30-min buffer)
   const today = format(new Date(), 'yyyy-MM-dd');
-  if (dateStr !== today) return TIME_SLOTS;
-  const now = new Date();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
-  return TIME_SLOTS.filter(slot => {
-    const [h, m] = slot.split(':').map(Number);
-    return h * 60 + m >= currentMinutes;
-  });
+  if (dateStr === today) {
+    const now = new Date();
+    const cur = now.getHours() * 60 + now.getMinutes() + BUFFER_MINUTES;
+    slots = slots.filter(slot => {
+      const [h, m] = slot.split(':').map(Number);
+      return h * 60 + m >= cur;
+    });
+  }
+
+  // Filter out admin-blocked slots
+  if (blockedSlots.length > 0) {
+    const blockedSet = new Set(blockedSlots);
+    slots = slots.filter(slot => !blockedSet.has(slot));
+  }
+
+  return slots;
 };
 
 const BORDER_COLORS = ['border-amber-400/30', 'border-rose-400/30', 'border-teal-400/30', 'border-violet-400/30', 'border-sky-400/30', 'border-orange-400/30'];
@@ -528,6 +539,28 @@ export default function WebsitePage() {
   const totalDuration = selectedServices.reduce((sum, s) => sum + (s.duration || 0), 0);
 
   const [conflictData, setConflictData] = useState(null);
+  const [blockedSlots, setBlockedSlots] = useState([]);
+
+  // Fetch blocked slots when date changes
+  useEffect(() => {
+    if (!formData.date) return;
+    const fetchBlocked = async () => {
+      try {
+        const res = await api.get(`${API}/public/blocked-slots/${formData.date}`);
+        setBlockedSlots(res.data || []);
+      } catch { setBlockedSlots([]); }
+    };
+    fetchBlocked();
+  }, [formData.date]);
+
+  // Auto-select first available time when date or blockedSlots change
+  useEffect(() => {
+    if (!config.hours && !blockedSlots.length) return;
+    const available = getAvailableSlotsForDate(formData.date, config.hours, blockedSlots);
+    if (available.length > 0 && !available.includes(formData.time)) {
+      setFormData(prev => ({ ...prev, time: available[0] }));
+    }
+  }, [formData.date, blockedSlots, config.hours]);
 
   // My Appointments lookup
   const [showMyAppts, setShowMyAppts] = useState(false);
@@ -823,18 +856,43 @@ export default function WebsitePage() {
               <h2 className="text-xl font-black text-white">Data e Ora</h2>
               <div className="space-y-3">
                 <div><label className="text-sm text-[#B89A7A] font-semibold mb-1 block">Data</label>
-                  <Input type="date" value={formData.date} min={format(new Date(), 'yyyy-MM-dd')} onChange={(e) => setFormData({...formData, date: e.target.value})} className="bg-[#2A1A0E] border-[#3A2A1A] text-white" /></div>
+                  <Input type="date" value={formData.date} min={format(new Date(), 'yyyy-MM-dd')} onChange={(e) => setFormData({...formData, date: e.target.value})} className="bg-[#2A1A0E] border-[#3A2A1A] text-white" data-testid="booking-date-input" /></div>
                 <div><label className="text-sm text-[#B89A7A] font-semibold mb-1 block">Ora</label>
-                  {getAvailableSlotsForDate(formData.date, config.hours).length === 0 ? (
-                    <p className="text-red-400 font-bold text-sm p-3 bg-red-500/10 rounded-lg border border-red-500/30">Giorno chiuso. Scegli un altro giorno.</p>
-                  ) : (
-                    <select value={formData.time} onChange={(e) => setFormData({...formData, time: e.target.value})} className="w-full p-3 bg-[#2A1A0E] border border-[#3A2A1A] rounded-lg text-white">
-                      {getAvailableSlotsForDate(formData.date, config.hours).map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                  )}</div>
+                  {(() => {
+                    const available = getAvailableSlotsForDate(formData.date, config.hours, blockedSlots);
+                    if (available.length === 0) {
+                      const dayMap = { 0: 'dom', 1: 'lun', 2: 'mar', 3: 'mer', 4: 'gio', 5: 'ven', 6: 'sab' };
+                      const d = new Date(formData.date + 'T12:00:00');
+                      const dayKey = dayMap[d.getDay()];
+                      const dayHours = (config.hours?.[dayKey] || '').toLowerCase();
+                      const isClosed = !dayHours || dayHours === 'chiuso' || dayHours === '-';
+                      return (
+                        <p className="text-red-400 font-bold text-sm p-3 bg-red-500/10 rounded-lg border border-red-500/30" data-testid="day-closed-msg">
+                          {isClosed ? 'Giorno chiuso. Scegli un altro giorno.' : 'Nessun orario disponibile per questa data. Tutti gli slot sono bloccati o passati.'}
+                        </p>
+                      );
+                    }
+                    return (
+                      <div className="grid grid-cols-4 gap-2" data-testid="time-slots-grid">
+                        {available.map(t => (
+                          <button key={t} type="button" onClick={() => setFormData(prev => ({...prev, time: t}))}
+                            className={`p-2.5 rounded-xl text-sm font-bold transition-all ${formData.time === t ? 'bg-gradient-to-r from-[#C8617A] to-[#A0404F] text-white shadow-lg scale-105' : 'bg-[#2A1A0E] border border-[#3A2A1A] text-[#D4B89A] hover:border-[#C8617A]/50 hover:text-white'}`}
+                            data-testid={`time-slot-${t}`}>
+                            {t}
+                          </button>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                  {blockedSlots.length > 0 && getAvailableSlotsForDate(formData.date, config.hours, blockedSlots).length > 0 && (
+                    <p className="text-xs text-amber-400/70 mt-2 flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> Alcuni orari non sono disponibili per questa data
+                    </p>
+                  )}
+                </div>
                 {operators.length > 0 && (
                   <div><label className="text-sm text-[#B89A7A] font-semibold mb-1 block">Operatore (opzionale)</label>
-                    <select value={formData.operator_id} onChange={(e) => setFormData({...formData, operator_id: e.target.value})} className="w-full p-3 bg-[#2A1A0E] border border-[#3A2A1A] rounded-lg text-white">
+                    <select value={formData.operator_id} onChange={(e) => setFormData({...formData, operator_id: e.target.value})} className="w-full p-3 bg-[#2A1A0E] border border-[#3A2A1A] rounded-lg text-white" data-testid="booking-operator-select">
                       <option value="">Nessuna preferenza</option>
                       {operators.map(op => <option key={op.id} value={op.id}>{op.name}</option>)}
                     </select></div>
@@ -842,7 +900,7 @@ export default function WebsitePage() {
               </div>
               <div className="flex gap-3">
                 <Button onClick={() => setStep(1)} variant="outline" className="flex-1 border-[#4A3020] text-[#D4B89A] hover:bg-white/10">Indietro</Button>
-                <Button onClick={() => setStep(3)} className="flex-1 bg-gradient-to-r from-[#C8617A] to-[#A0404F] text-white hover:bg-gray-200 font-bold" data-testid="website-step2-next">Continua <ArrowRight className="w-4 h-4 ml-2" /></Button>
+                <Button onClick={() => setStep(3)} disabled={getAvailableSlotsForDate(formData.date, config.hours, blockedSlots).length === 0} className="flex-1 bg-gradient-to-r from-[#C8617A] to-[#A0404F] text-white hover:bg-gray-200 font-bold disabled:opacity-40" data-testid="website-step2-next">Continua <ArrowRight className="w-4 h-4 ml-2" /></Button>
               </div>
             </div>
           )}

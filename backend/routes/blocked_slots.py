@@ -59,7 +59,7 @@ async def delete_blocked_slot(slot_id: str, current_user: dict = Depends(get_cur
 @router.get("/public/blocked-slots/{date}")
 async def get_public_blocked_for_date(date: str):
     """Get blocked time slots for a specific date (public, for booking page)."""
-    user = await db.users.find_one({"email": "melitobruno@gmail.com"}, {"_id": 0})
+    user = await db.users.find_one({"email": "admin@brunomelito.it"}, {"_id": 0})
     if not user:
         user = await db.users.find_one({}, {"_id": 0})
     if not user:
