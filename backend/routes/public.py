@@ -166,7 +166,7 @@ async def get_public_services():
         user = await db.users.find_one({}, {"_id": 0, "id": 1})
     if not user:
         return []
-    return await db.services.find({"user_id": user["id"]}, {"_id": 0, "user_id": 0}).to_list(100)
+    return await db.services.find({"user_id": user["id"]}, {"_id": 0, "user_id": 0}).sort("order", 1).to_list(100)
 
 
 @router.get("/public/operators")
@@ -665,7 +665,7 @@ async def public_get_website():
         config = {**DEFAULT_WEBSITE_CONFIG, **{k: v for k, v in config.items() if k != "user_id"}}
     reviews = await db.website_reviews.find({}, {"_id": 0, "user_id": 0}).to_list(100)
     gallery = await db.website_gallery.find({"is_deleted": {"$ne": True}}, {"_id": 0, "user_id": 0}).sort("sort_order", 1).to_list(100)
-    services = await db.services.find({}, {"_id": 0}).sort("sort_order", 1).to_list(100)
+    services = await db.services.find({}, {"_id": 0}).sort("order", 1).to_list(100)
     
     # Card templates for public booking
     card_templates_raw = await db.card_templates.find({"is_deleted": {"$ne": True}}, {"_id": 0}).to_list(100)

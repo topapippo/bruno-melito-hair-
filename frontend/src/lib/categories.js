@@ -27,7 +27,7 @@ export const sortServicesByCategory = (services) => {
     const orderA = catA === -1 ? 99 : catA;
     const orderB = catB === -1 ? 99 : catB;
     if (orderA !== orderB) return orderA - orderB;
-    return (a.sort_order || 999) - (b.sort_order || 999);
+    return (a.order ?? a.sort_order ?? 999) - (b.order ?? b.sort_order ?? 999);
   });
 };
 

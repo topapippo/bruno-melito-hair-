@@ -27,7 +27,7 @@ async def create_service(data: ServiceCreate, current_user: dict = Depends(get_c
 async def get_services(current_user: dict = Depends(get_current_user)):
     return await db.services.find(
         {"user_id": current_user["id"]}, {"_id": 0, "user_id": 0}
-    ).sort("sort_order", 1).to_list(1000)
+    ).sort("order", 1).to_list(1000)
 
 
 @router.put("/services/{service_id}", response_model=ServiceResponse)
