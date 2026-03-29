@@ -204,7 +204,13 @@ export default function NewAppointmentDialog({
     if (!formData.date) errors.date = 'Seleziona una data';
 
     // Validate time
-    if (!formData.time) errors.time = 'Seleziona un orario';
+    if (!formData.time || formData.time === 'closed') errors.time = 'Seleziona un orario';
+
+    // Block closed days
+    if (isDayClosed) errors.date = 'Giorno di chiusura! Scegli un altro giorno';
+
+    // Block if no available slots
+    if (availableSlots.length === 0 && !isDayClosed) errors.time = 'Nessun orario disponibile per questa data';
 
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) {
@@ -244,15 +250,25 @@ export default function NewAppointmentDialog({
       onClose();
       onSuccess?.();
     } catch (err) {
+      const status = err.response?.status;
       const detail = err.response?.data?.detail;
-      let msg = 'Errore nella creazione';
-      if (typeof detail === 'string') {
+      let msg = '';
+      if (!err.response) {
+        msg = 'Errore di rete - controlla la connessione internet';
+      } else if (typeof detail === 'string') {
         msg = detail;
-        // Map backend errors to field highlights
-        if (detail.includes('cliente') || detail.includes('Cliente')) setFieldErrors(prev => ({ ...prev, client: detail }));
-        if (detail.includes('serviz') || detail.includes('Serviz')) setFieldErrors(prev => ({ ...prev, services: detail }));
+        if (detail.toLowerCase().includes('client')) setFieldErrors(prev => ({ ...prev, client: detail }));
+        if (detail.toLowerCase().includes('serviz')) setFieldErrors(prev => ({ ...prev, services: detail }));
       } else if (Array.isArray(detail)) {
         msg = detail.map(d => d.msg || d.message || JSON.stringify(d)).join(' | ');
+      } else if (status === 422) {
+        msg = 'Dati mancanti o non validi. Controlla tutti i campi.';
+      } else if (status === 400) {
+        msg = 'Dati non validi: ' + JSON.stringify(detail || 'controlla i campi');
+      } else if (status === 500) {
+        msg = 'Errore del server. Riprova tra qualche secondo.';
+      } else {
+        msg = `Errore (${status || 'sconosciuto'}): ${JSON.stringify(detail) || 'Riprova'}`;
       }
       toast.error(msg);
     } finally {
@@ -682,10 +698,10 @@ export default function NewAppointmentDialog({
                 </div>
               );
             })()}
-            <Button type="submit" disabled={saving}
-              className="w-full h-11 bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-[0_4px_12px_rgba(200,97,122,0.3)] font-bold text-base"
+            <Button type="submit" disabled={saving || isDayClosed || availableSlots.length === 0}
+              className="w-full h-11 bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-[0_4px_12px_rgba(200,97,122,0.3)] font-bold text-base disabled:opacity-40"
               data-testid="save-appointment-btn">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salva Appuntamento'}
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : isDayClosed ? 'Giorno chiuso' : 'Salva Appuntamento'}
             </Button>
           </div>
         </form>
