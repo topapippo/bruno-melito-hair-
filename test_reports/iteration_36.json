@@ -1,0 +1,113 @@
+{
+  "summary": "Iteration 36: Comprehensive testing of NewAppointmentDialog and EditAppointmentDialog improvements on both DESKTOP (1920x800) and MOBILE (390x844) viewports. All requested features verified working: fixed footer buttons, expandable accordion service categories, price/duration summary in footer, INCASSA checkout flow.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": [
+    "=== DESKTOP (1920x800) NewAppointmentDialog ===",
+    "1. Dialog opens via 'Nuovo' button - PASS",
+    "2. Dialog title 'Nuovo Appuntamento' visible - PASS",
+    "3. Fixed footer with 'Salva Appuntamento' button at y=703 (lower half of 800px viewport) - PASS",
+    "4. All 6 service categories found as accordion blocks: taglio, piega, trattamento, colore, permanente, stiratura - PASS",
+    "5. Categories are expandable - clicking toggles open/close - PASS",
+    "6. Services visible after expanding category (2 services in taglio) - PASS",
+    "7. Footer shows service count + duration + price summary ('1 servizio - 10 min €10.00') - PASS",
+    "8. 'Occasionale' button works - pre-fills name with 'Cliente Occasionale' - PASS",
+    "9. Create appointment with Occasionale client works end-to-end - PASS",
+    "10. Success toast 'Appuntamento creato!' appears - PASS",
+    "11. Dialog closes after successful save - PASS",
+    "",
+    "=== DESKTOP (1920x800) EditAppointmentDialog ===",
+    "1. Dialog opens by clicking existing appointment - PASS",
+    "2. Dialog title 'Modifica Appuntamento' visible - PASS",
+    "3. Fixed footer with Elimina/Annulla/Salva buttons at y=711 - PASS",
+    "4. All 6 service categories found as accordion blocks - PASS",
+    "5. Categories are expandable - PASS",
+    "6. Services visible after expanding (9 services in taglio) - PASS",
+    "7. Footer shows service count + duration + price summary - PASS",
+    "8. INCASSA button opens checkout section with 'INCASSO' title - PASS",
+    "9. Checkout has 'Contanti' payment button - PASS",
+    "10. Checkout has 'CONFERMA PAGAMENTO' button - PASS",
+    "11. Update appointment works - toast 'Appuntamento aggiornato!' - PASS",
+    "12. Delete appointment works - toast 'Appuntamento eliminato!' - PASS",
+    "",
+    "=== MOBILE (390x844) NewAppointmentDialog ===",
+    "1. Dialog opens via 'Nuovo' button - PASS",
+    "2. Dialog title 'Nuovo Appuntamento' visible - PASS",
+    "3. Fixed footer with 'Salva Appuntamento' at y=744 (bottom of 844px viewport) - PASS",
+    "4. All 6 service categories found as accordion blocks - PASS",
+    "5. Categories are expandable - PASS",
+    "6. Services visible after expanding (2 services) - PASS",
+    "7. Footer shows service summary ('1 servizio - 10 min €10.00') - PASS",
+    "",
+    "=== MOBILE (390x844) EditAppointmentDialog ===",
+    "1. Dialog opens by clicking appointment block - PASS",
+    "2. Dialog title 'Modifica Appuntamento' visible - PASS",
+    "3. Fixed footer with Elimina button at y=752 - PASS",
+    "4. All 6 service categories found as accordion blocks - PASS",
+    "5. Categories are expandable - PASS",
+    "6. Services visible after expanding (9 services) - PASS",
+    "7. Footer shows service summary - PASS",
+    "8. INCASSA checkout flow works on mobile - PASS",
+    "9. 'CONFERMA PAGAMENTO' button found on mobile - PASS"
+  ],
+  "failed_tests": [],
+  "test_report_links": [
+    "/app/test_reports/iteration_36.json"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "NewAppointmentDialog.jsx: Excellent implementation of fixed footer using 'shrink-0' class and flex layout. Footer is outside scrollable area.",
+    "EditAppointmentDialog.jsx: Same pattern applied correctly. Footer with Elimina/Annulla/Salva buttons always visible.",
+    "Both dialogs: Accordion categories implemented with data-testid attributes (toggle-cat-{catKey} for new, edit-toggle-cat-{catKey} for edit).",
+    "Both dialogs: Service summary in footer shows count, duration, and price correctly.",
+    "Both dialogs: DialogContent uses p-0 with border-b on header for clean separation."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "N/A (frontend-only testing)",
+    "frontend": "100% (all 38 tests passed)"
+  },
+  "test_credentials": {
+    "admin_email": "admin@brunomelito.it",
+    "admin_password": "mbhs637104"
+  },
+  "seed_data_creation": "Created and deleted test appointment with 'Cliente Occasionale' during testing",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 36 verified all dialog improvements on both desktop and mobile. Key features working: 1) Fixed footer with buttons always visible at bottom. 2) Accordion service categories with data-testid='toggle-cat-{catKey}' (new) and 'edit-toggle-cat-{catKey}' (edit). 3) Footer shows service count, duration, price summary. 4) INCASSA checkout flow works. 5) Create/Update/Delete appointment flows all working. No issues found.",
+  "features_verified": {
+    "desktop_new_dialog": {
+      "fixed_footer": "VERIFIED - Save button at y=703 on 800px viewport",
+      "accordion_categories": "VERIFIED - All 6 categories expandable",
+      "footer_summary": "VERIFIED - Shows count, duration, price",
+      "occasionale_client": "VERIFIED - Pre-fills name correctly",
+      "create_flow": "VERIFIED - End-to-end works"
+    },
+    "desktop_edit_dialog": {
+      "fixed_footer": "VERIFIED - Elimina/Annulla/Salva at y=711",
+      "accordion_categories": "VERIFIED - All 6 categories expandable",
+      "footer_summary": "VERIFIED - Shows count, duration, price",
+      "incassa_flow": "VERIFIED - Opens checkout with payment options",
+      "update_flow": "VERIFIED - Toast 'Appuntamento aggiornato!'",
+      "delete_flow": "VERIFIED - Toast 'Appuntamento eliminato!'"
+    },
+    "mobile_new_dialog": {
+      "fixed_footer": "VERIFIED - Save button at y=744 on 844px viewport",
+      "accordion_categories": "VERIFIED - All 6 categories expandable",
+      "footer_summary": "VERIFIED - Shows count, duration, price"
+    },
+    "mobile_edit_dialog": {
+      "fixed_footer": "VERIFIED - Elimina at y=752",
+      "accordion_categories": "VERIFIED - All 6 categories expandable",
+      "footer_summary": "VERIFIED - Shows count, duration, price",
+      "incassa_flow": "VERIFIED - Works on mobile"
+    }
+  }
+}
