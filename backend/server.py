@@ -73,12 +73,7 @@ _cors_origins_raw = os.environ.get('CORS_ORIGINS', '')
 if _cors_origins_raw:
     cors_origins = [o.strip() for o in _cors_origins_raw.split(',') if o.strip()]
 else:
-    # In sviluppo permetti tutto; in produzione CORS_ORIGINS deve essere impostato
-    if os.environ.get('ENV', 'development') == 'production':
-        logger.warning("ATTENZIONE: CORS_ORIGINS non impostato in produzione, CORS disabilitato!")
-        cors_origins = []
-    else:
-        cors_origins = ["*"]
+    cors_origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,

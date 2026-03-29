@@ -222,34 +222,40 @@ export default function NewAppointmentDialog({
     setSaving(true);
     try {
       const payload = {
-        ...formData,
-        operator_id: formData.operator_id || null
+        client_id: formData.client_id || null,
+        service_ids: formData.service_ids,
+        operator_id: formData.operator_id || null,
+        date: formData.date,
+        time: formData.time,
+        notes: formData.notes || '',
+        promo_id: preSelectedPromoId || null,
+        card_id: preSelectedCardId || null,
       };
       if (newClientMode && !formData.client_id) {
         payload.client_id = null;
         payload.client_name = newClientName || 'Cliente Occasionale';
         payload.client_phone = newClientPhone || '';
       }
-      const notes = [];
+      const notesParts = [];
       if (preSelectedCardId) {
         const card = dialogClientCards.find(c => c.id === preSelectedCardId);
-        if (card) notes.push(`[CARD: ${card.name}]`);
+        if (card) notesParts.push(`[CARD: ${card.name}]`);
       }
       if (preSelectedPromoId) {
         const promo = dialogClientPromos.find(p => p.id === preSelectedPromoId) || allPromos.find(p => p.id === preSelectedPromoId);
-        if (promo) notes.push(`[PROMO: ${promo.name}]`);
+        if (promo) notesParts.push(`[PROMO: ${promo.name}]`);
       }
-      if (notes.length > 0) {
-        payload.notes = (payload.notes ? payload.notes + ' ' : '') + notes.join(' ');
+      if (notesParts.length > 0) {
+        payload.notes = (payload.notes ? payload.notes + ' ' : '') + notesParts.join(' ');
       }
-      payload.promo_id = preSelectedPromoId || null;
-      payload.card_id = preSelectedCardId || null;
 
+      console.log('[NewAppointment] Payload:', JSON.stringify(payload));
       await api.post(`${API}/appointments`, payload);
       toast.success('Appuntamento creato!' + (preSelectedCardId || preSelectedPromoId ? ' Card/Promo salvate.' : ''));
       onClose();
       onSuccess?.();
     } catch (err) {
+      console.error('[NewAppointment] Error:', err.response?.status, err.response?.data, err.message);
       const status = err.response?.status;
       const detail = err.response?.data?.detail;
       let msg = '';
@@ -264,13 +270,13 @@ export default function NewAppointmentDialog({
       } else if (status === 422) {
         msg = 'Dati mancanti o non validi. Controlla tutti i campi.';
       } else if (status === 400) {
-        msg = 'Dati non validi: ' + JSON.stringify(detail || 'controlla i campi');
+        msg = 'Dati non validi: ' + (typeof detail === 'object' ? JSON.stringify(detail) : String(detail || 'controlla i campi'));
       } else if (status === 500) {
-        msg = 'Errore del server. Riprova tra qualche secondo.';
+        msg = 'Errore del server: ' + (typeof detail === 'object' ? JSON.stringify(detail) : String(detail || 'Riprova tra qualche secondo'));
       } else {
-        msg = `Errore (${status || 'sconosciuto'}): ${JSON.stringify(detail) || 'Riprova'}`;
+        msg = `Errore (${status || 'sconosciuto'}): ${typeof detail === 'object' ? JSON.stringify(detail) : String(detail || 'Riprova')}`;
       }
-      toast.error(msg);
+      toast.error(msg || 'Errore nella creazione dell\'appuntamento');
     } finally {
       setSaving(false);
     }
