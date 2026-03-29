@@ -15,43 +15,47 @@ App gestionale per salone (Bruno Melito Hair) con sito pubblico di prenotazione 
 
 ## Struttura File Chiave
 ```
-/app/frontend/src/pages/WebsitePage.jsx  → Pagina pubblica + booking (/sito)
-/app/frontend/src/pages/BookingPage.jsx  → Pagina alternativa (/prenota - non usata)
-/app/frontend/src/pages/CardsPage.jsx    → Gestione Card & Abbonamenti
-/app/frontend/src/pages/PlanningPage.jsx → Calendario Planning (refactored)
-/app/frontend/src/components/planning/NewAppointmentDialog.jsx → Dialog nuovo appuntamento
-/app/frontend/src/lib/categories.js      → Definizione categorie servizi
-/app/backend/routes/cards.py             → API card templates e cards
-/app/backend/routes/services.py          → API servizi
-/app/backend/routes/public.py            → API pubbliche
+/app/frontend/src/pages/WebsitePage.jsx  -> Pagina pubblica + booking (/sito) - UNICA pagina pubblica
+/app/frontend/src/pages/CardsPage.jsx    -> Gestione Card & Abbonamenti
+/app/frontend/src/pages/PlanningPage.jsx -> Calendario Planning
+/app/frontend/src/pages/WebsiteAdminPage.jsx -> Gestione Sito CMS (/gestione-sito)
+/app/frontend/src/pages/SettingsPage.jsx -> Impostazioni (temi, slot bloccati)
+/app/frontend/src/pages/Dashboard.jsx    -> Dashboard admin
+/app/frontend/src/lib/categories.js      -> Definizione categorie servizi
+/app/frontend/src/lib/api.js             -> Axios con interceptor JWT
+/app/backend/routes/public.py            -> API pubbliche + booking + upselling
+/app/backend/routes/blocked_slots.py     -> API slot bloccati
+/app/backend/routes/services.py          -> API servizi
+/app/backend/routes/clients.py           -> API clienti
 ```
 
-## Funzionalità Completate
+## Funzionalita Completate
 - [x] CMS dinamico con temi e colori personalizzabili
-- [x] Sistema prenotazione pubblica con upselling
-- [x] Calendario Planning con festività italiane e slot bloccati
+- [x] Sistema prenotazione pubblica con blocco orari/giorni passati
+- [x] Upselling nella pagina di successo prenotazione (WebsitePage.jsx)
+- [x] Calendario Planning con festivita italiane e slot bloccati
 - [x] Promemoria WhatsApp batch
 - [x] Hero CMS personalizzabile
 - [x] Temi admin personalizzabili
-- [x] Refactoring PlanningPage.jsx in componenti modulari
-- [x] Standardizzazione 26 servizi nel DB
-- [x] Pulsanti espandibili per categorie servizi (landing + booking step 1) - WebsitePage.jsx
-- [x] Pacchetti Preimpostati (Card Templates) visibili e gestibili nella pagina Card/Abbonamenti
-- [x] Abbonamenti visibili nel dialog Nuovo Appuntamento del Planning
-
-- [x] QR Code stampabile sulla pagina pubblica con pulsanti Stampa e Scarica
-
-- [x] Eliminazione 33 foto duplicate dal database Atlas di produzione (27 Mar 2026)
+- [x] Pulsanti espandibili per categorie servizi
+- [x] Pacchetti Preimpostati (Card Templates)
+- [x] QR Code stampabile sulla pagina pubblica
+- [x] Indici unici MongoDB per prevenire duplicazioni
+- [x] Ordine progressivo servizi
+- [x] BookingPage.jsx ELIMINATO - /prenota reindirizza a /sito
+- [x] Gestione Sito salva correttamente tutte le tab (Generale, Upselling, Layout, Aspetto, Orari)
 
 ## Note Importanti
-- La rotta `/sito` usa WebsitePage.jsx (NON BookingPage.jsx)
+- SOLO WebsitePage.jsx gestisce la pagina pubblica (/sito)
+- BookingPage.jsx e stato eliminato definitivamente (29 Mar 2026)
+- /prenota reindirizza automaticamente a /sito
 - Deploy su Render: sempre "Clear build cache and deploy"
 - Service Worker self-destructing attivo per cache
 
 ## Task Futuri
-- P1: Dashboard statistiche clienti (grafici frequenza visite, spesa media, servizi più richiesti)
+- P1: Dashboard statistiche clienti (grafici frequenza visite, spesa media, servizi piu richiesti)
 - P2: Scheda cliente con storico foto tagli
 - P2: Sconti/messaggi automatici compleanno
 - P3: Lista d'attesa intelligente
-- P3: Heat map ore più occupate
+- P3: Heat map ore piu occupate
 - P3: Confronto performance operatori
