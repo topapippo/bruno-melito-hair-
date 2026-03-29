@@ -46,6 +46,7 @@ export default function NewAppointmentDialog({
   operators, clients, services, cardTemplates, onSuccess,
 }) {
   const [saving, setSaving] = useState(false);
+  const [openCats, setOpenCats] = useState({});
   const [formData, setFormData] = useState({
     client_id: '', service_ids: [], operator_id: '', time: '09:00', notes: '', date: ''
   });
@@ -167,40 +168,49 @@ export default function NewAppointmentDialog({
     }
   };
 
+  const toggleCat = (catKey) => setOpenCats(prev => ({ ...prev, [catKey]: !prev[catKey] }));
+
+  const selectedServicesInfo = services.filter(s => formData.service_ids.includes(s.id));
+  const totalPrice = selectedServicesInfo.reduce((sum, s) => sum + (s.price || 0), 0);
+  const totalDuration = selectedServicesInfo.reduce((sum, s) => sum + (s.duration || 0), 0);
+
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="font-display text-2xl text-[#2D1B14]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] p-0 flex flex-col overflow-hidden">
+        <DialogHeader className="px-5 pt-5 pb-3 shrink-0 border-b border-[#F0E6DC]">
+          <DialogTitle className="font-display text-xl text-[#2D1B14]">
             Nuovo Appuntamento
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-sm">
             {formData.date
               ? format(new Date(formData.date + 'T00:00:00'), "EEEE d MMMM yyyy", { locale: it })
               : ''} alle {formData.time}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 mt-4">
-          <div className="flex-1 overflow-y-auto space-y-4 pr-1 pb-2">
-            {/* Date Picker */}
-            <div className="space-y-2">
-              <Label className="text-[#2D1B14] font-semibold">Data</Label>
+
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+
+            {/* Data */}
+            <div className="space-y-1.5">
+              <Label className="text-[#2D1B14] font-semibold text-sm">Data</Label>
               <Input
                 type="date"
                 value={formData.date}
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                className="bg-white border-2 border-[#F0E6DC] text-[#2D1B14] font-medium"
+                className="bg-white border-2 border-[#F0E6DC] text-[#2D1B14] font-medium h-10"
                 data-testid="appointment-date-input"
               />
             </div>
-            <div className="space-y-2">
+
+            {/* Cliente */}
+            <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <Label className="text-[#2D1B14] font-semibold">Cliente</Label>
+                <Label className="text-[#2D1B14] font-semibold text-sm">Cliente</Label>
                 <div className="flex gap-1">
-                  <Button type="button" variant="ghost" size="sm" className="text-xs h-7 text-amber-600"
+                  <Button type="button" variant="ghost" size="sm" className="text-xs h-7 text-amber-600 px-2"
                     onClick={() => {
-                      setNewClientMode(false);
-                      setNewClientName('');
+                      setNewClientMode(false); setNewClientName('');
                       setFormData(prev => ({ ...prev, client_id: 'generic' }));
                       setClientSearch('Cliente Occasionale');
                       setSelectedClientInfo(null);
@@ -208,12 +218,11 @@ export default function NewAppointmentDialog({
                     data-testid="generic-client-btn">
                     <User className="w-3 h-3 mr-1" /> Occasionale
                   </Button>
-                  <Button type="button" variant="ghost" size="sm" className="text-xs h-7 text-emerald-600"
+                  <Button type="button" variant="ghost" size="sm" className="text-xs h-7 text-emerald-600 px-2"
                     onClick={() => {
                       setNewClientMode(true);
                       setFormData(prev => ({ ...prev, client_id: '' }));
-                      setClientSearch('');
-                      setSelectedClientInfo(null);
+                      setClientSearch(''); setSelectedClientInfo(null);
                     }}
                     data-testid="new-client-btn">
                     <UserPlus className="w-3 h-3 mr-1" /> Nuovo
@@ -222,28 +231,18 @@ export default function NewAppointmentDialog({
               </div>
               {newClientMode ? (
                 <div className="space-y-2 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
-                  <Input
-                    type="text"
-                    placeholder="Nome e Cognome *"
-                    value={newClientName}
+                  <Input type="text" placeholder="Nome e Cognome *" value={newClientName}
                     onChange={(e) => setNewClientName(e.target.value)}
-                    className="bg-white border-2 border-emerald-300 text-[#2D1B14] font-medium"
-                    data-testid="new-client-name-input"
-                  />
+                    className="bg-white border-2 border-emerald-300 text-[#2D1B14] font-medium h-10"
+                    data-testid="new-client-name-input" />
                   <div className="relative">
-                    <Input
-                      type="text"
-                      placeholder="Telefono (importante per promemoria!)"
-                      value={newClientPhone}
+                    <Input type="text" placeholder="Telefono (per promemoria!)" value={newClientPhone}
                       onChange={(e) => setNewClientPhone(e.target.value)}
-                      className={`bg-white border-2 text-[#2D1B14] font-medium ${
-                        newClientPhone ? 'border-emerald-300' : 'border-orange-400 ring-1 ring-orange-300'
-                      }`}
-                      data-testid="new-client-phone-input"
-                    />
+                      className={`bg-white border-2 text-[#2D1B14] font-medium h-10 ${newClientPhone ? 'border-emerald-300' : 'border-orange-400 ring-1 ring-orange-300'}`}
+                      data-testid="new-client-phone-input" />
                     {!newClientPhone && (
                       <p className="text-xs text-orange-600 font-semibold mt-1 flex items-center gap-1">
-                        <Bell className="w-3 h-3" /> Inserisci il numero per inviare promemoria WhatsApp
+                        <Bell className="w-3 h-3" /> Inserisci il numero per promemoria WhatsApp
                       </p>
                     )}
                   </div>
@@ -253,44 +252,26 @@ export default function NewAppointmentDialog({
                 </div>
               ) : (
                 <div className="relative">
-                  <Input
-                    type="text"
-                    placeholder="Digita nome cliente..."
-                    value={clientSearch}
+                  <Input type="text" placeholder="Digita nome cliente..." value={clientSearch}
                     onChange={(e) => {
-                      setClientSearch(e.target.value);
-                      setShowClientDropdown(true);
-                      if (!e.target.value) {
-                        setFormData(prev => ({ ...prev, client_id: '' }));
-                        setSelectedClientInfo(null);
-                      }
+                      setClientSearch(e.target.value); setShowClientDropdown(true);
+                      if (!e.target.value) { setFormData(prev => ({ ...prev, client_id: '' })); setSelectedClientInfo(null); }
                     }}
                     onFocus={() => setShowClientDropdown(true)}
-                    className="bg-white border-2 border-[#F0E6DC] text-[#2D1B14] font-medium"
-                    data-testid="search-client-dialog"
-                  />
+                    className="bg-white border-2 border-[#F0E6DC] text-[#2D1B14] font-medium h-10"
+                    data-testid="search-client-dialog" />
                   {showClientDropdown && clientSearch.length > 0 && (
                     <div className="absolute z-50 w-full mt-1 bg-white border-2 border-[#C8617A] rounded-xl shadow-xl max-h-48 overflow-auto">
-                      {clients
-                        .filter(c => c.name.toLowerCase().includes(clientSearch.toLowerCase()))
-                        .slice(0, 20)
-                        .map((client) => (
-                          <button
-                            key={client.id}
-                            type="button"
-                            className={`w-full px-3 py-2 text-left hover:bg-[#C8617A]/20 text-sm font-medium border-b border-[#F0E6DC]/30 last:border-0 ${
-                              formData.client_id === client.id ? 'bg-[#C8617A]/20 text-[#C8617A]' : 'text-[#2D1B14]'
-                            }`}
-                            onClick={() => handleClientSelect(client.id, client.name)}
-                          >
-                            <div className="flex items-center justify-between">
-                              <span>{client.name}</span>
-                              {!client.phone && (
-                                <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-bold ml-2">TEL MANCANTE</span>
-                              )}
-                            </div>
-                          </button>
-                        ))}
+                      {clients.filter(c => c.name.toLowerCase().includes(clientSearch.toLowerCase())).slice(0, 20).map((client) => (
+                        <button key={client.id} type="button"
+                          className={`w-full px-3 py-2 text-left hover:bg-[#C8617A]/20 text-sm font-medium border-b border-[#F0E6DC]/30 last:border-0 ${formData.client_id === client.id ? 'bg-[#C8617A]/20 text-[#C8617A]' : 'text-[#2D1B14]'}`}
+                          onClick={() => handleClientSelect(client.id, client.name)}>
+                          <div className="flex items-center justify-between">
+                            <span>{client.name}</span>
+                            {!client.phone && <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-bold ml-2">TEL MANCANTE</span>}
+                          </div>
+                        </button>
+                      ))}
                       {clients.filter(c => c.name.toLowerCase().includes(clientSearch.toLowerCase())).length === 0 && (
                         <div className="px-3 py-2 text-sm text-[#7C5C4A]">Nessun cliente trovato</div>
                       )}
@@ -304,64 +285,44 @@ export default function NewAppointmentDialog({
             {selectedClientInfo && (
               <div className={`p-3 rounded-xl border-2 ${!selectedClientInfo.phone ? 'bg-red-50 border-red-400' : 'bg-[#FEF3C7] border-[#F59E0B]'}`}>
                 <div className="flex items-start gap-2">
-                  <User className={`w-5 h-5 flex-shrink-0 mt-0.5 ${!selectedClientInfo.phone ? 'text-red-500' : 'text-[#F59E0B]'}`} />
-                  <div className="flex-1">
-                    <p className={`font-bold ${!selectedClientInfo.phone ? 'text-red-700' : 'text-[#92400E]'}`}>{selectedClientInfo.name}</p>
+                  <User className={`w-4 h-4 flex-shrink-0 mt-0.5 ${!selectedClientInfo.phone ? 'text-red-500' : 'text-[#F59E0B]'}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className={`font-bold text-sm ${!selectedClientInfo.phone ? 'text-red-700' : 'text-[#92400E]'}`}>{selectedClientInfo.name}</p>
                     {selectedClientInfo.phone ? (
-                      <p className="text-sm text-[#92400E]">Tel: {selectedClientInfo.phone}</p>
+                      <p className="text-xs text-[#92400E]">Tel: {selectedClientInfo.phone}</p>
                     ) : (
-                      <p className="text-sm text-red-600 font-semibold flex items-center gap-1">
-                        <Bell className="w-3.5 h-3.5" /> Telefono mancante! Inseriscilo nella scheda cliente
+                      <p className="text-xs text-red-600 font-semibold flex items-center gap-1">
+                        <Bell className="w-3 h-3" /> Telefono mancante!
                       </p>
                     )}
-                    {selectedClientInfo.notes && (
-                      <p className="text-sm text-[#92400E] mt-1 whitespace-pre-wrap">{selectedClientInfo.notes}</p>
-                    )}
-                    {!selectedClientInfo.notes && selectedClientInfo.phone && (
-                      <p className="text-sm text-[#92400E]/60 italic">Nessuna nota</p>
-                    )}
+                    {selectedClientInfo.notes && <p className="text-xs text-[#92400E] mt-0.5 truncate">{selectedClientInfo.notes}</p>}
                   </div>
                 </div>
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Orario</Label>
-                <Select
-                  value={formData.time}
-                  onValueChange={(val) => setFormData({ ...formData, time: val })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
+            {/* Orario + Operatore */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-sm">Orario</Label>
+                <Select value={formData.time} onValueChange={(val) => setFormData({ ...formData, time: val })}>
+                  <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                   <SelectContent className="max-h-[200px]">
                     {getAvailableTimeSlots(formData.date).map((time) => (
-                      <SelectItem key={time} value={time}>
-                        {time}
-                      </SelectItem>
+                      <SelectItem key={time} value={time}>{time}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-
-              <div className="space-y-2">
-                <Label>Operatore</Label>
-                <Select
-                  value={formData.operator_id || operators[0]?.id || ""}
-                  onValueChange={(val) => setFormData({ ...formData, operator_id: val })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleziona..." />
-                  </SelectTrigger>
+              <div className="space-y-1.5">
+                <Label className="text-sm">Operatore</Label>
+                <Select value={formData.operator_id || operators[0]?.id || ""} onValueChange={(val) => setFormData({ ...formData, operator_id: val })}>
+                  <SelectTrigger className="h-10"><SelectValue placeholder="Seleziona..." /></SelectTrigger>
                   <SelectContent>
                     {operators.map((op) => (
                       <SelectItem key={op.id} value={op.id}>
                         <div className="flex items-center gap-2">
-                          <div
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: op.color }}
-                          />
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: op.color }} />
                           {op.name}
                         </div>
                       </SelectItem>
@@ -371,124 +332,136 @@ export default function NewAppointmentDialog({
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Servizi</Label>
-              <div className="max-h-52 overflow-y-auto space-y-3 pr-1">
+            {/* Servizi - Categorie Espandibili */}
+            <div className="space-y-1.5">
+              <Label className="text-sm font-semibold text-[#2D1B14]">Servizi</Label>
+              <div className="space-y-2">
                 {sortedServices.orderedKeys.map(catKey => {
                   const catInfo = getCategoryInfo(catKey);
                   const catServices = sortedServices.groups[catKey];
+                  const isOpen = openCats[catKey];
+                  const selectedInCat = catServices.filter(s => formData.service_ids.includes(s.id));
                   return (
-                    <div key={catKey}>
-                      <p className="text-xs font-bold uppercase tracking-wider mb-1.5 flex items-center gap-1.5 sticky top-0 bg-white py-1 z-10" style={{ color: catInfo.color }}>
-                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: catInfo.color }} />
-                        {catInfo.label}
-                      </p>
-                      <div className="grid grid-cols-2 gap-1.5">
-                        {catServices.map(service => (
-                          <Button
-                            key={service.id}
-                            type="button"
-                            variant="outline"
-                            className={`justify-start h-auto py-2 px-3 ${
-                              formData.service_ids.includes(service.id)
-                                ? 'ring-2 ring-offset-1'
-                                : 'border-[#F0E6DC]'
-                            }`}
-                            style={formData.service_ids.includes(service.id) ? { borderColor: service.color || catInfo.color, color: service.color || catInfo.color, backgroundColor: `${service.color || catInfo.color}15`, ringColor: service.color || catInfo.color } : {}}
-                            onClick={() => toggleService(service.id)}
-                          >
-                            <div className="flex items-center gap-2 text-left">
-                              <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: service.color || catInfo.color }} />
-                              <div>
-                                <p className="font-medium text-sm">{service.name}</p>
-                                <p className="text-xs opacity-70">{service.duration} min - {'\u20AC'}{service.price}</p>
-                              </div>
-                            </div>
-                          </Button>
-                        ))}
-                      </div>
+                    <div key={catKey} className="rounded-xl border-2 border-[#F0E6DC] overflow-hidden" data-testid={`service-cat-${catKey}`}>
+                      <button type="button" onClick={() => toggleCat(catKey)}
+                        className="w-full flex items-center justify-between px-3 py-2.5 bg-white hover:bg-gray-50 transition-colors"
+                        data-testid={`toggle-cat-${catKey}`}>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: catInfo.color }} />
+                          <span className="font-bold text-sm uppercase tracking-wide" style={{ color: catInfo.color }}>{catInfo.label}</span>
+                          <span className="text-xs text-gray-400">({catServices.length})</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {selectedInCat.length > 0 && (
+                            <span className="text-xs font-bold px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: catInfo.color }}>
+                              {selectedInCat.length}
+                            </span>
+                          )}
+                          <svg className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                        </div>
+                      </button>
+                      {isOpen && (
+                        <div className="border-t border-[#F0E6DC] px-2 py-2 space-y-1 bg-gray-50/50">
+                          {catServices.map(service => {
+                            const isSel = formData.service_ids.includes(service.id);
+                            return (
+                              <button key={service.id} type="button" onClick={() => toggleService(service.id)}
+                                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-all ${
+                                  isSel
+                                    ? 'bg-white shadow-sm border-2'
+                                    : 'bg-transparent hover:bg-white border-2 border-transparent'
+                                }`}
+                                style={isSel ? { borderColor: service.color || catInfo.color, backgroundColor: `${service.color || catInfo.color}08` } : {}}
+                                data-testid={`planning-service-${service.id}`}>
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <div className={`w-5 h-5 rounded-md flex items-center justify-center border-2 shrink-0 transition-all ${isSel ? 'text-white' : 'border-gray-300'}`}
+                                    style={isSel ? { backgroundColor: service.color || catInfo.color, borderColor: service.color || catInfo.color } : {}}>
+                                    {isSel && <Check className="w-3 h-3" />}
+                                  </div>
+                                  <span className={`text-sm font-medium truncate ${isSel ? 'text-[#2D1B14]' : 'text-gray-700'}`}>{service.name}</span>
+                                </div>
+                                <span className="text-xs text-gray-500 shrink-0 ml-2">{service.duration}m - {'\u20AC'}{service.price}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
-                {/* Card & Abbonamenti come categoria */}
+
+                {/* Card & Abbonamenti */}
                 {cardTemplates.length > 0 && (
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-wider mb-1.5 flex items-center gap-1.5 sticky top-0 bg-white py-1 z-10" style={{ color: '#6366F1' }}>
-                      <CreditCard className="w-3 h-3" />
-                      Card & Abbonamenti
-                    </p>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      {cardTemplates.map((tmpl, i) => {
-                        const isSelected = formData.notes?.includes(`[CARD: ${tmpl.name}]`);
-                        return (
-                          <Button
-                            key={tmpl.id || i}
-                            type="button"
-                            variant="outline"
-                            className={`justify-start h-auto py-2 px-3 ${
-                              isSelected
-                                ? 'ring-2 ring-offset-1 ring-[#6366F1] border-[#6366F1] text-[#6366F1] bg-[#6366F1]/10'
-                                : 'border-[#F0E6DC]'
-                            }`}
-                            onClick={() => {
-                              if (isSelected) {
-                                setFormData(prev => ({ ...prev, notes: prev.notes.replace(`[CARD: ${tmpl.name}] `, '').replace(`[CARD: ${tmpl.name}]`, '') }));
-                              } else {
-                                const cleanNotes = (formData.notes || '').replace(/\[CARD: [^\]]+\] ?/g, '');
-                                setFormData(prev => ({ ...prev, notes: `[CARD: ${tmpl.name}] ${cleanNotes}`.trim() }));
-                                toast.success(`"${tmpl.name}" selezionato`);
-                              }
-                            }}
-                            data-testid={`planning-card-template-${i}`}
-                          >
-                            <div className="flex items-center gap-2 text-left">
-                              <CreditCard className="w-3 h-3 shrink-0" style={{ color: '#6366F1' }} />
-                              <div>
-                                <p className="font-medium text-sm">{tmpl.name}</p>
-                                <p className="text-xs opacity-70">{tmpl.card_type === 'subscription' ? 'Abb.' : 'Prep.'} - {'\u20AC'}{tmpl.total_value}</p>
+                  <div className="rounded-xl border-2 border-[#F0E6DC] overflow-hidden" data-testid="service-cat-cards">
+                    <button type="button" onClick={() => toggleCat('_cards')}
+                      className="w-full flex items-center justify-between px-3 py-2.5 bg-white hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="w-3.5 h-3.5 text-[#6366F1]" />
+                        <span className="font-bold text-sm uppercase tracking-wide text-[#6366F1]">Card & Abbonamenti</span>
+                        <span className="text-xs text-gray-400">({cardTemplates.length})</span>
+                      </div>
+                      <svg className={`w-4 h-4 text-gray-400 transition-transform ${openCats['_cards'] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                    </button>
+                    {openCats['_cards'] && (
+                      <div className="border-t border-[#F0E6DC] px-2 py-2 space-y-1 bg-gray-50/50">
+                        {cardTemplates.map((tmpl, i) => {
+                          const isSelected = formData.notes?.includes(`[CARD: ${tmpl.name}]`);
+                          return (
+                            <button key={tmpl.id || i} type="button"
+                              onClick={() => {
+                                if (isSelected) {
+                                  setFormData(prev => ({ ...prev, notes: prev.notes.replace(`[CARD: ${tmpl.name}] `, '').replace(`[CARD: ${tmpl.name}]`, '') }));
+                                } else {
+                                  const cleanNotes = (formData.notes || '').replace(/\[CARD: [^\]]+\] ?/g, '');
+                                  setFormData(prev => ({ ...prev, notes: `[CARD: ${tmpl.name}] ${cleanNotes}`.trim() }));
+                                  toast.success(`"${tmpl.name}" selezionato`);
+                                }
+                              }}
+                              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-all ${
+                                isSelected ? 'bg-[#6366F1]/10 shadow-sm border-2 border-[#6366F1]' : 'bg-transparent hover:bg-white border-2 border-transparent'
+                              }`}
+                              data-testid={`planning-card-template-${i}`}>
+                              <div className="flex items-center gap-2">
+                                <CreditCard className={`w-4 h-4 shrink-0 ${isSelected ? 'text-[#6366F1]' : 'text-gray-400'}`} />
+                                <div>
+                                  <p className="font-medium text-sm">{tmpl.name}</p>
+                                  <p className="text-xs text-gray-500">{tmpl.card_type === 'subscription' ? 'Abb.' : 'Prep.'} - {'\u20AC'}{tmpl.total_value}</p>
+                                </div>
                               </div>
-                            </div>
-                          </Button>
-                        );
-                      })}
-                    </div>
+                              {isSelected && <Check className="w-4 h-4 text-[#6366F1] shrink-0" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Promozioni Attive (sempre visibili) */}
+            {/* Promozioni Attive */}
             {allPromos.length > 0 && !formData.client_id && (
               <div className="space-y-2 p-3 bg-gradient-to-r from-pink-50 to-rose-50 border-2 border-pink-200 rounded-xl">
-                <Label className="text-pink-800 font-bold flex items-center gap-2">
+                <Label className="text-pink-800 font-bold flex items-center gap-2 text-sm">
                   <Gift className="w-4 h-4" /> Promozioni Attive
                 </Label>
-                <div className="grid grid-cols-1 gap-1.5">
+                <div className="space-y-1.5">
                   {allPromos.filter(p => p.active !== false).map(promo => (
-                    <button
-                      key={promo.id}
-                      type="button"
+                    <button key={promo.id} type="button"
                       onClick={() => setPreSelectedPromoId(preSelectedPromoId === promo.id ? '' : promo.id)}
                       className={`w-full p-2 rounded-xl border-2 text-left transition-all ${
-                        preSelectedPromoId === promo.id
-                          ? 'border-pink-500 bg-pink-100 ring-2 ring-pink-400'
-                          : 'border-pink-200 bg-white hover:border-pink-400'
+                        preSelectedPromoId === promo.id ? 'border-pink-500 bg-pink-100 ring-2 ring-pink-400' : 'border-pink-200 bg-white hover:border-pink-400'
                       }`}
-                      data-testid={`allpromo-${promo.id}`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Gift className={`w-4 h-4 ${preSelectedPromoId === promo.id ? 'text-pink-600' : 'text-gray-400'}`} />
-                          <div>
-                            <p className="font-bold text-sm text-[#2D1B14]">{promo.name}</p>
-                            {promo.free_service_name && <p className="text-[10px] text-pink-600 font-semibold">OMAGGIO: {promo.free_service_name}</p>}
-                          </div>
+                      data-testid={`allpromo-${promo.id}`}>
+                      <div className="flex items-center gap-2">
+                        <Gift className={`w-4 h-4 ${preSelectedPromoId === promo.id ? 'text-pink-600' : 'text-gray-400'}`} />
+                        <div>
+                          <p className="font-bold text-sm text-[#2D1B14]">{promo.name}</p>
+                          {promo.free_service_name && <p className="text-[10px] text-pink-600 font-semibold">OMAGGIO: {promo.free_service_name}</p>}
                         </div>
                       </div>
                       {preSelectedPromoId === promo.id && (
-                        <div className="mt-1 flex items-center gap-1 text-xs text-pink-700 font-semibold">
-                          <Check className="w-3 h-3" /> Selezionata
-                        </div>
+                        <div className="mt-1 flex items-center gap-1 text-xs text-pink-700 font-semibold"><Check className="w-3 h-3" /> Selezionata</div>
                       )}
                     </button>
                   ))}
@@ -496,113 +469,91 @@ export default function NewAppointmentDialog({
               </div>
             )}
 
-            {/* Card & Promozioni del Cliente (dopo selezione) */}
+            {/* Card & Promozioni del Cliente */}
             {(dialogClientCards.length > 0 || dialogClientPromos.length > 0) && (
-              <div className="space-y-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl">
-                <Label className="text-green-800 font-bold flex items-center gap-2">
+              <div className="space-y-2 p-3 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl">
+                <Label className="text-green-800 font-bold flex items-center gap-2 text-sm">
                   <Ticket className="w-4 h-4" /> Card & Promozioni Disponibili
                 </Label>
-                <p className="text-xs text-green-600 -mt-1">Seleziona per applicare automaticamente in cassa</p>
+                <p className="text-xs text-green-600 -mt-1">Seleziona per applicare in cassa</p>
 
                 {dialogClientCards.length > 0 && (
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <p className="text-xs font-semibold text-green-700 uppercase">Card/Abbonamenti</p>
-                    <div className="grid grid-cols-1 gap-2">
-                      {dialogClientCards.map(card => (
-                        <button
-                          key={card.id}
-                          type="button"
-                          onClick={() => setPreSelectedCardId(preSelectedCardId === card.id ? '' : card.id)}
-                          className={`w-full p-2.5 rounded-xl border-2 text-left transition-all ${
-                            preSelectedCardId === card.id
-                              ? 'border-green-500 bg-green-100 ring-2 ring-green-400'
-                              : 'border-green-200 bg-white hover:border-green-400'
-                          }`}
-                          data-testid={`preselect-card-${card.id}`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <CreditCard className={`w-4 h-4 ${preSelectedCardId === card.id ? 'text-green-600' : 'text-gray-400'}`} />
-                              <div>
-                                <p className="font-bold text-sm text-[#2D1B14]">{card.name}</p>
-                                <p className="text-[10px] text-gray-500">{card.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}</p>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-black text-green-600 text-sm">{'\u20AC'}{card.remaining_value?.toFixed(2)}</p>
-                              {card.total_services && (
-                                <p className="text-[10px] text-gray-500">{card.total_services - card.used_services} servizi rimasti</p>
-                              )}
+                    {dialogClientCards.map(card => (
+                      <button key={card.id} type="button"
+                        onClick={() => setPreSelectedCardId(preSelectedCardId === card.id ? '' : card.id)}
+                        className={`w-full p-2 rounded-xl border-2 text-left transition-all ${
+                          preSelectedCardId === card.id ? 'border-green-500 bg-green-100 ring-2 ring-green-400' : 'border-green-200 bg-white hover:border-green-400'
+                        }`}
+                        data-testid={`preselect-card-${card.id}`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <CreditCard className={`w-4 h-4 ${preSelectedCardId === card.id ? 'text-green-600' : 'text-gray-400'}`} />
+                            <div>
+                              <p className="font-bold text-sm text-[#2D1B14]">{card.name}</p>
+                              <p className="text-[10px] text-gray-500">{card.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}</p>
                             </div>
                           </div>
-                          {preSelectedCardId === card.id && (
-                            <div className="mt-1.5 flex items-center gap-1 text-xs text-green-700 font-semibold">
-                              <Check className="w-3 h-3" /> Verrà applicata in cassa
-                            </div>
-                          )}
-                        </button>
-                      ))}
-                    </div>
+                          <div className="text-right">
+                            <p className="font-black text-green-600 text-sm">{'\u20AC'}{card.remaining_value?.toFixed(2)}</p>
+                            {card.total_services && <p className="text-[10px] text-gray-500">{card.total_services - card.used_services} rimasti</p>}
+                          </div>
+                        </div>
+                        {preSelectedCardId === card.id && (
+                          <div className="mt-1 flex items-center gap-1 text-xs text-green-700 font-semibold"><Check className="w-3 h-3" /> In cassa</div>
+                        )}
+                      </button>
+                    ))}
                   </div>
                 )}
 
                 {dialogClientPromos.length > 0 && (
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <p className="text-xs font-semibold text-pink-700 uppercase">Promozioni</p>
-                    <div className="grid grid-cols-1 gap-2">
-                      {dialogClientPromos.map(promo => (
-                        <button
-                          key={promo.id}
-                          type="button"
-                          onClick={() => setPreSelectedPromoId(preSelectedPromoId === promo.id ? '' : promo.id)}
-                          className={`w-full p-2.5 rounded-xl border-2 text-left transition-all ${
-                            preSelectedPromoId === promo.id
-                              ? 'border-pink-500 bg-pink-100 ring-2 ring-pink-400'
-                              : 'border-pink-200 bg-white hover:border-pink-400'
-                          }`}
-                          data-testid={`preselect-promo-${promo.id}`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Gift className={`w-4 h-4 ${preSelectedPromoId === promo.id ? 'text-pink-600' : 'text-gray-400'}`} />
-                              <div>
-                                <p className="font-bold text-sm text-[#2D1B14]">{promo.name}</p>
-                                <p className="text-[10px] text-pink-600 font-semibold">OMAGGIO: {promo.free_service_name}</p>
-                              </div>
-                            </div>
+                    {dialogClientPromos.map(promo => (
+                      <button key={promo.id} type="button"
+                        onClick={() => setPreSelectedPromoId(preSelectedPromoId === promo.id ? '' : promo.id)}
+                        className={`w-full p-2 rounded-xl border-2 text-left transition-all ${
+                          preSelectedPromoId === promo.id ? 'border-pink-500 bg-pink-100 ring-2 ring-pink-400' : 'border-pink-200 bg-white hover:border-pink-400'
+                        }`}
+                        data-testid={`preselect-promo-${promo.id}`}>
+                        <div className="flex items-center gap-2">
+                          <Gift className={`w-4 h-4 ${preSelectedPromoId === promo.id ? 'text-pink-600' : 'text-gray-400'}`} />
+                          <div>
+                            <p className="font-bold text-sm text-[#2D1B14]">{promo.name}</p>
+                            <p className="text-[10px] text-pink-600 font-semibold">OMAGGIO: {promo.free_service_name}</p>
                           </div>
-                          {preSelectedPromoId === promo.id && (
-                            <div className="mt-1.5 flex items-center gap-1 text-xs text-pink-700 font-semibold">
-                              <Check className="w-3 h-3" /> Verrà applicata in cassa
-                            </div>
-                          )}
-                        </button>
-                      ))}
-                    </div>
+                        </div>
+                        {preSelectedPromoId === promo.id && (
+                          <div className="mt-1 flex items-center gap-1 text-xs text-pink-700 font-semibold"><Check className="w-3 h-3" /> Selezionata</div>
+                        )}
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label>Note (opzionale)</Label>
-              <Input
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="Note aggiuntive..."
-                className="bg-[#FAF7F2]"
-              />
+            {/* Note */}
+            <div className="space-y-1.5">
+              <Label className="text-sm">Note (opzionale)</Label>
+              <Input value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                placeholder="Note aggiuntive..." className="bg-[#FAF7F2] h-10" />
             </div>
           </div>
 
-          {/* Sticky footer */}
-          <div className="sticky bottom-0 bg-white pt-3 border-t border-[#F0E6DC] mt-2">
-            <Button
-              type="submit"
-              disabled={saving}
-              className="w-full bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-[0_4px_12px_rgba(200,97,122,0.3)]"
-              data-testid="save-appointment-btn"
-            >
+          {/* FOOTER FISSO - mai copre il contenuto */}
+          <div className="shrink-0 px-5 py-3 bg-white border-t-2 border-[#F0E6DC] shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
+            {formData.service_ids.length > 0 && (
+              <div className="flex items-center justify-between mb-2 text-sm">
+                <span className="text-gray-600">{formData.service_ids.length} {formData.service_ids.length === 1 ? 'servizio' : 'servizi'} - {totalDuration} min</span>
+                <span className="font-black text-[#2D1B14]">{'\u20AC'}{totalPrice.toFixed(2)}</span>
+              </div>
+            )}
+            <Button type="submit" disabled={saving}
+              className="w-full h-11 bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-[0_4px_12px_rgba(200,97,122,0.3)] font-bold text-base"
+              data-testid="save-appointment-btn">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salva Appuntamento'}
             </Button>
           </div>

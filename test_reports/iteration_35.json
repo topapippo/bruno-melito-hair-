@@ -1,0 +1,102 @@
+{
+  "summary": "Iteration 35: Tested NewAppointmentDialog mobile usability fix on Planning page. All key features working correctly on mobile viewport (390x844). Dialog has sticky footer with save button, accordion-style service categories, checkmarks on selected services, and price/duration summary. Full appointment creation flow works with real clients.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "POST /api/appointments",
+        "issue": "'Cliente Occasionale' button sets client_id='generic' which backend doesn't recognize - returns 'Cliente non trovato'. The 'Nuovo' client button works correctly.",
+        "priority": "LOW"
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": [
+    "MOBILE USABILITY TESTS (390x844 viewport):",
+    "1. Planning page loads correctly on mobile - PASS",
+    "2. 'Nuovo' button opens NewAppointmentDialog - PASS",
+    "3. Dialog title 'Nuovo Appuntamento' visible - PASS",
+    "4. Footer with 'Salva Appuntamento' button is always visible at bottom (y=744 on 844px viewport) - PASS",
+    "5. Save button remains visible after scrolling - PASS",
+    "6. All 6 service categories found as accordion blocks: taglio, piega, trattamento, colore, permanente, stiratura - PASS",
+    "7. Clicking category expands it showing services underneath - PASS",
+    "8. Services can be selected with visible checkmark - PASS",
+    "9. Footer shows count of selected services (e.g., '1 servizio - 10 min') - PASS",
+    "10. Footer shows total price (e.g., '€10.00') - PASS",
+    "11. Category header shows badge count of selected services (e.g., '1' badge on PIEGA) - PASS",
+    "12. 'Occasionale' button found and clickable - PASS",
+    "13. 'Nuovo' client button found and clickable - PASS",
+    "14. New client form appears with name and phone inputs - PASS",
+    "15. Client search autocomplete works - dropdown appears with matching clients - PASS",
+    "16. Full appointment creation flow works (select client, service, save) - PASS",
+    "17. Toast 'Appuntamento creato!' appears after successful save - PASS",
+    "18. Dialog closes after successful appointment creation - PASS",
+    "19. Appointment appears on Planning calendar after creation - PASS"
+  ],
+  "failed_tests": [
+    "1. 'Cliente Occasionale' button - sets client_id='generic' which backend rejects with 'Cliente non trovato' - MINOR BUG (workaround: use 'Nuovo' button or search for real client)"
+  ],
+  "test_report_links": [
+    "/app/test_reports/iteration_35.json"
+  ],
+  "action_items": [
+    "MINOR: Fix 'Occasionale' button to properly handle generic client - either update handleSubmit to treat 'generic' like newClientMode, or change the button to use newClientMode with pre-filled name 'Cliente Occasionale'"
+  ],
+  "critical_code_review_comments": [
+    "NewAppointmentDialog.jsx: Line 214 sets client_id='generic' for Occasionale button, but handleSubmit (lines 127-169) only handles newClientMode case for null client_id. The 'generic' value is sent to backend which doesn't recognize it.",
+    "NewAppointmentDialog.jsx: Good implementation of sticky footer with 'shrink-0' class and flex layout. Footer is separate from scrollable content area.",
+    "NewAppointmentDialog.jsx: Accordion categories implemented correctly with data-testid attributes for testing.",
+    "NewAppointmentDialog.jsx: Service selection with checkmarks working correctly."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "N/A (frontend-only testing)",
+    "frontend": "95% (18/19 tests passed, 1 minor issue with Occasionale button)"
+  },
+  "test_credentials": {
+    "admin_email": "admin@brunomelito.it",
+    "admin_password": "mbhs637104"
+  },
+  "seed_data_creation": "Created test appointment with Angela Manna client for testing",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Iteration 35 verified mobile usability fix for NewAppointmentDialog. Key improvements: 1) Footer with save button is sticky at bottom, never covers content. 2) Service categories are collapsible accordion blocks with data-testid='toggle-cat-{catKey}'. 3) Services have checkmarks when selected. 4) Footer shows service count, duration, and price summary. 5) Category headers show badge count of selected services. Minor issue: 'Occasionale' button doesn't work (backend rejects 'generic' client_id) - use 'Nuovo' button or real client search instead.",
+  "features_verified": {
+    "sticky_footer": {
+      "status": "VERIFIED WORKING",
+      "details": "Footer with 'Salva Appuntamento' button is always visible at bottom of dialog (y=744 on 844px viewport). Uses 'shrink-0' class and is outside scrollable area."
+    },
+    "accordion_categories": {
+      "status": "VERIFIED WORKING",
+      "details": "All 6 categories (taglio, piega, trattamento, colore, permanente, stiratura) are collapsible accordion blocks. Click to expand/collapse."
+    },
+    "service_selection_checkmarks": {
+      "status": "VERIFIED WORKING",
+      "details": "Selected services show blue checkmark icon. Unselected services show empty circle."
+    },
+    "footer_summary": {
+      "status": "VERIFIED WORKING",
+      "details": "Footer shows '1 servizio - 10 min' and '€10.00' when service selected."
+    },
+    "category_badge_count": {
+      "status": "VERIFIED WORKING",
+      "details": "Category header shows badge with count of selected services (e.g., '1' badge on PIEGA when 1 service selected)."
+    },
+    "client_buttons": {
+      "status": "PARTIALLY WORKING",
+      "details": "'Nuovo' button works correctly (opens new client form). 'Occasionale' button has minor bug (backend rejects 'generic' client_id)."
+    },
+    "client_search": {
+      "status": "VERIFIED WORKING",
+      "details": "Typing in search input shows dropdown with matching clients. Clicking client selects them."
+    },
+    "full_appointment_flow": {
+      "status": "VERIFIED WORKING",
+      "details": "Select client -> Select service -> Click Save -> Toast 'Appuntamento creato!' -> Dialog closes -> Appointment appears on calendar."
+    }
+  }
+}
