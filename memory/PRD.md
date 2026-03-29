@@ -21,7 +21,8 @@ App gestionale per salone (Bruno Melito Hair) con sito pubblico di prenotazione 
 /app/frontend/src/pages/WebsiteAdminPage.jsx       -> Gestione Sito CMS (/gestione-sito)
 /app/frontend/src/pages/SettingsPage.jsx           -> Impostazioni (temi, slot bloccati)
 /app/frontend/src/pages/Dashboard.jsx              -> Dashboard admin
-/app/frontend/src/components/planning/NewAppointmentDialog.jsx -> Dialog nuovo appuntamento (RISCRITTURA 29 Mar)
+/app/frontend/src/components/planning/NewAppointmentDialog.jsx -> Dialog nuovo appuntamento
+/app/frontend/src/components/planning/EditAppointmentDialog.jsx -> Dialog modifica appuntamento
 /app/frontend/src/lib/categories.js                -> Definizione categorie servizi
 /app/frontend/src/lib/api.js                       -> Axios con interceptor JWT
 /app/backend/routes/public.py                      -> API pubbliche + booking + upselling
@@ -45,12 +46,13 @@ App gestionale per salone (Bruno Melito Hair) con sito pubblico di prenotazione 
 - [x] Ordine progressivo servizi
 - [x] BookingPage.jsx ELIMINATO - /prenota reindirizza a /sito
 - [x] Gestione Sito salva correttamente tutte le tab
-- [x] Dialog "Nuovo Appuntamento" ridisegnato per mobile (29 Mar 2026):
-  - Footer fisso con bottone "Salva Appuntamento" sempre visibile
-  - Servizi in categorie espandibili (accordion)
-  - Riepilogo totale servizi, durata, prezzo nel footer
+- [x] Dialog Nuovo/Modifica Appuntamento ridisegnati (29 Mar 2026):
+  - Footer fisso con bottoni sempre visibili (mai copre contenuto)
+  - Servizi in categorie espandibili accordion (STYLING, PIEGA, TRATTAMENTI, COLORE, ecc.)
+  - Riepilogo totale: conteggio servizi, durata, prezzo nel footer
   - Badge conteggio servizi per categoria
-  - Bottone "Occasionale" funzionante con newClientMode
+  - Funziona identico su mobile (390x844) e desktop (1920x800)
+  - EditDialog mantiene checkout/INCASSA funzionante
 
 ## Note Importanti
 - SOLO WebsitePage.jsx gestisce la pagina pubblica (/sito)
