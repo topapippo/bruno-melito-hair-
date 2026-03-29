@@ -210,9 +210,11 @@ export default function NewAppointmentDialog({
                 <div className="flex gap-1">
                   <Button type="button" variant="ghost" size="sm" className="text-xs h-7 text-amber-600 px-2"
                     onClick={() => {
-                      setNewClientMode(false); setNewClientName('');
-                      setFormData(prev => ({ ...prev, client_id: 'generic' }));
-                      setClientSearch('Cliente Occasionale');
+                      setNewClientMode(true);
+                      setNewClientName('Cliente Occasionale');
+                      setNewClientPhone('');
+                      setFormData(prev => ({ ...prev, client_id: '' }));
+                      setClientSearch('');
                       setSelectedClientInfo(null);
                     }}
                     data-testid="generic-client-btn">
