@@ -29,7 +29,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(loginData.email, loginData.password);
-      toast.success('Bentornata!');
+      toast.success('Ciao Bruno, buon lavoro!');
       navigate('/');
     } catch (err) {
       if (err.code === 'ECONNABORTED' || !err.response) {
@@ -99,7 +99,8 @@ export default function LoginPage() {
               <Sparkles className="w-4 h-4 text-[#D4A847]" />
               <span className="text-xs font-bold uppercase tracking-widest text-[#9C7060]">Gestionale</span>
             </div>
-            <h1 className="font-display text-4xl font-semibold text-[#2D1B14] italic">Bentornata</h1>
+            <h1 className="font-display text-4xl font-semibold text-[#2D1B14] italic">Ciao Bruno</h1>
+            <p className="text-[#7C5C4A] text-sm mt-1">Buon lavoro!</p>
             <p className="text-[#9C7060] mt-1 text-sm">Accedi al tuo salone</p>
           </div>
 
