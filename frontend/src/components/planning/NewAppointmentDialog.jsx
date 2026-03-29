@@ -47,6 +47,7 @@ export default function NewAppointmentDialog({
 }) {
   const [saving, setSaving] = useState(false);
   const [openCats, setOpenCats] = useState({});
+  const [fieldErrors, setFieldErrors] = useState({});
   const [formData, setFormData] = useState({
     client_id: '', service_ids: [], operator_id: '', time: '09:00', notes: '', date: ''
   });
@@ -98,6 +99,7 @@ export default function NewAppointmentDialog({
         ? prev.service_ids.filter(id => id !== serviceId)
         : [...prev.service_ids, serviceId]
     }));
+    setFieldErrors(prev => { const p = {...prev}; delete p.services; return p; });
   };
 
   const handleClientSelect = async (clientId, clientName) => {
@@ -130,11 +132,29 @@ export default function NewAppointmentDialog({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const errors = {};
+
+    // Validate client
     const hasClient = formData.client_id || newClientMode;
-    if (!hasClient || formData.service_ids.length === 0) {
-      toast.error('Seleziona un cliente e almeno un servizio');
+    if (!hasClient) errors.client = 'Seleziona un cliente';
+    if (newClientMode && !newClientName.trim()) errors.client_name = 'Inserisci il nome del cliente';
+
+    // Validate services
+    if (formData.service_ids.length === 0) errors.services = 'Seleziona almeno un servizio';
+
+    // Validate date
+    if (!formData.date) errors.date = 'Seleziona una data';
+
+    // Validate time
+    if (!formData.time) errors.time = 'Seleziona un orario';
+
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      const msgs = Object.values(errors);
+      toast.error(msgs.join(' | '));
       return;
     }
+
     setSaving(true);
     try {
       const payload = {
@@ -152,7 +172,7 @@ export default function NewAppointmentDialog({
         if (card) notes.push(`[CARD: ${card.name}]`);
       }
       if (preSelectedPromoId) {
-        const promo = dialogClientPromos.find(p => p.id === preSelectedPromoId);
+        const promo = dialogClientPromos.find(p => p.id === preSelectedPromoId) || allPromos.find(p => p.id === preSelectedPromoId);
         if (promo) notes.push(`[PROMO: ${promo.name}]`);
       }
       if (notes.length > 0) {
@@ -162,11 +182,21 @@ export default function NewAppointmentDialog({
       payload.card_id = preSelectedCardId || null;
 
       await api.post(`${API}/appointments`, payload);
-      toast.success('Appuntamento creato!' + (preSelectedCardId || preSelectedPromoId ? ' Card/Promo salvate nelle note.' : ''));
+      toast.success('Appuntamento creato!' + (preSelectedCardId || preSelectedPromoId ? ' Card/Promo salvate.' : ''));
       onClose();
       onSuccess?.();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Errore nella creazione');
+      const detail = err.response?.data?.detail;
+      let msg = 'Errore nella creazione';
+      if (typeof detail === 'string') {
+        msg = detail;
+        // Map backend errors to field highlights
+        if (detail.includes('cliente') || detail.includes('Cliente')) setFieldErrors(prev => ({ ...prev, client: detail }));
+        if (detail.includes('serviz') || detail.includes('Serviz')) setFieldErrors(prev => ({ ...prev, services: detail }));
+      } else if (Array.isArray(detail)) {
+        msg = detail.map(d => d.msg || d.message || JSON.stringify(d)).join(' | ');
+      }
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
@@ -210,7 +240,7 @@ export default function NewAppointmentDialog({
             {/* Cliente */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <Label className="text-[#2D1B14] font-semibold text-sm">Cliente</Label>
+                <Label className={`font-semibold text-sm ${fieldErrors.client || fieldErrors.client_name ? 'text-red-600' : 'text-[#2D1B14]'}`}>Cliente {fieldErrors.client && <span className="text-xs font-normal ml-1">— {fieldErrors.client}</span>}</Label>
                 <div className="flex gap-1">
                   <Button type="button" variant="ghost" size="sm" className="text-xs h-7 text-amber-600 px-2"
                     onClick={() => {
@@ -238,8 +268,8 @@ export default function NewAppointmentDialog({
               {newClientMode ? (
                 <div className="space-y-2 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
                   <Input type="text" placeholder="Nome e Cognome *" value={newClientName}
-                    onChange={(e) => setNewClientName(e.target.value)}
-                    className="bg-white border-2 border-emerald-300 text-[#2D1B14] font-medium h-10"
+                    onChange={(e) => { setNewClientName(e.target.value); setFieldErrors(prev => { const p = {...prev}; delete p.client_name; return p; }); }}
+                    className={`bg-white border-2 text-[#2D1B14] font-medium h-10 ${fieldErrors.client_name ? 'border-red-500 ring-1 ring-red-400' : 'border-emerald-300'}`}
                     data-testid="new-client-name-input" />
                   <div className="relative">
                     <Input type="text" placeholder="Telefono (per promemoria!)" value={newClientPhone}
@@ -261,10 +291,11 @@ export default function NewAppointmentDialog({
                   <Input type="text" placeholder="Digita nome cliente..." value={clientSearch}
                     onChange={(e) => {
                       setClientSearch(e.target.value); setShowClientDropdown(true);
+                      setFieldErrors(prev => { const p = {...prev}; delete p.client; return p; });
                       if (!e.target.value) { setFormData(prev => ({ ...prev, client_id: '' })); setSelectedClientInfo(null); }
                     }}
                     onFocus={() => setShowClientDropdown(true)}
-                    className="bg-white border-2 border-[#F0E6DC] text-[#2D1B14] font-medium h-10"
+                    className={`bg-white border-2 text-[#2D1B14] font-medium h-10 ${fieldErrors.client ? 'border-red-500 ring-1 ring-red-400' : 'border-[#F0E6DC]'}`}
                     data-testid="search-client-dialog" />
                   {showClientDropdown && clientSearch.length > 0 && (
                     <div className="absolute z-50 w-full mt-1 bg-white border-2 border-[#C8617A] rounded-xl shadow-xl max-h-48 overflow-auto">
@@ -340,7 +371,7 @@ export default function NewAppointmentDialog({
 
             {/* Servizi - Categorie Espandibili */}
             <div className="space-y-1.5">
-              <Label className="text-sm font-semibold text-[#2D1B14]">Servizi</Label>
+              <Label className={`text-sm font-semibold ${fieldErrors.services ? 'text-red-600' : 'text-[#2D1B14]'}`}>Servizi {fieldErrors.services && <span className="text-xs font-normal ml-1">— {fieldErrors.services}</span>}</Label>
               <div className="space-y-2">
                 {sortedServices.orderedKeys.map(catKey => {
                   const catInfo = getCategoryInfo(catKey);

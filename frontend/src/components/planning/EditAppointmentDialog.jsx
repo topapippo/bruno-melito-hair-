@@ -128,15 +128,19 @@ export default function EditAppointmentDialog({
     if (!appointment) return;
     setSaving(true);
     try {
-      await api.put(`${API}/appointments/${appointment.id}`, {
-        ...formData,
-        date: editDate
-      });
+      const payload = { ...formData, date: editDate };
+      payload.promo_id = preSelectedPromoId || null;
+      payload.card_id = preSelectedCardId || null;
+      await api.put(`${API}/appointments/${appointment.id}`, payload);
       toast.success('Appuntamento aggiornato!');
       onClose();
       onSuccess?.();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Errore nell\'aggiornamento');
+      const detail = err.response?.data?.detail;
+      let msg = 'Errore nell\'aggiornamento';
+      if (typeof detail === 'string') msg = detail;
+      else if (Array.isArray(detail)) msg = detail.map(d => d.msg || JSON.stringify(d)).join(' | ');
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
