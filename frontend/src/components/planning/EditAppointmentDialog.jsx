@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
-  Loader2, User, CreditCard, Banknote, Euro, CheckCircle,
+  Loader2, User, CreditCard, Banknote, Euro, CheckCircle, Check,
   Star, Gift, Ticket, Plus, Trash2, Edit3, X,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -51,6 +51,8 @@ export default function EditAppointmentDialog({
   const [processing, setProcessing] = useState(false);
   const [clientCards, setClientCards] = useState([]);
   const [selectedCardId, setSelectedCardId] = useState('');
+  const [preSelectedCardId, setPreSelectedCardId] = useState('');
+  const [preSelectedPromoId, setPreSelectedPromoId] = useState('');
   const [clientLoyalty, setClientLoyalty] = useState({ points: 0 });
   const [useLoyaltyPoints, setUseLoyaltyPoints] = useState(false);
   const [eligiblePromos, setEligiblePromos] = useState([]);
@@ -74,17 +76,21 @@ export default function EditAppointmentDialog({
       setDiscountType('none');
       setDiscountValue('');
       setSelectedCardId('');
+      setPreSelectedCardId(appointment.card_id || '');
+      setPreSelectedPromoId(appointment.promo_id || '');
       setUseLoyaltyPoints(false);
       setSelectedPromo(null);
       setEligiblePromos([]);
 
       if (appointment.client_id && appointment.client_id !== 'generic') {
         Promise.all([
-          api.get(`${API}/clients/${appointment.client_id}/cards`).catch(() => ({ data: [] })),
+          api.get(`${API}/cards?client_id=${appointment.client_id}`).catch(() => ({ data: [] })),
           api.get(`${API}/clients/${appointment.client_id}/loyalty`).catch(() => ({ data: { points: 0 } })),
         ]).then(([cardsRes, loyaltyRes]) => {
-          setClientCards(cardsRes.data);
+          const activeCards = (cardsRes.data || []).filter(c => c.active && c.remaining_value > 0);
+          setClientCards(activeCards);
           setClientLoyalty(loyaltyRes.data);
+          if (activeCards.length > 0) setOpenCats(prev => ({ ...prev, _editCards: true }));
         });
       } else {
         setClientCards([]);
@@ -169,18 +175,20 @@ export default function EditAppointmentDialog({
       api.get(`${API}/promotions/check/${appointment.client_id}`)
         .then(res => {
           setEligiblePromos(res.data);
-          if (appointment.promo_id) {
-            const savedPromo = res.data.find(p => p.id === appointment.promo_id);
+          // Auto-select promo if pre-selected or saved on appointment
+          const targetPromoId = preSelectedPromoId || appointment.promo_id;
+          if (targetPromoId) {
+            const savedPromo = res.data.find(p => p.id === targetPromoId);
             if (savedPromo) setSelectedPromo(savedPromo);
-            else if (res.data.length > 0) setSelectedPromo(res.data[0]);
-          } else if (res.data.length > 0) {
-            setSelectedPromo(res.data[0]);
           }
+          if (!preSelectedPromoId && !appointment.promo_id) setOpenCats(prev => ({ ...prev, _editPromos: true }));
         })
         .catch(() => {});
     }
-    if (appointment?.card_id) {
-      const savedCard = clientCards.find(c => c.id === appointment.card_id && c.remaining_value > 0);
+    // Auto-select card if pre-selected or saved on appointment
+    const targetCardId = preSelectedCardId || appointment?.card_id;
+    if (targetCardId) {
+      const savedCard = clientCards.find(c => c.id === targetCardId && c.remaining_value > 0);
       if (savedCard) {
         setPaymentMethod('prepaid');
         setSelectedCardId(savedCard.id);
@@ -381,6 +389,99 @@ export default function EditAppointmentDialog({
               </div>
             </div>
 
+            {/* Abbonamenti/Card del Cliente (accordion) */}
+            {clientCards.length > 0 && (
+              <div className="rounded-xl border-2 border-emerald-300 overflow-hidden" data-testid="edit-client-cards-section">
+                <button type="button" onClick={() => setOpenCats(prev => ({ ...prev, _editCards: !prev._editCards }))}
+                  className="w-full flex items-center justify-between px-3 py-2.5 bg-emerald-50 hover:bg-emerald-100 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <Ticket className="w-3.5 h-3.5 text-emerald-600" />
+                    <span className="font-bold text-sm uppercase tracking-wide text-emerald-700">Abbonamenti / Card</span>
+                    <span className="text-xs text-emerald-500">({clientCards.length})</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {preSelectedCardId && <span className="text-xs font-bold px-2 py-0.5 rounded-full text-white bg-emerald-500">1</span>}
+                    <svg className={`w-4 h-4 text-emerald-400 transition-transform ${openCats['_editCards'] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                  </div>
+                </button>
+                {openCats['_editCards'] && (
+                  <div className="border-t border-emerald-200 px-2 py-2 space-y-1.5 bg-emerald-50/30">
+                    {clientCards.map(card => {
+                      const isSel = preSelectedCardId === card.id;
+                      const remaining = card.remaining_value || 0;
+                      const servicesLeft = card.total_services ? (card.total_services - (card.used_services || 0)) : null;
+                      return (
+                        <button key={card.id} type="button"
+                          onClick={() => setPreSelectedCardId(isSel ? '' : card.id)}
+                          className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left transition-all ${
+                            isSel ? 'bg-white shadow-sm border-2 border-emerald-500' : 'bg-transparent hover:bg-white border-2 border-transparent'
+                          }`}
+                          data-testid={`edit-preselect-card-${card.id}`}>
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className={`w-5 h-5 rounded-md flex items-center justify-center border-2 shrink-0 ${isSel ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300'}`}>
+                              {isSel && <Check className="w-3 h-3" />}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-bold text-sm text-[#2D1B14] truncate">{card.name}</p>
+                              <p className="text-[10px] text-gray-500">{card.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}</p>
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0 ml-2">
+                            <p className="font-black text-emerald-600 text-sm">{'\u20AC'}{remaining.toFixed(2)}</p>
+                            {servicesLeft !== null && <p className="text-[10px] text-gray-500">{servicesLeft} servizi rimasti</p>}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Promozioni (accordion) */}
+            {eligiblePromos.length > 0 && (
+              <div className="rounded-xl border-2 border-pink-300 overflow-hidden" data-testid="edit-promos-section">
+                <button type="button" onClick={() => setOpenCats(prev => ({ ...prev, _editPromos: !prev._editPromos }))}
+                  className="w-full flex items-center justify-between px-3 py-2.5 bg-pink-50 hover:bg-pink-100 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <Gift className="w-3.5 h-3.5 text-pink-600" />
+                    <span className="font-bold text-sm uppercase tracking-wide text-pink-700">Promozioni</span>
+                    <span className="text-xs text-pink-400">({eligiblePromos.length})</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {preSelectedPromoId && <span className="text-xs font-bold px-2 py-0.5 rounded-full text-white bg-pink-500">1</span>}
+                    <svg className={`w-4 h-4 text-pink-400 transition-transform ${openCats['_editPromos'] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                  </div>
+                </button>
+                {openCats['_editPromos'] && (
+                  <div className="border-t border-pink-200 px-2 py-2 space-y-1.5 bg-pink-50/30">
+                    {eligiblePromos.map(promo => {
+                      const isSel = preSelectedPromoId === promo.id;
+                      return (
+                        <button key={promo.id} type="button"
+                          onClick={() => setPreSelectedPromoId(isSel ? '' : promo.id)}
+                          className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left transition-all ${
+                            isSel ? 'bg-white shadow-sm border-2 border-pink-500' : 'bg-transparent hover:bg-white border-2 border-transparent'
+                          }`}
+                          data-testid={`edit-preselect-promo-${promo.id}`}>
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className={`w-5 h-5 rounded-md flex items-center justify-center border-2 shrink-0 ${isSel ? 'bg-pink-500 border-pink-500 text-white' : 'border-gray-300'}`}>
+                              {isSel && <Check className="w-3 h-3" />}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-bold text-sm text-[#2D1B14] truncate">{promo.name}</p>
+                              {promo.free_service_name && <p className="text-[10px] text-pink-600 font-semibold">OMAGGIO: {promo.free_service_name}</p>}
+                            </div>
+                          </div>
+                          {isSel && <Check className="w-4 h-4 text-pink-500 shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="space-y-1.5">
               <Label className="text-[#2D1B14] font-semibold text-sm">Note appuntamento</Label>
               <Input value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
@@ -533,12 +634,31 @@ export default function EditAppointmentDialog({
           {/* FOOTER FISSO */}
           {!checkoutMode && (
             <div className="shrink-0 px-5 py-3 bg-white border-t-2 border-[#F0E6DC] shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
-              {formData.service_ids.length > 0 && (
-                <div className="flex items-center justify-between mb-2 text-sm">
-                  <span className="text-gray-600">{formData.service_ids.length} {formData.service_ids.length === 1 ? 'servizio' : 'servizi'} - {editTotalDuration} min</span>
-                  <span className="font-black text-[#2D1B14]">{'\u20AC'}{editTotalPrice.toFixed(2)}</span>
-                </div>
-              )}
+              {formData.service_ids.length > 0 && (() => {
+                const selCard = clientCards.find(c => c.id === preSelectedCardId);
+                const cardDiscount = selCard ? Math.min(selCard.remaining_value || 0, editTotalPrice) : 0;
+                const finalPrice = Math.max(0, editTotalPrice - cardDiscount);
+                return (
+                  <div className="mb-2 space-y-1">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">{formData.service_ids.length} {formData.service_ids.length === 1 ? 'servizio' : 'servizi'} - {editTotalDuration} min</span>
+                      <span className={`font-black ${cardDiscount > 0 ? 'text-gray-400 line-through text-xs' : 'text-[#2D1B14]'}`}>{'\u20AC'}{editTotalPrice.toFixed(2)}</span>
+                    </div>
+                    {selCard && (
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-emerald-600 font-semibold flex items-center gap-1"><Ticket className="w-3 h-3" /> {selCard.name} (Residuo: {'\u20AC'}{(selCard.remaining_value || 0).toFixed(2)})</span>
+                        <span className="text-emerald-600 font-bold">-{'\u20AC'}{cardDiscount.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {cardDiscount > 0 && (
+                      <div className="flex items-center justify-between text-sm pt-1 border-t border-[#F0E6DC]">
+                        <span className="font-bold text-[#2D1B14]">Da pagare</span>
+                        <span className="font-black text-emerald-600 text-base">{'\u20AC'}{finalPrice.toFixed(2)}</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
               <div className="flex gap-2">
                 <Button type="button" variant="destructive" onClick={handleDelete} disabled={deleting} className="mr-auto" data-testid="delete-appointment-btn">
                   {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Trash2 className="w-4 h-4 mr-1" /> Elimina</>}
