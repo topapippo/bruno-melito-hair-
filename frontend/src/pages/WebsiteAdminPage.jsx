@@ -591,7 +591,7 @@ export default function WebsiteAdminPage() {
                         <div className="bg-white rounded-xl p-4 border">
                           <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: config.accent_color || '#33CC99' }}>I Nostri Servizi</p>
                           <h3 className="text-base font-black mb-3" style={{ color: config.text_color || '#2D3047', fontFamily: config.font_display }}>Servizi Professionali</h3>
-                          {['Taglio Uomo', 'Colore', 'Piega'].map((s, i) => (
+                          {['Taglio Uomo', 'Colore', 'Trattamento'].map((s, i) => (
                             <div key={i} className="flex justify-between py-1 border-b border-gray-100 last:border-0">
                               <span className="text-xs" style={{ color: config.text_color || '#2D3047', fontFamily: config.font_body }}>{s}</span>
                               <span className="text-xs font-bold" style={{ color: config.primary_color || '#ff3366' }}>{'\u20AC'}{[18, 45, 25][i]}</span>
