@@ -35,7 +35,7 @@ const MODULES = [
   { path: '/uscite', label: 'Uscite', desc: 'Registro spese', icon: ArrowDownCircle, from: '#7A3A3A', to: '#AA6A6A' },
   { path: '/promozioni', label: 'Promozioni', desc: 'Offerte', icon: Gift, from: '#AA3AAA', to: '#D46AD4' },
   { path: '/backup', label: 'Backup', desc: 'Esporta dati', icon: Download, from: '#5A6A7A', to: '#8A9AAA' },
-  { path: '/prenota', label: 'Booking', desc: 'Pagina pubblica', icon: Globe, from: '#1A8A8A', to: '#4ABABA' },
+  { path: '/sito', label: 'Sito Web', desc: 'Pagina pubblica', icon: Globe, from: '#1A8A8A', to: '#4ABABA' },
   { path: '/settings', label: 'Impostazioni', desc: 'Configurazione', icon: Settings, from: '#6A6A6A', to: '#9A9A9A' },
 ];
 

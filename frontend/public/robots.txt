@@ -1,6 +1,5 @@
 User-agent: *
 Allow: /sito
-Allow: /prenota
 Disallow: /login
 Disallow: /planning
 Disallow: /appointments

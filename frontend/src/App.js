@@ -22,7 +22,7 @@ import PrepaidCardsPage from "./pages/PrepaidCardsPage";
 import CardAlertsPage from "./pages/CardAlertsPage";
 import ReportIncassiPage from "./pages/ReportIncassiPage";
 import BackupPage from "./pages/BackupPage";
-import BookingPage from "./pages/BookingPage";
+// BookingPage rimosso - usa WebsitePage (/sito)
 import LoyaltyPage from "./pages/LoyaltyPage";
 import RemindersPage from "./pages/RemindersPage";
 import DailySummaryPage from "./pages/DailySummaryPage";
@@ -216,8 +216,8 @@ export default function App() {
             }
           />
 
-          {/* PRENOTAZIONE ONLINE (pubblica) */}
-          <Route path="/prenota" element={<BookingPage />} />
+          {/* /prenota reindirizza a /sito */}
+          <Route path="/prenota" element={<Navigate to="/sito" replace />} />
 
           {/* PROGRAMMA FEDELTÀ */}
           <Route
