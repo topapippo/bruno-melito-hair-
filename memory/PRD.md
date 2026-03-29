@@ -27,6 +27,8 @@ App gestionale per salone (Bruno Melito Hair) con sito pubblico di prenotazione 
 /app/frontend/src/lib/api.js                                         -> Axios JWT
 /app/backend/routes/public.py                                        -> API pubbliche + booking + upselling
 /app/backend/routes/blocked_slots.py                                 -> API slot bloccati
+/app/backend/routes/appointments.py                                  -> CRUD Appuntamenti
+/app/backend/server.py                                               -> FastAPI app + CORS
 ```
 
 ## Funzionalita Completate
@@ -43,17 +45,24 @@ App gestionale per salone (Bruno Melito Hair) con sito pubblico di prenotazione 
 - [x] Dialog Nuovo/Modifica Appuntamento ridisegnati:
   - Footer fisso con bottoni sempre visibili
   - Servizi in categorie espandibili accordion
-  - Sezione ABBONAMENTI/CARD CLIENTE con saldo residuo (29 Mar 2026)
+  - Sezione ABBONAMENTI/CARD CLIENTE con saldo residuo
   - Sezione PROMOZIONI espandibile con servizi omaggio
   - Calcolo automatico nel footer: totale - sconto card = da pagare
   - Auto-espansione card/promo quando cliente selezionato
   - INCASSA auto-applica card/promo pre-selezionate
+- [x] FIX: Creazione appuntamento da Admin Planning (29 Mar 2026)
+  - CORS sempre permissivo (allow_origins=["*"])
+  - "Cliente Occasionale" trattato come generico (nessun duplicato)
+  - Payload frontend esplicito (no spread formData)
+  - Messaggi errore piu informativi con console logging
+  - Giorni chiusi (Dom/Lun) bloccano il salvataggio
 
 ## Note Importanti
 - SOLO WebsitePage.jsx gestisce la pagina pubblica (/sito)
 - BookingPage.jsx eliminato definitivamente
 - Deploy su Render: sempre "Clear build cache and deploy"
 - API card: GET /api/cards?client_id={id} (NON /api/clients/{id}/cards)
+- "Cliente Occasionale" e "Cliente Generico" -> client_id = "generic"
 
 ## Task Futuri
 - P1: Dashboard statistiche clienti (grafici frequenza visite, spesa media)
