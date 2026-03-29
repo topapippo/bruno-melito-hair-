@@ -30,15 +30,46 @@ const generateTimeSlots = () => {
 
 const ALL_SLOTS = generateTimeSlots();
 
-const getAvailableTimeSlots = (dateStr) => {
+const DAY_MAP = { 0: 'dom', 1: 'lun', 2: 'mar', 3: 'mer', 4: 'gio', 5: 'ven', 6: 'sab' };
+
+const getFilteredSlots = (dateStr, hoursConfig, blockedSlots = []) => {
+  let slots = [...ALL_SLOTS];
+  
+  if (hoursConfig) {
+    const d = new Date(dateStr + 'T12:00:00');
+    const dayKey = DAY_MAP[d.getDay()];
+    const dayHours = (hoursConfig[dayKey] || '').toLowerCase();
+    if (!dayHours || dayHours === 'chiuso' || dayHours === '-') return { slots: [], closed: true, dayLabel: dayKey };
+    const match = dayHours.match(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/);
+    if (match) {
+      const openMin = parseInt(match[1]) * 60 + parseInt(match[2]);
+      const closeMin = parseInt(match[3]) * 60 + parseInt(match[4]);
+      slots = slots.filter(slot => {
+        const [h, m] = slot.split(':').map(Number);
+        const t = h * 60 + m;
+        return t >= openMin && t < closeMin;
+      });
+    }
+  }
+
+  // Filter past times for today
   const today = format(new Date(), 'yyyy-MM-dd');
-  if (dateStr !== today) return ALL_SLOTS;
-  const now = new Date();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
-  return ALL_SLOTS.filter(slot => {
-    const [h, m] = slot.split(':').map(Number);
-    return h * 60 + m >= currentMinutes;
-  });
+  if (dateStr === today) {
+    const now = new Date();
+    const cur = now.getHours() * 60 + now.getMinutes();
+    slots = slots.filter(slot => {
+      const [h, m] = slot.split(':').map(Number);
+      return h * 60 + m >= cur;
+    });
+  }
+
+  // Filter blocked slots
+  if (blockedSlots.length > 0) {
+    const blockedSet = new Set(blockedSlots);
+    slots = slots.filter(slot => !blockedSet.has(slot));
+  }
+
+  return { slots, closed: false };
 };
 
 export default function NewAppointmentDialog({
@@ -62,6 +93,9 @@ export default function NewAppointmentDialog({
   const [preSelectedCardId, setPreSelectedCardId] = useState('');
   const [preSelectedPromoId, setPreSelectedPromoId] = useState('');
   const [allPromos, setAllPromos] = useState([]);
+  const [hoursConfig, setHoursConfig] = useState(null);
+  const [blockedSlots, setBlockedSlots] = useState([]);
+  const [dayWarning, setDayWarning] = useState('');
 
   const mbhsOperator = operators.find(op => op.name.toUpperCase().includes('MBHS')) || operators[0];
 
@@ -87,10 +121,34 @@ export default function NewAppointmentDialog({
       });
       // Fetch all active promos
       api.get(`${API}/promotions`).then(res => setAllPromos(res.data || [])).catch(() => setAllPromos([]));
+      // Fetch hours config
+      api.get(`${API}/public/website`).then(res => setHoursConfig(res.data?.config?.hours || null)).catch(() => {});
     }
   }, [open, initialDate, initialTime, initialOperatorId]);
 
   const sortedServices = groupServicesByCategory(services);
+
+  // Fetch blocked slots when date changes
+  useEffect(() => {
+    if (!formData.date) return;
+    api.get(`${API}/public/blocked-slots/${formData.date}`)
+      .then(res => setBlockedSlots(res.data || []))
+      .catch(() => setBlockedSlots([]));
+    // Check if day is closed
+    if (hoursConfig) {
+      const d = new Date(formData.date + 'T12:00:00');
+      const dayKey = DAY_MAP[d.getDay()];
+      const dayHours = (hoursConfig[dayKey] || '').toLowerCase();
+      if (!dayHours || dayHours === 'chiuso' || dayHours === '-') {
+        const dayNames = { dom: 'Domenica', lun: 'Lunedi', mar: 'Martedi', mer: 'Mercoledi', gio: 'Giovedi', ven: 'Venerdi', sab: 'Sabato' };
+        setDayWarning(`${dayNames[dayKey] || dayKey} e giorno di chiusura!`);
+      } else {
+        setDayWarning('');
+      }
+    }
+  }, [formData.date, hoursConfig]);
+
+  const { slots: availableSlots, closed: isDayClosed } = getFilteredSlots(formData.date, hoursConfig, blockedSlots);
 
   const toggleService = (serviceId) => {
     setFormData(prev => ({
@@ -342,12 +400,25 @@ export default function NewAppointmentDialog({
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-sm">Orario</Label>
+                {dayWarning && (
+                  <p className="text-xs font-bold text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-1.5" data-testid="day-closed-warning">
+                    {dayWarning}
+                  </p>
+                )}
+                {blockedSlots.length > 0 && !isDayClosed && (
+                  <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
+                    Alcuni orari sono bloccati (es. pausa pranzo)
+                  </p>
+                )}
                 <Select value={formData.time} onValueChange={(val) => setFormData({ ...formData, time: val })}>
                   <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                   <SelectContent className="max-h-[200px]">
-                    {getAvailableTimeSlots(formData.date).map((time) => (
+                    {availableSlots.map((time) => (
                       <SelectItem key={time} value={time}>{time}</SelectItem>
                     ))}
+                    {availableSlots.length === 0 && (
+                      <SelectItem value="closed" disabled>Nessun orario disponibile</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>

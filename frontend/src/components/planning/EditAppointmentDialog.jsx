@@ -31,7 +31,32 @@ const generateTimeSlots = () => {
 
 const ALL_SLOTS = generateTimeSlots();
 
-const getAvailableTimeSlots = (dateStr) => ALL_SLOTS;
+const DAY_MAP = { 0: 'dom', 1: 'lun', 2: 'mar', 3: 'mer', 4: 'gio', 5: 'ven', 6: 'sab' };
+
+const getFilteredSlots = (dateStr, hoursConfig, blockedSlots = []) => {
+  let slots = [...ALL_SLOTS];
+  if (hoursConfig) {
+    const d = new Date(dateStr + 'T12:00:00');
+    const dayKey = DAY_MAP[d.getDay()];
+    const dayHours = (hoursConfig[dayKey] || '').toLowerCase();
+    if (!dayHours || dayHours === 'chiuso' || dayHours === '-') return { slots: [], closed: true };
+    const match = dayHours.match(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/);
+    if (match) {
+      const openMin = parseInt(match[1]) * 60 + parseInt(match[2]);
+      const closeMin = parseInt(match[3]) * 60 + parseInt(match[4]);
+      slots = slots.filter(slot => {
+        const [h, m] = slot.split(':').map(Number);
+        const t = h * 60 + m;
+        return t >= openMin && t < closeMin;
+      });
+    }
+  }
+  if (blockedSlots.length > 0) {
+    const blockedSet = new Set(blockedSlots);
+    slots = slots.filter(slot => !blockedSet.has(slot));
+  }
+  return { slots, closed: false };
+};
 
 export default function EditAppointmentDialog({
   open, onClose, appointment, operators, clients, services, onSuccess, onLoyaltyAlert,
@@ -54,6 +79,9 @@ export default function EditAppointmentDialog({
   const [preSelectedCardId, setPreSelectedCardId] = useState('');
   const [preSelectedPromoId, setPreSelectedPromoId] = useState('');
   const [clientLoyalty, setClientLoyalty] = useState({ points: 0 });
+  const [hoursConfig, setHoursConfig] = useState(null);
+  const [blockedSlots, setBlockedSlots] = useState([]);
+  const [dayWarning, setDayWarning] = useState('');
   const [useLoyaltyPoints, setUseLoyaltyPoints] = useState(false);
   const [eligiblePromos, setEligiblePromos] = useState([]);
   const [selectedPromo, setSelectedPromo] = useState(null);
@@ -98,6 +126,30 @@ export default function EditAppointmentDialog({
       }
     }
   }, [open, appointment, clients]);
+
+  // Fetch hours config
+  useEffect(() => {
+    api.get(`${API}/public/website`).then(res => setHoursConfig(res.data?.config?.hours || null)).catch(() => {});
+  }, []);
+
+  // Fetch blocked slots when date changes
+  useEffect(() => {
+    if (!editDate) return;
+    api.get(`${API}/public/blocked-slots/${editDate}`)
+      .then(res => setBlockedSlots(res.data || []))
+      .catch(() => setBlockedSlots([]));
+    if (hoursConfig) {
+      const d = new Date(editDate + 'T12:00:00');
+      const dayKey = DAY_MAP[d.getDay()];
+      const dayHours = (hoursConfig[dayKey] || '').toLowerCase();
+      if (!dayHours || dayHours === 'chiuso' || dayHours === '-') {
+        const dayNames = { dom: 'Domenica', lun: 'Lunedi', mar: 'Martedi', mer: 'Mercoledi', gio: 'Giovedi', ven: 'Venerdi', sab: 'Sabato' };
+        setDayWarning(`${dayNames[dayKey] || dayKey} e giorno di chiusura!`);
+      } else { setDayWarning(''); }
+    }
+  }, [editDate, hoursConfig]);
+
+  const { slots: editAvailableSlots } = getFilteredSlots(editDate, hoursConfig, blockedSlots);
 
   const toggleService = (serviceId) => {
     setFormData(prev => ({
@@ -310,10 +362,12 @@ export default function EditAppointmentDialog({
               </div>
               <div className="space-y-1.5">
                 <Label className="text-[#2D1B14] font-semibold text-sm">Orario</Label>
+                {dayWarning && <p className="text-xs font-bold text-red-600 bg-red-50 border border-red-200 rounded-lg px-2 py-1">{dayWarning}</p>}
                 <Select value={formData.time} onValueChange={(val) => setFormData({ ...formData, time: val })}>
                   <SelectTrigger className="border-2 border-[#F0E6DC] h-10"><SelectValue /></SelectTrigger>
                   <SelectContent className="max-h-[200px]">
-                    {getAvailableTimeSlots(editDate).map((time) => (<SelectItem key={time} value={time}>{time}</SelectItem>))}
+                    {editAvailableSlots.map((time) => (<SelectItem key={time} value={time}>{time}</SelectItem>))}
+                    {editAvailableSlots.length === 0 && <SelectItem value="closed" disabled>Nessun orario</SelectItem>}
                   </SelectContent>
                 </Select>
               </div>
