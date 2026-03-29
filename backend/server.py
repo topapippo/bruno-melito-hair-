@@ -42,6 +42,17 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Errore creazione indici MongoDB: {e}")
 
+    # Migrazione: sposta servizi "piega" nella categoria "taglio" (Styling)
+    try:
+        result = await db.services.update_many(
+            {"category": "piega"},
+            {"$set": {"category": "taglio"}}
+        )
+        if result.modified_count > 0:
+            logger.info(f"Migrazione: {result.modified_count} servizi piega spostati in Styling")
+    except Exception as e:
+        logger.warning(f"Migrazione piega->taglio: {e}")
+
     # Start push notification scheduler
     import asyncio
     try:
