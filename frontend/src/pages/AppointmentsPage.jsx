@@ -263,7 +263,7 @@ export default function AppointmentsPage() {
           <div>
             <h1 className="font-display text-3xl font-medium text-[#2D1B14]">Agenda</h1>
             <p className="text-[#7C5C4A] mt-1 ">
-              {format(selectedDate, "dd/MM/yy")}
+              {format(selectedDate, "EEEE dd/MM/yy", { locale: it })}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -297,7 +297,7 @@ export default function AppointmentsPage() {
                 <DialogHeader>
                   <DialogTitle className="font-display text-2xl text-[#2D1B14]">Nuovo Appuntamento</DialogTitle>
                   <DialogDescription>
-                    {format(selectedDate, "dd/MM/yy")}
+                    {format(selectedDate, "EEEE dd/MM/yy", { locale: it })}
                   </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 mt-4">
@@ -507,7 +507,7 @@ export default function AppointmentsPage() {
                     onClick={() => setSelectedDate(day.dateObj)}>
                     <div className="flex items-center justify-between">
                       <p className="font-medium text-sm text-[#2D1B14]">
-                        {format(day.dateObj, "dd/MM/yy")}
+                        {format(day.dateObj, "EEEE dd/MM/yy", { locale: it })}
                       </p>
                       <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-semibold">
                         {day.appointments.length} appuntament{day.appointments.length === 1 ? 'o' : 'i'}

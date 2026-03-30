@@ -80,7 +80,7 @@ export default function WeeklyView() {
           <div>
             <h1 className="font-display text-3xl font-medium text-[#2D1B14]">Vista Settimanale</h1>
             <p className="text-[#7C5C4A] mt-1 ">
-              {format(weekStart, "dd/MM/yy")} - {format(addDays(weekStart, 5), "dd/MM/yy")}
+              {format(weekStart, "EEEE dd/MM/yy", { locale: it })} - {format(addDays(weekStart, 5), "EEEE dd/MM/yy", { locale: it })}
             </p>
           </div>
           <div className="flex items-center gap-2">
