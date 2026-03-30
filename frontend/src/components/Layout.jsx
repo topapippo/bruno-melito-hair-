@@ -176,14 +176,16 @@ export default function Layout({ children }) {
   );
 
   return (
-    <div className="min-h-screen" style={{
+    <div className="min-h-screen" data-admin-theme="true" style={{
       '--admin-primary': t.primary,
       '--admin-accent': t.accent,
       '--admin-sidebar-bg': t.sidebar_bg,
       '--admin-sidebar-text': t.sidebar_text,
       '--admin-content-bg': t.content_bg || '#F8F5F0',
       '--admin-content-text': t.content_text || '#2D1B14',
-      fontFamily: `${t.font_body || 'Poppins'}, sans-serif`,
+      '--admin-font-display': `'${t.font_display || 'Cormorant Garamond'}'`,
+      '--admin-font-body': `'${t.font_body || 'Poppins'}'`,
+      fontFamily: `'${t.font_body || 'Poppins'}', sans-serif`,
       backgroundColor: t.content_bg || '#F8F5F0',
       color: t.content_text || '#2D1B14',
     }}>
