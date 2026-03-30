@@ -289,7 +289,7 @@ export default function PrepaidCardsPage() {
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
     try {
-      return format(new Date(dateStr), 'd MMM yyyy', { locale: it });
+      return format(new Date(dateStr), 'dd/MM/yy');
     } catch {
       return dateStr;
     }

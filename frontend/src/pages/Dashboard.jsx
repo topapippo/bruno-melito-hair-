@@ -115,7 +115,7 @@ export default function Dashboard() {
               <span className="text-sm font-medium text-[#9C7060] uppercase tracking-wider">Dashboard</span>
             </div>
             <h1 className="font-display text-3xl md:text-4xl text-[#2D1B14] italic">{greeting}!</h1>
-            <p className="text-[#9C7060] mt-1 text-sm">{format(new Date(), "EEEE d MMMM yyyy", { locale: it })}</p>
+            <p className="text-[#9C7060] mt-1 text-sm">{format(new Date(), "dd/MM/yy")}</p>
           </div>
           <Link to="/appointments">
             <Button data-testid="new-appointment-btn" className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-[0_4px_14px_rgba(200,97,122,0.35)] rounded-xl px-5">
@@ -308,7 +308,7 @@ export default function Dashboard() {
                       <div className="w-1.5 h-1.5 rounded-full bg-[#D4A847] shrink-0 mt-0.5" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-[#2D1B14] truncate">{apt.client_name}</p>
-                        <p className="text-xs text-[#9C7060]">{format(new Date(apt.date), "EEE d MMM", {locale: it})} · {apt.time}</p>
+                        <p className="text-xs text-[#9C7060]">{format(new Date(apt.date), "dd/MM/yy")} · {apt.time}</p>
                       </div>
                     </div>
                   ))}

@@ -57,7 +57,7 @@ export default function DailySummaryPage() {
           <div>
             <h1 className="font-display text-3xl font-medium text-[#2D1B14]">Riepilogo Giornaliero</h1>
             <p className="text-[#7C5C4A] mt-1  capitalize">
-              {format(new Date(selectedDate), "EEEE d MMMM yyyy", { locale: it })}
+              {format(new Date(selectedDate), "dd/MM/yy")}
             </p>
           </div>
           <div className="flex items-center gap-2">

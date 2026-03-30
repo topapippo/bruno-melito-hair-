@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { format } from 'date-fns';
 import api from '../lib/api';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
@@ -332,10 +333,10 @@ export default function ExpensesPage() {
                         <div className="flex items-center gap-4 text-sm text-[#7C5C4A] mt-1">
                           <span className="flex items-center gap-1">
                             <Calendar className="w-3.5 h-3.5" />
-                            Scadenza: {exp.due_date}
+                            Scadenza: {format(new Date(exp.due_date + 'T00:00:00'), 'dd/MM/yy')}
                           </span>
                           {exp.paid_date && (
-                            <span className="text-green-600">Pagata il {exp.paid_date}</span>
+                            <span className="text-green-600">Pagata il {format(new Date(exp.paid_date + 'T00:00:00'), 'dd/MM/yy')}</span>
                           )}
                         </div>
                         {exp.notes && <p className="text-xs text-[#64748B] mt-1">{exp.notes}</p>}

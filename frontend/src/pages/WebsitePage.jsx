@@ -668,7 +668,7 @@ export default function WebsitePage() {
   if (success) {
     const whatsappNum = config.whatsapp || '393397833526';
     const serviceNames = selectedServices.map(s => s.name).join(', ');
-    const dateFormatted = format(new Date(formData.date), 'd MMMM yyyy', { locale: it });
+    const dateFormatted = format(new Date(formData.date), 'dd/MM/yy');
     const confirmMsg = encodeURIComponent(
       `Ciao, confermo la prenotazione per il ${dateFormatted} alle ${formData.time}.\n` +
       `Nome: ${formData.client_name}\n` +
@@ -987,7 +987,7 @@ export default function WebsitePage() {
                 <p className="text-sm text-[#B89A7A]">Riepilogo:</p>
                 {selectedServices.map(s => (<div key={s.id} className="flex justify-between text-sm"><span className="text-[#D4B89A]">{s.name}</span><span className="text-white font-bold">{'\u20AC'}{s.price}</span></div>))}
                 <div className="border-t border-[#3A2A1A] pt-2 flex justify-between"><span className="text-white font-bold">Totale</span><span className="text-white font-black text-lg">{'\u20AC'}{totalPrice}</span></div>
-                <p className="text-xs text-[#8A6A4A]">{format(new Date(formData.date), 'd MMMM yyyy', { locale: it })} alle {formData.time}</p>
+                <p className="text-xs text-[#8A6A4A]">{format(new Date(formData.date), 'dd/MM/yy')} alle {formData.time}</p>
               </div>
               <div className="flex gap-3">
                 <Button onClick={() => setStep(2)} variant="outline" className="flex-1 border-[#4A3020] text-[#D4B89A] hover:bg-white/10">Indietro</Button>
@@ -1322,7 +1322,7 @@ export default function WebsitePage() {
                           <div className="flex justify-between items-start mb-2">
                             <div>
                               <p className="font-bold text-[#1e293b]">
-                                {(() => { try { return format(new Date(appt.date), 'd MMMM yyyy', { locale: it }); } catch { return appt.date; }})()}
+                                {(() => { try { return format(new Date(appt.date), 'dd/MM/yy'); } catch { return appt.date; }})()}
                                 <span className="text-[#0EA5E9] ml-2">{appt.time}</span>
                               </p>
                               <p className="text-xs text-[#64748B]">{appt.services?.join(', ')}</p>
@@ -1373,7 +1373,7 @@ export default function WebsitePage() {
                           <div className="flex justify-between items-center">
                             <div>
                               <p className="font-semibold text-sm text-[#64748B]">
-                                {(() => { try { return format(new Date(appt.date), 'd MMM yyyy', { locale: it }); } catch { return appt.date; }})()}
+                                {(() => { try { return format(new Date(appt.date), 'dd/MM/yy'); } catch { return appt.date; }})()}
                                 <span className="ml-2 text-[#94A3B8]">{appt.time}</span>
                               </p>
                               <p className="text-xs text-[#94A3B8]">{appt.services?.join(', ')}</p>
