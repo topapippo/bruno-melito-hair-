@@ -10,5 +10,3 @@ python-dotenv
 python-multipart
 requests
 gunicorn
-watchfiles
-httptools
