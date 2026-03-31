@@ -58,7 +58,13 @@ async def create_client(data: ClientCreate, current_user: dict = Depends(get_cur
         "send_sms_reminders": data.send_sms_reminders if data.send_sms_reminders is not None else True,
         "total_visits": 0, "created_at": datetime.now(timezone.utc).isoformat()
     }
-    await db.clients.insert_one(client_doc)
+    try:
+        await db.clients.insert_one(client_doc)
+    except Exception as e:
+        if "duplicate key" in str(e).lower() or "E11000" in str(e):
+            raise HTTPException(status_code=400, detail=f"Esiste già un cliente con il nome '{data.name}'")
+        logger.error(f"Errore creazione cliente: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nel salvataggio: {str(e)}")
     return ClientResponse(**_normalize_client(dict(client_doc)))
 
 
@@ -104,9 +110,14 @@ async def update_client(client_id: str, data: ClientUpdate, current_user: dict =
     update_data = {k: v for k, v in data.model_dump().items() if v is not None}
     if not update_data:
         raise HTTPException(status_code=400, detail="Nessun dato da aggiornare")
-    result = await db.clients.update_one(
-        {"id": client_id, "user_id": current_user["id"]}, {"$set": update_data}
-    )
+    try:
+        result = await db.clients.update_one(
+            {"id": client_id, "user_id": current_user["id"]}, {"$set": update_data}
+        )
+    except Exception as e:
+        if "duplicate key" in str(e).lower() or "E11000" in str(e):
+            raise HTTPException(status_code=400, detail=f"Esiste già un cliente con questo nome")
+        raise HTTPException(status_code=500, detail=f"Errore aggiornamento: {str(e)}")
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Cliente non trovato")
     updated = await db.clients.find_one({"id": client_id}, {"_id": 0})

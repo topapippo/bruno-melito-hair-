@@ -42,6 +42,16 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Errore creazione indici MongoDB: {e}")
 
+    # Rimuovi indice unico su clients (user_id, name) se esiste — impediva nomi duplicati
+    try:
+        indexes = await db.clients.index_information()
+        for idx_name, idx_info in indexes.items():
+            if idx_info.get('unique') and idx_info.get('key') == [('user_id', 1), ('name', 1)]:
+                await db.clients.drop_index(idx_name)
+                logger.info(f"Rimosso indice unico {idx_name} su clients")
+    except Exception as e:
+        logger.warning(f"Pulizia indici clients: {e}")
+
     # Migrazione: sposta servizi "piega" nella categoria "taglio" (Styling)
     try:
         result = await db.services.update_many(
