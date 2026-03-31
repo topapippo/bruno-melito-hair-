@@ -59,6 +59,17 @@ App gestionale per salone (Bruno Melito Hair) con sito pubblico di prenotazione 
 - [x] PWA Service Worker ripristinato
 - [x] Bottone Google Review WhatsApp nel checkout
 - [x] Sezione Fedelta pagina pubblica aggiornata con i 5 livelli (31 Mar 2026)
+- [x] Restyling completo pagina pubblica /sito (31 Mar 2026):
+  - AnimatedSection: scroll-triggered fade-in animations (IntersectionObserver)
+  - Hero: entrance animata, cerchi decorativi flottanti, scroll indicator
+  - Galleria: lightbox con navigazione prev/next e contatore
+  - Fedelta: linea di progressione rainbow, bordi colorati, ring su icone
+  - Recensioni: virgolette decorative, card con hover lift
+  - Contatti: icone animate hover (scale-125), bordi colorati
+  - Navbar: glass-morphism migliorato (backdrop-blur-xl)
+  - Footer: gradient border top, social con hover lift
+  - Mobile: bottone fisso con shadow potenziato
+  - Tutti i bottoni CTA con hover:scale-105 e transition fluide
 
 ## Note Importanti
 - SOLO WebsitePage.jsx gestisce la pagina pubblica (/sito)
