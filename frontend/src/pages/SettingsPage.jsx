@@ -20,12 +20,14 @@ const ADMIN_FONTS = [
 ];
 
 const ADMIN_PRESETS = [
-  { name: 'Rosa Classico', primary: '#C8617A', sidebar_bg: '#FAF7F2', sidebar_text: '#2D1B14', accent: '#D4A847', content_bg: '#F8F5F0', content_text: '#2D1B14' },
+  { name: 'Classico Caldo', primary: '#B45309', sidebar_bg: '#FFF8F0', sidebar_text: '#431407', accent: '#D97706', content_bg: '#FFFBF5', content_text: '#431407' },
   { name: 'Blu Elegante', primary: '#2563EB', sidebar_bg: '#F0F4FF', sidebar_text: '#0F172A', accent: '#F59E0B', content_bg: '#F8FAFC', content_text: '#0F172A' },
   { name: 'Verde Natura', primary: '#059669', sidebar_bg: '#F0FDF4', sidebar_text: '#14532D', accent: '#A3E635', content_bg: '#F7FDF9', content_text: '#14532D' },
   { name: 'Viola Lusso', primary: '#7C3AED', sidebar_bg: '#FAF5FF', sidebar_text: '#1E1B4B', accent: '#F472B6', content_bg: '#FDFAFF', content_text: '#1E1B4B' },
+  { name: 'Rosso Fuoco', primary: '#DC2626', sidebar_bg: '#FFF5F5', sidebar_text: '#450A0A', accent: '#FACC15', content_bg: '#FFFAFA', content_text: '#450A0A' },
+  { name: 'Teal Fresco', primary: '#0D9488', sidebar_bg: '#F0FDFA', sidebar_text: '#134E4A', accent: '#FB923C', content_bg: '#F7FFFE', content_text: '#134E4A' },
   { name: 'Grigio Moderno', primary: '#475569', sidebar_bg: '#F1F5F9', sidebar_text: '#0F172A', accent: '#0EA5E9', content_bg: '#F8FAFC', content_text: '#0F172A' },
-  { name: 'Scuro', primary: '#C8617A', sidebar_bg: '#1E1B14', sidebar_text: '#FAF7F2', accent: '#D4A847', content_bg: '#292524', content_text: '#FAF7F2' },
+  { name: 'Scuro', primary: '#3B82F6', sidebar_bg: '#1E1B14', sidebar_text: '#FAF7F2', accent: '#FACC15', content_bg: '#1C1917', content_text: '#F5F5F4' },
 ];
 
 const DAYS = [

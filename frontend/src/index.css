@@ -131,23 +131,76 @@ a, button { transition: all 0.2s ease; }
 }
 
 
-/* Admin Theme Dynamic Color Overrides */
-[data-admin-theme="true"] .text-\[\#2D1B14\] { color: var(--admin-content-text, #2D1B14) !important; }
-[data-admin-theme="true"] .text-\[\#7C5C4A\] { color: var(--admin-content-text, #7C5C4A) !important; opacity: 0.75; }
-[data-admin-theme="true"] .text-\[\#9C7060\] { color: var(--admin-content-text, #9C7060) !important; opacity: 0.6; }
-[data-admin-theme="true"] .text-\[\#C8617A\] { color: var(--admin-primary, #C8617A) !important; }
-[data-admin-theme="true"] .text-\[\#D4A847\] { color: var(--admin-accent, #D4A847) !important; }
-[data-admin-theme="true"] .bg-\[\#F8F5F0\] { background-color: var(--admin-content-bg, #F8F5F0) !important; }
-[data-admin-theme="true"] .bg-\[\#FAF7F2\] { background-color: var(--admin-content-bg, #FAF7F2) !important; }
-[data-admin-theme="true"] .bg-white { background-color: var(--admin-content-bg, white) !important; }
-[data-admin-theme="true"] .bg-\[\#C8617A\] { background-color: var(--admin-primary, #C8617A) !important; }
-[data-admin-theme="true"] .border-\[\#F0E6DC\] { border-color: color-mix(in srgb, var(--admin-content-text, #2D1B14) 15%, transparent) !important; }
-[data-admin-theme="true"] .border-\[\#C8617A\] { border-color: var(--admin-primary, #C8617A) !important; }
-[data-admin-theme="true"] .hover\:text-\[\#C8617A\]:hover { color: var(--admin-primary, #C8617A) !important; }
-[data-admin-theme="true"] .hover\:bg-\[\#C8617A\]:hover { background-color: var(--admin-primary, #C8617A) !important; }
-[data-admin-theme="true"] .divide-\[\#F0E6DC\] > :not([hidden]) ~ :not([hidden]) { border-color: color-mix(in srgb, var(--admin-content-text, #2D1B14) 15%, transparent) !important; }
-[data-admin-theme="true"] input, [data-admin-theme="true"] select, [data-admin-theme="true"] textarea {
-  background-color: color-mix(in srgb, var(--admin-content-bg, #F8F5F0) 100%, transparent) !important;
-  color: var(--admin-content-text, #2D1B14) !important;
-  border-color: color-mix(in srgb, var(--admin-content-text, #2D1B14) 20%, transparent) !important;
+/* ═══════════════════════════════════════════════════════════════════
+   Admin Theme Dynamic Color Overrides — Complete System
+   Variabili: --admin-primary, --admin-accent, --admin-content-bg,
+              --admin-content-text, --admin-font-display, --admin-font-body
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* --- TEXT: Main --- */
+[data-admin-theme="true"] .text-\[\#2D1B14\],
+[data-admin-theme="true"] .text-\[\#1e293b\] { color: var(--admin-content-text) !important; }
+
+/* --- TEXT: Secondary (muted) --- */
+[data-admin-theme="true"] .text-\[\#7C5C4A\],
+[data-admin-theme="true"] .text-\[\#8A6A4A\],
+[data-admin-theme="true"] .text-\[\#9C7060\],
+[data-admin-theme="true"] .text-\[\#B89A7A\],
+[data-admin-theme="true"] .text-\[\#D4B89A\] { color: color-mix(in srgb, var(--admin-content-text) 65%, transparent) !important; }
+
+/* --- TEXT: Primary accent --- */
+[data-admin-theme="true"] .text-\[\#C8617A\] { color: var(--admin-primary) !important; }
+
+/* --- TEXT: Gold accent --- */
+[data-admin-theme="true"] .text-\[\#D4A847\] { color: var(--admin-accent) !important; }
+
+/* --- BACKGROUND: Page & Cards --- */
+[data-admin-theme="true"] .bg-\[\#F8F5F0\],
+[data-admin-theme="true"] .bg-\[\#FAF7F2\],
+[data-admin-theme="true"] .bg-\[\#F5EDE0\],
+[data-admin-theme="true"] .bg-white { background-color: var(--admin-content-bg) !important; }
+
+/* --- BACKGROUND: Primary --- */
+[data-admin-theme="true"] .bg-\[\#C8617A\] { background-color: var(--admin-primary) !important; }
+[data-admin-theme="true"] .bg-\[\#A0404F\] { background-color: color-mix(in srgb, var(--admin-primary) 80%, black) !important; }
+[data-admin-theme="true"] .bg-\[\#D4A847\] { background-color: var(--admin-accent) !important; }
+
+/* --- BORDER --- */
+[data-admin-theme="true"] .border-\[\#F0E6DC\],
+[data-admin-theme="true"] .border-\[\#3A2A1A\] { border-color: color-mix(in srgb, var(--admin-content-text) 15%, transparent) !important; }
+[data-admin-theme="true"] .border-\[\#C8617A\] { border-color: var(--admin-primary) !important; }
+[data-admin-theme="true"] .divide-\[\#F0E6DC\] > :not([hidden]) ~ :not([hidden]) { border-color: color-mix(in srgb, var(--admin-content-text) 15%, transparent) !important; }
+
+/* --- GRADIENT: Primary --- */
+[data-admin-theme="true"] .from-\[\#C8617A\] { --tw-gradient-from: var(--admin-primary) !important; }
+[data-admin-theme="true"] .to-\[\#A0404F\] { --tw-gradient-to: color-mix(in srgb, var(--admin-primary) 70%, black) !important; }
+[data-admin-theme="true"] .from-\[\#A0404F\] { --tw-gradient-from: color-mix(in srgb, var(--admin-primary) 70%, black) !important; }
+[data-admin-theme="true"] .to-\[\#C8617A\] { --tw-gradient-to: var(--admin-primary) !important; }
+
+/* --- HOVER --- */
+[data-admin-theme="true"] .hover\:text-\[\#C8617A\]:hover { color: var(--admin-primary) !important; }
+[data-admin-theme="true"] .hover\:bg-\[\#C8617A\]:hover { background-color: var(--admin-primary) !important; }
+[data-admin-theme="true"] .hover\:bg-\[\#A0404F\]:hover { background-color: color-mix(in srgb, var(--admin-primary) 70%, black) !important; }
+[data-admin-theme="true"] .hover\:bg-\[\#D55F41\]:hover { background-color: color-mix(in srgb, var(--admin-primary) 85%, black) !important; }
+
+/* --- RING / OUTLINE --- */
+[data-admin-theme="true"] .ring-\[\#C8617A\] { --tw-ring-color: var(--admin-primary) !important; }
+[data-admin-theme="true"] .focus\:ring-\[\#C8617A\]:focus { --tw-ring-color: var(--admin-primary) !important; }
+
+/* --- FORM INPUTS --- */
+[data-admin-theme="true"] input:not([type="color"]):not([type="date"]):not([type="checkbox"]):not([type="radio"]),
+[data-admin-theme="true"] select,
+[data-admin-theme="true"] textarea {
+  background-color: var(--admin-content-bg) !important;
+  color: var(--admin-content-text) !important;
+  border-color: color-mix(in srgb, var(--admin-content-text) 20%, transparent) !important;
+}
+
+/* --- SCROLLBAR --- */
+[data-admin-theme="true"] ::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--admin-primary) 40%, transparent);
+  border-radius: 4px;
+}
+[data-admin-theme="true"] ::-webkit-scrollbar-track {
+  background-color: color-mix(in srgb, var(--admin-content-bg) 50%, transparent);
 }
