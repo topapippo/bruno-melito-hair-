@@ -285,19 +285,25 @@ class RecurringAppointmentCreate(BaseModel):
 class LoyaltyRedeemRequest(BaseModel):
     reward_type: str
 
-LOYALTY_POINTS_PER_EURO = 10
+LOYALTY_POINTS_PER_EURO = 20
 
 DEFAULT_LOYALTY_REWARDS = {
-    "sconto_colorazione": {
-        "name": "Sconto 10% Colorazione",
-        "description": "Sconto del 10% sul prossimo servizio di colorazione",
+    "sconto_5": {
+        "name": "Sconto 5€",
+        "description": "Buono sconto di 5€ sul prossimo servizio",
         "points_required": 5,
-        "discount_percent": 10,
+        "discount_value": 5,
+    },
+    "sconto_10": {
+        "name": "Sconto 10€",
+        "description": "Buono sconto di 10€ sul prossimo servizio",
+        "points_required": 10,
+        "discount_value": 10,
     },
     "taglio_gratuito": {
         "name": "Taglio Gratuito",
         "description": "Un taglio completamente gratuito",
-        "points_required": 10,
+        "points_required": 20,
     }
 }
 

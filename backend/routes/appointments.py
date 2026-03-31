@@ -306,9 +306,24 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, current_
 
     loyalty_before = await get_or_create_loyalty(appointment["client_id"], current_user["id"])
     points_before = loyalty_before["points"]
-    points_earned = await award_loyalty_points(
-        appointment["client_id"], current_user["id"], data.total_paid, appointment_id
-    )
+    points_earned = 0
+
+    # Punti fedeltà: escludi se usato card, promo, o servizi abbonamento
+    has_card = bool(data.card_id)
+    has_promo = bool(data.promo_id)
+    # Controlla se tutti i servizi sono abbonamenti
+    all_abbonamento = False
+    if appointment.get("service_ids"):
+        svcs = await db.services.find(
+            {"id": {"$in": appointment["service_ids"]}, "user_id": current_user["id"]},
+            {"_id": 0, "category": 1}
+        ).to_list(50)
+        all_abbonamento = all(s.get("category") == "abbonamento" for s in svcs) if svcs else False
+
+    if not has_card and not has_promo and not all_abbonamento and data.total_paid > 0:
+        points_earned = await award_loyalty_points(
+            appointment["client_id"], current_user["id"], data.total_paid, appointment_id
+        )
     points_after = points_before + points_earned
 
     if data.promo_id:
@@ -323,7 +338,9 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, current_
             })
 
     threshold_reached = None
-    if points_before < 10 and points_after >= 10:
+    if points_before < 20 and points_after >= 20:
+        threshold_reached = 20
+    elif points_before < 10 and points_after >= 10:
         threshold_reached = 10
     elif points_before < 5 and points_after >= 5:
         threshold_reached = 5

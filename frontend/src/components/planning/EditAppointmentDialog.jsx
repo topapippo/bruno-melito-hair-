@@ -671,9 +671,9 @@ export default function EditAppointmentDialog({
                   {selectedPromo && <div className="flex justify-between text-sm text-pink-600"><span className="font-semibold flex items-center gap-1"><Gift className="w-3.5 h-3.5" /> Omaggio:</span><span>{selectedPromo.free_service_name}</span></div>}
                   {discountType !== 'none' && calculateDiscount() > 0 && <div className="flex justify-between text-sm text-red-600"><span className="font-semibold">Sconto:</span><span>-{'\u20AC'}{calculateDiscount().toFixed(2)}</span></div>}
                   <div className="flex justify-between text-xl font-black pt-2 border-t border-green-200"><span>TOTALE:</span><span className="text-green-600">{'\u20AC'}{calculateFinalAmount().toFixed(2)}</span></div>
-                  {calculateFinalAmount() >= 10 && (
+                  {calculateFinalAmount() >= 20 && !selectedCard && !selectedPromo && (
                     <div className="flex items-center gap-1.5 text-sm text-amber-600 pt-1" data-testid="loyalty-points-preview">
-                      <Star className="w-4 h-4 text-amber-500" /><span className="font-semibold">+{Math.floor(calculateFinalAmount() / 10)} punti fedeltà</span>
+                      <Star className="w-4 h-4 text-amber-500" /><span className="font-semibold">+{Math.floor(calculateFinalAmount() / 20)} punti fedeltà</span>
                     </div>
                   )}
                 </div>

@@ -684,7 +684,7 @@ async def public_get_website():
     # Loyalty program info for public display
     loyalty_rewards = await db.loyalty_rewards.find({}, {"_id": 0, "user_id": 0}).to_list(10)
     loyalty_config = {
-        "points_per_euro": 10,
+        "points_per_euro": 20,
         "rewards": {r["key"]: r for r in loyalty_rewards} if loyalty_rewards else {
             "discount_5": {"name": "Sconto 5%", "points_required": 50, "discount_percent": 5},
             "discount_10": {"name": "Sconto 10%", "points_required": 100, "discount_percent": 10},

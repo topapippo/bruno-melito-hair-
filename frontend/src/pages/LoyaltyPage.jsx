@@ -172,7 +172,8 @@ export default function LoyaltyPage() {
               <Star className="w-7 h-7 text-amber-500" />
               Programma Fedeltà
             </h1>
-            <p className="text-[#7C5C4A] mt-1">1 punto ogni €{config?.points_per_euro || 10} spesi</p>
+            <p className="text-[#7C5C4A] mt-1">1 punto ogni €{config?.points_per_euro || 20} spesi</p>
+            <p className="text-[#9C7060] text-xs mt-1">Esclusi: promo, card prepagate e abbonamenti</p>
           </div>
         </div>
 
