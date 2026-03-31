@@ -206,22 +206,23 @@ export default function Dashboard() {
             { title: "Incasso Annuale", value: (stats?.yearly_revenue || 0).toFixed(0), icon: TrendingUp, from: '#3B82F6', to: '#93C5FD', prefix: '€', sub: `${stats?.yearly_appointments||0} appuntamenti` },
             { title: "Prossimi 7 Giorni", value: stats?.upcoming_appointments?.length || 0, icon: Clock, from: '#8B5CF6', to: '#C4B5FD', suffix: '' },
           ].map((s, i) => (
-            <div key={i} className="bg-white rounded-2xl p-5 shadow-sm border border-[#E5E7EB] card-lift-enhanced">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-xs text-[#8891A5] font-medium uppercase tracking-wider">{s.title}</p>
-                  <p className="text-3xl font-display font-semibold text-[#1A1A2E] mt-1.5">
-                    {s.prefix || ''}{s.value}
-                  </p>
-                  {s.sub && <p className="text-xs text-[#8891A5] mt-1">{s.sub}</p>}
-                </div>
-                <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110" style={{background: `linear-gradient(135deg, ${s.from}20, ${s.to}30)`}}>
-                  <s.icon className="w-5 h-5" style={{color: s.from}} strokeWidth={1.5} />
+            <div key={i} className="rounded-2xl p-5 shadow-lg card-lift-enhanced relative overflow-hidden" style={{background: `linear-gradient(135deg, ${s.from}, ${s.to})`}}>
+              <div className="relative z-10">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs text-white/80 font-bold uppercase tracking-wider">{s.title}</p>
+                    <p className="text-3xl font-display font-bold text-white mt-1.5">
+                      {s.prefix || ''}{s.value}
+                    </p>
+                    {s.sub && <p className="text-xs text-white/60 mt-1">{s.sub}</p>}
+                  </div>
+                  <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0">
+                    <s.icon className="w-6 h-6 text-white" strokeWidth={1.5} />
+                  </div>
                 </div>
               </div>
-              <div className="mt-3 h-1 rounded-full overflow-hidden" style={{background: `linear-gradient(90deg, ${s.from}30, ${s.to}30)`}}>
-                <div className="h-full rounded-full" style={{width: '60%', background: `linear-gradient(90deg, ${s.from}, ${s.to})`}} />
-              </div>
+              <div className="absolute -bottom-4 -right-4 w-24 h-24 rounded-full bg-white/10" />
+              <div className="absolute -top-6 -left-6 w-20 h-20 rounded-full bg-white/5" />
             </div>
           ))}
         </div>
