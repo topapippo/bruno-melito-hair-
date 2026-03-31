@@ -288,23 +288,33 @@ class LoyaltyRedeemRequest(BaseModel):
 LOYALTY_POINTS_PER_EURO = 20
 
 DEFAULT_LOYALTY_REWARDS = {
-    "sconto_5": {
-        "name": "Sconto 5€",
-        "description": "Buono sconto di 5€ sul prossimo servizio",
+    "sconto_3": {
+        "name": "Buono sconto 3€",
+        "description": "Buono sconto di 3€ sul prossimo servizio",
         "points_required": 5,
+        "discount_value": 3,
+    },
+    "sconto_5": {
+        "name": "Buono sconto 5€",
+        "description": "Buono sconto di 5€ sul prossimo servizio",
+        "points_required": 10,
         "discount_value": 5,
     },
-    "sconto_10": {
-        "name": "Sconto 10€",
-        "description": "Buono sconto di 10€ sul prossimo servizio",
-        "points_required": 10,
-        "discount_value": 10,
-    },
-    "taglio_gratuito": {
-        "name": "Taglio Gratuito",
-        "description": "Un taglio completamente gratuito",
+    "piega_taglio_gratuito": {
+        "name": "Piega o Taglio Gratuito",
+        "description": "Una piega o un taglio completamente gratuito",
         "points_required": 20,
-    }
+    },
+    "colore_parziale": {
+        "name": "Colore Parziale Gratuito",
+        "description": "Buono sconto per un colore parziale gratuito",
+        "points_required": 30,
+    },
+    "colore_completo": {
+        "name": "Colore Completo Gratuito",
+        "description": "Buono sconto per un colore completo gratuito",
+        "points_required": 50,
+    },
 }
 
 

@@ -338,7 +338,11 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, current_
             })
 
     threshold_reached = None
-    if points_before < 20 and points_after >= 20:
+    if points_before < 50 and points_after >= 50:
+        threshold_reached = 50
+    elif points_before < 30 and points_after >= 30:
+        threshold_reached = 30
+    elif points_before < 20 and points_after >= 20:
         threshold_reached = 20
     elif points_before < 10 and points_after >= 10:
         threshold_reached = 10
