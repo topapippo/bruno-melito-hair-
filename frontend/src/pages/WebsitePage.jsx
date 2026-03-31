@@ -340,26 +340,38 @@ function LoyaltySection({ setShowBooking, T }) {
         <div className="text-center mb-12">
           <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Programma Fedeltà</p>
           <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>Ogni Visita Vale di Più</h2>
-          <p className="text-[#94A3B8] mt-3 max-w-xl mx-auto">Accumula punti ad ogni appuntamento e sblocca premi esclusivi. <strong>1 punto ogni {'\u20AC'}10 spesi</strong>.</p>
+          <p className="text-[#94A3B8] mt-3 max-w-xl mx-auto">Accumula punti ad ogni appuntamento e sblocca premi esclusivi. <strong>1 punto ogni {'\u20AC'}20 spesi</strong>.</p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
-          <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.03] text-center">
-            <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-4"><Gift className="w-8 h-8 text-amber-600" /></div>
-            <h3 className="font-bold text-lg text-[#1e293b] mb-2">Sconto 5%</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-5 max-w-5xl mx-auto">
+          <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.03] text-center" data-testid="loyalty-reward-0">
+            <div className="w-14 h-14 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-3"><Gift className="w-7 h-7 text-amber-600" /></div>
+            <h3 className="font-bold text-base text-[#1e293b] mb-2">Buono sconto 3{'\u20AC'}</h3>
             <div className="inline-block bg-gradient-to-r from-amber-400 to-orange-400 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3">5 punti</div>
-            <p className="text-[#64748B] text-sm">Sconto del 5% sul prossimo servizio</p>
+            <p className="text-[#64748B] text-xs">Buono sconto di 3{'\u20AC'} sul prossimo servizio</p>
           </div>
-          <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.03] text-center">
-            <div className="w-16 h-16 bg-rose-100 rounded-2xl flex items-center justify-center mx-auto mb-4"><Star className="w-8 h-8 text-rose-600" /></div>
-            <h3 className="font-bold text-lg text-[#1e293b] mb-2">Sconto 10%</h3>
+          <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.03] text-center" data-testid="loyalty-reward-1">
+            <div className="w-14 h-14 bg-rose-100 rounded-2xl flex items-center justify-center mx-auto mb-3"><Star className="w-7 h-7 text-rose-600" /></div>
+            <h3 className="font-bold text-base text-[#1e293b] mb-2">Buono sconto 5{'\u20AC'}</h3>
             <div className="inline-block bg-gradient-to-r from-rose-400 to-pink-400 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3">10 punti</div>
-            <p className="text-[#64748B] text-sm">Sconto del 10% sul prossimo servizio</p>
+            <p className="text-[#64748B] text-xs">Buono sconto di 5{'\u20AC'} sul prossimo servizio</p>
           </div>
-          <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.03] text-center">
-            <div className="w-16 h-16 bg-teal-100 rounded-2xl flex items-center justify-center mx-auto mb-4"><Scissors className="w-8 h-8 text-teal-600" /></div>
-            <h3 className="font-bold text-lg text-[#1e293b] mb-2">Servizio Omaggio</h3>
-            <div className="inline-block bg-gradient-to-r from-teal-400 to-emerald-400 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3">35 punti</div>
-            <p className="text-[#64748B] text-sm">Un servizio colore gratuito!</p>
+          <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.03] text-center" data-testid="loyalty-reward-2">
+            <div className="w-14 h-14 bg-teal-100 rounded-2xl flex items-center justify-center mx-auto mb-3"><Scissors className="w-7 h-7 text-teal-600" /></div>
+            <h3 className="font-bold text-base text-[#1e293b] mb-2">Piega o Taglio Gratuito</h3>
+            <div className="inline-block bg-gradient-to-r from-teal-400 to-emerald-400 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3">20 punti</div>
+            <p className="text-[#64748B] text-xs">Una piega o un taglio completamente gratuito</p>
+          </div>
+          <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.03] text-center" data-testid="loyalty-reward-3">
+            <div className="w-14 h-14 bg-violet-100 rounded-2xl flex items-center justify-center mx-auto mb-3"><Star className="w-7 h-7 text-violet-600" /></div>
+            <h3 className="font-bold text-base text-[#1e293b] mb-2">Colore Parziale Gratuito</h3>
+            <div className="inline-block bg-gradient-to-r from-violet-400 to-purple-400 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3">30 punti</div>
+            <p className="text-[#64748B] text-xs">Un colore parziale completamente gratuito</p>
+          </div>
+          <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.03] text-center" data-testid="loyalty-reward-4">
+            <div className="w-14 h-14 bg-sky-100 rounded-2xl flex items-center justify-center mx-auto mb-3"><Gift className="w-7 h-7 text-sky-600" /></div>
+            <h3 className="font-bold text-base text-[#1e293b] mb-2">Colore Completo Gratuito</h3>
+            <div className="inline-block bg-gradient-to-r from-sky-400 to-blue-400 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3">50 punti</div>
+            <p className="text-[#64748B] text-xs">Un colore completo completamente gratuito</p>
           </div>
         </div>
         <div className="text-center mt-10">

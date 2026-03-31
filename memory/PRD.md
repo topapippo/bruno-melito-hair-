@@ -23,12 +23,17 @@ App gestionale per salone (Bruno Melito Hair) con sito pubblico di prenotazione 
 /app/frontend/src/pages/SettingsPage.jsx                             -> Impostazioni
 /app/frontend/src/pages/Dashboard.jsx                                -> Dashboard admin
 /app/frontend/src/pages/CardsPage.jsx                                -> Gestione Card
+/app/frontend/src/pages/LoyaltyPage.jsx                              -> Programma Fedelta admin
 /app/frontend/src/lib/categories.js                                  -> Definizione categorie
 /app/frontend/src/lib/api.js                                         -> Axios JWT
+/app/frontend/src/index.css                                          -> CSS variables admin themes
+/app/frontend/public/sw.js                                           -> PWA Service Worker
 /app/backend/routes/public.py                                        -> API pubbliche + booking + upselling
 /app/backend/routes/blocked_slots.py                                 -> API slot bloccati
 /app/backend/routes/appointments.py                                  -> CRUD Appuntamenti
-/app/backend/server.py                                               -> FastAPI app + CORS
+/app/backend/routes/loyalty.py                                       -> API Programma Fedelta
+/app/backend/models.py                                               -> Modelli + DEFAULT_LOYALTY_REWARDS
+/app/backend/server.py                                               -> FastAPI app + CORS + startup migrations
 ```
 
 ## Funzionalita Completate
@@ -42,20 +47,18 @@ App gestionale per salone (Bruno Melito Hair) con sito pubblico di prenotazione 
 - [x] Indici unici MongoDB anti-duplicazione
 - [x] Ordine progressivo servizi
 - [x] BookingPage.jsx ELIMINATO - /prenota reindirizza a /sito
-- [x] Dialog Nuovo/Modifica Appuntamento ridisegnati:
-  - Footer fisso con bottoni sempre visibili
-  - Servizi in categorie espandibili accordion
-  - Sezione ABBONAMENTI/CARD CLIENTE con saldo residuo
-  - Sezione PROMOZIONI espandibile con servizi omaggio
-  - Calcolo automatico nel footer: totale - sconto card = da pagare
-  - Auto-espansione card/promo quando cliente selezionato
-  - INCASSA auto-applica card/promo pre-selezionate
-- [x] FIX: Creazione appuntamento da Admin Planning (29 Mar 2026)
-  - CORS sempre permissivo (allow_origins=["*"])
-  - "Cliente Occasionale" trattato come generico (nessun duplicato)
-  - Payload frontend esplicito (no spread formData)
-  - Messaggi errore piu informativi con console logging
-  - Giorni chiusi (Dom/Lun) bloccano il salvataggio
+- [x] Dialog Nuovo/Modifica Appuntamento ridisegnati
+- [x] Creazione appuntamento da Admin Planning
+- [x] requirements.txt semplificato (no ML libraries)
+- [x] Piega in categoria Styling
+- [x] Formato date gg/mm/aa globale
+- [x] Admin UI Theming con CSS variables
+- [x] UptimeRobot HEAD support
+- [x] Fix indice user_id_1_name_1
+- [x] Programma Fedelta aggiornato (1pt/20EUR, 5 livelli premi)
+- [x] PWA Service Worker ripristinato
+- [x] Bottone Google Review WhatsApp nel checkout
+- [x] Sezione Fedelta pagina pubblica aggiornata con i 5 livelli (31 Mar 2026)
 
 ## Note Importanti
 - SOLO WebsitePage.jsx gestisce la pagina pubblica (/sito)
@@ -63,6 +66,8 @@ App gestionale per salone (Bruno Melito Hair) con sito pubblico di prenotazione 
 - Deploy su Render: sempre "Clear build cache and deploy"
 - API card: GET /api/cards?client_id={id} (NON /api/clients/{id}/cards)
 - "Cliente Occasionale" e "Cliente Generico" -> client_id = "generic"
+- NON aggiungere dipendenze pesanti a requirements.txt (Render free tier OOM)
+- Migrazioni schema vanno in server.py startup event per applicarle in produzione
 
 ## Task Futuri
 - P1: Dashboard statistiche clienti (grafici frequenza visite, spesa media)
