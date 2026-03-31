@@ -636,19 +636,19 @@ export default function WebsitePage() {
   }, [config.font_display, config.font_body]);
 
   const themeStyle = {
-    '--theme-primary': config.primary_color || '#0EA5E9',
-    '--theme-accent': config.accent_color || '#D4A847',
-    '--theme-bg': config.bg_color || '#FFF8F0',
-    '--theme-text': config.text_color || '#1e293b',
+    '--theme-primary': config.primary_color || '#E8477C',
+    '--theme-accent': config.accent_color || '#2EC4B6',
+    '--theme-bg': config.bg_color || '#FAFBFD',
+    '--theme-text': config.text_color || '#1A1A2E',
     '--theme-font-display': config.font_display || 'Cormorant Garamond, serif',
     '--theme-font-body': config.font_body || 'Nunito, sans-serif',
   };
 
   const T = {
-    primary: config.primary_color || '#0EA5E9',
-    accent: config.accent_color || '#D4A847',
-    bg: config.bg_color || '#FFF8F0',
-    text: config.text_color || '#1e293b',
+    primary: config.primary_color || '#E8477C',
+    accent: config.accent_color || '#2EC4B6',
+    bg: config.bg_color || '#FAFBFD',
+    text: config.text_color || '#1A1A2E',
     fontDisplay: config.font_display || 'Cormorant Garamond, serif',
     fontBody: config.font_body || 'Nunito, sans-serif',
   };
@@ -1192,7 +1192,7 @@ export default function WebsitePage() {
   };
 
   return (
-    <div className="min-h-screen text-[#1e293b]" style={{ ...themeStyle, backgroundColor: config.bg_color || '#FFF8F0', fontFamily: `var(--theme-font-body)` }} data-testid="website-landing">
+    <div className="min-h-screen text-[#1e293b]" style={{ ...themeStyle, backgroundColor: config.bg_color || '#FAFBFD', fontFamily: `var(--theme-font-body)` }} data-testid="website-landing">
       <Toaster position="top-center" />
       <style>{`
         @keyframes heroFadeIn { from { opacity: 0; transform: translateY(25px); } to { opacity: 1; transform: translateY(0); } }

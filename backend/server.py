@@ -78,6 +78,28 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Migrazione premi fedeltà: {e}")
 
+    # Migrazione: Aggiorna colori tema admin al nuovo palette "Vivace Bloom"
+    try:
+        old_primaries = ["#C8617A", "#c8617a", "#B45309", "#b45309"]
+        result = await db.users.update_many(
+            {"$or": [
+                {"admin_theme.primary": {"$in": old_primaries}},
+                {"admin_theme.primary": {"$exists": True, "$nin": ["#E8477C"]}}
+            ]},
+            {"$set": {
+                "admin_theme.primary": "#E8477C",
+                "admin_theme.sidebar_bg": "#FAFBFC",
+                "admin_theme.sidebar_text": "#1A1A2E",
+                "admin_theme.accent": "#2EC4B6",
+                "admin_theme.content_bg": "#FCFCFD",
+                "admin_theme.content_text": "#1A1A2E"
+            }}
+        )
+        if result.modified_count > 0:
+            logger.info(f"Migrazione tema: {result.modified_count} utenti aggiornati al nuovo palette")
+    except Exception as e:
+        logger.warning(f"Migrazione tema: {e}")
+
     # Start push notification scheduler
     import asyncio
     try:

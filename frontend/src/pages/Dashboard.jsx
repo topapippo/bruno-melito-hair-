@@ -18,25 +18,25 @@ import { toast } from 'sonner';
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const MODULES = [
-  { path: '/', label: 'Planning', desc: 'Vista giornaliera', icon: Calendar, from: '#C8617A', to: '#E8A0B0' },
-  { path: '/week', label: 'Settimana', desc: 'Vista settimanale', icon: CalendarDays, from: '#D4A847', to: '#F0CC7A' },
-  { path: '/month', label: 'Mese', desc: 'Vista mensile', icon: CalendarRange, from: '#7C9B7A', to: '#A0C49A' },
-  { path: '/appointments', label: 'Appuntamenti', desc: 'Nuovo appuntamento', icon: Plus, from: '#7C5C4A', to: '#A07060' },
-  { path: '/clients', label: 'Clienti', desc: 'Gestione clienti', icon: Users, from: '#5C7A9A', to: '#8AABCC' },
-  { path: '/services', label: 'Servizi', desc: 'Listino prezzi', icon: Scissors, from: '#9A6CAA', to: '#C094D0' },
-  { path: '/operators', label: 'Operatori', desc: 'Staff', icon: UserCheck, from: '#C87A3A', to: '#E8A06A' },
-  { path: '/stats', label: 'Statistiche', desc: 'Report e grafici', icon: BarChart3, from: '#A04040', to: '#D07070' },
-  { path: '/incassi', label: 'Incassi', desc: 'Report pagamenti', icon: Euro, from: '#3A8A4A', to: '#6AB47A' },
-  { path: '/daily-summary', label: 'Riepilogo', desc: 'Giornaliero', icon: FileBarChart, from: '#8A3A7A', to: '#C46AB4' },
-  { path: '/cards', label: 'Card', desc: 'Abbonamenti', icon: CreditCard, from: '#3A5AAA', to: '#6A8ADA' },
-  { path: '/card-alerts', label: 'Avvisi Card', desc: 'Scadenze', icon: AlertTriangle, from: '#C86A1A', to: '#E89A4A' },
-  { path: '/loyalty', label: 'Fedeltà', desc: 'Programma punti', icon: Star, from: '#AA3A5A', to: '#DA6A8A' },
-  { path: '/reminders', label: 'Promemoria', desc: 'Notifiche', icon: Bell, from: '#C8501A', to: '#E8804A' },
-  { path: '/uscite', label: 'Uscite', desc: 'Registro spese', icon: ArrowDownCircle, from: '#7A3A3A', to: '#AA6A6A' },
-  { path: '/promozioni', label: 'Promozioni', desc: 'Offerte', icon: Gift, from: '#AA3AAA', to: '#D46AD4' },
-  { path: '/backup', label: 'Backup', desc: 'Esporta dati', icon: Download, from: '#5A6A7A', to: '#8A9AAA' },
-  { path: '/sito', label: 'Sito Web', desc: 'Pagina pubblica', icon: Globe, from: '#1A8A8A', to: '#4ABABA' },
-  { path: '/settings', label: 'Impostazioni', desc: 'Configurazione', icon: Settings, from: '#6A6A6A', to: '#9A9A9A' },
+  { path: '/', label: 'Planning', desc: 'Vista giornaliera', icon: Calendar, from: '#E8477C', to: '#F49AB3' },
+  { path: '/week', label: 'Settimana', desc: 'Vista settimanale', icon: CalendarDays, from: '#2EC4B6', to: '#5EDECF' },
+  { path: '/month', label: 'Mese', desc: 'Vista mensile', icon: CalendarRange, from: '#22C55E', to: '#6EE7A0' },
+  { path: '/appointments', label: 'Appuntamenti', desc: 'Nuovo appuntamento', icon: Plus, from: '#F59E0B', to: '#FCD34D' },
+  { path: '/clients', label: 'Clienti', desc: 'Gestione clienti', icon: Users, from: '#3B82F6', to: '#93C5FD' },
+  { path: '/services', label: 'Servizi', desc: 'Listino prezzi', icon: Scissors, from: '#8B5CF6', to: '#C4B5FD' },
+  { path: '/operators', label: 'Operatori', desc: 'Staff', icon: UserCheck, from: '#F97316', to: '#FDBA74' },
+  { path: '/stats', label: 'Statistiche', desc: 'Report e grafici', icon: BarChart3, from: '#EC4899', to: '#F9A8D4' },
+  { path: '/incassi', label: 'Incassi', desc: 'Report pagamenti', icon: Euro, from: '#10B981', to: '#6EE7B7' },
+  { path: '/daily-summary', label: 'Riepilogo', desc: 'Giornaliero', icon: FileBarChart, from: '#A855F7', to: '#D8B4FE' },
+  { path: '/cards', label: 'Card', desc: 'Abbonamenti', icon: CreditCard, from: '#0EA5E9', to: '#7DD3FC' },
+  { path: '/card-alerts', label: 'Avvisi Card', desc: 'Scadenze', icon: AlertTriangle, from: '#EF4444', to: '#FCA5A5' },
+  { path: '/loyalty', label: 'Fedeltà', desc: 'Programma punti', icon: Star, from: '#E8477C', to: '#F49AB3' },
+  { path: '/reminders', label: 'Promemoria', desc: 'Notifiche', icon: Bell, from: '#F97316', to: '#FDBA74' },
+  { path: '/uscite', label: 'Uscite', desc: 'Registro spese', icon: ArrowDownCircle, from: '#EF4444', to: '#FCA5A5' },
+  { path: '/promozioni', label: 'Promozioni', desc: 'Offerte', icon: Gift, from: '#D946EF', to: '#F0ABFC' },
+  { path: '/backup', label: 'Backup', desc: 'Esporta dati', icon: Download, from: '#6B7280', to: '#D1D5DB' },
+  { path: '/sito', label: 'Sito Web', desc: 'Pagina pubblica', icon: Globe, from: '#14B8A6', to: '#5EEAD4' },
+  { path: '/settings', label: 'Impostazioni', desc: 'Configurazione', icon: Settings, from: '#6B7280', to: '#D1D5DB' },
 ];
 
 export default function Dashboard() {
@@ -111,14 +111,14 @@ export default function Dashboard() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 greeting-in">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <Sparkles className="w-5 h-5 text-[#D4A847]" />
-              <span className="text-sm font-medium text-[#9C7060] uppercase tracking-wider">Dashboard</span>
+              <Sparkles className="w-5 h-5 text-[#2EC4B6]" />
+              <span className="text-sm font-medium text-[#8891A5] uppercase tracking-wider">Dashboard</span>
             </div>
-            <h1 className="font-display text-3xl md:text-4xl text-[#2D1B14] italic">{greeting}!</h1>
-            <p className="text-[#9C7060] mt-1 text-sm">{format(new Date(), "EEEE dd/MM/yy", { locale: it })}</p>
+            <h1 className="font-display text-3xl md:text-4xl text-[#1A1A2E] italic">{greeting}!</h1>
+            <p className="text-[#8891A5] mt-1 text-sm">{format(new Date(), "EEEE dd/MM/yy", { locale: it })}</p>
           </div>
           <Link to="/appointments">
-            <Button data-testid="new-appointment-btn" className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-[0_4px_14px_rgba(200,97,122,0.35)] rounded-xl px-5 hover:scale-105 transition-transform duration-300">
+            <Button data-testid="new-appointment-btn" className="bg-gradient-to-r from-[#E8477C] to-[#D03367] hover:from-[#D03367] hover:to-[#E8477C] text-white shadow-[0_4px_14px_rgba(200,97,122,0.35)] rounded-xl px-5 hover:scale-105 transition-transform duration-300">
               <Plus className="w-4 h-4 mr-2" /> Nuovo Appuntamento
             </Button>
           </Link>
@@ -146,7 +146,7 @@ export default function Dashboard() {
                     {[...cardAlerts.expiring.slice(0,2).map(c => ({...c,type:'expiring'})),
                       ...cardAlerts.low_balance.slice(0,2).map(c => ({...c,type:'low'}))].map(card => (
                       <div key={card.id} className="flex items-center gap-1.5 bg-white/80 rounded-lg px-2.5 py-1 border border-amber-100">
-                        <span className="text-xs font-medium text-[#2D1B14]">{card.client_name}</span>
+                        <span className="text-xs font-medium text-[#1A1A2E]">{card.client_name}</span>
                         <Badge className={`text-[10px] px-1.5 ${card.type==='expiring'?'bg-amber-400':'bg-rose-400'} text-white`}>
                           {card.type==='expiring'?`${card.days_until_expiry}g`:`${card.percent_remaining}%`}
                         </Badge>
@@ -200,20 +200,20 @@ export default function Dashboard() {
         {/* ── Stats Row ──────────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 stagger-in">
           {[
-            { title: "Appuntamenti Oggi", value: stats?.today_appointments_count || 0, icon: Calendar, from: '#C8617A', to: '#E8A0B0', suffix: '' },
-            { title: "Clienti Totali", value: stats?.total_clients || 0, icon: Users, from: '#7C9B7A', to: '#A0C49A', suffix: '' },
-            { title: "Incasso Mensile", value: (stats?.monthly_revenue || 0).toFixed(0), icon: Euro, from: '#D4A847', to: '#F0CC7A', prefix: '€', sub: `${stats?.monthly_appointments||0} appuntamenti` },
-            { title: "Incasso Annuale", value: (stats?.yearly_revenue || 0).toFixed(0), icon: TrendingUp, from: '#A04040', to: '#D07070', prefix: '€', sub: `${stats?.yearly_appointments||0} appuntamenti` },
-            { title: "Prossimi 7 Giorni", value: stats?.upcoming_appointments?.length || 0, icon: Clock, from: '#7C5C4A', to: '#A07060', suffix: '' },
+            { title: "Appuntamenti Oggi", value: stats?.today_appointments_count || 0, icon: Calendar, from: '#E8477C', to: '#F49AB3', suffix: '' },
+            { title: "Clienti Totali", value: stats?.total_clients || 0, icon: Users, from: '#2EC4B6', to: '#5EDECF', suffix: '' },
+            { title: "Incasso Mensile", value: (stats?.monthly_revenue || 0).toFixed(0), icon: Euro, from: '#F59E0B', to: '#FCD34D', prefix: '€', sub: `${stats?.monthly_appointments||0} appuntamenti` },
+            { title: "Incasso Annuale", value: (stats?.yearly_revenue || 0).toFixed(0), icon: TrendingUp, from: '#3B82F6', to: '#93C5FD', prefix: '€', sub: `${stats?.yearly_appointments||0} appuntamenti` },
+            { title: "Prossimi 7 Giorni", value: stats?.upcoming_appointments?.length || 0, icon: Clock, from: '#8B5CF6', to: '#C4B5FD', suffix: '' },
           ].map((s, i) => (
-            <div key={i} className="bg-white rounded-2xl p-5 shadow-sm border border-[#F0E6DC] card-lift-enhanced">
+            <div key={i} className="bg-white rounded-2xl p-5 shadow-sm border border-[#E5E7EB] card-lift-enhanced">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-xs text-[#9C7060] font-medium uppercase tracking-wider">{s.title}</p>
-                  <p className="text-3xl font-display font-semibold text-[#2D1B14] mt-1.5">
+                  <p className="text-xs text-[#8891A5] font-medium uppercase tracking-wider">{s.title}</p>
+                  <p className="text-3xl font-display font-semibold text-[#1A1A2E] mt-1.5">
                     {s.prefix || ''}{s.value}
                   </p>
-                  {s.sub && <p className="text-xs text-[#9C7060] mt-1">{s.sub}</p>}
+                  {s.sub && <p className="text-xs text-[#8891A5] mt-1">{s.sub}</p>}
                 </div>
                 <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110" style={{background: `linear-gradient(135deg, ${s.from}20, ${s.to}30)`}}>
                   <s.icon className="w-5 h-5" style={{color: s.from}} strokeWidth={1.5} />
@@ -229,8 +229,8 @@ export default function Dashboard() {
         {/* ── Modules Grid ───────────────────────────────────────────────── */}
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <Heart className="w-4 h-4 text-[#C8617A]" />
-            <h2 className="font-display text-xl text-[#2D1B14]">Moduli</h2>
+            <Heart className="w-4 h-4 text-[#E8477C]" />
+            <h2 className="font-display text-xl text-[#1A1A2E]">Moduli</h2>
           </div>
           <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-3 stagger-fast">
             {MODULES.map((mod) => (
@@ -238,13 +238,13 @@ export default function Dashboard() {
                 key={mod.path}
                 data-testid={`module-${mod.path.slice(1)}`}
                 onClick={() => navigate(mod.path)}
-                className="module-card bg-white rounded-2xl p-3 text-center border border-[#F0E6DC] hover:border-[#E8A0B0] cursor-pointer group"
+                className="module-card bg-white rounded-2xl p-3 text-center border border-[#E5E7EB] hover:border-[#F49AB3] cursor-pointer group"
               >
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3" style={{background: `linear-gradient(135deg, ${mod.from}18, ${mod.to}28)`}}>
                   <mod.icon className="w-5 h-5" style={{color: mod.from}} strokeWidth={1.5} />
                 </div>
-                <p className="font-semibold text-[#2D1B14] text-xs leading-tight">{mod.label}</p>
-                <p className="text-[9px] text-[#9C7060] mt-0.5 leading-tight hidden sm:block">{mod.desc}</p>
+                <p className="font-semibold text-[#1A1A2E] text-xs leading-tight">{mod.label}</p>
+                <p className="text-[9px] text-[#8891A5] mt-0.5 leading-tight hidden sm:block">{mod.desc}</p>
               </button>
             ))}
           </div>
@@ -253,68 +253,68 @@ export default function Dashboard() {
         {/* ── Bottom: Today + Upcoming ───────────────────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
           {/* Today */}
-          <div className="lg:col-span-8 bg-white rounded-2xl border border-[#F0E6DC] shadow-sm overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[#F5EDE0]">
+          <div className="lg:col-span-8 bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[#F1F3F5]">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-[#C8617A]" />
-                <h2 className="font-display text-lg text-[#2D1B14]">Appuntamenti di Oggi</h2>
+                <div className="w-2 h-2 rounded-full bg-[#E8477C]" />
+                <h2 className="font-display text-lg text-[#1A1A2E]">Appuntamenti di Oggi</h2>
               </div>
-              <Link to="/planning"><Button variant="ghost" size="sm" className="text-[#C8617A] hover:text-[#A0404F] hover:bg-rose-50 text-xs">Vedi tutti <ChevronRight className="w-3 h-3 ml-1" /></Button></Link>
+              <Link to="/planning"><Button variant="ghost" size="sm" className="text-[#E8477C] hover:text-[#D03367] hover:bg-rose-50 text-xs">Vedi tutti <ChevronRight className="w-3 h-3 ml-1" /></Button></Link>
             </div>
             <div className="p-4">
               {stats?.today_appointments?.length > 0 ? (
                 <div className="space-y-2">
                   {stats.today_appointments.map((apt, idx) => (
-                    <div key={apt.id} data-testid={`appointment-${apt.id}`} className="appt-row flex items-center gap-4 p-3 rounded-xl bg-[#FAF7F2] cursor-pointer">
+                    <div key={apt.id} data-testid={`appointment-${apt.id}`} className="appt-row flex items-center gap-4 p-3 rounded-xl bg-[#FAFBFC] cursor-pointer">
                       <div className="flex-shrink-0 text-center w-14">
-                        <p className="text-sm font-bold text-[#C8617A]">{apt.time}</p>
-                        <p className="text-[10px] text-[#9C7060]">{apt.end_time}</p>
+                        <p className="text-sm font-bold text-[#E8477C]">{apt.time}</p>
+                        <p className="text-[10px] text-[#8891A5]">{apt.end_time}</p>
                       </div>
-                      <div className="w-0.5 h-8 rounded-full bg-gradient-to-b from-[#C8617A] to-[#E8A0B0]" />
+                      <div className="w-0.5 h-8 rounded-full bg-gradient-to-b from-[#E8477C] to-[#F49AB3]" />
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-[#2D1B14] text-sm truncate">{apt.client_name}</p>
-                        <p className="text-xs text-[#9C7060] truncate">{apt.services.map(s => s.name).join(', ')}</p>
+                        <p className="font-semibold text-[#1A1A2E] text-sm truncate">{apt.client_name}</p>
+                        <p className="text-xs text-[#8891A5] truncate">{apt.services.map(s => s.name).join(', ')}</p>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="font-bold text-[#2D1B14] text-sm">€{apt.total_price}</p>
-                        <p className="text-[10px] text-[#9C7060]">{apt.total_duration} min</p>
+                        <p className="font-bold text-[#1A1A2E] text-sm">€{apt.total_price}</p>
+                        <p className="text-[10px] text-[#8891A5]">{apt.total_duration} min</p>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="text-center py-10">
-                  <div className="w-14 h-14 rounded-2xl bg-[#F5EDE0] flex items-center justify-center mx-auto mb-3">
-                    <Calendar className="w-7 h-7 text-[#E8A0B0]" strokeWidth={1} />
+                  <div className="w-14 h-14 rounded-2xl bg-[#F1F3F5] flex items-center justify-center mx-auto mb-3">
+                    <Calendar className="w-7 h-7 text-[#F49AB3]" strokeWidth={1} />
                   </div>
-                  <p className="text-[#9C7060] text-sm">Nessun appuntamento per oggi</p>
-                  <Link to="/appointments"><Button variant="outline" className="mt-3 border-[#E8A0B0] text-[#C8617A] hover:bg-rose-50 text-sm rounded-xl">Prenota ora</Button></Link>
+                  <p className="text-[#8891A5] text-sm">Nessun appuntamento per oggi</p>
+                  <Link to="/appointments"><Button variant="outline" className="mt-3 border-[#F49AB3] text-[#E8477C] hover:bg-rose-50 text-sm rounded-xl">Prenota ora</Button></Link>
                 </div>
               )}
             </div>
           </div>
 
           {/* Upcoming */}
-          <div className="lg:col-span-4 bg-white rounded-2xl border border-[#F0E6DC] shadow-sm overflow-hidden">
-            <div className="px-5 py-4 border-b border-[#F5EDE0] flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-[#D4A847]" />
-              <h2 className="font-display text-lg text-[#2D1B14]">Prossimi</h2>
+          <div className="lg:col-span-4 bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-[#F1F3F5] flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-[#2EC4B6]" />
+              <h2 className="font-display text-lg text-[#1A1A2E]">Prossimi</h2>
             </div>
             <div className="p-4">
               {stats?.upcoming_appointments?.length > 0 ? (
                 <div className="space-y-2">
                   {stats.upcoming_appointments.slice(0, 6).map((apt) => (
-                    <div key={apt.id} className="flex items-center gap-3 py-2 border-b border-[#FAF7F2] last:border-0">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#D4A847] shrink-0 mt-0.5" />
+                    <div key={apt.id} className="flex items-center gap-3 py-2 border-b border-[#FAFBFC] last:border-0">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#2EC4B6] shrink-0 mt-0.5" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-[#2D1B14] truncate">{apt.client_name}</p>
-                        <p className="text-xs text-[#9C7060]">{format(new Date(apt.date), "dd/MM/yy")} · {apt.time}</p>
+                        <p className="text-sm font-semibold text-[#1A1A2E] truncate">{apt.client_name}</p>
+                        <p className="text-xs text-[#8891A5]">{format(new Date(apt.date), "dd/MM/yy")} · {apt.time}</p>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-[#9C7060] text-center py-6">Nessun appuntamento in programma</p>
+                <p className="text-sm text-[#8891A5] text-center py-6">Nessun appuntamento in programma</p>
               )}
             </div>
           </div>

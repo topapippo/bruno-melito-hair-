@@ -62,9 +62,14 @@ export default function Layout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const NEW_DEFAULTS = { primary: '#E8477C', sidebar_bg: '#FAFBFC', sidebar_text: '#1A1A2E', accent: '#2EC4B6', content_bg: '#FCFCFD', content_text: '#1A1A2E' };
   const [adminTheme, setAdminTheme] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('adminTheme')) || { primary: '#C8617A', sidebar_bg: '#FAF7F2', sidebar_text: '#2D1B14', accent: '#D4A847', content_bg: '#F8F5F0', content_text: '#2D1B14' }; }
-    catch { return { primary: '#C8617A', sidebar_bg: '#FAF7F2', sidebar_text: '#2D1B14', accent: '#D4A847', content_bg: '#F8F5F0', content_text: '#2D1B14' }; }
+    try {
+      const stored = JSON.parse(localStorage.getItem('adminTheme'));
+      if (stored && stored.primary === '#C8617A') { localStorage.removeItem('adminTheme'); return NEW_DEFAULTS; }
+      return stored || NEW_DEFAULTS;
+    }
+    catch { return NEW_DEFAULTS; }
   });
   const themeRef = useRef(adminTheme);
 
@@ -181,12 +186,12 @@ export default function Layout({ children }) {
       '--admin-accent': t.accent,
       '--admin-sidebar-bg': t.sidebar_bg,
       '--admin-sidebar-text': t.sidebar_text,
-      '--admin-content-bg': t.content_bg || '#F8F5F0',
+      '--admin-content-bg': t.content_bg || '#FCFCFD',
       '--admin-content-text': t.content_text || '#2D1B14',
       '--admin-font-display': `'${t.font_display || 'Cormorant Garamond'}'`,
       '--admin-font-body': `'${t.font_body || 'Poppins'}'`,
       fontFamily: `'${t.font_body || 'Poppins'}', sans-serif`,
-      backgroundColor: t.content_bg || '#F8F5F0',
+      backgroundColor: t.content_bg || '#FCFCFD',
       color: t.content_text || '#2D1B14',
     }}>
       {/* Desktop Sidebar */}
