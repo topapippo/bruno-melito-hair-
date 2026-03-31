@@ -104,6 +104,7 @@ async def root():
     return {"message": "Salone Parrucchiera API", "status": "ok"}
 
 @api_router.get("/health")
+@api_router.head("/health")
 async def health():
     return {"status": "alive"}
 
