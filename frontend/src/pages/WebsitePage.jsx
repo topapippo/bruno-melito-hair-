@@ -185,7 +185,7 @@ function SalonSection({ salonPhotos, T }) {
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
               {item.file_type === 'video' && <div className="absolute top-3 left-3 bg-black/60 text-white text-xs font-bold px-2 py-1 rounded">VIDEO</div>}
-              {item.label && <p className="absolute bottom-3 left-3 text-white font-bold text-sm">{item.label}</p>}
+              {item.label && !item.label.toLowerCase().includes('whatsapp') && <p className="absolute bottom-3 left-3 text-white font-bold text-sm">{item.label}</p>}
             </div>
           ))}
         </div>
@@ -318,7 +318,7 @@ function GallerySection({ config, hairstylePhotos, setShowBooking, T }) {
                 <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-md text-[#1e293b] text-xs font-bold px-3 py-1 rounded-full border border-gray-200">{item.tag}</div>
               )}
               <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                <p className="text-white font-bold">{item.label}</p>
+                {item.label && !item.label.toLowerCase().includes('whatsapp') && <p className="text-white font-bold">{item.label}</p>}
               </div>
             </div>
           ))}
