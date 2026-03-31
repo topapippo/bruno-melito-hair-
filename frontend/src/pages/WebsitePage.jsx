@@ -10,6 +10,19 @@ import { it } from 'date-fns/locale';
 import { toast, Toaster } from 'sonner';
 import { CATEGORY_ORDER, getCategoryInfo, groupServicesByCategory } from '../lib/categories';
 
+function AnimatedSection({ children, className = '', delay = 0 }) {
+  const ref = useRef(null);
+  const [v, setV] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const o = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setV(true); o.disconnect(); } }, { threshold: 0.1, rootMargin: '50px' });
+    o.observe(el);
+    return () => o.disconnect();
+  }, []);
+  return <div ref={ref} className={className} style={{ opacity: v ? 1 : 0, transform: v ? 'none' : 'translateY(40px)', transition: `opacity 0.8s cubic-bezier(.16,1,.3,1) ${delay}s, transform 0.8s cubic-bezier(.16,1,.3,1) ${delay}s` }}>{children}</div>;
+}
+
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const SOCIAL_LINKS = [
@@ -86,13 +99,15 @@ function ServicesSection({ servicesRef, showServices, setShowServices, landingSe
   return (
     <section ref={servicesRef} className="py-20 sm:py-28 relative">
       <div className="max-w-6xl mx-auto px-4">
-        <button onClick={() => setShowServices(!showServices)} className="w-full text-center mb-4 group">
-          <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>I Nostri Servizi</p>
-          <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>Servizi Professionali</h2>
-          <div className="flex items-center justify-center gap-2 font-bold mt-4" style={{ color: T.accent }}>
-            {showServices ? <><span>Nascondi listino</span><ChevronUp className="w-5 h-5" /></> : <><span>Mostra listino</span><ChevronDown className="w-5 h-5" /></>}
-          </div>
-        </button>
+        <AnimatedSection>
+          <button onClick={() => setShowServices(!showServices)} className="w-full text-center mb-4 group">
+            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>I Nostri Servizi</p>
+            <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>Servizi Professionali</h2>
+            <div className="flex items-center justify-center gap-2 font-bold mt-4" style={{ color: T.accent }}>
+              {showServices ? <><span>Nascondi listino</span><ChevronUp className="w-5 h-5" /></> : <><span>Mostra listino</span><ChevronDown className="w-5 h-5" /></>}
+            </div>
+          </button>
+        </AnimatedSection>
         {showServices && (
           <div className="space-y-3 mt-8 animate-in fade-in duration-300 max-w-2xl mx-auto">
             {landingServiceGroups.orderedKeys.map((catKey) => {
@@ -171,22 +186,26 @@ function SalonSection({ salonPhotos, T }) {
   return (
     <section className="py-20 sm:py-28 bg-white/60">
       <div className="max-w-6xl mx-auto px-4">
-        <div className="text-center mb-12">
-          <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.primary }}>Il Nostro Salone</p>
-          <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>Dove Nasce la Bellezza</h2>
-        </div>
+        <AnimatedSection>
+          <div className="text-center mb-12">
+            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.primary }}>Il Nostro Salone</p>
+            <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>Dove Nasce la Bellezza</h2>
+          </div>
+        </AnimatedSection>
         <div className={`grid gap-4 ${salonPhotos.length === 1 ? 'grid-cols-1 max-w-lg mx-auto' : salonPhotos.length === 2 ? 'grid-cols-2' : salonPhotos.length === 3 ? 'grid-cols-3' : 'grid-cols-2 lg:grid-cols-4'}`}>
           {salonPhotos.map((item, idx) => (
-            <div key={item.id} className={`relative rounded-3xl overflow-hidden aspect-square group border-2 ${BORDER_COLORS[idx % 6]} transition-all duration-300 hover:shadow-xl ${GLOW_COLORS[idx % 6]} hover:border-opacity-60`}>
-              {item.file_type === 'video' ? (
-                <video src={getMediaUrl(item?.image_url)} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" muted loop playsInline onMouseEnter={e => e.target.play()} onMouseLeave={e => { e.target.pause(); e.target.currentTime = 0; }} />
-              ) : (
-                <img src={getMediaUrl(item?.image_url)} alt={item.label} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-              {item.file_type === 'video' && <div className="absolute top-3 left-3 bg-black/60 text-white text-xs font-bold px-2 py-1 rounded">VIDEO</div>}
-              {item.label && !item.label.toLowerCase().includes('whatsapp') && <p className="absolute bottom-3 left-3 text-white font-bold text-sm">{item.label}</p>}
-            </div>
+            <AnimatedSection key={item.id} delay={0.1 * idx}>
+              <div className={`relative rounded-3xl overflow-hidden aspect-square group border-2 ${BORDER_COLORS[idx % 6]} transition-all duration-500 hover:shadow-2xl ${GLOW_COLORS[idx % 6]} hover:border-opacity-60 hover:scale-[1.03]`}>
+                {item.file_type === 'video' ? (
+                  <video src={getMediaUrl(item?.image_url)} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" muted loop playsInline onMouseEnter={e => e.target.play()} onMouseLeave={e => { e.target.pause(); e.target.currentTime = 0; }} />
+                ) : (
+                  <img src={getMediaUrl(item?.image_url)} alt={item.label} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                {item.file_type === 'video' && <div className="absolute top-3 left-3 bg-black/60 text-white text-xs font-bold px-2 py-1 rounded">VIDEO</div>}
+                {item.label && !item.label.toLowerCase().includes('whatsapp') && <p className="absolute bottom-3 left-3 text-white font-bold text-sm">{item.label}</p>}
+              </div>
+            </AnimatedSection>
           ))}
         </div>
       </div>
@@ -200,26 +219,30 @@ function AboutSection({ config, salonPhotos, T }) {
       <div className="max-w-6xl mx-auto px-4">
         <div className={`grid grid-cols-1 ${salonPhotos.length > 1 ? 'lg:grid-cols-2' : ''} gap-12 items-center`}>
           {salonPhotos.length > 1 && (
-            <div className="rounded-3xl overflow-hidden h-80 lg:h-96 border-2 border-rose-400/20 hover:shadow-xl hover:shadow-rose-400/20 transition-all duration-300">
-              <img src={getMediaUrl(salonPhotos[1]?.image_url || salonPhotos[0]?.image_url)} alt="Il nostro salone" className="w-full h-full object-cover" />
-            </div>
-          )}
-          <div>
-            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Chi Siamo</p>
-            <h2 className="text-3xl sm:text-4xl font-black mb-6" style={{ color: T.text, fontFamily: T.fontDisplay }}>{config.about_title}</h2>
-            {config.about_text && <p className="text-[#64748B] leading-relaxed mb-6">{config.about_text}</p>}
-            {config.about_text_2 && <p className="text-[#B89A7A] leading-relaxed mb-8">{config.about_text_2}</p>}
-            {config.about_features && config.about_features.length > 0 && (
-              <div className="grid grid-cols-2 gap-3">
-                {config.about_features.map((item, idx) => (
-                  <div key={idx} className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-teal-400 shrink-0" />
-                    <span className="text-sm text-[#D4B89A]">{item}</span>
-                  </div>
-                ))}
+            <AnimatedSection>
+              <div className="rounded-3xl overflow-hidden h-80 lg:h-96 border-2 border-rose-400/20 hover:shadow-2xl hover:shadow-rose-400/20 transition-all duration-500 group">
+                <img src={getMediaUrl(salonPhotos[1]?.image_url || salonPhotos[0]?.image_url)} alt="Il nostro salone" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
               </div>
-            )}
-          </div>
+            </AnimatedSection>
+          )}
+          <AnimatedSection delay={0.2}>
+            <div>
+              <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Chi Siamo</p>
+              <h2 className="text-3xl sm:text-4xl font-black mb-6" style={{ color: T.text, fontFamily: T.fontDisplay }}>{config.about_title}</h2>
+              {config.about_text && <p className="text-[#64748B] leading-relaxed mb-6">{config.about_text}</p>}
+              {config.about_text_2 && <p className="text-[#B89A7A] leading-relaxed mb-8">{config.about_text_2}</p>}
+              {config.about_features && config.about_features.length > 0 && (
+                <div className="grid grid-cols-2 gap-3">
+                  {config.about_features.map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-teal-400 shrink-0" />
+                      <span className="text-sm text-[#D4B89A]">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </AnimatedSection>
         </div>
       </div>
     </section>
@@ -230,38 +253,46 @@ function PromotionsSection({ publicPromos, setShowBooking, T }) {
   return (
     <section className="py-20 sm:py-28" style={{ backgroundColor: `${T.primary}08` }}>
       <div className="max-w-6xl mx-auto px-4">
-        <div className="text-center mb-12">
-          <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.primary }}>Offerte Speciali</p>
-          <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>Promozioni Attive</h2>
-        </div>
+        <AnimatedSection>
+          <div className="text-center mb-12">
+            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.primary }}>Offerte Speciali</p>
+            <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>Promozioni Attive</h2>
+          </div>
+        </AnimatedSection>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {publicPromos.map((promo, idx) => {
             const gradients = ['from-amber-50 to-orange-50', 'from-rose-50 to-pink-50', 'from-teal-50 to-emerald-50', 'from-violet-50 to-purple-50', 'from-sky-50 to-blue-50'];
+            const borders = ['border-amber-200', 'border-rose-200', 'border-teal-200', 'border-violet-200', 'border-sky-200'];
             const g = gradients[idx % gradients.length];
+            const b = borders[idx % borders.length];
             return (
-              <div key={promo.id || idx} className={`bg-gradient-to-br ${g} border border-gray-200 rounded-3xl p-6 transition-all duration-300 hover:shadow-xl hover:scale-[1.02]`}
-                data-testid={`website-promo-${promo.id || idx}`}>
-                <div className="mb-3"><h3 className="text-lg font-black text-[#1e293b]">{promo.name}</h3></div>
-                <p className="text-[#64748B] text-sm mb-4">{promo.description}</p>
-                {promo.free_service_name && (
-                  <div className="flex items-center gap-2 text-emerald-600 text-sm font-bold mb-3">
-                    <Gift className="w-4 h-4" /> IN OMAGGIO: {promo.free_service_name}
-                  </div>
-                )}
-                {promo.promo_code && (
-                  <div className="flex items-center gap-2 text-xs text-[#64748B]">
-                    Codice: <span className="font-mono font-bold text-[#0EA5E9] bg-[#0EA5E9]/10 px-2 py-0.5 rounded text-sm">{promo.promo_code}</span>
-                  </div>
-                )}
-              </div>
+              <AnimatedSection key={promo.id || idx} delay={0.1 * idx}>
+                <div className={`bg-gradient-to-br ${g} border-2 ${b} rounded-3xl p-6 transition-all duration-500 hover:shadow-xl hover:scale-[1.03] hover:-translate-y-1 h-full`}
+                  data-testid={`website-promo-${promo.id || idx}`}>
+                  <div className="mb-3"><h3 className="text-lg font-black text-[#1e293b]">{promo.name}</h3></div>
+                  <p className="text-[#64748B] text-sm mb-4">{promo.description}</p>
+                  {promo.free_service_name && (
+                    <div className="flex items-center gap-2 text-emerald-600 text-sm font-bold mb-3">
+                      <Gift className="w-4 h-4" /> IN OMAGGIO: {promo.free_service_name}
+                    </div>
+                  )}
+                  {promo.promo_code && (
+                    <div className="flex items-center gap-2 text-xs text-[#64748B]">
+                      Codice: <span className="font-mono font-bold text-[#0EA5E9] bg-[#0EA5E9]/10 px-2 py-0.5 rounded text-sm">{promo.promo_code}</span>
+                    </div>
+                  )}
+                </div>
+              </AnimatedSection>
             );
           })}
         </div>
-        <div className="text-center mt-8">
-          <Button onClick={() => setShowBooking(true)} style={{ backgroundColor: T.primary }} className="text-white hover:opacity-90 font-bold px-8 py-6 rounded-xl shadow-lg">
-            <Scissors className="w-4 h-4 mr-2" /> APPROFITTA ORA
-          </Button>
-        </div>
+        <AnimatedSection delay={0.3}>
+          <div className="text-center mt-8">
+            <Button onClick={() => setShowBooking(true)} style={{ backgroundColor: T.primary }} className="text-white hover:opacity-90 font-bold px-8 py-6 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300">
+              <Scissors className="w-4 h-4 mr-2" /> APPROFITTA ORA
+            </Button>
+          </div>
+        </AnimatedSection>
       </div>
     </section>
   );
@@ -271,24 +302,29 @@ function ReviewsSection({ reviews, T }) {
   return (
     <section className="py-20 sm:py-28">
       <div className="max-w-6xl mx-auto px-4">
-        <div className="text-center mb-12">
-          <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Recensioni</p>
-          <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>Cosa Dicono di Noi</h2>
-        </div>
+        <AnimatedSection>
+          <div className="text-center mb-12">
+            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Recensioni</p>
+            <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>Cosa Dicono di Noi</h2>
+          </div>
+        </AnimatedSection>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {reviews.map((review, idx) => (
-            <div key={review.id || idx} className={`bg-[#2A1A0E]/80 border ${BORDER_COLORS[idx % 4]} rounded-3xl p-5 transition-all duration-300 hover:shadow-lg ${GLOW_COLORS[idx % 4]} hover:border-opacity-60 hover:scale-[1.02]`}>
-              <div className="flex gap-0.5 mb-3">
-                {[...Array(review.rating || 5)].map((_, i) => (<Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />))}
-              </div>
-              <p className="text-[#D4B89A] text-sm leading-relaxed mb-4">"{review.text}"</p>
-              <div className="flex items-center gap-3">
-                <div className={`w-8 h-8 ${AVATAR_BGS[idx % 4]} rounded-full flex items-center justify-center`}>
-                  <span className={`${AVATAR_TEXTS[idx % 4]} font-bold text-sm`}>{(review.name || '?')[0]}</span>
+            <AnimatedSection key={review.id || idx} delay={0.1 + idx * 0.1}>
+              <div className={`bg-[#2A1A0E]/80 border ${BORDER_COLORS[idx % 4]} rounded-3xl p-6 transition-all duration-500 hover:shadow-lg ${GLOW_COLORS[idx % 4]} hover:border-opacity-60 hover:scale-[1.03] hover:-translate-y-1 h-full flex flex-col`}>
+                <div className="text-5xl leading-none opacity-15 -mb-1" style={{ color: T.accent, fontFamily: 'Georgia, serif' }}>{'\u201C'}</div>
+                <div className="flex gap-0.5 mb-3">
+                  {[...Array(review.rating || 5)].map((_, i) => (<Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />))}
                 </div>
-                <span className="text-sm text-[#B89A7A] font-semibold">{review.name}</span>
+                <p className="text-[#D4B89A] text-sm leading-relaxed mb-4 flex-1">{review.text}</p>
+                <div className="flex items-center gap-3 pt-3 border-t border-white/5">
+                  <div className={`w-10 h-10 ${AVATAR_BGS[idx % 4]} rounded-full flex items-center justify-center ring-2 ring-white/10`}>
+                    <span className={`${AVATAR_TEXTS[idx % 4]} font-bold text-sm`}>{(review.name || '?')[0]}</span>
+                  </div>
+                  <span className="text-sm text-[#B89A7A] font-semibold">{review.name}</span>
+                </div>
               </div>
-            </div>
+            </AnimatedSection>
           ))}
         </div>
       </div>
@@ -297,39 +333,80 @@ function ReviewsSection({ reviews, T }) {
 }
 
 function GallerySection({ config, hairstylePhotos, setShowBooking, T }) {
+  const [lightboxIdx, setLightboxIdx] = useState(null);
+  const imagePhotos = hairstylePhotos.filter(p => p.file_type !== 'video');
   return (
-    <section className="py-20 sm:py-28 bg-white/60">
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="text-center mb-12">
-          <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>{config.gallery_title || 'I Nostri Lavori'}</p>
-          <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>I Nostri Lavori</h2>
-          {config.gallery_subtitle && <p className="text-[#64748B] mt-3 max-w-xl mx-auto">{config.gallery_subtitle}</p>}
-        </div>
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-          {hairstylePhotos.map((item, idx) => (
-            <div key={item.id} className="relative rounded-3xl overflow-hidden aspect-[3/4] group cursor-pointer border-2 border-gray-200 transition-all duration-300 hover:shadow-xl hover:border-[#0EA5E9]/30">
-              {item.file_type === 'video' ? (
-                <video src={getMediaUrl(item?.image_url)} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" muted loop playsInline onMouseEnter={e => e.target.play()} onMouseLeave={e => { e.target.pause(); e.target.currentTime = 0; }} />
-              ) : (
-                <img src={getMediaUrl(item?.image_url)} alt={item.label} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              {item.tag && (
-                <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-md text-[#1e293b] text-xs font-bold px-3 py-1 rounded-full border border-gray-200">{item.tag}</div>
-              )}
-              <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                {item.label && !item.label.toLowerCase().includes('whatsapp') && <p className="text-white font-bold">{item.label}</p>}
-              </div>
+    <>
+      <section className="py-20 sm:py-28 bg-white/60">
+        <div className="max-w-6xl mx-auto px-4">
+          <AnimatedSection>
+            <div className="text-center mb-12">
+              <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>{config.gallery_title || 'I Nostri Lavori'}</p>
+              <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>I Nostri Lavori</h2>
+              {config.gallery_subtitle && <p className="text-[#64748B] mt-3 max-w-xl mx-auto">{config.gallery_subtitle}</p>}
             </div>
-          ))}
+          </AnimatedSection>
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+            {hairstylePhotos.map((item, idx) => (
+              <AnimatedSection key={item.id} delay={0.05 * idx}>
+                <div onClick={() => item.file_type !== 'video' && setLightboxIdx(imagePhotos.indexOf(item))}
+                  className={`relative rounded-3xl overflow-hidden aspect-[3/4] group ${item.file_type !== 'video' ? 'cursor-pointer' : ''} border-2 border-gray-200 transition-all duration-500 hover:shadow-2xl hover:border-[#0EA5E9]/30 hover:scale-[1.02]`}>
+                  {item.file_type === 'video' ? (
+                    <video src={getMediaUrl(item?.image_url)} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" muted loop playsInline onMouseEnter={e => e.target.play()} onMouseLeave={e => { e.target.pause(); e.target.currentTime = 0; }} />
+                  ) : (
+                    <img src={getMediaUrl(item?.image_url)} alt={item.label} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  {item.file_type !== 'video' && (
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                        <Search className="w-5 h-5 text-white" />
+                      </div>
+                    </div>
+                  )}
+                  {item.tag && (
+                    <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-md text-[#1e293b] text-xs font-bold px-3 py-1 rounded-full border border-gray-200">{item.tag}</div>
+                  )}
+                  <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                    {item.label && !item.label.toLowerCase().includes('whatsapp') && <p className="text-white font-bold">{item.label}</p>}
+                  </div>
+                </div>
+              </AnimatedSection>
+            ))}
+          </div>
+          <AnimatedSection delay={0.3}>
+            <div className="text-center mt-8">
+              <Button onClick={() => setShowBooking(true)} style={{ backgroundColor: T.primary }} className="text-white hover:opacity-90 font-bold px-8 py-6 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300">
+                <Scissors className="w-4 h-4 mr-2" /> PRENOTA ORA
+              </Button>
+            </div>
+          </AnimatedSection>
         </div>
-        <div className="text-center mt-8">
-          <Button onClick={() => setShowBooking(true)} style={{ backgroundColor: T.primary }} className="text-white hover:opacity-90 font-bold px-8 py-6 rounded-xl shadow-lg">
-            <Scissors className="w-4 h-4 mr-2" /> PRENOTA ORA
-          </Button>
+      </section>
+      {lightboxIdx !== null && lightboxIdx >= 0 && (
+        <div className="fixed inset-0 z-[70] bg-black/95 backdrop-blur-sm flex items-center justify-center" onClick={() => setLightboxIdx(null)} data-testid="gallery-lightbox">
+          <button onClick={() => setLightboxIdx(null)} className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors z-10" data-testid="lightbox-close">
+            <X className="w-6 h-6" />
+          </button>
+          {imagePhotos.length > 1 && (
+            <>
+              <button onClick={(e) => { e.stopPropagation(); setLightboxIdx(p => p > 0 ? p - 1 : imagePhotos.length - 1); }}
+                className="absolute left-2 sm:left-6 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors z-10" data-testid="lightbox-prev">
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <button onClick={(e) => { e.stopPropagation(); setLightboxIdx(p => p < imagePhotos.length - 1 ? p + 1 : 0); }}
+                className="absolute right-2 sm:right-6 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors z-10" data-testid="lightbox-next">
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            </>
+          )}
+          <img src={getMediaUrl(imagePhotos[lightboxIdx]?.image_url)} alt="" className="max-h-[85vh] max-w-[92vw] object-contain rounded-2xl shadow-2xl" onClick={e => e.stopPropagation()} />
+          <div className="absolute bottom-4 left-0 right-0 text-center">
+            <span className="text-white/50 text-sm">{lightboxIdx + 1} / {imagePhotos.length}</span>
+          </div>
         </div>
-      </div>
-    </section>
+      )}
+    </>
   );
 }
 
@@ -337,48 +414,65 @@ function LoyaltySection({ setShowBooking, T }) {
   return (
     <section className="py-20 sm:py-28" style={{ backgroundColor: `${T.accent}10` }}>
       <div className="max-w-6xl mx-auto px-4">
-        <div className="text-center mb-12">
-          <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Programma Fedeltà</p>
-          <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>Ogni Visita Vale di Più</h2>
-          <p className="text-[#94A3B8] mt-3 max-w-xl mx-auto">Accumula punti ad ogni appuntamento e sblocca premi esclusivi. <strong>1 punto ogni {'\u20AC'}20 spesi</strong>.</p>
+        <AnimatedSection>
+          <div className="text-center mb-12">
+            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Programma Fedeltà</p>
+            <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>Ogni Visita Vale di Più</h2>
+            <p className="text-[#94A3B8] mt-3 max-w-xl mx-auto">Accumula punti ad ogni appuntamento e sblocca premi esclusivi. <strong>1 punto ogni {'\u20AC'}20 spesi</strong>.</p>
+          </div>
+        </AnimatedSection>
+        <div className="relative max-w-5xl mx-auto">
+          <div className="hidden lg:block absolute top-[4.2rem] left-[10%] right-[10%] h-1 rounded-full opacity-25" style={{ background: `linear-gradient(90deg, #F59E0B, #EC4899, #14B8A6, #8B5CF6, #0EA5E9)` }} />
+          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-5">
+            <AnimatedSection delay={0}>
+              <div className="bg-white rounded-3xl p-5 border-2 border-amber-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.05] hover:-translate-y-1 text-center" data-testid="loyalty-reward-0">
+                <div className="w-14 h-14 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-3 ring-4 ring-white shadow-md"><Gift className="w-7 h-7 text-amber-600" /></div>
+                <h3 className="font-bold text-base text-[#1e293b] mb-2">Buono sconto 3{'\u20AC'}</h3>
+                <div className="inline-block bg-gradient-to-r from-amber-400 to-orange-400 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3 shadow-md">5 punti</div>
+                <p className="text-[#64748B] text-xs">Buono sconto di 3{'\u20AC'} sul prossimo servizio</p>
+              </div>
+            </AnimatedSection>
+            <AnimatedSection delay={0.1}>
+              <div className="bg-white rounded-3xl p-5 border-2 border-rose-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.05] hover:-translate-y-1 text-center" data-testid="loyalty-reward-1">
+                <div className="w-14 h-14 bg-rose-100 rounded-2xl flex items-center justify-center mx-auto mb-3 ring-4 ring-white shadow-md"><Star className="w-7 h-7 text-rose-600" /></div>
+                <h3 className="font-bold text-base text-[#1e293b] mb-2">Buono sconto 5{'\u20AC'}</h3>
+                <div className="inline-block bg-gradient-to-r from-rose-400 to-pink-400 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3 shadow-md">10 punti</div>
+                <p className="text-[#64748B] text-xs">Buono sconto di 5{'\u20AC'} sul prossimo servizio</p>
+              </div>
+            </AnimatedSection>
+            <AnimatedSection delay={0.2}>
+              <div className="bg-white rounded-3xl p-5 border-2 border-teal-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.05] hover:-translate-y-1 text-center" data-testid="loyalty-reward-2">
+                <div className="w-14 h-14 bg-teal-100 rounded-2xl flex items-center justify-center mx-auto mb-3 ring-4 ring-white shadow-md"><Scissors className="w-7 h-7 text-teal-600" /></div>
+                <h3 className="font-bold text-base text-[#1e293b] mb-2">Piega o Taglio Gratuito</h3>
+                <div className="inline-block bg-gradient-to-r from-teal-400 to-emerald-400 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3 shadow-md">20 punti</div>
+                <p className="text-[#64748B] text-xs">Una piega o un taglio completamente gratuito</p>
+              </div>
+            </AnimatedSection>
+            <AnimatedSection delay={0.3}>
+              <div className="bg-white rounded-3xl p-5 border-2 border-violet-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.05] hover:-translate-y-1 text-center" data-testid="loyalty-reward-3">
+                <div className="w-14 h-14 bg-violet-100 rounded-2xl flex items-center justify-center mx-auto mb-3 ring-4 ring-white shadow-md"><Star className="w-7 h-7 text-violet-600" /></div>
+                <h3 className="font-bold text-base text-[#1e293b] mb-2">Colore Parziale Gratuito</h3>
+                <div className="inline-block bg-gradient-to-r from-violet-400 to-purple-400 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3 shadow-md">30 punti</div>
+                <p className="text-[#64748B] text-xs">Un colore parziale completamente gratuito</p>
+              </div>
+            </AnimatedSection>
+            <AnimatedSection delay={0.4}>
+              <div className="bg-white rounded-3xl p-5 border-2 border-sky-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.05] hover:-translate-y-1 text-center" data-testid="loyalty-reward-4">
+                <div className="w-14 h-14 bg-sky-100 rounded-2xl flex items-center justify-center mx-auto mb-3 ring-4 ring-white shadow-md"><Gift className="w-7 h-7 text-sky-600" /></div>
+                <h3 className="font-bold text-base text-[#1e293b] mb-2">Colore Completo Gratuito</h3>
+                <div className="inline-block bg-gradient-to-r from-sky-400 to-blue-400 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3 shadow-md">50 punti</div>
+                <p className="text-[#64748B] text-xs">Un colore completo completamente gratuito</p>
+              </div>
+            </AnimatedSection>
+          </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-5 max-w-5xl mx-auto">
-          <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.03] text-center" data-testid="loyalty-reward-0">
-            <div className="w-14 h-14 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-3"><Gift className="w-7 h-7 text-amber-600" /></div>
-            <h3 className="font-bold text-base text-[#1e293b] mb-2">Buono sconto 3{'\u20AC'}</h3>
-            <div className="inline-block bg-gradient-to-r from-amber-400 to-orange-400 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3">5 punti</div>
-            <p className="text-[#64748B] text-xs">Buono sconto di 3{'\u20AC'} sul prossimo servizio</p>
+        <AnimatedSection delay={0.5}>
+          <div className="text-center mt-10">
+            <Button onClick={() => setShowBooking(true)} className="bg-gradient-to-r from-amber-400 to-orange-400 text-white hover:from-amber-500 hover:to-orange-500 font-bold px-8 py-6 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300">
+              <Gift className="w-4 h-4 mr-2" /> INIZIA A RACCOGLIERE PUNTI
+            </Button>
           </div>
-          <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.03] text-center" data-testid="loyalty-reward-1">
-            <div className="w-14 h-14 bg-rose-100 rounded-2xl flex items-center justify-center mx-auto mb-3"><Star className="w-7 h-7 text-rose-600" /></div>
-            <h3 className="font-bold text-base text-[#1e293b] mb-2">Buono sconto 5{'\u20AC'}</h3>
-            <div className="inline-block bg-gradient-to-r from-rose-400 to-pink-400 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3">10 punti</div>
-            <p className="text-[#64748B] text-xs">Buono sconto di 5{'\u20AC'} sul prossimo servizio</p>
-          </div>
-          <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.03] text-center" data-testid="loyalty-reward-2">
-            <div className="w-14 h-14 bg-teal-100 rounded-2xl flex items-center justify-center mx-auto mb-3"><Scissors className="w-7 h-7 text-teal-600" /></div>
-            <h3 className="font-bold text-base text-[#1e293b] mb-2">Piega o Taglio Gratuito</h3>
-            <div className="inline-block bg-gradient-to-r from-teal-400 to-emerald-400 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3">20 punti</div>
-            <p className="text-[#64748B] text-xs">Una piega o un taglio completamente gratuito</p>
-          </div>
-          <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.03] text-center" data-testid="loyalty-reward-3">
-            <div className="w-14 h-14 bg-violet-100 rounded-2xl flex items-center justify-center mx-auto mb-3"><Star className="w-7 h-7 text-violet-600" /></div>
-            <h3 className="font-bold text-base text-[#1e293b] mb-2">Colore Parziale Gratuito</h3>
-            <div className="inline-block bg-gradient-to-r from-violet-400 to-purple-400 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3">30 punti</div>
-            <p className="text-[#64748B] text-xs">Un colore parziale completamente gratuito</p>
-          </div>
-          <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.03] text-center" data-testid="loyalty-reward-4">
-            <div className="w-14 h-14 bg-sky-100 rounded-2xl flex items-center justify-center mx-auto mb-3"><Gift className="w-7 h-7 text-sky-600" /></div>
-            <h3 className="font-bold text-base text-[#1e293b] mb-2">Colore Completo Gratuito</h3>
-            <div className="inline-block bg-gradient-to-r from-sky-400 to-blue-400 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3">50 punti</div>
-            <p className="text-[#64748B] text-xs">Un colore completo completamente gratuito</p>
-          </div>
-        </div>
-        <div className="text-center mt-10">
-          <Button onClick={() => setShowBooking(true)} className="bg-gradient-to-r from-amber-400 to-orange-400 text-white hover:from-amber-500 hover:to-orange-500 font-bold px-8 py-6 rounded-xl shadow-lg">
-            <Gift className="w-4 h-4 mr-2" /> INIZIA A RACCOGLIERE PUNTI
-          </Button>
-        </div>
+        </AnimatedSection>
       </div>
     </section>
   );
@@ -388,37 +482,46 @@ function ContactSection({ contactRef, config, hours, phones, setShowBooking, ope
   return (
     <section ref={contactRef} className="py-20 sm:py-28">
       <div className="max-w-6xl mx-auto px-4">
-        <div className="text-center mb-12">
-          <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.primary }}>Contattaci</p>
-          <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>Prenota il Tuo Appuntamento</h2>
-        </div>
+        <AnimatedSection>
+          <div className="text-center mb-12">
+            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.primary }}>Contattaci</p>
+            <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>Prenota il Tuo Appuntamento</h2>
+          </div>
+        </AnimatedSection>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
           {config.address && (
-            <a href={config.maps_url} target="_blank" rel="noopener noreferrer" className="bg-white border border-gray-200 rounded-3xl p-5 hover:border-amber-400/50 hover:shadow-lg transition-all duration-300 text-center" data-testid="website-contact-address">
-              <MapPin className="w-6 h-6 text-amber-500 mx-auto mb-3" />
-              <h3 className="font-bold text-[#1e293b] text-sm mb-1">Indirizzo</h3>
-              <p className="text-[#64748B] text-xs leading-relaxed">{config.address}</p>
-            </a>
+            <AnimatedSection delay={0.1}>
+              <a href={config.maps_url} target="_blank" rel="noopener noreferrer" className="block bg-white border-2 border-gray-100 rounded-3xl p-5 hover:border-amber-400/50 hover:shadow-xl transition-all duration-500 text-center group hover:-translate-y-1" data-testid="website-contact-address">
+                <MapPin className="w-6 h-6 text-amber-500 mx-auto mb-3 group-hover:scale-125 transition-transform duration-300" />
+                <h3 className="font-bold text-[#1e293b] text-sm mb-1">Indirizzo</h3>
+                <p className="text-[#64748B] text-xs leading-relaxed">{config.address}</p>
+              </a>
+            </AnimatedSection>
           )}
           {phones.length > 0 && (
-            <div className="bg-white border border-gray-200 rounded-3xl p-5 text-center hover:shadow-lg transition-all duration-300">
-              <Phone className="w-6 h-6 text-rose-500 mx-auto mb-3" />
-              <h3 className="font-bold text-[#1e293b] text-sm mb-1">Telefono</h3>
-              {phones.map((p, i) => (
-                <a key={i} href={`tel:${p.replace(/\s/g, '')}`} className="text-[#64748B] text-xs hover:text-[#0EA5E9] transition-colors block mt-1">{p}</a>
-              ))}
-            </div>
+            <AnimatedSection delay={0.2}>
+              <div className="bg-white border-2 border-gray-100 rounded-3xl p-5 text-center hover:shadow-xl hover:border-rose-400/50 transition-all duration-500 group hover:-translate-y-1">
+                <Phone className="w-6 h-6 text-rose-500 mx-auto mb-3 group-hover:scale-125 transition-transform duration-300" />
+                <h3 className="font-bold text-[#1e293b] text-sm mb-1">Telefono</h3>
+                {phones.map((p, i) => (
+                  <a key={i} href={`tel:${p.replace(/\s/g, '')}`} className="text-[#64748B] text-xs hover:text-[#0EA5E9] transition-colors block mt-1">{p}</a>
+                ))}
+              </div>
+            </AnimatedSection>
           )}
           {config.email && (
-            <a href={`mailto:${config.email}`} className="bg-white border border-gray-200 rounded-3xl p-5 hover:shadow-lg transition-all duration-300 text-center">
-              <Mail className="w-6 h-6 text-teal-500 mx-auto mb-3" />
-              <h3 className="font-bold text-[#1e293b] text-sm mb-1">Email</h3>
-              <p className="text-[#64748B] text-xs">{config.email}</p>
-            </a>
+            <AnimatedSection delay={0.3}>
+              <a href={`mailto:${config.email}`} className="block bg-white border-2 border-gray-100 rounded-3xl p-5 hover:shadow-xl hover:border-teal-400/50 transition-all duration-500 text-center group hover:-translate-y-1">
+                <Mail className="w-6 h-6 text-teal-500 mx-auto mb-3 group-hover:scale-125 transition-transform duration-300" />
+                <h3 className="font-bold text-[#1e293b] text-sm mb-1">Email</h3>
+                <p className="text-[#64748B] text-xs">{config.email}</p>
+              </a>
+            </AnimatedSection>
           )}
-          <div className="bg-white border border-gray-200 rounded-3xl p-5 text-center hover:shadow-lg transition-all duration-300">
-            <Clock className="w-6 h-6 text-violet-500 mx-auto mb-3" />
-            <h3 className="font-bold text-[#1e293b] text-sm mb-1">Orari</h3>
+          <AnimatedSection delay={0.4}>
+            <div className="bg-white border-2 border-gray-100 rounded-3xl p-5 text-center hover:shadow-xl hover:border-violet-400/50 transition-all duration-500 group hover:-translate-y-1">
+              <Clock className="w-6 h-6 text-violet-500 mx-auto mb-3 group-hover:scale-125 transition-transform duration-300" />
+              <h3 className="font-bold text-[#1e293b] text-sm mb-1">Orari</h3>
             {Object.entries(hours).filter(([, v]) => v !== 'Chiuso').length > 0 ? (
               <>
                 <p className="text-[#64748B] text-xs">{Object.entries(hours).filter(([, v]) => v !== 'Chiuso').map(([d]) => d.charAt(0).toUpperCase() + d.slice(1)).join(' - ')}</p>
@@ -429,32 +532,37 @@ function ContactSection({ contactRef, config, hours, phones, setShowBooking, ope
               <p className="text-[#64748B] text-xs">Mar - Sab: 08:00 - 19:00</p>
             )}
           </div>
+          </AnimatedSection>
         </div>
-        <div className="flex flex-wrap items-center justify-center gap-3 mb-10">
-          {SOCIAL_LINKS.map((link, i) => (
-            <a key={i} href={link.url} target="_blank" rel="noopener noreferrer"
-              className={`flex items-center gap-2 px-5 py-3 rounded-2xl bg-white border border-gray-200 text-[#64748B] ${link.color} transition-all hover:shadow-md hover:scale-105`}
-              data-testid={`social-link-${i}`}>
-              <link.icon className="w-5 h-5" />
-              <span className="text-sm font-semibold">{link.label}</span>
-            </a>
-          ))}
-        </div>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Button onClick={() => setShowBooking(true)} style={{ backgroundColor: T.primary }} className="text-white hover:opacity-90 font-black text-base px-10 py-6 rounded-2xl w-full sm:w-auto shadow-lg" data-testid="website-contact-book-btn">
-            <Scissors className="w-5 h-5 mr-2" /> PRENOTA ORA
-          </Button>
-          <Button onClick={openWhatsApp} className="bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-base px-10 py-6 rounded-2xl w-full sm:w-auto shadow-lg shadow-green-400/20" data-testid="website-whatsapp-btn">
-            <MessageSquare className="w-5 h-5 mr-2" /> WHATSAPP
-          </Button>
-          {phones.length > 0 && (
-            <a href={`tel:${phones[0].replace(/\s/g, '')}`} className="w-full sm:w-auto">
-              <Button variant="outline" className="border-rose-300 text-rose-500 hover:bg-rose-50 font-bold text-base px-10 py-6 rounded-2xl w-full" data-testid="website-call-btn">
-                <Phone className="w-5 h-5 mr-2" /> CHIAMA
-              </Button>
-            </a>
-          )}
-        </div>
+        <AnimatedSection delay={0.3}>
+          <div className="flex flex-wrap items-center justify-center gap-3 mb-10">
+            {SOCIAL_LINKS.map((link, i) => (
+              <a key={i} href={link.url} target="_blank" rel="noopener noreferrer"
+                className={`flex items-center gap-2 px-5 py-3 rounded-2xl bg-white border-2 border-gray-100 text-[#64748B] ${link.color} transition-all duration-300 hover:shadow-lg hover:scale-105 hover:-translate-y-0.5`}
+                data-testid={`social-link-${i}`}>
+                <link.icon className="w-5 h-5" />
+                <span className="text-sm font-semibold">{link.label}</span>
+              </a>
+            ))}
+          </div>
+        </AnimatedSection>
+        <AnimatedSection delay={0.4}>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Button onClick={() => setShowBooking(true)} style={{ backgroundColor: T.primary }} className="text-white hover:opacity-90 font-black text-base px-10 py-6 rounded-2xl w-full sm:w-auto shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300" data-testid="website-contact-book-btn">
+              <Scissors className="w-5 h-5 mr-2" /> PRENOTA ORA
+            </Button>
+            <Button onClick={openWhatsApp} className="bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-base px-10 py-6 rounded-2xl w-full sm:w-auto shadow-lg shadow-green-400/20 hover:shadow-xl hover:scale-105 transition-all duration-300" data-testid="website-whatsapp-btn">
+              <MessageSquare className="w-5 h-5 mr-2" /> WHATSAPP
+            </Button>
+            {phones.length > 0 && (
+              <a href={`tel:${phones[0].replace(/\s/g, '')}`} className="w-full sm:w-auto">
+                <Button variant="outline" className="border-rose-300 text-rose-500 hover:bg-rose-50 font-bold text-base px-10 py-6 rounded-2xl w-full hover:scale-105 transition-all duration-300" data-testid="website-call-btn">
+                  <Phone className="w-5 h-5 mr-2" /> CHIAMA
+                </Button>
+              </a>
+            )}
+          </div>
+        </AnimatedSection>
       </div>
     </section>
   );
@@ -1086,9 +1194,23 @@ export default function WebsitePage() {
   return (
     <div className="min-h-screen text-[#1e293b]" style={{ ...themeStyle, backgroundColor: config.bg_color || '#FFF8F0', fontFamily: `var(--theme-font-body)` }} data-testid="website-landing">
       <Toaster position="top-center" />
+      <style>{`
+        @keyframes heroFadeIn { from { opacity: 0; transform: translateY(25px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+        @keyframes pulseGlow { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.6; } }
+        .hero-animate { animation: heroFadeIn 1s ease forwards; opacity: 0; }
+        .hero-d1 { animation-delay: 0.15s; }
+        .hero-d2 { animation-delay: 0.3s; }
+        .hero-d3 { animation-delay: 0.45s; }
+        .hero-d4 { animation-delay: 0.6s; }
+        .hero-d5 { animation-delay: 0.75s; }
+        .float-slow { animation: float 6s ease-in-out infinite; }
+        .float-med { animation: float 4s ease-in-out infinite 1s; }
+        .pulse-glow { animation: pulseGlow 3s ease-in-out infinite; }
+      `}</style>
 
       {/* NAVBAR */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-amber-200/50 shadow-sm">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/70 backdrop-blur-xl border-b border-gray-200/50 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src="/logo.png?v=4" alt={config.salon_name} className="w-10 h-10 rounded-lg" />
@@ -1121,57 +1243,69 @@ export default function WebsitePage() {
       </nav>
 
       {/* HERO */}
-      <section className="relative min-h-screen flex items-center pt-16">
+      <section className="relative min-h-screen flex items-center pt-16 overflow-hidden">
         {config.hero_image ? (
           <>
             <div className="absolute inset-0">
               <img src={getMediaUrl(config.hero_image)} alt="" className="w-full h-full object-cover" />
             </div>
-            <div className="absolute inset-0 bg-black/60" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80" />
           </>
         ) : (
-          <div className="absolute inset-0 bg-[#1a0e08]" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#1a0e08] via-[#1C1008] to-[#0a0604]" />
         )}
+        {/* Decorative floating shapes */}
+        <div className="absolute top-32 left-[10%] w-64 h-64 rounded-full opacity-10 blur-3xl float-slow" style={{ backgroundColor: T.primary }} />
+        <div className="absolute bottom-20 right-[15%] w-48 h-48 rounded-full opacity-10 blur-3xl float-med" style={{ backgroundColor: T.accent }} />
         <div className="relative max-w-6xl mx-auto px-4 py-20 sm:py-32 w-full">
           <div className="text-center max-w-3xl mx-auto">
-            <div className="flex justify-center mb-8">
-              <img src="/logo.png?v=4" alt={config.salon_name} className="w-48 h-48 sm:w-64 sm:h-64 object-contain drop-shadow-2xl rounded-3xl border-2 border-white/20 shadow-2xl" />
+            <div className="flex justify-center mb-8 hero-animate hero-d1">
+              <img src="/logo.png?v=4" alt={config.salon_name} className="w-40 h-40 sm:w-56 sm:h-56 object-contain drop-shadow-2xl rounded-3xl border-2 border-white/10 shadow-2xl hover:scale-105 transition-transform duration-500" />
             </div>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white mb-4 tracking-tight" style={{ fontFamily: `var(--theme-font-display)` }}>{config.salon_name || 'BRUNO MELITO HAIR'}</h1>
-            <div className="inline-block backdrop-blur-sm text-xs font-bold px-4 py-2 rounded-full border mb-6" style={{ backgroundColor: `${T.primary}20`, color: T.primary, borderColor: `${T.primary}40` }}>
-              {config.subtitle || 'SOLO PER APPUNTAMENTO'}
+            <h1 className="text-3xl sm:text-4xl lg:text-6xl font-black text-white mb-4 tracking-tight hero-animate hero-d2" style={{ fontFamily: `var(--theme-font-display)` }}>{config.salon_name || 'BRUNO MELITO HAIR'}</h1>
+            <div className="hero-animate hero-d3">
+              <div className="inline-block backdrop-blur-sm text-xs font-bold px-5 py-2.5 rounded-full border mb-6" style={{ backgroundColor: `${T.primary}20`, color: T.primary, borderColor: `${T.primary}40` }}>
+                {config.subtitle || 'SOLO PER APPUNTAMENTO'}
+              </div>
             </div>
-            <p className="text-base sm:text-lg text-white/70 max-w-lg mx-auto mb-8 leading-relaxed">
+            <p className="text-base sm:text-lg text-white/60 max-w-lg mx-auto mb-10 leading-relaxed hero-animate hero-d4">
               {config.hero_description || ''}
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center mb-10">
-              <Button onClick={() => setShowBooking(true)} style={{ backgroundColor: T.primary }} className="text-white hover:opacity-90 font-black text-base px-8 py-6 rounded-xl shadow-lg" data-testid="website-hero-book-btn">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center mb-10 hero-animate hero-d5">
+              <Button onClick={() => setShowBooking(true)} style={{ backgroundColor: T.primary }} className="text-white hover:opacity-90 font-black text-base px-10 py-7 rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300" data-testid="website-hero-book-btn">
                 <Scissors className="w-5 h-5 mr-2" /> PRENOTA ORA
               </Button>
-              <Button onClick={() => { setShowServices(true); setTimeout(() => scrollTo(servicesRef), 100); }} variant="outline" style={{ borderColor: `${T.primary}30`, color: T.primary }} className="hover:opacity-80 font-bold text-base px-8 py-6 rounded-xl">
+              <Button onClick={() => { setShowServices(true); setTimeout(() => scrollTo(servicesRef), 100); }} variant="outline" style={{ borderColor: `${T.primary}40`, color: T.primary }} className="hover:opacity-80 font-bold text-base px-10 py-7 rounded-2xl backdrop-blur-sm hover:scale-105 transition-all duration-300">
                 Scopri i Servizi <ChevronDown className="w-4 h-4 ml-2" />
               </Button>
             </div>
-            <div className="flex flex-col sm:flex-row gap-4 text-sm justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 text-sm justify-center hero-animate hero-d5">
               {phones.map((p, i) => (
-                <a key={i} href={`tel:${p.replace(/\s/g, '')}`} className="flex items-center gap-2 text-white/60 hover:text-[#0EA5E9] transition-colors justify-center">
-                  <Phone className="w-4 h-4" /> {p}
+                <a key={i} href={`tel:${p.replace(/\s/g, '')}`} className="flex items-center gap-2 text-white/50 hover:text-white transition-colors duration-300 justify-center group">
+                  <Phone className="w-4 h-4 group-hover:scale-110 transition-transform" /> {p}
                 </a>
               ))}
               {config.address && (
-                <a href={config.maps_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-white/60 hover:text-[#0EA5E9] transition-colors justify-center">
-                  <MapPin className="w-4 h-4" /> {config.address}
+                <a href={config.maps_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-white/50 hover:text-white transition-colors duration-300 justify-center group">
+                  <MapPin className="w-4 h-4 group-hover:scale-110 transition-transform" /> {config.address}
                 </a>
               )}
             </div>
           </div>
           {config.years_experience && (
-            <div className="absolute right-4 sm:right-8 bottom-20 sm:bottom-32 bg-white/80 backdrop-blur-md border border-[#0EA5E9]/30 rounded-3xl p-5 text-center hidden md:block shadow-lg hover:shadow-xl transition-all duration-300">
-              <p className="text-4xl font-black text-[#0EA5E9]">{config.years_experience}</p>
+            <div className="absolute right-4 sm:right-8 bottom-20 sm:bottom-32 bg-white/80 backdrop-blur-xl border border-white/50 rounded-3xl p-5 text-center hidden md:block shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-500 float-slow">
+              <p className="text-4xl font-black" style={{ color: T.primary }}>{config.years_experience}</p>
               <p className="text-xs text-[#64748B] font-semibold">Anni di<br />Esperienza</p>
               {config.year_founded && <p className="text-[10px] text-[#94A3B8] mt-1">Dal {config.year_founded}</p>}
             </div>
           )}
+        </div>
+        {/* Scroll indicator */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 hidden sm:flex flex-col items-center gap-2 hero-animate hero-d5">
+          <span className="text-white/30 text-xs font-semibold tracking-widest uppercase">Scorri</span>
+          <div className="w-6 h-10 rounded-full border-2 border-white/20 flex items-start justify-center p-1.5">
+            <div className="w-1.5 h-3 bg-white/40 rounded-full" style={{ animation: 'float 2s ease-in-out infinite' }} />
+          </div>
         </div>
       </section>
 
@@ -1261,36 +1395,39 @@ export default function WebsitePage() {
       </section>
 
       {/* FOOTER */}
-      <footer className="py-12 border-t border-gray-200 bg-white/60">
+      <footer className="py-12 border-t-2 border-transparent bg-white/60 relative">
+        <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, transparent, ${T.primary}40, ${T.accent}40, transparent)` }} />
         <div className="max-w-6xl mx-auto px-4">
-          <div className="flex flex-col items-center gap-6">
-            <img src="/logo.png?v=4" alt={config.salon_name} className="w-14 h-14 rounded-2xl border border-gray-200 shadow-sm" />
-            <p className="text-[#1e293b] text-sm font-bold">{config.salon_name || 'BRUNO MELITO HAIR'}</p>
-            
-            <div className="flex items-center gap-4">
-              {SOCIAL_LINKS.map((link, i) => (
-                <a key={i} href={link.url} target="_blank" rel="noopener noreferrer"
-                  className={`w-10 h-10 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-[#64748B] ${link.color} transition-all hover:shadow-md hover:scale-110`}
-                  title={link.label}>
-                  <link.icon className="w-5 h-5" />
-                </a>
-              ))}
-            </div>
+          <AnimatedSection>
+            <div className="flex flex-col items-center gap-6">
+              <img src="/logo.png?v=4" alt={config.salon_name} className="w-14 h-14 rounded-2xl border border-gray-200 shadow-sm hover:scale-110 transition-transform duration-300" />
+              <p className="text-[#1e293b] text-sm font-bold">{config.salon_name || 'BRUNO MELITO HAIR'}</p>
+              
+              <div className="flex items-center gap-3">
+                {SOCIAL_LINKS.map((link, i) => (
+                  <a key={i} href={link.url} target="_blank" rel="noopener noreferrer"
+                    className={`w-10 h-10 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-[#64748B] ${link.color} transition-all duration-300 hover:shadow-lg hover:scale-110 hover:-translate-y-1`}
+                    title={link.label}>
+                    <link.icon className="w-5 h-5" />
+                  </a>
+                ))}
+              </div>
 
-            <div className="flex items-center gap-6 text-sm text-[#64748B]">
-              <a href="/sito" className="hover:text-[#0EA5E9] transition-colors">Prenota Online</a>
-              <a href="/sito" className="hover:text-[#0EA5E9] transition-colors">Sito Web</a>
-              <a href={config.maps_url} target="_blank" rel="noopener noreferrer" className="hover:text-[#0EA5E9] transition-colors">Come Raggiungerci</a>
-            </div>
+              <div className="flex items-center gap-6 text-sm text-[#64748B]">
+                <a href="/sito" className="hover:text-[#0EA5E9] transition-colors">Prenota Online</a>
+                <a href="/sito" className="hover:text-[#0EA5E9] transition-colors">Sito Web</a>
+                <a href={config.maps_url} target="_blank" rel="noopener noreferrer" className="hover:text-[#0EA5E9] transition-colors">Come Raggiungerci</a>
+              </div>
 
-            <p className="text-[#94A3B8] text-xs">{config.address}</p>
-            <p className="text-[#CBD5E1] text-xs">&copy; {new Date().getFullYear()} {config.salon_name || 'Bruno Melito Hair'}. Tutti i diritti riservati.</p>
-            <p className="text-[#E2E8F0] text-[9px] opacity-30" data-testid="build-version">v2.1-27mar</p>
-          </div>
+              <p className="text-[#94A3B8] text-xs">{config.address}</p>
+              <p className="text-[#CBD5E1] text-xs">&copy; {new Date().getFullYear()} {config.salon_name || 'Bruno Melito Hair'}. Tutti i diritti riservati.</p>
+              <p className="text-[#E2E8F0] text-[9px] opacity-30" data-testid="build-version">v2.2-31mar</p>
+            </div>
+          </AnimatedSection>
         </div>
       </footer>
 
-      <div className="fixed bottom-0 left-0 right-0 p-3 bg-white/95 backdrop-blur-md border-t border-gray-200 sm:hidden z-50">
+      <div className="fixed bottom-0 left-0 right-0 p-3 bg-white/95 backdrop-blur-xl border-t border-gray-200/50 sm:hidden z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
         <Button onClick={() => setShowBooking(true)} style={{ backgroundColor: T.primary }} className="w-full text-white hover:opacity-90 font-black py-5 rounded-2xl shadow-lg" data-testid="website-mobile-book-btn">
           <Scissors className="w-5 h-5 mr-2" /> PRENOTA ORA
         </Button>
