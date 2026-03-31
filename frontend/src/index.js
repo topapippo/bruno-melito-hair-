@@ -3,26 +3,22 @@ import ReactDOM from "react-dom/client";
 import "@/index.css";
 import App from "@/App";
 
-// Unregister old caching service worker and clear stale caches
+// Registra PWA Service Worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      for (const reg of registrations) {
-        if (reg.active && reg.active.scriptURL.includes('/sw.js')) {
-          await reg.unregister();
-          console.log('Old SW unregistered');
-        }
-      }
+      // Pulisci vecchie cache obsolete
       const cacheNames = await caches.keys();
       for (const name of cacheNames) {
         if (name.startsWith('salone-')) {
           await caches.delete(name);
-          console.log('Deleted cache:', name);
         }
       }
+      // Registra il nuovo SW
+      const reg = await navigator.serviceWorker.register('/sw.js');
+      console.log('SW registrato:', reg.scope);
     } catch (e) {
-      console.log('SW cleanup error:', e);
+      console.log('SW errore:', e);
     }
   });
 }

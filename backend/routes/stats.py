@@ -202,7 +202,8 @@ async def get_settings(current_user: dict = Depends(get_current_user)):
         "admin_theme": current_user.get("admin_theme", {
             "primary": "#C8617A", "sidebar_bg": "#FAF7F2", "sidebar_text": "#2D1B14",
             "accent": "#D4A847", "font_display": "Cormorant Garamond", "font_body": "Poppins"
-        })
+        }),
+        "google_review_link": current_user.get("google_review_link", "")
     }
 
 

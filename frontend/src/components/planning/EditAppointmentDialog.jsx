@@ -278,6 +278,32 @@ export default function EditAppointmentDialog({
         ? `Pagamento registrato! +${pointsEarned} punti fedeltà`
         : 'Pagamento registrato con successo!';
       toast.success(msg);
+
+      // Invita a lasciare recensione Google via WhatsApp
+      const clientPhone = res.data.client_phone || appointment.client_phone;
+      if (clientPhone && clientPhone.length >= 6) {
+        try {
+          const settingsRes = await api.get(`${API}/settings`);
+          const reviewLink = settingsRes.data?.google_review_link;
+          if (reviewLink) {
+            const cleanPhone = clientPhone.replace(/\D/g, '').replace(/^0/, '39');
+            const phoneNum = cleanPhone.startsWith('39') ? cleanPhone : '39' + cleanPhone;
+            const reviewMsg = encodeURIComponent(
+              `Ciao ${res.data.client_name || appointment.client_name || ''}! Grazie per essere venuto da Bruno Melito Hair. Se ti sei trovato bene, ci farebbe molto piacere una tua recensione su Google: ${reviewLink}`
+            );
+            setTimeout(() => {
+              toast('Invia recensione Google al cliente?', {
+                duration: 15000,
+                action: {
+                  label: 'WhatsApp',
+                  onClick: () => window.open(`https://wa.me/${phoneNum}?text=${reviewMsg}`, '_blank')
+                }
+              });
+            }, 1500);
+          }
+        } catch {}
+      }
+
       onClose();
       resetCheckout();
       onSuccess?.();

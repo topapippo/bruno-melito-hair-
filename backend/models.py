@@ -226,6 +226,7 @@ class SettingsUpdate(BaseModel):
     opening_time: Optional[str] = None
     closing_time: Optional[str] = None
     working_days: Optional[List[str]] = None
+    google_review_link: Optional[str] = None
 
 
 # ============== PREPAID CARD ==============

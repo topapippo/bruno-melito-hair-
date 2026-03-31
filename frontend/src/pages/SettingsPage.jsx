@@ -132,7 +132,8 @@ export default function SettingsPage() {
         name: settings.name,
         opening_time: settings.opening_time,
         closing_time: settings.closing_time,
-        working_days: settings.working_days
+        working_days: settings.working_days,
+        google_review_link: settings.google_review_link
       });
       updateUser({ name: settings.name, salon_name: settings.salon_name });
       toast.success('Impostazioni salvate!');
@@ -246,6 +247,17 @@ export default function SettingsPage() {
                   data-testid="settings-salon-name-input"
                   className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
                 />
+              </div>
+              <div className="space-y-2">
+                <Label>Link Recensioni Google</Label>
+                <Input
+                  value={settings.google_review_link || ''}
+                  onChange={(e) => setSettings({ ...settings, google_review_link: e.target.value })}
+                  placeholder="https://search.google.com/local/writereview?placeid=..."
+                  data-testid="settings-google-review-input"
+                  className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
+                />
+                <p className="text-xs text-[#9C7060]">Cerca il tuo salone su Google Maps → Condividi → Copia link recensione</p>
               </div>
             </CardContent>
           </Card>

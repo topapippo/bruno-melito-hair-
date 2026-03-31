@@ -1,7 +1,15 @@
-// Self-destructing service worker - clears all caches and unregisters itself
-// This replaces the old caching SW that was serving stale content
+const CACHE_NAME = 'bruno-melito-v1';
+const ASSETS_TO_CACHE = [
+  '/sito',
+  '/logo.png',
+];
 
 self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(ASSETS_TO_CACHE);
+    })
+  );
   self.skipWaiting();
 });
 
@@ -9,17 +17,30 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames.map((name) => {
-          console.log('Deleting cache:', name);
-          return caches.delete(name);
-        })
+        cacheNames
+          .filter((name) => name !== CACHE_NAME)
+          .map((name) => caches.delete(name))
       );
-    }).then(() => {
-      return self.registration.unregister();
-    }).then(() => {
-      return self.clients.matchAll();
-    }).then((clients) => {
-      clients.forEach((client) => client.navigate(client.url));
     })
+  );
+  self.clients.claim();
+});
+
+self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') return;
+  if (event.request.url.includes('/api/')) return;
+
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, clone);
+        });
+        return response;
+      })
+      .catch(() => {
+        return caches.match(event.request);
+      })
   );
 });
