@@ -63,6 +63,21 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Migrazione piega->taglio: {e}")
 
+    # Migrazione: Aggiorna premi fedeltà
+    try:
+        from models import DEFAULT_LOYALTY_REWARDS
+        # Rimuovi vecchi premi e inserisci i nuovi per tutti gli utenti
+        users = await db.users.find({}, {"_id": 0, "id": 1}).to_list(100)
+        for user in users:
+            uid = user["id"]
+            await db.loyalty_rewards.delete_many({"user_id": uid})
+            for key, reward in DEFAULT_LOYALTY_REWARDS.items():
+                doc = {**reward, "key": key, "user_id": uid}
+                await db.loyalty_rewards.insert_one(doc)
+            logger.info(f"Premi fedeltà aggiornati per utente {uid}")
+    except Exception as e:
+        logger.warning(f"Migrazione premi fedeltà: {e}")
+
     # Start push notification scheduler
     import asyncio
     try:
