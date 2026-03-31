@@ -108,7 +108,7 @@ export default function Dashboard() {
       <div className="space-y-7 fade-in-up" data-testid="dashboard-page">
 
         {/* ── Header ─────────────────────────────────────────────────────── */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 greeting-in">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Sparkles className="w-5 h-5 text-[#D4A847]" />
@@ -118,7 +118,7 @@ export default function Dashboard() {
             <p className="text-[#9C7060] mt-1 text-sm">{format(new Date(), "EEEE dd/MM/yy", { locale: it })}</p>
           </div>
           <Link to="/appointments">
-            <Button data-testid="new-appointment-btn" className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-[0_4px_14px_rgba(200,97,122,0.35)] rounded-xl px-5">
+            <Button data-testid="new-appointment-btn" className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-[0_4px_14px_rgba(200,97,122,0.35)] rounded-xl px-5 hover:scale-105 transition-transform duration-300">
               <Plus className="w-4 h-4 mr-2" /> Nuovo Appuntamento
             </Button>
           </Link>
@@ -198,7 +198,7 @@ export default function Dashboard() {
         )}
 
         {/* ── Stats Row ──────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 stagger-in">
           {[
             { title: "Appuntamenti Oggi", value: stats?.today_appointments_count || 0, icon: Calendar, from: '#C8617A', to: '#E8A0B0', suffix: '' },
             { title: "Clienti Totali", value: stats?.total_clients || 0, icon: Users, from: '#7C9B7A', to: '#A0C49A', suffix: '' },
@@ -206,7 +206,7 @@ export default function Dashboard() {
             { title: "Incasso Annuale", value: (stats?.yearly_revenue || 0).toFixed(0), icon: TrendingUp, from: '#A04040', to: '#D07070', prefix: '€', sub: `${stats?.yearly_appointments||0} appuntamenti` },
             { title: "Prossimi 7 Giorni", value: stats?.upcoming_appointments?.length || 0, icon: Clock, from: '#7C5C4A', to: '#A07060', suffix: '' },
           ].map((s, i) => (
-            <div key={i} className="bg-white rounded-2xl p-5 shadow-sm border border-[#F0E6DC] card-lift">
+            <div key={i} className="bg-white rounded-2xl p-5 shadow-sm border border-[#F0E6DC] card-lift-enhanced">
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-xs text-[#9C7060] font-medium uppercase tracking-wider">{s.title}</p>
@@ -215,7 +215,7 @@ export default function Dashboard() {
                   </p>
                   {s.sub && <p className="text-xs text-[#9C7060] mt-1">{s.sub}</p>}
                 </div>
-                <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{background: `linear-gradient(135deg, ${s.from}20, ${s.to}30)`}}>
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110" style={{background: `linear-gradient(135deg, ${s.from}20, ${s.to}30)`}}>
                   <s.icon className="w-5 h-5" style={{color: s.from}} strokeWidth={1.5} />
                 </div>
               </div>
@@ -232,15 +232,15 @@ export default function Dashboard() {
             <Heart className="w-4 h-4 text-[#C8617A]" />
             <h2 className="font-display text-xl text-[#2D1B14]">Moduli</h2>
           </div>
-          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-3">
+          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-3 stagger-fast">
             {MODULES.map((mod) => (
               <button
                 key={mod.path}
                 data-testid={`module-${mod.path.slice(1)}`}
                 onClick={() => navigate(mod.path)}
-                className="bg-white rounded-2xl p-3 text-center border border-[#F0E6DC] hover:border-[#E8A0B0] hover:-translate-y-1 hover:shadow-md transition-all duration-200 cursor-pointer group"
+                className="module-card bg-white rounded-2xl p-3 text-center border border-[#F0E6DC] hover:border-[#E8A0B0] cursor-pointer group"
               >
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2 transition-transform group-hover:scale-110" style={{background: `linear-gradient(135deg, ${mod.from}18, ${mod.to}28)`}}>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3" style={{background: `linear-gradient(135deg, ${mod.from}18, ${mod.to}28)`}}>
                   <mod.icon className="w-5 h-5" style={{color: mod.from}} strokeWidth={1.5} />
                 </div>
                 <p className="font-semibold text-[#2D1B14] text-xs leading-tight">{mod.label}</p>
@@ -265,7 +265,7 @@ export default function Dashboard() {
               {stats?.today_appointments?.length > 0 ? (
                 <div className="space-y-2">
                   {stats.today_appointments.map((apt, idx) => (
-                    <div key={apt.id} data-testid={`appointment-${apt.id}`} className="flex items-center gap-4 p-3 rounded-xl bg-[#FAF7F2] hover:bg-[#F5EDE0] transition-colors">
+                    <div key={apt.id} data-testid={`appointment-${apt.id}`} className="appt-row flex items-center gap-4 p-3 rounded-xl bg-[#FAF7F2] cursor-pointer">
                       <div className="flex-shrink-0 text-center w-14">
                         <p className="text-sm font-bold text-[#C8617A]">{apt.time}</p>
                         <p className="text-[10px] text-[#9C7060]">{apt.end_time}</p>

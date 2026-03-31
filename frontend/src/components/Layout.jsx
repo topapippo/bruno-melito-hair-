@@ -104,10 +104,10 @@ export default function Layout({ children }) {
         to={item.path}
         onClick={() => mobile && setMobileOpen(false)}
         data-testid={`nav-${item.path.replace('/', '') || 'home'}`}
-        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 text-sm font-medium`}
+        className={`sidebar-nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium ${isActive ? 'nav-active' : ''}`}
         style={isActive ? {
-          background: `linear-gradient(to right, ${t.primary}15, ${t.primary}10)`,
-          color: t.primary, borderRight: `3px solid ${t.primary}`, fontWeight: 600
+          background: `linear-gradient(to right, ${t.primary}15, ${t.primary}08)`,
+          color: t.primary, fontWeight: 600
         } : { color: t.sidebar_text + 'AA' }}
       >
         <Icon className="w-4 h-4 flex-shrink-0" style={isActive ? { color: t.primary } : {}} strokeWidth={isActive ? 2 : 1.5} />
@@ -190,7 +190,7 @@ export default function Layout({ children }) {
       color: t.content_text || '#2D1B14',
     }}>
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-60 h-screen fixed left-0 top-0" style={{ boxShadow: `4px 0 24px ${t.primary}12` }}>
+      <aside className="hidden md:flex flex-col w-60 h-screen fixed left-0 top-0 border-r" style={{ boxShadow: `6px 0 32px ${t.primary}08`, borderColor: `${t.sidebar_text}10` }}>
         <SidebarContent />
       </aside>
 
@@ -215,7 +215,7 @@ export default function Layout({ children }) {
 
       {/* Main Content */}
       <main className="md:ml-60 min-h-screen pt-16 md:pt-0">
-        <div className="p-5 md:p-7 lg:p-10">
+        <div key={location.pathname} className="p-5 md:p-7 lg:p-10 admin-page-in">
           {children}
         </div>
       </main>
