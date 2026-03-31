@@ -13,15 +13,6 @@ App gestionale per salone (Bruno Melito Hair) con sito pubblico di prenotazione 
 ## Credenziali
 - Admin: admin@brunomelito.it / mbhs637104
 
-## Palette Colori "Vivace Bloom" (31 Mar 2026)
-- Primary: #E8477C (hot pink/coral vivace)
-- Accent: #2EC4B6 (teal brillante)
-- Secondary: #F59E0B (ambra caldo)
-- Content BG: #FCFCFD (bianco pulito)
-- Sidebar BG: #FAFBFC (bianco leggero)
-- Text Dark: #1A1A2E (navy scuro - alta leggibilita)
-- Text Light: #8891A5 (grigio secondario)
-
 ## Struttura File Chiave
 ```
 /app/frontend/src/pages/WebsitePage.jsx           -> Pagina pubblica (/sito)
@@ -29,8 +20,7 @@ App gestionale per salone (Bruno Melito Hair) con sito pubblico di prenotazione 
 /app/frontend/src/components/Layout.jsx            -> Sidebar + Nav + Page transitions
 /app/frontend/src/index.css                        -> CSS variables + animazioni + override temi
 /app/frontend/src/pages/PlanningPage.jsx           -> Calendario Planning
-/app/frontend/src/components/planning/*.jsx        -> Dialog appuntamenti
-/app/frontend/src/pages/SettingsPage.jsx           -> Impostazioni
+/app/frontend/src/pages/SettingsPage.jsx           -> Impostazioni + Temi Admin
 /app/backend/routes/appointments.py                -> CRUD Appuntamenti
 /app/backend/routes/loyalty.py                     -> API Programma Fedelta
 /app/backend/routes/stats.py                       -> API Settings + Admin Theme
@@ -48,17 +38,17 @@ App gestionale per salone (Bruno Melito Hair) con sito pubblico di prenotazione 
 - [x] Programma Fedelta aggiornato (1pt/20EUR, 5 livelli premi)
 - [x] PWA Service Worker ripristinato
 - [x] Google Review WhatsApp nel checkout
-- [x] Restyling pagina pubblica (scroll animations, hero animato, lightbox galleria, progress fedelta)
-- [x] Restyling gestionale admin (page transitions, stagger animations, sidebar hover, card hover)
-- [x] Palette colori "Vivace Bloom" (31 Mar 2026):
-  - Colori vivaci e allegri su tutti i componenti
-  - Background bianco pulito per massima leggibilita
-  - Testi navy scuri per alto contrasto
-  - Stat cards: 5 colori distinti (rosa, teal, ambra, blu, viola)
-  - Moduli: 19 icone con gradienti colorati unici
-  - Pagina pubblica: stessi colori del gestionale
-  - CSS override per backward compatibility
-  - Migrazione automatica DB per aggiornare tema in produzione
+- [x] Restyling UI "Vibrante" (31 Mar 2026):
+  - Dashboard: Card moduli con sfondi gradiente solidi e icone grandi (w-7 h-7)
+  - Dashboard: Card statistiche con icone grandi (w-8 h-8) e gradienti vibranti
+  - Dashboard: Sezioni "Oggi" e "Prossimi" con sfondo scuro (navy/teal)
+  - Sito pubblico: Sezioni alternate scuro/chiaro per contrasto massimo
+  - Sito pubblico: Promozioni con sfondi solidi vibranti (rosa, teal, viola, ambra, celeste)
+  - Sito pubblico: Card fedelta con gradienti solidi (ambra, rosa, teal, viola, celeste)
+  - Sito pubblico: Sezione contatti su sfondo scuro con card glass-morphism
+  - Sito pubblico: Footer scuro
+  - 6 preset temi: Elettrico, Fuoco, Lusso, Smeraldo, Scuro, Rosa Vivace
+- [x] Animazioni e transizioni (scroll, hover, stagger, page transitions)
 
 ## Note Importanti
 - Deploy su Render: sempre "Clear build cache and deploy"
