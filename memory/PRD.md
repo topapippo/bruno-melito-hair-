@@ -26,8 +26,9 @@ App gestionale per salone (Bruno Melito Hair) con sito pubblico di prenotazione 
 /app/frontend/src/pages/LoyaltyPage.jsx                              -> Programma Fedelta admin
 /app/frontend/src/lib/categories.js                                  -> Definizione categorie
 /app/frontend/src/lib/api.js                                         -> Axios JWT
-/app/frontend/src/index.css                                          -> CSS variables admin themes
+/app/frontend/src/index.css                                          -> CSS variables admin themes + animazioni
 /app/frontend/public/sw.js                                           -> PWA Service Worker
+/app/frontend/src/components/Layout.jsx                              -> Sidebar + Nav + Page transitions
 /app/backend/routes/public.py                                        -> API pubbliche + booking + upselling
 /app/backend/routes/blocked_slots.py                                 -> API slot bloccati
 /app/backend/routes/appointments.py                                  -> CRUD Appuntamenti
@@ -58,18 +59,17 @@ App gestionale per salone (Bruno Melito Hair) con sito pubblico di prenotazione 
 - [x] Programma Fedelta aggiornato (1pt/20EUR, 5 livelli premi)
 - [x] PWA Service Worker ripristinato
 - [x] Bottone Google Review WhatsApp nel checkout
-- [x] Sezione Fedelta pagina pubblica aggiornata con i 5 livelli (31 Mar 2026)
-- [x] Restyling completo pagina pubblica /sito (31 Mar 2026):
-  - AnimatedSection: scroll-triggered fade-in animations (IntersectionObserver)
-  - Hero: entrance animata, cerchi decorativi flottanti, scroll indicator
-  - Galleria: lightbox con navigazione prev/next e contatore
-  - Fedelta: linea di progressione rainbow, bordi colorati, ring su icone
-  - Recensioni: virgolette decorative, card con hover lift
-  - Contatti: icone animate hover (scale-125), bordi colorati
-  - Navbar: glass-morphism migliorato (backdrop-blur-xl)
-  - Footer: gradient border top, social con hover lift
-  - Mobile: bottone fisso con shadow potenziato
-  - Tutti i bottoni CTA con hover:scale-105 e transition fluide
+- [x] Sezione Fedelta pagina pubblica aggiornata con i 5 livelli
+- [x] Restyling pagina pubblica /sito (scroll animations, hero animato, lightbox galleria, progress fedelta, glass navbar, footer moderno)
+- [x] Restyling gestionale admin (31 Mar 2026):
+  - admin-page-in: transizione fade-in-up su ogni cambio pagina (via key={location.pathname})
+  - stagger-in: ingresso staggered stat cards Dashboard
+  - stagger-fast: ingresso staggered moduli Dashboard
+  - sidebar-nav-link: hover con barra laterale sinistra e translateX
+  - module-card: hover con scale + shadow elevato
+  - card-lift-enhanced: hover migliorato per stat cards
+  - appt-row: slide orizzontale su hover appuntamenti
+  - greeting-in: animazione ingresso saluto Dashboard
 
 ## Note Importanti
 - SOLO WebsitePage.jsx gestisce la pagina pubblica (/sito)
