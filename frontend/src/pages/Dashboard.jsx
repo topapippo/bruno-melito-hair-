@@ -216,8 +216,8 @@ export default function Dashboard() {
                     </p>
                     {s.sub && <p className="text-xs text-white/60 mt-1">{s.sub}</p>}
                   </div>
-                  <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0">
-                    <s.icon className="w-6 h-6 text-white" strokeWidth={1.5} />
+                  <div className="w-14 h-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0">
+                    <s.icon className="w-8 h-8 text-white" strokeWidth={1.5} />
                   </div>
                 </div>
               </div>
@@ -230,7 +230,7 @@ export default function Dashboard() {
         {/* ── Modules Grid ───────────────────────────────────────────────── */}
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <Heart className="w-4 h-4 text-[#E8477C]" />
+            <Heart className="w-5 h-5 text-[#E8477C]" />
             <h2 className="font-display text-xl text-[#1A1A2E]">Moduli</h2>
           </div>
           <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-3 stagger-fast">
@@ -239,13 +239,18 @@ export default function Dashboard() {
                 key={mod.path}
                 data-testid={`module-${mod.path.slice(1)}`}
                 onClick={() => navigate(mod.path)}
-                className="module-card bg-white rounded-2xl p-3 text-center border border-[#E5E7EB] hover:border-[#F49AB3] cursor-pointer group"
+                className="module-card rounded-2xl p-4 text-center cursor-pointer group relative overflow-hidden shadow-md hover:shadow-xl"
+                style={{background: `linear-gradient(135deg, ${mod.from}, ${mod.to})`}}
               >
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3" style={{background: `linear-gradient(135deg, ${mod.from}18, ${mod.to}28)`}}>
-                  <mod.icon className="w-5 h-5" style={{color: mod.from}} strokeWidth={1.5} />
+                <div className="absolute -bottom-3 -right-3 w-16 h-16 rounded-full bg-white/10" />
+                <div className="absolute -top-4 -left-4 w-12 h-12 rounded-full bg-white/5" />
+                <div className="relative z-10">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-2 bg-white/20 backdrop-blur-sm transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                    <mod.icon className="w-7 h-7 text-white" strokeWidth={1.5} />
+                  </div>
+                  <p className="font-bold text-white text-xs leading-tight">{mod.label}</p>
+                  <p className="text-[9px] text-white/70 mt-0.5 leading-tight hidden sm:block">{mod.desc}</p>
                 </div>
-                <p className="font-semibold text-[#1A1A2E] text-xs leading-tight">{mod.label}</p>
-                <p className="text-[9px] text-[#8891A5] mt-0.5 leading-tight hidden sm:block">{mod.desc}</p>
               </button>
             ))}
           </div>
@@ -254,68 +259,68 @@ export default function Dashboard() {
         {/* ── Bottom: Today + Upcoming ───────────────────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
           {/* Today */}
-          <div className="lg:col-span-8 bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[#F1F3F5]">
+          <div className="lg:col-span-8 rounded-2xl shadow-lg overflow-hidden" style={{background: 'linear-gradient(135deg, #1A1A2E, #2D2B55)'}}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-[#E8477C]" />
-                <h2 className="font-display text-lg text-[#1A1A2E]">Appuntamenti di Oggi</h2>
+                <h2 className="font-display text-lg text-white">Appuntamenti di Oggi</h2>
               </div>
-              <Link to="/planning"><Button variant="ghost" size="sm" className="text-[#E8477C] hover:text-[#D03367] hover:bg-rose-50 text-xs">Vedi tutti <ChevronRight className="w-3 h-3 ml-1" /></Button></Link>
+              <Link to="/planning"><Button variant="ghost" size="sm" className="text-[#F49AB3] hover:text-white hover:bg-white/10 text-xs">Vedi tutti <ChevronRight className="w-3 h-3 ml-1" /></Button></Link>
             </div>
             <div className="p-4">
               {stats?.today_appointments?.length > 0 ? (
                 <div className="space-y-2">
                   {stats.today_appointments.map((apt, idx) => (
-                    <div key={apt.id} data-testid={`appointment-${apt.id}`} className="appt-row flex items-center gap-4 p-3 rounded-xl bg-[#FAFBFC] cursor-pointer">
+                    <div key={apt.id} data-testid={`appointment-${apt.id}`} className="appt-row flex items-center gap-4 p-3 rounded-xl bg-white/5 hover:bg-white/10 cursor-pointer">
                       <div className="flex-shrink-0 text-center w-14">
                         <p className="text-sm font-bold text-[#E8477C]">{apt.time}</p>
-                        <p className="text-[10px] text-[#8891A5]">{apt.end_time}</p>
+                        <p className="text-[10px] text-white/40">{apt.end_time}</p>
                       </div>
                       <div className="w-0.5 h-8 rounded-full bg-gradient-to-b from-[#E8477C] to-[#F49AB3]" />
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-[#1A1A2E] text-sm truncate">{apt.client_name}</p>
-                        <p className="text-xs text-[#8891A5] truncate">{apt.services.map(s => s.name).join(', ')}</p>
+                        <p className="font-semibold text-white text-sm truncate">{apt.client_name}</p>
+                        <p className="text-xs text-white/50 truncate">{apt.services.map(s => s.name).join(', ')}</p>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="font-bold text-[#1A1A2E] text-sm">€{apt.total_price}</p>
-                        <p className="text-[10px] text-[#8891A5]">{apt.total_duration} min</p>
+                        <p className="font-bold text-white text-sm">{'\u20AC'}{apt.total_price}</p>
+                        <p className="text-[10px] text-white/40">{apt.total_duration} min</p>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="text-center py-10">
-                  <div className="w-14 h-14 rounded-2xl bg-[#F1F3F5] flex items-center justify-center mx-auto mb-3">
+                  <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center mx-auto mb-3">
                     <Calendar className="w-7 h-7 text-[#F49AB3]" strokeWidth={1} />
                   </div>
-                  <p className="text-[#8891A5] text-sm">Nessun appuntamento per oggi</p>
-                  <Link to="/appointments"><Button variant="outline" className="mt-3 border-[#F49AB3] text-[#E8477C] hover:bg-rose-50 text-sm rounded-xl">Prenota ora</Button></Link>
+                  <p className="text-white/50 text-sm">Nessun appuntamento per oggi</p>
+                  <Link to="/appointments"><Button variant="outline" className="mt-3 border-[#F49AB3] text-[#E8477C] hover:bg-white/10 text-sm rounded-xl">Prenota ora</Button></Link>
                 </div>
               )}
             </div>
           </div>
 
           {/* Upcoming */}
-          <div className="lg:col-span-4 bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden">
-            <div className="px-5 py-4 border-b border-[#F1F3F5] flex items-center gap-2">
+          <div className="lg:col-span-4 rounded-2xl shadow-lg overflow-hidden" style={{background: 'linear-gradient(135deg, #0C4A6E, #164E63)'}}>
+            <div className="px-5 py-4 border-b border-white/10 flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-[#2EC4B6]" />
-              <h2 className="font-display text-lg text-[#1A1A2E]">Prossimi</h2>
+              <h2 className="font-display text-lg text-white">Prossimi</h2>
             </div>
             <div className="p-4">
               {stats?.upcoming_appointments?.length > 0 ? (
                 <div className="space-y-2">
                   {stats.upcoming_appointments.slice(0, 6).map((apt) => (
-                    <div key={apt.id} className="flex items-center gap-3 py-2 border-b border-[#FAFBFC] last:border-0">
+                    <div key={apt.id} className="flex items-center gap-3 py-2 border-b border-white/5 last:border-0">
                       <div className="w-1.5 h-1.5 rounded-full bg-[#2EC4B6] shrink-0 mt-0.5" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-[#1A1A2E] truncate">{apt.client_name}</p>
-                        <p className="text-xs text-[#8891A5]">{format(new Date(apt.date), "dd/MM/yy")} · {apt.time}</p>
+                        <p className="text-sm font-semibold text-white truncate">{apt.client_name}</p>
+                        <p className="text-xs text-white/50">{format(new Date(apt.date), "dd/MM/yy")} {'\u00B7'} {apt.time}</p>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-[#8891A5] text-center py-6">Nessun appuntamento in programma</p>
+                <p className="text-sm text-white/50 text-center py-6">Nessun appuntamento in programma</p>
               )}
             </div>
           </div>

@@ -97,7 +97,7 @@ function ServicesSection({ servicesRef, showServices, setShowServices, landingSe
   const toggleLCat = (key) => setOpenLandingCats(prev => ({ ...prev, [key]: !prev[key] }));
 
   return (
-    <section ref={servicesRef} className="py-20 sm:py-28 relative">
+    <section ref={servicesRef} className="py-20 sm:py-28 relative" style={{ background: `linear-gradient(180deg, ${T.primary}08, ${T.accent}05)` }}>
       <div className="max-w-6xl mx-auto px-4">
         <AnimatedSection>
           <button onClick={() => setShowServices(!showServices)} className="w-full text-center mb-4 group">
@@ -184,12 +184,12 @@ function ServicesSection({ servicesRef, showServices, setShowServices, landingSe
 
 function SalonSection({ salonPhotos, T }) {
   return (
-    <section className="py-20 sm:py-28 bg-white/60">
+    <section className="py-20 sm:py-28" style={{ backgroundColor: `${T.text}F0`, color: '#fff' }}>
       <div className="max-w-6xl mx-auto px-4">
         <AnimatedSection>
           <div className="text-center mb-12">
-            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.primary }}>Il Nostro Salone</p>
-            <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>Dove Nasce la Bellezza</h2>
+            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Il Nostro Salone</p>
+            <h2 className="text-3xl sm:text-4xl font-black text-white" style={{ fontFamily: T.fontDisplay }}>Dove Nasce la Bellezza</h2>
           </div>
         </AnimatedSection>
         <div className={`grid gap-4 ${salonPhotos.length === 1 ? 'grid-cols-1 max-w-lg mx-auto' : salonPhotos.length === 2 ? 'grid-cols-2' : salonPhotos.length === 3 ? 'grid-cols-3' : 'grid-cols-2 lg:grid-cols-4'}`}>
@@ -215,7 +215,7 @@ function SalonSection({ salonPhotos, T }) {
 
 function AboutSection({ config, salonPhotos, T }) {
   return (
-    <section className="py-20 sm:py-28">
+    <section className="py-20 sm:py-28" style={{ background: `linear-gradient(135deg, ${T.accent}10, ${T.primary}08)` }}>
       <div className="max-w-6xl mx-auto px-4">
         <div className={`grid grid-cols-1 ${salonPhotos.length > 1 ? 'lg:grid-cols-2' : ''} gap-12 items-center`}>
           {salonPhotos.length > 1 && (
@@ -261,26 +261,29 @@ function PromotionsSection({ publicPromos, setShowBooking, T }) {
         </AnimatedSection>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {publicPromos.map((promo, idx) => {
-            const gradients = ['from-amber-50 to-orange-50', 'from-rose-50 to-pink-50', 'from-teal-50 to-emerald-50', 'from-violet-50 to-purple-50', 'from-sky-50 to-blue-50'];
-            const borders = ['border-amber-200', 'border-rose-200', 'border-teal-200', 'border-violet-200', 'border-sky-200'];
-            const g = gradients[idx % gradients.length];
-            const b = borders[idx % borders.length];
+            const solidBgs = [`${T.primary}`, `${T.accent}`, '#8B5CF6', '#F59E0B', '#0EA5E9'];
+            const bg = solidBgs[idx % solidBgs.length];
             return (
               <AnimatedSection key={promo.id || idx} delay={0.1 * idx}>
-                <div className={`bg-gradient-to-br ${g} border-2 ${b} rounded-3xl p-6 transition-all duration-500 hover:shadow-xl hover:scale-[1.03] hover:-translate-y-1 h-full`}
+                <div className="rounded-3xl p-6 transition-all duration-500 hover:shadow-xl hover:scale-[1.03] hover:-translate-y-1 h-full relative overflow-hidden"
+                  style={{ backgroundColor: bg }}
                   data-testid={`website-promo-${promo.id || idx}`}>
-                  <div className="mb-3"><h3 className="text-lg font-black text-[#1e293b]">{promo.name}</h3></div>
-                  <p className="text-[#64748B] text-sm mb-4">{promo.description}</p>
-                  {promo.free_service_name && (
-                    <div className="flex items-center gap-2 text-emerald-600 text-sm font-bold mb-3">
-                      <Gift className="w-4 h-4" /> IN OMAGGIO: {promo.free_service_name}
-                    </div>
-                  )}
-                  {promo.promo_code && (
-                    <div className="flex items-center gap-2 text-xs text-[#64748B]">
-                      Codice: <span className="font-mono font-bold text-[#0EA5E9] bg-[#0EA5E9]/10 px-2 py-0.5 rounded text-sm">{promo.promo_code}</span>
-                    </div>
-                  )}
+                  <div className="absolute -bottom-4 -right-4 w-20 h-20 rounded-full bg-white/10" />
+                  <div className="absolute -top-6 -left-6 w-16 h-16 rounded-full bg-white/5" />
+                  <div className="relative z-10">
+                    <div className="mb-3"><h3 className="text-lg font-black text-white">{promo.name}</h3></div>
+                    <p className="text-white/80 text-sm mb-4">{promo.description}</p>
+                    {promo.free_service_name && (
+                      <div className="flex items-center gap-2 text-white text-sm font-bold mb-3 bg-white/15 rounded-lg px-3 py-1.5 inline-flex">
+                        <Gift className="w-4 h-4" /> IN OMAGGIO: {promo.free_service_name}
+                      </div>
+                    )}
+                    {promo.promo_code && (
+                      <div className="flex items-center gap-2 text-xs text-white/70">
+                        Codice: <span className="font-mono font-bold text-white bg-white/20 px-2 py-0.5 rounded text-sm">{promo.promo_code}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </AnimatedSection>
             );
@@ -300,28 +303,28 @@ function PromotionsSection({ publicPromos, setShowBooking, T }) {
 
 function ReviewsSection({ reviews, T }) {
   return (
-    <section className="py-20 sm:py-28">
+    <section className="py-20 sm:py-28" style={{ backgroundColor: `${T.text}F0`, color: '#fff' }}>
       <div className="max-w-6xl mx-auto px-4">
         <AnimatedSection>
           <div className="text-center mb-12">
             <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Recensioni</p>
-            <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>Cosa Dicono di Noi</h2>
+            <h2 className="text-3xl sm:text-4xl font-black text-white" style={{ fontFamily: T.fontDisplay }}>Cosa Dicono di Noi</h2>
           </div>
         </AnimatedSection>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {reviews.map((review, idx) => (
             <AnimatedSection key={review.id || idx} delay={0.1 + idx * 0.1}>
-              <div className={`bg-[#2A1A0E]/80 border ${BORDER_COLORS[idx % 4]} rounded-3xl p-6 transition-all duration-500 hover:shadow-lg ${GLOW_COLORS[idx % 4]} hover:border-opacity-60 hover:scale-[1.03] hover:-translate-y-1 h-full flex flex-col`}>
+              <div className={`bg-white/10 backdrop-blur-sm border border-white/15 rounded-3xl p-6 transition-all duration-500 hover:shadow-lg hover:bg-white/15 hover:scale-[1.03] hover:-translate-y-1 h-full flex flex-col`}>
                 <div className="text-5xl leading-none opacity-15 -mb-1" style={{ color: T.accent, fontFamily: 'Georgia, serif' }}>{'\u201C'}</div>
                 <div className="flex gap-0.5 mb-3">
                   {[...Array(review.rating || 5)].map((_, i) => (<Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />))}
                 </div>
-                <p className="text-[#D4B89A] text-sm leading-relaxed mb-4 flex-1">{review.text}</p>
-                <div className="flex items-center gap-3 pt-3 border-t border-white/5">
+                <p className="text-white/80 text-sm leading-relaxed mb-4 flex-1">{review.text}</p>
+                <div className="flex items-center gap-3 pt-3 border-t border-white/10">
                   <div className={`w-10 h-10 ${AVATAR_BGS[idx % 4]} rounded-full flex items-center justify-center ring-2 ring-white/10`}>
                     <span className={`${AVATAR_TEXTS[idx % 4]} font-bold text-sm`}>{(review.name || '?')[0]}</span>
                   </div>
-                  <span className="text-sm text-[#B89A7A] font-semibold">{review.name}</span>
+                  <span className="text-sm text-white/70 font-semibold">{review.name}</span>
                 </div>
               </div>
             </AnimatedSection>
@@ -337,7 +340,7 @@ function GallerySection({ config, hairstylePhotos, setShowBooking, T }) {
   const imagePhotos = hairstylePhotos.filter(p => p.file_type !== 'video');
   return (
     <>
-      <section className="py-20 sm:py-28 bg-white/60">
+      <section className="py-20 sm:py-28" style={{ background: `linear-gradient(180deg, ${T.primary}08, ${T.accent}05)` }}>
         <div className="max-w-6xl mx-auto px-4">
           <AnimatedSection>
             <div className="text-center mb-12">
@@ -425,43 +428,48 @@ function LoyaltySection({ setShowBooking, T }) {
           <div className="hidden lg:block absolute top-[4.2rem] left-[10%] right-[10%] h-1 rounded-full opacity-25" style={{ background: `linear-gradient(90deg, #F59E0B, #EC4899, #14B8A6, #8B5CF6, #0EA5E9)` }} />
           <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-5">
             <AnimatedSection delay={0}>
-              <div className="bg-white rounded-3xl p-5 border-2 border-amber-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.05] hover:-translate-y-1 text-center" data-testid="loyalty-reward-0">
-                <div className="w-14 h-14 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-3 ring-4 ring-white shadow-md"><Gift className="w-7 h-7 text-amber-600" /></div>
-                <h3 className="font-bold text-base text-[#1e293b] mb-2">Buono sconto 3{'\u20AC'}</h3>
-                <div className="inline-block bg-gradient-to-r from-amber-400 to-orange-400 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3 shadow-md">5 punti</div>
-                <p className="text-[#64748B] text-xs">Buono sconto di 3{'\u20AC'} sul prossimo servizio</p>
+              <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-3xl p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.05] hover:-translate-y-1 text-center relative overflow-hidden" data-testid="loyalty-reward-0">
+                <div className="absolute -bottom-3 -right-3 w-16 h-16 rounded-full bg-white/10" />
+                <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-3 ring-4 ring-white/20 shadow-md"><Gift className="w-7 h-7 text-white" /></div>
+                <h3 className="font-bold text-base text-white mb-2">Buono sconto 3{'\u20AC'}</h3>
+                <div className="inline-block bg-white/20 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3 shadow-md backdrop-blur-sm">5 punti</div>
+                <p className="text-white/80 text-xs">Buono sconto di 3{'\u20AC'} sul prossimo servizio</p>
               </div>
             </AnimatedSection>
             <AnimatedSection delay={0.1}>
-              <div className="bg-white rounded-3xl p-5 border-2 border-rose-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.05] hover:-translate-y-1 text-center" data-testid="loyalty-reward-1">
-                <div className="w-14 h-14 bg-rose-100 rounded-2xl flex items-center justify-center mx-auto mb-3 ring-4 ring-white shadow-md"><Star className="w-7 h-7 text-rose-600" /></div>
-                <h3 className="font-bold text-base text-[#1e293b] mb-2">Buono sconto 5{'\u20AC'}</h3>
-                <div className="inline-block bg-gradient-to-r from-rose-400 to-pink-400 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3 shadow-md">10 punti</div>
-                <p className="text-[#64748B] text-xs">Buono sconto di 5{'\u20AC'} sul prossimo servizio</p>
+              <div className="bg-gradient-to-br from-rose-400 to-pink-500 rounded-3xl p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.05] hover:-translate-y-1 text-center relative overflow-hidden" data-testid="loyalty-reward-1">
+                <div className="absolute -bottom-3 -right-3 w-16 h-16 rounded-full bg-white/10" />
+                <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-3 ring-4 ring-white/20 shadow-md"><Star className="w-7 h-7 text-white" /></div>
+                <h3 className="font-bold text-base text-white mb-2">Buono sconto 5{'\u20AC'}</h3>
+                <div className="inline-block bg-white/20 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3 shadow-md backdrop-blur-sm">10 punti</div>
+                <p className="text-white/80 text-xs">Buono sconto di 5{'\u20AC'} sul prossimo servizio</p>
               </div>
             </AnimatedSection>
             <AnimatedSection delay={0.2}>
-              <div className="bg-white rounded-3xl p-5 border-2 border-teal-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.05] hover:-translate-y-1 text-center" data-testid="loyalty-reward-2">
-                <div className="w-14 h-14 bg-teal-100 rounded-2xl flex items-center justify-center mx-auto mb-3 ring-4 ring-white shadow-md"><Scissors className="w-7 h-7 text-teal-600" /></div>
-                <h3 className="font-bold text-base text-[#1e293b] mb-2">Piega o Taglio Gratuito</h3>
-                <div className="inline-block bg-gradient-to-r from-teal-400 to-emerald-400 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3 shadow-md">20 punti</div>
-                <p className="text-[#64748B] text-xs">Una piega o un taglio completamente gratuito</p>
+              <div className="bg-gradient-to-br from-teal-400 to-emerald-500 rounded-3xl p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.05] hover:-translate-y-1 text-center relative overflow-hidden" data-testid="loyalty-reward-2">
+                <div className="absolute -bottom-3 -right-3 w-16 h-16 rounded-full bg-white/10" />
+                <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-3 ring-4 ring-white/20 shadow-md"><Scissors className="w-7 h-7 text-white" /></div>
+                <h3 className="font-bold text-base text-white mb-2">Piega o Taglio Gratuito</h3>
+                <div className="inline-block bg-white/20 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3 shadow-md backdrop-blur-sm">20 punti</div>
+                <p className="text-white/80 text-xs">Una piega o un taglio completamente gratuito</p>
               </div>
             </AnimatedSection>
             <AnimatedSection delay={0.3}>
-              <div className="bg-white rounded-3xl p-5 border-2 border-violet-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.05] hover:-translate-y-1 text-center" data-testid="loyalty-reward-3">
-                <div className="w-14 h-14 bg-violet-100 rounded-2xl flex items-center justify-center mx-auto mb-3 ring-4 ring-white shadow-md"><Star className="w-7 h-7 text-violet-600" /></div>
-                <h3 className="font-bold text-base text-[#1e293b] mb-2">Colore Parziale Gratuito</h3>
-                <div className="inline-block bg-gradient-to-r from-violet-400 to-purple-400 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3 shadow-md">30 punti</div>
-                <p className="text-[#64748B] text-xs">Un colore parziale completamente gratuito</p>
+              <div className="bg-gradient-to-br from-violet-400 to-purple-500 rounded-3xl p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.05] hover:-translate-y-1 text-center relative overflow-hidden" data-testid="loyalty-reward-3">
+                <div className="absolute -bottom-3 -right-3 w-16 h-16 rounded-full bg-white/10" />
+                <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-3 ring-4 ring-white/20 shadow-md"><Star className="w-7 h-7 text-white" /></div>
+                <h3 className="font-bold text-base text-white mb-2">Colore Parziale Gratuito</h3>
+                <div className="inline-block bg-white/20 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3 shadow-md backdrop-blur-sm">30 punti</div>
+                <p className="text-white/80 text-xs">Un colore parziale completamente gratuito</p>
               </div>
             </AnimatedSection>
             <AnimatedSection delay={0.4}>
-              <div className="bg-white rounded-3xl p-5 border-2 border-sky-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.05] hover:-translate-y-1 text-center" data-testid="loyalty-reward-4">
-                <div className="w-14 h-14 bg-sky-100 rounded-2xl flex items-center justify-center mx-auto mb-3 ring-4 ring-white shadow-md"><Gift className="w-7 h-7 text-sky-600" /></div>
-                <h3 className="font-bold text-base text-[#1e293b] mb-2">Colore Completo Gratuito</h3>
-                <div className="inline-block bg-gradient-to-r from-sky-400 to-blue-400 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3 shadow-md">50 punti</div>
-                <p className="text-[#64748B] text-xs">Un colore completo completamente gratuito</p>
+              <div className="bg-gradient-to-br from-sky-400 to-blue-500 rounded-3xl p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.05] hover:-translate-y-1 text-center relative overflow-hidden" data-testid="loyalty-reward-4">
+                <div className="absolute -bottom-3 -right-3 w-16 h-16 rounded-full bg-white/10" />
+                <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-3 ring-4 ring-white/20 shadow-md"><Gift className="w-7 h-7 text-white" /></div>
+                <h3 className="font-bold text-base text-white mb-2">Colore Completo Gratuito</h3>
+                <div className="inline-block bg-white/20 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3 shadow-md backdrop-blur-sm">50 punti</div>
+                <p className="text-white/80 text-xs">Un colore completo completamente gratuito</p>
               </div>
             </AnimatedSection>
           </div>
@@ -480,56 +488,56 @@ function LoyaltySection({ setShowBooking, T }) {
 
 function ContactSection({ contactRef, config, hours, phones, setShowBooking, openWhatsApp, T }) {
   return (
-    <section ref={contactRef} className="py-20 sm:py-28">
+    <section ref={contactRef} className="py-20 sm:py-28" style={{ backgroundColor: `${T.text}F0`, color: '#fff' }}>
       <div className="max-w-6xl mx-auto px-4">
         <AnimatedSection>
           <div className="text-center mb-12">
-            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.primary }}>Contattaci</p>
-            <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>Prenota il Tuo Appuntamento</h2>
+            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Contattaci</p>
+            <h2 className="text-3xl sm:text-4xl font-black text-white" style={{ fontFamily: T.fontDisplay }}>Prenota il Tuo Appuntamento</h2>
           </div>
         </AnimatedSection>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
           {config.address && (
             <AnimatedSection delay={0.1}>
-              <a href={config.maps_url} target="_blank" rel="noopener noreferrer" className="block bg-white border-2 border-gray-100 rounded-3xl p-5 hover:border-amber-400/50 hover:shadow-xl transition-all duration-500 text-center group hover:-translate-y-1" data-testid="website-contact-address">
-                <MapPin className="w-6 h-6 text-amber-500 mx-auto mb-3 group-hover:scale-125 transition-transform duration-300" />
-                <h3 className="font-bold text-[#1e293b] text-sm mb-1">Indirizzo</h3>
-                <p className="text-[#64748B] text-xs leading-relaxed">{config.address}</p>
+              <a href={config.maps_url} target="_blank" rel="noopener noreferrer" className="block bg-white/10 backdrop-blur-sm border border-white/15 rounded-3xl p-5 hover:bg-white/15 hover:shadow-xl transition-all duration-500 text-center group hover:-translate-y-1" data-testid="website-contact-address">
+                <MapPin className="w-7 h-7 text-amber-400 mx-auto mb-3 group-hover:scale-125 transition-transform duration-300" />
+                <h3 className="font-bold text-white text-sm mb-1">Indirizzo</h3>
+                <p className="text-white/60 text-xs leading-relaxed">{config.address}</p>
               </a>
             </AnimatedSection>
           )}
           {phones.length > 0 && (
             <AnimatedSection delay={0.2}>
-              <div className="bg-white border-2 border-gray-100 rounded-3xl p-5 text-center hover:shadow-xl hover:border-rose-400/50 transition-all duration-500 group hover:-translate-y-1">
-                <Phone className="w-6 h-6 text-rose-500 mx-auto mb-3 group-hover:scale-125 transition-transform duration-300" />
-                <h3 className="font-bold text-[#1e293b] text-sm mb-1">Telefono</h3>
+              <div className="bg-white/10 backdrop-blur-sm border border-white/15 rounded-3xl p-5 text-center hover:bg-white/15 hover:shadow-xl transition-all duration-500 group hover:-translate-y-1">
+                <Phone className="w-7 h-7 text-rose-400 mx-auto mb-3 group-hover:scale-125 transition-transform duration-300" />
+                <h3 className="font-bold text-white text-sm mb-1">Telefono</h3>
                 {phones.map((p, i) => (
-                  <a key={i} href={`tel:${p.replace(/\s/g, '')}`} className="text-[#64748B] text-xs hover:text-[#0EA5E9] transition-colors block mt-1">{p}</a>
+                  <a key={i} href={`tel:${p.replace(/\s/g, '')}`} className="text-white/60 text-xs hover:text-white transition-colors block mt-1">{p}</a>
                 ))}
               </div>
             </AnimatedSection>
           )}
           {config.email && (
             <AnimatedSection delay={0.3}>
-              <a href={`mailto:${config.email}`} className="block bg-white border-2 border-gray-100 rounded-3xl p-5 hover:shadow-xl hover:border-teal-400/50 transition-all duration-500 text-center group hover:-translate-y-1">
-                <Mail className="w-6 h-6 text-teal-500 mx-auto mb-3 group-hover:scale-125 transition-transform duration-300" />
-                <h3 className="font-bold text-[#1e293b] text-sm mb-1">Email</h3>
-                <p className="text-[#64748B] text-xs">{config.email}</p>
+              <a href={`mailto:${config.email}`} className="block bg-white/10 backdrop-blur-sm border border-white/15 rounded-3xl p-5 hover:bg-white/15 hover:shadow-xl transition-all duration-500 text-center group hover:-translate-y-1">
+                <Mail className="w-7 h-7 text-teal-400 mx-auto mb-3 group-hover:scale-125 transition-transform duration-300" />
+                <h3 className="font-bold text-white text-sm mb-1">Email</h3>
+                <p className="text-white/60 text-xs">{config.email}</p>
               </a>
             </AnimatedSection>
           )}
           <AnimatedSection delay={0.4}>
-            <div className="bg-white border-2 border-gray-100 rounded-3xl p-5 text-center hover:shadow-xl hover:border-violet-400/50 transition-all duration-500 group hover:-translate-y-1">
-              <Clock className="w-6 h-6 text-violet-500 mx-auto mb-3 group-hover:scale-125 transition-transform duration-300" />
-              <h3 className="font-bold text-[#1e293b] text-sm mb-1">Orari</h3>
+            <div className="bg-white/10 backdrop-blur-sm border border-white/15 rounded-3xl p-5 text-center hover:bg-white/15 hover:shadow-xl transition-all duration-500 group hover:-translate-y-1">
+              <Clock className="w-7 h-7 text-violet-400 mx-auto mb-3 group-hover:scale-125 transition-transform duration-300" />
+              <h3 className="font-bold text-white text-sm mb-1">Orari</h3>
             {Object.entries(hours).filter(([, v]) => v !== 'Chiuso').length > 0 ? (
               <>
-                <p className="text-[#64748B] text-xs">{Object.entries(hours).filter(([, v]) => v !== 'Chiuso').map(([d]) => d.charAt(0).toUpperCase() + d.slice(1)).join(' - ')}</p>
-                <p className="text-[#64748B] text-xs">{Object.values(hours).find(v => v !== 'Chiuso')}</p>
-                <p className="text-[#94A3B8] text-xs mt-1">{Object.entries(hours).filter(([, v]) => v === 'Chiuso').map(([d]) => d.charAt(0).toUpperCase() + d.slice(1)).join(', ')}: Chiuso</p>
+                <p className="text-white/60 text-xs">{Object.entries(hours).filter(([, v]) => v !== 'Chiuso').map(([d]) => d.charAt(0).toUpperCase() + d.slice(1)).join(' - ')}</p>
+                <p className="text-white/60 text-xs">{Object.values(hours).find(v => v !== 'Chiuso')}</p>
+                <p className="text-white/40 text-xs mt-1">{Object.entries(hours).filter(([, v]) => v === 'Chiuso').map(([d]) => d.charAt(0).toUpperCase() + d.slice(1)).join(', ')}: Chiuso</p>
               </>
             ) : (
-              <p className="text-[#64748B] text-xs">Mar - Sab: 08:00 - 19:00</p>
+              <p className="text-white/60 text-xs">Mar - Sab: 08:00 - 19:00</p>
             )}
           </div>
           </AnimatedSection>
@@ -538,7 +546,7 @@ function ContactSection({ contactRef, config, hours, phones, setShowBooking, ope
           <div className="flex flex-wrap items-center justify-center gap-3 mb-10">
             {SOCIAL_LINKS.map((link, i) => (
               <a key={i} href={link.url} target="_blank" rel="noopener noreferrer"
-                className={`flex items-center gap-2 px-5 py-3 rounded-2xl bg-white border-2 border-gray-100 text-[#64748B] ${link.color} transition-all duration-300 hover:shadow-lg hover:scale-105 hover:-translate-y-0.5`}
+                className={`flex items-center gap-2 px-5 py-3 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/15 text-white/70 ${link.color} transition-all duration-300 hover:shadow-lg hover:scale-105 hover:-translate-y-0.5 hover:bg-white/15`}
                 data-testid={`social-link-${i}`}>
                 <link.icon className="w-5 h-5" />
                 <span className="text-sm font-semibold">{link.label}</span>
@@ -1395,33 +1403,33 @@ export default function WebsitePage() {
       </section>
 
       {/* FOOTER */}
-      <footer className="py-12 border-t-2 border-transparent bg-white/60 relative">
-        <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, transparent, ${T.primary}40, ${T.accent}40, transparent)` }} />
+      <footer className="py-12 relative" style={{ backgroundColor: `${T.text}`, color: '#fff' }}>
+        <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, transparent, ${T.primary}, ${T.accent}, transparent)` }} />
         <div className="max-w-6xl mx-auto px-4">
           <AnimatedSection>
             <div className="flex flex-col items-center gap-6">
-              <img src="/logo.png?v=4" alt={config.salon_name} className="w-14 h-14 rounded-2xl border border-gray-200 shadow-sm hover:scale-110 transition-transform duration-300" />
-              <p className="text-[#1e293b] text-sm font-bold">{config.salon_name || 'BRUNO MELITO HAIR'}</p>
+              <img src="/logo.png?v=4" alt={config.salon_name} className="w-14 h-14 rounded-2xl border border-white/20 shadow-sm hover:scale-110 transition-transform duration-300" />
+              <p className="text-white text-sm font-bold">{config.salon_name || 'BRUNO MELITO HAIR'}</p>
               
               <div className="flex items-center gap-3">
                 {SOCIAL_LINKS.map((link, i) => (
                   <a key={i} href={link.url} target="_blank" rel="noopener noreferrer"
-                    className={`w-10 h-10 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-[#64748B] ${link.color} transition-all duration-300 hover:shadow-lg hover:scale-110 hover:-translate-y-1`}
+                    className={`w-10 h-10 rounded-full bg-white/10 border border-white/15 flex items-center justify-center text-white/60 ${link.color} transition-all duration-300 hover:shadow-lg hover:scale-110 hover:-translate-y-1`}
                     title={link.label}>
                     <link.icon className="w-5 h-5" />
                   </a>
                 ))}
               </div>
 
-              <div className="flex items-center gap-6 text-sm text-[#64748B]">
-                <a href="/sito" className="hover:text-[#0EA5E9] transition-colors">Prenota Online</a>
-                <a href="/sito" className="hover:text-[#0EA5E9] transition-colors">Sito Web</a>
-                <a href={config.maps_url} target="_blank" rel="noopener noreferrer" className="hover:text-[#0EA5E9] transition-colors">Come Raggiungerci</a>
+              <div className="flex items-center gap-6 text-sm text-white/50">
+                <a href="/sito" className="hover:text-white transition-colors">Prenota Online</a>
+                <a href="/sito" className="hover:text-white transition-colors">Sito Web</a>
+                <a href={config.maps_url} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Come Raggiungerci</a>
               </div>
 
-              <p className="text-[#94A3B8] text-xs">{config.address}</p>
-              <p className="text-[#CBD5E1] text-xs">&copy; {new Date().getFullYear()} {config.salon_name || 'Bruno Melito Hair'}. Tutti i diritti riservati.</p>
-              <p className="text-[#E2E8F0] text-[9px] opacity-30" data-testid="build-version">v2.2-31mar</p>
+              <p className="text-white/30 text-xs">{config.address}</p>
+              <p className="text-white/20 text-xs">&copy; {new Date().getFullYear()} {config.salon_name || 'Bruno Melito Hair'}. Tutti i diritti riservati.</p>
+              <p className="text-white/10 text-[9px]" data-testid="build-version">v2.3-vibrant</p>
             </div>
           </AnimatedSection>
         </div>
