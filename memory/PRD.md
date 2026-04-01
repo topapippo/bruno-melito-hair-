@@ -1,74 +1,54 @@
-# Bruno Melito Hair - Salon Management App
+# Bruno Melito Hair - PRD
 
 ## Problema Originale
-App gestionale per salone (Bruno Melito Hair) con sito pubblico di prenotazione e dashboard admin (CMS, Planning, Statistiche).
+App gestionale per salone (Bruno Melito Hair) con sito pubblico prenotazioni e dashboard admin (CMS, Planning, Statistiche).
 
 ## Architettura
-- **Frontend**: React + Shadcn UI (porta 3000)
-- **Backend**: FastAPI (porta 8001)
-- **Database**: MongoDB Atlas
-- **Hosting**: Render (produzione), Emergent Preview (sviluppo)
-- **Dominio**: brunomelitohair.it
-
-## Credenziali
-- Admin: admin@brunomelito.it / mbhs637104
-
-## Struttura File Chiave
-```
-/app/frontend/src/pages/WebsitePage.jsx           -> Pagina pubblica (/sito)
-/app/frontend/src/pages/Dashboard.jsx              -> Dashboard admin
-/app/frontend/src/components/Layout.jsx            -> Sidebar + Nav + Page transitions
-/app/frontend/src/components/planning/EditAppointmentDialog.jsx -> Checkout + Sospesi
-/app/frontend/src/index.css                        -> CSS variables + animazioni
-/app/frontend/src/pages/PlanningPage.jsx           -> Calendario Planning
-/app/frontend/src/pages/SettingsPage.jsx           -> Impostazioni + Temi Admin
-/app/frontend/src/pages/ReportIncassiPage.jsx      -> Report Incassi (aggiornato con POS/Sospeso)
-/app/frontend/src/pages/DailySummaryPage.jsx       -> Riepilogo Giorno (aggiornato con POS/Sospeso)
-/app/backend/routes/appointments.py                -> CRUD Appuntamenti + Checkout + Sospesi API
-/app/backend/routes/loyalty.py                     -> API Programma Fedelta
-/app/backend/routes/stats.py                       -> API Settings + Admin Theme
-/app/backend/models.py                             -> Modelli + CheckoutData (cash/pos/sospeso/prepaid)
-/app/backend/server.py                             -> FastAPI + startup migrations
-```
+- Frontend: React + Shadcn/UI + date-fns
+- Backend: FastAPI + MongoDB (Atlas in produzione, locale in preview)
+- Deploy: Render (frontend + backend) + Custom Domain (brunomelitohair.it)
+- DNS: OVH
 
 ## Funzionalita Completate
-- [x] CMS dinamico con temi personalizzabili (6 preset: Elettrico, Fuoco, Lusso, Smeraldo, Scuro, Rosa Vivace)
-- [x] Prenotazione pubblica con blocco orari/giorni
-- [x] Upselling nella pagina di successo prenotazione
-- [x] Calendario Planning con festivita italiane e slot bloccati
-- [x] Promemoria WhatsApp batch
-- [x] Pacchetti Preimpostati (Card Templates)
-- [x] Programma Fedelta aggiornato (1pt/20EUR, 5 livelli premi)
-- [x] PWA Service Worker
-- [x] Google Review WhatsApp nel checkout
-- [x] Restyling UI "Vibrante" con card solide, icone grandi, sezioni alternate
-- [x] **Modalita di Pagamento in Cassa** (1 Apr 2026):
-  - 3 metodi: Contanti, POS, Sospeso
-  - Sospeso crea un debito sulla scheda cliente
-  - Popup rosso di avviso "PAGAMENTO SOSPESO" all'apertura dell'appuntamento del cliente
-  - Pulsanti "Salda con Contanti" e "Salda con POS" direttamente dal popup
-  - Report Incassi e Riepilogo Giorno aggiornati con nuovi metodi
-- [x] **Promo come Pulsante nel Booking** (1 Apr 2026):
-  - Categoria "Promozioni Attive" e ora un pulsante collassabile come Card & Abbonamenti
-  - Toggle selezione/deselezione con badge "SELEZIONATO"
+- Sistema di prenotazione pubblica con calcolo disponibilita (festivi, pausa pranzo)
+- Planning giornaliero, settimanale, mensile con drag & drop
+- Checkout avanzato (Contanti, POS, Sospesi, Abbonamenti)
+- Programma fedelta
+- CMS personalizzazione temi (variabili CSS dinamiche)
+- WhatsApp batch reminders
+- Gestione slot bloccati (CRUD + context menu)
+- Festivita italiane evidenziate
+- Upselling servizi post-prenotazione
+- Hero image e slogan personalizzabili
+- PWA Service Worker
 
-## DB Collections
-- `sospesi`: { id, user_id, client_id, client_name, appointment_id, amount, date, services[], settled, settled_at, settled_method }
-- `payments`: { id, user_id, appointment_id, payment_method (cash/pos/sospeso/prepaid), total_paid, ... }
+## Bug Fix Critici (01/04/2026)
+### Fix Orari Split (Pausa Pranzo)
+- **Problema**: Il regex catturava solo il primo intervallo orario. Con orari tipo `08:00 - 13:00---14:00 - 19:00`, gli slot pomeridiani venivano completamente ignorati
+- **File corretti**: `WebsitePage.jsx` (prenotazione pubblica) + `NewAppointmentDialog.jsx` (admin planning)
+- **Soluzione**: Regex globale (/g) con loop `exec()` per catturare TUTTI gli intervalli
+- **Miglioramenti aggiuntivi**: Buffer ridotto 30->15min, messaggi specifici (giorno chiuso vs orari terminati), bottone "Prenota per prossimo giorno", auto-avanzamento, matching giorni case-insensitive
 
-## API Endpoints Chiave
-- `POST /api/appointments/{id}/checkout` - Checkout con payment_method: cash, pos, sospeso, prepaid
-- `GET /api/sospesi/client/{client_id}` - Lista sospesi non saldati del cliente
-- `POST /api/sospesi/{id}/settle/{method}` - Salda un sospeso (method: cash o pos)
-
-## Note Importanti
-- Deploy su Render: sempre "Clear build cache and deploy"
-- Migrazioni schema vanno in server.py startup event
+## Task In Corso
+- Nessuno (bug fix completato e testato)
 
 ## Task Futuri
-- P1: Dashboard statistiche clienti (grafici frequenza visite, spesa media)
-- P2: Scheda cliente con storico foto tagli
+- P1: Dashboard statistiche clienti (grafici frequenza, spesa media, servizi piu richiesti)
+- P2: Scheda cliente con storico fotografico
 - P2: Sconti/messaggi automatici compleanno
 - P3: Lista d'attesa intelligente
-- P3: Heat map ore piu occupate
+- P3: Heat map ore occupate
 - P3: Confronto performance operatori
+
+## Refactoring Necessario
+- WebsitePage.jsx (1650+ righe) - separare in componenti (Hero, Services, Booking, Contact)
+- PlanningPage.jsx (740+ righe) - estrarre calendar grid e helper
+
+## Credenziali Test
+- Preview: admin@brunomelito.it / mbhs637104
+- Produzione: melitobruno@gmail.com / mbhs637104
+
+## Note Importanti
+- La produzione su Render richiede SEMPRE "Clear build cache and deploy"
+- Il Service Worker puo servire versioni vecchie - ricordare all'utente di svuotare cache browser
+- MongoDB Atlas usa chiavi estese (lunedi, martedi) mentre il default usa abbreviazioni (lun, mar) - il codice gestisce entrambi
