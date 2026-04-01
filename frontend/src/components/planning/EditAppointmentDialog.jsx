@@ -710,15 +710,14 @@ export default function EditAppointmentDialog({
                       <p className="text-xs mt-1">Il pagamento verra registrato come "sospeso". Apparira un avviso al prossimo appuntamento del cliente.</p>
                     </div>
                   )}
-                  {/* Prepaid / Card button */}
-                  {clientCards.length > 0 && (
-                    <Button type="button" variant={paymentMethod === 'prepaid' ? 'default' : 'outline'}
-                      className={`w-full mt-1 ${paymentMethod === 'prepaid' ? 'bg-purple-600 text-white' : 'border-2'}`}
-                      onClick={() => setPaymentMethod('prepaid')}
-                      data-testid="payment-method-prepaid">
-                      <Ticket className="w-4 h-4 mr-2" /> Abb. / Prepagata
-                    </Button>
-                  )}
+                  {/* Prepaid / Card button - sempre visibile come collapsible */}
+                  <Button type="button" variant={paymentMethod === 'prepaid' ? 'default' : 'outline'}
+                    className={`w-full mt-1 ${paymentMethod === 'prepaid' ? 'bg-purple-600 text-white' : 'border-2'}`}
+                    onClick={() => setPaymentMethod(paymentMethod === 'prepaid' ? 'cash' : 'prepaid')}
+                    data-testid="payment-method-prepaid">
+                    <Ticket className="w-4 h-4 mr-2" /> Abb. / Prepagata
+                    {clientCards.length > 0 && <span className="ml-1 text-xs opacity-75">({clientCards.length})</span>}
+                  </Button>
                   {paymentMethod === 'prepaid' && (
                     <div className="space-y-2 mt-2">
                       {clientCards.length > 0 ? clientCards.map(card => (
@@ -749,22 +748,39 @@ export default function EditAppointmentDialog({
                   </div>
                 )}
 
-                {/* Eligible Promotions */}
+                {/* Eligible Promotions - Collapsible Button */}
                 {eligiblePromos.length > 0 && (
                   <div className="mb-4">
-                    <Label className="text-[#2D1B14] font-bold flex items-center gap-2 mb-2 text-sm"><Gift className="w-4 h-4 text-pink-500" /> Promozioni Disponibili</Label>
-                    <div className="space-y-2">
-                      {eligiblePromos.map(promo => (
-                        <button key={promo.id} type="button" onClick={() => setSelectedPromo(selectedPromo?.id === promo.id ? null : promo)}
-                          className={`w-full p-3 rounded-xl border-2 text-left transition-all ${selectedPromo?.id === promo.id ? 'border-pink-500 bg-pink-50' : 'border-gray-200 hover:border-pink-300'}`}
-                          data-testid={`select-promo-${promo.id}`}>
-                          <div className="flex items-center justify-between">
-                            <div><p className="font-bold text-sm text-[#2D1B14]">{promo.name}</p><p className="text-xs text-pink-600 font-semibold mt-0.5">OMAGGIO: {promo.free_service_name}</p></div>
-                            <Gift className={`w-5 h-5 ${selectedPromo?.id === promo.id ? 'text-pink-500' : 'text-gray-300'}`} />
-                          </div>
-                        </button>
-                      ))}
-                    </div>
+                    <button type="button"
+                      onClick={() => setOpenCats(prev => ({ ...prev, _checkoutPromos: !prev._checkoutPromos }))}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 font-bold text-sm transition-all ${
+                        selectedPromo ? 'border-pink-500 bg-pink-50 text-pink-700' : 'border-gray-200 hover:border-pink-300 text-[#2D1B14]'
+                      }`}
+                      data-testid="toggle-checkout-promos">
+                      <div className="flex items-center gap-2">
+                        <Gift className="w-5 h-5 text-pink-500" />
+                        <span>Promozioni Disponibili</span>
+                        <span className="text-xs text-pink-400">({eligiblePromos.length})</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {selectedPromo && <span className="text-xs font-bold px-2 py-0.5 rounded-full text-white bg-pink-500">1</span>}
+                        <svg className={`w-4 h-4 text-pink-400 transition-transform ${openCats['_checkoutPromos'] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                      </div>
+                    </button>
+                    {openCats['_checkoutPromos'] && (
+                      <div className="mt-2 space-y-2 animate-in fade-in duration-200">
+                        {eligiblePromos.map(promo => (
+                          <button key={promo.id} type="button" onClick={() => setSelectedPromo(selectedPromo?.id === promo.id ? null : promo)}
+                            className={`w-full p-3 rounded-xl border-2 text-left transition-all ${selectedPromo?.id === promo.id ? 'border-pink-500 bg-pink-50' : 'border-gray-200 hover:border-pink-300'}`}
+                            data-testid={`select-promo-${promo.id}`}>
+                            <div className="flex items-center justify-between">
+                              <div><p className="font-bold text-sm text-[#2D1B14]">{promo.name}</p><p className="text-xs text-pink-600 font-semibold mt-0.5">OMAGGIO: {promo.free_service_name}</p></div>
+                              <Gift className={`w-5 h-5 ${selectedPromo?.id === promo.id ? 'text-pink-500' : 'text-gray-300'}`} />
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
 
