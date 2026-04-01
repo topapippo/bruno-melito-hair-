@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Clock, Scissors, CheckCircle, ArrowLeft, MapPin, Phone, Mail, Star, MessageSquare, ChevronDown, ChevronUp, ArrowRight, Instagram, Facebook, Globe, Youtube, Gift, CreditCard, CalendarDays, X, Pencil, Trash2, Search, Printer, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
 import { CATEGORY_ORDER, getCategoryInfo, groupServicesByCategory } from '../lib/categories';
 
 function AnimatedSection({ children, className = '', delay = 0 }) {
@@ -805,7 +805,7 @@ export default function WebsitePage() {
     );
     return (
       <div className="min-h-screen bg-[#1C1008] flex items-center justify-center p-4">
-        <Toaster position="top-center" />
+        {/* toaster global */}
         <div className="max-w-md w-full">
           <div className="text-center">
             <CheckCircle className="w-20 h-20 mx-auto text-emerald-400 mb-6" />
@@ -876,7 +876,7 @@ export default function WebsitePage() {
   if (showBooking) {
     return (
       <div className="min-h-screen bg-[#1C1008]">
-        <Toaster position="top-center" />
+        {/* toaster global */}
         <div className="bg-[#2A1A0E] border-b border-[#3A2A1A] py-4 px-4 sticky top-0 z-50">
           <div className="max-w-lg mx-auto flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={() => setShowBooking(false)} className="text-[#B89A7A] hover:text-white hover:bg-white/10 shrink-0" data-testid="website-booking-back-btn">
@@ -1230,7 +1230,6 @@ export default function WebsitePage() {
 
   return (
     <div className="min-h-screen text-[#1e293b]" style={{ ...themeStyle, backgroundColor: config.bg_color || '#FAFBFD', fontFamily: `var(--theme-font-body)` }} data-testid="website-landing">
-      <Toaster position="top-center" />
       <style>{`
         @keyframes heroFadeIn { from { opacity: 0; transform: translateY(25px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
