@@ -119,6 +119,50 @@ export default function WeeklyView() {
     fetchAll();
   };
 
+  // --- Drag & Drop ---
+  const [draggedApt, setDraggedApt] = useState(null);
+  const [dragOverSlot, setDragOverSlot] = useState(null);
+
+  const handleDragStart = (e, apt) => {
+    setDraggedApt(apt);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', apt.id);
+    e.currentTarget.style.opacity = '0.4';
+  };
+
+  const handleDragEnd = (e) => {
+    e.currentTarget.style.opacity = '1';
+    setDraggedApt(null);
+    setDragOverSlot(null);
+  };
+
+  const handleDragOver = (e, day, time) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverSlot(`${format(day, 'yyyy-MM-dd')}-${time}`);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverSlot(null);
+  };
+
+  const handleDrop = async (e, day, time) => {
+    e.preventDefault();
+    setDragOverSlot(null);
+    if (!draggedApt) return;
+    const newDate = format(day, 'yyyy-MM-dd');
+    if (draggedApt.time === time && draggedApt.date === newDate) return;
+    try {
+      const updateData = { time, date: newDate };
+      await api.put(`${API}/appointments/${draggedApt.id}`, updateData);
+      toast.success(`Spostato a ${format(day, 'EEE dd/MM', { locale: it })} ${time}`);
+      fetchAll();
+    } catch {
+      toast.error('Errore nello spostamento');
+    }
+    setDraggedApt(null);
+  };
+
   return (
     <Layout>
       <div className="space-y-4" data-testid="weekly-view-page">
@@ -186,20 +230,27 @@ export default function WeeklyView() {
                         {TIME_SLOTS.map((time, idx) => (
                           <div
                             key={time}
-                            className={`h-10 border-b ${idx % 4 === 0 ? 'border-[#F0E6DC]' : 'border-[#F0E6DC]/30'} cursor-pointer hover:bg-blue-50/50 transition-colors`}
-                            onClick={() => handleSlotClick(day, time)}
+                            className={`h-10 border-b ${idx % 4 === 0 ? 'border-[#F0E6DC]' : 'border-[#F0E6DC]/30'} cursor-pointer hover:bg-blue-50/50 transition-colors ${dragOverSlot === `${format(day, 'yyyy-MM-dd')}-${time}` ? 'bg-blue-100 ring-2 ring-inset ring-blue-400' : ''}`}
+                            onClick={() => !draggedApt && handleSlotClick(day, time)}
+                            onDragOver={(e) => handleDragOver(e, day, time)}
+                            onDragLeave={handleDragLeave}
+                            onDrop={(e) => handleDrop(e, day, time)}
                             data-testid={`week-slot-${format(day, 'yyyy-MM-dd')}-${time}`}
                           />
                         ))}
                         {/* Appointments overlay */}
                         {dayApts.map((apt) => {
                           const style = getAppointmentStyle(apt);
+                          const isDragging = draggedApt?.id === apt.id;
                           return (
                             <div
                               key={apt.id}
-                              className={`absolute left-0.5 right-0.5 ${getStatusColor(apt.status)} text-white rounded-lg px-1.5 py-0.5 overflow-hidden cursor-pointer hover:brightness-110 hover:shadow-md transition-all text-xs shadow-sm z-10`}
+                              draggable={apt.status !== 'completed' && apt.status !== 'cancelled'}
+                              onDragStart={(e) => handleDragStart(e, apt)}
+                              onDragEnd={handleDragEnd}
+                              className={`absolute left-0.5 right-0.5 ${getStatusColor(apt.status)} text-white rounded-lg px-1.5 py-0.5 overflow-hidden cursor-grab active:cursor-grabbing hover:brightness-110 hover:shadow-md transition-all text-xs shadow-sm z-10 ${isDragging ? 'opacity-40 ring-2 ring-white' : ''}`}
                               style={style}
-                              title={`${apt.time} - ${apt.client_name}\n${apt.services.map(s => s.name).join(', ')}`}
+                              title={`${apt.time} - ${apt.client_name}\n${apt.services.map(s => s.name).join(', ')}\nTrascina per spostare`}
                               onClick={(e) => handleAppointmentClick(e, apt)}
                               data-testid={`week-apt-${apt.id}`}
                             >
