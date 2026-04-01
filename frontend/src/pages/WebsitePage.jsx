@@ -73,18 +73,23 @@ const getAvailableSlotsForDate = (dateStr, hoursConfig, blockedSlots = []) => {
   if (hasHoursConfig) {
     const { dayHours, isClosed } = getDayHoursForDate(dateStr, hoursConfig);
     if (isClosed) return [];
-    const match = dayHours.match(/(\d{1,2})[.:](\d{2})\s*[-–]\s*(\d{1,2})[.:](\d{2})/);
-    if (match) {
+    // Support split schedules like "08:00 - 13:00---14:00 - 19:00"
+    const rangePattern = /(\d{1,2})[.:](\d{2})\s*[-–]\s*(\d{1,2})[.:](\d{2})/g;
+    let match;
+    let foundRange = false;
+    while ((match = rangePattern.exec(dayHours)) !== null) {
+      foundRange = true;
       const openMin = parseInt(match[1]) * 60 + parseInt(match[2]);
       const closeMin = parseInt(match[3]) * 60 + parseInt(match[4]);
-      slots = TIME_SLOTS.filter(slot => {
+      TIME_SLOTS.forEach(slot => {
         const [h, m] = slot.split(':').map(Number);
         const t = h * 60 + m;
-        return t >= openMin && t < closeMin;
+        if (t >= openMin && t < closeMin) slots.push(slot);
       });
-    } else if (!dayHours) {
+    }
+    if (!foundRange && !dayHours) {
       slots = [...TIME_SLOTS];
-    } else {
+    } else if (!foundRange) {
       slots = [...TIME_SLOTS];
     }
   } else {
