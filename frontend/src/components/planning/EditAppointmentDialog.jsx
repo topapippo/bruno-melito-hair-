@@ -595,8 +595,8 @@ export default function EditAppointmentDialog({
               </div>
             )}
 
-            {/* Promozioni (accordion) */}
-            {eligiblePromos.length > 0 && (
+            {/* Promozioni (accordion) - nascosto in checkout mode perché gestito sotto */}
+            {eligiblePromos.length > 0 && !checkoutMode && (
               <div className="rounded-xl border-2 border-pink-300 overflow-hidden" data-testid="edit-promos-section">
                 <button type="button" onClick={() => setOpenCats(prev => ({ ...prev, _editPromos: !prev._editPromos }))}
                   className="w-full flex items-center justify-between px-3 py-2.5 bg-pink-50 hover:bg-pink-100 transition-colors">
