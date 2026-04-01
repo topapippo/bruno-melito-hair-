@@ -44,12 +44,14 @@ const getAvailableSlotsForDate = (dateStr, hoursConfig, blockedSlots = []) => {
   const BUFFER_MINUTES = 30;
   let slots = [];
 
-  if (hoursConfig) {
+  const hasHoursConfig = hoursConfig && Object.keys(hoursConfig).some(k => hoursConfig[k] && hoursConfig[k] !== '');
+
+  if (hasHoursConfig) {
     const dayMap = { 0: 'dom', 1: 'lun', 2: 'mar', 3: 'mer', 4: 'gio', 5: 'ven', 6: 'sab' };
     const d = new Date(dateStr + 'T12:00:00');
     const dayKey = dayMap[d.getDay()];
     const dayHours = (hoursConfig[dayKey] || '').toLowerCase();
-    if (!dayHours || dayHours === 'chiuso' || dayHours === '-') return [];
+    if (dayHours === 'chiuso' || dayHours === '-') return [];
     const match = dayHours.match(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/);
     if (match) {
       const openMin = parseInt(match[1]) * 60 + parseInt(match[2]);
@@ -59,6 +61,9 @@ const getAvailableSlotsForDate = (dateStr, hoursConfig, blockedSlots = []) => {
         const t = h * 60 + m;
         return t >= openMin && t < closeMin;
       });
+    } else if (!dayHours) {
+      // Day not configured but others are → treat as open with default hours
+      slots = [...TIME_SLOTS];
     } else {
       slots = [...TIME_SLOTS];
     }
