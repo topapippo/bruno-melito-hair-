@@ -1270,7 +1270,7 @@ export default function WebsitePage() {
               <span className="text-xs font-bold hidden xs:inline sm:inline">Accedi</span>
             </a>
             <Button variant="outline" onClick={() => setShowMyAppts(true)} className="border-amber-300 text-amber-600 hover:bg-amber-50 font-bold text-xs px-2.5 py-1.5 sm:px-4 sm:text-sm rounded-lg" data-testid="my-appointments-btn">
-              <CalendarDays className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" /> <span className="hidden sm:inline">I Miei</span> Appuntamenti
+              <CalendarDays className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" /> <span className="hidden sm:inline">I Miei Appuntamenti</span><span className="sm:hidden">Storico</span>
             </Button>
             <Button onClick={() => setShowBooking(true)} style={{ backgroundColor: T.primary }} className="text-white font-bold text-sm px-4 sm:px-6 hover:opacity-90" data-testid="website-book-btn">
               PRENOTA ORA
@@ -1481,7 +1481,7 @@ export default function WebsitePage() {
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              <p className="text-sm text-[#64748B] mb-4">Inserisci il tuo numero di telefono per vedere i tuoi appuntamenti</p>
+              <p className="text-sm text-[#64748B] mb-4">Inserisci il tuo numero di telefono per vedere, modificare o annullare i tuoi appuntamenti e consultare lo storico degli ultimi 3 mesi.</p>
               <div className="flex gap-2">
                 <input type="tel" value={lookupPhone} onChange={e => setLookupPhone(e.target.value)}
                   placeholder="Es. 339 783 3526" className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#0EA5E9] focus:border-transparent outline-none"
@@ -1501,7 +1501,12 @@ export default function WebsitePage() {
                 {/* Upcoming */}
                 {myApptsData.upcoming?.length > 0 && (
                   <div>
-                    <h3 className="font-bold text-sm text-[#0EA5E9] uppercase tracking-wider mb-3">Prossimi Appuntamenti</h3>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <CalendarDays className="w-3.5 h-3.5 text-blue-500" />
+                      </div>
+                      <h3 className="font-bold text-sm text-[#0EA5E9] uppercase tracking-wider">Prossimi Appuntamenti</h3>
+                    </div>
                     <div className="space-y-3">
                       {myApptsData.upcoming.map(appt => (
                         <div key={appt.id} className="border border-gray-200 rounded-2xl p-4 hover:border-[#0EA5E9]/30 transition-all" data-testid={`appt-upcoming-${appt.id}`}>
@@ -1552,7 +1557,12 @@ export default function WebsitePage() {
                 {/* History */}
                 {myApptsData.history?.length > 0 && (
                   <div>
-                    <h3 className="font-bold text-sm text-[#94A3B8] uppercase tracking-wider mb-3">Storico (ultimi 3 mesi)</h3>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-6 h-6 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <Clock className="w-3.5 h-3.5 text-gray-500" />
+                      </div>
+                      <h3 className="font-bold text-sm text-[#64748B] uppercase tracking-wider">Storico Appuntamenti (ultimi 3 mesi)</h3>
+                    </div>
                     <div className="space-y-2">
                       {myApptsData.history.map(appt => (
                         <div key={appt.id} className="border border-gray-100 rounded-xl p-3 bg-gray-50/50" data-testid={`appt-history-${appt.id}`}>
