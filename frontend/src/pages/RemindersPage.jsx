@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/select';
 import {
   Bell, MessageSquare, Clock, UserX, Check, Phone, Calendar,
-  RotateCcw, Pencil, Trash2, Plus, FileText, Send, Loader2, XCircle, Palette
+  RotateCcw, Pencil, Trash2, Plus, FileText, Send, Loader2, XCircle, Palette, Edit3
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -91,48 +91,53 @@ export default function RemindersPage() {
 
   const batchSendAll = async () => {
     if (!autoCheck || autoCheck.pending.length === 0) return;
+    // Trova il prossimo non inviato
+    const nextApt = tomorrowReminders.find(a => !a.reminded && a.client_phone);
+    if (!nextApt) { toast('Tutti i promemoria sono stati inviati!'); return; }
+    
     setBatchSending(true);
-
-    // Find the appointment template
     const aptTemplate = templates.find(t => t.template_type === 'appointment');
     const templateText = aptTemplate?.text || 'Ciao {nome}! Ti ricordiamo il tuo appuntamento domani alle {ora} presso Bruno Melito Hair. Ti aspettiamo!';
 
-    const pendingApts = autoCheck.pending;
-    const sentIds = [];
+    let msg = templateText
+      .replace('{nome}', nextApt.client_name || '')
+      .replace('{ora}', nextApt.time || '')
+      .replace('{servizi}', nextApt.services?.map(s => s.name).join(', ') || '')
+      .replace('{operatore}', '')
+      .replace('{data}', autoCheck.tomorrow_date || '');
 
-    for (let i = 0; i < pendingApts.length; i++) {
-      const apt = pendingApts[i];
-      // Build personalized message
-      let msg = templateText
-        .replace('{nome}', apt.client_name || '')
-        .replace('{ora}', apt.time || '')
-        .replace('{servizi}', apt.services?.map(s => s.name).join(', ') || '')
-        .replace('{operatore}', '')
-        .replace('{data}', autoCheck.tomorrow_date || '');
+    const phone = formatPhone(nextApt.client_phone);
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
 
-      const phone = formatPhone(apt.client_phone);
-      const encoded = encodeURIComponent(msg);
-      window.open(`https://wa.me/${phone}?text=${encoded}`, '_blank');
-      sentIds.push(apt.id);
-
-      // Small delay between opens to avoid browser blocking
-      if (i < pendingApts.length - 1) {
-        await new Promise(r => setTimeout(r, 1500));
-      }
-    }
-
-    // Mark all as sent
-    if (sentIds.length > 0) {
-      try {
-        await api.post(`${API}/reminders/batch-mark-sent`, { appointment_ids: sentIds });
-        toast.success(`${sentIds.length} promemoria inviati!`);
-        fetchData();
-        checkAutoReminder();
-      } catch (err) {
-        console.error(err);
-      }
-    }
+    try {
+      await api.post(`${API}/reminders/appointment/${nextApt.id}/mark-sent`);
+      setTomorrowReminders(prev => prev.map(r => r.id === nextApt.id ? { ...r, reminded: true } : r));
+      toast.success(`Promemoria inviato a ${nextApt.client_name}`);
+      checkAutoReminder();
+    } catch (err) { console.error(err); }
     setBatchSending(false);
+  };
+
+  const quickSendReminder = async (apt) => {
+    if (!apt.client_phone) { toast.error('Numero non disponibile'); return; }
+    setSendingId(apt.id);
+    const aptTemplate = templates.find(t => t.template_type === 'appointment');
+    const templateText = aptTemplate?.text || 'Ciao {nome}! Ti ricordiamo il tuo appuntamento domani alle {ora} presso Bruno Melito Hair. Ti aspettiamo!';
+    let msg = templateText
+      .replace('{nome}', apt.client_name || '')
+      .replace('{ora}', apt.time || '')
+      .replace('{servizi}', apt.services?.map(s => s.name).join(', ') || '')
+      .replace('{operatore}', apt.operator_name || '')
+      .replace('{data}', apt.date || '');
+    const phone = formatPhone(apt.client_phone);
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+    try {
+      await api.post(`${API}/reminders/appointment/${apt.id}/mark-sent`);
+      setTomorrowReminders(prev => prev.map(r => r.id === apt.id ? { ...r, reminded: true } : r));
+      toast.success(`Promemoria inviato a ${apt.client_name}`);
+      checkAutoReminder();
+    } catch (err) { console.error(err); }
+    setSendingId(null);
   };
 
   const buildMessage = (template, target) => {
@@ -316,42 +321,38 @@ export default function RemindersPage() {
   const pendingColors = colorReminders.filter(c => !c.already_sent);
 
   const batchSendColors = async () => {
-    if (pendingColors.length === 0) return;
+    const next = colorReminders.find(c => !c.already_sent && c.phone);
+    if (!next) { toast('Tutti i promemoria colore sono stati inviati!'); return; }
     setBatchSending(true);
     const colorTemplate = templates.find(t => t.template_type === 'color_expiry');
-    for (let i = 0; i < pendingColors.length; i++) {
-      const cr = pendingColors[i];
-      if (!cr.phone) continue;
-      const phone = formatPhone(cr.phone);
-      let msg = colorTemplate
-        ? colorTemplate.text.replace('{nome}', cr.client_name || '').replace('{giorni}', String(cr.days_ago || ''))
-        : `Ciao ${cr.client_name}! Sono passati ${cr.days_ago} giorni dal tuo ultimo colore. E' il momento di rinfrescare il look! Prenota da Bruno Melito Hair.`;
-      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
-      try { await api.post(`${API}/reminders/color-expiry/${cr.client_id}/mark-sent`); } catch {}
-      if (i < pendingColors.length - 1) await new Promise(r => setTimeout(r, 1500));
-    }
-    toast.success(`${pendingColors.length} promemoria colore inviati!`);
-    fetchData();
+    const phone = formatPhone(next.phone);
+    let msg = colorTemplate
+      ? colorTemplate.text.replace('{nome}', next.client_name || '').replace('{giorni}', String(next.days_ago || ''))
+      : `Ciao ${next.client_name}! Sono passati ${next.days_ago} giorni dal tuo ultimo colore. E' il momento di rinfrescare il look! Prenota da Bruno Melito Hair.`;
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+    try {
+      await api.post(`${API}/reminders/color-expiry/${next.client_id}/mark-sent`);
+      setColorReminders(prev => prev.map(c => c.client_id === next.client_id ? { ...c, already_sent: true } : c));
+      toast.success(`Promemoria colore inviato a ${next.client_name}`);
+    } catch {}
     setBatchSending(false);
   };
 
   const batchSendInactive = async () => {
-    if (pendingRecalls.length === 0) return;
+    const next = inactiveClients.find(c => !c.already_recalled && c.client_phone);
+    if (!next) { toast('Tutti i richiami sono stati inviati!'); return; }
     setBatchSending(true);
     const recallTemplate = templates.find(t => t.template_type === 'recall');
-    for (let i = 0; i < pendingRecalls.length; i++) {
-      const client = pendingRecalls[i];
-      if (!client.client_phone) continue;
-      const phone = formatPhone(client.client_phone);
-      let msg = recallTemplate
-        ? recallTemplate.text.replace('{nome}', client.client_name || '').replace('{giorni}', String(client.days_ago || '')).replace('{servizi}', client.last_services?.join(', ') || '')
-        : `Ciao ${client.client_name}! Sono passati ${client.days_ago} giorni dalla tua ultima visita presso Bruno Melito Hair. Torna a trovarci, ti aspettiamo!`;
-      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
-      try { await api.post(`${API}/reminders/inactive/${client.client_id}/mark-sent`); } catch {}
-      if (i < pendingRecalls.length - 1) await new Promise(r => setTimeout(r, 1500));
-    }
-    toast.success(`${pendingRecalls.length} richiami inviati!`);
-    fetchData();
+    const phone = formatPhone(next.client_phone);
+    let msg = recallTemplate
+      ? recallTemplate.text.replace('{nome}', next.client_name || '').replace('{giorni}', String(next.days_ago || '')).replace('{servizi}', next.last_services?.join(', ') || '')
+      : `Ciao ${next.client_name}! Sono passati ${next.days_ago} giorni dalla tua ultima visita presso Bruno Melito Hair. Torna a trovarci, ti aspettiamo!`;
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+    try {
+      await api.post(`${API}/reminders/inactive/${next.client_id}/mark-sent`);
+      setInactiveClients(prev => prev.map(c => c.client_id === next.client_id ? { ...c, already_recalled: true } : c));
+      toast.success(`Richiamo inviato a ${next.client_name}`);
+    } catch {}
     setBatchSending(false);
   };
 
@@ -452,7 +453,7 @@ export default function RemindersPage() {
                 </div>
                 <div>
                   <p className="font-bold text-green-800 text-lg">Centro Invio WhatsApp</p>
-                  <p className="text-sm text-green-700">Invia tutti i messaggi per categoria con un click. Si apriranno le finestre WhatsApp in sequenza.</p>
+                  <p className="text-sm text-green-700">Clicca il pulsante per inviare il prossimo messaggio. Ogni click apre 1 messaggio WhatsApp.</p>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -460,21 +461,21 @@ export default function RemindersPage() {
                   <Button onClick={batchSendAll} disabled={batchSending}
                     className="bg-blue-500 hover:bg-blue-600 text-white font-bold h-auto py-3" data-testid="batch-send-appointments-btn">
                     {batchSending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Calendar className="w-4 h-4 mr-2" />}
-                    Promemoria ({pendingReminders.length})
+                    Invia Prossimo ({pendingReminders.length})
                   </Button>
                 )}
                 {pendingColors.length > 0 && (
                   <Button onClick={batchSendColors} disabled={batchSending}
                     className="bg-purple-500 hover:bg-purple-600 text-white font-bold h-auto py-3" data-testid="batch-send-colors-btn">
                     {batchSending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Palette className="w-4 h-4 mr-2" />}
-                    Scadenza Colore ({pendingColors.length})
+                    Invia Prossimo ({pendingColors.length})
                   </Button>
                 )}
                 {pendingRecalls.length > 0 && (
                   <Button onClick={batchSendInactive} disabled={batchSending}
                     className="bg-orange-500 hover:bg-orange-600 text-white font-bold h-auto py-3" data-testid="batch-send-inactive-btn">
                     {batchSending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <UserX className="w-4 h-4 mr-2" />}
-                    Clienti Inattivi ({pendingRecalls.length})
+                    Invia Prossimo ({pendingRecalls.length})
                   </Button>
                 )}
               </div>
@@ -630,18 +631,31 @@ export default function RemindersPage() {
                           )}
                         </Button>
                       ) : (
-                        <Button
-                          onClick={() => openMessageDialog('appointment', apt)}
-                          disabled={sendingId === apt.id || !apt.client_phone}
-                          className="bg-green-500 hover:bg-green-600 text-white font-bold"
-                          data-testid={`send-reminder-${apt.id}`}
-                        >
-                          {sendingId === apt.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <><MessageSquare className="w-4 h-4 mr-2" /> WhatsApp</>
-                          )}
-                        </Button>
+                        <>
+                          <Button
+                            size="sm"
+                            onClick={() => quickSendReminder(apt)}
+                            disabled={sendingId === apt.id || !apt.client_phone}
+                            className="bg-green-500 hover:bg-green-600 text-white font-bold"
+                            data-testid={`quick-send-${apt.id}`}
+                          >
+                            {sendingId === apt.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <><Send className="w-4 h-4 mr-1" /> Invia</>
+                            )}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openMessageDialog('appointment', apt)}
+                            disabled={sendingId === apt.id || !apt.client_phone}
+                            className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                            data-testid={`edit-msg-${apt.id}`}
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </Button>
+                        </>
                       )}
                     </div>
                   </div>
