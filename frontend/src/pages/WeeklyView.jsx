@@ -1,14 +1,18 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import Layout from '../components/Layout';
-import PageHeader from '../components/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ChevronLeft, ChevronRight, Clock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Loader2 } from 'lucide-react';
 import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay } from 'date-fns';
 import { it } from 'date-fns/locale';
+import { toast } from 'sonner';
+
+import NewAppointmentDialog from '../components/planning/NewAppointmentDialog';
+import EditAppointmentDialog from '../components/planning/EditAppointmentDialog';
+import LoyaltyAlertDialog from '../components/planning/LoyaltyAlertDialog';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -26,13 +30,45 @@ const TIME_SLOTS = generateTimeSlots();
 
 export default function WeeklyView() {
   const [appointments, setAppointments] = useState([]);
+  const [operators, setOperators] = useState([]);
+  const [clients, setClients] = useState([]);
+  const [services, setServices] = useState([]);
+  const [cardTemplates, setCardTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [weekStart, setWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const scrollRef = useRef(null);
   const navigate = useNavigate();
 
-  useEffect(() => { fetchAppointments(); // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Dialog states
+  const [newDialogOpen, setNewDialogOpen] = useState(false);
+  const [newDialogInitial, setNewDialogInitial] = useState({ date: '', time: '', operatorId: '' });
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingAppointment, setEditingAppointment] = useState(null);
+  const [loyaltyAlertOpen, setLoyaltyAlertOpen] = useState(false);
+  const [loyaltyAlertData, setLoyaltyAlertData] = useState(null);
+
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    try {
+      const startDate = format(weekStart, 'yyyy-MM-dd');
+      const endDate = format(addDays(weekStart, 6), 'yyyy-MM-dd');
+      const [aptsRes, opsRes, clientsRes, svcRes, ctRes] = await Promise.all([
+        api.get(`${API}/appointments?start_date=${startDate}&end_date=${endDate}`),
+        api.get(`${API}/operators`).catch(() => ({ data: [] })),
+        api.get(`${API}/clients`).catch(() => ({ data: [] })),
+        api.get(`${API}/services`).catch(() => ({ data: [] })),
+        api.get(`${API}/card-templates`).catch(() => ({ data: [] })),
+      ]);
+      setAppointments(aptsRes.data);
+      setOperators(opsRes.data);
+      setClients(clientsRes.data);
+      setServices(svcRes.data);
+      setCardTemplates(ctRes.data);
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
   }, [weekStart]);
+
+  useEffect(() => { fetchAll(); }, [fetchAll]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -42,18 +78,7 @@ export default function WeeklyView() {
     }
   }, [loading]);
 
-  const fetchAppointments = async () => {
-    setLoading(true);
-    try {
-      const startDate = format(weekStart, 'yyyy-MM-dd');
-      const endDate = format(addDays(weekStart, 6), 'yyyy-MM-dd');
-      const res = await api.get(`${API}/appointments?start_date=${startDate}&end_date=${endDate}`);
-      setAppointments(res.data);
-    } catch (err) { console.error(err); }
-    finally { setLoading(false); }
-  };
-
-  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const weekDays = Array.from({ length: 6 }, (_, i) => addDays(weekStart, i));
 
   const getAppointmentsForDay = (date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
@@ -64,7 +89,7 @@ export default function WeeklyView() {
     const [h, m] = apt.time.split(':').map(Number);
     const startIdx = (h - 8) * 4 + Math.floor(m / 15);
     const slots = Math.ceil((apt.total_duration || 15) / 15);
-    return { top: `${startIdx * 40}px`, height: `${slots * 40 - 2}px` };
+    return { top: `${startIdx * 40}px`, height: `${Math.max(slots * 40 - 2, 20)}px` };
   };
 
   const getStatusColor = (status) => {
@@ -73,24 +98,45 @@ export default function WeeklyView() {
     return 'bg-[#C8617A]';
   };
 
+  // Click empty slot → create new appointment
+  const handleSlotClick = (day, time) => {
+    setNewDialogInitial({
+      date: format(day, 'yyyy-MM-dd'),
+      time: time,
+      operatorId: operators[0]?.id || ''
+    });
+    setNewDialogOpen(true);
+  };
+
+  // Click appointment → edit
+  const handleAppointmentClick = (e, apt) => {
+    e.stopPropagation();
+    setEditingAppointment(apt);
+    setEditDialogOpen(true);
+  };
+
+  const refreshAll = () => {
+    fetchAll();
+  };
+
   return (
     <Layout>
       <div className="space-y-4" data-testid="weekly-view-page">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="font-display text-3xl font-medium text-[#2D1B14]">Vista Settimanale</h1>
-            <p className="text-[#7C5C4A] mt-1 ">
-              {format(weekStart, "EEEE dd/MM/yy", { locale: it })} - {format(addDays(weekStart, 5), "EEEE dd/MM/yy", { locale: it })}
+            <p className="text-[#7C5C4A] mt-1">
+              {format(weekStart, "dd MMMM", { locale: it })} - {format(addDays(weekStart, 5), "dd MMMM yyyy", { locale: it })}
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={() => setWeekStart(subWeeks(weekStart, 1))} className="border-[#F0E6DC]">
+            <Button variant="outline" size="icon" onClick={() => setWeekStart(subWeeks(weekStart, 1))} className="border-[#F0E6DC]" data-testid="week-prev">
               <ChevronLeft className="w-4 h-4" />
             </Button>
-            <Button variant="outline" onClick={() => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))} className="border-[#F0E6DC] text-[#2D1B14]">
+            <Button variant="outline" onClick={() => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))} className="border-[#F0E6DC] text-[#2D1B14]" data-testid="week-today">
               Oggi
             </Button>
-            <Button variant="outline" size="icon" onClick={() => setWeekStart(addWeeks(weekStart, 1))} className="border-[#F0E6DC]">
+            <Button variant="outline" size="icon" onClick={() => setWeekStart(addWeeks(weekStart, 1))} className="border-[#F0E6DC]" data-testid="week-next">
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
@@ -110,8 +156,8 @@ export default function WeeklyView() {
                   const isToday = isSameDay(day, new Date());
                   const dayApts = getAppointmentsForDay(day);
                   return (
-                    <div key={day.toString()} className={`flex-1 min-w-[120px] p-2 text-center border-r border-[#F0E6DC] last:border-r-0 ${isToday ? 'bg-[#C8617A]/5' : 'bg-[#FAF7F2]'}`}>
-                      <p className="text-xs uppercase tracking-wide text-[#7C5C4A] ">{format(day, 'EEE', { locale: it })}</p>
+                    <div key={day.toString()} className={`flex-1 min-w-[100px] p-2 text-center border-r border-[#F0E6DC] last:border-r-0 ${isToday ? 'bg-[#C8617A]/5' : 'bg-[#FAF7F2]'}`}>
+                      <p className="text-xs uppercase tracking-wide text-[#7C5C4A]">{format(day, 'EEE', { locale: it })}</p>
                       <p className={`text-lg font-bold ${isToday ? 'text-[#C8617A]' : 'text-[#2D1B14]'}`}>{format(day, 'd')}</p>
                       {dayApts.length > 0 && <p className="text-[10px] text-[#C8617A] font-bold">{dayApts.length} app.</p>}
                     </div>
@@ -136,9 +182,14 @@ export default function WeeklyView() {
                     const dayApts = getAppointmentsForDay(day);
                     const isToday = isSameDay(day, new Date());
                     return (
-                      <div key={day.toString()} className={`flex-1 min-w-[120px] border-r border-[#F0E6DC] last:border-r-0 relative ${isToday ? 'bg-[#C8617A]/[0.02]' : ''}`}>
+                      <div key={day.toString()} className={`flex-1 min-w-[100px] border-r border-[#F0E6DC] last:border-r-0 relative ${isToday ? 'bg-[#C8617A]/[0.02]' : ''}`}>
                         {TIME_SLOTS.map((time, idx) => (
-                          <div key={time} className={`h-10 border-b ${idx % 4 === 0 ? 'border-[#F0E6DC]' : 'border-[#F0E6DC]/30'}`} />
+                          <div
+                            key={time}
+                            className={`h-10 border-b ${idx % 4 === 0 ? 'border-[#F0E6DC]' : 'border-[#F0E6DC]/30'} cursor-pointer hover:bg-blue-50/50 transition-colors`}
+                            onClick={() => handleSlotClick(day, time)}
+                            data-testid={`week-slot-${format(day, 'yyyy-MM-dd')}-${time}`}
+                          />
                         ))}
                         {/* Appointments overlay */}
                         {dayApts.map((apt) => {
@@ -146,10 +197,11 @@ export default function WeeklyView() {
                           return (
                             <div
                               key={apt.id}
-                              className={`absolute left-0.5 right-0.5 ${getStatusColor(apt.status)} text-white rounded-xl px-1.5 py-0.5 overflow-hidden cursor-pointer hover:brightness-110 transition-all text-xs shadow-sm`}
+                              className={`absolute left-0.5 right-0.5 ${getStatusColor(apt.status)} text-white rounded-lg px-1.5 py-0.5 overflow-hidden cursor-pointer hover:brightness-110 hover:shadow-md transition-all text-xs shadow-sm z-10`}
                               style={style}
                               title={`${apt.time} - ${apt.client_name}\n${apt.services.map(s => s.name).join(', ')}`}
-                              onClick={() => navigate(`/planning?date=${format(day, 'yyyy-MM-dd')}`)}
+                              onClick={(e) => handleAppointmentClick(e, apt)}
+                              data-testid={`week-apt-${apt.id}`}
                             >
                               <p className="font-bold truncate leading-tight">{apt.time} {apt.client_name}</p>
                               <p className="truncate opacity-80 leading-tight text-[10px]">{apt.services.map(s => s.name).join(', ')}</p>
@@ -175,6 +227,37 @@ export default function WeeklyView() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Dialogs */}
+        <NewAppointmentDialog
+          open={newDialogOpen}
+          onClose={() => setNewDialogOpen(false)}
+          initialDate={newDialogInitial.date}
+          initialTime={newDialogInitial.time}
+          initialOperatorId={newDialogInitial.operatorId}
+          operators={operators}
+          clients={clients}
+          services={services}
+          cardTemplates={cardTemplates}
+          onSuccess={refreshAll}
+        />
+
+        <EditAppointmentDialog
+          open={editDialogOpen}
+          onClose={() => { setEditDialogOpen(false); setEditingAppointment(null); }}
+          appointment={editingAppointment}
+          operators={operators}
+          clients={clients}
+          services={services}
+          onSuccess={refreshAll}
+          onLoyaltyAlert={(data) => { setLoyaltyAlertData(data); setLoyaltyAlertOpen(true); }}
+        />
+
+        <LoyaltyAlertDialog
+          open={loyaltyAlertOpen}
+          onClose={() => setLoyaltyAlertOpen(false)}
+          alertData={loyaltyAlertData}
+        />
       </div>
     </Layout>
   );
