@@ -1,6 +1,5 @@
-const CACHE_NAME = 'bruno-melito-v1';
+const CACHE_NAME = 'bruno-melito-v3';
 const ASSETS_TO_CACHE = [
-  '/sito',
   '/logo.png',
 ];
 
@@ -33,10 +32,6 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, clone);
-        });
         return response;
       })
       .catch(() => {
