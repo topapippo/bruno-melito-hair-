@@ -40,32 +40,39 @@ for (let h = 8; h <= 20; h++) {
   }
 }
 
+const getDayHoursForDate = (dateStr, hoursConfig) => {
+  if (!hoursConfig) return { dayHours: '', isClosed: false, isConfigured: false };
+  const dayMapShort = { 0: 'dom', 1: 'lun', 2: 'mar', 3: 'mer', 4: 'gio', 5: 'ven', 6: 'sab' };
+  const dayMapFull = { 0: 'domenica', 1: 'lunedì', 2: 'martedì', 3: 'mercoledì', 4: 'giovedì', 5: 'venerdì', 6: 'sabato' };
+  const dayMapFullNoAccent = { 0: 'domenica', 1: 'lunedi', 2: 'martedi', 3: 'mercoledi', 4: 'giovedi', 5: 'venerdi', 6: 'sabato' };
+  const d = new Date(dateStr + 'T12:00:00');
+  const dow = d.getDay();
+  // Case-insensitive lookup
+  const configLower = {};
+  Object.keys(hoursConfig).forEach(k => { configLower[k.toLowerCase()] = hoursConfig[k]; });
+  const dayHours = (
+    configLower[dayMapFull[dow]] ||
+    configLower[dayMapFullNoAccent[dow]] ||
+    configLower[dayMapShort[dow]] ||
+    ''
+  );
+  const val = (typeof dayHours === 'string' ? dayHours : '').toLowerCase().trim();
+  const isClosed = val === 'chiuso' || val === '-';
+  return { dayHours: val, isClosed, isConfigured: !!val };
+};
+
 const getAvailableSlotsForDate = (dateStr, hoursConfig, blockedSlots = []) => {
-  const BUFFER_MINUTES = 30;
+  const BUFFER_MINUTES = 15;
   let slots = [];
 
   const hasHoursConfig = hoursConfig && Object.keys(hoursConfig).some(k => {
     const v = hoursConfig[k];
-    return v && v !== '' && v.toLowerCase() !== 'chiuso' && v !== '-';
+    return v && v !== '' && (typeof v === 'string' ? v.toLowerCase() : '') !== 'chiuso' && v !== '-';
   });
 
   if (hasHoursConfig) {
-    // Supporta sia chiavi abbreviate (lun, mar) che complete (lunedì, martedì)
-    const dayMapShort = { 0: 'dom', 1: 'lun', 2: 'mar', 3: 'mer', 4: 'gio', 5: 'ven', 6: 'sab' };
-    const dayMapFull = { 0: 'domenica', 1: 'lunedì', 2: 'martedì', 3: 'mercoledì', 4: 'giovedì', 5: 'venerdì', 6: 'sabato' };
-    const dayMapFullNoAccent = { 0: 'domenica', 1: 'lunedi', 2: 'martedi', 3: 'mercoledi', 4: 'giovedi', 5: 'venerdi', 6: 'sabato' };
-    const d = new Date(dateStr + 'T12:00:00');
-    const dow = d.getDay();
-
-    // Cerca con tutti i formati possibili
-    const dayHours = (
-      hoursConfig[dayMapFull[dow]] ||
-      hoursConfig[dayMapFullNoAccent[dow]] ||
-      hoursConfig[dayMapShort[dow]] ||
-      ''
-    ).toLowerCase().trim();
-
-    if (dayHours === 'chiuso' || dayHours === '-') return [];
+    const { dayHours, isClosed } = getDayHoursForDate(dateStr, hoursConfig);
+    if (isClosed) return [];
     const match = dayHours.match(/(\d{1,2})[.:](\d{2})\s*[-–]\s*(\d{1,2})[.:](\d{2})/);
     if (match) {
       const openMin = parseInt(match[1]) * 60 + parseInt(match[2]);
@@ -76,7 +83,6 @@ const getAvailableSlotsForDate = (dateStr, hoursConfig, blockedSlots = []) => {
         return t >= openMin && t < closeMin;
       });
     } else if (!dayHours) {
-      // Giorno non configurato ma altri sì → aperto con orari default
       slots = [...TIME_SLOTS];
     } else {
       slots = [...TIME_SLOTS];
@@ -85,7 +91,7 @@ const getAvailableSlotsForDate = (dateStr, hoursConfig, blockedSlots = []) => {
     slots = [...TIME_SLOTS];
   }
 
-  // Filter past times for today (with 30-min buffer)
+  // Filter past times for today (with 15-min buffer)
   const today = format(new Date(), 'yyyy-MM-dd');
   if (dateStr === today) {
     const now = new Date();
@@ -103,6 +109,32 @@ const getAvailableSlotsForDate = (dateStr, hoursConfig, blockedSlots = []) => {
   }
 
   return slots;
+};
+
+const isAllSlotsPastForToday = (dateStr, hoursConfig) => {
+  const today = format(new Date(), 'yyyy-MM-dd');
+  if (dateStr !== today) return false;
+  const hasHoursConfig = hoursConfig && Object.keys(hoursConfig).some(k => {
+    const v = hoursConfig[k];
+    return v && v !== '' && (typeof v === 'string' ? v.toLowerCase() : '') !== 'chiuso' && v !== '-';
+  });
+  if (hasHoursConfig) {
+    const { isClosed } = getDayHoursForDate(dateStr, hoursConfig);
+    if (isClosed) return false;
+  }
+  return true;
+};
+
+const getNextAvailableDate = (currentDateStr, hoursConfig, maxDays = 14) => {
+  const current = new Date(currentDateStr + 'T12:00:00');
+  for (let i = 1; i <= maxDays; i++) {
+    const next = new Date(current);
+    next.setDate(next.getDate() + i);
+    const nextStr = format(next, 'yyyy-MM-dd');
+    const slots = getAvailableSlotsForDate(nextStr, hoursConfig, []);
+    if (slots.length > 0) return nextStr;
+  }
+  return null;
 };
 
 const BORDER_COLORS = ['border-amber-400/30', 'border-rose-400/30', 'border-teal-400/30', 'border-violet-400/30', 'border-sky-400/30', 'border-orange-400/30'];
@@ -705,11 +737,23 @@ export default function WebsitePage() {
   }, [formData.date]);
 
   // Auto-select first available time when date or blockedSlots change
+  // If today has no slots, auto-advance to next available day
   useEffect(() => {
     if (!config.hours && !blockedSlots.length) return;
     const available = getAvailableSlotsForDate(formData.date, config.hours, blockedSlots);
-    if (available.length > 0 && !available.includes(formData.time)) {
-      setFormData(prev => ({ ...prev, time: available[0] }));
+    if (available.length > 0) {
+      if (!available.includes(formData.time)) {
+        setFormData(prev => ({ ...prev, time: available[0] }));
+      }
+    } else {
+      // If today and no slots, auto-advance to next available day
+      const today = format(new Date(), 'yyyy-MM-dd');
+      if (formData.date === today) {
+        const nextDate = getNextAvailableDate(formData.date, config.hours);
+        if (nextDate) {
+          setFormData(prev => ({ ...prev, date: nextDate }));
+        }
+      }
     }
   }, [formData.date, blockedSlots, config.hours]);
 
@@ -1105,16 +1149,22 @@ export default function WebsitePage() {
                   {(() => {
                     const available = getAvailableSlotsForDate(formData.date, config.hours, blockedSlots);
                     if (available.length === 0) {
-                      const dayMapFull = { 0: 'domenica', 1: 'lunedì', 2: 'martedì', 3: 'mercoledì', 4: 'giovedì', 5: 'venerdì', 6: 'sabato' };
-                      const dayMapShort = { 0: 'dom', 1: 'lun', 2: 'mar', 3: 'mer', 4: 'gio', 5: 'ven', 6: 'sab' };
-                      const d = new Date(formData.date + 'T12:00:00');
-                      const dow = d.getDay();
-                      const dayHours = (config.hours?.[dayMapFull[dow]] || config.hours?.[dayMapShort[dow]] || '').toLowerCase().trim();
-                      const isClosed = dayHours === 'chiuso' || dayHours === '-';
+                      const { isClosed } = getDayHoursForDate(formData.date, config.hours);
+                      const todayPast = isAllSlotsPastForToday(formData.date, config.hours);
+                      const nextDate = getNextAvailableDate(formData.date, config.hours);
                       return (
-                        <p className="text-red-400 font-bold text-sm p-3 bg-red-500/10 rounded-lg border border-red-500/30" data-testid="day-closed-msg">
-                          {isClosed ? 'Giorno chiuso. Scegli un altro giorno.' : 'Nessun orario disponibile per questa data. Tutti gli slot sono bloccati o passati.'}
-                        </p>
+                        <div className="space-y-3" data-testid="day-closed-msg">
+                          <p className="text-amber-400 font-bold text-sm p-3 bg-amber-500/10 rounded-lg border border-amber-500/30">
+                            {isClosed ? 'Giorno di chiusura. Scegli un altro giorno.' : todayPast ? 'Gli orari di oggi sono terminati.' : 'Nessun orario disponibile per questa data.'}
+                          </p>
+                          {nextDate && (
+                            <button type="button" onClick={() => setFormData(prev => ({...prev, date: nextDate}))}
+                              className="w-full p-3 rounded-xl bg-gradient-to-r from-[#C8617A] to-[#A0404F] text-white font-bold text-sm hover:scale-[1.02] transition-all"
+                              data-testid="go-next-date-btn">
+                              Prenota per {format(new Date(nextDate + 'T12:00:00'), 'EEEE d MMMM', { locale: it })}
+                            </button>
+                          )}
+                        </div>
                       );
                     }
                     return (
