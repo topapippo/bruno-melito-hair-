@@ -38,17 +38,31 @@ const getFilteredSlots = (dateStr, hoursConfig, blockedSlots = []) => {
   if (hoursConfig) {
     const d = new Date(dateStr + 'T12:00:00');
     const dayKey = DAY_MAP[d.getDay()];
-    const dayHours = (hoursConfig[dayKey] || '').toLowerCase();
+    // Case-insensitive lookup
+    const configLower = {};
+    Object.keys(hoursConfig).forEach(k => { configLower[k.toLowerCase()] = hoursConfig[k]; });
+    const dayMapFull = { 0: 'domenica', 1: 'lunedì', 2: 'martedì', 3: 'mercoledì', 4: 'giovedì', 5: 'venerdì', 6: 'sabato' };
+    const dayMapNoAccent = { 0: 'domenica', 1: 'lunedi', 2: 'martedi', 3: 'mercoledi', 4: 'giovedi', 5: 'venerdi', 6: 'sabato' };
+    const dow = d.getDay();
+    const dayHours = (configLower[dayMapFull[dow]] || configLower[dayMapNoAccent[dow]] || configLower[dayKey] || '').toLowerCase();
     if (!dayHours || dayHours === 'chiuso' || dayHours === '-') return { slots: [], closed: true, dayLabel: dayKey };
-    const match = dayHours.match(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/);
-    if (match) {
+    // Support split schedules: "08:00 - 13:00---14:00 - 19:00"
+    const rangePattern = /(\d{1,2})[.:](\d{2})\s*[-–]\s*(\d{1,2})[.:](\d{2})/g;
+    let match;
+    let foundRange = false;
+    const rangeSlots = [];
+    while ((match = rangePattern.exec(dayHours)) !== null) {
+      foundRange = true;
       const openMin = parseInt(match[1]) * 60 + parseInt(match[2]);
       const closeMin = parseInt(match[3]) * 60 + parseInt(match[4]);
-      slots = slots.filter(slot => {
+      ALL_SLOTS.forEach(slot => {
         const [h, m] = slot.split(':').map(Number);
         const t = h * 60 + m;
-        return t >= openMin && t < closeMin;
+        if (t >= openMin && t < closeMin) rangeSlots.push(slot);
       });
+    }
+    if (foundRange) {
+      slots = rangeSlots;
     }
   }
 
