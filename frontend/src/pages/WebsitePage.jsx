@@ -44,15 +44,29 @@ const getAvailableSlotsForDate = (dateStr, hoursConfig, blockedSlots = []) => {
   const BUFFER_MINUTES = 30;
   let slots = [];
 
-  const hasHoursConfig = hoursConfig && Object.keys(hoursConfig).some(k => hoursConfig[k] && hoursConfig[k] !== '');
+  const hasHoursConfig = hoursConfig && Object.keys(hoursConfig).some(k => {
+    const v = hoursConfig[k];
+    return v && v !== '' && v.toLowerCase() !== 'chiuso' && v !== '-';
+  });
 
   if (hasHoursConfig) {
-    const dayMap = { 0: 'dom', 1: 'lun', 2: 'mar', 3: 'mer', 4: 'gio', 5: 'ven', 6: 'sab' };
+    // Supporta sia chiavi abbreviate (lun, mar) che complete (lunedì, martedì)
+    const dayMapShort = { 0: 'dom', 1: 'lun', 2: 'mar', 3: 'mer', 4: 'gio', 5: 'ven', 6: 'sab' };
+    const dayMapFull = { 0: 'domenica', 1: 'lunedì', 2: 'martedì', 3: 'mercoledì', 4: 'giovedì', 5: 'venerdì', 6: 'sabato' };
+    const dayMapFullNoAccent = { 0: 'domenica', 1: 'lunedi', 2: 'martedi', 3: 'mercoledi', 4: 'giovedi', 5: 'venerdi', 6: 'sabato' };
     const d = new Date(dateStr + 'T12:00:00');
-    const dayKey = dayMap[d.getDay()];
-    const dayHours = (hoursConfig[dayKey] || '').toLowerCase();
+    const dow = d.getDay();
+
+    // Cerca con tutti i formati possibili
+    const dayHours = (
+      hoursConfig[dayMapFull[dow]] ||
+      hoursConfig[dayMapFullNoAccent[dow]] ||
+      hoursConfig[dayMapShort[dow]] ||
+      ''
+    ).toLowerCase().trim();
+
     if (dayHours === 'chiuso' || dayHours === '-') return [];
-    const match = dayHours.match(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/);
+    const match = dayHours.match(/(\d{1,2})[.:](\d{2})\s*[-–]\s*(\d{1,2})[.:](\d{2})/);
     if (match) {
       const openMin = parseInt(match[1]) * 60 + parseInt(match[2]);
       const closeMin = parseInt(match[3]) * 60 + parseInt(match[4]);
@@ -62,7 +76,7 @@ const getAvailableSlotsForDate = (dateStr, hoursConfig, blockedSlots = []) => {
         return t >= openMin && t < closeMin;
       });
     } else if (!dayHours) {
-      // Day not configured but others are → treat as open with default hours
+      // Giorno non configurato ma altri sì → aperto con orari default
       slots = [...TIME_SLOTS];
     } else {
       slots = [...TIME_SLOTS];
@@ -1091,11 +1105,12 @@ export default function WebsitePage() {
                   {(() => {
                     const available = getAvailableSlotsForDate(formData.date, config.hours, blockedSlots);
                     if (available.length === 0) {
-                      const dayMap = { 0: 'dom', 1: 'lun', 2: 'mar', 3: 'mer', 4: 'gio', 5: 'ven', 6: 'sab' };
+                      const dayMapFull = { 0: 'domenica', 1: 'lunedì', 2: 'martedì', 3: 'mercoledì', 4: 'giovedì', 5: 'venerdì', 6: 'sabato' };
+                      const dayMapShort = { 0: 'dom', 1: 'lun', 2: 'mar', 3: 'mer', 4: 'gio', 5: 'ven', 6: 'sab' };
                       const d = new Date(formData.date + 'T12:00:00');
-                      const dayKey = dayMap[d.getDay()];
-                      const dayHours = (config.hours?.[dayKey] || '').toLowerCase();
-                      const isClosed = !dayHours || dayHours === 'chiuso' || dayHours === '-';
+                      const dow = d.getDay();
+                      const dayHours = (config.hours?.[dayMapFull[dow]] || config.hours?.[dayMapShort[dow]] || '').toLowerCase().trim();
+                      const isClosed = dayHours === 'chiuso' || dayHours === '-';
                       return (
                         <p className="text-red-400 font-bold text-sm p-3 bg-red-500/10 rounded-lg border border-red-500/30" data-testid="day-closed-msg">
                           {isClosed ? 'Giorno chiuso. Scegli un altro giorno.' : 'Nessun orario disponibile per questa data. Tutti gli slot sono bloccati o passati.'}
