@@ -60,9 +60,11 @@ export default function ReportIncassiPage() {
       // Calculate stats
       const total = data.reduce((sum, p) => sum + p.total_paid, 0);
       const cash = data.filter(p => p.payment_method === 'cash').reduce((sum, p) => sum + p.total_paid, 0);
-      const prepaid = data.filter(p => p.payment_method !== 'cash').reduce((sum, p) => sum + p.total_paid, 0);
+      const pos = data.filter(p => p.payment_method === 'pos').reduce((sum, p) => sum + p.total_paid, 0);
+      const sospeso = data.filter(p => p.payment_method === 'sospeso').reduce((sum, p) => sum + p.total_paid, 0);
+      const prepaid = data.filter(p => p.payment_method === 'prepaid').reduce((sum, p) => sum + p.total_paid, 0);
       
-      setStats({ total, count: data.length, cash, prepaid });
+      setStats({ total, count: data.length, cash, pos, sospeso, prepaid });
     } catch (err) {
       console.error('Error fetching payments:', err);
     } finally {
@@ -78,7 +80,7 @@ export default function ReportIncassiPage() {
       'Importo Originale': p.original_amount,
       'Sconto': p.discount_value || 0,
       'Totale Pagato': p.total_paid,
-      'Metodo': p.payment_method === 'cash' ? 'Contanti' : 'Abbonamento/Prepagata'
+      'Metodo': p.payment_method === 'cash' ? 'Contanti' : p.payment_method === 'pos' ? 'POS' : p.payment_method === 'sospeso' ? 'Sospeso' : 'Abbonamento/Prepagata'
     }));
     
     const ws = XLSX.utils.json_to_sheet(data);
@@ -197,7 +199,7 @@ export default function ReportIncassiPage() {
                         <div className="text-right">
                           <p className="text-xl font-black text-green-600">€{payment.total_paid.toFixed(2)}</p>
                           <p className="text-xs text-[#7C5C4A] capitalize">
-                            {payment.payment_method === 'cash' ? 'Contanti' : 'Abbonamento/Prepagata'}
+                            {payment.payment_method === 'cash' ? 'Contanti' : payment.payment_method === 'pos' ? 'POS' : payment.payment_method === 'sospeso' ? 'Sospeso' : 'Abbonamento/Prepagata'}
                           </p>
                         </div>
                       </div>

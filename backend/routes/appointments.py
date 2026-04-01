@@ -272,6 +272,24 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, current_
                   "payment_method": data.payment_method, "amount_paid": data.total_paid}}
     )
 
+    # Se il pagamento e "sospeso", crea un record di debito
+    if data.payment_method == "sospeso" and data.total_paid > 0:
+        sospeso_doc = {
+            "id": str(uuid.uuid4()),
+            "user_id": current_user["id"],
+            "client_id": appointment["client_id"],
+            "client_name": appointment["client_name"],
+            "appointment_id": appointment_id,
+            "amount": data.total_paid,
+            "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+            "services": [s["name"] for s in appointment.get("services", [])],
+            "settled": False,
+            "settled_at": None,
+            "settled_method": None,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.sospesi.insert_one(sospeso_doc)
+
     # Incrementa total_visits del cliente al momento del checkout
     if appointment.get("client_id") and appointment["client_id"] not in ("", "generic"):
         await db.clients.update_one(
@@ -403,3 +421,55 @@ async def create_recurring_appointments(data: RecurringAppointmentCreate, curren
         created_appointments.append({"id": appointment_id, "date": appointment_doc["date"], "time": appointment_doc["time"]})
 
     return {"created": len(created_appointments), "appointments": created_appointments}
+
+
+
+# ============== SOSPESI (SUSPENDED PAYMENTS) ==============
+
+@router.get("/sospesi/client/{client_id}")
+async def get_client_sospesi(client_id: str, current_user: dict = Depends(get_current_user)):
+    """Restituisce tutti i sospesi non saldati di un cliente."""
+    sospesi = await db.sospesi.find(
+        {"client_id": client_id, "user_id": current_user["id"], "settled": False},
+        {"_id": 0}
+    ).to_list(100)
+    total = sum(s.get("amount", 0) for s in sospesi)
+    return {"sospesi": sospesi, "total": total}
+
+
+@router.post("/sospesi/{sospeso_id}/settle")
+async def settle_sospeso(sospeso_id: str, current_user: dict = Depends(get_current_user)):
+    """Salda un sospeso."""
+    from pydantic import BaseModel
+
+    class SettleData(BaseModel):
+        payment_method: str = "cash"
+
+    # Parse body manually
+    return await _settle_sospeso_impl(sospeso_id, "cash", current_user)
+
+
+@router.post("/sospesi/{sospeso_id}/settle/{method}")
+async def settle_sospeso_with_method(sospeso_id: str, method: str, current_user: dict = Depends(get_current_user)):
+    """Salda un sospeso con metodo specificato (cash/pos)."""
+    return await _settle_sospeso_impl(sospeso_id, method, current_user)
+
+
+async def _settle_sospeso_impl(sospeso_id: str, method: str, current_user: dict):
+    sospeso = await db.sospesi.find_one(
+        {"id": sospeso_id, "user_id": current_user["id"]}, {"_id": 0}
+    )
+    if not sospeso:
+        raise HTTPException(status_code=404, detail="Sospeso non trovato")
+    if sospeso.get("settled"):
+        raise HTTPException(status_code=400, detail="Sospeso gia saldato")
+
+    await db.sospesi.update_one(
+        {"id": sospeso_id},
+        {"$set": {
+            "settled": True,
+            "settled_at": datetime.now(timezone.utc).isoformat(),
+            "settled_method": method
+        }}
+    )
+    return {"success": True, "message": "Sospeso saldato con successo"}

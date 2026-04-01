@@ -355,7 +355,7 @@ class PublicBookingRequest(BaseModel):
 # ============== CHECKOUT ==============
 
 class CheckoutData(BaseModel):
-    payment_method: str
+    payment_method: str  # cash, pos, sospeso, prepaid
     discount_type: Optional[str] = "none"
     discount_value: Optional[float] = 0
     total_paid: float

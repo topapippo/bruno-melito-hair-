@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
   Loader2, User, CreditCard, Banknote, Euro, CheckCircle, Check,
-  Star, Gift, Ticket, Plus, Trash2, Edit3, X,
+  Star, Gift, Ticket, Plus, Trash2, Edit3, X, Smartphone, AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getCategoryInfo, groupServicesByCategory } from '../../lib/categories';
@@ -85,6 +85,10 @@ export default function EditAppointmentDialog({
   const [useLoyaltyPoints, setUseLoyaltyPoints] = useState(false);
   const [eligiblePromos, setEligiblePromos] = useState([]);
   const [selectedPromo, setSelectedPromo] = useState(null);
+  const [clientSospesi, setClientSospesi] = useState([]);
+  const [sospesiTotal, setSospesiTotal] = useState(0);
+  const [showSospesiPopup, setShowSospesiPopup] = useState(false);
+  const [settlingId, setSettlingId] = useState(null);
 
   const sortedServices = groupServicesByCategory(services);
 
@@ -114,11 +118,16 @@ export default function EditAppointmentDialog({
         Promise.all([
           api.get(`${API}/cards?client_id=${appointment.client_id}`).catch(() => ({ data: [] })),
           api.get(`${API}/clients/${appointment.client_id}/loyalty`).catch(() => ({ data: { points: 0 } })),
-        ]).then(([cardsRes, loyaltyRes]) => {
+          api.get(`${API}/sospesi/client/${appointment.client_id}`).catch(() => ({ data: { sospesi: [], total: 0 } })),
+        ]).then(([cardsRes, loyaltyRes, sospesiRes]) => {
           const activeCards = (cardsRes.data || []).filter(c => c.active && c.remaining_value > 0);
           setClientCards(activeCards);
           setClientLoyalty(loyaltyRes.data);
           if (activeCards.length > 0) setOpenCats(prev => ({ ...prev, _editCards: true }));
+          const sospData = sospesiRes.data || { sospesi: [], total: 0 };
+          setClientSospesi(sospData.sospesi || []);
+          setSospesiTotal(sospData.total || 0);
+          if ((sospData.sospesi || []).length > 0) setShowSospesiPopup(true);
         });
       } else {
         setClientCards([]);
@@ -211,6 +220,23 @@ export default function EditAppointmentDialog({
       toast.error(err.response?.data?.detail || 'Errore nell\'eliminazione');
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleSettleSospeso = async (sospesoId, method) => {
+    setSettlingId(sospesoId);
+    try {
+      await api.post(`${API}/sospesi/${sospesoId}/settle/${method}`);
+      toast.success('Sospeso saldato!');
+      setClientSospesi(prev => prev.filter(s => s.id !== sospesoId));
+      setSospesiTotal(prev => {
+        const settled = clientSospesi.find(s => s.id === sospesoId);
+        return prev - (settled?.amount || 0);
+      });
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Errore nel saldo sospeso');
+    } finally {
+      setSettlingId(null);
     }
   };
 
@@ -341,6 +367,53 @@ export default function EditAppointmentDialog({
             {appointment.date} alle {appointment.time}
           </DialogDescription>
         </DialogHeader>
+
+        {/* SOSPESO POPUP */}
+        {showSospesiPopup && clientSospesi.length > 0 && (
+          <div className="mx-5 mt-2 p-4 bg-red-50 border-2 border-red-400 rounded-2xl animate-in slide-in-from-top duration-300" data-testid="sospeso-popup">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-6 h-6 text-red-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-black text-red-800 text-base">PAGAMENTO SOSPESO</p>
+                <p className="text-sm text-red-600 font-semibold mt-0.5">
+                  {appointment.client_name || selectedClientInfo?.name} ha {clientSospesi.length} sospeso/i per un totale di {'\u20AC'}{sospesiTotal.toFixed(2)}
+                </p>
+                <div className="mt-3 space-y-2">
+                  {clientSospesi.map(s => (
+                    <div key={s.id} className="flex items-center justify-between bg-white rounded-xl p-3 border border-red-200">
+                      <div>
+                        <p className="text-sm font-bold text-red-800">{'\u20AC'}{s.amount?.toFixed(2)}</p>
+                        <p className="text-xs text-red-500">{s.date} {s.services?.length > 0 ? `- ${s.services.join(', ')}` : ''}</p>
+                      </div>
+                      <div className="flex gap-1.5">
+                        <Button type="button" size="sm"
+                          className="bg-green-600 hover:bg-green-700 text-white text-xs h-8 px-3"
+                          onClick={() => handleSettleSospeso(s.id, 'cash')}
+                          disabled={settlingId === s.id}
+                          data-testid={`settle-sospeso-cash-${s.id}`}>
+                          {settlingId === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Banknote className="w-3 h-3 mr-1" />Contanti</>}
+                        </Button>
+                        <Button type="button" size="sm"
+                          className="bg-blue-600 hover:bg-blue-700 text-white text-xs h-8 px-3"
+                          onClick={() => handleSettleSospeso(s.id, 'pos')}
+                          disabled={settlingId === s.id}
+                          data-testid={`settle-sospeso-pos-${s.id}`}>
+                          {settlingId === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Smartphone className="w-3 h-3 mr-1" />POS</>}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <button type="button" onClick={() => setShowSospesiPopup(false)}
+                  className="text-xs text-red-400 hover:text-red-600 mt-2 underline" data-testid="dismiss-sospeso-popup">
+                  Chiudi avviso
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         <form onSubmit={handleUpdate} className="flex flex-col flex-1 min-h-0">
           <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
             {/* Client Info */}
@@ -582,7 +655,7 @@ export default function EditAppointmentDialog({
                   <div>
                     <p className="font-bold text-emerald-800">Pagamento completato</p>
                     <p className="text-sm text-emerald-600">
-                      {appointment.payment_method === 'cash' ? 'Contanti' : appointment.payment_method === 'card' ? 'Carta' : appointment.payment_method || 'N/A'}
+                      {appointment.payment_method === 'cash' ? 'Contanti' : appointment.payment_method === 'pos' ? 'POS' : appointment.payment_method === 'sospeso' ? 'Sospeso' : appointment.payment_method === 'card' ? 'Carta' : appointment.payment_method === 'prepaid' ? 'Abb./Prepagata' : appointment.payment_method || 'N/A'}
                       {appointment.amount_paid ? ` - \u20AC${appointment.amount_paid.toFixed(2)}` : ''}
                     </p>
                   </div>
@@ -611,18 +684,41 @@ export default function EditAppointmentDialog({
                 {/* Payment Method */}
                 <div className="space-y-2 mb-4">
                   <Label className="text-[#2D1B14] font-bold text-sm">Metodo di pagamento</Label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     <Button type="button" variant={paymentMethod === 'cash' ? 'default' : 'outline'}
                       className={paymentMethod === 'cash' ? 'bg-green-600 text-white' : 'border-2'}
-                      onClick={() => { setPaymentMethod('cash'); setSelectedCardId(''); }}>
-                      <Banknote className="w-4 h-4 mr-2" /> Contanti
+                      onClick={() => { setPaymentMethod('cash'); setSelectedCardId(''); }}
+                      data-testid="payment-method-cash">
+                      <Banknote className="w-4 h-4 mr-1" /> Contanti
                     </Button>
-                    <Button type="button" variant={paymentMethod === 'prepaid' ? 'default' : 'outline'}
-                      className={paymentMethod === 'prepaid' ? 'bg-green-600 text-white' : 'border-2'}
-                      onClick={() => setPaymentMethod('prepaid')}>
-                      <Ticket className="w-4 h-4 mr-2" /> Abb. / Prepagata
+                    <Button type="button" variant={paymentMethod === 'pos' ? 'default' : 'outline'}
+                      className={paymentMethod === 'pos' ? 'bg-blue-600 text-white' : 'border-2'}
+                      onClick={() => { setPaymentMethod('pos'); setSelectedCardId(''); }}
+                      data-testid="payment-method-pos">
+                      <Smartphone className="w-4 h-4 mr-1" /> POS
+                    </Button>
+                    <Button type="button" variant={paymentMethod === 'sospeso' ? 'default' : 'outline'}
+                      className={paymentMethod === 'sospeso' ? 'bg-amber-600 text-white' : 'border-2'}
+                      onClick={() => { setPaymentMethod('sospeso'); setSelectedCardId(''); }}
+                      data-testid="payment-method-sospeso">
+                      <AlertTriangle className="w-4 h-4 mr-1" /> Sospeso
                     </Button>
                   </div>
+                  {paymentMethod === 'sospeso' && (
+                    <div className="p-3 bg-amber-50 border-2 border-amber-300 rounded-xl text-amber-800 text-sm">
+                      <p className="font-bold flex items-center gap-1"><AlertTriangle className="w-4 h-4" /> Attenzione</p>
+                      <p className="text-xs mt-1">Il pagamento verra registrato come "sospeso". Apparira un avviso al prossimo appuntamento del cliente.</p>
+                    </div>
+                  )}
+                  {/* Prepaid / Card button */}
+                  {clientCards.length > 0 && (
+                    <Button type="button" variant={paymentMethod === 'prepaid' ? 'default' : 'outline'}
+                      className={`w-full mt-1 ${paymentMethod === 'prepaid' ? 'bg-purple-600 text-white' : 'border-2'}`}
+                      onClick={() => setPaymentMethod('prepaid')}
+                      data-testid="payment-method-prepaid">
+                      <Ticket className="w-4 h-4 mr-2" /> Abb. / Prepagata
+                    </Button>
+                  )}
                   {paymentMethod === 'prepaid' && (
                     <div className="space-y-2 mt-2">
                       {clientCards.length > 0 ? clientCards.map(card => (
@@ -697,7 +793,7 @@ export default function EditAppointmentDialog({
                   {selectedPromo && <div className="flex justify-between text-sm text-pink-600"><span className="font-semibold flex items-center gap-1"><Gift className="w-3.5 h-3.5" /> Omaggio:</span><span>{selectedPromo.free_service_name}</span></div>}
                   {discountType !== 'none' && calculateDiscount() > 0 && <div className="flex justify-between text-sm text-red-600"><span className="font-semibold">Sconto:</span><span>-{'\u20AC'}{calculateDiscount().toFixed(2)}</span></div>}
                   <div className="flex justify-between text-xl font-black pt-2 border-t border-green-200"><span>TOTALE:</span><span className="text-green-600">{'\u20AC'}{calculateFinalAmount().toFixed(2)}</span></div>
-                  {calculateFinalAmount() >= 20 && !selectedCard && !selectedPromo && (
+                  {calculateFinalAmount() >= 20 && !selectedCardId && !selectedPromo && (
                     <div className="flex items-center gap-1.5 text-sm text-amber-600 pt-1" data-testid="loyalty-points-preview">
                       <Star className="w-4 h-4 text-amber-500" /><span className="font-semibold">+{Math.floor(calculateFinalAmount() / 20)} punti fedeltà</span>
                     </div>

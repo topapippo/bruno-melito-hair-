@@ -1000,37 +1000,66 @@ export default function WebsitePage() {
                       );
                     })()}
 
-                    {/* Promozioni attive */}
-                    {publicPromos.length > 0 && (
-                      <div>
-                        <h3 className="text-sm font-bold uppercase tracking-wider mb-2 sticky top-0 bg-[#1C1008] py-1 z-10 flex items-center gap-2 text-amber-400">
-                          <Gift className="w-4 h-4" /> Promozioni Attive
-                        </h3>
-                        <div className="space-y-2">
-                          {publicPromos.map((promo) => (
-                            <div key={promo.id}
-                              onClick={() => {
-                                if (promo.free_service_id && !formData.service_ids.includes(promo.free_service_id)) {
-                                  setFormData(prev => ({ ...prev, service_ids: [...prev.service_ids, promo.free_service_id], notes: (prev.notes ? prev.notes + ' ' : '') + `[PROMO: ${promo.name}]` }));
-                                } else {
-                                  setFormData(prev => ({ ...prev, notes: (prev.notes ? prev.notes + ' ' : '') + `[PROMO: ${promo.name}]` }));
-                                }
-                                toast.success(`Promo "${promo.name}" aggiunta!`);
-                              }}
-                              className="p-4 rounded-xl border-2 border-amber-500/30 bg-[#2A1A0E] cursor-pointer transition-all hover:border-amber-400"
-                              data-testid={`website-promo-${promo.id}`}>
-                              <div className="flex justify-between items-center">
-                                <div>
-                                  <p className="font-bold text-white">{promo.name}</p>
-                                  <p className="text-sm text-amber-300">{promo.free_service_name || promo.description || 'Clicca per applicare'}</p>
-                                </div>
-                                <div className="bg-amber-400 text-[#1C1008] text-xs font-bold px-3 py-1 rounded-full">PROMO</div>
-                              </div>
+                    {/* Promozioni attive - pulsante come Card & Abbonamenti */}
+                    {publicPromos.length > 0 && (() => {
+                      const isOpen = openCats['b_promos'];
+                      return (
+                        <div data-testid="booking-cat-promos">
+                          <button type="button" onClick={() => toggleCat('b_promos')}
+                            className="w-full flex items-center justify-between px-5 py-3.5 rounded-2xl font-black text-white text-left transition-all hover:brightness-110 active:scale-[0.98]"
+                            style={{ backgroundColor: '#F59E0B' }}>
+                            <span className="flex items-center gap-2">
+                              <Gift className="w-4 h-4" />
+                              <span className="text-base">Promozioni Attive</span>
+                              {publicPromos.filter(p => (formData.notes || '').includes(`[PROMO: ${p.name}]`)).length > 0 && (
+                                <span className="bg-white/30 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                                  {publicPromos.filter(p => (formData.notes || '').includes(`[PROMO: ${p.name}]`)).length}
+                                </span>
+                              )}
+                            </span>
+                            {isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                          </button>
+                          {isOpen && (
+                            <div className="mt-1 space-y-2 pb-2 animate-in fade-in duration-200">
+                              {publicPromos.map((promo) => {
+                                const isSelected = (formData.notes || '').includes(`[PROMO: ${promo.name}]`);
+                                return (
+                                  <div key={promo.id}
+                                    onClick={() => {
+                                      if (isSelected) {
+                                        setFormData(prev => ({ ...prev, notes: prev.notes.replace(`[PROMO: ${promo.name}] `, '').replace(`[PROMO: ${promo.name}]`, '') }));
+                                        if (promo.free_service_id) {
+                                          setFormData(prev => ({ ...prev, service_ids: prev.service_ids.filter(id => id !== promo.free_service_id) }));
+                                        }
+                                        toast('Promo rimossa');
+                                      } else {
+                                        if (promo.free_service_id && !formData.service_ids.includes(promo.free_service_id)) {
+                                          setFormData(prev => ({ ...prev, service_ids: [...prev.service_ids, promo.free_service_id], notes: (prev.notes ? prev.notes + ' ' : '') + `[PROMO: ${promo.name}]` }));
+                                        } else {
+                                          setFormData(prev => ({ ...prev, notes: (prev.notes ? prev.notes + ' ' : '') + `[PROMO: ${promo.name}]` }));
+                                        }
+                                        toast.success(`Promo "${promo.name}" aggiunta!`);
+                                      }
+                                    }}
+                                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${isSelected ? 'border-amber-500 bg-amber-500/15' : 'border-[#3A2A1A] bg-[#2A1A0E] hover:border-amber-400/60'}`}
+                                    data-testid={`website-promo-${promo.id}`}>
+                                    <div className="flex justify-between items-center">
+                                      <div>
+                                        <p className="font-bold text-white">{promo.name}</p>
+                                        <p className="text-sm text-amber-300">{promo.free_service_name || promo.description || 'Clicca per applicare'}</p>
+                                      </div>
+                                      <div className="text-right">
+                                        {isSelected ? <span className="text-xs font-bold text-amber-400">SELEZIONATO</span> : <div className="bg-amber-400 text-[#1C1008] text-xs font-bold px-3 py-1 rounded-full">PROMO</div>}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
-                          ))}
+                          )}
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
                   </>
                 );
               })()}
