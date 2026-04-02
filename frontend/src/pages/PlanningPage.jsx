@@ -276,13 +276,25 @@ export default function PlanningPage() {
     setBlockDialogOpen(true);
   };
 
-  const openNewAppointmentForDate = (date) => {
+  const openNewAppointmentForDate = (date, time) => {
     setNewDialogInitial({
       date: format(date, 'yyyy-MM-dd'),
-      time: '09:00',
+      time: time || '09:00',
       operatorId: mbhsOperator?.id || ''
     });
     setNewDialogOpen(true);
+  };
+
+  // Week view drag & drop handler
+  const handleWeekDragDrop = async (apt, newDate, newTime) => {
+    try {
+      const updateData = { time: newTime, date: newDate };
+      await api.put(`${API}/appointments/${apt.id}`, updateData);
+      toast.success(`Spostato a ${format(new Date(newDate + 'T12:00:00'), 'EEE dd/MM', { locale: it })} ${newTime}`);
+      fetchWeekData();
+    } catch {
+      toast.error('Errore nello spostamento');
+    }
   };
 
   // --- Appointment interactions ---
@@ -673,8 +685,12 @@ export default function PlanningPage() {
           <WeekView
             selectedDate={selectedDate}
             weekAppointments={weekAppointments}
+            operators={operators}
+            blockedSlotsMap={{}}
             onAddAppointment={openNewAppointmentForDate}
             onDayClick={(day) => { setSelectedDate(day); setViewMode('day'); }}
+            onEditAppointment={openEditDialog}
+            onDragDrop={handleWeekDragDrop}
           />
         ) : (
           <MonthView
