@@ -92,10 +92,22 @@ export default function WeeklyView() {
     return { top: `${startIdx * 40}px`, height: `${Math.max(slots * 40 - 2, 20)}px` };
   };
 
-  const getStatusColor = (status) => {
-    if (status === 'completed') return 'bg-emerald-500';
-    if (status === 'cancelled') return 'bg-red-400';
-    return 'bg-[#C8617A]';
+  const getOperatorColor = (apt) => {
+    if (apt.status === 'completed') return '#10B981';
+    if (apt.status === 'cancelled') return '#EF4444';
+    if (apt.operator_id && operators.length) {
+      const op = operators.find(o => o.id === apt.operator_id);
+      if (op?.color) return op.color;
+    }
+    return '#C8617A';
+  };
+
+  const getOperatorName = (apt) => {
+    if (apt.operator_id && operators.length) {
+      const op = operators.find(o => o.id === apt.operator_id);
+      if (op) return op.name;
+    }
+    return '';
   };
 
   // Click empty slot → create new appointment
@@ -192,18 +204,32 @@ export default function WeeklyView() {
           <Card className="bg-white border-[#F0E6DC]/30 shadow-sm overflow-hidden">
             <CardContent className="p-0">
               {/* Day Headers */}
-              <div className="flex border-b border-[#F0E6DC]">
-                <div className="w-16 shrink-0 border-r border-[#F0E6DC] p-2 bg-[#FAF7F2]">
-                  <span className="text-xs text-[#7C5C4A]">Ora</span>
+              <div className="flex border-b-2 border-[#C8617A]/40 sticky top-0 z-20 bg-white">
+                <div className="w-16 shrink-0 border-r border-[#F0E6DC] p-2 bg-[#FAF7F2] flex items-center justify-center">
+                  <span className="text-xs font-bold text-[#C8617A]">Ora</span>
                 </div>
                 {weekDays.map((day) => {
                   const isToday = isSameDay(day, new Date());
                   const dayApts = getAppointmentsForDay(day);
                   return (
-                    <div key={day.toString()} className={`flex-1 min-w-[100px] p-2 text-center border-r border-[#F0E6DC] last:border-r-0 ${isToday ? 'bg-[#C8617A]/5' : 'bg-[#FAF7F2]'}`}>
-                      <p className="text-xs uppercase tracking-wide text-[#7C5C4A]">{format(day, 'EEE', { locale: it })}</p>
-                      <p className={`text-lg font-bold ${isToday ? 'text-[#C8617A]' : 'text-[#2D1B14]'}`}>{format(day, 'd')}</p>
-                      {dayApts.length > 0 && <p className="text-[10px] text-[#C8617A] font-bold">{dayApts.length} app.</p>}
+                    <div key={day.toString()} className={`flex-1 min-w-[120px] p-2 border-r border-[#F0E6DC] last:border-r-0 ${isToday ? 'bg-[#C8617A]/10' : 'bg-[#FAF7F2]'}`}>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className={`text-[10px] font-bold uppercase ${isToday ? 'text-[#C8617A]' : 'text-[#64748B]'}`}>{format(day, 'EEE', { locale: it })}</p>
+                          <p className={`text-xl font-black leading-tight ${isToday ? 'text-[#C8617A]' : 'text-[#2D1B14]'}`}>{format(day, 'd')}</p>
+                        </div>
+                        <div className="flex flex-col items-end gap-0.5">
+                          <Button variant="ghost" size="icon"
+                            className="h-6 w-6 rounded-full bg-[#C8617A]/10 hover:bg-[#C8617A]/20 text-[#C8617A]"
+                            onClick={() => handleSlotClick(day, '09:00')}
+                            data-testid={`weekly-add-apt-${format(day, 'yyyy-MM-dd')}`}>
+                            <Plus className="w-3 h-3" />
+                          </Button>
+                          {dayApts.length > 0 && (
+                            <span className="text-[9px] font-bold text-[#C8617A] bg-[#C8617A]/10 px-1.5 rounded-full">{dayApts.length}</span>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   );
                 })}
@@ -215,8 +241,12 @@ export default function WeeklyView() {
                   {/* Time column */}
                   <div className="w-16 shrink-0 border-r border-[#F0E6DC]">
                     {TIME_SLOTS.map((time, idx) => (
-                      <div key={time} className="h-10 flex items-center justify-center border-b border-[#F0E6DC]/50" style={idx % 4 === 0 ? { borderBottomColor: '#E2E8F0' } : {}}>
-                        {idx % 4 === 0 && <span className="text-xs font-bold text-[#7C5C4A]">{time}</span>}
+                      <div key={time} className={`h-10 flex items-center justify-center border-b ${idx % 4 === 0 ? 'border-[#E2E8F0]' : 'border-[#F0E6DC]/30'}`}>
+                        {idx % 4 === 0 ? (
+                          <span className="text-xs font-bold text-[#2D1B14]">{time}</span>
+                        ) : idx % 2 === 0 ? (
+                          <span className="text-[10px] text-[#94A3B8]">{time}</span>
+                        ) : null}
                       </div>
                     ))}
                   </div>
@@ -242,20 +272,28 @@ export default function WeeklyView() {
                         {dayApts.map((apt) => {
                           const style = getAppointmentStyle(apt);
                           const isDragging = draggedApt?.id === apt.id;
+                          const color = getOperatorColor(apt);
+                          const opName = getOperatorName(apt);
                           return (
                             <div
                               key={apt.id}
                               draggable={apt.status !== 'completed' && apt.status !== 'cancelled'}
                               onDragStart={(e) => handleDragStart(e, apt)}
                               onDragEnd={handleDragEnd}
-                              className={`absolute left-0.5 right-0.5 ${getStatusColor(apt.status)} text-white rounded-lg px-1.5 py-0.5 overflow-hidden cursor-grab active:cursor-grabbing hover:brightness-110 hover:shadow-md transition-all text-xs shadow-sm z-10 ${isDragging ? 'opacity-40 ring-2 ring-white' : ''}`}
-                              style={style}
-                              title={`${apt.time} - ${apt.client_name}\n${apt.services.map(s => s.name).join(', ')}\nTrascina per spostare`}
+                              className={`absolute left-0.5 right-0.5 text-white rounded-lg px-1.5 py-0.5 overflow-hidden cursor-grab active:cursor-grabbing hover:brightness-110 hover:shadow-lg transition-all text-xs shadow-sm z-10 border-l-[3px] border-white/40 ${isDragging ? 'opacity-40 ring-2 ring-white' : ''}`}
+                              style={{ ...style, backgroundColor: color }}
+                              title={`${apt.time} - ${apt.client_name}${opName ? ` (${opName})` : ''}\n${apt.services.map(s => s.name).join(', ')}\nTrascina per spostare`}
                               onClick={(e) => handleAppointmentClick(e, apt)}
                               data-testid={`week-apt-${apt.id}`}
                             >
-                              <p className="font-bold truncate leading-tight">{apt.time} {apt.client_name}</p>
-                              <p className="truncate opacity-80 leading-tight text-[10px]">{apt.services.map(s => s.name).join(', ')}</p>
+                              <p className="font-bold truncate leading-tight text-[11px]">{apt.time}</p>
+                              <p className="font-semibold truncate leading-tight text-[10px]">{apt.client_name}</p>
+                              {parseInt(style.height) > 50 && (
+                                <p className="truncate opacity-80 leading-tight text-[9px]">{apt.services.map(s => s.name).join(', ')}</p>
+                              )}
+                              {parseInt(style.height) > 70 && opName && (
+                                <p className="truncate opacity-70 leading-tight text-[8px] italic">{opName}</p>
+                              )}
                             </div>
                           );
                         })}
@@ -270,11 +308,20 @@ export default function WeeklyView() {
 
         <Card className="bg-white border-[#F0E6DC]/30">
           <CardContent className="p-4">
-            <div className="flex flex-wrap items-center justify-center gap-6 text-sm">
-              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-[#C8617A]" /><span className="text-[#7C5C4A]">Programmati</span></div>
-              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-emerald-500" /><span className="text-[#7C5C4A]">Completati</span></div>
-              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-red-400" /><span className="text-[#7C5C4A]">Cancellati</span></div>
-              <span className="text-[#7C5C4A] font-bold">Totale: {appointments.length} appuntamenti</span>
+            <div className="flex flex-wrap items-center justify-between gap-4 text-sm">
+              <div className="flex flex-wrap items-center gap-4">
+                <span className="text-[10px] text-[#7C5C4A] font-semibold uppercase">Operatori:</span>
+                {operators.map(op => (
+                  <div key={op.id} className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: op.color }} />
+                    <span className="text-xs font-medium text-[#2D1B14]">{op.name}</span>
+                  </div>
+                ))}
+                <span className="text-[#7C5C4A]/40">|</span>
+                <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-emerald-500" /><span className="text-xs text-[#7C5C4A]">Completati</span></div>
+                <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-red-400" /><span className="text-xs text-[#7C5C4A]">Cancellati</span></div>
+              </div>
+              <span className="text-[#7C5C4A] font-bold text-xs">Totale: {appointments.length}</span>
             </div>
           </CardContent>
         </Card>
