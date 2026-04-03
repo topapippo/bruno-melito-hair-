@@ -8,12 +8,14 @@ App gestionale completa per salone (Bruno Melito Hair) con sito pubblico per pre
 - **Backend**: FastAPI + MongoDB
 - **Deploy**: Render (hosting) + MongoDB Atlas (DB) + OVH (DNS)
 - **Dominio**: brunomelitohair.it
+- **Render Backend**: https://bruno-melito-hair-2497.onrender.com
+- **GitHub**: topapippo/bruno-melito-hair-
 
 ## Credenziali
 - Preview: admin@brunomelito.it / mbhs637104
 - Produzione: melitobruno@gmail.com / mbhs637104
 
-## Struttura File Principali
+## Struttura File
 ```
 /app/
 ├── backend/
@@ -23,7 +25,7 @@ App gestionale completa per salone (Bruno Melito Hair) con sito pubblico per pre
 └── frontend/
     ├── src/
     │   ├── components/
-    │   │   ├── planning/ (DayView, WeekView, MonthView, PlanningBanners, PlanningSearch, NewAppointmentDialog, EditAppointmentDialog, BlockSlotDialog, holidays.js)
+    │   │   ├── planning/ (DayView, WeekView, MonthView, PlanningBanners, PlanningSearch, EditAppointmentDialog, NewAppointmentDialog, BlockSlotDialog, holidays.js)
     │   │   ├── website/ (BookingForm, BookingSuccess, MyAppointmentsModal, sections/LandingSections)
     │   │   └── ui/ (Shadcn components)
     │   ├── pages/ (WebsitePage, PlanningPage, WeeklyView, SettingsPage, ecc.)
@@ -32,30 +34,26 @@ App gestionale completa per salone (Bruno Melito Hair) con sito pubblico per pre
 
 ## Funzionalità Completate
 - Landing page pubblica con sezioni dinamiche CMS
-- Booking online 3 step (servizi, data/ora, dati cliente) con upselling
+- Booking online 3 step con upselling
 - Planning giornaliero/settimanale/mensile con drag & drop
-- Auto-assegnazione 2° operatore su conflitto orario
-- Colori categorie servizi (Styling, Trattamenti, Colore, ecc.)
-- Gestione blocco slot orari
-- Festività italiane evidenziate nel planning
+- **Colori per categoria servizi** (taglio=#0EA5E9, colore=#789F8A, trattamento=#334155, permanente=#8B5CF6, stiratura=#D946EF) con triple-fallback (category → ID → nome)
+- **Split overlap appuntamenti** (computeOverlaps divide visivamente slot sovrapposti)
+- **Auto-assegnazione 2° operatore** con check time-range overlap (non exact match)
+- **Messaggio ringraziamento WhatsApp post-incasso** con invito a tornare e recensione
+- Gestione blocco slot orari, festività italiane
 - Orari split pausa pranzo (formato `08:00 - 13:00---14:00 - 19:00`)
-- CMS temi dinamici (colori, font) per sito pubblico e dashboard admin
-- WhatsApp batch reminders
-- Programma fedeltà punti
-- Card/Abbonamenti
-- QR Code prenotazione
-- Promozioni attive
-- Report incassi e spese
-- "I Miei Appuntamenti" per clienti (lookup via telefono)
-- **Refactoring completato**: WebsitePage.jsx (1686→449 righe), PlanningPage.jsx (763→573 righe)
+- CMS temi dinamici, WhatsApp batch reminders
+- Programma fedeltà, Card/Abbonamenti, QR Code
+- Refactoring: WebsitePage (1686→449), PlanningPage (763→640)
 
 ## Note Tecniche Critiche
-- **Split Hours**: Formato `08:00 - 13:00---14:00 - 19:00` → parseare con `---` come delimitatore
-- **Legacy Color Fallback**: Appuntamenti vecchi senza campo `category` → fallback lookup su lista servizi
-- **MongoDB ObjectId**: Sempre escludere `_id` nelle risposte JSON
+- **Split Hours**: Parseare con `---` come delimitatore
+- **Legacy Color Fallback**: svcById + svcByName per appuntamenti vecchi senza category
+- **MongoDB ObjectId**: Sempre escludere `_id`
+- **Render Deploy**: SEMPRE Clear build cache!
 
 ## Task Futuri
-- P1: Dashboard statistiche clienti (grafici frequenza visite, spesa media, servizi più richiesti)
+- P1: Dashboard statistiche clienti (grafici frequenza visite, spesa media)
 - P2: Scheda cliente con storico fotografico
 - P2: Sconti/messaggi automatici compleanno
 - P3: Lista d'attesa intelligente

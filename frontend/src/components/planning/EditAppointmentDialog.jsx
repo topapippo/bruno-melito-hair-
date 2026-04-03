@@ -59,7 +59,7 @@ const getFilteredSlots = (dateStr, hoursConfig, blockedSlots = []) => {
 };
 
 export default function EditAppointmentDialog({
-  open, onClose, appointment, operators, clients, services, onSuccess, onLoyaltyAlert,
+  open, onClose, appointment, operators, clients, services, onSuccess, onLoyaltyAlert, onThankYou,
 }) {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -91,6 +91,7 @@ export default function EditAppointmentDialog({
   const [settlingId, setSettlingId] = useState(null);
 
   const sortedServices = groupServicesByCategory(services);
+
 
   useEffect(() => {
     if (open && appointment) {
@@ -305,33 +306,31 @@ export default function EditAppointmentDialog({
         : 'Pagamento registrato con successo!';
       toast.success(msg);
 
-      // Invita a lasciare recensione Google via WhatsApp
-      const clientPhone = res.data.client_phone || appointment.client_phone;
-      if (clientPhone && clientPhone.length >= 6) {
-        try {
-          const settingsRes = await api.get(`${API}/settings`);
-          const reviewLink = settingsRes.data?.google_review_link;
-          if (reviewLink) {
-            const cleanPhone = clientPhone.replace(/\D/g, '').replace(/^0/, '39');
-            const phoneNum = cleanPhone.startsWith('39') ? cleanPhone : '39' + cleanPhone;
-            const reviewMsg = encodeURIComponent(
-              `Ciao ${res.data.client_name || appointment.client_name || ''}! Grazie per essere venuto da Bruno Melito Hair. Se ti sei trovato bene, ci farebbe molto piacere una tua recensione su Google: ${reviewLink}`
-            );
-            setTimeout(() => {
-              toast('Invia recensione Google al cliente?', {
-                duration: 15000,
-                action: {
-                  label: 'WhatsApp',
-                  onClick: () => window.open(`https://wa.me/${phoneNum}?text=${reviewMsg}`, '_blank')
-                }
-              });
-            }, 1500);
-          }
-        } catch {}
+      // Prepara i dati per il ringraziamento WhatsApp
+      const clientPhone = res.data.client_phone || appointment.client_phone || selectedClientInfo?.phone;
+      const clientName = res.data.client_name || appointment.client_name || selectedClientInfo?.name;
+      let salonName = 'Bruno Melito Hair';
+      let reviewLink = '';
+      try {
+        const settingsRes = await api.get(`${API}/settings`);
+        salonName = settingsRes.data?.salon_name || salonName;
+        reviewLink = settingsRes.data?.google_review_link || '';
+      } catch {}
+
+      // Mostra il dialog di ringraziamento (nel parent)
+      if (onThankYou) {
+        onThankYou({
+          clientName,
+          clientPhone,
+          amount: calculateFinalAmount(),
+          salonName,
+          reviewLink,
+          pointsEarned,
+        });
       }
 
-      onClose();
       resetCheckout();
+      onClose();
       onSuccess?.();
 
       if (res.data.loyalty_threshold_reached) {
