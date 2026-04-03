@@ -1174,43 +1174,23 @@ export default function WebsitePage() {
                       );
                     }
                     return (
-                      <div className="space-y-3" data-testid="time-slots-grid">
-                        {(() => {
-                          const morning = available.filter(t => parseInt(t.split(':')[0]) < 13);
-                          const afternoon = available.filter(t => parseInt(t.split(':')[0]) >= 13);
-                          return (
-                            <>
-                              {morning.length > 0 && (
-                                <div>
-                                  <p className="text-xs font-bold text-[#B89A7A] mb-1.5 uppercase tracking-wider">Mattina</p>
-                                  <div className="grid grid-cols-5 gap-1.5">
-                                    {morning.map(t => (
-                                      <button key={t} type="button" onClick={() => setFormData(prev => ({...prev, time: t}))}
-                                        className={`p-2 rounded-lg text-xs font-bold transition-all ${formData.time === t ? 'bg-gradient-to-r from-[#C8617A] to-[#A0404F] text-white shadow-lg scale-105' : 'bg-[#2A1A0E] border border-[#3A2A1A] text-[#D4B89A] hover:border-[#C8617A]/50 hover:text-white'}`}
-                                        data-testid={`time-slot-${t}`}>
-                                        {t}
-                                      </button>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                              {afternoon.length > 0 && (
-                                <div>
-                                  <p className="text-xs font-bold text-[#B89A7A] mb-1.5 uppercase tracking-wider">Pomeriggio</p>
-                                  <div className="grid grid-cols-5 gap-1.5">
-                                    {afternoon.map(t => (
-                                      <button key={t} type="button" onClick={() => setFormData(prev => ({...prev, time: t}))}
-                                        className={`p-2 rounded-lg text-xs font-bold transition-all ${formData.time === t ? 'bg-gradient-to-r from-[#C8617A] to-[#A0404F] text-white shadow-lg scale-105' : 'bg-[#2A1A0E] border border-[#3A2A1A] text-[#D4B89A] hover:border-[#C8617A]/50 hover:text-white'}`}
-                                        data-testid={`time-slot-${t}`}>
-                                        {t}
-                                      </button>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                            </>
-                          );
-                        })()}
+                      <div className="space-y-2" data-testid="time-slots-grid">
+                        <select value={formData.time} onChange={(e) => setFormData(prev => ({...prev, time: e.target.value}))}
+                          className="w-full p-3.5 bg-[#2A1A0E] border border-[#3A2A1A] rounded-xl text-white font-bold text-base appearance-none cursor-pointer focus:border-[#C8617A] focus:ring-1 focus:ring-[#C8617A] transition-all"
+                          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23D4B89A' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center' }}
+                          data-testid="time-select">
+                          {(() => {
+                            const morning = available.filter(t => parseInt(t.split(':')[0]) < 13);
+                            const afternoon = available.filter(t => parseInt(t.split(':')[0]) >= 13);
+                            return (
+                              <>
+                                {morning.length > 0 && <optgroup label="Mattina">{morning.map(t => <option key={t} value={t}>{t}</option>)}</optgroup>}
+                                {afternoon.length > 0 && <optgroup label="Pomeriggio">{afternoon.map(t => <option key={t} value={t}>{t}</option>)}</optgroup>}
+                              </>
+                            );
+                          })()}
+                        </select>
+                        <p className="text-[10px] text-[#B89A7A]/60 text-center">Scorri per vedere tutti gli orari disponibili</p>
                       </div>
                     );
                   })()}
@@ -1373,9 +1353,10 @@ export default function WebsitePage() {
               <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
               <span className="text-xs font-bold hidden xs:inline sm:inline">Accedi</span>
             </a>
-            <Button variant="outline" onClick={() => setShowMyAppts(true)} className="border-amber-300 text-amber-600 hover:bg-amber-50 font-bold text-xs px-2.5 py-1.5 sm:px-4 sm:text-sm rounded-lg" data-testid="my-appointments-btn" title="Inserisci il tuo numero di telefono per vedere le tue prenotazioni">
-              <CalendarDays className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" /> <span className="hidden sm:inline">Verifica Prenotazione</span><span className="sm:hidden">Prenot.</span>
-            </Button>
+            <button onClick={() => setShowMyAppts(true)} className="flex flex-col items-center text-amber-600 hover:text-amber-700 transition-colors px-2 py-1" data-testid="my-appointments-btn" title="Inserisci il tuo numero di telefono per vedere le tue prenotazioni">
+              <span className="flex items-center gap-1 font-bold text-[10px] sm:text-sm"><CalendarDays className="w-3 h-3 sm:w-4 sm:h-4" />I Miei Appuntamenti</span>
+              <span className="text-[7px] sm:text-[9px] text-amber-400 font-normal sm:hidden">Verifica prenotazione</span>
+            </button>
             <Button onClick={() => setShowBooking(true)} style={{ backgroundColor: T.primary }} className="text-white font-bold text-sm px-4 sm:px-6 hover:opacity-90" data-testid="website-book-btn">
               PRENOTA ORA
             </Button>
@@ -1580,7 +1561,7 @@ export default function WebsitePage() {
           <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl" onClick={e => e.stopPropagation()} data-testid="my-appointments-modal">
             <div className="p-6 border-b border-gray-100">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-black text-[#1e293b]">Verifica Prenotazione</h2>
+                <h2 className="text-xl font-black text-[#1e293b]">I Miei Appuntamenti</h2>
                 <button onClick={() => setShowMyAppts(false)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
                   <X className="w-4 h-4" />
                 </button>
