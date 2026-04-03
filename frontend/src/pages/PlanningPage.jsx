@@ -680,6 +680,7 @@ export default function PlanningPage() {
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             touchStartRef={touchStartRef}
+            services={services}
           />
         ) : viewMode === 'week' ? (
           <WeekView
@@ -691,6 +692,7 @@ export default function PlanningPage() {
             onDayClick={(day) => { setSelectedDate(day); setViewMode('day'); }}
             onEditAppointment={openEditDialog}
             onDragDrop={handleWeekDragDrop}
+            services={services}
           />
         ) : (
           <MonthView

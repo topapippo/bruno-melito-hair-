@@ -3,11 +3,18 @@ import { Clock, Repeat } from 'lucide-react';
 import { addDays, subDays } from 'date-fns';
 import { getCategoryInfo } from '../../lib/categories';
 
-const getAppointmentColor = (apt) => {
+const getAppointmentColor = (apt, servicesLookup) => {
   if (apt.status === 'completed') return '#10B981';
   if (apt.status === 'cancelled') return '#EF4444';
-  const cat = apt.services?.[0]?.category;
-  if (cat) return getCategoryInfo(cat).color;
+  const svc = apt.services?.[0];
+  if (svc) {
+    if (svc.category) return getCategoryInfo(svc.category).color;
+    if (svc.id && servicesLookup?.[svc.id]) return getCategoryInfo(servicesLookup[svc.id]).color;
+    if (svc.name && servicesLookup) {
+      const match = Object.entries(servicesLookup).find(([, v]) => typeof v === 'object' && v.name === svc.name);
+      if (match) return getCategoryInfo(match[1].category).color;
+    }
+  }
   return '#C8617A';
 };
 
@@ -33,7 +40,9 @@ export default function DayView({
   onDragLeave,
   onDrop,
   touchStartRef,
+  services,
 }) {
+  const servicesLookup = (services || []).reduce((m, s) => { m[s.id] = s.category; return m; }, {});
   return (
     <Card className="bg-white border-[#F0E6DC]/30 shadow-sm overflow-hidden">
       <CardContent className="p-0">
@@ -146,7 +155,7 @@ export default function DayView({
                         }`}
                         style={{
                           ...style,
-                          backgroundColor: getAppointmentColor(apt),
+                          backgroundColor: getAppointmentColor(apt, servicesLookup),
                         }}
                         title={`Clicca per modificare - ${apt.client_name}`}
                       >

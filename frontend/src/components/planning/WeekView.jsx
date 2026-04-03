@@ -5,7 +5,7 @@ import { Plus, Clock } from 'lucide-react';
 import { format, startOfWeek, eachDayOfInterval, addDays, isToday } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { isHoliday } from './holidays';
-import { getCategoryInfo } from '../../lib/categories';
+import { getCategoryInfo, CATEGORIES } from '../../lib/categories';
 
 const TIME_SLOTS = [];
 for (let h = 8; h <= 20; h++) {
@@ -26,12 +26,14 @@ export default function WeekView({
   onDayClick,
   onEditAppointment,
   onDragDrop,
+  services,
 }) {
   const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
   const days = eachDayOfInterval({ start: weekStart, end: addDays(weekStart, 5) });
   const scrollRef = useRef(null);
   const dragRef = useRef(null);
   const dragOverRef = useRef(null);
+  const servicesLookup = (services || []).reduce((m, s) => { m[s.id] = s.category; return m; }, {});
 
   const getStyle = (apt, overlapInfo) => {
     const [h, m] = apt.time.split(':').map(Number);
@@ -49,8 +51,11 @@ export default function WeekView({
   const getAppointmentColor = (apt) => {
     if (apt.status === 'completed') return '#10B981';
     if (apt.status === 'cancelled') return '#EF4444';
-    const cat = apt.services?.[0]?.category;
-    if (cat) return getCategoryInfo(cat).color;
+    const svc = apt.services?.[0];
+    if (svc) {
+      if (svc.category) return getCategoryInfo(svc.category).color;
+      if (svc.id && servicesLookup[svc.id]) return getCategoryInfo(servicesLookup[svc.id]).color;
+    }
     return '#C8617A';
   };
 
@@ -247,10 +252,10 @@ export default function WeekView({
         {/* Category Legend */}
         <div className="flex flex-wrap items-center gap-3 px-4 py-2 bg-[#FAF7F2] border-t border-[#F0E6DC]">
           <span className="text-[10px] text-[#7C5C4A] font-semibold uppercase">Servizi:</span>
-          {[{l:'Styling',c:'#0EA5E9'},{l:'Trattamenti',c:'#334155'},{l:'Colore',c:'#789F8A'},{l:'Permanente',c:'#8B5CF6'},{l:'Stiratura',c:'#D946EF'},{l:'Abbonamenti',c:'#6366F1'}].map(x => (
-            <div key={x.l} className="flex items-center gap-1">
-              <div className="w-2.5 h-2.5 rounded-sm shadow-sm" style={{ backgroundColor: x.c }} />
-              <span className="text-[10px] font-medium text-[#2D1B14]">{x.l}</span>
+          {CATEGORIES.filter(c => c.value !== 'altro').map(x => (
+            <div key={x.value} className="flex items-center gap-1">
+              <div className="w-2.5 h-2.5 rounded-sm shadow-sm" style={{ backgroundColor: x.color }} />
+              <span className="text-[10px] font-medium text-[#2D1B14]">{x.label}</span>
             </div>
           ))}
         </div>
