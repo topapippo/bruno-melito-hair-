@@ -5,6 +5,7 @@ import { Plus, Clock } from 'lucide-react';
 import { format, startOfWeek, eachDayOfInterval, addDays, isToday } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { isHoliday } from './holidays';
+import { getCategoryInfo } from '../../lib/categories';
 
 const TIME_SLOTS = [];
 for (let h = 8; h <= 20; h++) {
@@ -32,29 +33,49 @@ export default function WeekView({
   const dragRef = useRef(null);
   const dragOverRef = useRef(null);
 
-  const getStyle = (apt) => {
+  const getStyle = (apt, overlapInfo) => {
     const [h, m] = apt.time.split(':').map(Number);
     const idx = (h - 8) * 4 + Math.floor(m / 15);
     const slots = Math.ceil((apt.total_duration || 15) / 15);
-    return { top: `${idx * SLOT_H}px`, height: `${Math.max(slots * SLOT_H - 2, SLOT_H - 2)}px` };
+    const base = { top: `${idx * SLOT_H}px`, height: `${Math.max(slots * SLOT_H - 2, SLOT_H - 2)}px` };
+    if (overlapInfo) {
+      const w = 100 / overlapInfo.total;
+      base.width = `${w - 1}%`;
+      base.left = `${overlapInfo.index * w}%`;
+    }
+    return base;
   };
 
-  const getOperatorColor = (apt) => {
+  const getAppointmentColor = (apt) => {
     if (apt.status === 'completed') return '#10B981';
     if (apt.status === 'cancelled') return '#EF4444';
-    if (apt.operator_id && operators?.length) {
-      const op = operators.find(o => o.id === apt.operator_id);
-      if (op) return op.color;
-    }
+    const cat = apt.services?.[0]?.category;
+    if (cat) return getCategoryInfo(cat).color;
     return '#C8617A';
   };
 
-  const getOperatorName = (apt) => {
-    if (apt.operator_id && operators?.length) {
-      const op = operators.find(o => o.id === apt.operator_id);
-      if (op) return op.name;
+  const computeOverlaps = (apts) => {
+    if (!apts.length) return {};
+    const sorted = [...apts].sort((a, b) => a.time.localeCompare(b.time));
+    const toMin = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+    const overlapMap = {};
+    for (let i = 0; i < sorted.length; i++) {
+      const a = sorted[i];
+      const aStart = toMin(a.time);
+      const aEnd = aStart + (a.total_duration || 15);
+      const group = [a];
+      for (let j = i + 1; j < sorted.length; j++) {
+        const b = sorted[j];
+        const bStart = toMin(b.time);
+        if (bStart < aEnd) group.push(b);
+      }
+      if (group.length > 1) {
+        group.forEach((g, idx) => {
+          if (!overlapMap[g.id]) overlapMap[g.id] = { total: group.length, index: idx };
+        });
+      }
     }
-    return '';
+    return overlapMap;
   };
 
   const handleDragStart = (e, apt, dateStr) => {
@@ -187,50 +208,52 @@ export default function WeekView({
                   })}
 
                   {/* Appointments overlay */}
-                  {dayApts.map(apt => {
-                    const style = getStyle(apt);
-                    const color = getOperatorColor(apt);
-                    const opName = getOperatorName(apt);
-                    const isDragging = dragRef.current?.apt?.id === apt.id;
-                    return (
-                      <div key={apt.id}
-                        draggable={apt.status !== 'completed' && apt.status !== 'cancelled'}
-                        onDragStart={(e) => handleDragStart(e, apt, dateStr)}
-                        onDragEnd={handleDragEnd}
-                        onClick={(e) => { e.stopPropagation(); onEditAppointment?.(apt); }}
-                        className={`absolute left-0.5 right-0.5 text-white rounded-lg px-1.5 py-0.5 overflow-hidden cursor-grab active:cursor-grabbing hover:brightness-110 hover:shadow-lg transition-all text-xs shadow-sm z-10 border-l-[3px] border-white/40 ${isDragging ? 'opacity-40' : ''}`}
-                        style={{ ...style, backgroundColor: color }}
-                        title={`${apt.time} - ${apt.client_name}${opName ? ` (${opName})` : ''}\nTrascina per spostare`}
-                        data-testid={`week-apt-${apt.id}`}>
-                        <p className="font-bold truncate leading-tight text-[11px]">{apt.time}</p>
-                        <p className="font-semibold truncate leading-tight text-[10px]">{apt.client_name}</p>
-                        {parseInt(style.height) > 50 && (
-                          <p className="truncate opacity-80 leading-tight text-[9px]">{apt.services?.map(s => s.name).join(', ')}</p>
-                        )}
-                        {parseInt(style.height) > 70 && opName && (
-                          <p className="truncate opacity-70 leading-tight text-[8px] italic">{opName}</p>
-                        )}
-                      </div>
-                    );
-                  })}
+                  {(() => {
+                    const overlapMap = computeOverlaps(dayApts);
+                    return dayApts.map(apt => {
+                      const overlapInfo = overlapMap[apt.id] || null;
+                      const style = getStyle(apt, overlapInfo);
+                      const color = getAppointmentColor(apt);
+                      const opName = apt.operator_id && operators?.length ? (operators.find(o => o.id === apt.operator_id)?.name || '') : '';
+                      const isDragging = dragRef.current?.apt?.id === apt.id;
+                      return (
+                        <div key={apt.id}
+                          draggable={apt.status !== 'completed' && apt.status !== 'cancelled'}
+                          onDragStart={(e) => handleDragStart(e, apt, dateStr)}
+                          onDragEnd={handleDragEnd}
+                          onClick={(e) => { e.stopPropagation(); onEditAppointment?.(apt); }}
+                          className={`absolute text-white rounded-lg px-1.5 py-0.5 overflow-hidden cursor-grab active:cursor-grabbing hover:brightness-110 hover:shadow-lg transition-all text-xs shadow-sm z-10 border-l-[3px] border-white/40 ${isDragging ? 'opacity-40' : ''}`}
+                          style={{ ...style, backgroundColor: color, ...(overlapInfo ? {} : { left: '2px', right: '2px' }) }}
+                          title={`${apt.time} - ${apt.client_name}${opName ? ` (${opName})` : ''}\nTrascina per spostare`}
+                          data-testid={`week-apt-${apt.id}`}>
+                          <p className="font-bold truncate leading-tight text-[11px]">{apt.time}</p>
+                          <p className="font-semibold truncate leading-tight text-[10px]">{apt.client_name}</p>
+                          {parseInt(style.height) > 50 && (
+                            <p className="truncate opacity-80 leading-tight text-[9px]">{apt.services?.map(s => s.name).join(', ')}</p>
+                          )}
+                          {parseInt(style.height) > 70 && opName && (
+                            <p className="truncate opacity-70 leading-tight text-[8px] italic">{opName}</p>
+                          )}
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
               );
             })}
           </div>
         </div>
 
-        {/* Operator Legend */}
-        {operators && operators.length > 0 && (
-          <div className="flex items-center gap-4 px-4 py-2 bg-[#FAF7F2] border-t border-[#F0E6DC]">
-            <span className="text-[10px] text-[#7C5C4A] font-semibold uppercase">Operatori:</span>
-            {operators.map(op => (
-              <div key={op.id} className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: op.color }} />
-                <span className="text-xs font-medium text-[#2D1B14]">{op.name}</span>
-              </div>
-            ))}
-          </div>
-        )}
+        {/* Category Legend */}
+        <div className="flex flex-wrap items-center gap-3 px-4 py-2 bg-[#FAF7F2] border-t border-[#F0E6DC]">
+          <span className="text-[10px] text-[#7C5C4A] font-semibold uppercase">Servizi:</span>
+          {[{l:'Styling',c:'#0EA5E9'},{l:'Trattamenti',c:'#334155'},{l:'Colore',c:'#789F8A'},{l:'Permanente',c:'#8B5CF6'},{l:'Stiratura',c:'#D946EF'},{l:'Abbonamenti',c:'#6366F1'}].map(x => (
+            <div key={x.l} className="flex items-center gap-1">
+              <div className="w-2.5 h-2.5 rounded-sm shadow-sm" style={{ backgroundColor: x.c }} />
+              <span className="text-[10px] font-medium text-[#2D1B14]">{x.l}</span>
+            </div>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );

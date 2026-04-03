@@ -115,6 +115,41 @@ async def create_appointment(data: AppointmentCreate, current_user: dict = Depen
     total_price = sum(s["price"] for s in services)
     end_time = calculate_end_time(data.time, total_duration)
 
+    # Auto-assign to another operator if conflict at same time
+    if data.operator_id:
+        def time_to_min(t):
+            h, m = t.split(':')
+            return int(h) * 60 + int(m)
+        new_start = time_to_min(data.time)
+        new_end = new_start + total_duration
+        conflict = await db.appointments.find_one({
+            "user_id": current_user["id"],
+            "date": data.date,
+            "operator_id": data.operator_id,
+            "status": {"$nin": ["cancelled"]},
+        }, {"_id": 0, "time": 1, "total_duration": 1})
+        if conflict:
+            c_start = time_to_min(conflict["time"])
+            c_end = c_start + (conflict.get("total_duration") or 15)
+            if new_start < c_end and new_end > c_start:
+                all_ops = await db.operators.find({"user_id": current_user["id"], "active": True}, {"_id": 0}).to_list(20)
+                for alt_op in all_ops:
+                    if alt_op["id"] == data.operator_id:
+                        continue
+                    alt_conflict = await db.appointments.find_one({
+                        "user_id": current_user["id"],
+                        "date": data.date,
+                        "operator_id": alt_op["id"],
+                        "status": {"$nin": ["cancelled"]},
+                        "time": data.time,
+                    }, {"_id": 0})
+                    if not alt_conflict:
+                        data.operator_id = alt_op["id"]
+                        operator_name = alt_op["name"]
+                        operator_color = alt_op.get("color", "#C58970")
+                        logger.info(f"Auto-assegnato operatore {alt_op['name']} per conflitto orario")
+                        break
+
     appointment_id = str(uuid.uuid4())
     
     # Resolve promo and card names
@@ -131,7 +166,7 @@ async def create_appointment(data: AppointmentCreate, current_user: dict = Depen
         "id": appointment_id, "user_id": current_user["id"],
         "client_id": client_id, "client_name": client_name, "client_phone": client_phone,
         "service_ids": data.service_ids,
-        "services": [{"id": s["id"], "name": s["name"], "duration": s["duration"], "price": s["price"]} for s in services],
+        "services": [{"id": s["id"], "name": s["name"], "duration": s["duration"], "price": s["price"], "category": s.get("category", "")} for s in services],
         "operator_id": data.operator_id, "operator_name": operator_name, "operator_color": operator_color,
         "date": data.date, "time": data.time, "end_time": end_time,
         "total_duration": total_duration, "total_price": total_price,

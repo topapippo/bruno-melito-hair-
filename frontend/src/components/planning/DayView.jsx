@@ -1,6 +1,15 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Clock, Repeat } from 'lucide-react';
 import { addDays, subDays } from 'date-fns';
+import { getCategoryInfo } from '../../lib/categories';
+
+const getAppointmentColor = (apt) => {
+  if (apt.status === 'completed') return '#10B981';
+  if (apt.status === 'cancelled') return '#EF4444';
+  const cat = apt.services?.[0]?.category;
+  if (cat) return getCategoryInfo(cat).color;
+  return '#C8617A';
+};
 
 export default function DayView({
   columns,
@@ -137,7 +146,7 @@ export default function DayView({
                         }`}
                         style={{
                           ...style,
-                          backgroundColor: apt.status === 'completed' ? '#10B981' : (apt.operator_color || col.color),
+                          backgroundColor: getAppointmentColor(apt),
                         }}
                         title={`Clicca per modificare - ${apt.client_name}`}
                       >
