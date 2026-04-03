@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bruno-melito-v4';
+const CACHE_NAME = 'bruno-melito-v5';
 const ASSETS_TO_CACHE = [
   '/logo.png',
 ];
