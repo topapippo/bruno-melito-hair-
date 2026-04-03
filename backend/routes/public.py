@@ -436,6 +436,7 @@ async def public_lookup_appointments(phone: str):
     def fmt(a):
         return {"id": a["id"], "date": a["date"], "time": a["time"],
                 "services": [s["name"] for s in a.get("services", [])],
+                "service_ids": [s["id"] for s in a.get("services", []) if s.get("id")],
                 "operator_name": a.get("operator_name", ""), "status": a.get("status", "scheduled"),
                 "total_price": a.get("total_price", 0), "booking_code": a["id"][:8].upper()}
     return {"upcoming": [fmt(a) for a in upcoming], "history": [fmt(a) for a in history], "client_name": client.get("name", "")}

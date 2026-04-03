@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import api from '../../lib/api';
 import { Button } from '@/components/ui/button';
-import { Clock, CalendarDays, X, Pencil, Trash2, Search } from 'lucide-react';
+import { Clock, CalendarDays, X, Pencil, Trash2, Search, RotateCcw } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
-export default function MyAppointmentsModal({ onClose }) {
+export default function MyAppointmentsModal({ onClose, onRebook }) {
   const [lookupPhone, setLookupPhone] = useState('');
   const [myApptsData, setMyApptsData] = useState(null);
   const [lookupLoading, setLookupLoading] = useState(false);
@@ -43,6 +43,20 @@ export default function MyAppointmentsModal({ onClose }) {
       setEditingAppt(null);
       lookupMyAppointments();
     } catch (err) { toast.error(err.response?.data?.detail || 'Errore nella modifica'); }
+  };
+
+  const handleRebook = (appt) => {
+    if (onRebook && appt.service_ids?.length > 0) {
+      onRebook({
+        service_ids: appt.service_ids,
+        client_name: myApptsData?.client_name || '',
+        client_phone: lookupPhone,
+      });
+      onClose();
+      toast.success('Servizi pre-selezionati! Scegli data e ora.');
+    } else {
+      toast.error('Servizi non disponibili per questa prenotazione');
+    }
   };
 
   return (
@@ -135,26 +149,37 @@ export default function MyAppointmentsModal({ onClose }) {
                   <div className="w-6 h-6 bg-gray-100 rounded-lg flex items-center justify-center">
                     <Clock className="w-3.5 h-3.5 text-gray-500" />
                   </div>
-                  <h3 className="font-bold text-sm text-[#64748B] uppercase tracking-wider">Storico Appuntamenti (ultimi 3 mesi)</h3>
+                  <h3 className="font-bold text-sm text-[#64748B] uppercase tracking-wider">Storico (ultimi 3 mesi)</h3>
                 </div>
                 <div className="space-y-2">
                   {myApptsData.history.map(appt => (
                     <div key={appt.id} className="border border-gray-100 rounded-xl p-3 bg-gray-50/50" data-testid={`appt-history-${appt.id}`}>
-                      <div className="flex justify-between items-center">
-                        <div>
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1 min-w-0">
                           <p className="font-semibold text-sm text-[#64748B]">
                             {(() => { try { return format(new Date(appt.date), 'dd/MM/yy'); } catch { return appt.date; }})()}
                             <span className="ml-2 text-[#94A3B8]">{appt.time}</span>
                           </p>
-                          <p className="text-xs text-[#94A3B8]">{appt.services?.join(', ')}</p>
+                          <p className="text-xs text-[#94A3B8] truncate">{appt.services?.join(', ')}</p>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right shrink-0 ml-2">
                           {appt.total_price > 0 && <p className="text-sm font-bold text-[#1e293b]">{'\u20AC'}{appt.total_price}</p>}
                           <span className={`text-xs font-semibold px-2 py-0.5 rounded ${appt.status === 'cancelled' ? 'bg-red-100 text-red-600' : appt.status === 'completed' ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-500'}`}>
                             {appt.status === 'cancelled' ? 'Annullato' : appt.status === 'completed' ? 'Completato' : 'Programmato'}
                           </span>
                         </div>
                       </div>
+                      {/* Prenota di nuovo */}
+                      {appt.status !== 'cancelled' && appt.service_ids?.length > 0 && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleRebook(appt)}
+                          className="mt-2 w-full bg-gradient-to-r from-[#C8617A] to-[#A0404F] text-white text-xs font-bold hover:opacity-90"
+                          data-testid={`rebook-btn-${appt.id}`}
+                        >
+                          <RotateCcw className="w-3 h-3 mr-1" /> Prenota di nuovo
+                        </Button>
+                      )}
                     </div>
                   ))}
                 </div>

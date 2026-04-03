@@ -36,21 +36,23 @@ App gestionale completa per salone (Bruno Melito Hair) con sito pubblico per pre
 - Landing page pubblica con sezioni dinamiche CMS
 - Booking online 3 step con upselling
 - Planning giornaliero/settimanale/mensile con drag & drop
-- **Colori per categoria servizi** (taglio=#0EA5E9, colore=#789F8A, trattamento=#334155, permanente=#8B5CF6, stiratura=#D946EF) con triple-fallback (category → ID → nome)
-- **Split overlap appuntamenti** (computeOverlaps divide visivamente slot sovrapposti)
-- **Auto-assegnazione 2° operatore** con check time-range overlap (non exact match)
-- **Messaggio ringraziamento WhatsApp post-incasso** con invito a tornare e recensione
+- Colori per categoria servizi con triple-fallback
+- Split overlap appuntamenti
+- Auto-assegnazione 2° operatore con time-range overlap
+- Messaggio ringraziamento WhatsApp post-incasso
+- **"Prenota di nuovo"** nello storico "I Miei Appuntamenti" — pre-compila servizi dal vecchio appuntamento
 - Gestione blocco slot orari, festività italiane
-- Orari split pausa pranzo (formato `08:00 - 13:00---14:00 - 19:00`)
+- Orari split pausa pranzo
 - CMS temi dinamici, WhatsApp batch reminders
 - Programma fedeltà, Card/Abbonamenti, QR Code
-- Refactoring: WebsitePage (1686→449), PlanningPage (763→640)
+- Refactoring: WebsitePage e PlanningPage suddivisi in componenti
 
 ## Note Tecniche Critiche
 - **Split Hours**: Parseare con `---` come delimitatore
 - **Legacy Color Fallback**: svcById + svcByName per appuntamenti vecchi senza category
 - **MongoDB ObjectId**: Sempre escludere `_id`
 - **Render Deploy**: SEMPRE Clear build cache!
+- **service_ids nello storico**: L'endpoint `/api/public/my-appointments` ora ritorna anche `service_ids` per il rebooking
 
 ## Task Futuri
 - P1: Dashboard statistiche clienti (grafici frequenza visite, spesa media)

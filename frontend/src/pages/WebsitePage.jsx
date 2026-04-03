@@ -443,7 +443,20 @@ export default function WebsitePage() {
       </div>
 
       {/* MY APPOINTMENTS MODAL */}
-      {showMyAppts && <MyAppointmentsModal onClose={() => setShowMyAppts(false)} />}
+      {showMyAppts && (
+        <MyAppointmentsModal
+          onClose={() => setShowMyAppts(false)}
+          onRebook={({ service_ids, client_name, client_phone }) => {
+            setFormData(prev => ({
+              ...prev,
+              service_ids,
+              client_name: client_name || prev.client_name,
+              client_phone: client_phone || prev.client_phone,
+            }));
+            setShowBooking(true);
+          }}
+        />
+      )}
     </div>
   );
 }
