@@ -33,7 +33,8 @@ export default function WeekView({
   const scrollRef = useRef(null);
   const dragRef = useRef(null);
   const dragOverRef = useRef(null);
-  const servicesLookup = (services || []).reduce((m, s) => { m[s.id] = s.category; return m; }, {});
+  const svcById = (services || []).reduce((m, s) => { if (s.category) m[s.id] = s.category; return m; }, {});
+  const svcByName = (services || []).reduce((m, s) => { if (s.category && s.name) m[s.name] = s.category; return m; }, {});
 
   const getStyle = (apt, overlapInfo) => {
     const [h, m] = apt.time.split(':').map(Number);
@@ -54,7 +55,8 @@ export default function WeekView({
     const svc = apt.services?.[0];
     if (svc) {
       if (svc.category) return getCategoryInfo(svc.category).color;
-      if (svc.id && servicesLookup[svc.id]) return getCategoryInfo(servicesLookup[svc.id]).color;
+      if (svc.id && svcById[svc.id]) return getCategoryInfo(svcById[svc.id]).color;
+      if (svc.name && svcByName[svc.name]) return getCategoryInfo(svcByName[svc.name]).color;
     }
     return '#C8617A';
   };

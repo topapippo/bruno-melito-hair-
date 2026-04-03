@@ -99,7 +99,8 @@ export default function WeeklyView() {
     return base;
   };
 
-  const servicesLookup = services.reduce((m, s) => { m[s.id] = s.category; return m; }, {});
+  const svcById = services.reduce((m, s) => { if (s.category) m[s.id] = s.category; return m; }, {});
+  const svcByName = services.reduce((m, s) => { if (s.category && s.name) m[s.name] = s.category; return m; }, {});
 
   const getAppointmentColor = (apt) => {
     if (apt.status === 'completed') return '#10B981';
@@ -107,7 +108,8 @@ export default function WeeklyView() {
     const svc = apt.services?.[0];
     if (svc) {
       if (svc.category) return getCategoryInfo(svc.category).color;
-      if (svc.id && servicesLookup[svc.id]) return getCategoryInfo(servicesLookup[svc.id]).color;
+      if (svc.id && svcById[svc.id]) return getCategoryInfo(svcById[svc.id]).color;
+      if (svc.name && svcByName[svc.name]) return getCategoryInfo(svcByName[svc.name]).color;
     }
     return '#C8617A';
   };

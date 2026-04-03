@@ -3,17 +3,14 @@ import { Clock, Repeat } from 'lucide-react';
 import { addDays, subDays } from 'date-fns';
 import { getCategoryInfo } from '../../lib/categories';
 
-const getAppointmentColor = (apt, servicesLookup) => {
+const getAppointmentColor = (apt, svcById, svcByName) => {
   if (apt.status === 'completed') return '#10B981';
   if (apt.status === 'cancelled') return '#EF4444';
   const svc = apt.services?.[0];
   if (svc) {
     if (svc.category) return getCategoryInfo(svc.category).color;
-    if (svc.id && servicesLookup?.[svc.id]) return getCategoryInfo(servicesLookup[svc.id]).color;
-    if (svc.name && servicesLookup) {
-      const match = Object.entries(servicesLookup).find(([, v]) => typeof v === 'object' && v.name === svc.name);
-      if (match) return getCategoryInfo(match[1].category).color;
-    }
+    if (svc.id && svcById?.[svc.id]) return getCategoryInfo(svcById[svc.id]).color;
+    if (svc.name && svcByName?.[svc.name]) return getCategoryInfo(svcByName[svc.name]).color;
   }
   return '#C8617A';
 };
@@ -42,7 +39,34 @@ export default function DayView({
   touchStartRef,
   services,
 }) {
-  const servicesLookup = (services || []).reduce((m, s) => { m[s.id] = s.category; return m; }, {});
+  const svcById = (services || []).reduce((m, s) => { if (s.category) m[s.id] = s.category; return m; }, {});
+  const svcByName = (services || []).reduce((m, s) => { if (s.category && s.name) m[s.name] = s.category; return m; }, {});
+
+  // Compute overlaps per operator
+  const toMin = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+  const computeOverlaps = (apts) => {
+    if (!apts.length) return {};
+    const sorted = [...apts].sort((a, b) => a.time.localeCompare(b.time));
+    const map = {};
+    for (let i = 0; i < sorted.length; i++) {
+      const a = sorted[i];
+      const aStart = toMin(a.time);
+      const aEnd = aStart + (a.total_duration || 15);
+      const group = [a];
+      for (let j = i + 1; j < sorted.length; j++) {
+        const b = sorted[j];
+        const bStart = toMin(b.time);
+        if (bStart < aEnd) group.push(b);
+      }
+      if (group.length > 1) {
+        group.forEach((g, idx) => {
+          if (!map[g.id]) map[g.id] = { total: group.length, index: idx };
+        });
+      }
+    }
+    return map;
+  };
+
   return (
     <Card className="bg-white border-[#F0E6DC]/30 shadow-sm overflow-hidden">
       <CardContent className="p-0">
@@ -139,8 +163,18 @@ export default function DayView({
                   ))}
 
                   {/* Appointments overlay */}
-                  {colAppointments.map((apt) => {
+                  {(() => {
+                    const colApts = colAppointments;
+                    const overlapMap = computeOverlaps(colApts);
+                    return colApts.map((apt) => {
                     const style = getAppointmentStyle(apt);
+                    const overlapInfo = overlapMap[apt.id] || null;
+                    if (overlapInfo) {
+                      const w = 100 / overlapInfo.total;
+                      style.width = `${w - 2}%`;
+                      style.left = `${overlapInfo.index * w + 1}%`;
+                      style.right = 'auto';
+                    }
                     const isHighlighted = highlightedClientId && apt.client_id === highlightedClientId;
                     return (
                       <div
@@ -150,12 +184,13 @@ export default function DayView({
                         onDragStart={(e) => onDragStart(e, apt)}
                         onDragEnd={onDragEnd}
                         onClick={() => openEditDialog(apt)}
-                        className={`absolute left-1 right-1 rounded-xl p-2 text-white overflow-hidden shadow-lg cursor-grab active:cursor-grabbing hover:scale-[1.02] hover:shadow-xl transition-all border-l-4 border-white/50 ${
+                        className={`absolute rounded-xl p-2 text-white overflow-hidden shadow-lg cursor-grab active:cursor-grabbing hover:scale-[1.02] hover:shadow-xl transition-all border-l-4 border-white/50 ${
                           isHighlighted ? 'ring-4 ring-yellow-400 ring-offset-2 z-20' : ''
                         }`}
                         style={{
                           ...style,
-                          backgroundColor: getAppointmentColor(apt, servicesLookup),
+                          ...(overlapInfo ? {} : { left: '4px', right: '4px' }),
+                          backgroundColor: getAppointmentColor(apt, svcById, svcByName),
                         }}
                         title={`Clicca per modificare - ${apt.client_name}`}
                       >
@@ -185,7 +220,8 @@ export default function DayView({
                         </div>
                       </div>
                     );
-                  })}
+                  });
+                  })()}
                 </div>
               );
             })}

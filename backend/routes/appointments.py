@@ -122,33 +122,48 @@ async def create_appointment(data: AppointmentCreate, current_user: dict = Depen
             return int(h) * 60 + int(m)
         new_start = time_to_min(data.time)
         new_end = new_start + total_duration
-        conflict = await db.appointments.find_one({
+
+        # Get ALL non-cancelled appointments for this day and operator
+        existing_apts = await db.appointments.find({
             "user_id": current_user["id"],
             "date": data.date,
             "operator_id": data.operator_id,
             "status": {"$nin": ["cancelled"]},
-        }, {"_id": 0, "time": 1, "total_duration": 1})
-        if conflict:
-            c_start = time_to_min(conflict["time"])
-            c_end = c_start + (conflict.get("total_duration") or 15)
+        }, {"_id": 0, "time": 1, "total_duration": 1}).to_list(100)
+
+        has_conflict = False
+        for existing in existing_apts:
+            c_start = time_to_min(existing["time"])
+            c_end = c_start + (existing.get("total_duration") or 15)
             if new_start < c_end and new_end > c_start:
-                all_ops = await db.operators.find({"user_id": current_user["id"], "active": True}, {"_id": 0}).to_list(20)
-                for alt_op in all_ops:
-                    if alt_op["id"] == data.operator_id:
-                        continue
-                    alt_conflict = await db.appointments.find_one({
-                        "user_id": current_user["id"],
-                        "date": data.date,
-                        "operator_id": alt_op["id"],
-                        "status": {"$nin": ["cancelled"]},
-                        "time": data.time,
-                    }, {"_id": 0})
-                    if not alt_conflict:
-                        data.operator_id = alt_op["id"]
-                        operator_name = alt_op["name"]
-                        operator_color = alt_op.get("color", "#C58970")
-                        logger.info(f"Auto-assegnato operatore {alt_op['name']} per conflitto orario")
+                has_conflict = True
+                break
+
+        if has_conflict:
+            all_ops = await db.operators.find({"user_id": current_user["id"], "active": True}, {"_id": 0}).to_list(20)
+            for alt_op in all_ops:
+                if alt_op["id"] == data.operator_id:
+                    continue
+                # Check if alt operator has any overlap
+                alt_apts = await db.appointments.find({
+                    "user_id": current_user["id"],
+                    "date": data.date,
+                    "operator_id": alt_op["id"],
+                    "status": {"$nin": ["cancelled"]},
+                }, {"_id": 0, "time": 1, "total_duration": 1}).to_list(100)
+                alt_conflict = False
+                for aa in alt_apts:
+                    aa_start = time_to_min(aa["time"])
+                    aa_end = aa_start + (aa.get("total_duration") or 15)
+                    if new_start < aa_end and new_end > aa_start:
+                        alt_conflict = True
                         break
+                if not alt_conflict:
+                    data.operator_id = alt_op["id"]
+                    operator_name = alt_op["name"]
+                    operator_color = alt_op.get("color", "#C58970")
+                    logger.info(f"Auto-assegnato operatore {alt_op['name']} per conflitto orario")
+                    break
 
     appointment_id = str(uuid.uuid4())
     
@@ -233,7 +248,7 @@ async def update_appointment(appointment_id: str, data: AppointmentUpdate, curre
         if len(services) != len(data.service_ids):
             raise HTTPException(status_code=404, detail="Uno o più servizi non trovati")
         update_data["service_ids"] = data.service_ids
-        update_data["services"] = [{"id": s["id"], "name": s["name"], "duration": s["duration"], "price": s["price"]} for s in services]
+        update_data["services"] = [{"id": s["id"], "name": s["name"], "duration": s["duration"], "price": s["price"], "category": s.get("category", "")} for s in services]
         update_data["total_duration"] = sum(s["duration"] for s in services)
         update_data["total_price"] = sum(s["price"] for s in services)
 
