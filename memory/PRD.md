@@ -40,9 +40,11 @@ Bruno Melito - Proprietario salone parrucchiere. Lingua: Italiano.
 - Upselling post-prenotazione
 - "Prenota di nuovo" da storico appuntamenti
 - Sezione fedeltà dinamica dal CMS
+- **Anti-duplicato clienti** (04/04/2026): prenotazione online riconosce clienti esistenti per telefono normalizzato o nome
 
 ### Bug Fix (04/04/2026)
-- **Storico cliente "ERRORE CARICAMENTO"** → Creati endpoint `GET /api/clients/{id}/history` e `GET /api/clients/{id}/whatsapp` (mancavano nel backend)
+- **Storico cliente "ERRORE CARICAMENTO"** → Creati endpoint `GET /api/clients/{id}/history` e `GET /api/clients/{id}/whatsapp`
+- **Duplicazione clienti da prenotazione online** → Implementata normalizzazione telefono e ricerca intelligente per evitare duplicati
 
 ## Credenziali Test
 - Email: melitobruno@gmail.com

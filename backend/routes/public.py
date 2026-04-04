@@ -3,6 +3,7 @@ from fastapi.responses import Response, FileResponse
 from datetime import datetime, timezone, timedelta
 import uuid
 import os
+import re
 import requests as http_requests
 import logging
 
@@ -12,6 +13,20 @@ from models import PublicBookingRequest
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+
+def _normalize_phone(phone: str) -> str:
+    """Normalizza il numero di telefono rimuovendo tutto tranne le cifre e il prefisso internazionale."""
+    if not phone:
+        return ""
+    digits = re.sub(r'\D', '', phone)
+    if digits.startswith('0039'):
+        digits = digits[4:]
+    elif digits.startswith('39') and len(digits) > 10:
+        digits = digits[2:]
+    if digits.startswith('0') and len(digits) > 9:
+        digits = digits[1:]
+    return digits
 
 # ============== Object Storage with Local Fallback ==============
 
@@ -272,8 +287,48 @@ async def create_public_booking(data: PublicBookingRequest):
             }
         )
 
-    client = await db.clients.find_one({"phone": data.client_phone, "user_id": user_id}, {"_id": 0})
-    if not client:
+    # Cerca cliente esistente per telefono (normalizzato) o per nome
+    incoming_phone_norm = _normalize_phone(data.client_phone)
+    incoming_name_lower = (data.client_name or "").strip().lower()
+    client = None
+
+    if incoming_phone_norm and len(incoming_phone_norm) >= 6:
+        # Cerca per telefono normalizzato
+        all_clients = await db.clients.find(
+            {"user_id": user_id}, {"_id": 0, "id": 1, "name": 1, "phone": 1}
+        ).to_list(5000)
+        for c in all_clients:
+            stored_norm = _normalize_phone(c.get("phone", ""))
+            if stored_norm and stored_norm == incoming_phone_norm:
+                client = c
+                break
+            # Match anche sulle ultime 9+ cifre per formati diversi
+            if stored_norm and len(stored_norm) >= 9 and len(incoming_phone_norm) >= 9:
+                if stored_norm[-9:] == incoming_phone_norm[-9:]:
+                    client = c
+                    break
+
+    # Fallback: cerca per nome esatto (case-insensitive) se il telefono non ha dato risultati
+    if not client and incoming_name_lower:
+        name_match = await db.clients.find_one(
+            {"user_id": user_id, "name": {"$regex": f"^{re.escape(incoming_name_lower)}$", "$options": "i"}},
+            {"_id": 0}
+        )
+        if name_match:
+            client = name_match
+
+    if client:
+        client_id = client["id"]
+        # Aggiorna il telefono se il cliente esistente non ce l'ha
+        stored_phone = client.get("phone", "")
+        if not stored_phone and data.client_phone:
+            await db.clients.update_one(
+                {"id": client_id, "user_id": user_id},
+                {"$set": {"phone": data.client_phone}}
+            )
+            logger.info(f"Aggiornato telefono per cliente esistente: {client.get('name')} -> {data.client_phone}")
+        logger.info(f"Cliente esistente trovato: {client.get('name')} (ID: {client_id})")
+    else:
         client_id = str(uuid.uuid4())
         client = {
             "id": client_id, "user_id": user_id, "name": data.client_name,
@@ -282,8 +337,7 @@ async def create_public_booking(data: PublicBookingRequest):
             "send_sms_reminders": True, "created_at": datetime.now(timezone.utc).isoformat()
         }
         await db.clients.insert_one(client)
-    else:
-        client_id = client["id"]
+        logger.info(f"Nuovo cliente creato: {data.client_name} ({data.client_phone})")
 
     services = await db.services.find({"id": {"$in": data.service_ids}, "user_id": user_id}, {"_id": 0, "user_id": 0}).to_list(20)
     if not services:
