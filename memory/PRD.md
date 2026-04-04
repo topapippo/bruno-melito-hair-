@@ -1,39 +1,67 @@
-# Bruno Melito Hair — PRD
+# Bruno Melito Hair - PRD (Product Requirements Document)
 
 ## Problema Originale
-App gestionale completa per salone (Bruno Melito Hair) con sito pubblico per prenotazioni e dashboard admin.
+App gestionale per salone parrucchiere (Bruno Melito Hair) con sito pubblico per prenotazioni e dashboard admin (CMS, Planning, Statistiche).
+
+## Utente
+Bruno Melito - Proprietario salone parrucchiere. Lingua: Italiano.
 
 ## Architettura
-- **Frontend**: React + Tailwind CSS + Shadcn UI
-- **Backend**: FastAPI + MongoDB
-- **Deploy**: Render + MongoDB Atlas + OVH
-- **Dominio**: brunomelitohair.it
-- **GitHub**: topapippo/bruno-melito-hair-
+- **Frontend**: React (porta 3000) con Shadcn/UI
+- **Backend**: FastAPI (porta 8001)
+- **Database**: MongoDB (locale preview / Atlas produzione)
+- **Hosting**: Render
+- **Dominio**: brunomelitohair.it (OVH DNS)
 
 ## Funzionalità Completate
-- Landing page pubblica con sezioni dinamiche CMS
-- Booking online 3 step con upselling
+
+### Gestionale (Admin)
+- Login/Registrazione con JWT
 - Planning giornaliero/settimanale/mensile con drag & drop
-- Colori per categoria servizi con triple-fallback
-- Split overlap appuntamenti
-- Auto-assegnazione 2° operatore con time-range overlap
-- Messaggio ringraziamento WhatsApp post-incasso
-- "Prenota di nuovo" nello storico appuntamenti
-- **Sezione Fedeltà dinamica** — legge premi e punti_per_euro dal DB (modificabili da Gestione Sito)
-- Gestione blocco slot orari, festività italiane
-- CMS temi dinamici, WhatsApp batch reminders
-- Programma fedeltà, Card/Abbonamenti, QR Code
-- Refactoring: WebsitePage e PlanningPage suddivisi in componenti
+- Appuntamenti con colori per categoria servizio
+- Auto-assegnazione operatore per overlap
+- Festività italiane sul calendario
+- Blocco slot/giorni specifici
+- Scheda clienti con storico, WhatsApp, import Excel
+- Card/Abbonamenti e Avvisi Card
+- Programma Fedeltà dinamico
+- Promemoria WhatsApp batch (domani, inattivi, scadenza colore)
+- **Template ringraziamento post-incasso modificabile** (04/04/2026)
+- Promozioni
+- Report Incassi / Registro Uscite / Riepilogo Giorno
+- Gestione Servizi e Operatori
+- Gestione Sito Web (CMS completo con temi, hero, gallery, recensioni, orari)
+- **Sincronizzazione automatica servizi gestionale ↔ sito pubblico** (04/04/2026)
+- Tema admin personalizzabile (colori/font)
 
-## Note Tecniche
-- Split Hours: `---` come delimitatore
-- Legacy Color Fallback: svcById + svcByName
-- Render Deploy: SEMPRE Clear build cache!
+### Sito Pubblico (/sito)
+- Landing page con hero, chi siamo, servizi, gallery, recensioni, orari
+- Sistema prenotazione online con selezione servizi multipli
+- Upselling post-prenotazione
+- "Prenota di nuovo" da storico appuntamenti
+- Sezione fedeltà dinamica dal CMS
 
-## Task Futuri
-- P1: Dashboard statistiche clienti
-- P2: Scheda cliente con storico fotografico
-- P2: Sconti/messaggi automatici compleanno
-- P3: Lista d'attesa intelligente
-- P3: Heat map ore più occupate
-- P3: Confronto performance operatori
+### Bug Fix (04/04/2026)
+- **Storico cliente "ERRORE CARICAMENTO"** → Creati endpoint `GET /api/clients/{id}/history` e `GET /api/clients/{id}/whatsapp` (mancavano nel backend)
+
+## Credenziali Test
+- Email: melitobruno@gmail.com
+- Password: mbhs637104
+
+## Backlog Prioritizzato
+
+### P1 - Alta Priorità
+- Dashboard statistiche clienti avanzate (grafici frequenza visite, spesa media, servizi più richiesti)
+
+### P2 - Media Priorità
+- Scheda cliente con storico fotografico (foto tagli precedenti)
+- Auguri compleanno automatici / sconti
+
+### P3 - Bassa Priorità
+- Lista d'attesa intelligente (notifica slot libero)
+- Heat map ore più occupate
+- Confronto performance operatori
+
+## Note Produzione
+- Sempre fare "Clear build cache and deploy" su Render
+- Il DB di produzione è su MongoDB Atlas (NON il locale)
