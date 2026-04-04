@@ -117,6 +117,19 @@ async def get_message_templates(current_user: dict = Depends(get_current_user)):
         for d in defaults:
             await db.message_templates.insert_one(d)
         templates = [{k: v for k, v in d.items() if k not in ("_id", "user_id")} for d in defaults]
+    else:
+        # Se i template esistono ma manca il "thank_you", aggiungilo automaticamente
+        existing_types = {t.get("template_type") for t in templates}
+        if "thank_you" not in existing_types:
+            thank_you = {
+                "id": str(uuid.uuid4()), "user_id": current_user["id"],
+                "name": "Ringraziamento Post-Incasso",
+                "text": "Ciao {nome}! Grazie per essere venuto da Bruno Melito Hair.\n\nTi aspettiamo presto per il tuo prossimo appuntamento!\n\nA presto!",
+                "template_type": "thank_you",
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.message_templates.insert_one(thank_you)
+            templates.append({k: v for k, v in thank_you.items() if k not in ("_id", "user_id")})
     return templates
 
 
