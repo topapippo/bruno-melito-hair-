@@ -736,15 +736,14 @@ async def public_get_website():
             "notes": ct.get("notes", ""),
         })
 
-    # Loyalty program info for public display
-    loyalty_rewards = await db.loyalty_rewards.find({}, {"_id": 0, "user_id": 0}).to_list(10)
+    # Loyalty program info for public display - USE SAME SOURCE AS ADMIN
+    from models import get_loyalty_rewards, LOYALTY_POINTS_PER_EURO
+    admin_user = await db.users.find_one({}, {"_id": 0, "id": 1})
+    admin_user_id = admin_user["id"] if admin_user else ""
+    loyalty_rewards_data = await get_loyalty_rewards(admin_user_id)
     loyalty_config = {
-        "points_per_euro": 20,
-        "rewards": {r["key"]: r for r in loyalty_rewards} if loyalty_rewards else {
-            "discount_5": {"name": "Sconto 5%", "points_required": 50, "discount_percent": 5},
-            "discount_10": {"name": "Sconto 10%", "points_required": 100, "discount_percent": 10},
-            "free_service": {"name": "Servizio Omaggio", "points_required": 200, "discount_percent": 100},
-        }
+        "points_per_euro": LOYALTY_POINTS_PER_EURO,
+        "rewards": loyalty_rewards_data
     }
     
     return {"config": config, "reviews": reviews, "gallery": gallery, "services": services, "card_templates": card_templates, "loyalty": loyalty_config}

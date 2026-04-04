@@ -10,8 +10,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Save, Plus, Trash2, Upload, Image, Star, Globe, Eye, Loader2, X, GripVertical, Palette, Type, ArrowUp, ArrowDown, LayoutGrid, EyeOff, TrendingUp, Percent } from 'lucide-react';
+import { Save, Plus, Trash2, Upload, Image, Star, Globe, Eye, Loader2, X, GripVertical, Palette, Type, ArrowUp, ArrowDown, LayoutGrid, EyeOff, TrendingUp, Percent, Gift, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 
 const FONT_OPTIONS = [
   'Cormorant Garamond', 'Playfair Display', 'Lora', 'Merriweather', 'Libre Baskerville',
@@ -31,6 +33,11 @@ export default function WebsiteAdminPage() {
   const [reviewForm, setReviewForm] = useState({ name: '', text: '', rating: 5 });
   const [uploadSection, setUploadSection] = useState('gallery');
   const [allServices, setAllServices] = useState([]);
+  const [loyaltyConfig, setLoyaltyConfig] = useState(null);
+  const [promotions, setPromotions] = useState([]);
+  const [promoDialog, setPromoDialog] = useState(false);
+  const [editPromo, setEditPromo] = useState(null);
+  const [promoForm, setPromoForm] = useState({ name: '', description: '', discount_type: 'percent', discount_value: 10, active: true, show_on_booking: true });
   const heroInputRef = useRef(null);
 
   const handleHeroImageUpload = async (e) => {
@@ -51,16 +58,20 @@ export default function WebsiteAdminPage() {
 
   const fetchAll = async () => {
     try {
-      const [configRes, reviewsRes, galleryRes, servicesRes] = await Promise.all([
+      const [configRes, reviewsRes, galleryRes, servicesRes, loyaltyRes, promosRes] = await Promise.all([
         api.get('/website/config'),
         api.get('/website/reviews'),
         api.get('/website/gallery'),
-        api.get('/services')
+        api.get('/services'),
+        api.get('/loyalty/config'),
+        api.get('/promotions'),
       ]);
       setConfig(configRes.data);
       setReviews(reviewsRes.data);
       setGallery(galleryRes.data);
       setAllServices(servicesRes.data || []);
+      setLoyaltyConfig(loyaltyRes.data);
+      setPromotions(promosRes.data || []);
     } catch (err) { console.error(err); toast.error('Errore caricamento dati'); }
     finally { setLoading(false); }
   };
@@ -73,6 +84,81 @@ export default function WebsiteAdminPage() {
       toast.success('Configurazione salvata!');
     } catch (err) { toast.error('Errore nel salvataggio'); }
     finally { setSaving(false); }
+  };
+
+  // ── Loyalty helpers ──
+  const saveLoyaltyConfig = async (updatedRewards) => {
+    try {
+      const res = await api.put('/loyalty/config', { rewards: updatedRewards });
+      setLoyaltyConfig(res.data);
+      toast.success('Programma fedeltà aggiornato!');
+    } catch (err) { toast.error('Errore salvataggio fedeltà'); }
+  };
+
+  const updateReward = (key, field, value) => {
+    setLoyaltyConfig(prev => ({
+      ...prev,
+      rewards: { ...prev.rewards, [key]: { ...prev.rewards[key], [field]: value } }
+    }));
+  };
+
+  const addReward = () => {
+    const newKey = `reward_${Date.now()}`;
+    setLoyaltyConfig(prev => ({
+      ...prev,
+      rewards: { ...prev.rewards, [newKey]: { name: 'Nuovo Premio', points_required: 10, description: '' } }
+    }));
+  };
+
+  const removeReward = (key) => {
+    setLoyaltyConfig(prev => {
+      const newRewards = { ...prev.rewards };
+      delete newRewards[key];
+      return { ...prev, rewards: newRewards };
+    });
+  };
+
+  // ── Promotions helpers ──
+  const openNewPromo = () => {
+    setEditPromo(null);
+    setPromoForm({ name: '', description: '', discount_type: 'percent', discount_value: 10, active: true, show_on_booking: true });
+    setPromoDialog(true);
+  };
+
+  const openEditPromo = (promo) => {
+    setEditPromo(promo);
+    setPromoForm({ name: promo.name, description: promo.description || '', discount_type: promo.discount_type || 'percent', discount_value: promo.discount_value || 0, active: promo.active !== false, show_on_booking: promo.show_on_booking !== false });
+    setPromoDialog(true);
+  };
+
+  const savePromo = async () => {
+    try {
+      if (editPromo) {
+        await api.put(`/promotions/${editPromo.id}`, promoForm);
+      } else {
+        await api.post('/promotions', promoForm);
+      }
+      toast.success(editPromo ? 'Promozione aggiornata!' : 'Promozione creata!');
+      setPromoDialog(false);
+      const res = await api.get('/promotions');
+      setPromotions(res.data || []);
+    } catch (err) { toast.error('Errore salvataggio promozione'); }
+  };
+
+  const deletePromo = async (id) => {
+    try {
+      await api.delete(`/promotions/${id}`);
+      setPromotions(prev => prev.filter(p => p.id !== id));
+      toast.success('Promozione eliminata');
+    } catch (err) { toast.error('Errore eliminazione'); }
+  };
+
+  const togglePromoActive = async (promo) => {
+    try {
+      await api.put(`/promotions/${promo.id}`, { ...promo, active: !promo.active });
+      const res = await api.get('/promotions');
+      setPromotions(res.data || []);
+    } catch (err) { toast.error('Errore aggiornamento'); }
   };
 
   const updateField = (field, value) => {
@@ -317,6 +403,8 @@ export default function WebsiteAdminPage() {
             <TabsTrigger value="gallery" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Gallery Lavori</TabsTrigger>
             <TabsTrigger value="reviews" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Recensioni</TabsTrigger>
             <TabsTrigger value="upselling" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Upselling</TabsTrigger>
+            <TabsTrigger value="loyalty" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Fedeltà</TabsTrigger>
+            <TabsTrigger value="promotions" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Promozioni</TabsTrigger>
             <TabsTrigger value="hours" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Orari & Contatti</TabsTrigger>
           </TabsList>
 
@@ -963,6 +1051,116 @@ export default function WebsiteAdminPage() {
             </Card>
           </TabsContent>
 
+          {/* LOYALTY */}
+          <TabsContent value="loyalty">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Programma Fedeltà</CardTitle>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={addReward}><Plus className="w-4 h-4 mr-1" /> Premio</Button>
+                    <Button size="sm" onClick={() => saveLoyaltyConfig(loyaltyConfig?.rewards || {})} className="bg-[#C8617A] text-white"><Save className="w-4 h-4 mr-1" /> Salva</Button>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg mt-2">
+                  <TrendingUp className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-bold text-emerald-800">Sincronizzato con il sito</p>
+                    <p className="text-xs text-emerald-700 mt-0.5">I premi configurati qui appaiono automaticamente nella sezione Fedeltà del sito pubblico. Punti per euro: <strong>{loyaltyConfig?.points_per_euro || 20}</strong>.</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {loyaltyConfig?.rewards && Object.keys(loyaltyConfig.rewards).length > 0 ? (
+                  <div className="space-y-3">
+                    {Object.entries(loyaltyConfig.rewards).sort(([,a],[,b]) => (a.points_required||0) - (b.points_required||0)).map(([key, reward]) => (
+                      <div key={key} className="border rounded-xl p-4 hover:border-[#C8617A]/30 transition-colors" data-testid={`loyalty-reward-edit-${key}`}>
+                        <div className="flex items-start gap-3">
+                          <div className="flex-1 space-y-2">
+                            <div className="flex gap-3">
+                              <div className="flex-1">
+                                <Label className="text-xs text-gray-500">Nome Premio</Label>
+                                <Input value={reward.name || ''} onChange={e => updateReward(key, 'name', e.target.value)} className="font-bold" />
+                              </div>
+                              <div className="w-32">
+                                <Label className="text-xs text-gray-500">Punti Richiesti</Label>
+                                <Input type="number" value={reward.points_required || 0} onChange={e => updateReward(key, 'points_required', parseInt(e.target.value) || 0)} />
+                              </div>
+                            </div>
+                            <div>
+                              <Label className="text-xs text-gray-500">Descrizione</Label>
+                              <Input value={reward.description || ''} onChange={e => updateReward(key, 'description', e.target.value)} placeholder="Descrizione del premio..." />
+                            </div>
+                          </div>
+                          <Button variant="ghost" size="icon" onClick={() => removeReward(key)} className="text-red-500 shrink-0 mt-5"><Trash2 className="w-4 h-4" /></Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-400">
+                    <Gift className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <p className="text-sm">Nessun premio configurato.</p>
+                    <p className="text-xs mt-1">Aggiungi premi per incentivare i clienti a tornare.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* PROMOTIONS */}
+          <TabsContent value="promotions">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Promozioni</CardTitle>
+                  <Button size="sm" onClick={openNewPromo} className="bg-[#C8617A] text-white"><Plus className="w-4 h-4 mr-1" /> Nuova Promozione</Button>
+                </div>
+                <div className="flex items-start gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg mt-2">
+                  <TrendingUp className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-bold text-emerald-800">Visibili sul sito</p>
+                    <p className="text-xs text-emerald-700 mt-0.5">Le promozioni attive con "Mostra sul sito" appaiono nella sezione Promozioni della pagina pubblica.</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {promotions.length > 0 ? (
+                  <div className="space-y-3">
+                    {promotions.map(promo => (
+                      <div key={promo.id} className={`border rounded-xl p-4 flex items-center gap-4 ${promo.active ? 'bg-white' : 'bg-gray-50 opacity-60'}`} data-testid={`promo-card-${promo.id}`}>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold text-[#2D1B14]">{promo.name}</p>
+                            {promo.active ? <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">Attiva</span> : <span className="text-xs px-2 py-0.5 rounded-full bg-gray-200 text-gray-500 font-medium">Disattiva</span>}
+                            {promo.show_on_booking && <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">Sul sito</span>}
+                          </div>
+                          <p className="text-sm text-gray-500 mt-1">{promo.description || 'Nessuna descrizione'}</p>
+                          <p className="text-xs text-[#C8617A] font-bold mt-1">
+                            {promo.discount_type === 'percent' && promo.discount_value ? `Sconto: ${promo.discount_value}%` : promo.discount_type === 'fixed' && promo.discount_value ? `Sconto: ${promo.discount_value}\u20AC` : ''}
+                          </p>
+                        </div>
+                        <div className="flex gap-1 shrink-0">
+                          <Button variant="ghost" size="icon" onClick={() => togglePromoActive(promo)} className={promo.active ? 'text-emerald-600' : 'text-gray-400'}>
+                            {promo.active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => openEditPromo(promo)} className="text-gray-600"><Pencil className="w-4 h-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => deletePromo(promo.id)} className="text-red-500"><Trash2 className="w-4 h-4" /></Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-400">
+                    <Percent className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <p className="text-sm">Nessuna promozione configurata.</p>
+                    <p className="text-xs mt-1">Crea promozioni per attrarre nuovi clienti e fidelizzare quelli esistenti.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* HOURS & CONTACTS */}
           <TabsContent value="hours">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1023,6 +1221,47 @@ export default function WebsiteAdminPage() {
             <DialogFooter>
               <Button variant="outline" onClick={() => setReviewDialog(false)}>Annulla</Button>
               <Button onClick={saveReview} className="bg-[#C8617A] text-white" data-testid="save-review-btn">Salva</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Promo Dialog */}
+        <Dialog open={promoDialog} onOpenChange={setPromoDialog}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>{editPromo ? 'Modifica Promozione' : 'Nuova Promozione'}</DialogTitle></DialogHeader>
+            <div className="space-y-4">
+              <div><Label>Nome Promozione</Label><Input value={promoForm.name} onChange={e => setPromoForm({ ...promoForm, name: e.target.value })} placeholder="Es. Sconto Primavera" data-testid="promo-name-input" /></div>
+              <div><Label>Descrizione</Label><Textarea value={promoForm.description} onChange={e => setPromoForm({ ...promoForm, description: e.target.value })} rows={2} placeholder="Descrizione della promozione..." data-testid="promo-desc-input" /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Tipo Sconto</Label>
+                  <Select value={promoForm.discount_type} onValueChange={v => setPromoForm({ ...promoForm, discount_type: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="percent">Percentuale (%)</SelectItem>
+                      <SelectItem value="fixed">Fisso ({'\u20AC'})</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Valore Sconto</Label>
+                  <Input type="number" value={promoForm.discount_value} onChange={e => setPromoForm({ ...promoForm, discount_value: parseFloat(e.target.value) || 0 })} />
+                </div>
+              </div>
+              <div className="flex items-center gap-6">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Switch checked={promoForm.active} onCheckedChange={v => setPromoForm({ ...promoForm, active: v })} />
+                  <span className="text-sm">Attiva</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Switch checked={promoForm.show_on_booking} onCheckedChange={v => setPromoForm({ ...promoForm, show_on_booking: v })} />
+                  <span className="text-sm">Mostra sul sito</span>
+                </label>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setPromoDialog(false)}>Annulla</Button>
+              <Button onClick={savePromo} className="bg-[#C8617A] text-white" data-testid="save-promo-btn">{editPromo ? 'Aggiorna' : 'Crea'}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

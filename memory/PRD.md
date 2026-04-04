@@ -26,12 +26,13 @@ Bruno Melito - Proprietario salone parrucchiere. Lingua: Italiano.
 - Card/Abbonamenti e Avvisi Card
 - Programma Fedeltà dinamico
 - Promemoria WhatsApp batch (domani, inattivi, scadenza colore)
-- **Template ringraziamento post-incasso modificabile** (04/04/2026)
+- Template ringraziamento post-incasso modificabile
 - Promozioni
 - Report Incassi / Registro Uscite / Riepilogo Giorno
 - Gestione Servizi e Operatori
-- Gestione Sito Web (CMS completo con temi, hero, gallery, recensioni, orari)
-- **Sincronizzazione automatica servizi gestionale ↔ sito pubblico** (04/04/2026)
+- Gestione Sito Web (CMS completo) con:
+  - Generale, Layout, Aspetto, Servizi (sync), Foto Salone, Gallery, Recensioni
+  - Upselling, **Fedeltà** (sync con sito), **Promozioni** (CRUD), Orari & Contatti
 - Tema admin personalizzabile (colori/font)
 
 ### Sito Pubblico (/sito)
@@ -39,12 +40,17 @@ Bruno Melito - Proprietario salone parrucchiere. Lingua: Italiano.
 - Sistema prenotazione online con selezione servizi multipli
 - Upselling post-prenotazione
 - "Prenota di nuovo" da storico appuntamenti
-- Sezione fedeltà dinamica dal CMS
-- **Anti-duplicato clienti** (04/04/2026): prenotazione online riconosce clienti esistenti per telefono normalizzato o nome
+- Sezione fedeltà dinamica **sincronizzata con gestionale**
+- Sezione promozioni **sincronizzata con gestionale**
+- Anti-duplicato clienti (normalizzazione telefono + match nome)
 
 ### Bug Fix (04/04/2026)
-- **Storico cliente "ERRORE CARICAMENTO"** → Creati endpoint `GET /api/clients/{id}/history` e `GET /api/clients/{id}/whatsapp`
-- **Duplicazione clienti da prenotazione online** → Implementata normalizzazione telefono e ricerca intelligente per evitare duplicati
+- Storico cliente "ERRORE CARICAMENTO" → Creati endpoint history e whatsapp
+- Duplicazione clienti da prenotazione online → Normalizzazione telefono
+- Messaggio ringraziamento non partiva → Checkout ora recupera telefono dal cliente
+- Template ringraziamento non appariva in produzione → Auto-creazione se mancante
+- **Sync fedeltà gestionale ↔ sito** → Endpoint pubblico usa stessa fonte dati admin
+- **Gestione Sito completa** → Aggiunti tab Fedeltà e Promozioni
 
 ## Credenziali Test
 - Email: melitobruno@gmail.com
