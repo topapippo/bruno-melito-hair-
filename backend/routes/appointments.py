@@ -417,11 +417,21 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, current_
     elif points_before < 5 and points_after >= 5:
         threshold_reached = 5
 
+    # Recupera il telefono del cliente (non è sempre salvato sull'appuntamento)
+    client_phone = appointment.get("client_phone", "")
+    if not client_phone and appointment.get("client_id"):
+        client_doc = await db.clients.find_one(
+            {"id": appointment["client_id"], "user_id": current_user["id"]},
+            {"_id": 0, "phone": 1}
+        )
+        if client_doc:
+            client_phone = client_doc.get("phone", "")
+
     return {
         "success": True, "payment_id": payment_id, "message": "Pagamento registrato con successo",
         "loyalty_points_earned": points_earned, "loyalty_total_points": points_after,
         "loyalty_threshold_reached": threshold_reached,
-        "client_phone": appointment.get("client_phone", ""),
+        "client_phone": client_phone,
         "client_name": appointment.get("client_name", "")
     }
 
