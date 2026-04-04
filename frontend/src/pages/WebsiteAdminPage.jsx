@@ -639,34 +639,87 @@ export default function WebsiteAdminPage() {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>Categorie Servizi (Listino Pubblico)</CardTitle>
-                  <Button variant="outline" size="sm" onClick={addCategory}><Plus className="w-4 h-4 mr-1" /> Categoria</Button>
+                  <CardTitle>Servizi del Salone (Listino Pubblico)</CardTitle>
+                  <a href="/services">
+                    <Button variant="outline" className="border-[#C8617A] text-[#C8617A] hover:bg-[#C8617A]/10">
+                      <Plus className="w-4 h-4 mr-1" /> Gestisci Servizi
+                    </Button>
+                  </a>
                 </div>
-                <p className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-3 mt-2">
-                  Il listino servizi della pagina pubblica viene generato automaticamente dai servizi inseriti nel gestionale (pagina Servizi). Qui puoi aggiungere categorie aggiuntive personalizzate se necessario.
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {(config.service_categories || []).map((cat, catIdx) => (
-                  <div key={catIdx} className="border rounded-xl p-4 space-y-3">
-                    <div className="flex items-center gap-3">
-                      <Input value={cat.title} onChange={e => updateCategory(catIdx, 'title', e.target.value)} placeholder="Nome Categoria" className="font-bold" />
-                      <Button variant="ghost" size="icon" onClick={() => removeCategory(catIdx)} className="text-red-500 shrink-0"><Trash2 className="w-4 h-4" /></Button>
-                    </div>
-                    <Input value={cat.desc || ''} onChange={e => updateCategory(catIdx, 'desc', e.target.value)} placeholder="Descrizione (opzionale)" className="text-sm" />
-                    <div className="space-y-2 pl-4">
-                      {(cat.items || []).map((item, itemIdx) => (
-                        <div key={itemIdx} className="flex gap-2 items-center">
-                          <Input value={item.name} onChange={e => updateCategoryItem(catIdx, itemIdx, 'name', e.target.value)} placeholder="Servizio" className="flex-1" />
-                          <Input value={item.price} onChange={e => updateCategoryItem(catIdx, itemIdx, 'price', e.target.value)} placeholder="Prezzo" className="w-28" />
-                          <Button variant="ghost" size="icon" onClick={() => removeCategoryItem(catIdx, itemIdx)} className="text-red-500 shrink-0"><X className="w-4 h-4" /></Button>
-                        </div>
-                      ))}
-                      <Button variant="outline" size="sm" onClick={() => addCategoryItem(catIdx)}><Plus className="w-4 h-4 mr-1" /> Servizio</Button>
-                    </div>
+                <div className="flex items-start gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg mt-2">
+                  <TrendingUp className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-bold text-emerald-800">Sincronizzazione Automatica</p>
+                    <p className="text-xs text-emerald-700 mt-0.5">I servizi mostrati sul sito pubblico vengono letti direttamente dalla pagina <strong>Servizi</strong> del gestionale. Qualsiasi modifica fatta li aggiorna automaticamente sul sito.</p>
                   </div>
-                ))}
-                <p className="text-xs text-gray-500">Questi sono i servizi mostrati nel listino della pagina web. Per i servizi usati nelle prenotazioni, vai alla pagina Servizi del gestionale.</p>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {allServices.length > 0 ? (
+                  <div className="space-y-2">
+                    {(() => {
+                      const grouped = {};
+                      allServices.forEach(s => {
+                        const cat = s.category || 'altro';
+                        if (!grouped[cat]) grouped[cat] = [];
+                        grouped[cat].push(s);
+                      });
+                      return Object.entries(grouped).map(([cat, svcs]) => (
+                        <div key={cat} className="border rounded-xl p-4">
+                          <p className="font-bold text-[#2D1B14] capitalize mb-2">{cat === 'taglio' ? 'Taglio & Styling' : cat === 'colore' ? 'Colorazione' : cat === 'trattamento' ? 'Trattamenti' : cat}</p>
+                          <div className="space-y-1">
+                            {svcs.map(s => (
+                              <div key={s.id} className="flex justify-between items-center py-1.5 px-2 rounded-lg hover:bg-gray-50 text-sm">
+                                <span className="text-[#2D1B14]">{s.name}</span>
+                                <div className="flex items-center gap-3">
+                                  <span className="text-xs text-gray-400">{s.duration} min</span>
+                                  <span className="font-bold text-[#C8617A]">{'\u20AC'}{s.price}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>Nessun servizio trovato. Vai alla pagina Servizi per aggiungerne.</p>
+                    <a href="/services"><Button className="mt-3 bg-[#C8617A] text-white">Vai a Servizi</Button></a>
+                  </div>
+                )}
+                
+                {/* Custom categories aggiuntive */}
+                {(config.service_categories || []).length > 0 && (
+                  <div className="mt-6 pt-4 border-t border-gray-200">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-sm font-bold text-gray-500">Categorie Personalizzate (Solo sito)</p>
+                      <Button variant="outline" size="sm" onClick={addCategory}><Plus className="w-4 h-4 mr-1" /> Categoria</Button>
+                    </div>
+                    {(config.service_categories || []).map((cat, catIdx) => (
+                      <div key={catIdx} className="border rounded-xl p-4 space-y-3 mb-3 bg-gray-50">
+                        <div className="flex items-center gap-3">
+                          <Input value={cat.title} onChange={e => updateCategory(catIdx, 'title', e.target.value)} placeholder="Nome Categoria" className="font-bold" />
+                          <Button variant="ghost" size="icon" onClick={() => removeCategory(catIdx)} className="text-red-500 shrink-0"><Trash2 className="w-4 h-4" /></Button>
+                        </div>
+                        <Input value={cat.desc || ''} onChange={e => updateCategory(catIdx, 'desc', e.target.value)} placeholder="Descrizione (opzionale)" className="text-sm" />
+                        <div className="space-y-2 pl-4">
+                          {(cat.items || []).map((item, itemIdx) => (
+                            <div key={itemIdx} className="flex gap-2 items-center">
+                              <Input value={item.name} onChange={e => updateCategoryItem(catIdx, itemIdx, 'name', e.target.value)} placeholder="Servizio" className="flex-1" />
+                              <Input value={item.price} onChange={e => updateCategoryItem(catIdx, itemIdx, 'price', e.target.value)} placeholder="Prezzo" className="w-28" />
+                              <Button variant="ghost" size="icon" onClick={() => removeCategoryItem(catIdx, itemIdx)} className="text-red-500 shrink-0"><X className="w-4 h-4" /></Button>
+                            </div>
+                          ))}
+                          <Button variant="outline" size="sm" onClick={() => addCategoryItem(catIdx)}><Plus className="w-4 h-4 mr-1" /> Servizio</Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {(config.service_categories || []).length === 0 && (
+                  <p className="text-xs text-gray-400 mt-4">Puoi aggiungere categorie personalizzate extra per il sito pubblico cliccando su "+" sopra.</p>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

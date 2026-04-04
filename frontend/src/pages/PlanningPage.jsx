@@ -77,14 +77,22 @@ export default function PlanningPage() {
 
   // Thank You dialog
   const [thankYouData, setThankYouData] = useState(null);
-  const sendThankYouWhatsApp = (data) => {
-    const { clientName, clientPhone, salonName, reviewLink } = data;
+  const sendThankYouWhatsApp = async (data) => {
+    const { clientName, clientPhone, reviewLink } = data;
     if (!clientPhone || clientPhone.length < 6) return;
     const cleanPhone = clientPhone.replace(/\D/g, '').replace(/^0/, '39');
     const phoneNum = cleanPhone.startsWith('39') ? cleanPhone : '39' + cleanPhone;
-    let msg = `Ciao ${clientName || ''}! Grazie per essere venuto da ${salonName || 'Bruno Melito Hair'}.\n\nTi aspettiamo presto per il tuo prossimo appuntamento!`;
+    // Carica il template di ringraziamento dal DB
+    let msg = '';
+    try {
+      const res = await api.get('/reminders/thank-you-template');
+      msg = (res.data.text || '')
+        .replace('{nome}', clientName || '')
+        .replace('{servizi}', data.services || '');
+    } catch {
+      msg = `Ciao ${clientName || ''}! Grazie per essere venuto da Bruno Melito Hair.\n\nTi aspettiamo presto per il tuo prossimo appuntamento!\n\nA presto!`;
+    }
     if (reviewLink) msg += `\n\nSe ti sei trovato bene, ci farebbe molto piacere una tua recensione: ${reviewLink}`;
-    msg += `\n\nA presto!`;
     window.open(`https://wa.me/${phoneNum}?text=${encodeURIComponent(msg)}`, '_blank');
   };
 

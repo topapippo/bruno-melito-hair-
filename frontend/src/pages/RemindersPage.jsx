@@ -508,9 +508,11 @@ export default function RemindersPage() {
                             ? 'bg-blue-100 text-blue-700'
                             : tmpl.template_type === 'color_expiry'
                             ? 'bg-purple-100 text-purple-700'
+                            : tmpl.template_type === 'thank_you'
+                            ? 'bg-emerald-100 text-emerald-700'
                             : 'bg-orange-100 text-orange-700'
                         }`}>
-                          {tmpl.template_type === 'appointment' ? 'Appuntamento' : tmpl.template_type === 'color_expiry' ? 'Scadenza Colore' : 'Richiamo'}
+                          {tmpl.template_type === 'appointment' ? 'Appuntamento' : tmpl.template_type === 'color_expiry' ? 'Scadenza Colore' : tmpl.template_type === 'thank_you' ? 'Ringraziamento' : 'Richiamo'}
                         </span>
                       </div>
                       <p className="text-xs text-[#64748B] mt-1 truncate">{tmpl.text}</p>
@@ -938,6 +940,7 @@ export default function RemindersPage() {
                       <SelectItem value="appointment">Promemoria Appuntamento</SelectItem>
                       <SelectItem value="recall">Richiamo Cliente</SelectItem>
                       <SelectItem value="color_expiry">Scadenza Colore</SelectItem>
+                      <SelectItem value="thank_you">Ringraziamento Post-Incasso</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

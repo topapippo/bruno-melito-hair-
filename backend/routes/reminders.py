@@ -109,7 +109,10 @@ async def get_message_templates(current_user: dict = Depends(get_current_user)):
              "template_type": "recall", "created_at": datetime.now(timezone.utc).isoformat()},
             {"id": str(uuid.uuid4()), "user_id": current_user["id"], "name": "Scadenza Colore",
              "text": "Ciao {nome}! Sono passati {giorni} giorni dal tuo ultimo colore. E' il momento di rinfrescare il look! Prenota da Bruno Melito Hair.",
-             "template_type": "color_expiry", "created_at": datetime.now(timezone.utc).isoformat()}
+             "template_type": "color_expiry", "created_at": datetime.now(timezone.utc).isoformat()},
+            {"id": str(uuid.uuid4()), "user_id": current_user["id"], "name": "Ringraziamento Post-Incasso",
+             "text": "Ciao {nome}! Grazie per essere venuto da Bruno Melito Hair.\n\nTi aspettiamo presto per il tuo prossimo appuntamento!\n\nA presto!",
+             "template_type": "thank_you", "created_at": datetime.now(timezone.utc).isoformat()}
         ]
         for d in defaults:
             await db.message_templates.insert_one(d)
@@ -305,3 +308,14 @@ async def reset_inactive_recall(client_id: str, current_user: dict = Depends(get
         {"user_id": current_user["id"], "type": "inactive_recall", "client_id": client_id}
     )
     return {"success": True, "deleted": result.deleted_count}
+
+
+@router.get("/reminders/thank-you-template")
+async def get_thank_you_template(current_user: dict = Depends(get_current_user)):
+    """Restituisce il template di ringraziamento post-incasso."""
+    tmpl = await db.message_templates.find_one(
+        {"user_id": current_user["id"], "template_type": "thank_you"}, {"_id": 0, "user_id": 0}
+    )
+    if not tmpl:
+        return {"text": "Ciao {nome}! Grazie per essere venuto da Bruno Melito Hair.\n\nTi aspettiamo presto per il tuo prossimo appuntamento!\n\nA presto!"}
+    return {"text": tmpl.get("text", "")}
