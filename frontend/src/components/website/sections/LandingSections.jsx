@@ -342,7 +342,25 @@ export function GallerySection({ config, hairstylePhotos, setShowBooking, T }) {
   );
 }
 
-export function LoyaltySection({ setShowBooking, T }) {
+export function LoyaltySection({ setShowBooking, T, loyalty }) {
+  const GRADIENT_BG = [
+    'from-amber-400 to-orange-500', 'from-rose-400 to-pink-500',
+    'from-teal-400 to-emerald-500', 'from-violet-400 to-purple-500',
+    'from-sky-400 to-blue-500', 'from-indigo-400 to-blue-600',
+    'from-fuchsia-400 to-pink-600', 'from-orange-400 to-red-500',
+  ];
+  const ICONS = [Gift, Star, Scissors, Star, Gift, Scissors, Gift, Star];
+  const pointsPerEuro = loyalty?.points_per_euro || 20;
+
+  // Ordina per punti richiesti crescenti
+  const rewards = loyalty?.rewards
+    ? Object.values(loyalty.rewards).sort((a, b) => (a.points_required || 0) - (b.points_required || 0))
+    : [];
+
+  if (rewards.length === 0) return null;
+
+  const colsClass = rewards.length <= 3 ? 'sm:grid-cols-3' : rewards.length === 4 ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-3 lg:grid-cols-5';
+
   return (
     <section className="py-20 sm:py-28" style={{ backgroundColor: `${T.accent}10` }}>
       <div className="max-w-6xl mx-auto px-4">
@@ -350,29 +368,26 @@ export function LoyaltySection({ setShowBooking, T }) {
           <div className="text-center mb-12">
             <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Programma Fedeltà</p>
             <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>Ogni Visita Vale di Più</h2>
-            <p className="text-[#94A3B8] mt-3 max-w-xl mx-auto">Accumula punti ad ogni appuntamento e sblocca premi esclusivi. <strong>1 punto ogni {'\u20AC'}20 spesi</strong>.</p>
+            <p className="text-[#94A3B8] mt-3 max-w-xl mx-auto">Accumula punti ad ogni appuntamento e sblocca premi esclusivi. <strong>1 punto ogni {'\u20AC'}{pointsPerEuro} spesi</strong>.</p>
           </div>
         </AnimatedSection>
         <div className="relative max-w-5xl mx-auto">
           <div className="hidden lg:block absolute top-[4.2rem] left-[10%] right-[10%] h-1 rounded-full opacity-25" style={{ background: `linear-gradient(90deg, #F59E0B, #EC4899, #14B8A6, #8B5CF6, #0EA5E9)` }} />
-          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-5">
-            {[
-              { bg: 'from-amber-400 to-orange-500', icon: Gift, title: 'Buono sconto 3\u20AC', points: '5 punti', desc: 'Buono sconto di 3\u20AC sul prossimo servizio' },
-              { bg: 'from-rose-400 to-pink-500', icon: Star, title: 'Buono sconto 5\u20AC', points: '10 punti', desc: 'Buono sconto di 5\u20AC sul prossimo servizio' },
-              { bg: 'from-teal-400 to-emerald-500', icon: Scissors, title: 'Piega o Taglio Gratuito', points: '20 punti', desc: 'Una piega o un taglio completamente gratuito' },
-              { bg: 'from-violet-400 to-purple-500', icon: Star, title: 'Colore Parziale Gratuito', points: '30 punti', desc: 'Un colore parziale completamente gratuito' },
-              { bg: 'from-sky-400 to-blue-500', icon: Gift, title: 'Colore Completo Gratuito', points: '50 punti', desc: 'Un colore completo completamente gratuito' },
-            ].map((reward, idx) => (
-              <AnimatedSection key={idx} delay={idx * 0.1}>
-                <div className={`bg-gradient-to-br ${reward.bg} rounded-3xl p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.05] hover:-translate-y-1 text-center relative overflow-hidden`} data-testid={`loyalty-reward-${idx}`}>
-                  <div className="absolute -bottom-3 -right-3 w-16 h-16 rounded-full bg-white/10" />
-                  <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-3 ring-4 ring-white/20 shadow-md"><reward.icon className="w-7 h-7 text-white" /></div>
-                  <h3 className="font-bold text-base text-white mb-2">{reward.title}</h3>
-                  <div className="inline-block bg-white/20 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3 shadow-md backdrop-blur-sm">{reward.points}</div>
-                  <p className="text-white/80 text-xs">{reward.desc}</p>
-                </div>
-              </AnimatedSection>
-            ))}
+          <div className={`grid grid-cols-1 ${colsClass} gap-5`}>
+            {rewards.map((reward, idx) => {
+              const Icon = ICONS[idx % ICONS.length];
+              return (
+                <AnimatedSection key={reward.key || idx} delay={idx * 0.1}>
+                  <div className={`bg-gradient-to-br ${GRADIENT_BG[idx % GRADIENT_BG.length]} rounded-3xl p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.05] hover:-translate-y-1 text-center relative overflow-hidden`} data-testid={`loyalty-reward-${idx}`}>
+                    <div className="absolute -bottom-3 -right-3 w-16 h-16 rounded-full bg-white/10" />
+                    <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-3 ring-4 ring-white/20 shadow-md"><Icon className="w-7 h-7 text-white" /></div>
+                    <h3 className="font-bold text-base text-white mb-2">{reward.name}</h3>
+                    <div className="inline-block bg-white/20 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3 shadow-md backdrop-blur-sm">{reward.points_required} punti</div>
+                    <p className="text-white/80 text-xs">{reward.description || ''}</p>
+                  </div>
+                </AnimatedSection>
+              );
+            })}
           </div>
         </div>
         <AnimatedSection delay={0.5}>

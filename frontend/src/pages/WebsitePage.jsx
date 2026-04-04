@@ -197,7 +197,7 @@ export default function WebsitePage() {
       case 'gallery':
         return hairstylePhotos.length > 0 ? <GallerySection key="gallery" config={config} hairstylePhotos={hairstylePhotos} setShowBooking={setShowBooking} T={T} /> : null;
       case 'loyalty':
-        return <LoyaltySection key="loyalty" setShowBooking={setShowBooking} T={T} />;
+        return <LoyaltySection key="loyalty" setShowBooking={setShowBooking} T={T} loyalty={siteData?.loyalty} />;
       case 'contact':
         return <ContactSection key="contact" {...{ contactRef, config, hours, phones, setShowBooking, openWhatsApp, T }} />;
       default:
