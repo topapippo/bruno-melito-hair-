@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from typing import List
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import uuid
 import logging
 
@@ -131,9 +131,10 @@ async def get_client_history(client_id: str, current_user: dict = Depends(get_cu
     if not client:
         raise HTTPException(status_code=404, detail="Cliente non trovato")
 
-    # Appuntamenti (ultimi 50, ordinati per data decrescente)
+    # Appuntamenti (ultimi 3 mesi, ordinati per data decrescente)
+    three_months_ago = (datetime.now(timezone.utc) - timedelta(days=90)).strftime("%Y-%m-%d")
     appointments_raw = await db.appointments.find(
-        {"client_id": client_id, "user_id": current_user["id"]},
+        {"client_id": client_id, "user_id": current_user["id"], "date": {"$gte": three_months_ago}},
         {"_id": 0, "user_id": 0}
     ).sort("date", -1).to_list(50)
     appointments = []

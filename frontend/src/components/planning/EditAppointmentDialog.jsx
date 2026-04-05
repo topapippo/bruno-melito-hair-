@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
   Loader2, User, CreditCard, Banknote, Euro, CheckCircle, Check,
-  Star, Gift, Ticket, Plus, Trash2, Edit3, X, Smartphone, AlertTriangle,
+  Star, Gift, Ticket, Plus, Trash2, Edit3, X, Smartphone, AlertTriangle, Clock, History,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getCategoryInfo, groupServicesByCategory } from '../../lib/categories';
@@ -89,8 +89,25 @@ export default function EditAppointmentDialog({
   const [sospesiTotal, setSospesiTotal] = useState(0);
   const [showSospesiPopup, setShowSospesiPopup] = useState(false);
   const [settlingId, setSettlingId] = useState(null);
+  const [clientHistory, setClientHistory] = useState(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   const sortedServices = groupServicesByCategory(services);
+
+  const loadClientHistory = async (clientId) => {
+    if (!clientId || clientId === 'generic') return;
+    setLoadingHistory(true);
+    try {
+      const res = await api.get(`${API}/clients/${clientId}/history`);
+      setClientHistory(res.data);
+      setShowHistory(true);
+    } catch (err) {
+      toast.error('Errore caricamento storico');
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
 
 
   useEffect(() => {
@@ -426,7 +443,39 @@ export default function EditAppointmentDialog({
                     {selectedClientInfo.phone && <p className="text-xs text-[#92400E]">Tel: {selectedClientInfo.phone}</p>}
                     {selectedClientInfo.notes && <p className="text-xs text-[#92400E] mt-0.5 truncate">{selectedClientInfo.notes}</p>}
                   </div>
+                  <Button type="button" variant="outline" size="sm" className="h-7 text-xs border-[#F59E0B] text-[#92400E] hover:bg-[#FEF3C7] shrink-0"
+                    onClick={() => showHistory ? setShowHistory(false) : loadClientHistory(selectedClientInfo?.id || appointment?.client_id)}
+                    disabled={loadingHistory}
+                    data-testid="client-history-toggle-btn">
+                    {loadingHistory ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <History className="w-3 h-3 mr-1" />}
+                    Storico
+                  </Button>
                 </div>
+
+                {/* Client History Panel */}
+                {showHistory && clientHistory && (
+                  <div className="mt-3 pt-3 border-t border-[#F59E0B]/30 space-y-2 max-h-48 overflow-y-auto" data-testid="client-history-panel">
+                    <div className="flex items-center gap-4 text-xs text-[#92400E] font-medium">
+                      <span>Visite: {clientHistory.total_visits || 0}</span>
+                      <span>Speso: {'\u20AC'}{(clientHistory.total_spent || 0).toFixed(2)}</span>
+                      {clientHistory.last_visit && <span>Ultima: {clientHistory.last_visit}</span>}
+                    </div>
+                    {(clientHistory.appointments || []).length > 0 ? (
+                      clientHistory.appointments.map((apt, idx) => (
+                        <div key={idx} className="flex items-center gap-2 bg-white/60 rounded-lg px-2 py-1.5 text-xs">
+                          <Clock className="w-3 h-3 text-[#92400E] shrink-0" />
+                          <span className="font-bold text-[#92400E] w-20 shrink-0">{apt.date}</span>
+                          <span className="text-[#92400E] w-12 shrink-0">{apt.time}</span>
+                          <span className="text-[#92400E] flex-1 truncate">{(apt.services || []).map(s => s.name).join(', ')}</span>
+                          {apt.status === 'completed' && <span className="text-emerald-600 font-bold">{'\u20AC'}{(apt.amount_paid || 0).toFixed(0)}</span>}
+                          {apt.status !== 'completed' && <span className={`text-xs px-1 rounded ${apt.status === 'cancelled' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>{apt.status === 'cancelled' ? 'Ann.' : apt.status}</span>}
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-xs text-[#92400E]/60 text-center py-2">Nessun appuntamento negli ultimi 3 mesi</p>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
