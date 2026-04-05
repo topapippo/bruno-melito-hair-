@@ -3,7 +3,7 @@ import api from '../../lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Clock, Scissors, CheckCircle, ArrowLeft, ArrowRight, Gift, CreditCard, ChevronDown, ChevronUp } from 'lucide-react';
+import { Clock, Scissors, CheckCircle, ArrowLeft, ArrowRight, Gift, CreditCard, ChevronDown, ChevronUp, History, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -22,6 +22,27 @@ export default function BookingForm({
   const [submitting, setSubmitting] = useState(false);
   const [conflictData, setConflictData] = useState(null);
   const [openCats, setOpenCats] = useState({});
+  const [clientHistory, setClientHistory] = useState(null);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+
+  const loadMyHistory = async () => {
+    const phone = formData.client_phone?.trim();
+    if (!phone || phone.length < 6) { toast.error('Inserisci il tuo numero di telefono'); return; }
+    setLoadingHistory(true);
+    try {
+      const res = await api.get(`${API}/public/my-appointments?phone=${encodeURIComponent(phone)}`);
+      const data = res.data;
+      const past = (data.past || []).slice(0, 10);
+      setClientHistory(past);
+      setShowHistory(true);
+      if (past.length === 0) toast.info('Nessun appuntamento negli ultimi 3 mesi');
+    } catch {
+      setClientHistory([]);
+      setShowHistory(true);
+      toast.info('Nessun appuntamento trovato');
+    } finally { setLoadingHistory(false); }
+  };
 
   const toggleService = (id) => {
     setFormData(prev => ({
@@ -373,7 +394,30 @@ export default function BookingForm({
               <div><label className="text-sm text-[#B89A7A] font-semibold mb-1 block">Nome e Cognome *</label>
                 <Input value={formData.client_name} onChange={(e) => setFormData({...formData, client_name: e.target.value})} placeholder="Es. Maria Rossi" className="bg-[#2A1A0E] border-[#3A2A1A] text-white placeholder:text-[#7A5A3A]" data-testid="website-booking-name" /></div>
               <div><label className="text-sm text-[#B89A7A] font-semibold mb-1 block">Telefono *</label>
-                <Input value={formData.client_phone} onChange={(e) => setFormData({...formData, client_phone: e.target.value})} placeholder="Es. 339 123 4567" className="bg-[#2A1A0E] border-[#3A2A1A] text-white placeholder:text-[#7A5A3A]" data-testid="website-booking-phone" /></div>
+                <Input value={formData.client_phone} onChange={(e) => { setFormData({...formData, client_phone: e.target.value}); setShowHistory(false); setClientHistory(null); }} placeholder="Es. 339 123 4567" className="bg-[#2A1A0E] border-[#3A2A1A] text-white placeholder:text-[#7A5A3A]" data-testid="website-booking-phone" />
+                <Button type="button" variant="outline" size="sm"
+                  onClick={showHistory ? () => setShowHistory(false) : loadMyHistory}
+                  disabled={loadingHistory || !formData.client_phone || formData.client_phone.length < 6}
+                  className="mt-2 h-8 text-xs border-[#C8617A]/50 text-[#C8617A] hover:bg-[#C8617A]/10 disabled:opacity-30"
+                  data-testid="booking-history-btn">
+                  {loadingHistory ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <History className="w-3 h-3 mr-1" />}
+                  {showHistory ? 'Chiudi Storico' : 'Il Mio Storico'}
+                </Button>
+                {showHistory && clientHistory && (
+                  <div className="mt-2 rounded-xl border border-[#C8617A]/30 bg-[#2A1A0E] p-3 space-y-2 max-h-44 overflow-y-auto" data-testid="booking-history-panel">
+                    {clientHistory.length > 0 ? clientHistory.map((apt, idx) => (
+                      <div key={idx} className="flex items-center gap-2 text-xs bg-[#3A2A1A] rounded-lg px-3 py-2">
+                        <Clock className="w-3 h-3 text-[#C8617A] shrink-0" />
+                        <span className="font-bold text-white w-16 shrink-0">{apt.date}</span>
+                        <span className="text-[#B89A7A] w-10 shrink-0">{apt.time}</span>
+                        <span className="text-[#D4B89A] flex-1 truncate">{(apt.services || []).map(s => s.name || s).join(', ')}</span>
+                      </div>
+                    )) : (
+                      <p className="text-xs text-[#8A6A4A] text-center py-2">Nessun appuntamento negli ultimi 3 mesi</p>
+                    )}
+                  </div>
+                )}
+              </div>
               <div><label className="text-sm text-[#B89A7A] font-semibold mb-1 block">Note (opzionale)</label>
                 <Textarea value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})} placeholder="Richieste particolari..." className="bg-[#2A1A0E] border-[#3A2A1A] text-white placeholder:text-[#7A5A3A]" rows={3} /></div>
             </div>
