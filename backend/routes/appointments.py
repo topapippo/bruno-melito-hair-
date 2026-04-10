@@ -233,24 +233,22 @@ async def get_appointments(
         query, {"_id": 0, "user_id": 0}
     ).sort([("date", 1), ("time", 1)]).to_list(1000)
 
-    # Enrich missing category from master services list + name inference
-    needs_enrich = any(
-        not svc.get("category") for apt in appointments for svc in (apt.get("services") or [])
-    )
-    if needs_enrich:
-        master = await db.services.find(
-            {"user_id": current_user["id"]}, {"_id": 0, "id": 1, "name": 1, "category": 1}
-        ).to_list(1000)
-        by_id = {s["id"]: s.get("category", "") for s in master}
-        by_name = {s["name"]: s.get("category", "") for s in master if s.get("name")}
-        for apt in appointments:
-            for svc in (apt.get("services") or []):
-                if not svc.get("category"):
-                    svc["category"] = (
-                        by_id.get(svc.get("id", ""), "")
-                        or by_name.get(svc.get("name", ""), "")
-                        or _infer_category_from_name(svc.get("name", ""))
-                    )
+    # Sync service names, categories, and prices from master services list
+    master = await db.services.find(
+        {"user_id": current_user["id"]}, {"_id": 0}
+    ).to_list(1000)
+    master_by_id = {s["id"]: s for s in master}
+
+    for apt in appointments:
+        for svc in (apt.get("services") or []):
+            ms = master_by_id.get(svc.get("id", ""))
+            if ms:
+                svc["name"] = ms.get("name", svc.get("name", ""))
+                svc["category"] = ms.get("category", svc.get("category", ""))
+                svc["price"] = ms.get("price", svc.get("price", 0))
+                svc["duration"] = ms.get("duration", svc.get("duration", 15))
+            elif not svc.get("category"):
+                svc["category"] = _infer_category_from_name(svc.get("name", ""))
 
     return appointments
 
