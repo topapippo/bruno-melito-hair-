@@ -14,6 +14,28 @@ from utils import calculate_end_time
 router = APIRouter()
 
 
+
+def _infer_category_from_name(name: str) -> str:
+    """Infer service category from its name using keyword matching."""
+    n = name.lower()
+    if any(k in n for k in ["colore", "meches", "tinta", "shatush", "balayage", "decoloraz", "rifless", "copertura"]):
+        return "colore"
+    if any(k in n for k in ["permanente", "arricciatura", "ondulazione"]):
+        return "permanente"
+    if any(k in n for k in ["stiratura", "lisciatura", "lisciante"]):
+        return "stiratura"
+    if any(k in n for k in ["trattamento", "cheratina", "ricostruz", "maschera", "ristruttur", "olaplex", "botox"]):
+        return "trattamento"
+    if any(k in n for k in ["piega", "messa in piega", "finish", "asciugatura"]):
+        return "piega"
+    if any(k in n for k in ["taglio", "rasatura", "sfumatura", "barba", "spuntat"]):
+        return "taglio"
+    if any(k in n for k in ["abbonamento", "pacchetto", "tessera"]):
+        return "abbonamento"
+    return "altro"
+
+
+
 # ============== Loyalty helpers (used by checkout) ==============
 
 async def get_or_create_loyalty(client_id: str, user_id: str):
@@ -213,7 +235,7 @@ async def get_appointments(
         query, {"_id": 0, "user_id": 0}
     ).sort([("date", 1), ("time", 1)]).to_list(1000)
 
-    # Enrich missing category from master services list
+    # Enrich missing category from master services list + name inference
     needs_enrich = any(
         not svc.get("category") for apt in appointments for svc in (apt.get("services") or [])
     )
@@ -226,7 +248,11 @@ async def get_appointments(
         for apt in appointments:
             for svc in (apt.get("services") or []):
                 if not svc.get("category"):
-                    svc["category"] = by_id.get(svc.get("id", ""), "") or by_name.get(svc.get("name", ""), "") or "altro"
+                    svc["category"] = (
+                        by_id.get(svc.get("id", ""), "")
+                        or by_name.get(svc.get("name", ""), "")
+                        or _infer_category_from_name(svc.get("name", ""))
+                    )
 
     return appointments
 
@@ -556,16 +582,26 @@ async def _settle_sospeso_impl(sospeso_id: str, method: str, current_user: dict)
 import logging
 logger_repair = logging.getLogger("repair")
 
+
 @router.post("/appointments/repair-categories")
 async def repair_appointment_categories(current_user: dict = Depends(get_current_user)):
-    """Patch the 'category' field into embedded services of existing appointments
-    using the master services list."""
+    """Repair categories on master services AND embedded appointment services."""
+    # Step 1: Repair master services
     master_services = await db.services.find(
         {"user_id": current_user["id"]}, {"_id": 0}
     ).to_list(1000)
-    by_id = {s["id"]: s.get("category", "") for s in master_services}
-    by_name = {s["name"]: s.get("category", "") for s in master_services if s.get("name")}
+    svc_repaired = 0
+    for svc in master_services:
+        if not svc.get("category"):
+            inferred = _infer_category_from_name(svc.get("name", ""))
+            await db.services.update_one({"id": svc["id"]}, {"$set": {"category": inferred}})
+            svc["category"] = inferred
+            svc_repaired += 1
 
+    by_id = {s["id"]: s.get("category", "") for s in master_services}
+    by_name = {s["name"]: s.get("category", "") for s in master_services if s.get("name") and s.get("category")}
+
+    # Step 2: Repair appointment embedded services
     appointments = await db.appointments.find(
         {"user_id": current_user["id"]}, {"_id": 0, "id": 1, "services": 1}
     ).to_list(10000)
@@ -573,19 +609,18 @@ async def repair_appointment_categories(current_user: dict = Depends(get_current
     patched = 0
     for apt in appointments:
         needs_update = False
-        updated_services = []
         for svc in (apt.get("services") or []):
             cat = svc.get("category", "")
-            if not cat:
-                cat = by_id.get(svc.get("id", ""), "") or by_name.get(svc.get("name", ""), "") or "altro"
-                svc["category"] = cat
-                needs_update = True
-            updated_services.append(svc)
+            if not cat or cat == "altro":
+                new_cat = by_id.get(svc.get("id", ""), "") or by_name.get(svc.get("name", ""), "") or _infer_category_from_name(svc.get("name", ""))
+                if new_cat != cat:
+                    svc["category"] = new_cat
+                    needs_update = True
         if needs_update:
             await db.appointments.update_one(
                 {"id": apt["id"]},
-                {"$set": {"services": updated_services}}
+                {"$set": {"services": apt["services"]}}
             )
             patched += 1
 
-    return {"success": True, "patched": patched, "total": len(appointments)}
+    return {"success": True, "services_repaired": svc_repaired, "appointments_patched": patched, "total_appointments": len(appointments)}

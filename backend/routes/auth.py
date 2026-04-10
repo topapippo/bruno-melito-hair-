@@ -97,22 +97,61 @@ async def register(data: UserCreate):
 
 
 
+def _infer_category(name: str) -> str:
+    """Infer service category from its name using keyword matching."""
+    n = name.lower()
+    if any(k in n for k in ["colore", "meches", "tinta", "shatush", "balayage", "decoloraz", "rifless", "copertura"]):
+        return "colore"
+    if any(k in n for k in ["permanente", "arricciatura", "ondulazione"]):
+        return "permanente"
+    if any(k in n for k in ["stiratura", "lisciatura", "lisciante"]):
+        return "stiratura"
+    if any(k in n for k in ["trattamento", "cheratina", "ricostruz", "maschera", "ristruttur", "olaplex", "botox"]):
+        return "trattamento"
+    if any(k in n for k in ["piega",  "messa in piega", "finish", "asciugatura"]):
+        return "piega"
+    if any(k in n for k in ["taglio", "rasatura", "sfumatura", "barba", "spuntat"]):
+        return "taglio"
+    if any(k in n for k in ["abbonamento", "pacchetto", "tessera"]):
+        return "abbonamento"
+    return "altro"
+
+
 async def _repair_categories(user_id: str):
-    """Background task: patch missing category on old appointment services."""
+    """Background task: repair categories on master services AND appointment embedded services."""
     try:
-        master = await db.services.find({"user_id": user_id}, {"_id": 0, "id": 1, "name": 1, "category": 1}).to_list(1000)
+        # Step 1: Repair master services that have no category
+        master = await db.services.find({"user_id": user_id}, {"_id": 0}).to_list(1000)
+        for svc in master:
+            if not svc.get("category"):
+                inferred = _infer_category(svc.get("name", ""))
+                await db.services.update_one({"id": svc["id"]}, {"$set": {"category": inferred}})
+                svc["category"] = inferred
+
+        # Build lookup maps from repaired master list
         by_id = {s["id"]: s.get("category", "") for s in master}
-        by_name = {s["name"]: s.get("category", "") for s in master if s.get("name")}
+        by_name = {}
+        for s in master:
+            if s.get("name") and s.get("category"):
+                by_name[s["name"]] = s["category"]
+
+        # Step 2: Repair appointment embedded services
         appointments = await db.appointments.find({"user_id": user_id}, {"_id": 0, "id": 1, "services": 1}).to_list(10000)
+        patched = 0
         for apt in appointments:
             updated = False
             for svc in (apt.get("services") or []):
-                if not svc.get("category"):
-                    svc["category"] = by_id.get(svc.get("id", ""), "") or by_name.get(svc.get("name", ""), "") or "altro"
-                    updated = True
+                current_cat = svc.get("category", "")
+                if not current_cat or current_cat == "altro":
+                    # Try lookup first, then infer from name
+                    new_cat = by_id.get(svc.get("id", ""), "") or by_name.get(svc.get("name", ""), "") or _infer_category(svc.get("name", ""))
+                    if new_cat != current_cat:
+                        svc["category"] = new_cat
+                        updated = True
             if updated:
                 await db.appointments.update_one({"id": apt["id"]}, {"$set": {"services": apt["services"]}})
-        logger.info(f"Auto-repair categorie completato per user {user_id}")
+                patched += 1
+        logger.info(f"Auto-repair categorie: {patched} appuntamenti aggiornati per user {user_id}")
     except Exception as e:
         logger.error(f"Errore auto-repair categorie: {e}")
 
