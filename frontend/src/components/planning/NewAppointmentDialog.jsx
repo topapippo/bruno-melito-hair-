@@ -110,6 +110,9 @@ export default function NewAppointmentDialog({
   const [hoursConfig, setHoursConfig] = useState(null);
   const [blockedSlots, setBlockedSlots] = useState([]);
   const [dayWarning, setDayWarning] = useState('');
+  const [sellCardMode, setSellCardMode] = useState(null); // template being sold
+  const [sellPaymentMethod, setSellPaymentMethod] = useState('cash');
+  const [sellLoading, setSellLoading] = useState(false);
 
   const mbhsOperator = operators.find(op => op.name.toUpperCase().includes('MBHS')) || operators[0];
 
@@ -125,6 +128,8 @@ export default function NewAppointmentDialog({
       setNewClientMode(false);
       setNewClientName('');
       setNewClientPhone('');
+      setSellCardMode(null);
+      setSellPaymentMethod('cash');
       setFormData({
         client_id: '',
         service_ids: [],
@@ -201,6 +206,35 @@ export default function NewAppointmentDialog({
       setDialogClientPromos([]);
     }
   };
+
+  const handleSellCard = async (template) => {
+    if (!formData.client_id) {
+      toast.error('Seleziona prima un cliente!');
+      return;
+    }
+    setSellLoading(true);
+    try {
+      const res = await api.post(`${API}/cards/sell`, {
+        template_id: template.id,
+        client_id: formData.client_id,
+        amount_paid: template.total_value,
+        payment_method: sellPaymentMethod,
+      });
+      toast.success(`Card "${res.data.card_name}" venduta a ${res.data.client_name}! Incasso: €${res.data.amount_paid.toFixed(2)}`);
+      setSellCardMode(null);
+      // Refresh client cards
+      const cardsRes = await api.get(`${API}/cards?client_id=${formData.client_id}`);
+      const activeCards = cardsRes.data.filter(c => c.active && c.remaining_value > 0);
+      setDialogClientCards(activeCards);
+      setOpenCats(prev => ({ ...prev, _clientCards: true }));
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Errore nella vendita della card');
+    } finally {
+      setSellLoading(false);
+    }
+  };
+
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -534,46 +568,72 @@ export default function NewAppointmentDialog({
                   );
                 })}
 
-                {/* Card & Abbonamenti */}
+                {/* Card & Abbonamenti - VENDI */}
                 {cardTemplates.length > 0 && (
-                  <div className="rounded-xl border-2 border-[#F0E6DC] overflow-hidden" data-testid="service-cat-cards">
+                  <div className="rounded-xl border-2 border-[#6366F1]/50 overflow-hidden" data-testid="service-cat-cards">
                     <button type="button" onClick={() => toggleCat('_cards')}
-                      className="w-full flex items-center justify-between px-3 py-2.5 bg-white hover:bg-gray-50 transition-colors">
+                      className="w-full flex items-center justify-between px-3 py-2.5 bg-[#6366F1]/5 hover:bg-[#6366F1]/10 transition-colors">
                       <div className="flex items-center gap-2">
                         <CreditCard className="w-3.5 h-3.5 text-[#6366F1]" />
-                        <span className="font-bold text-sm uppercase tracking-wide text-[#6366F1]">Pacchetti Disponibili</span>
+                        <span className="font-bold text-sm uppercase tracking-wide text-[#6366F1]">Vendi Card / Abbonamento</span>
                         <span className="text-xs text-gray-400">({cardTemplates.length})</span>
                       </div>
-                      <svg className={`w-4 h-4 text-gray-400 transition-transform ${openCats['_cards'] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                      <svg className={`w-4 h-4 text-[#6366F1]/50 transition-transform ${openCats['_cards'] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                     </button>
                     {openCats['_cards'] && (
-                      <div className="border-t border-[#F0E6DC] px-2 py-2 space-y-1 bg-gray-50/50">
+                      <div className="border-t border-[#6366F1]/20 px-2 py-2 space-y-1.5 bg-[#6366F1]/5">
                         {cardTemplates.map((tmpl, i) => {
-                          const isSelected = formData.notes?.includes(`[CARD: ${tmpl.name}]`);
+                          const isSelling = sellCardMode?.id === tmpl.id;
                           return (
-                            <button key={tmpl.id || i} type="button"
-                              onClick={() => {
-                                if (isSelected) {
-                                  setFormData(prev => ({ ...prev, notes: prev.notes.replace(`[CARD: ${tmpl.name}] `, '').replace(`[CARD: ${tmpl.name}]`, '') }));
-                                } else {
-                                  const cleanNotes = (formData.notes || '').replace(/\[CARD: [^\]]+\] ?/g, '');
-                                  setFormData(prev => ({ ...prev, notes: `[CARD: ${tmpl.name}] ${cleanNotes}`.trim() }));
-                                  toast.success(`"${tmpl.name}" selezionato`);
-                                }
-                              }}
-                              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-all ${
-                                isSelected ? 'bg-[#6366F1]/10 shadow-sm border-2 border-[#6366F1]' : 'bg-transparent hover:bg-white border-2 border-transparent'
-                              }`}
-                              data-testid={`planning-card-template-${i}`}>
-                              <div className="flex items-center gap-2">
-                                <CreditCard className={`w-4 h-4 shrink-0 ${isSelected ? 'text-[#6366F1]' : 'text-gray-400'}`} />
-                                <div>
-                                  <p className="font-medium text-sm">{tmpl.name}</p>
-                                  <p className="text-xs text-gray-500">{tmpl.card_type === 'subscription' ? 'Abb.' : 'Prep.'} - {'\u20AC'}{tmpl.total_value}</p>
+                            <div key={tmpl.id || i} className="rounded-lg overflow-hidden">
+                              <div className={`flex items-center justify-between px-3 py-2.5 transition-all ${
+                                isSelling ? 'bg-white border-2 border-[#6366F1]' : 'bg-white/60 hover:bg-white border-2 border-transparent'
+                              }`}>
+                                <div className="flex items-center gap-2">
+                                  <CreditCard className="w-4 h-4 shrink-0 text-[#6366F1]" />
+                                  <div>
+                                    <p className="font-semibold text-sm text-[#2D1B14]">{tmpl.name}</p>
+                                    <p className="text-xs text-gray-500">{tmpl.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'} - {'\u20AC'}{tmpl.total_value}</p>
+                                  </div>
                                 </div>
+                                <button type="button"
+                                  onClick={() => setSellCardMode(isSelling ? null : tmpl)}
+                                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                    isSelling ? 'bg-gray-200 text-gray-600' : 'bg-[#6366F1] text-white hover:bg-[#4F46E5]'
+                                  }`}
+                                  data-testid={`sell-card-btn-${i}`}>
+                                  {isSelling ? 'Annulla' : 'Vendi'}
+                                </button>
                               </div>
-                              {isSelected && <Check className="w-4 h-4 text-[#6366F1] shrink-0" />}
-                            </button>
+                              {isSelling && (
+                                <div className="px-3 py-3 bg-[#6366F1]/5 border-t border-[#6366F1]/20 space-y-2">
+                                  <div className="flex items-center justify-between text-sm">
+                                    <span className="text-gray-600">Incasso:</span>
+                                    <span className="font-black text-[#6366F1] text-lg">{'\u20AC'}{tmpl.total_value.toFixed(2)}</span>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    {['cash', 'card', 'transfer'].map(m => (
+                                      <button key={m} type="button"
+                                        onClick={() => setSellPaymentMethod(m)}
+                                        className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                                          sellPaymentMethod === m ? 'bg-[#6366F1] text-white' : 'bg-white text-gray-600 border border-gray-200'
+                                        }`}>
+                                        {m === 'cash' ? 'Contanti' : m === 'card' ? 'Carta' : 'Bonifico'}
+                                      </button>
+                                    ))}
+                                  </div>
+                                  <button type="button" disabled={sellLoading}
+                                    onClick={() => handleSellCard(tmpl)}
+                                    className="w-full py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm transition-all disabled:opacity-50"
+                                    data-testid={`confirm-sell-card-${i}`}>
+                                    {sellLoading ? 'Registrando...' : `Registra Vendita €${tmpl.total_value.toFixed(2)}`}
+                                  </button>
+                                  {!formData.client_id && (
+                                    <p className="text-xs text-red-500 font-medium text-center">Seleziona prima un cliente!</p>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           );
                         })}
                       </div>
