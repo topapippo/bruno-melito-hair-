@@ -1,7 +1,6 @@
 // Ordine progressivo delle categorie - condiviso tra gestionale, planning e pagina pubblica
 export const CATEGORIES = [
-  { value: 'taglio', label: 'Taglio', color: '#0EA5E9', bg: '#E0F2FE', text: '#0369A1' },
-  { value: 'piega', label: 'Piega', color: '#F97316', bg: '#FFF7ED', text: '#9A3412' },
+  { value: 'taglio', label: 'Styling', color: '#0EA5E9', bg: '#E0F2FE', text: '#0369A1' },
   { value: 'trattamento', label: 'Trattamenti', color: '#F59E0B', bg: '#FEF3C7', text: '#92400E' },
   { value: 'colore', label: 'Colore', color: '#10B981', bg: '#D1FAE5', text: '#065F46' },
   { value: 'permanente', label: 'Permanente', color: '#8B5CF6', bg: '#EDE9FE', text: '#5B21B6' },

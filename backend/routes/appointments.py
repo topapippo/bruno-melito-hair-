@@ -26,9 +26,7 @@ def _infer_category_from_name(name: str) -> str:
         return "stiratura"
     if any(k in n for k in ["trattamento", "cheratina", "ricostruz", "maschera", "ristruttur", "olaplex", "botox"]):
         return "trattamento"
-    if any(k in n for k in ["piega", "messa in piega", "finish", "asciugatura"]):
-        return "piega"
-    if any(k in n for k in ["taglio", "rasatura", "sfumatura", "barba", "spuntat"]):
+    if any(k in n for k in ["taglio", "piega", "rasatura", "sfumatura", "barba", "spuntat", "messa in piega", "finish", "asciugatura", "piastra", "arricciacapelli"]):
         return "taglio"
     if any(k in n for k in ["abbonamento", "pacchetto", "tessera"]):
         return "abbonamento"

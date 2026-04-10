@@ -57,7 +57,7 @@ async def register(data: UserCreate):
 
     default_services = [
         {"name": "Taglio Donna", "category": "taglio", "duration": 45, "price": 35.0},
-        {"name": "Piega", "category": "piega", "duration": 30, "price": 25.0},
+        {"name": "Piega", "category": "taglio", "duration": 30, "price": 25.0},
         {"name": "Colore", "category": "colore", "duration": 90, "price": 60.0},
         {"name": "Meches", "category": "colore", "duration": 120, "price": 80.0},
         {"name": "Trattamento Ristrutturante", "category": "trattamento", "duration": 30, "price": 30.0},
@@ -108,9 +108,7 @@ def _infer_category(name: str) -> str:
         return "stiratura"
     if any(k in n for k in ["trattamento", "cheratina", "ricostruz", "maschera", "ristruttur", "olaplex", "botox"]):
         return "trattamento"
-    if any(k in n for k in ["piega",  "messa in piega", "finish", "asciugatura"]):
-        return "piega"
-    if any(k in n for k in ["taglio", "rasatura", "sfumatura", "barba", "spuntat"]):
+    if any(k in n for k in ["taglio", "piega", "rasatura", "sfumatura", "barba", "spuntat", "messa in piega", "finish", "asciugatura", "piastra", "arricciacapelli"]):
         return "taglio"
     if any(k in n for k in ["abbonamento", "pacchetto", "tessera"]):
         return "abbonamento"
