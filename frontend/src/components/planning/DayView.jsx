@@ -165,6 +165,7 @@ export default function DayView({
                     const isHighlighted = highlightedClientId && apt.client_id === highlightedClientId;
                     const svcColors = getServiceColors(apt, svcById, svcByName);
                     const isCancelled = apt.status === 'cancelled';
+                    const totalDuration = apt.services.reduce((sum, s) => sum + (s.duration || 15), 0) || 1;
                     return (
                       <div
                         key={apt.id}
@@ -173,58 +174,51 @@ export default function DayView({
                         onDragStart={(e) => onDragStart(e, apt)}
                         onDragEnd={onDragEnd}
                         onClick={() => openEditDialog(apt)}
-                        className={`absolute rounded-xl overflow-hidden shadow-lg cursor-grab active:cursor-grabbing hover:scale-[1.02] hover:shadow-xl transition-all ${
+                        className={`absolute rounded-xl overflow-hidden shadow-lg cursor-grab active:cursor-grabbing hover:scale-[1.02] hover:shadow-xl transition-all flex flex-col ${
                           isHighlighted ? 'ring-4 ring-yellow-400 ring-offset-2 z-20' : ''
                         }`}
                         style={{
                           ...style,
                           ...(overlapInfo ? {} : { left: '4px', right: '4px' }),
-                          backgroundColor: isCancelled ? '#FEE2E2' : '#FFFFFF',
-                          border: '1px solid #E2E8F0',
                           ...(apt.status === 'completed' ? { opacity: 0.65 } : {}),
                         }}
                         title={`Clicca per modificare - ${apt.client_name}`}
                       >
-                        {/* Multi-color strip on the left */}
-                        <div className="absolute left-0 top-0 bottom-0 w-[6px] flex flex-col rounded-l-xl overflow-hidden" data-testid={`apt-colors-${apt.id}`}>
-                          {svcColors.map((color, i) => (
-                            <div key={i} className="flex-1" style={{ backgroundColor: color }} />
-                          ))}
-                        </div>
-                        <div className="pl-3 pr-2 py-1.5">
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1 min-w-0">
-                              <p className="font-bold truncate text-sm text-[#2D1B14]">
-                                {apt.status === 'completed' && '\u2713 '}{apt.client_name}
-                              </p>
-                              <p className="font-medium truncate text-[11px] text-[#7C5C4A]">
-                                {apt.time} - {apt.end_time}
-                              </p>
-                              {/* Service badges with category colors */}
-                              <div className="flex flex-wrap gap-1 mt-1">
-                                {apt.services.map((s, i) => (
-                                  <span
-                                    key={i}
-                                    className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-semibold text-white truncate max-w-[120px]"
-                                    style={{ backgroundColor: svcColors[i] || '#64748B' }}
-                                  >
-                                    {s.name}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openRecurringDialog(apt);
-                              }}
-                              className="ml-1 p-1 rounded hover:bg-[#C8617A]/20 transition-colors flex-shrink-0"
-                              title="Ripeti appuntamento"
-                              data-testid={`repeat-btn-${apt.id}`}
-                            >
-                              <Repeat className="w-3 h-3 text-[#7C5C4A]" />
-                            </button>
+                        {/* Header: client name + time */}
+                        <div className="flex items-center justify-between px-2 py-1 bg-[#2D1B14]/90 text-white flex-shrink-0" style={{ minHeight: '24px' }}>
+                          <div className="flex-1 min-w-0">
+                            <span className="font-bold text-xs truncate block">
+                              {apt.status === 'completed' && '\u2713 '}{apt.client_name}
+                            </span>
+                            <span className="text-[10px] text-white/80">{apt.time} - {apt.end_time}</span>
                           </div>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); openRecurringDialog(apt); }}
+                            className="ml-1 p-0.5 rounded hover:bg-white/20 transition-colors flex-shrink-0"
+                            title="Ripeti appuntamento"
+                            data-testid={`repeat-btn-${apt.id}`}
+                          >
+                            <Repeat className="w-3 h-3" />
+                          </button>
+                        </div>
+                        {/* Service blocks proportional to duration */}
+                        <div className="flex flex-col flex-1 min-h-0" data-testid={`apt-colors-${apt.id}`}>
+                          {apt.services.map((s, i) => {
+                            const pct = ((s.duration || 15) / totalDuration) * 100;
+                            const color = isCancelled ? '#EF4444' : (svcColors[i] || '#64748B');
+                            return (
+                              <div
+                                key={i}
+                                className="flex items-center px-2 overflow-hidden border-b border-white/20 last:border-b-0"
+                                style={{ backgroundColor: color, flex: `${pct} 0 0%`, minHeight: '16px' }}
+                              >
+                                <span className="text-white font-semibold text-[11px] truncate drop-shadow-sm">
+                                  {s.name}
+                                </span>
+                                <span className="text-white/70 text-[9px] ml-1 flex-shrink-0">{s.duration || 15}&apos;</span>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     );

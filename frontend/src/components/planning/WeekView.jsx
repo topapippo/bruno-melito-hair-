@@ -209,6 +209,7 @@ export default function WeekView({
                       const style = getStyle(apt, overlapInfo);
                       const svcColors = getServiceColors(apt, svcById, svcByName);
                       const isCancelled = apt.status === 'cancelled';
+                      const totalDuration = apt.services?.reduce((sum, s) => sum + (s.duration || 15), 0) || 1;
                       const opName = apt.operator_id && operators?.length ? (operators.find(o => o.id === apt.operator_id)?.name || '') : '';
                       const isDragging = dragRef.current?.apt?.id === apt.id;
                       return (
@@ -217,32 +218,26 @@ export default function WeekView({
                           onDragStart={(e) => handleDragStart(e, apt, dateStr)}
                           onDragEnd={handleDragEnd}
                           onClick={(e) => { e.stopPropagation(); onEditAppointment?.(apt); }}
-                          className={`absolute rounded-lg overflow-hidden cursor-grab active:cursor-grabbing hover:shadow-lg transition-all text-xs shadow-sm z-10 ${isDragging ? 'opacity-40' : ''}`}
-                          style={{ ...style, backgroundColor: isCancelled ? '#FEE2E2' : '#FFFFFF', border: '1px solid #E2E8F0', ...(overlapInfo ? {} : { left: '2px', right: '2px' }) }}
+                          className={`absolute rounded-lg overflow-hidden cursor-grab active:cursor-grabbing hover:shadow-lg transition-all text-xs shadow-sm z-10 flex flex-col ${isDragging ? 'opacity-40' : ''}`}
+                          style={{ ...style, ...(overlapInfo ? {} : { left: '2px', right: '2px' }) }}
                           title={`${apt.time} - ${apt.client_name}${opName ? ` (${opName})` : ''}\nTrascina per spostare`}
                           data-testid={`week-apt-${apt.id}`}>
-                          {/* Multi-color strip left */}
-                          <div className="absolute left-0 top-0 bottom-0 w-[5px] flex flex-col rounded-l-lg overflow-hidden">
-                            {svcColors.map((c, i) => (
-                              <div key={i} className="flex-1" style={{ backgroundColor: c }} />
-                            ))}
+                          {/* Header */}
+                          <div className="flex items-center justify-between px-1 bg-[#2D1B14]/90 text-white flex-shrink-0" style={{ minHeight: '18px' }}>
+                            <span className="font-bold text-[10px] truncate">{apt.time} {apt.client_name}</span>
                           </div>
-                          <div className="pl-2.5 pr-1 py-0.5">
-                            <p className="font-bold truncate leading-tight text-[11px] text-[#2D1B14]">{apt.time}</p>
-                            <p className="font-semibold truncate leading-tight text-[10px] text-[#7C5C4A]">{apt.client_name}</p>
-                            {parseInt(style.height) > 50 && (
-                              <div className="flex flex-wrap gap-0.5 mt-0.5">
-                                {apt.services?.map((s, i) => (
-                                  <span key={i} className="inline-flex items-center px-1 py-px rounded text-[8px] font-semibold text-white truncate max-w-[70px]"
-                                    style={{ backgroundColor: svcColors[i] || '#64748B' }}>
-                                    {s.name}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                            {parseInt(style.height) > 70 && opName && (
-                              <p className="truncate text-[#7C5C4A]/70 leading-tight text-[8px] italic">{opName}</p>
-                            )}
+                          {/* Service blocks */}
+                          <div className="flex flex-col flex-1 min-h-0">
+                            {apt.services?.map((s, i) => {
+                              const pct = ((s.duration || 15) / totalDuration) * 100;
+                              const color = isCancelled ? '#EF4444' : (svcColors[i] || '#64748B');
+                              return (
+                                <div key={i} className="flex items-center px-1 overflow-hidden border-b border-white/20 last:border-b-0"
+                                  style={{ backgroundColor: color, flex: `${pct} 0 0%`, minHeight: '12px' }}>
+                                  <span className="text-white font-semibold text-[9px] truncate drop-shadow-sm">{s.name}</span>
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
                       );
