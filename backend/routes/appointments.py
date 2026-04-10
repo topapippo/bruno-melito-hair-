@@ -592,14 +592,14 @@ async def repair_appointment_categories(current_user: dict = Depends(get_current
     ).to_list(1000)
     svc_repaired = 0
     for svc in master_services:
-        if not svc.get("category"):
-            inferred = _infer_category_from_name(svc.get("name", ""))
+        inferred = _infer_category_from_name(svc.get("name", ""))
+        current = svc.get("category", "")
+        if not current or (inferred != "altro" and inferred != current):
             await db.services.update_one({"id": svc["id"]}, {"$set": {"category": inferred}})
             svc["category"] = inferred
             svc_repaired += 1
 
     by_id = {s["id"]: s.get("category", "") for s in master_services}
-    by_name = {s["name"]: s.get("category", "") for s in master_services if s.get("name") and s.get("category")}
 
     # Step 2: Repair appointment embedded services
     appointments = await db.appointments.find(
@@ -610,12 +610,11 @@ async def repair_appointment_categories(current_user: dict = Depends(get_current
     for apt in appointments:
         needs_update = False
         for svc in (apt.get("services") or []):
-            cat = svc.get("category", "")
-            if not cat or cat == "altro":
-                new_cat = by_id.get(svc.get("id", ""), "") or by_name.get(svc.get("name", ""), "") or _infer_category_from_name(svc.get("name", ""))
-                if new_cat != cat:
-                    svc["category"] = new_cat
-                    needs_update = True
+            correct_cat = by_id.get(svc.get("id", ""), "") or _infer_category_from_name(svc.get("name", ""))
+            current_cat = svc.get("category", "")
+            if correct_cat and correct_cat != current_cat:
+                svc["category"] = correct_cat
+                needs_update = True
         if needs_update:
             await db.appointments.update_one(
                 {"id": apt["id"]},
