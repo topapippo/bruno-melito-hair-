@@ -103,7 +103,6 @@ export default function WeeklyView() {
   const svcByName = services.reduce((m, s) => { if (s.category && s.name) m[s.name] = s.category; return m; }, {});
 
   const getAppointmentColor = (apt) => {
-    if (apt.status === 'completed') return '#10B981';
     if (apt.status === 'cancelled') return '#EF4444';
     const svc = apt.services?.[0];
     if (svc) {

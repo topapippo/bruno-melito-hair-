@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, Plus, CalendarDays, CheckCircle } from 'luci
 import { format, addDays, subDays, startOfWeek, endOfWeek, addWeeks, subWeeks, startOfMonth, endOfMonth, addMonths, subMonths, eachDayOfInterval } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { CATEGORIES } from '../lib/categories';
 
 // Sub-components
 import { isHoliday } from '../components/planning/holidays';
@@ -485,6 +486,20 @@ export default function PlanningPage() {
             </div>
           </div>
         )}
+
+        {/* Category Color Legend */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 pb-2" data-testid="category-legend">
+          {CATEGORIES.map(cat => (
+            <div key={cat.value} className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: cat.color }} />
+              <span className="text-xs text-gray-500">{cat.label}</span>
+            </div>
+          ))}
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-sm bg-red-500" />
+            <span className="text-xs text-gray-500">Cancellato</span>
+          </div>
+        </div>
 
         {/* Planning Grid */}
         {loading ? (

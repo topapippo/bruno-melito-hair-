@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import api from '../lib/api';
+import { getCategoryInfo, groupServicesByCategory } from '../lib/categories';
 import { getMediaUrl } from '../lib/mediaUrl';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
@@ -744,30 +745,33 @@ export default function WebsiteAdminPage() {
               </CardHeader>
               <CardContent>
                 {allServices.length > 0 ? (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {(() => {
-                      const grouped = {};
-                      allServices.forEach(s => {
-                        const cat = s.category || 'altro';
-                        if (!grouped[cat]) grouped[cat] = [];
-                        grouped[cat].push(s);
-                      });
-                      return Object.entries(grouped).map(([cat, svcs]) => (
-                        <div key={cat} className="border rounded-xl p-4">
-                          <p className="font-bold text-[#2D1B14] capitalize mb-2">{cat === 'taglio' ? 'Taglio & Styling' : cat === 'colore' ? 'Colorazione' : cat === 'trattamento' ? 'Trattamenti' : cat}</p>
-                          <div className="space-y-1">
-                            {svcs.map(s => (
-                              <div key={s.id} className="flex justify-between items-center py-1.5 px-2 rounded-lg hover:bg-gray-50 text-sm">
-                                <span className="text-[#2D1B14]">{s.name}</span>
-                                <div className="flex items-center gap-3">
-                                  <span className="text-xs text-gray-400">{s.duration} min</span>
-                                  <span className="font-bold text-[#C8617A]">{'\u20AC'}{s.price}</span>
+                      const { groups, orderedKeys } = groupServicesByCategory(allServices);
+                      return orderedKeys.map(catKey => {
+                        const catInfo = getCategoryInfo(catKey);
+                        const svcs = groups[catKey];
+                        return (
+                          <div key={catKey} className="border-2 rounded-xl overflow-hidden" style={{ borderColor: catInfo.color + '40' }}>
+                            <div className="flex items-center gap-2 px-4 py-2.5" style={{ backgroundColor: catInfo.bg }}>
+                              <div className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: catInfo.color }} />
+                              <p className="font-bold text-sm uppercase tracking-wide" style={{ color: catInfo.text }}>{catInfo.label}</p>
+                              <span className="text-xs ml-1 opacity-60" style={{ color: catInfo.text }}>({svcs.length})</span>
+                            </div>
+                            <div className="divide-y divide-gray-100">
+                              {svcs.map(s => (
+                                <div key={s.id} className="flex justify-between items-center py-2 px-4 hover:bg-gray-50 text-sm">
+                                  <span className="text-[#2D1B14] font-medium">{s.name}</span>
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-xs text-gray-400">{s.duration} min</span>
+                                    <span className="font-bold" style={{ color: catInfo.color }}>{'\u20AC'}{s.price}</span>
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      ));
+                        );
+                      });
                     })()}
                   </div>
                 ) : (

@@ -4,7 +4,6 @@ import { addDays, subDays } from 'date-fns';
 import { getCategoryInfo } from '../../lib/categories';
 
 const getAppointmentColor = (apt, svcById, svcByName) => {
-  if (apt.status === 'completed') return '#10B981';
   if (apt.status === 'cancelled') return '#EF4444';
   const svc = apt.services?.[0];
   if (svc) {
@@ -191,6 +190,7 @@ export default function DayView({
                           ...style,
                           ...(overlapInfo ? {} : { left: '4px', right: '4px' }),
                           backgroundColor: getAppointmentColor(apt, svcById, svcByName),
+                          ...(apt.status === 'completed' ? { opacity: 0.65 } : {}),
                         }}
                         title={`Clicca per modificare - ${apt.client_name}`}
                       >

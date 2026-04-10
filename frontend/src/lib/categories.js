@@ -1,12 +1,12 @@
 // Ordine progressivo delle categorie - condiviso tra gestionale, planning e pagina pubblica
 export const CATEGORIES = [
-  { value: 'taglio', label: 'Styling', color: '#0EA5E9' },
-  { value: 'trattamento', label: 'Trattamenti', color: '#334155' },
-  { value: 'colore', label: 'Colore', color: '#789F8A' },
-  { value: 'permanente', label: 'Permanente', color: '#8B5CF6' },
-  { value: 'stiratura', label: 'Stiratura', color: '#D946EF' },
-  { value: 'abbonamento', label: 'Abbonamenti', color: '#6366F1' },
-  { value: 'altro', label: 'Altro', color: '#64748B' },
+  { value: 'taglio', label: 'Styling', color: '#0EA5E9', bg: '#E0F2FE', text: '#0369A1' },
+  { value: 'trattamento', label: 'Trattamenti', color: '#F59E0B', bg: '#FEF3C7', text: '#92400E' },
+  { value: 'colore', label: 'Colore', color: '#10B981', bg: '#D1FAE5', text: '#065F46' },
+  { value: 'permanente', label: 'Permanente', color: '#8B5CF6', bg: '#EDE9FE', text: '#5B21B6' },
+  { value: 'stiratura', label: 'Stiratura', color: '#EC4899', bg: '#FCE7F3', text: '#9D174D' },
+  { value: 'abbonamento', label: 'Abbonamenti', color: '#6366F1', bg: '#E0E7FF', text: '#3730A3' },
+  { value: 'altro', label: 'Altro', color: '#64748B', bg: '#F1F5F9', text: '#334155' },
 ];
 
 export const CATEGORY_ORDER = CATEGORIES.map(c => c.value);
