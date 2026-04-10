@@ -164,7 +164,7 @@ export default function DayView({
                     }
                     const isHighlighted = highlightedClientId && apt.client_id === highlightedClientId;
                     const svcColors = getServiceColors(apt, svcById, svcByName);
-                    const mainColor = svcColors[0];
+                    const isCancelled = apt.status === 'cancelled';
                     return (
                       <div
                         key={apt.id}
@@ -179,32 +179,36 @@ export default function DayView({
                         style={{
                           ...style,
                           ...(overlapInfo ? {} : { left: '4px', right: '4px' }),
-                          backgroundColor: mainColor,
+                          backgroundColor: isCancelled ? '#FEE2E2' : '#FFFFFF',
+                          border: '1px solid #E2E8F0',
                           ...(apt.status === 'completed' ? { opacity: 0.65 } : {}),
                         }}
                         title={`Clicca per modificare - ${apt.client_name}`}
                       >
                         {/* Multi-color strip on the left */}
-                        <div className="absolute left-0 top-0 bottom-0 w-2 flex flex-col" data-testid={`apt-colors-${apt.id}`}>
+                        <div className="absolute left-0 top-0 bottom-0 w-[6px] flex flex-col rounded-l-xl overflow-hidden" data-testid={`apt-colors-${apt.id}`}>
                           {svcColors.map((color, i) => (
-                            <div key={i} className="flex-1" style={{ backgroundColor: color, filter: 'brightness(0.85)' }} />
+                            <div key={i} className="flex-1" style={{ backgroundColor: color }} />
                           ))}
                         </div>
-                        <div className="pl-4 pr-2 py-1.5 text-white">
+                        <div className="pl-3 pr-2 py-1.5">
                           <div className="flex justify-between items-start">
                             <div className="flex-1 min-w-0">
-                              <p className="font-bold truncate text-sm drop-shadow-sm">
+                              <p className="font-bold truncate text-sm text-[#2D1B14]">
                                 {apt.status === 'completed' && '\u2713 '}{apt.client_name}
                               </p>
-                              <p className="text-white font-medium truncate text-[11px] drop-shadow-sm">
+                              <p className="font-medium truncate text-[11px] text-[#7C5C4A]">
                                 {apt.time} - {apt.end_time}
                               </p>
-                              {/* Service names with colored dots */}
-                              <div className="flex flex-wrap gap-x-1.5 gap-y-0.5 mt-0.5">
+                              {/* Service badges with category colors */}
+                              <div className="flex flex-wrap gap-1 mt-1">
                                 {apt.services.map((s, i) => (
-                                  <span key={i} className="flex items-center gap-0.5 text-[10px] text-white/90">
-                                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 border border-white/40" style={{ backgroundColor: svcColors[i] || '#64748B' }} />
-                                    <span className="truncate max-w-[90px]">{s.name}</span>
+                                  <span
+                                    key={i}
+                                    className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-semibold text-white truncate max-w-[120px]"
+                                    style={{ backgroundColor: svcColors[i] || '#64748B' }}
+                                  >
+                                    {s.name}
                                   </span>
                                 ))}
                               </div>
@@ -214,11 +218,11 @@ export default function DayView({
                                 e.stopPropagation();
                                 openRecurringDialog(apt);
                               }}
-                              className="ml-1 p-1 rounded hover:bg-white/20 transition-colors flex-shrink-0"
+                              className="ml-1 p-1 rounded hover:bg-[#C8617A]/20 transition-colors flex-shrink-0"
                               title="Ripeti appuntamento"
                               data-testid={`repeat-btn-${apt.id}`}
                             >
-                              <Repeat className="w-3 h-3" />
+                              <Repeat className="w-3 h-3 text-[#7C5C4A]" />
                             </button>
                           </div>
                         </div>
