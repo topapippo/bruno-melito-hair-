@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi import APIRouter, HTTPException, Depends, Request, BackgroundTasks
 from typing import List
 from datetime import datetime, timezone
 from collections import defaultdict
@@ -96,9 +96,30 @@ async def register(data: UserCreate):
     )
 
 
+
+async def _repair_categories(user_id: str):
+    """Background task: patch missing category on old appointment services."""
+    try:
+        master = await db.services.find({"user_id": user_id}, {"_id": 0, "id": 1, "name": 1, "category": 1}).to_list(1000)
+        by_id = {s["id"]: s.get("category", "") for s in master}
+        by_name = {s["name"]: s.get("category", "") for s in master if s.get("name")}
+        appointments = await db.appointments.find({"user_id": user_id}, {"_id": 0, "id": 1, "services": 1}).to_list(10000)
+        for apt in appointments:
+            updated = False
+            for svc in (apt.get("services") or []):
+                if not svc.get("category"):
+                    svc["category"] = by_id.get(svc.get("id", ""), "") or by_name.get(svc.get("name", ""), "") or "altro"
+                    updated = True
+            if updated:
+                await db.appointments.update_one({"id": apt["id"]}, {"$set": {"services": apt["services"]}})
+        logger.info(f"Auto-repair categorie completato per user {user_id}")
+    except Exception as e:
+        logger.error(f"Errore auto-repair categorie: {e}")
+
+
 # ── Login ─────────────────────────────────────────────────────────────────────
 @router.post("/auth/login", response_model=TokenResponse)
-async def login(data: UserLogin, request: Request):
+async def login(data: UserLogin, request: Request, background_tasks: BackgroundTasks):
     client_ip = request.client.host if request.client else "unknown"
     _check_rate_limit(client_ip)
 
@@ -110,6 +131,9 @@ async def login(data: UserLogin, request: Request):
 
     logger.info(f"Login riuscito per: {data.email}")
     token = create_token(user["id"])
+
+    # Auto-repair: patch category on old appointments in background
+    background_tasks.add_task(_repair_categories, user["id"])
 
     return TokenResponse(
         access_token=token,
