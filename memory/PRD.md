@@ -18,7 +18,7 @@ Bruno Melito - Proprietario salone parrucchiere. Lingua: Italiano.
 ### Gestionale (Admin)
 - Login/Registrazione con JWT
 - Planning giornaliero/settimanale/mensile con drag & drop
-- Appuntamenti con colori per categoria servizio
+- **Colori categorie servizi sul Planning** (taglio=blu, piega=arancione, colore=verde, trattamento=ambra, permanente=viola, stiratura=rosa)
 - Auto-assegnazione operatore per overlap
 - Festività italiane sul calendario
 - Blocco slot/giorni specifici
@@ -32,7 +32,7 @@ Bruno Melito - Proprietario salone parrucchiere. Lingua: Italiano.
 - Gestione Servizi e Operatori
 - Gestione Sito Web (CMS completo) con:
   - Generale, Layout, Aspetto, Servizi (sync), Foto Salone, Gallery, Recensioni
-  - Upselling, **Fedeltà** (sync con sito), **Promozioni** (CRUD), Orari & Contatti
+  - Upselling, Fedeltà (sync con sito), Promozioni (CRUD), Orari & Contatti
 - Tema admin personalizzabile (colori/font)
 
 ### Sito Pubblico (/sito)
@@ -40,17 +40,12 @@ Bruno Melito - Proprietario salone parrucchiere. Lingua: Italiano.
 - Sistema prenotazione online con selezione servizi multipli
 - Upselling post-prenotazione
 - "Prenota di nuovo" da storico appuntamenti
-- Sezione fedeltà dinamica **sincronizzata con gestionale**
-- Sezione promozioni **sincronizzata con gestionale**
+- Sezione fedeltà dinamica sincronizzata con gestionale
+- Sezione promozioni sincronizzata con gestionale
 - Anti-duplicato clienti (normalizzazione telefono + match nome)
 
-### Bug Fix (04/04/2026)
-- Storico cliente "ERRORE CARICAMENTO" → Creati endpoint history e whatsapp
-- Duplicazione clienti da prenotazione online → Normalizzazione telefono
-- Messaggio ringraziamento non partiva → Checkout ora recupera telefono dal cliente
-- Template ringraziamento non appariva in produzione → Auto-creazione se mancante
-- **Sync fedeltà gestionale ↔ sito** → Endpoint pubblico usa stessa fonte dati admin
-- **Gestione Sito completa** → Aggiunti tab Fedeltà e Promozioni
+### Bug Fix (10/04/2026)
+- **Colori categorie sul Planning**: Corretta funzione `getAppointmentColor` centralizzata in `categories.js`. Aggiunta categoria "piega" mancante. Backend arricchisce categorie mancanti su GET. Endpoint `/api/appointments/repair-categories` per DB legacy.
 
 ## Credenziali Test
 - Email: melitobruno@gmail.com
@@ -73,3 +68,4 @@ Bruno Melito - Proprietario salone parrucchiere. Lingua: Italiano.
 ## Note Produzione
 - Sempre fare "Clear build cache and deploy" su Render
 - Il DB di produzione è su MongoDB Atlas (NON il locale)
+- Dopo deploy, chiamare POST /api/appointments/repair-categories per riparare appuntamenti vecchi senza categoria
