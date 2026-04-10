@@ -209,9 +209,26 @@ async def get_appointments(
         query["status"] = status
     if operator_id:
         query["operator_id"] = operator_id
-    return await db.appointments.find(
+    appointments = await db.appointments.find(
         query, {"_id": 0, "user_id": 0}
     ).sort([("date", 1), ("time", 1)]).to_list(1000)
+
+    # Enrich missing category from master services list
+    needs_enrich = any(
+        not svc.get("category") for apt in appointments for svc in (apt.get("services") or [])
+    )
+    if needs_enrich:
+        master = await db.services.find(
+            {"user_id": current_user["id"]}, {"_id": 0, "id": 1, "name": 1, "category": 1}
+        ).to_list(1000)
+        by_id = {s["id"]: s.get("category", "") for s in master}
+        by_name = {s["name"]: s.get("category", "") for s in master if s.get("name")}
+        for apt in appointments:
+            for svc in (apt.get("services") or []):
+                if not svc.get("category"):
+                    svc["category"] = by_id.get(svc.get("id", ""), "") or by_name.get(svc.get("name", ""), "") or "altro"
+
+    return appointments
 
 
 @router.get("/appointments/{appointment_id}", response_model=AppointmentResponse)
@@ -533,3 +550,42 @@ async def _settle_sospeso_impl(sospeso_id: str, method: str, current_user: dict)
         }}
     )
     return {"success": True, "message": "Sospeso saldato con successo"}
+
+
+# ── Repair: patch category on old appointments ────────────────────────────────
+import logging
+logger_repair = logging.getLogger("repair")
+
+@router.post("/appointments/repair-categories")
+async def repair_appointment_categories(current_user: dict = Depends(get_current_user)):
+    """Patch the 'category' field into embedded services of existing appointments
+    using the master services list."""
+    master_services = await db.services.find(
+        {"user_id": current_user["id"]}, {"_id": 0}
+    ).to_list(1000)
+    by_id = {s["id"]: s.get("category", "") for s in master_services}
+    by_name = {s["name"]: s.get("category", "") for s in master_services if s.get("name")}
+
+    appointments = await db.appointments.find(
+        {"user_id": current_user["id"]}, {"_id": 0, "id": 1, "services": 1}
+    ).to_list(10000)
+
+    patched = 0
+    for apt in appointments:
+        needs_update = False
+        updated_services = []
+        for svc in (apt.get("services") or []):
+            cat = svc.get("category", "")
+            if not cat:
+                cat = by_id.get(svc.get("id", ""), "") or by_name.get(svc.get("name", ""), "") or "altro"
+                svc["category"] = cat
+                needs_update = True
+            updated_services.append(svc)
+        if needs_update:
+            await db.appointments.update_one(
+                {"id": apt["id"]},
+                {"$set": {"services": updated_services}}
+            )
+            patched += 1
+
+    return {"success": True, "patched": patched, "total": len(appointments)}

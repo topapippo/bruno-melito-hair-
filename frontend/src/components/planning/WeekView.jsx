@@ -5,7 +5,7 @@ import { Plus, Clock } from 'lucide-react';
 import { format, startOfWeek, eachDayOfInterval, addDays, isToday } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { isHoliday } from './holidays';
-import { getCategoryInfo, CATEGORIES } from '../../lib/categories';
+import { getCategoryInfo, CATEGORIES, getAppointmentColor, buildServiceLookups } from '../../lib/categories';
 
 const TIME_SLOTS = [];
 for (let h = 8; h <= 20; h++) {
@@ -33,8 +33,7 @@ export default function WeekView({
   const scrollRef = useRef(null);
   const dragRef = useRef(null);
   const dragOverRef = useRef(null);
-  const svcById = (services || []).reduce((m, s) => { if (s.category) m[s.id] = s.category; return m; }, {});
-  const svcByName = (services || []).reduce((m, s) => { if (s.category && s.name) m[s.name] = s.category; return m; }, {});
+  const { svcById, svcByName } = buildServiceLookups(services);
 
   const getStyle = (apt, overlapInfo) => {
     const [h, m] = apt.time.split(':').map(Number);
@@ -47,17 +46,6 @@ export default function WeekView({
       base.left = `${overlapInfo.index * w}%`;
     }
     return base;
-  };
-
-  const getAppointmentColor = (apt) => {
-    if (apt.status === 'cancelled') return '#EF4444';
-    const svc = apt.services?.[0];
-    if (svc) {
-      if (svc.category) return getCategoryInfo(svc.category).color;
-      if (svc.id && svcById[svc.id]) return getCategoryInfo(svcById[svc.id]).color;
-      if (svc.name && svcByName[svc.name]) return getCategoryInfo(svcByName[svc.name]).color;
-    }
-    return '#C8617A';
   };
 
   const computeOverlaps = (apts) => {
@@ -219,7 +207,7 @@ export default function WeekView({
                     return dayApts.map(apt => {
                       const overlapInfo = overlapMap[apt.id] || null;
                       const style = getStyle(apt, overlapInfo);
-                      const color = getAppointmentColor(apt);
+                      const color = getAppointmentColor(apt, svcById, svcByName);
                       const opName = apt.operator_id && operators?.length ? (operators.find(o => o.id === apt.operator_id)?.name || '') : '';
                       const isDragging = dragRef.current?.apt?.id === apt.id;
                       return (

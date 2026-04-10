@@ -1,18 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Clock, Repeat } from 'lucide-react';
 import { addDays, subDays } from 'date-fns';
-import { getCategoryInfo } from '../../lib/categories';
-
-const getAppointmentColor = (apt, svcById, svcByName) => {
-  if (apt.status === 'cancelled') return '#EF4444';
-  const svc = apt.services?.[0];
-  if (svc) {
-    if (svc.category) return getCategoryInfo(svc.category).color;
-    if (svc.id && svcById?.[svc.id]) return getCategoryInfo(svcById[svc.id]).color;
-    if (svc.name && svcByName?.[svc.name]) return getCategoryInfo(svcByName[svc.name]).color;
-  }
-  return '#C8617A';
-};
+import { getAppointmentColor, buildServiceLookups } from '../../lib/categories';
 
 export default function DayView({
   columns,
@@ -38,8 +27,7 @@ export default function DayView({
   touchStartRef,
   services,
 }) {
-  const svcById = (services || []).reduce((m, s) => { if (s.category) m[s.id] = s.category; return m; }, {});
-  const svcByName = (services || []).reduce((m, s) => { if (s.category && s.name) m[s.name] = s.category; return m; }, {});
+  const { svcById, svcByName } = buildServiceLookups(services);
 
   // Compute overlaps per operator
   const toMin = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };

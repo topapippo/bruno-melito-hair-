@@ -1,6 +1,7 @@
 // Ordine progressivo delle categorie - condiviso tra gestionale, planning e pagina pubblica
 export const CATEGORIES = [
-  { value: 'taglio', label: 'Styling', color: '#0EA5E9', bg: '#E0F2FE', text: '#0369A1' },
+  { value: 'taglio', label: 'Taglio', color: '#0EA5E9', bg: '#E0F2FE', text: '#0369A1' },
+  { value: 'piega', label: 'Piega', color: '#F97316', bg: '#FFF7ED', text: '#9A3412' },
   { value: 'trattamento', label: 'Trattamenti', color: '#F59E0B', bg: '#FEF3C7', text: '#92400E' },
   { value: 'colore', label: 'Colore', color: '#10B981', bg: '#D1FAE5', text: '#065F46' },
   { value: 'permanente', label: 'Permanente', color: '#8B5CF6', bg: '#EDE9FE', text: '#5B21B6' },
@@ -12,7 +13,46 @@ export const CATEGORIES = [
 export const CATEGORY_ORDER = CATEGORIES.map(c => c.value);
 
 export const getCategoryInfo = (categoryValue) => {
-  return CATEGORIES.find(c => c.value === categoryValue) || { value: categoryValue, label: categoryValue, color: '#64748B' };
+  return CATEGORIES.find(c => c.value === categoryValue) || { value: categoryValue, label: categoryValue, color: '#64748B', bg: '#F1F5F9', text: '#334155' };
+};
+
+/**
+ * Determine the color for an appointment card based on its services' categories.
+ * Tries: 1) embedded category, 2) lookup by service id, 3) lookup by service name.
+ * Uses the FIRST service's category for the card color.
+ */
+export const getAppointmentColor = (apt, svcById, svcByName) => {
+  if (apt.status === 'cancelled') return '#EF4444';
+  for (const svc of (apt.services || [])) {
+    // Direct category on the embedded service
+    if (svc.category) {
+      return getCategoryInfo(svc.category).color;
+    }
+    // Fallback: lookup in master service list by id
+    if (svc.id && svcById?.[svc.id]) {
+      return getCategoryInfo(svcById[svc.id]).color;
+    }
+    // Fallback: lookup in master service list by name
+    if (svc.name && svcByName?.[svc.name]) {
+      return getCategoryInfo(svcByName[svc.name]).color;
+    }
+  }
+  return '#64748B'; // Altro (gray) as ultimate fallback
+};
+
+/**
+ * Build lookup maps from the master services list.
+ */
+export const buildServiceLookups = (services) => {
+  const svcById = {};
+  const svcByName = {};
+  for (const s of (services || [])) {
+    if (s.category) {
+      if (s.id) svcById[s.id] = s.category;
+      if (s.name) svcByName[s.name] = s.category;
+    }
+  }
+  return { svcById, svcByName };
 };
 
 export const getCategoryLabel = (categoryValue) => {
