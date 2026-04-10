@@ -41,6 +41,22 @@ export const getAppointmentColor = (apt, svcById, svcByName) => {
 };
 
 /**
+ * Get an array of colors for ALL services in an appointment.
+ * Each service maps to its category color.
+ */
+export const getServiceColors = (apt, svcById, svcByName) => {
+  if (apt.status === 'cancelled') return ['#EF4444'];
+  const colors = [];
+  for (const svc of (apt.services || [])) {
+    let cat = svc.category;
+    if (!cat && svc.id && svcById?.[svc.id]) cat = svcById[svc.id];
+    if (!cat && svc.name && svcByName?.[svc.name]) cat = svcByName[svc.name];
+    colors.push(getCategoryInfo(cat || 'altro').color);
+  }
+  return colors.length ? colors : ['#64748B'];
+};
+
+/**
  * Build lookup maps from the master services list.
  */
 export const buildServiceLookups = (services) => {

@@ -118,33 +118,27 @@ def _infer_category(name: str) -> str:
 
 
 async def _repair_categories(user_id: str):
-    """Background task: repair categories on master services AND appointment embedded services.
-    Also fixes WRONG categories (e.g. 'Piega' marked as 'taglio')."""
+    """Background task: fill empty categories on master services AND appointment embedded services."""
     try:
-        # Step 1: Repair master services - re-infer from name and fix mismatches
+        # Step 1: Repair master services that have no category (only empty ones)
         master = await db.services.find({"user_id": user_id}, {"_id": 0}).to_list(1000)
         for svc in master:
-            inferred = _infer_category(svc.get("name", ""))
-            current = svc.get("category", "")
-            # Fix if: no category, or inferred is specific but current doesn't match
-            if not current or (inferred != "altro" and inferred != current):
+            if not svc.get("category"):
+                inferred = _infer_category(svc.get("name", ""))
                 await db.services.update_one({"id": svc["id"]}, {"$set": {"category": inferred}})
                 svc["category"] = inferred
 
-        # Build lookup maps from repaired master list
+        # Build lookup maps from master list
         by_id = {s["id"]: s.get("category", "") for s in master}
 
-        # Step 2: Repair appointment embedded services
+        # Step 2: Fill empty categories on appointment embedded services
         appointments = await db.appointments.find({"user_id": user_id}, {"_id": 0, "id": 1, "services": 1}).to_list(10000)
         patched = 0
         for apt in appointments:
             updated = False
             for svc in (apt.get("services") or []):
-                # Use master service lookup by id first, then infer from name
-                correct_cat = by_id.get(svc.get("id", ""), "") or _infer_category(svc.get("name", ""))
-                current_cat = svc.get("category", "")
-                if correct_cat and correct_cat != current_cat:
-                    svc["category"] = correct_cat
+                if not svc.get("category"):
+                    svc["category"] = by_id.get(svc.get("id", ""), "") or _infer_category(svc.get("name", ""))
                     updated = True
             if updated:
                 await db.appointments.update_one({"id": apt["id"]}, {"$set": {"services": apt["services"]}})

@@ -5,7 +5,7 @@ import { Plus, Clock } from 'lucide-react';
 import { format, startOfWeek, eachDayOfInterval, addDays, isToday } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { isHoliday } from './holidays';
-import { getCategoryInfo, CATEGORIES, getAppointmentColor, buildServiceLookups } from '../../lib/categories';
+import { getCategoryInfo, CATEGORIES, getAppointmentColor, getServiceColors, buildServiceLookups } from '../../lib/categories';
 
 const TIME_SLOTS = [];
 for (let h = 8; h <= 20; h++) {
@@ -207,7 +207,8 @@ export default function WeekView({
                     return dayApts.map(apt => {
                       const overlapInfo = overlapMap[apt.id] || null;
                       const style = getStyle(apt, overlapInfo);
-                      const color = getAppointmentColor(apt, svcById, svcByName);
+                      const svcColors = getServiceColors(apt, svcById, svcByName);
+                      const mainColor = svcColors[0];
                       const opName = apt.operator_id && operators?.length ? (operators.find(o => o.id === apt.operator_id)?.name || '') : '';
                       const isDragging = dragRef.current?.apt?.id === apt.id;
                       return (
@@ -216,18 +217,33 @@ export default function WeekView({
                           onDragStart={(e) => handleDragStart(e, apt, dateStr)}
                           onDragEnd={handleDragEnd}
                           onClick={(e) => { e.stopPropagation(); onEditAppointment?.(apt); }}
-                          className={`absolute text-white rounded-lg px-1.5 py-0.5 overflow-hidden cursor-grab active:cursor-grabbing hover:brightness-110 hover:shadow-lg transition-all text-xs shadow-sm z-10 border-l-[3px] border-white/40 ${isDragging ? 'opacity-40' : ''}`}
-                          style={{ ...style, backgroundColor: color, ...(overlapInfo ? {} : { left: '2px', right: '2px' }) }}
+                          className={`absolute text-white rounded-lg overflow-hidden cursor-grab active:cursor-grabbing hover:brightness-110 hover:shadow-lg transition-all text-xs shadow-sm z-10 ${isDragging ? 'opacity-40' : ''}`}
+                          style={{ ...style, backgroundColor: mainColor, ...(overlapInfo ? {} : { left: '2px', right: '2px' }) }}
                           title={`${apt.time} - ${apt.client_name}${opName ? ` (${opName})` : ''}\nTrascina per spostare`}
                           data-testid={`week-apt-${apt.id}`}>
-                          <p className="font-bold truncate leading-tight text-[11px]">{apt.time}</p>
-                          <p className="font-semibold truncate leading-tight text-[10px]">{apt.client_name}</p>
-                          {parseInt(style.height) > 50 && (
-                            <p className="truncate opacity-80 leading-tight text-[9px]">{apt.services?.map(s => s.name).join(', ')}</p>
-                          )}
-                          {parseInt(style.height) > 70 && opName && (
-                            <p className="truncate opacity-70 leading-tight text-[8px] italic">{opName}</p>
-                          )}
+                          {/* Multi-color strip left */}
+                          <div className="absolute left-0 top-0 bottom-0 w-1.5 flex flex-col">
+                            {svcColors.map((c, i) => (
+                              <div key={i} className="flex-1" style={{ backgroundColor: c, filter: 'brightness(0.85)' }} />
+                            ))}
+                          </div>
+                          <div className="pl-3 pr-1 py-0.5">
+                            <p className="font-bold truncate leading-tight text-[11px]">{apt.time}</p>
+                            <p className="font-semibold truncate leading-tight text-[10px]">{apt.client_name}</p>
+                            {parseInt(style.height) > 50 && (
+                              <div className="flex flex-wrap gap-x-1 mt-0.5">
+                                {apt.services?.map((s, i) => (
+                                  <span key={i} className="flex items-center gap-0.5 text-[9px] text-white/90">
+                                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: svcColors[i] || '#64748B' }} />
+                                    <span className="truncate max-w-[60px]">{s.name}</span>
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            {parseInt(style.height) > 70 && opName && (
+                              <p className="truncate opacity-70 leading-tight text-[8px] italic">{opName}</p>
+                            )}
+                          </div>
                         </div>
                       );
                     });

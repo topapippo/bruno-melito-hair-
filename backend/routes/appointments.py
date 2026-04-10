@@ -585,23 +585,22 @@ logger_repair = logging.getLogger("repair")
 
 @router.post("/appointments/repair-categories")
 async def repair_appointment_categories(current_user: dict = Depends(get_current_user)):
-    """Repair categories on master services AND embedded appointment services."""
-    # Step 1: Repair master services
+    """Fill empty categories on master services AND embedded appointment services."""
+    # Step 1: Repair master services (only empty categories)
     master_services = await db.services.find(
         {"user_id": current_user["id"]}, {"_id": 0}
     ).to_list(1000)
     svc_repaired = 0
     for svc in master_services:
-        inferred = _infer_category_from_name(svc.get("name", ""))
-        current = svc.get("category", "")
-        if not current or (inferred != "altro" and inferred != current):
+        if not svc.get("category"):
+            inferred = _infer_category_from_name(svc.get("name", ""))
             await db.services.update_one({"id": svc["id"]}, {"$set": {"category": inferred}})
             svc["category"] = inferred
             svc_repaired += 1
 
     by_id = {s["id"]: s.get("category", "") for s in master_services}
 
-    # Step 2: Repair appointment embedded services
+    # Step 2: Fill empty categories on appointment embedded services
     appointments = await db.appointments.find(
         {"user_id": current_user["id"]}, {"_id": 0, "id": 1, "services": 1}
     ).to_list(10000)
@@ -610,10 +609,8 @@ async def repair_appointment_categories(current_user: dict = Depends(get_current
     for apt in appointments:
         needs_update = False
         for svc in (apt.get("services") or []):
-            correct_cat = by_id.get(svc.get("id", ""), "") or _infer_category_from_name(svc.get("name", ""))
-            current_cat = svc.get("category", "")
-            if correct_cat and correct_cat != current_cat:
-                svc["category"] = correct_cat
+            if not svc.get("category"):
+                svc["category"] = by_id.get(svc.get("id", ""), "") or _infer_category_from_name(svc.get("name", ""))
                 needs_update = True
         if needs_update:
             await db.appointments.update_one(

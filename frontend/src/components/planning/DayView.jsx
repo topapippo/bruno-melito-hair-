@@ -1,7 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Clock, Repeat } from 'lucide-react';
 import { addDays, subDays } from 'date-fns';
-import { getAppointmentColor, buildServiceLookups } from '../../lib/categories';
+import { getAppointmentColor, getServiceColors, buildServiceLookups } from '../../lib/categories';
 
 export default function DayView({
   columns,
@@ -163,6 +163,8 @@ export default function DayView({
                       style.right = 'auto';
                     }
                     const isHighlighted = highlightedClientId && apt.client_id === highlightedClientId;
+                    const svcColors = getServiceColors(apt, svcById, svcByName);
+                    const mainColor = svcColors[0];
                     return (
                       <div
                         key={apt.id}
@@ -171,40 +173,54 @@ export default function DayView({
                         onDragStart={(e) => onDragStart(e, apt)}
                         onDragEnd={onDragEnd}
                         onClick={() => openEditDialog(apt)}
-                        className={`absolute rounded-xl p-2 text-white overflow-hidden shadow-lg cursor-grab active:cursor-grabbing hover:scale-[1.02] hover:shadow-xl transition-all border-l-4 border-white/50 ${
+                        className={`absolute rounded-xl overflow-hidden shadow-lg cursor-grab active:cursor-grabbing hover:scale-[1.02] hover:shadow-xl transition-all ${
                           isHighlighted ? 'ring-4 ring-yellow-400 ring-offset-2 z-20' : ''
                         }`}
                         style={{
                           ...style,
                           ...(overlapInfo ? {} : { left: '4px', right: '4px' }),
-                          backgroundColor: getAppointmentColor(apt, svcById, svcByName),
+                          backgroundColor: mainColor,
                           ...(apt.status === 'completed' ? { opacity: 0.65 } : {}),
                         }}
                         title={`Clicca per modificare - ${apt.client_name}`}
                       >
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1 min-w-0">
-                            <p className="font-bold truncate text-sm drop-shadow-sm">
-                              {apt.status === 'completed' && '\u2713 '}{apt.client_name}
-                            </p>
-                            <p className="text-white font-medium truncate text-[11px] drop-shadow-sm">
-                              {apt.time} - {apt.end_time}
-                            </p>
-                            <p className="text-white/90 truncate text-[10px]">
-                              {apt.services.map(s => s.name).join(', ')}
-                            </p>
+                        {/* Multi-color strip on the left */}
+                        <div className="absolute left-0 top-0 bottom-0 w-2 flex flex-col" data-testid={`apt-colors-${apt.id}`}>
+                          {svcColors.map((color, i) => (
+                            <div key={i} className="flex-1" style={{ backgroundColor: color, filter: 'brightness(0.85)' }} />
+                          ))}
+                        </div>
+                        <div className="pl-4 pr-2 py-1.5 text-white">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold truncate text-sm drop-shadow-sm">
+                                {apt.status === 'completed' && '\u2713 '}{apt.client_name}
+                              </p>
+                              <p className="text-white font-medium truncate text-[11px] drop-shadow-sm">
+                                {apt.time} - {apt.end_time}
+                              </p>
+                              {/* Service names with colored dots */}
+                              <div className="flex flex-wrap gap-x-1.5 gap-y-0.5 mt-0.5">
+                                {apt.services.map((s, i) => (
+                                  <span key={i} className="flex items-center gap-0.5 text-[10px] text-white/90">
+                                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 border border-white/40" style={{ backgroundColor: svcColors[i] || '#64748B' }} />
+                                    <span className="truncate max-w-[90px]">{s.name}</span>
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openRecurringDialog(apt);
+                              }}
+                              className="ml-1 p-1 rounded hover:bg-white/20 transition-colors flex-shrink-0"
+                              title="Ripeti appuntamento"
+                              data-testid={`repeat-btn-${apt.id}`}
+                            >
+                              <Repeat className="w-3 h-3" />
+                            </button>
                           </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openRecurringDialog(apt);
-                            }}
-                            className="ml-1 p-1 rounded hover:bg-white/20 transition-colors flex-shrink-0"
-                            title="Ripeti appuntamento"
-                            data-testid={`repeat-btn-${apt.id}`}
-                          >
-                            <Repeat className="w-3 h-3" />
-                          </button>
                         </div>
                       </div>
                     );
