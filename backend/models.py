@@ -86,7 +86,7 @@ class ClientResponse(BaseModel):
     phone: Optional[str] = ""
     email: Optional[str] = ""
     notes: Optional[str] = ""
-    send_sms_reminders: Optional[bool] = False  # unico campo canonico
+    send_sms_reminders: Optional[bool] = True  # unico campo canonico
     created_at: str
     total_visits: int = 0
 

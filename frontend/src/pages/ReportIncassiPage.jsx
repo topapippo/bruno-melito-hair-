@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import api from '../lib/api';
 import * as XLSX from 'xlsx';
 import Layout from '../components/Layout';
-import PageHeader from '../components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,31 +12,32 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Euro, TrendingUp, Calendar, CreditCard, Banknote, Download, FileSpreadsheet } from 'lucide-react';
+import { Euro, CreditCard, Banknote, FileSpreadsheet, TrendingDown, TrendingUp } from 'lucide-react';
 import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays } from 'date-fns';
-import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export default function ReportIncassiPage() {
   const [payments, setPayments] = useState([]);
+  const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('today');
-  const [stats, setStats] = useState({ total: 0, count: 0, cash: 0, prepaid: 0 });
+  const [stats, setStats] = useState({ total: 0, count: 0, cash: 0, pos: 0, prepaid: 0, totalExpenses: 0, net: 0 });
 
   useEffect(() => {
-    fetchPayments();
-  }, [period]) // eslint-disable-line react-hooks/exhaustive-deps
+    fetchData();
+  }, [period]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const getDateRange = () => {
     const now = new Date();
     switch (period) {
       case 'today':
         return { start: startOfDay(now), end: endOfDay(now) };
-      case 'yesterday':
+      case 'yesterday': {
         const yesterday = subDays(now, 1);
         return { start: startOfDay(yesterday), end: endOfDay(yesterday) };
+      }
       case 'week':
         return { start: startOfWeek(now, { weekStartsOn: 1 }), end: endOfWeek(now, { weekStartsOn: 1 }) };
       case 'month':
@@ -49,44 +49,66 @@ export default function ReportIncassiPage() {
     }
   };
 
-  const fetchPayments = async () => {
+  const fetchData = async () => {
     setLoading(true);
     try {
       const { start, end } = getDateRange();
-      const res = await api.get(`${API}/payments?start=${start.toISOString()}&end=${end.toISOString()}`);
-      const data = res.data;
-      setPayments(data);
-      
-      // Calculate stats
-      const total = data.reduce((sum, p) => sum + p.total_paid, 0);
-      const cash = data.filter(p => p.payment_method === 'cash').reduce((sum, p) => sum + p.total_paid, 0);
-      const pos = data.filter(p => p.payment_method === 'pos').reduce((sum, p) => sum + p.total_paid, 0);
-      const sospeso = data.filter(p => p.payment_method === 'sospeso').reduce((sum, p) => sum + p.total_paid, 0);
-      const prepaid = data.filter(p => p.payment_method === 'prepaid').reduce((sum, p) => sum + p.total_paid, 0);
-      
-      setStats({ total, count: data.length, cash, pos, sospeso, prepaid });
+      const startIso = start.toISOString();
+      const endIso = end.toISOString();
+
+      const [paymentsRes, expensesRes] = await Promise.all([
+        api.get(`${API}/payments?start=${startIso}&end=${endIso}`),
+        api.get(`${API}/expenses?start=${startIso}&end=${endIso}`),
+      ]);
+
+      const paymentsData = paymentsRes.data;
+      const expensesData = expensesRes.data;
+
+      setPayments(paymentsData);
+      setExpenses(expensesData);
+
+      const total = paymentsData.reduce((sum, p) => sum + p.total_paid, 0);
+      const cash = paymentsData.filter(p => p.payment_method === 'cash').reduce((sum, p) => sum + p.total_paid, 0);
+      const pos = paymentsData.filter(p => p.payment_method === 'pos').reduce((sum, p) => sum + p.total_paid, 0);
+      const sospeso = paymentsData.filter(p => p.payment_method === 'sospeso').reduce((sum, p) => sum + p.total_paid, 0);
+      const prepaid = paymentsData.filter(p => p.payment_method === 'prepaid').reduce((sum, p) => sum + p.total_paid, 0);
+      const totalExpenses = expensesData.reduce((sum, e) => sum + e.amount, 0);
+
+      setStats({ total, count: paymentsData.length, cash, pos, sospeso, prepaid, totalExpenses, net: total - totalExpenses });
     } catch (err) {
-      console.error('Error fetching payments:', err);
+      console.error('Error fetching report data:', err);
     } finally {
       setLoading(false);
     }
   };
 
   const exportToExcel = () => {
-    const data = payments.map(p => ({
+    const paymentRows = payments.map(p => ({
+      'Tipo': 'Entrata',
       'Data': p.date,
-      'Cliente': p.client_name,
-      'Servizi': p.services?.map(s => s.name).join(', ') || '',
+      'Descrizione': p.client_name,
+      'Dettaglio': p.services?.map(s => s.name).join(', ') || '',
       'Importo Originale': p.original_amount,
       'Sconto': p.discount_value || 0,
-      'Totale Pagato': p.total_paid,
-      'Metodo': p.payment_method === 'cash' ? 'Contanti' : p.payment_method === 'pos' ? 'POS' : p.payment_method === 'sospeso' ? 'Sospeso' : 'Abbonamento/Prepagata'
+      'Importo': p.total_paid,
+      'Metodo': p.payment_method === 'cash' ? 'Contanti' : p.payment_method === 'pos' ? 'POS' : p.payment_method === 'sospeso' ? 'Sospeso' : 'Abbonamento/Prepagata',
     }));
-    
-    const ws = XLSX.utils.json_to_sheet(data);
+    const expenseRows = expenses.map(e => ({
+      'Tipo': 'Uscita',
+      'Data': e.paid_date || e.due_date,
+      'Descrizione': e.description,
+      'Dettaglio': e.category,
+      'Importo Originale': e.amount,
+      'Sconto': 0,
+      'Importo': -e.amount,
+      'Metodo': '',
+    }));
+
+    const allRows = [...paymentRows, ...expenseRows].sort((a, b) => a['Data'].localeCompare(b['Data']));
+    const ws = XLSX.utils.json_to_sheet(allRows);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Incassi');
-    XLSX.writeFile(wb, `incassi_${period}_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+    XLSX.utils.book_append_sheet(wb, ws, 'Report');
+    XLSX.writeFile(wb, `report_${period}_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
     toast.success('Report esportato!');
   };
 
@@ -100,6 +122,16 @@ export default function ReportIncassiPage() {
       default: return '';
     }
   };
+
+  // Lista unificata pagamenti + uscite ordinata per data
+  const allEntries = [
+    ...payments.map(p => ({ ...p, _type: 'payment' })),
+    ...expenses.map(e => ({ ...e, _type: 'expense' })),
+  ].sort((a, b) => {
+    const da = a._type === 'payment' ? a.date : (a.paid_date || a.due_date);
+    const db2 = b._type === 'payment' ? b.date : (b.paid_date || b.due_date);
+    return da.localeCompare(db2);
+  });
 
   return (
     <Layout>
@@ -133,77 +165,145 @@ export default function ReportIncassiPage() {
         {/* Stats Cards */}
         {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[1,2,3,4].map(i => <Skeleton key={i} className="h-32" />)}
+            {[1,2,3,4,5,6].map(i => <Skeleton key={i} className="h-32" />)}
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white">
-                <CardContent className="p-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {/* Totale Incassato */}
+              <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white col-span-2 md:col-span-1">
+                <CardContent className="p-5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-green-100 font-semibold">Totale Incassato</p>
-                      <p className="text-4xl font-black mt-2">€{stats.total.toFixed(2)}</p>
+                      <p className="text-green-100 font-semibold text-sm">Totale Entrate</p>
+                      <p className="text-3xl font-black mt-1">€{stats.total.toFixed(2)}</p>
                     </div>
-                    <Euro className="w-12 h-12 text-green-200" />
+                    <Euro className="w-10 h-10 text-green-200" />
                   </div>
-                  <p className="text-green-100 mt-2 font-medium">{stats.count} pagamenti</p>
+                  <p className="text-green-100 mt-1 text-xs font-medium">{stats.count} pagamenti</p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-white border-2 border-[#F0E6DC]">
-                <CardContent className="p-6">
+              {/* Uscite */}
+              <Card className="bg-gradient-to-br from-red-500 to-red-600 text-white col-span-2 md:col-span-1">
+                <CardContent className="p-5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-[#7C5C4A] font-semibold">Contanti</p>
-                      <p className="text-3xl font-black text-[#2D1B14] mt-2">{'\u20AC'}{stats.cash.toFixed(2)}</p>
+                      <p className="text-red-100 font-semibold text-sm">Totale Uscite</p>
+                      <p className="text-3xl font-black mt-1">€{stats.totalExpenses.toFixed(2)}</p>
                     </div>
-                    <Banknote className="w-10 h-10 text-green-500" />
+                    <TrendingDown className="w-10 h-10 text-red-200" />
+                  </div>
+                  <p className="text-red-100 mt-1 text-xs font-medium">{expenses.length} uscite</p>
+                </CardContent>
+              </Card>
+
+              {/* Netto */}
+              <Card className={`col-span-2 md:col-span-1 ${stats.net >= 0 ? 'bg-gradient-to-br from-blue-500 to-blue-600' : 'bg-gradient-to-br from-orange-500 to-orange-600'} text-white`}>
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-blue-100 font-semibold text-sm">Netto</p>
+                      <p className="text-3xl font-black mt-1">€{stats.net.toFixed(2)}</p>
+                    </div>
+                    <TrendingUp className="w-10 h-10 text-blue-200" />
+                  </div>
+                  <p className="text-blue-100 mt-1 text-xs font-medium">entrate − uscite</p>
+                </CardContent>
+              </Card>
+
+              {/* Contanti */}
+              <Card className="bg-white border-2 border-[#F0E6DC]">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-[#7C5C4A] font-semibold text-sm">Contanti</p>
+                      <p className="text-2xl font-black text-[#2D1B14] mt-1">€{stats.cash.toFixed(2)}</p>
+                    </div>
+                    <Banknote className="w-9 h-9 text-green-500" />
                   </div>
                 </CardContent>
               </Card>
 
+              {/* POS */}
               <Card className="bg-white border-2 border-[#F0E6DC]">
-                <CardContent className="p-6">
+                <CardContent className="p-5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-[#7C5C4A] font-semibold">Abbonamento / Prepagata</p>
-                      <p className="text-3xl font-black text-[#2D1B14] mt-2">{'\u20AC'}{stats.prepaid.toFixed(2)}</p>
+                      <p className="text-[#7C5C4A] font-semibold text-sm">POS</p>
+                      <p className="text-2xl font-black text-[#2D1B14] mt-1">€{stats.pos.toFixed(2)}</p>
                     </div>
-                    <CreditCard className="w-10 h-10 text-purple-500" />
+                    <CreditCard className="w-9 h-9 text-blue-500" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Abbonamento */}
+              <Card className="bg-white border-2 border-[#F0E6DC]">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-[#7C5C4A] font-semibold text-sm">Abbonamento</p>
+                      <p className="text-2xl font-black text-[#2D1B14] mt-1">€{stats.prepaid.toFixed(2)}</p>
+                    </div>
+                    <CreditCard className="w-9 h-9 text-purple-500" />
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Payments List */}
+            {/* Lista unificata pagamenti + uscite */}
             <Card className="bg-white border-2 border-[#F0E6DC]">
               <CardHeader>
-                <CardTitle className="text-xl font-black text-[#2D1B14]">Dettaglio Pagamenti</CardTitle>
+                <CardTitle className="text-xl font-black text-[#2D1B14]">Dettaglio Movimenti</CardTitle>
               </CardHeader>
               <CardContent>
-                {payments.length === 0 ? (
+                {allEntries.length === 0 ? (
                   <div className="text-center py-12 text-[#7C5C4A]">
                     <Euro className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p className="font-semibold">Nessun pagamento in questo periodo</p>
+                    <p className="font-semibold">Nessun movimento in questo periodo</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {payments.map((payment) => (
-                      <div key={payment.id} className="flex items-center justify-between p-4 bg-[#FAF7F2] rounded-xl border border-[#F0E6DC]">
-                        <div className="flex-1">
-                          <p className="font-bold text-[#2D1B14]">{payment.client_name}</p>
-                          <p className="text-sm text-[#7C5C4A]">{payment.services?.map(s => s.name).join(', ')}</p>
-                          <p className="text-xs text-[#7C5C4A] mt-1">{payment.date}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xl font-black text-green-600">€{payment.total_paid.toFixed(2)}</p>
-                          <p className="text-xs text-[#7C5C4A] capitalize">
-                            {payment.payment_method === 'cash' ? 'Contanti' : payment.payment_method === 'pos' ? 'POS' : payment.payment_method === 'sospeso' ? 'Sospeso' : 'Abbonamento/Prepagata'}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
+                    {allEntries.map((entry) => {
+                      if (entry._type === 'payment') {
+                        return (
+                          <div key={`p-${entry.id}`} className="flex items-center justify-between p-4 bg-[#FAF7F2] rounded-xl border border-[#F0E6DC]">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">ENTRATA</span>
+                                <p className="font-bold text-[#2D1B14]">{entry.client_name}</p>
+                              </div>
+                              <p className="text-sm text-[#7C5C4A]">{entry.services?.map(s => s.name).join(', ')}</p>
+                              <p className="text-xs text-[#7C5C4A] mt-1">{entry.date}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-xl font-black text-green-600">+€{entry.total_paid.toFixed(2)}</p>
+                              <p className="text-xs text-[#7C5C4A] capitalize">
+                                {entry.payment_method === 'cash' ? 'Contanti' : entry.payment_method === 'pos' ? 'POS' : entry.payment_method === 'sospeso' ? 'Sospeso' : 'Abbonamento'}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      } else {
+                        return (
+                          <div key={`e-${entry.id}`} className="flex items-center justify-between p-4 bg-red-50 rounded-xl border border-red-200">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">USCITA</span>
+                                <p className="font-bold text-[#2D1B14]">{entry.description}</p>
+                              </div>
+                              <p className="text-sm text-[#7C5C4A] capitalize">{entry.category}</p>
+                              <p className="text-xs text-[#7C5C4A] mt-1">{entry.paid_date || entry.due_date}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-xl font-black text-red-600">−€{entry.amount.toFixed(2)}</p>
+                              {entry.notes && <p className="text-xs text-[#7C5C4A]">{entry.notes}</p>}
+                            </div>
+                          </div>
+                        );
+                      }
+                    })}
                   </div>
                 )}
               </CardContent>

@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 import logging
 import os
 
@@ -102,6 +103,7 @@ async def lifespan(app: FastAPI):
 
     # Start push notification scheduler
     import asyncio
+    from datetime import timedelta
     try:
         from routes.push import _send_push_reminders_core
         async def push_reminder_loop():
@@ -115,6 +117,36 @@ async def lifespan(app: FastAPI):
         logger.info("Push notification scheduler avviato")
     except Exception as e:
         logger.warning(f"Push scheduler non avviato: {e}")
+
+    # Start backup serale (ore 20:00 Italia = 19:00 UTC)
+    try:
+        from routes.backup import run_backup
+        BACKUP_HOUR_UTC = int(os.environ.get("BACKUP_HOUR_UTC", "19"))
+
+        async def backup_loop():
+            while True:
+                now = datetime.now(timezone.utc)
+                # Calcola il prossimo orario target
+                next_run = now.replace(
+                    hour=BACKUP_HOUR_UTC, minute=0, second=0, microsecond=0
+                )
+                if now >= next_run:
+                    next_run += timedelta(days=1)
+                wait_seconds = (next_run - now).total_seconds()
+                logger.info(
+                    f"Prossimo backup serale in {wait_seconds / 3600:.1f}h "
+                    f"(alle {next_run.strftime('%Y-%m-%d %H:%M')} UTC)"
+                )
+                await asyncio.sleep(wait_seconds)
+                try:
+                    await run_backup()
+                except Exception as e:
+                    logger.error(f"Errore backup serale: {e}")
+
+        asyncio.ensure_future(backup_loop())
+        logger.info(f"Backup serale scheduler avviato (ogni giorno alle {BACKUP_HOUR_UTC:02d}:00 UTC)")
+    except Exception as e:
+        logger.warning(f"Backup scheduler non avviato: {e}")
 
     yield
 

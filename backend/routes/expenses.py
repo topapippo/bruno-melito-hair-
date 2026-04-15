@@ -18,6 +18,8 @@ class ExpenseCreate(BaseModel):
     is_recurring: bool = False
     recurrence: Optional[str] = None
     notes: Optional[str] = ""
+    paid: Optional[bool] = False
+    paid_date: Optional[str] = None
 
 class ExpenseUpdate(BaseModel):
     description: Optional[str] = None
@@ -32,21 +34,37 @@ class ExpenseUpdate(BaseModel):
 
 
 @router.get("/expenses")
-async def get_expenses(paid: Optional[bool] = None, current_user: dict = Depends(get_current_user)):
+async def get_expenses(
+    paid: Optional[bool] = None,
+    start: Optional[str] = None,
+    end: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
     query = {"user_id": current_user["id"]}
     if paid is not None:
         query["paid"] = paid
+    # Se vengono passate start/end, filtra per paid_date (per il report incassi)
+    if start and end:
+        start_date = start[:10]
+        end_date = end[:10]
+        query["paid"] = True
+        query["paid_date"] = {"$gte": start_date, "$lte": end_date}
     return await db.expenses.find(query, {"_id": 0, "user_id": 0}).sort("due_date", 1).to_list(500)
 
 
 @router.post("/expenses")
 async def create_expense(data: ExpenseCreate, current_user: dict = Depends(get_current_user)):
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    is_paid = bool(data.paid)
+    paid_date = None
+    if is_paid:
+        paid_date = data.paid_date or data.due_date or today
     expense = {
         "id": str(uuid.uuid4()), "user_id": current_user["id"],
         "description": data.description, "amount": data.amount,
         "category": data.category, "due_date": data.due_date,
         "is_recurring": data.is_recurring, "recurrence": data.recurrence,
-        "notes": data.notes or "", "paid": False, "paid_date": None,
+        "notes": data.notes or "", "paid": is_paid, "paid_date": paid_date,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.expenses.insert_one(expense)

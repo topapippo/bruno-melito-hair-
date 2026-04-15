@@ -13,6 +13,7 @@ from routes.notifications import router as notifications_router
 from routes.public import router as public_router
 from routes.push import router as push_router
 from routes.blocked_slots import router as blocked_slots_router
+from routes.backup import router as backup_router
 
 all_routers = [
     auth_router,
@@ -30,4 +31,5 @@ all_routers = [
     public_router,
     push_router,
     blocked_slots_router,
+    backup_router,
 ]

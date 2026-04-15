@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 def _normalize_phone(phone: str) -> str:
-    """Normalizza il numero di telefono rimuovendo tutto tranne le cifre e il prefisso internazionale."""
+    """Normalizza il numero di telefono a solo cifre senza prefisso +39."""
     if not phone:
         return ""
     digits = re.sub(r'\D', '', phone)
@@ -27,6 +27,20 @@ def _normalize_phone(phone: str) -> str:
     if digits.startswith('0') and len(digits) > 9:
         digits = digits[1:]
     return digits
+
+
+def _phone_variants(phone: str) -> list:
+    """Restituisce tutte le varianti con cui un numero può essere salvato in DB."""
+    norm = _normalize_phone(phone)
+    if not norm:
+        return []
+    return list({phone.strip(), norm, f"+39{norm}", f"39{norm}", f"0039{norm}"})
+
+
+def _phones_match(a: str, b: str) -> bool:
+    """True se i due numeri rappresentano lo stesso telefono (indipendente dal prefisso)."""
+    na, nb = _normalize_phone(a), _normalize_phone(b)
+    return bool(na) and na == nb
 
 # ============== Object Storage with Local Fallback ==============
 
@@ -430,9 +444,9 @@ async def add_service_to_appointment(appointment_id: str, data: dict):
     apt = await db.appointments.find_one({"id": appointment_id, "user_id": user_id}, {"_id": 0})
     if not apt:
         raise HTTPException(status_code=404, detail="Appuntamento non trovato")
-    if apt.get("client_phone") != phone and apt.get("client_name", "").lower() != phone.lower():
+    if not _phones_match(apt.get("client_phone", ""), phone) and apt.get("client_name", "").lower() != phone.lower():
         client = await db.clients.find_one({"id": apt.get("client_id")}, {"_id": 0})
-        if not client or client.get("phone") != phone:
+        if not client or not _phones_match(client.get("phone", ""), phone):
             raise HTTPException(status_code=403, detail="Telefono non corrisponde")
     service = await db.services.find_one({"id": service_id, "user_id": user_id}, {"_id": 0, "user_id": 0})
     if not service:
@@ -471,9 +485,11 @@ async def public_lookup_appointments(phone: str):
         user = await db.users.find_one({}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=400, detail="Salone non configurato")
-    phone_clean = phone.replace(" ", "").replace("-", "").replace("+", "")
+    variants = _phone_variants(phone)
+    if not variants:
+        return {"upcoming": [], "history": [], "client_name": ""}
     client = await db.clients.find_one(
-        {"user_id": user["id"], "$or": [{"phone": phone}, {"phone": phone_clean}]}, {"_id": 0}
+        {"user_id": user["id"], "phone": {"$in": variants}}, {"_id": 0}
     )
     if not client:
         return {"upcoming": [], "history": [], "client_name": ""}
@@ -510,8 +526,7 @@ async def public_update_appointment(appointment_id: str, data: dict):
     if not apt:
         raise HTTPException(status_code=404, detail="Appuntamento non trovato")
     client = await db.clients.find_one({"id": apt["client_id"]}, {"_id": 0})
-    phone_clean = phone.replace(" ", "").replace("-", "").replace("+", "")
-    if not client or (client.get("phone", "").replace(" ", "").replace("-", "").replace("+", "") != phone_clean):
+    if not client or not _phones_match(client.get("phone", ""), phone):
         raise HTTPException(status_code=403, detail="Numero non corrispondente")
     new_date = data.get("date", apt["date"])
     new_time = data.get("time", apt["time"])
@@ -536,8 +551,7 @@ async def public_cancel_appointment(appointment_id: str, phone: str):
     if not apt:
         raise HTTPException(status_code=404, detail="Appuntamento non trovato")
     client = await db.clients.find_one({"id": apt["client_id"]}, {"_id": 0})
-    phone_clean = phone.replace(" ", "").replace("-", "").replace("+", "")
-    if not client or (client.get("phone", "").replace(" ", "").replace("-", "").replace("+", "") != phone_clean):
+    if not client or not _phones_match(client.get("phone", ""), phone):
         raise HTTPException(status_code=403, detail="Numero non corrispondente")
     await db.appointments.update_one({"id": appointment_id}, {"$set": {"status": "cancelled"}})
     return {"success": True}

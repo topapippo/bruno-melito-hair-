@@ -26,26 +26,42 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
     first_of_month = datetime.now(timezone.utc).replace(day=1).strftime("%Y-%m-%d")
     last_of_month = (datetime.now(timezone.utc).replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
     last_of_month = last_of_month.strftime("%Y-%m-%d")
+    # Conteggio appuntamenti completati del mese (tutti, inclusi prepagati)
     monthly_appointments = await db.appointments.find(
         {"user_id": current_user["id"], "date": {"$gte": first_of_month, "$lte": last_of_month}, "status": "completed"},
-        {"_id": 0}
+        {"_id": 0, "total_price": 1}
     ).to_list(1000)
-    monthly_revenue = sum(a.get("total_price", 0) for a in monthly_appointments)
+    # Ricavi reali dal mese: usa payments (contiene checkout contanti + vendite abbonamento, esclude consumi carta)
+    monthly_payments = await db.payments.find(
+        {"user_id": current_user["id"], "date": {"$gte": first_of_month, "$lte": last_of_month}},
+        {"_id": 0, "total_paid": 1}
+    ).to_list(10000)
+    monthly_revenue = sum(p.get("total_paid", 0) for p in monthly_payments)
     first_of_year = datetime.now(timezone.utc).replace(month=1, day=1).strftime("%Y-%m-%d")
     last_of_year = datetime.now(timezone.utc).replace(month=12, day=31).strftime("%Y-%m-%d")
     yearly_appointments = await db.appointments.find(
         {"user_id": current_user["id"], "date": {"$gte": first_of_year, "$lte": last_of_year}, "status": "completed"},
-        {"_id": 0}
+        {"_id": 0, "total_price": 1}
     ).to_list(10000)
-    yearly_revenue = sum(a.get("total_price", 0) for a in yearly_appointments)
+    yearly_payments = await db.payments.find(
+        {"user_id": current_user["id"], "date": {"$gte": first_of_year, "$lte": last_of_year}},
+        {"_id": 0, "total_paid": 1}
+    ).to_list(100000)
+    yearly_revenue = sum(p.get("total_paid", 0) for p in yearly_payments)
     next_week = (datetime.now(timezone.utc) + timedelta(days=7)).strftime("%Y-%m-%d")
     upcoming = await db.appointments.find(
         {"user_id": current_user["id"], "date": {"$gte": today, "$lte": next_week}, "status": "scheduled"},
         {"_id": 0, "user_id": 0}
     ).sort([("date", 1), ("time", 1)]).to_list(10)
+    # Ricavo di oggi: solo da payments (checkout contanti + vendite abbonamento odierne)
+    today_payments = await db.payments.find(
+        {"user_id": current_user["id"], "date": today},
+        {"_id": 0, "total_paid": 1}
+    ).to_list(500)
+    today_revenue = sum(p.get("total_paid", 0) for p in today_payments)
     return {
         "today_appointments": today_appointments, "today_appointments_count": len(today_appointments),
-        "today_revenue": sum(a.get("total_price", 0) for a in today_appointments if a.get("status") == "completed"),
+        "today_revenue": today_revenue,
         "total_clients": total_clients, "total_operators": total_operators,
         "monthly_revenue": monthly_revenue, "monthly_appointments": len(monthly_appointments),
         "yearly_revenue": yearly_revenue, "yearly_appointments": len(yearly_appointments),
@@ -64,8 +80,17 @@ async def get_daily_summary(date: Optional[str] = None, current_user: dict = Dep
         {"user_id": current_user["id"], "date": yesterday, "status": {"$ne": "cancelled"}}, {"_id": 0, "user_id": 0}
     ).to_list(200)
     completed = [a for a in today_apts if a.get("status") == "completed"]
-    total_earnings = sum(a.get("total_paid", a.get("total_price", 0)) for a in completed)
-    yesterday_earnings = sum(a.get("total_paid", a.get("total_price", 0)) for a in yesterday_apts if a.get("status") == "completed")
+    # Incassi reali dal db.payments (checkout contanti + vendite abbonamento, esclude consumi carta)
+    today_payments = await db.payments.find(
+        {"user_id": current_user["id"], "date": target_date},
+        {"_id": 0, "total_paid": 1}
+    ).to_list(500)
+    total_earnings = sum(p.get("total_paid", 0) for p in today_payments)
+    yesterday_payments = await db.payments.find(
+        {"user_id": current_user["id"], "date": yesterday},
+        {"_id": 0, "total_paid": 1}
+    ).to_list(500)
+    yesterday_earnings = sum(p.get("total_paid", 0) for p in yesterday_payments)
     hourly = {f"{h:02d}:00": 0 for h in range(8, 21)}
     for apt in today_apts:
         hour = apt.get("time", "09:00")[:2] + ":00"
@@ -98,31 +123,48 @@ async def get_daily_summary(date: Optional[str] = None, current_user: dict = Dep
 
 @router.get("/stats/revenue")
 async def get_revenue_stats(start_date: str, end_date: str, current_user: dict = Depends(get_current_user)):
-    appointments = await db.appointments.find(
-        {"user_id": current_user["id"], "date": {"$gte": start_date, "$lte": end_date}, "status": "completed"},
+    # Ricavi reali: da payments (checkout contanti + vendite abbonamento, esclude consumi carta prepagata)
+    payments = await db.payments.find(
+        {"user_id": current_user["id"], "date": {"$gte": start_date, "$lte": end_date}},
         {"_id": 0}
     ).to_list(10000)
     daily_revenue = {}
-    for apt in appointments:
-        d = apt["date"]
-        daily_revenue[d] = daily_revenue.get(d, 0) + apt.get("total_price", 0)
+    for p in payments:
+        d = p["date"][:10]
+        daily_revenue[d] = daily_revenue.get(d, 0) + p.get("total_paid", 0)
+    total_revenue = sum(daily_revenue.values())
+    # Service breakdown da payments (include servizi checkout e "Vendita: abbonamento")
     service_revenue = {}
-    for apt in appointments:
-        for svc in apt.get("services", []):
-            name = svc["name"]
+    for p in payments:
+        for svc in p.get("services", []):
+            name = svc.get("name", "Altro")
             if name not in service_revenue:
                 service_revenue[name] = {"count": 0, "revenue": 0}
             service_revenue[name]["count"] += 1
-            service_revenue[name]["revenue"] += svc["price"]
+            service_revenue[name]["revenue"] += svc.get("price", 0)
+    # Operator breakdown da appuntamenti completati NON prepagati
+    # (gli appuntamenti prepagati non generano nuovo cassa, ma il lavoro è stato svolto: contiamo solo il ricavo effettivo)
+    appointments = await db.appointments.find(
+        {"user_id": current_user["id"], "date": {"$gte": start_date, "$lte": end_date},
+         "status": "completed", "payment_method": {"$ne": "prepaid"}},
+        {"_id": 0}
+    ).to_list(10000)
+    # Aggiunge anche gli appuntamenti senza payment_method (vecchi record pre-abbonamento)
+    appointments_no_method = await db.appointments.find(
+        {"user_id": current_user["id"], "date": {"$gte": start_date, "$lte": end_date},
+         "status": "completed", "payment_method": {"$exists": False}},
+        {"_id": 0}
+    ).to_list(10000)
+    all_cash_appointments = appointments + appointments_no_method
     operator_stats = {}
-    for apt in appointments:
+    for apt in all_cash_appointments:
         op_name = apt.get("operator_name", "Non assegnato")
         if op_name not in operator_stats:
             operator_stats[op_name] = {"count": 0, "revenue": 0, "color": apt.get("operator_color", "#78716C")}
         operator_stats[op_name]["count"] += 1
         operator_stats[op_name]["revenue"] += apt.get("total_price", 0)
     return {
-        "total_revenue": sum(daily_revenue.values()), "total_appointments": len(appointments),
+        "total_revenue": total_revenue, "total_appointments": len(all_cash_appointments),
         "daily_revenue": [{"date": k, "revenue": v} for k, v in sorted(daily_revenue.items())],
         "service_breakdown": [{"name": k, **v} for k, v in sorted(service_revenue.items(), key=lambda x: x[1]["revenue"], reverse=True)],
         "operator_breakdown": [{"name": k, **v} for k, v in sorted(operator_stats.items(), key=lambda x: x[1]["revenue"], reverse=True)]
@@ -131,22 +173,34 @@ async def get_revenue_stats(start_date: str, end_date: str, current_user: dict =
 
 @router.get("/stats/export-pdf")
 async def export_stats_pdf(start_date: str, end_date: str, current_user: dict = Depends(get_current_user)):
-    appointments = await db.appointments.find(
-        {"user_id": current_user["id"], "date": {"$gte": start_date, "$lte": end_date}, "status": "completed"},
+    # Ricavi reali da payments
+    payments = await db.payments.find(
+        {"user_id": current_user["id"], "date": {"$gte": start_date, "$lte": end_date}},
         {"_id": 0}
     ).to_list(10000)
-    total_revenue = sum(a.get("total_price", 0) for a in appointments)
-    total_appointments = len(appointments)
+    total_revenue = sum(p.get("total_paid", 0) for p in payments)
     service_stats = {}
-    for apt in appointments:
-        for svc in apt.get("services", []):
-            name = svc["name"]
+    for p in payments:
+        for svc in p.get("services", []):
+            name = svc.get("name", "Altro")
             if name not in service_stats:
                 service_stats[name] = {"count": 0, "revenue": 0}
             service_stats[name]["count"] += 1
-            service_stats[name]["revenue"] += svc["price"]
+            service_stats[name]["revenue"] += svc.get("price", 0)
+    # Appuntamenti completati non prepagati (esclude consumi carta)
+    appointments = await db.appointments.find(
+        {"user_id": current_user["id"], "date": {"$gte": start_date, "$lte": end_date},
+         "status": "completed", "payment_method": {"$ne": "prepaid"}},
+        {"_id": 0}
+    ).to_list(10000)
+    appointments_no_method = await db.appointments.find(
+        {"user_id": current_user["id"], "date": {"$gte": start_date, "$lte": end_date},
+         "status": "completed", "payment_method": {"$exists": False}},
+        {"_id": 0}
+    ).to_list(10000)
+    total_appointments = len(appointments) + len(appointments_no_method)
     operator_stats = {}
-    for apt in appointments:
+    for apt in appointments + appointments_no_method:
         op_name = apt.get("operator_name", "Non assegnato")
         if op_name not in operator_stats:
             operator_stats[op_name] = {"count": 0, "revenue": 0}

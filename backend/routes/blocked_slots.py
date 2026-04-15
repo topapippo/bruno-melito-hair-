@@ -85,8 +85,11 @@ async def get_public_blocked_for_date(date: str):
 
     blocked_times = []
     for slot in one_time + recurring:
-        sh, sm = map(int, slot["start_time"].split(":"))
-        eh, em = map(int, slot["end_time"].split(":"))
+        try:
+            sh, sm = map(int, slot["start_time"].split(":"))
+            eh, em = map(int, slot["end_time"].split(":"))
+        except (ValueError, AttributeError):
+            continue
         start_min = sh * 60 + sm
         end_min = eh * 60 + em
         t = start_min

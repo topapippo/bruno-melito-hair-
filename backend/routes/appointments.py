@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import List, Optional
 from datetime import datetime, timezone, timedelta
 import uuid
+import logging
 
 from database import db
 from auth import get_current_user
@@ -12,6 +13,7 @@ from models import (
 from utils import calculate_end_time
 
 router = APIRouter()
+logger = logging.getLogger("routes.appointments")
 
 
 
@@ -72,9 +74,6 @@ async def award_loyalty_points(client_id: str, user_id: str, amount_paid: float,
 
 @router.post("/appointments", response_model=AppointmentResponse)
 async def create_appointment(data: AppointmentCreate, current_user: dict = Depends(get_current_user)):
-    import logging
-    logger = logging.getLogger("routes.appointments")
-    
     client_name = ""
     client_phone = ""
     client_id = data.client_id or ""
@@ -309,8 +308,10 @@ async def update_appointment(appointment_id: str, data: AppointmentUpdate, curre
         update_data["time"] = data.time
     if data.status:
         update_data["status"] = data.status
-        if data.status == "completed":
-            await db.clients.update_one({"id": appointment["client_id"]}, {"$inc": {"total_visits": 1}})
+        if data.status == "completed" and appointment.get("status") != "completed":
+            client_id = appointment.get("client_id", "")
+            if client_id and client_id not in ("", "generic"):
+                await db.clients.update_one({"id": client_id}, {"$inc": {"total_visits": 1}})
     if data.notes is not None:
         update_data["notes"] = data.notes
 
@@ -353,7 +354,7 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, current_
         "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         "created_at": datetime.now(timezone.utc).isoformat()
     }
-    await db.payments.insert_one(payment_doc)
+    if data.payment_method != 'prepaid' or not data.card_id: await db.payments.insert_one(payment_doc)
 
     await db.appointments.update_one(
         {"id": appointment_id},
@@ -388,22 +389,34 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, current_
 
     if data.payment_method == "prepaid" and data.card_id:
         card = await db.cards.find_one({"id": data.card_id, "user_id": current_user["id"], "active": True})
-        if card:
-            new_remaining = max(0, card["remaining_value"] - data.total_paid)
-            new_used = card.get("used_services", 0) + len(appointment.get("services", []))
-            transaction = {
-                "date": datetime.now(timezone.utc).isoformat(),
-                "description": f"Servizi: {', '.join([s['name'] for s in appointment['services']])}",
-                "amount": data.total_paid, "appointment_id": appointment_id
-            }
-            update_fields = {"remaining_value": new_remaining, "used_services": new_used}
-            total_svc = card.get("total_services")
-            if new_remaining <= 0 or (total_svc and new_used >= total_svc):
-                update_fields["active"] = False
-            await db.cards.update_one(
-                {"id": card["id"]},
-                {"$set": update_fields, "$push": {"transactions": transaction}}
+        if not card:
+            raise HTTPException(status_code=400, detail="Carta prepagata non trovata o non attiva")
+        # Calcola l'importo da scalare dalla carta: usa il prezzo del servizio (non total_paid in contanti)
+        deduction = appointment["total_price"]
+        if data.discount_type == "percent" and data.discount_value:
+            deduction = round(deduction * (1 - data.discount_value / 100), 2)
+        elif data.discount_type == "fixed" and data.discount_value:
+            deduction = max(0, round(deduction - data.discount_value, 2))
+        if card["remaining_value"] < deduction:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Credito insufficiente. Disponibile: €{card['remaining_value']:.2f}, richiesto: €{deduction:.2f}"
             )
+        new_remaining = round(card["remaining_value"] - deduction, 2)
+        new_used = card.get("used_services", 0) + len(appointment.get("services", []))
+        transaction = {
+            "date": datetime.now(timezone.utc).isoformat(),
+            "description": f"Servizi: {', '.join([s['name'] for s in appointment['services']])}",
+            "amount": deduction, "appointment_id": appointment_id
+        }
+        update_fields = {"remaining_value": new_remaining, "used_services": new_used}
+        total_svc = card.get("total_services")
+        if new_remaining <= 0 or (total_svc and new_used >= total_svc):
+            update_fields["active"] = False
+        await db.cards.update_one(
+            {"id": card["id"]},
+            {"$set": update_fields, "$push": {"transactions": transaction}}
+        )
 
     if data.loyalty_points_used > 0:
         await db.loyalty.update_one(
@@ -484,6 +497,9 @@ async def create_recurring_appointments(data: RecurringAppointmentCreate, curren
     )
     if not original:
         raise HTTPException(status_code=404, detail="Appuntamento non trovato")
+
+    if data.repeat_months == 0 and data.repeat_weeks == 0:
+        raise HTTPException(status_code=400, detail="Specificare repeat_months o repeat_weeks maggiore di 0")
 
     created_appointments = []
     original_date = datetime.strptime(original["date"], "%Y-%m-%d")
@@ -575,7 +591,6 @@ async def _settle_sospeso_impl(sospeso_id: str, method: str, current_user: dict)
 
 
 # ── Repair: patch category on old appointments ────────────────────────────────
-import logging
 logger_repair = logging.getLogger("repair")
 
 

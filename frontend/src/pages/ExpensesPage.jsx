@@ -65,7 +65,8 @@ export default function ExpensesPage() {
     due_date: new Date().toISOString().split('T')[0],
     is_recurring: false,
     recurrence: 'monthly',
-    notes: ''
+    notes: '',
+    paid: true,
   });
 
   useEffect(() => {
@@ -157,7 +158,8 @@ export default function ExpensesPage() {
       due_date: exp.due_date,
       is_recurring: exp.is_recurring || false,
       recurrence: exp.recurrence || 'monthly',
-      notes: exp.notes || ''
+      notes: exp.notes || '',
+      paid: exp.paid || false,
     });
     setDialogOpen(true);
   };
@@ -171,7 +173,8 @@ export default function ExpensesPage() {
       due_date: new Date().toISOString().split('T')[0],
       is_recurring: false,
       recurrence: 'monthly',
-      notes: ''
+      notes: '',
+      paid: true,
     });
   };
 
@@ -458,6 +461,20 @@ export default function ExpensesPage() {
                   value={formData.due_date}
                   onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
                   data-testid="expense-date-input"
+                />
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-xl bg-green-50 border border-green-200">
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-600" />
+                  <div>
+                    <Label className="font-semibold text-green-800">Già pagata</Label>
+                    <p className="text-xs text-green-600">Appare subito nel Report Incassi come uscita</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={formData.paid}
+                  onCheckedChange={(c) => setFormData({ ...formData, paid: c })}
+                  data-testid="expense-paid-toggle"
                 />
               </div>
               <div className="flex items-center justify-between p-3 rounded-xl bg-[#FAF7F2]">
