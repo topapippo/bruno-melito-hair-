@@ -178,7 +178,10 @@ export default function WebsitePage() {
   const landingServiceGroups = groupServicesByCategory(bookingServices);
 
   // Dynamic section ordering from CMS config
-  const sectionOrder = config.section_order || ['services', 'salon', 'about', 'promotions', 'reviews', 'gallery', 'loyalty', 'contact'];
+  const defaultSectionOrder = ['services', 'salon', 'about', 'promotions', 'reviews', 'gallery', 'loyalty', 'contact'];
+  const rawSectionOrder = config.section_order || defaultSectionOrder;
+  const normalizedSectionOrder = [...new Set(rawSectionOrder.filter(id => defaultSectionOrder.includes(id)))];
+  const sectionOrder = [...normalizedSectionOrder, ...defaultSectionOrder.filter(id => !normalizedSectionOrder.includes(id))];
   const hiddenSections = config.hidden_sections || [];
 
   const renderSection = (sectionId) => {
@@ -241,10 +244,12 @@ export default function WebsitePage() {
                 ))}
               </div>
             </div>
-            <a href="/login" className="flex items-center gap-1.5 text-[#64748B] hover:text-[#0EA5E9] transition-colors bg-gray-100 hover:bg-gray-200 rounded-lg px-2.5 py-1.5 sm:px-3 sm:py-2" title="Area Riservata" data-testid="admin-link">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-              <span className="text-xs font-bold hidden xs:inline sm:inline">Accedi</span>
-            </a>
+            <Button asChild variant="outline" className="border-none bg-gray-100 hover:bg-gray-200 rounded-lg px-2.5 py-1.5 sm:px-3 sm:py-2" data-testid="admin-link" title="Area Riservata">
+              <a href="/login" className="flex items-center gap-1.5 text-[#64748B] hover:text-[#0EA5E9] transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                <span className="text-xs font-bold hidden xs:inline sm:inline">Accedi</span>
+              </a>
+            </Button>
             <button onClick={() => setShowMyAppts(true)} className="flex flex-col items-center text-amber-600 hover:text-amber-700 transition-colors px-2 py-1" data-testid="my-appointments-btn" title="Inserisci il tuo numero di telefono per vedere le tue prenotazioni">
               <span className="flex items-center gap-1 font-bold text-[10px] sm:text-sm"><CalendarDays className="w-3 h-3 sm:w-4 sm:h-4" />I Miei Appuntamenti</span>
               <span className="text-[7px] sm:text-[9px] text-amber-400 font-normal sm:hidden">Verifica prenotazione</span>

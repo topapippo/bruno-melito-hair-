@@ -138,6 +138,37 @@ class TestMyAppointmentsAPI:
         
         print(f"PASS: GET /api/public/my-appointments with existing client returns client_name='{data['client_name']}' and {len(data['upcoming'])} upcoming appointments")
 
+    def test_my_appointments_phone_prefix_variants(self, api_client):
+        """GET /api/public/my-appointments should work with +39 prefix on stored local numbers"""
+        services_resp = api_client.get(f"{BASE_URL}/api/public/services")
+        services = services_resp.json()
+        if not services:
+            pytest.skip("No services available")
+
+        raw_digits = str(uuid.uuid4().int)[:7]
+        test_phone = f"081 {raw_digits[:3]} {raw_digits[3:]}"
+        future_date = (datetime.now() + timedelta(days=45)).strftime("%Y-%m-%d")
+        booking_data = {
+            "client_name": "Test Prefix Client",
+            "client_phone": test_phone,
+            "service_ids": [services[0]["id"]],
+            "operator_id": "",
+            "date": future_date,
+            "time": "14:00",
+            "notes": "Prefix variant test"
+        }
+        create_resp = api_client.post(f"{BASE_URL}/api/public/booking", json=booking_data)
+        if create_resp.status_code != 200:
+            pytest.skip(f"Could not create booking: {create_resp.status_code}")
+
+        lookup_phone = f"+39{test_phone.replace(' ', '')}"
+        lookup_resp = api_client.get(f"{BASE_URL}/api/public/my-appointments?phone={lookup_phone}")
+        assert lookup_resp.status_code == 200
+        data = lookup_resp.json()
+        assert data.get("client_name") == "Test Prefix Client"
+        assert len(data.get("upcoming", [])) > 0
+        print(f"PASS: GET /api/public/my-appointments with +39 prefix returned client_name='{data['client_name']}'")
+
 
 class TestBookingConflictResolution:
     """Test booking conflict resolution with available operators and alternative slots"""

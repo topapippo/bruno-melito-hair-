@@ -354,7 +354,29 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, current_
         "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         "created_at": datetime.now(timezone.utc).isoformat()
     }
-    if data.payment_method != 'prepaid' or not data.card_id: await db.payments.insert_one(payment_doc)
+    card = None
+    prepaid_deduction = None
+    if data.payment_method == "prepaid" and data.card_id:
+        card = await db.cards.find_one({"id": data.card_id, "user_id": current_user["id"], "active": True})
+        if not card:
+            raise HTTPException(status_code=400, detail="Carta prepagata non trovata o non attiva")
+        payment_doc["card_id"] = card["id"]
+        payment_doc["card_name"] = card["name"]
+        prepaid_deduction = appointment["total_price"]
+        if data.discount_type == "percent" and data.discount_value:
+            prepaid_deduction = round(prepaid_deduction * (1 - data.discount_value / 100), 2)
+        elif data.discount_type == "fixed" and data.discount_value:
+            prepaid_deduction = max(0, round(prepaid_deduction - data.discount_value, 2))
+        if card["remaining_value"] < prepaid_deduction:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Credito insufficiente. Disponibile: €{card['remaining_value']:.2f}, richiesto: €{prepaid_deduction:.2f}"
+            )
+
+    if data.payment_method == "prepaid" and data.card_id and not card:
+        payment_doc["card_id"] = data.card_id
+
+    await db.payments.insert_one(payment_doc)
 
     await db.appointments.update_one(
         {"id": appointment_id},
@@ -387,27 +409,13 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, current_
             {"$inc": {"total_visits": 1}}
         )
 
-    if data.payment_method == "prepaid" and data.card_id:
-        card = await db.cards.find_one({"id": data.card_id, "user_id": current_user["id"], "active": True})
-        if not card:
-            raise HTTPException(status_code=400, detail="Carta prepagata non trovata o non attiva")
-        # Calcola l'importo da scalare dalla carta: usa il prezzo del servizio (non total_paid in contanti)
-        deduction = appointment["total_price"]
-        if data.discount_type == "percent" and data.discount_value:
-            deduction = round(deduction * (1 - data.discount_value / 100), 2)
-        elif data.discount_type == "fixed" and data.discount_value:
-            deduction = max(0, round(deduction - data.discount_value, 2))
-        if card["remaining_value"] < deduction:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Credito insufficiente. Disponibile: €{card['remaining_value']:.2f}, richiesto: €{deduction:.2f}"
-            )
-        new_remaining = round(card["remaining_value"] - deduction, 2)
+    if card and prepaid_deduction is not None:
+        new_remaining = round(card["remaining_value"] - prepaid_deduction, 2)
         new_used = card.get("used_services", 0) + len(appointment.get("services", []))
         transaction = {
             "date": datetime.now(timezone.utc).isoformat(),
             "description": f"Servizi: {', '.join([s['name'] for s in appointment['services']])}",
-            "amount": deduction, "appointment_id": appointment_id
+            "amount": prepaid_deduction, "appointment_id": appointment_id
         }
         update_fields = {"remaining_value": new_remaining, "used_services": new_used}
         total_svc = card.get("total_services")

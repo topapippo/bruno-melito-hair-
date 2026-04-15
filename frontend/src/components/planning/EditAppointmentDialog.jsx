@@ -92,6 +92,8 @@ export default function EditAppointmentDialog({
   const [clientHistory, setClientHistory] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [localAppointment, setLocalAppointment] = useState(null);
+  const [saveAndCheckout, setSaveAndCheckout] = useState(false);
 
   const sortedServices = groupServicesByCategory(services);
 
@@ -112,6 +114,7 @@ export default function EditAppointmentDialog({
 
   useEffect(() => {
     if (open && appointment) {
+      setLocalAppointment(appointment);
       setEditDate(appointment.date);
       setFormData({
         service_ids: appointment.services.map(s => s.id),
@@ -177,6 +180,7 @@ export default function EditAppointmentDialog({
   }, [editDate, hoursConfig]);
 
   const { slots: editAvailableSlots } = getFilteredSlots(editDate, hoursConfig, blockedSlots);
+  const currentAppointment = localAppointment || appointment;
 
   const toggleService = (serviceId) => {
     setFormData(prev => ({
@@ -188,8 +192,9 @@ export default function EditAppointmentDialog({
   };
 
   const calculateTotal = () => {
-    if (!appointment) return 0;
-    return appointment.services.reduce((sum, s) => sum + (s.price || 0), 0);
+    const activeAppointment = localAppointment || appointment;
+    if (!activeAppointment) return 0;
+    return activeAppointment.services.reduce((sum, s) => sum + (s.price || 0), 0);
   };
 
   const calculateDiscount = () => {
@@ -202,18 +207,22 @@ export default function EditAppointmentDialog({
 
   const calculateFinalAmount = () => Math.max(0, calculateTotal() - calculateDiscount());
 
-  const handleUpdate = async (e) => {
-    e.preventDefault();
-    if (!appointment) return;
+  const saveAppointment = async (openCheckout = false) => {
+    if (!currentAppointment) return;
     setSaving(true);
     try {
       const payload = { ...formData, date: editDate };
       payload.promo_id = preSelectedPromoId || null;
       payload.card_id = preSelectedCardId || null;
-      await api.put(`${API}/appointments/${appointment.id}`, payload);
+      const res = await api.put(`${API}/appointments/${currentAppointment.id}`, payload);
       toast.success('Appuntamento aggiornato!');
-      onClose();
+      setLocalAppointment(res.data);
       onSuccess?.();
+      if (openCheckout) {
+        openCheckoutMode(res.data);
+      } else {
+        onClose();
+      }
     } catch (err) {
       const detail = err.response?.data?.detail;
       let msg = 'Errore nell\'aggiornamento';
@@ -222,7 +231,18 @@ export default function EditAppointmentDialog({
       toast.error(msg);
     } finally {
       setSaving(false);
+      setSaveAndCheckout(false);
     }
+  };
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    await saveAppointment(false);
+  };
+
+  const handleSaveAndCheckout = async () => {
+    setSaveAndCheckout(true);
+    await saveAppointment(true);
   };
 
   const handleDelete = async () => {
@@ -269,24 +289,25 @@ export default function EditAppointmentDialog({
     setEligiblePromos([]);
   };
 
-  const openCheckoutMode = () => {
+  const openCheckoutMode = (apt = null) => {
+    const activeAppointment = apt || localAppointment || appointment;
     setCheckoutMode(true);
-    if (appointment?.client_id) {
-      api.get(`${API}/promotions/check/${appointment.client_id}`)
+    if (activeAppointment?.client_id) {
+      api.get(`${API}/promotions/check/${activeAppointment.client_id}`)
         .then(res => {
           setEligiblePromos(res.data);
           // Auto-select promo if pre-selected or saved on appointment
-          const targetPromoId = preSelectedPromoId || appointment.promo_id;
+          const targetPromoId = preSelectedPromoId || activeAppointment.promo_id;
           if (targetPromoId) {
             const savedPromo = res.data.find(p => p.id === targetPromoId);
             if (savedPromo) setSelectedPromo(savedPromo);
           }
-          if (!preSelectedPromoId && !appointment.promo_id) setOpenCats(prev => ({ ...prev, _editPromos: true }));
+          if (!preSelectedPromoId && !activeAppointment.promo_id) setOpenCats(prev => ({ ...prev, _editPromos: true }));
         })
         .catch(() => {});
     }
     // Auto-select card if pre-selected or saved on appointment
-    const targetCardId = preSelectedCardId || appointment?.card_id;
+    const targetCardId = preSelectedCardId || activeAppointment?.card_id;
     if (targetCardId) {
       const savedCard = clientCards.find(c => c.id === targetCardId && c.remaining_value > 0);
       if (savedCard) {
@@ -303,11 +324,12 @@ export default function EditAppointmentDialog({
   };
 
   const handleCheckout = async () => {
-    if (!appointment) return;
+    const activeAppointment = localAppointment || appointment;
+    if (!activeAppointment) return;
     setProcessing(true);
     try {
       const loyaltyPointsUsed = useLoyaltyPoints ? clientLoyalty.points : 0;
-      const res = await api.post(`${API}/appointments/${appointment.id}/checkout`, {
+      const res = await api.post(`${API}/appointments/${activeAppointment.id}/checkout`, {
         payment_method: paymentMethod,
         discount_type: discountType,
         discount_value: discountType !== 'none' ? parseFloat(discountValue) || 0 : 0,
@@ -324,8 +346,8 @@ export default function EditAppointmentDialog({
       toast.success(msg);
 
       // Prepara i dati per il ringraziamento WhatsApp
-      const clientPhone = res.data.client_phone || appointment.client_phone || selectedClientInfo?.phone;
-      const clientName = res.data.client_name || appointment.client_name || selectedClientInfo?.name;
+      const clientPhone = res.data.client_phone || activeAppointment.client_phone || selectedClientInfo?.phone;
+      const clientName = res.data.client_name || activeAppointment.client_name || selectedClientInfo?.name;
       let salonName = 'Bruno Melito Hair';
       let reviewLink = '';
       try {
@@ -343,7 +365,7 @@ export default function EditAppointmentDialog({
           salonName,
           reviewLink,
           pointsEarned,
-          services: appointment.services?.map(s => s.name).join(', ') || '',
+          services: activeAppointment.services?.map(s => s.name).join(', ') || '',
         });
       }
 
@@ -366,7 +388,7 @@ export default function EditAppointmentDialog({
     }
   };
 
-  if (!appointment) return null;
+  if (!currentAppointment) return null;
 
   const toggleCat = (catKey) => setOpenCats(prev => ({ ...prev, [catKey]: !prev[catKey] }));
   const selectedServicesInfo = services.filter(s => formData.service_ids.includes(s.id));
@@ -907,6 +929,11 @@ export default function EditAppointmentDialog({
               <div className="flex gap-2">
                 <Button type="button" variant="destructive" onClick={handleDelete} disabled={deleting} className="mr-auto" data-testid="delete-appointment-btn">
                   {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Trash2 className="w-4 h-4 mr-1" /> Elimina</>}
+                </Button>
+                <Button type="button" onClick={handleSaveAndCheckout} disabled={saving}
+                  className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-4"
+                  data-testid="save-and-checkout-btn">
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Vai in Cassa'}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => { resetCheckout(); onClose(); }} className="border-[#F0E6DC]">Annulla</Button>
                 <Button type="submit" disabled={saving}

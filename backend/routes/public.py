@@ -34,7 +34,8 @@ def _phone_variants(phone: str) -> list:
     norm = _normalize_phone(phone)
     if not norm:
         return []
-    return list({phone.strip(), norm, f"+39{norm}", f"39{norm}", f"0039{norm}"})
+    variants = {phone.strip(), norm, f"+39{norm}", f"39{norm}", f"0039{norm}", f"0{norm}"}
+    return list(variants)
 
 
 def _phones_match(a: str, b: str) -> bool:
@@ -188,11 +189,15 @@ DEFAULT_WEBSITE_CONFIG = {
 
 # ============== PUBLIC BOOKING ==============
 
-@router.get("/public/services")
-async def get_public_services():
+async def get_public_admin_user():
     user = await db.users.find_one({"email": "admin@brunomelito.it"}, {"_id": 0, "id": 1})
     if not user:
         user = await db.users.find_one({}, {"_id": 0, "id": 1})
+    return user
+
+@router.get("/public/services")
+async def get_public_services():
+    user = await get_public_admin_user()
     if not user:
         return []
     return await db.services.find({"user_id": user["id"]}, {"_id": 0, "user_id": 0}).sort("order", 1).to_list(100)
@@ -492,6 +497,16 @@ async def public_lookup_appointments(phone: str):
         {"user_id": user["id"], "phone": {"$in": variants}}, {"_id": 0}
     )
     if not client:
+        # Fallback to normalized comparison so stored clients with formatted phone values
+        # (spaces, dashes, parentheses) still match public lookups.
+        all_clients = await db.clients.find(
+            {"user_id": user["id"]}, {"_id": 0, "id": 1, "phone": 1, "name": 1}
+        ).to_list(5000)
+        for candidate in all_clients:
+            if _phones_match(candidate.get("phone", ""), phone):
+                client = candidate
+                break
+    if not client:
         return {"upcoming": [], "history": [], "client_name": ""}
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     three_months_ago = (datetime.now(timezone.utc) - timedelta(days=90)).strftime("%Y-%m-%d")
@@ -727,17 +742,18 @@ async def delete_website_gallery_item(item_id: str, current_user: dict = Depends
 
 @router.get("/public/website")
 async def public_get_website():
-    config = await db.website_config.find_one({}, {"_id": 0, "user_id": 0})
+    user = await get_public_admin_user()
+    config = await db.website_config.find_one({"user_id": user["id"]} if user else {}, {"_id": 0, "user_id": 0})
     if not config:
         config = {k: v for k, v in DEFAULT_WEBSITE_CONFIG.items()}
     else:
         config = {**DEFAULT_WEBSITE_CONFIG, **{k: v for k, v in config.items() if k != "user_id"}}
-    reviews = await db.website_reviews.find({}, {"_id": 0, "user_id": 0}).to_list(100)
-    gallery = await db.website_gallery.find({"is_deleted": {"$ne": True}}, {"_id": 0, "user_id": 0}).sort("sort_order", 1).to_list(100)
-    services = await db.services.find({}, {"_id": 0}).sort("order", 1).to_list(100)
+    reviews = await db.website_reviews.find({"user_id": user["id"]} if user else {}, {"_id": 0, "user_id": 0}).to_list(100)
+    gallery = await db.website_gallery.find({"user_id": user["id"], "is_deleted": {"$ne": True}} if user else {"is_deleted": {"$ne": True}}, {"_id": 0, "user_id": 0}).sort("sort_order", 1).to_list(100)
+    services = await db.services.find({"user_id": user["id"]} if user else {}, {"_id": 0}).sort("order", 1).to_list(100)
     
     # Card templates for public booking
-    card_templates_raw = await db.card_templates.find({"is_deleted": {"$ne": True}}, {"_id": 0}).to_list(100)
+    card_templates_raw = await db.card_templates.find({"user_id": user["id"], "is_deleted": {"$ne": True}} if user else {"is_deleted": {"$ne": True}}, {"_id": 0}).to_list(100)
     card_templates = []
     for ct in card_templates_raw:
         card_templates.append({
@@ -750,10 +766,9 @@ async def public_get_website():
             "notes": ct.get("notes", ""),
         })
 
-    # Loyalty program info for public display - USE SAME SOURCE AS ADMIN
+    # Loyalty program info for public display - use same admin user as public services
     from models import get_loyalty_rewards, LOYALTY_POINTS_PER_EURO
-    admin_user = await db.users.find_one({}, {"_id": 0, "id": 1})
-    admin_user_id = admin_user["id"] if admin_user else ""
+    admin_user_id = user["id"] if user else ""
     loyalty_rewards_data = await get_loyalty_rewards(admin_user_id)
     loyalty_config = {
         "points_per_euro": LOYALTY_POINTS_PER_EURO,

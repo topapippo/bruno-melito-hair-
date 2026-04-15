@@ -350,6 +350,69 @@ class TestPrepaidCards:
         assert data["remaining_value"] == 100.00
         assert data["active"] == True
 
+    def test_checkout_with_prepaid_card_deducts_balance(self, auth_headers, test_client_id, test_service_id):
+        """Test prepaid checkout deducts card balance after service completion"""
+        if not test_client_id or not test_service_id:
+            pytest.skip("No test client or service available")
+
+        # Create a prepaid card for the client
+        card_resp = requests.post(f"{BASE_URL}/api/cards", headers=auth_headers, json={
+            "client_id": test_client_id,
+            "card_type": "prepaid",
+            "name": "TEST_CARD_PREPAID",
+            "total_value": 1000.00,
+            "total_services": 10,
+            "notes": "Test prepaid card"
+        })
+        assert card_resp.status_code == 200
+        card_data = card_resp.json()
+        card_id = card_data["id"]
+        original_balance = card_data["remaining_value"]
+        original_used = card_data["used_services"]
+
+        # Create appointment
+        today = datetime.now().strftime("%Y-%m-%d")
+        create_resp = requests.post(f"{BASE_URL}/api/appointments", headers=auth_headers, json={
+            "client_id": test_client_id,
+            "service_ids": [test_service_id],
+            "date": today,
+            "time": "16:00"
+        })
+        assert create_resp.status_code == 200
+        apt_data = create_resp.json()
+        apt_id = apt_data["id"]
+        total_price = apt_data["total_price"]
+
+        # Checkout using prepaid card
+        checkout_resp = requests.post(f"{BASE_URL}/api/appointments/{apt_id}/checkout", headers=auth_headers, json={
+            "payment_method": "prepaid",
+            "discount_type": "none",
+            "discount_value": 0,
+            "total_paid": 0,
+            "card_id": card_id
+        })
+        assert checkout_resp.status_code == 200
+        checkout_data = checkout_resp.json()
+        assert checkout_data["success"] is True
+        assert "payment_id" in checkout_data
+
+        # Verify card balance is reduced and used_services incremented
+        card_check = requests.get(f"{BASE_URL}/api/cards/{card_id}", headers=auth_headers)
+        assert card_check.status_code == 200
+        updated_card = card_check.json()
+        assert updated_card["remaining_value"] == pytest.approx(round(original_balance - total_price, 2))
+        assert updated_card["used_services"] == original_used + 1
+
+        payments_resp = requests.get(f"{BASE_URL}/api/payments", headers=auth_headers)
+        assert payments_resp.status_code == 200
+        payment_record = next(
+            (p for p in payments_resp.json() if p.get("appointment_id") == apt_id and p.get("payment_method") == "prepaid"),
+            None
+        )
+        assert payment_record is not None
+        assert payment_record["total_paid"] == 0
+        assert payment_record["card_id"] == card_id
+
 
 class TestPaymentsReport:
     """Payments/Report tests"""

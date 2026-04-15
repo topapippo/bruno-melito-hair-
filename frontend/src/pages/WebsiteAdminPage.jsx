@@ -322,7 +322,10 @@ export default function WebsiteAdminPage() {
     { id: 'contact', label: 'Contatti', desc: 'Orari, indirizzo, telefono' },
   ];
 
-  const sectionOrder = config?.section_order || ALL_SECTIONS.map(s => s.id);
+  const rawSectionOrder = config?.section_order || ALL_SECTIONS.map(s => s.id);
+  const normalizedSectionOrder = [...new Set(rawSectionOrder.filter(id => ALL_SECTIONS.some(s => s.id === id)))];
+  const missingSectionIds = ALL_SECTIONS.map(s => s.id).filter(id => !normalizedSectionOrder.includes(id));
+  const sectionOrder = [...normalizedSectionOrder, ...missingSectionIds];
 
   const moveSectionUp = (idx) => {
     if (idx <= 0) return;
@@ -729,11 +732,11 @@ export default function WebsiteAdminPage() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>Servizi del Salone (Listino Pubblico)</CardTitle>
-                  <a href="/services">
-                    <Button variant="outline" className="border-[#C8617A] text-[#C8617A] hover:bg-[#C8617A]/10">
+                  <Button asChild variant="outline" className="border-[#C8617A] text-[#C8617A] hover:bg-[#C8617A]/10">
+                    <a href="/services">
                       <Plus className="w-4 h-4 mr-1" /> Gestisci Servizi
-                    </Button>
-                  </a>
+                    </a>
+                  </Button>
                 </div>
                 <div className="flex items-start gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg mt-2">
                   <TrendingUp className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
@@ -777,7 +780,9 @@ export default function WebsiteAdminPage() {
                 ) : (
                   <div className="text-center py-8 text-gray-500">
                     <p>Nessun servizio trovato. Vai alla pagina Servizi per aggiungerne.</p>
-                    <a href="/services"><Button className="mt-3 bg-[#C8617A] text-white">Vai a Servizi</Button></a>
+                    <Button asChild className="mt-3 bg-[#C8617A] text-white">
+                      <a href="/services">Vai a Servizi</a>
+                    </Button>
                   </div>
                 )}
                 

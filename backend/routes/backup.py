@@ -1,5 +1,6 @@
 import json
 import os
+import tempfile
 import logging
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
@@ -12,11 +13,11 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 # ── Directory e file di backup (file unico, sovrascrive ogni volta) ─────────────
-_BACKUP_DIR = "/app/backend/backups"
+_BACKUP_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "backups"))
 try:
     os.makedirs(_BACKUP_DIR, exist_ok=True)
 except (PermissionError, OSError):
-    _BACKUP_DIR = "/tmp/salon_backups"
+    _BACKUP_DIR = os.path.join(tempfile.gettempdir(), "salon_backups")
     os.makedirs(_BACKUP_DIR, exist_ok=True)
 
 BACKUP_FILE = os.path.join(_BACKUP_DIR, "salon_backup.json")
