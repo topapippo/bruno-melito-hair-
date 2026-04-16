@@ -26,7 +26,7 @@ services:
     name: bruno-melito-hair-frontend
     runtime: static
     rootDir: frontend
-    buildCommand: yarn install --frozen-lockfile && DISABLE_ESLINT_PLUGIN=true yarn build
+    buildCommand: yarn install && DISABLE_ESLINT_PLUGIN=true yarn build
     staticPublishPath: build
     headers:
       - path: /*
