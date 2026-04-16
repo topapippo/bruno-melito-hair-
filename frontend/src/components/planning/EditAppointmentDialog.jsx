@@ -366,7 +366,7 @@ export default function EditAppointmentDialog({
           salonName,
           reviewLink,
           pointsEarned,
-          services: activeAppointment.services?.map(s => s.name).join(', ') || '',
+          services: (activeAppointment.services || []).map(s => s.name).join(', '),
         });
       }
 
