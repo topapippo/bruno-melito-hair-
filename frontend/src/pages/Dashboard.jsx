@@ -124,6 +124,36 @@ export default function Dashboard() {
           </Link>
         </div>
 
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <button onClick={() => navigate('/appointments')} className="rounded-2xl border border-slate-200 bg-white/90 p-4 text-left shadow-sm hover:shadow-lg transition-shadow">
+            <div className="flex items-center gap-3 mb-2">
+              <Plus className="w-5 h-5 text-[#E8477C]" />
+              <div>
+                <p className="text-sm font-semibold text-slate-900">Prenota un appuntamento</p>
+                <p className="text-xs text-slate-500">Aggiungi velocemente una nuova prenotazione</p>
+              </div>
+            </div>
+          </button>
+          <button onClick={() => navigate('/clients')} className="rounded-2xl border border-slate-200 bg-white/90 p-4 text-left shadow-sm hover:shadow-lg transition-shadow">
+            <div className="flex items-center gap-3 mb-2">
+              <Users className="w-5 h-5 text-[#2EC4B6]" />
+              <div>
+                <p className="text-sm font-semibold text-slate-900">Nuovo cliente</p>
+                <p className="text-xs text-slate-500">Aggiungi un cliente alla rubrica</p>
+              </div>
+            </div>
+          </button>
+          <button onClick={() => navigate('/uscite')} className="rounded-2xl border border-slate-200 bg-white/90 p-4 text-left shadow-sm hover:shadow-lg transition-shadow">
+            <div className="flex items-center gap-3 mb-2">
+              <CreditCard className="w-5 h-5 text-[#F59E0B]" />
+              <div>
+                <p className="text-sm font-semibold text-slate-900">Registra un’uscita</p>
+                <p className="text-xs text-slate-500">Registra le spese e tieni tutto sotto controllo</p>
+              </div>
+            </div>
+          </button>
+        </div>
+
         {/* ── Alert Banner ───────────────────────────────────────────────── */}
         {showAlerts && cardAlerts.total > 0 && (
           <div className="relative overflow-hidden rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 via-orange-50 to-rose-50 p-4 shadow-md animate-pulse-slow" data-testid="daily-alerts-banner">
@@ -198,15 +228,23 @@ export default function Dashboard() {
         )}
 
         {/* ── Stats Row ──────────────────────────────────────────────────── */}
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <p className="text-sm text-slate-500">Clicca una metrica per aprire la sezione corrispondente.</p>
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 stagger-in">
           {[
-            { title: "Appuntamenti Oggi", value: stats?.today_appointments_count || 0, icon: Calendar, from: '#E8477C', to: '#F49AB3', suffix: '' },
-            { title: "Clienti Totali", value: stats?.total_clients || 0, icon: Users, from: '#2EC4B6', to: '#5EDECF', suffix: '' },
-            { title: "Incasso Mensile", value: (stats?.monthly_revenue || 0).toFixed(0), icon: Euro, from: '#F59E0B', to: '#FCD34D', prefix: '€', sub: `${stats?.monthly_appointments||0} appuntamenti` },
-            { title: "Incasso Annuale", value: (stats?.yearly_revenue || 0).toFixed(0), icon: TrendingUp, from: '#3B82F6', to: '#93C5FD', prefix: '€', sub: `${stats?.yearly_appointments||0} appuntamenti` },
-            { title: "Prossimi 7 Giorni", value: stats?.upcoming_appointments?.length || 0, icon: Clock, from: '#8B5CF6', to: '#C4B5FD', suffix: '' },
+            { title: "Appuntamenti Oggi", value: stats?.today_appointments_count || 0, icon: Calendar, from: '#E8477C', to: '#F49AB3', suffix: '', path: '/appointments' },
+            { title: "Clienti Totali", value: stats?.total_clients || 0, icon: Users, from: '#2EC4B6', to: '#5EDECF', suffix: '', path: '/clients' },
+            { title: "Incasso Mensile", value: (stats?.monthly_revenue || 0).toFixed(0), icon: Euro, from: '#F59E0B', to: '#FCD34D', prefix: '€', sub: `${stats?.monthly_appointments||0} appuntamenti`, path: '/incassi' },
+            { title: "Incasso Annuale", value: (stats?.yearly_revenue || 0).toFixed(0), icon: TrendingUp, from: '#3B82F6', to: '#93C5FD', prefix: '€', sub: `${stats?.yearly_appointments||0} appuntamenti`, path: '/incassi' },
+            { title: "Prossimi 7 Giorni", value: stats?.upcoming_appointments?.length || 0, icon: Clock, from: '#8B5CF6', to: '#C4B5FD', suffix: '', path: '/week' },
           ].map((s, i) => (
-            <div key={i} className="rounded-2xl p-5 shadow-lg card-lift-enhanced relative overflow-hidden" style={{background: `linear-gradient(135deg, ${s.from}, ${s.to})`}}>
+            <button
+              key={i}
+              onClick={() => navigate(s.path)}
+              className="rounded-2xl p-5 shadow-lg card-lift-enhanced relative overflow-hidden text-left focus:outline-none focus:ring-2 focus:ring-white/40"
+              style={{background: `linear-gradient(135deg, ${s.from}, ${s.to})`}}
+            >
               <div className="relative z-10">
                 <div className="flex items-start justify-between">
                   <div>
@@ -223,7 +261,7 @@ export default function Dashboard() {
               </div>
               <div className="absolute -bottom-4 -right-4 w-24 h-24 rounded-full bg-white/10" />
               <div className="absolute -top-6 -left-6 w-20 h-20 rounded-full bg-white/5" />
-            </div>
+            </button>
           ))}
         </div>
 
@@ -269,9 +307,17 @@ export default function Dashboard() {
             </div>
             <div className="p-4">
               {stats?.today_appointments?.length > 0 ? (
-                <div className="space-y-2">
-                  {stats.today_appointments.map((apt, idx) => (
-                    <div key={apt.id} data-testid={`appointment-${apt.id}`} className="appt-row flex items-center gap-4 p-3 rounded-xl bg-white/5 hover:bg-white/10 cursor-pointer">
+                <>
+                  <p className="text-xs text-white/40 uppercase tracking-[0.2em] mb-3">Tocca una riga per aprire il planning</p>
+                  <div className="space-y-2">
+                  {stats.today_appointments.map((apt) => (
+                    <button
+                      key={apt.id}
+                      type="button"
+                      onClick={() => navigate('/planning')}
+                      data-testid={`appointment-${apt.id}`}
+                      className="appt-row flex items-center gap-4 w-full p-3 rounded-xl bg-white/5 hover:bg-white/10 transition duration-200 ease-in-out transform hover:-translate-y-0.5 text-left"
+                    >
                       <div className="flex-shrink-0 text-center w-14">
                         <p className="text-sm font-bold text-[#E8477C]">{apt.time}</p>
                         <p className="text-[10px] text-white/40">{apt.end_time}</p>
@@ -285,7 +331,7 @@ export default function Dashboard() {
                         <p className="font-bold text-white text-sm">{'\u20AC'}{apt.total_price}</p>
                         <p className="text-[10px] text-white/40">{apt.total_duration} min</p>
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               ) : (
@@ -310,13 +356,18 @@ export default function Dashboard() {
               {stats?.upcoming_appointments?.length > 0 ? (
                 <div className="space-y-2">
                   {stats.upcoming_appointments.slice(0, 6).map((apt) => (
-                    <div key={apt.id} className="flex items-center gap-3 py-2 border-b border-white/5 last:border-0">
+                    <button
+                      key={apt.id}
+                      type="button"
+                      onClick={() => navigate('/planning')}
+                      className="flex items-center gap-3 py-2 w-full text-left border-b border-white/5 last:border-0 hover:bg-white/10 rounded-xl transition-colors"
+                    >
                       <div className="w-1.5 h-1.5 rounded-full bg-[#2EC4B6] shrink-0 mt-0.5" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-white truncate">{apt.client_name}</p>
                         <p className="text-xs text-white/50">{format(new Date(apt.date), "dd/MM/yy")} {'\u00B7'} {apt.time}</p>
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               ) : (

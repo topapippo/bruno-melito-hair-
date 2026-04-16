@@ -25,17 +25,31 @@ export default function DailySummaryPage() {
   const fetchSummary = async () => {
     setLoading(true);
     try {
-      const res = await api.get(`${API}/stats/daily-summary?date=${selectedDate}`);
+      const safeDate = selectedDate && !Number.isNaN(new Date(selectedDate).getTime())
+        ? selectedDate
+        : format(new Date(), 'yyyy-MM-dd');
+      const res = await api.get(`${API}/stats/daily-summary?date=${safeDate}`);
       setData(res.data);
-    } catch (err) { console.error(err); }
-    finally { setLoading(false); }
+      if (!selectedDate || selectedDate !== safeDate) {
+        setSelectedDate(safeDate);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const prevDay = () => setSelectedDate(format(subDays(new Date(selectedDate), 1), 'yyyy-MM-dd'));
   const nextDay = () => setSelectedDate(format(addDays(new Date(selectedDate), 1), 'yyyy-MM-dd'));
   const goToday = () => setSelectedDate(format(new Date(), 'yyyy-MM-dd'));
 
-  const maxHourly = data ? Math.max(...Object.values(data.hourly_distribution), 1) : 1;
+  const selectedDateObject = new Date(selectedDate);
+  const validSelectedDate = Number.isNaN(selectedDateObject.getTime()) ? new Date() : selectedDateObject;
+  const hourlyDistribution = data?.hourly_distribution || Object.fromEntries(
+    Array.from({ length: 13 }, (_, i) => [`${String(8 + i).padStart(2, '0')}:00`, 0])
+  );
+  const maxHourly = Math.max(...Object.values(hourlyDistribution), 1);
 
   if (loading) {
     return (
@@ -57,7 +71,7 @@ export default function DailySummaryPage() {
           <div>
             <h1 className="font-display text-3xl font-medium text-[#2D1B14]">Riepilogo Giornaliero</h1>
             <p className="text-[#7C5C4A] mt-1  capitalize">
-              {format(new Date(selectedDate), "EEEE dd/MM/yy", { locale: it })}
+              {format(validSelectedDate, "EEEE dd/MM/yy", { locale: it })}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -160,7 +174,7 @@ export default function DailySummaryPage() {
           </CardHeader>
           <CardContent>
             <div className="flex items-end gap-1.5 h-48 pt-4" data-testid="hourly-chart">
-              {data && Object.entries(data.hourly_distribution).map(([hour, count]) => {
+              {Object.entries(hourlyDistribution).map(([hour, count]) => {
                 const height = maxHourly > 0 ? (count / maxHourly) * 100 : 0;
                 const isBusiest = hour === data.busiest_hour && count > 0;
                 return (

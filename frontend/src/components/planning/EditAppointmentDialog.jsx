@@ -329,11 +329,12 @@ export default function EditAppointmentDialog({
     setProcessing(true);
     try {
       const loyaltyPointsUsed = useLoyaltyPoints ? clientLoyalty.points : 0;
+      const finalAmount = calculateFinalAmount();
       const res = await api.post(`${API}/appointments/${activeAppointment.id}/checkout`, {
         payment_method: paymentMethod,
         discount_type: discountType,
         discount_value: discountType !== 'none' ? parseFloat(discountValue) || 0 : 0,
-        total_paid: calculateFinalAmount(),
+        total_paid: finalAmount,
         card_id: paymentMethod === 'prepaid' ? selectedCardId : null,
         loyalty_points_used: loyaltyPointsUsed,
         promo_id: selectedPromo?.id || null,
@@ -346,8 +347,8 @@ export default function EditAppointmentDialog({
       toast.success(msg);
 
       // Prepara i dati per il ringraziamento WhatsApp
-      const clientPhone = res.data.client_phone || activeAppointment.client_phone || selectedClientInfo?.phone;
-      const clientName = res.data.client_name || activeAppointment.client_name || selectedClientInfo?.name;
+      const clientPhone = String(res.data.client_phone || activeAppointment.client_phone || selectedClientInfo?.phone || '').trim();
+      const clientName = res.data.client_name || activeAppointment.client_name || selectedClientInfo?.name || 'Cliente';
       let salonName = 'Bruno Melito Hair';
       let reviewLink = '';
       try {
@@ -361,7 +362,7 @@ export default function EditAppointmentDialog({
         onThankYou({
           clientName,
           clientPhone,
-          amount: calculateFinalAmount(),
+          amount: finalAmount,
           salonName,
           reviewLink,
           pointsEarned,

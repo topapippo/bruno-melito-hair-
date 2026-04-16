@@ -8,6 +8,15 @@ import { Database, Download, Users, Calendar, CreditCard, FileSpreadsheet, Check
 import { toast } from 'sonner';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const BACKUP_STALE_MS = 1000 * 60 * 60 * 24;
+
+const getBackupState = (status) => {
+  if (!status || !status.exists) return 'missing';
+  if (!status.backup_date) return 'missing';
+  const lastBackup = Date.parse(status.backup_date);
+  if (Number.isNaN(lastBackup)) return 'missing';
+  return Date.now() - lastBackup > BACKUP_STALE_MS ? 'stale' : 'fresh';
+};
 
 export default function BackupPage() {
   const [stats, setStats] = useState({ clients: 0, appointments: 0, payments: 0, expenses: 0, services: 0 });
@@ -15,6 +24,7 @@ export default function BackupPage() {
   const [backupRunning, setBackupRunning] = useState(false);
   const [backupStatus, setBackupStatus] = useState({ exists: false, size_kb: 0, backup_date: null, last_modified: null });
   const [askSaveOnClose, setAskSaveOnClose] = useState(false);
+  const [backupState, setBackupState] = useState('missing');
 
   useEffect(() => {
     fetchStats();
@@ -22,14 +32,9 @@ export default function BackupPage() {
   }, []);
 
   useEffect(() => {
-    const shouldPrompt = () => {
-      if (!backupStatus.exists) return true;
-      if (!backupStatus.backup_date) return true;
-      const lastBackup = Date.parse(backupStatus.backup_date);
-      if (Number.isNaN(lastBackup)) return true;
-      return Date.now() - lastBackup > 1000 * 60 * 60 * 24;
-    };
-    setAskSaveOnClose(shouldPrompt());
+    const state = getBackupState(backupStatus);
+    setBackupState(state);
+    setAskSaveOnClose(state !== 'fresh');
   }, [backupStatus]);
 
   useEffect(() => {
@@ -53,7 +58,7 @@ export default function BackupPage() {
         api.get(`${API}/appointments`),
         api.get(`${API}/services`),
         api.get(`${API}/payments?start=2000-01-01&end=2100-12-31`),
-        api.get(`${API}/expenses`)
+        api.get(`${API}/expenses`),
       ]);
       setStats({
         clients: clients.data.length,
@@ -72,7 +77,7 @@ export default function BackupPage() {
   const fetchBackupStatus = async () => {
     try {
       const res = await api.get(`${API}/backup/status`);
-      setBackupStatus(res.data);
+      setBackupStatus(res.data || {});
     } catch (err) {
       console.error(err);
     }
@@ -82,8 +87,9 @@ export default function BackupPage() {
     setBackupRunning(true);
     try {
       const res = await api.post(`${API}/backup/run`);
-      toast.success(res.data.message || 'Backup aggiornato');
+      toast.success(res.data?.message || 'Backup aggiornato');
       await fetchBackupStatus();
+      setAskSaveOnClose(false);
     } catch (err) {
       toast.error('Errore durante l’aggiornamento del backup');
       console.error(err);
@@ -108,6 +114,18 @@ export default function BackupPage() {
       toast.error('Errore nel download del backup');
       console.error(err);
     }
+  };
+
+  const backupStateLabel = () => {
+    if (backupState === 'fresh') return 'Backup aggiornato';
+    if (backupState === 'stale') return 'Backup obsoleto';
+    return 'Backup mancante';
+  };
+
+  const backupStateClasses = () => {
+    if (backupState === 'fresh') return 'text-emerald-100';
+    if (backupState === 'stale') return 'text-yellow-100';
+    return 'text-red-100';
   };
 
   return (
@@ -169,7 +187,7 @@ export default function BackupPage() {
                   <div className="text-left text-sm text-white/80">
                     <p>Ultimo backup: {backupStatus.backup_date || 'Nessuno'}</p>
                     <p>Dimensione: {backupStatus.exists ? `${backupStatus.size_kb} KB` : 'N/D'}</p>
-                    <p>File aggiornato: {backupStatus.exists ? 'Sì' : 'No'}</p>
+                    <p>Stato backup: <span className={backupStateClasses()}>{backupStateLabel()}</span></p>
                     {askSaveOnClose && (
                       <p className="mt-2 text-yellow-100 font-semibold">Alla chiusura della pagina ti verrà chiesto di aggiornare il backup se non è recente.</p>
                     )}

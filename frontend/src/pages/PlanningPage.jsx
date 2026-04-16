@@ -3,7 +3,7 @@ import api from '../lib/api';
 import Layout from '../components/Layout';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ChevronLeft, ChevronRight, Plus, CalendarDays, CheckCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, CalendarDays, CheckCircle, RefreshCcw } from 'lucide-react';
 import { format, addDays, subDays, startOfWeek, endOfWeek, addWeeks, subWeeks, startOfMonth, endOfMonth, addMonths, subMonths, eachDayOfInterval } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -53,6 +53,8 @@ export default function PlanningPage() {
   const [weekAppointments, setWeekAppointments] = useState({});
   const [monthAppointments, setMonthAppointments] = useState({});
   const [blockedSlots, setBlockedSlots] = useState([]);
+  const [selectedOperatorId, setSelectedOperatorId] = useState('');
+  const [selectedServiceId, setSelectedServiceId] = useState('');
 
   // Search
   const [highlightedClientId, setHighlightedClientId] = useState(null);
@@ -220,6 +222,30 @@ export default function PlanningPage() {
     setMonthAppointments(results);
   };
 
+  const filteredAppointments = appointments
+    .filter((apt) => !selectedOperatorId || apt.operator_id === selectedOperatorId)
+    .filter((apt) => !selectedServiceId || (apt.services || []).some((service) => service.id === selectedServiceId));
+
+  const filteredWeekAppointments = Object.fromEntries(
+    Object.entries(weekAppointments).map(([date, apts]) => [
+      date,
+      apts
+        .filter((apt) => !selectedOperatorId || apt.operator_id === selectedOperatorId)
+        .filter((apt) => !selectedServiceId || (apt.services || []).some((service) => service.id === selectedServiceId)),
+    ])
+  );
+
+  const filteredMonthAppointments = Object.fromEntries(
+    Object.entries(monthAppointments).map(([date, apts]) => [
+      date,
+      apts
+        .filter((apt) => !selectedOperatorId || apt.operator_id === selectedOperatorId)
+        .filter((apt) => !selectedServiceId || (apt.services || []).some((service) => service.id === selectedServiceId)),
+    ])
+  );
+
+  const filteredColumns = selectedOperatorId ? operators.filter((op) => op.id === selectedOperatorId) : operators;
+
   const refreshAll = () => {
     fetchData();
     if (viewMode === 'week') fetchWeekData();
@@ -360,9 +386,9 @@ export default function PlanningPage() {
   const getOperatorAppointments = (operatorId) => {
     if (operatorId === null) {
       const activeOpIds = operators.map(op => op.id);
-      return appointments.filter(apt => !apt.operator_id || !activeOpIds.includes(apt.operator_id));
+      return filteredAppointments.filter(apt => !apt.operator_id || !activeOpIds.includes(apt.operator_id));
     }
-    return appointments.filter(apt => apt.operator_id === operatorId);
+    return filteredAppointments.filter(apt => apt.operator_id === operatorId);
   };
 
   const isSlotOccupied = (time, operatorId) => {
@@ -377,7 +403,7 @@ export default function PlanningPage() {
     });
   };
 
-  const columns = operators.map(op => ({ id: op.id, name: op.name, color: op.color }));
+  const columns = filteredColumns.map(op => ({ id: op.id, name: op.name, color: op.color }));
 
   // --- Render ---
   return (
@@ -463,6 +489,42 @@ export default function PlanningPage() {
             >
               <Plus className="w-4 h-4 mr-1" /> Nuovo
             </Button>
+            <Button
+              variant="outline"
+              onClick={refreshAll}
+              className="border-[#F0E6DC] text-[#2D1B14] h-10 px-4"
+              data-testid="refresh-planning-btn"
+            >
+              <RefreshCcw className="w-4 h-4 mr-1" /> Aggiorna
+            </Button>
+            <div className="flex items-center gap-2 border border-[#F0E6DC] rounded-xl px-3 h-10 bg-white">
+              <span className="text-sm text-slate-500">Operatore</span>
+              <select
+                className="bg-transparent outline-none text-sm text-slate-900"
+                value={selectedOperatorId}
+                onChange={(e) => setSelectedOperatorId(e.target.value)}
+                data-testid="operator-filter-select"
+              >
+                <option value="">Tutti</option>
+                {operators.map((op) => (
+                  <option key={op.id} value={op.id}>{op.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2 border border-[#F0E6DC] rounded-xl px-3 h-10 bg-white">
+              <span className="text-sm text-slate-500">Servizio</span>
+              <select
+                className="bg-transparent outline-none text-sm text-slate-900"
+                value={selectedServiceId}
+                onChange={(e) => setSelectedServiceId(e.target.value)}
+                data-testid="service-filter-select"
+              >
+                <option value="">Tutti</option>
+                {services.map((service) => (
+                  <option key={service.id} value={service.id}>{service.name}</option>
+                ))}
+              </select>
+            </div>
             <PlanningSearch
               onHighlightClient={(clientId) => {
                 setHighlightedClientId(clientId);
@@ -532,8 +594,8 @@ export default function PlanningPage() {
         ) : viewMode === 'week' ? (
           <WeekView
             selectedDate={selectedDate}
-            weekAppointments={weekAppointments}
-            operators={operators}
+            weekAppointments={filteredWeekAppointments}
+            operators={filteredColumns}
             blockedSlotsMap={{}}
             onAddAppointment={openNewAppointmentForDate}
             onDayClick={(day) => { setSelectedDate(day); setViewMode('day'); }}
@@ -544,7 +606,7 @@ export default function PlanningPage() {
         ) : (
           <MonthView
             selectedDate={selectedDate}
-            monthAppointments={monthAppointments}
+            monthAppointments={filteredMonthAppointments}
             onDayClick={(day) => { setSelectedDate(day); setViewMode('day'); }}
           />
         )}
