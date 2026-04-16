@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../lib/api';
-import ExcelJS from 'exceljs/dist/exceljs.min.js';
+import * as XLSX from 'xlsx';
 import Layout from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -157,51 +157,70 @@ export default function ClientsPage() {
   };
 
   // Excel Import Functions
-  const handleFileSelect = async (e) => {
+  const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    // Reset file input subito
     if (fileInputRef.current) fileInputRef.current.value = '';
 
-    try {
-      const buffer = await file.arrayBuffer();
-      const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.load(buffer);
-
-      const worksheet = workbook.worksheets[0];
-      if (!worksheet) { toast.error('Foglio Excel vuoto o non leggibile'); return; }
-
-      const clients = [];
-      worksheet.eachRow((row, rowNumber) => {
-        const cells = row.values.slice(1); // eachRow usa indice 1-based, slice(1) rimuove il primo undefined
-        if (!cells || cells.length === 0) return;
-
-        const name = String(cells[0] ?? '').trim();
-        if (!name || ['nome', 'cliente', 'name'].includes(name.toLowerCase())) return;
-
-        let phone = '', email = '', notes = '';
-        for (let j = 1; j < cells.length; j++) {
-          const val = String(cells[j] ?? '').trim();
-          if (!val) continue;
-          if (val.includes('@')) {
-            email = val;
-          } else if (/^[\d\s+\-.]+$/.test(val) && val.length >= 8) {
-            phone = val;
-          } else {
-            notes = notes ? `${notes}, ${val}` : val;
-          }
-        }
-        clients.push({ name, phone, email, notes });
-      });
-
-      if (clients.length === 0) { toast.error('Nessun cliente trovato nel file'); return; }
-      setImportPreview(clients);
-      setImportDialogOpen(true);
-    } catch (err) {
-      console.error('Error parsing Excel:', err);
-      toast.error('Errore nella lettura del file Excel');
+    // Limite dimensione: 5MB
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File troppo grande (max 5MB)');
+      return;
     }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = new Uint8Array(event.target.result);
+        // Legge solo dati, nessun macro/formula eseguita
+        const workbook = XLSX.read(data, { type: 'array', cellFormulas: false, cellHTML: false });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+        if (!jsonData || jsonData.length === 0) {
+          toast.error('Foglio Excel vuoto');
+          return;
+        }
+
+        const clients = [];
+        for (let i = 0; i < jsonData.length; i++) {
+          const row = jsonData[i];
+          if (!row || row.length === 0) continue;
+
+          // Sanitizza: converte in stringa e rimuove caratteri di controllo
+          const sanitize = (v) => String(v ?? '').replace(/[\x00-\x1F\x7F]/g, '').trim();
+
+          const name = sanitize(row[0]);
+          if (!name || ['nome', 'cliente', 'name', 'cognome'].includes(name.toLowerCase())) continue;
+          // Limite lunghezza per prevenire abusi
+          if (name.length > 100) continue;
+
+          let phone = '', email = '', notes = '';
+          for (let j = 1; j < row.length; j++) {
+            const val = sanitize(row[j]);
+            if (!val) continue;
+            if (val.includes('@') && val.length <= 254) {
+              email = val;
+            } else if (/^[\d\s+\-.()]+$/.test(val) && val.length >= 6 && val.length <= 20) {
+              phone = val;
+            } else if (notes.length < 200) {
+              notes = notes ? `${notes}, ${val}` : val;
+            }
+          }
+          clients.push({ name, phone, email, notes });
+        }
+
+        if (clients.length === 0) { toast.error('Nessun cliente trovato nel file'); return; }
+        if (clients.length > 500) { toast.warning(`File grande: verranno importati solo i primi 500 clienti`); }
+        setImportPreview(clients.slice(0, 500));
+        setImportDialogOpen(true);
+      } catch (err) {
+        console.error('Error parsing Excel:', err);
+        toast.error('Errore nella lettura del file. Verifica che sia un file Excel (.xlsx) valido.');
+      }
+    };
+    reader.readAsArrayBuffer(file);
   };
 
   const handleImport = async () => {
