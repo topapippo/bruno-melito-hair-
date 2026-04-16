@@ -19,22 +19,32 @@ export default function DailySummaryPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [error, setError] = useState('');
 
   useEffect(() => { fetchSummary(); }, [selectedDate]);
 
+  const isValidDateString = (value) => {
+    return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(new Date(`${value}T00:00:00`).getTime());
+  };
+
   const fetchSummary = async () => {
     setLoading(true);
+    setError('');
     try {
-      const safeDate = selectedDate && !Number.isNaN(new Date(selectedDate).getTime())
+      const safeDate = isValidDateString(selectedDate)
         ? selectedDate
         : format(new Date(), 'yyyy-MM-dd');
-      const res = await api.get(`${API}/stats/daily-summary?date=${safeDate}`);
+      const res = await api.get(`${API}/stats/daily-summary?date=${encodeURIComponent(safeDate)}`);
       setData(res.data);
       if (!selectedDate || selectedDate !== safeDate) {
         setSelectedDate(safeDate);
       }
+      if (res.data?.date && res.data.date !== safeDate) {
+        setError('Il riepilogo restituito non corrisponde alla data selezionata.');
+      }
     } catch (err) {
       console.error(err);
+      setError('Errore durante il caricamento del riepilogo giornaliero.');
     } finally {
       setLoading(false);
     }
@@ -73,6 +83,9 @@ export default function DailySummaryPage() {
             <p className="text-[#7C5C4A] mt-1  capitalize">
               {format(validSelectedDate, "EEEE dd/MM/yy", { locale: it })}
             </p>
+            {data?.date && data.date !== selectedDate && (
+              <p className="text-sm text-red-500 mt-1">Dati caricati per: {data.date}</p>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="icon" onClick={prevDay} className="border-[#F0E6DC]" data-testid="prev-day-btn">
@@ -86,6 +99,12 @@ export default function DailySummaryPage() {
             </Button>
           </div>
         </div>
+
+        {error && (
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700">
+            {error}
+          </div>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
