@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../lib/api';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs/dist/exceljs.min.js';
 import Layout from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -55,7 +55,7 @@ export default function ClientsPage() {
     phone: '',
     email: '',
     notes: '',
-    sms_reminder: true
+    send_sms_reminders: true
   });
 
   useEffect(() => {
@@ -92,7 +92,7 @@ export default function ClientsPage() {
       }
       setDialogOpen(false);
       setEditingClient(null);
-      setFormData({ name: '', phone: '', email: '', notes: '', sms_reminder: true });
+      setFormData({ name: '', phone: '', email: '', notes: '', send_sms_reminders: true });
       fetchClients();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Errore nel salvataggio');
@@ -108,7 +108,7 @@ export default function ClientsPage() {
       phone: client.phone,
       email: client.email,
       notes: client.notes,
-      sms_reminder: client.sms_reminder !== false
+      send_sms_reminders: client.send_sms_reminders !== false
     });
     setDialogOpen(true);
   };
@@ -128,7 +128,7 @@ export default function ClientsPage() {
 
   const openNewDialog = () => {
     setEditingClient(null);
-    setFormData({ name: '', phone: '', email: '', notes: '', sms_reminder: true });
+    setFormData({ name: '', phone: '', email: '', notes: '', send_sms_reminders: true });
     setDialogOpen(true);
   };
 
@@ -157,62 +157,50 @@ export default function ClientsPage() {
   };
 
   // Excel Import Functions
-  const handleFileSelect = (e) => {
+  const handleFileSelect = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const data = new Uint8Array(event.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-        
-        // Parse rows (skip header if present)
-        const clients = [];
-        for (let i = 0; i < jsonData.length; i++) {
-          const row = jsonData[i];
-          if (!row || row.length === 0) continue;
-          
-          // Try to find name in first non-empty column
-          const name = String(row[0] || '').trim();
-          if (!name || name.toLowerCase() === 'nome' || name.toLowerCase() === 'cliente') continue;
-          
-          // Look for phone, email, notes in other columns
-          let phone = '';
-          let email = '';
-          let notes = '';
-          
-          for (let j = 1; j < row.length; j++) {
-            const val = String(row[j] || '').trim();
-            if (!val) continue;
-            
-            if (val.includes('@')) {
-              email = val;
-            } else if (/^[\d\s\+\-\.]+$/.test(val) && val.length >= 8) {
-              phone = val;
-            } else {
-              notes = notes ? `${notes}, ${val}` : val;
-            }
+    // Reset file input subito
+    if (fileInputRef.current) fileInputRef.current.value = '';
+
+    try {
+      const buffer = await file.arrayBuffer();
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(buffer);
+
+      const worksheet = workbook.worksheets[0];
+      if (!worksheet) { toast.error('Foglio Excel vuoto o non leggibile'); return; }
+
+      const clients = [];
+      worksheet.eachRow((row, rowNumber) => {
+        const cells = row.values.slice(1); // eachRow usa indice 1-based, slice(1) rimuove il primo undefined
+        if (!cells || cells.length === 0) return;
+
+        const name = String(cells[0] ?? '').trim();
+        if (!name || ['nome', 'cliente', 'name'].includes(name.toLowerCase())) return;
+
+        let phone = '', email = '', notes = '';
+        for (let j = 1; j < cells.length; j++) {
+          const val = String(cells[j] ?? '').trim();
+          if (!val) continue;
+          if (val.includes('@')) {
+            email = val;
+          } else if (/^[\d\s+\-.]+$/.test(val) && val.length >= 8) {
+            phone = val;
+          } else {
+            notes = notes ? `${notes}, ${val}` : val;
           }
-          
-          clients.push({ name, phone, email, notes });
         }
-        
-        setImportPreview(clients);
-        setImportDialogOpen(true);
-      } catch (err) {
-        console.error('Error parsing Excel:', err);
-        toast.error('Errore nella lettura del file Excel');
-      }
-    };
-    reader.readAsArrayBuffer(file);
-    
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+        clients.push({ name, phone, email, notes });
+      });
+
+      if (clients.length === 0) { toast.error('Nessun cliente trovato nel file'); return; }
+      setImportPreview(clients);
+      setImportDialogOpen(true);
+    } catch (err) {
+      console.error('Error parsing Excel:', err);
+      toast.error('Errore nella lettura del file Excel');
     }
   };
 
@@ -227,7 +215,7 @@ export default function ClientsPage() {
           phone: c.phone || '',
           email: c.email || '',
           notes: c.notes || '',
-          sms_reminder: true
+          send_sms_reminders: true
         }))
       });
       
@@ -359,7 +347,7 @@ export default function ClientsPage() {
                       <div className="flex items-center gap-2 text-[#7C5C4A]">
                         <Phone className="w-4 h-4" />
                         <span>{client.phone}</span>
-                        {client.sms_reminder && (
+                        {client.send_sms_reminders && (
                           <MessageSquare className="w-3 h-3 text-[#789F8A]" title="SMS attivi" />
                         )}
                       </div>
@@ -497,8 +485,8 @@ export default function ClientsPage() {
                   <Label className="font-normal">Promemoria SMS</Label>
                 </div>
                 <Switch
-                  checked={formData.sms_reminder}
-                  onCheckedChange={(checked) => setFormData({ ...formData, sms_reminder: checked })}
+                  checked={formData.send_sms_reminders}
+                  onCheckedChange={(checked) => setFormData({ ...formData, send_sms_reminders: checked })}
                   className="data-[state=checked]:bg-[#789F8A]"
                 />
               </div>

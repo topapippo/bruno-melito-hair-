@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Request
 from fastapi.responses import Response, FileResponse
+from pydantic import BaseModel
 from datetime import datetime, timezone, timedelta
 import uuid
 import os
@@ -99,9 +100,6 @@ def put_object(path: str, data: bytes, content_type: str) -> dict:
     # Fallback to MongoDB storage (survives Render redeploys)
     import base64
     filename = path.split("/")[-1]
-    from database import db as sync_db
-    import asyncio
-    loop = asyncio.get_event_loop()
     b64_data = base64.b64encode(data).decode('utf-8')
     # Store will happen in the upload handler via db directly
     return {"path": f"mongo://{filename}", "size": len(data), "_mongo_data": b64_data, "_content_type": content_type}
@@ -116,9 +114,6 @@ def get_object(path: str):
         filename = path.replace("mongo://", "").replace("local://", "")
         file_id = filename.split(".")[0]
         
-        # Try to get from MongoDB first (for mongo:// and migrated local:// files)
-        import asyncio
-        loop = asyncio.get_event_loop()
         # Use sync pymongo for this
         from database import sync_db
         record = sync_db.website_files.find_one({"id": file_id})
@@ -483,8 +478,13 @@ async def add_service_to_appointment(appointment_id: str, data: dict):
 
 
 
-@router.get("/public/my-appointments")
-async def public_lookup_appointments(phone: str):
+class _PhoneLookupRequest(BaseModel):
+    phone: str
+
+
+@router.post("/public/my-appointments")
+async def public_lookup_appointments(data: _PhoneLookupRequest):
+    phone = data.phone
     user = await db.users.find_one({"email": "admin@brunomelito.it"}, {"_id": 0})
     if not user:
         user = await db.users.find_one({}, {"_id": 0})

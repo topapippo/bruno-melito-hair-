@@ -31,7 +31,7 @@ export default function BookingForm({
     if (!phone || phone.length < 6) { toast.error('Inserisci il tuo numero di telefono'); return; }
     setLoadingHistory(true);
     try {
-      const res = await api.get(`${API}/public/my-appointments?phone=${encodeURIComponent(phone)}`);
+      const res = await api.post(`${API}/public/my-appointments`, { phone });
       const data = res.data;
       const past = (data.past || []).slice(0, 10);
       setClientHistory(past);

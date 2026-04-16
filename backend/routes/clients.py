@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from typing import List
 from datetime import datetime, timezone, timedelta
+from urllib.parse import quote
 import uuid
 import logging
 
@@ -208,7 +209,8 @@ async def get_client_whatsapp(client_id: str, current_user: dict = Depends(get_c
         clean = clean[2:]
     if not clean.startswith("39"):
         clean = "39" + clean
-    return {"url": f"https://wa.me/{clean}?text=Ciao {client.get('name', '')}!"}
+    greeting = quote(f"Ciao {client.get('name', '')}!")
+    return {"url": f"https://wa.me/{clean}?text={greeting}"}
 
 
 @router.delete("/clients/{client_id}")

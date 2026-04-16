@@ -43,3 +43,5 @@ api.interceptors.response.use(
 
 export default api;
 export { API_BASE };
+// Alias conveniente: import { API } from '../lib/api' invece di ridefinirlo in ogni pagina
+export const API = API_BASE;

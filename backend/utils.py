@@ -17,7 +17,10 @@ if TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN:
 def calculate_end_time(start_time: str, duration_minutes: int) -> str:
     hours, minutes = map(int, start_time.split(':'))
     total_minutes = hours * 60 + minutes + duration_minutes
-    end_hours = (total_minutes // 60) % 24
+    # Cap a 23:59 se supera la mezzanotte invece di riportare a 00:xx
+    if total_minutes >= 24 * 60:
+        return "23:59"
+    end_hours = total_minutes // 60
     end_minutes = total_minutes % 60
     return f"{end_hours:02d}:{end_minutes:02d}"
 

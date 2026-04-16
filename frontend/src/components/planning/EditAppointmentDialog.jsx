@@ -116,8 +116,9 @@ export default function EditAppointmentDialog({
     if (open && appointment) {
       setLocalAppointment(appointment);
       setEditDate(appointment.date);
+      const appointmentServices = Array.isArray(appointment.services) ? appointment.services : [];
       setFormData({
-        service_ids: appointment.services.map(s => s.id),
+        service_ids: appointmentServices.map(s => s.id),
         operator_id: appointment.operator_id || '',
         time: appointment.time,
         notes: appointment.notes || ''
@@ -194,7 +195,8 @@ export default function EditAppointmentDialog({
   const calculateTotal = () => {
     const activeAppointment = localAppointment || appointment;
     if (!activeAppointment) return 0;
-    return activeAppointment.services.reduce((sum, s) => sum + (s.price || 0), 0);
+    const servicesList = Array.isArray(activeAppointment.services) ? activeAppointment.services : [];
+    return servicesList.reduce((sum, s) => sum + (s.price || 0), 0);
   };
 
   const calculateDiscount = () => {

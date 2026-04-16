@@ -6,13 +6,11 @@ import bcrypt
 import os
 import sys
 
-# ── JWT Secret: obbligatorio in produzione, fallback SOLO in sviluppo ──────────
+# ── JWT Secret: obbligatorio sempre ───────────────────────────────────────────
 JWT_SECRET = os.environ.get('JWT_SECRET')
 if not JWT_SECRET:
-    if os.environ.get('ENV', 'development') == 'production':
-        print("ERRORE FATALE: JWT_SECRET non è impostato in produzione!", file=sys.stderr)
-        sys.exit(1)
-    JWT_SECRET = 'dev-only-insecure-secret-change-in-production'
+    print("ERRORE FATALE: la variabile d'ambiente JWT_SECRET non è impostata.", file=sys.stderr)
+    sys.exit(1)
 
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 24

@@ -197,14 +197,16 @@ export default function PlanningPage() {
     const ws = startOfWeek(selectedDate, { weekStartsOn: 1 });
     const we = endOfWeek(selectedDate, { weekStartsOn: 1 });
     const days = eachDayOfInterval({ start: ws, end: we });
+    const startDate = format(ws, 'yyyy-MM-dd');
+    const endDate = format(we, 'yyyy-MM-dd');
     const results = {};
-    await Promise.all(days.map(async (day) => {
-      const dateStr = format(day, 'yyyy-MM-dd');
-      try {
-        const res = await api.get(`${API}/appointments?date=${dateStr}`);
-        results[dateStr] = res.data;
-      } catch { results[dateStr] = []; }
-    }));
+    days.forEach((day) => { results[format(day, 'yyyy-MM-dd')] = []; });
+    try {
+      const res = await api.get(`${API}/appointments?start_date=${startDate}&end_date=${endDate}`);
+      (res.data || []).forEach((apt) => {
+        if (results[apt.date] !== undefined) results[apt.date].push(apt);
+      });
+    } catch { /* silent */ }
     setWeekAppointments(results);
   };
 
@@ -212,14 +214,16 @@ export default function PlanningPage() {
     const ms = startOfMonth(selectedDate);
     const me = endOfMonth(selectedDate);
     const days = eachDayOfInterval({ start: ms, end: me });
+    const startDate = format(ms, 'yyyy-MM-dd');
+    const endDate = format(me, 'yyyy-MM-dd');
     const results = {};
-    await Promise.all(days.map(async (day) => {
-      const dateStr = format(day, 'yyyy-MM-dd');
-      try {
-        const res = await api.get(`${API}/appointments?date=${dateStr}`);
-        results[dateStr] = res.data;
-      } catch { results[dateStr] = []; }
-    }));
+    days.forEach((day) => { results[format(day, 'yyyy-MM-dd')] = []; });
+    try {
+      const res = await api.get(`${API}/appointments?start_date=${startDate}&end_date=${endDate}`);
+      (res.data || []).forEach((apt) => {
+        if (results[apt.date] !== undefined) results[apt.date].push(apt);
+      });
+    } catch { /* silent */ }
     setMonthAppointments(results);
   };
 

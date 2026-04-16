@@ -33,7 +33,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Calendar, Plus, Clock, Loader2, CheckCircle, XCircle, Trash2, MessageSquare, Send, UserCircle } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -99,19 +99,20 @@ export default function AppointmentsPage() {
         if (mbhs) setFormData(prev => ({ ...prev, operator_id: mbhs.id }));
       }
       
-      // Fetch upcoming 7 days of appointments
-      const upcoming = [];
-      for (let i = 1; i <= 7; i++) {
-        const d = new Date(selectedDate);
-        d.setDate(d.getDate() + i);
-        const ds = format(d, 'yyyy-MM-dd');
-        try {
-          const res = await api.get(`${API}/appointments?date=${ds}`);
-          if (res.data.length > 0) {
-            upcoming.push({ date: ds, dateObj: d, appointments: res.data });
-          }
-        } catch (e) { /* skip */ }
-      }
+      // Fetch upcoming 7 days with a single range query
+      const startDate = format(addDays(selectedDate, 1), 'yyyy-MM-dd');
+      const endDate = format(addDays(selectedDate, 7), 'yyyy-MM-dd');
+      const upcomingMap = {};
+      try {
+        const res = await api.get(`${API}/appointments?start_date=${startDate}&end_date=${endDate}`);
+        (res.data || []).forEach((apt) => {
+          if (!upcomingMap[apt.date]) upcomingMap[apt.date] = [];
+          upcomingMap[apt.date].push(apt);
+        });
+      } catch (e) { /* skip */ }
+      const upcoming = Object.entries(upcomingMap).map(([ds, appointments]) => ({
+        date: ds, dateObj: new Date(ds + 'T00:00:00'), appointments,
+      })).sort((a, b) => a.date.localeCompare(b.date));
       setUpcomingAppointments(upcoming);
     } catch (err) {
       console.error('Error fetching data:', err);

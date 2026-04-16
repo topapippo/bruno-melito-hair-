@@ -39,6 +39,9 @@ async def lifespan(app: FastAPI):
         await db.payments.create_index([("user_id", 1), ("date", 1)])
         await db.loyalty.create_index([("client_id", 1), ("user_id", 1)])
         await db.users.create_index([("email", 1)], unique=True)
+        # Indice TTL: pulisce automaticamente i tentativi di login vecchi dopo 10 minuti
+        await db.login_attempts.create_index([("ip", 1)])
+        await db.login_attempts.create_index("ts", expireAfterSeconds=600)
         logger.info("Indici MongoDB creati/verificati")
     except Exception as e:
         logger.error(f"Errore creazione indici MongoDB: {e}")
@@ -64,18 +67,23 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Migrazione piega->taglio: {e}")
 
-    # Migrazione: Aggiorna premi fedeltà
+    # Migrazione: Aggiunge premi fedeltà mancanti senza sovrascrivere quelli personalizzati
     try:
         from models import DEFAULT_LOYALTY_REWARDS
-        # Rimuovi vecchi premi e inserisci i nuovi per tutti gli utenti
-        users = await db.users.find({}, {"_id": 0, "id": 1}).to_list(100)
-        for user in users:
+        # Usa cursor per gestire più di 100 utenti
+        async for user in db.users.find({}, {"_id": 0, "id": 1}):
             uid = user["id"]
-            await db.loyalty_rewards.delete_many({"user_id": uid})
+            existing_keys = set()
+            async for r in db.loyalty_rewards.find({"user_id": uid}, {"_id": 0, "key": 1}):
+                existing_keys.add(r["key"])
+            inserted = 0
             for key, reward in DEFAULT_LOYALTY_REWARDS.items():
-                doc = {**reward, "key": key, "user_id": uid}
-                await db.loyalty_rewards.insert_one(doc)
-            logger.info(f"Premi fedeltà aggiornati per utente {uid}")
+                if key not in existing_keys:
+                    doc = {**reward, "key": key, "user_id": uid}
+                    await db.loyalty_rewards.insert_one(doc)
+                    inserted += 1
+            if inserted:
+                logger.info(f"Premi fedeltà: aggiunti {inserted} nuovi premi per utente {uid}")
     except Exception as e:
         logger.warning(f"Migrazione premi fedeltà: {e}")
 
@@ -163,7 +171,9 @@ _cors_origins_raw = os.environ.get('CORS_ORIGINS', '')
 if _cors_origins_raw:
     cors_origins = [o.strip() for o in _cors_origins_raw.split(',') if o.strip()]
 else:
-    cors_origins = ["*"]
+    # "*" + allow_credentials=True è vietato dalle specifiche CORS e bloccato dai browser.
+    # In sviluppo usiamo l'origine locale; in produzione impostare CORS_ORIGINS.
+    cors_origins = ["http://localhost:3000"]
 
 app.add_middleware(
     CORSMiddleware,

@@ -19,7 +19,7 @@ export default function MyAppointmentsModal({ onClose, onRebook }) {
     if (!lookupPhone || lookupPhone.length < 6) { toast.error('Inserisci un numero di telefono valido'); return; }
     setLookupLoading(true);
     try {
-      const res = await api.get(`${API}/public/my-appointments?phone=${encodeURIComponent(lookupPhone)}`);
+      const res = await api.post(`${API}/public/my-appointments`, { phone: lookupPhone });
       setMyApptsData(res.data);
       if (!res.data.upcoming?.length && !res.data.history?.length) toast.info('Nessun appuntamento trovato per questo numero');
     } catch { toast.error('Errore nella ricerca'); }

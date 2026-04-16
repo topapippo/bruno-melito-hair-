@@ -1,9 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Request, BackgroundTasks
 from typing import List
-from datetime import datetime, timezone
-from collections import defaultdict
+from datetime import datetime, timezone, timedelta
 import uuid
-import time
 import logging
 
 from database import db
@@ -14,23 +12,32 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# ── Rate limiting semplice in memoria (per brute-force su login) ──────────────
-_login_attempts: dict = defaultdict(list)
+# ── Rate limiting su MongoDB (funziona con Gunicorn multi-worker) ─────────────
 LOGIN_MAX_ATTEMPTS = 10
 LOGIN_WINDOW_SECONDS = 300  # 5 minuti
 
 
-def _check_rate_limit(ip: str):
-    now = time.time()
-    attempts = _login_attempts[ip]
-    # Rimuovi tentativi vecchi
-    _login_attempts[ip] = [t for t in attempts if now - t < LOGIN_WINDOW_SECONDS]
-    if len(_login_attempts[ip]) >= LOGIN_MAX_ATTEMPTS:
+async def _check_rate_limit(ip: str):
+    """Conta i tentativi di login falliti per IP negli ultimi 5 minuti tramite MongoDB.
+    Condiviso tra tutti i worker — resistente a riavvii del server."""
+    window_start = datetime.now(timezone.utc) - timedelta(seconds=LOGIN_WINDOW_SECONDS)
+    count = await db.login_attempts.count_documents({
+        "ip": ip,
+        "ts": {"$gte": window_start.isoformat()}
+    })
+    if count >= LOGIN_MAX_ATTEMPTS:
         raise HTTPException(
             status_code=429,
             detail=f"Troppi tentativi di login. Riprova tra {LOGIN_WINDOW_SECONDS // 60} minuti."
         )
-    _login_attempts[ip].append(now)
+    await db.login_attempts.insert_one({
+        "ip": ip,
+        "ts": datetime.now(timezone.utc).isoformat()
+    })
+    # Pulizia asincrona dei record vecchi (non bloccante)
+    await db.login_attempts.delete_many({
+        "ts": {"$lt": window_start.isoformat()}
+    })
 
 
 # ── Register ──────────────────────────────────────────────────────────────────
@@ -116,8 +123,13 @@ def _infer_category(name: str) -> str:
 
 
 async def _repair_categories(user_id: str):
-    """Background task: fill empty categories on master services AND appointment embedded services."""
+    """Background task: fill empty categories on master services AND appointment embedded services.
+    Viene eseguita una sola volta per utente (flag categories_repaired nel documento utente)."""
     try:
+        user = await db.users.find_one({"id": user_id}, {"_id": 0, "categories_repaired": 1})
+        if user and user.get("categories_repaired"):
+            return  # già eseguita, nessuna azione
+
         # Step 1: Repair master services that have no category (only empty ones)
         master = await db.services.find({"user_id": user_id}, {"_id": 0}).to_list(1000)
         for svc in master:
@@ -141,6 +153,9 @@ async def _repair_categories(user_id: str):
             if updated:
                 await db.appointments.update_one({"id": apt["id"]}, {"$set": {"services": apt["services"]}})
                 patched += 1
+
+        # Segna come completata per non rieseguire ad ogni login
+        await db.users.update_one({"id": user_id}, {"$set": {"categories_repaired": True}})
         logger.info(f"Auto-repair categorie: {patched} appuntamenti aggiornati per user {user_id}")
     except Exception as e:
         logger.error(f"Errore auto-repair categorie: {e}")
@@ -150,7 +165,7 @@ async def _repair_categories(user_id: str):
 @router.post("/auth/login", response_model=TokenResponse)
 async def login(data: UserLogin, request: Request, background_tasks: BackgroundTasks):
     client_ip = request.client.host if request.client else "unknown"
-    _check_rate_limit(client_ip)
+    await _check_rate_limit(client_ip)
 
     user = await db.users.find_one({"email": data.email}, {"_id": 0})
     # Messaggio generico per non rivelare se l'email esiste

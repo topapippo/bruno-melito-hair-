@@ -43,11 +43,11 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
         {"user_id": current_user["id"], "date": {"$gte": first_of_year, "$lte": last_of_year}, "status": "completed"},
         {"_id": 0, "total_price": 1}
     ).to_list(10000)
-    yearly_payments = await db.payments.find(
-        {"user_id": current_user["id"], "date": {"$gte": first_of_year, "$lte": last_of_year}},
-        {"_id": 0, "total_paid": 1}
-    ).to_list(100000)
-    yearly_revenue = sum(p.get("total_paid", 0) for p in yearly_payments)
+    _yearly_agg = await db.payments.aggregate([
+        {"$match": {"user_id": current_user["id"], "date": {"$gte": first_of_year, "$lte": last_of_year}}},
+        {"$group": {"_id": None, "total": {"$sum": "$total_paid"}}}
+    ]).to_list(1)
+    yearly_revenue = _yearly_agg[0]["total"] if _yearly_agg else 0
     next_week = (datetime.now(timezone.utc) + timedelta(days=7)).strftime("%Y-%m-%d")
     upcoming = await db.appointments.find(
         {"user_id": current_user["id"], "date": {"$gte": today, "$lte": next_week}, "status": "scheduled"},

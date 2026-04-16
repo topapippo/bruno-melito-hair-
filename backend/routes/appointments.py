@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
+from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime, timezone, timedelta
 import uuid
@@ -404,38 +405,45 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, current_
         }
         await db.sospesi.insert_one(sospeso_doc)
 
-    # Incrementa total_visits del cliente al momento del checkout
-    if appointment.get("client_id") and appointment["client_id"] not in ("", "generic"):
+    # Incrementa total_visits solo se l'appuntamento non era già completato (evita doppio incremento)
+    if appointment.get("client_id") and appointment["client_id"] not in ("", "generic") \
+            and appointment.get("status") != "completed":
         await db.clients.update_one(
             {"id": appointment["client_id"], "user_id": current_user["id"]},
             {"$inc": {"total_visits": 1}}
         )
 
     if card and prepaid_deduction is not None:
-        new_remaining = round(card["remaining_value"] - prepaid_deduction, 2)
         new_used = card.get("used_services", 0) + len(appointment.get("services", []))
         transaction = {
             "date": datetime.now(timezone.utc).isoformat(),
             "description": f"Servizi: {', '.join([s['name'] for s in appointment['services']])}",
             "amount": prepaid_deduction, "appointment_id": appointment_id
         }
-        update_fields = {"remaining_value": new_remaining, "used_services": new_used}
         total_svc = card.get("total_services")
-        if new_remaining <= 0 or (total_svc and new_used >= total_svc):
-            update_fields["active"] = False
-        await db.cards.update_one(
-            {"id": card["id"]},
-            {"$set": update_fields, "$push": {"transactions": transaction}}
+        # Update atomico: scala il credito solo se ancora sufficiente (previene race condition)
+        card_update_result = await db.cards.update_one(
+            {"id": card["id"], "remaining_value": {"$gte": prepaid_deduction}},
+            {
+                "$inc": {"remaining_value": -prepaid_deduction, "used_services": len(appointment.get("services", []))},
+                "$push": {"transactions": transaction}
+            }
         )
+        if card_update_result.modified_count == 0:
+            raise HTTPException(status_code=400, detail="Credito insufficiente o carta modificata da un'altra operazione")
+        new_remaining = round(card["remaining_value"] - prepaid_deduction, 2)
+        if new_remaining <= 0 or (total_svc and new_used >= total_svc):
+            await db.cards.update_one({"id": card["id"]}, {"$set": {"active": False}})
+
+    # Legge il saldo PRIMA di qualsiasi modifica per calcoli corretti
+    loyalty_before = await get_or_create_loyalty(appointment["client_id"], current_user["id"])
+    points_before = loyalty_before["points"]
 
     if data.loyalty_points_used > 0:
         await db.loyalty.update_one(
             {"client_id": appointment["client_id"], "user_id": current_user["id"]},
             {"$inc": {"points": -data.loyalty_points_used}}
         )
-
-    loyalty_before = await get_or_create_loyalty(appointment["client_id"], current_user["id"])
-    points_before = loyalty_before["points"]
     points_earned = 0
 
     # Punti fedeltà: escludi se usato card, promo, o servizi abbonamento
@@ -562,16 +570,14 @@ async def get_client_sospesi(client_id: str, current_user: dict = Depends(get_cu
     return {"sospesi": sospesi, "total": total}
 
 
+class _SettleData(BaseModel):
+    payment_method: str = "cash"
+
+
 @router.post("/sospesi/{sospeso_id}/settle")
-async def settle_sospeso(sospeso_id: str, current_user: dict = Depends(get_current_user)):
-    """Salda un sospeso."""
-    from pydantic import BaseModel
-
-    class SettleData(BaseModel):
-        payment_method: str = "cash"
-
-    # Parse body manually
-    return await _settle_sospeso_impl(sospeso_id, "cash", current_user)
+async def settle_sospeso(sospeso_id: str, data: _SettleData = _SettleData(), current_user: dict = Depends(get_current_user)):
+    """Salda un sospeso (metodo di pagamento nel body JSON, default: cash)."""
+    return await _settle_sospeso_impl(sospeso_id, data.payment_method, current_user)
 
 
 @router.post("/sospesi/{sospeso_id}/settle/{method}")

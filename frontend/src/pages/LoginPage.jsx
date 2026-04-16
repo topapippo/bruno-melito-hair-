@@ -28,8 +28,8 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      await login(loginData.email, loginData.password);
-      toast.success('Ciao Bruno, buon lavoro!');
+      const userData = await login(loginData.email, loginData.password);
+      toast.success(`Ciao ${userData?.name || 'benvenuto'}, buon lavoro!`);
       navigate('/');
     } catch (err) {
       if (err.code === 'ECONNABORTED' || !err.response) {
