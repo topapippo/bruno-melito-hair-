@@ -356,6 +356,8 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, current_
     }
     card = None
     prepaid_deduction = None
+    if data.payment_method == "prepaid" and not data.card_id:
+        raise HTTPException(status_code=400, detail="Carta prepagata obbligatoria per il pagamento prepagato")
     if data.payment_method == "prepaid" and data.card_id:
         card = await db.cards.find_one({"id": data.card_id, "user_id": current_user["id"], "active": True})
         if not card:

@@ -180,7 +180,7 @@ export default function EditAppointmentDialog({
   }, [editDate, hoursConfig]);
 
   const { slots: editAvailableSlots } = getFilteredSlots(editDate, hoursConfig, blockedSlots);
-  const currentAppointment = localAppointment || appointment;
+  const currentAppointment = localAppointment || appointment || { services: [] };
 
   const toggleService = (serviceId) => {
     setFormData(prev => ({
@@ -290,31 +290,33 @@ export default function EditAppointmentDialog({
   };
 
   const openCheckoutMode = (apt = null) => {
-    const activeAppointment = apt || localAppointment || appointment;
+    const activeAppointment = apt || localAppointment || appointment || { client_id: '', promo_id: '' };
     setCheckoutMode(true);
     if (activeAppointment?.client_id) {
       api.get(`${API}/promotions/check/${activeAppointment.client_id}`)
         .then(res => {
-          setEligiblePromos(res.data);
+          setEligiblePromos(res.data || []);
           // Auto-select promo if pre-selected or saved on appointment
           const targetPromoId = preSelectedPromoId || activeAppointment.promo_id;
           if (targetPromoId) {
-            const savedPromo = res.data.find(p => p.id === targetPromoId);
+            const savedPromo = (res.data || []).find(p => p.id === targetPromoId);
             if (savedPromo) setSelectedPromo(savedPromo);
           }
           if (!preSelectedPromoId && !activeAppointment.promo_id) setOpenCats(prev => ({ ...prev, _editPromos: true }));
         })
-        .catch(() => {});
+        .catch((err) => { console.error('Errore caricamento promozioni checkout:', err); setEligiblePromos([]); });
+    } else {
+      setEligiblePromos([]);
     }
     // Auto-select card if pre-selected or saved on appointment
     const targetCardId = preSelectedCardId || activeAppointment?.card_id;
     if (targetCardId) {
-      const savedCard = clientCards.find(c => c.id === targetCardId && c.remaining_value > 0);
+      const savedCard = (clientCards || []).find(c => c.id === targetCardId && c.remaining_value > 0);
       if (savedCard) {
         setPaymentMethod('prepaid');
         setSelectedCardId(savedCard.id);
       }
-    } else if (clientCards.length > 0) {
+    } else if ((clientCards || []).length > 0) {
       const activeCard = clientCards.find(c => c.remaining_value > 0);
       if (activeCard) {
         setPaymentMethod('prepaid');
@@ -326,14 +328,19 @@ export default function EditAppointmentDialog({
   const handleCheckout = async () => {
     const activeAppointment = localAppointment || appointment;
     if (!activeAppointment) return;
+    if (paymentMethod === 'prepaid' && !selectedCardId) {
+      toast.error('Seleziona una card o abbonamento per il pagamento prepagato');
+      return;
+    }
+    const loyaltyPointsUsed = useLoyaltyPoints ? Math.max(0, clientLoyalty.points || 0) : 0;
+    const finalAmount = calculateFinalAmount();
+    const discountValueNumber = discountType !== 'none' ? Math.max(0, parseFloat(discountValue) || 0) : 0;
     setProcessing(true);
     try {
-      const loyaltyPointsUsed = useLoyaltyPoints ? clientLoyalty.points : 0;
-      const finalAmount = calculateFinalAmount();
       const res = await api.post(`${API}/appointments/${activeAppointment.id}/checkout`, {
         payment_method: paymentMethod,
         discount_type: discountType,
-        discount_value: discountType !== 'none' ? parseFloat(discountValue) || 0 : 0,
+        discount_value: discountValueNumber,
         total_paid: finalAmount,
         card_id: paymentMethod === 'prepaid' ? selectedCardId : null,
         loyalty_points_used: loyaltyPointsUsed,
@@ -383,6 +390,7 @@ export default function EditAppointmentDialog({
         });
       }
     } catch (err) {
+      console.error('Checkout error:', err);
       toast.error(err.response?.data?.detail || 'Errore nel pagamento');
     } finally {
       setProcessing(false);
@@ -392,7 +400,7 @@ export default function EditAppointmentDialog({
   if (!currentAppointment) return null;
 
   const toggleCat = (catKey) => setOpenCats(prev => ({ ...prev, [catKey]: !prev[catKey] }));
-  const selectedServicesInfo = services.filter(s => formData.service_ids.includes(s.id));
+  const selectedServicesInfo = (services || []).filter(s => formData.service_ids.includes(s.id));
   const editTotalPrice = selectedServicesInfo.reduce((sum, s) => sum + (s.price || 0), 0);
   const editTotalDuration = selectedServicesInfo.reduce((sum, s) => sum + (s.duration || 0), 0);
 

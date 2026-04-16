@@ -34,7 +34,7 @@ export default function DailySummaryPage() {
       const safeDate = isValidDateString(selectedDate)
         ? selectedDate
         : format(new Date(), 'yyyy-MM-dd');
-      const res = await api.get(`${API}/stats/daily-summary?date=${encodeURIComponent(safeDate)}`);
+      const res = await api.get(`${API}/stats/daily-summary`, { params: { date: safeDate } });
       setData(res.data);
       if (!selectedDate || selectedDate !== safeDate) {
         setSelectedDate(safeDate);
@@ -43,7 +43,7 @@ export default function DailySummaryPage() {
         setError('Il riepilogo restituito non corrisponde alla data selezionata.');
       }
     } catch (err) {
-      console.error(err);
+      console.error('Daily summary fetch error:', err);
       setError('Errore durante il caricamento del riepilogo giornaliero.');
     } finally {
       setLoading(false);

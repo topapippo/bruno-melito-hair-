@@ -21,6 +21,7 @@ import LoyaltyAlertDialog from '../components/planning/LoyaltyAlertDialog';
 import BlockSlotDialog from '../components/planning/BlockSlotDialog';
 import { OnlineBookingBanner, ReminderBanner, ExpensesBanner } from '../components/planning/PlanningBanners';
 import PlanningSearch from '../components/planning/PlanningSearch';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -633,17 +634,19 @@ export default function PlanningPage() {
           onSuccess={refreshAll}
         />
 
-        <EditAppointmentDialog
-          open={editDialogOpen}
-          onClose={() => { setEditDialogOpen(false); setEditingAppointment(null); }}
-          appointment={editingAppointment}
-          operators={operators}
-          clients={clients}
-          services={services}
-          onSuccess={refreshAll}
-          onLoyaltyAlert={(data) => { setLoyaltyAlertData(data); setLoyaltyAlertOpen(true); }}
-          onThankYou={setThankYouData}
-        />
+        <ErrorBoundary>
+          <EditAppointmentDialog
+            open={editDialogOpen}
+            onClose={() => { setEditDialogOpen(false); setEditingAppointment(null); }}
+            appointment={editingAppointment}
+            operators={operators}
+            clients={clients}
+            services={services}
+            onSuccess={refreshAll}
+            onLoyaltyAlert={(data) => { setLoyaltyAlertData(data); setLoyaltyAlertOpen(true); }}
+            onThankYou={setThankYouData}
+          />
+        </ErrorBoundary>
 
         <RecurringDialog
           open={recurringDialogOpen}

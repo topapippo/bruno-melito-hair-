@@ -71,7 +71,13 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
 
 @router.get("/stats/daily-summary")
 async def get_daily_summary(date: Optional[str] = None, current_user: dict = Depends(get_current_user)):
-    target_date = date or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    if date:
+        try:
+            target_date = datetime.strptime(date.strip()[:10], "%Y-%m-%d").strftime("%Y-%m-%d")
+        except ValueError:
+            target_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    else:
+        target_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     yesterday = (datetime.strptime(target_date, "%Y-%m-%d") - timedelta(days=1)).strftime("%Y-%m-%d")
     today_apts = await db.appointments.find(
         {"user_id": current_user["id"], "date": target_date, "status": {"$ne": "cancelled"}}, {"_id": 0, "user_id": 0}
