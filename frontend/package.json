@@ -61,6 +61,10 @@
     "build": "DISABLE_ESLINT_PLUGIN=true craco build",
     "test": "craco test"
   },
+  "engines": {
+    "node": "18.x",
+    "yarn": "1.22.x"
+  },
   "browserslist": {
     "production": [
       ">0.2%",
