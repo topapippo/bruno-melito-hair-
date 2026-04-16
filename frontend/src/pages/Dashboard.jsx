@@ -334,6 +334,7 @@ export default function Dashboard() {
                     </button>
                   ))}
                 </div>
+              </>
               ) : (
                 <div className="text-center py-10">
                   <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center mx-auto mb-3">
