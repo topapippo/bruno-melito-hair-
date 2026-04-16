@@ -181,7 +181,7 @@ export default function EditAppointmentDialog({
   }, [editDate, hoursConfig]);
 
   const { slots: editAvailableSlots } = getFilteredSlots(editDate, hoursConfig, blockedSlots);
-  const currentAppointment = localAppointment || appointment || { services: [] };
+  const currentAppointment = localAppointment || appointment || { services: [], client_id: '', promo_id: '' };
 
   const toggleService = (serviceId) => {
     setFormData(prev => ({
@@ -193,8 +193,7 @@ export default function EditAppointmentDialog({
   };
 
   const calculateTotal = () => {
-    const activeAppointment = localAppointment || appointment;
-    if (!activeAppointment) return 0;
+    const activeAppointment = localAppointment || appointment || { services: [] };
     const servicesList = Array.isArray(activeAppointment.services) ? activeAppointment.services : [];
     return servicesList.reduce((sum, s) => sum + (s.price || 0), 0);
   };
@@ -406,6 +405,8 @@ export default function EditAppointmentDialog({
   const editTotalPrice = selectedServicesInfo.reduce((sum, s) => sum + (s.price || 0), 0);
   const editTotalDuration = selectedServicesInfo.reduce((sum, s) => sum + (s.duration || 0), 0);
 
+  if (!appointment) return null;
+
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) { resetCheckout(); onClose(); } }}>
       <DialogContent className="sm:max-w-[550px] max-h-[90vh] p-0 flex flex-col overflow-hidden">
@@ -414,7 +415,7 @@ export default function EditAppointmentDialog({
             Modifica Appuntamento
           </DialogTitle>
           <DialogDescription className="text-sm">
-            {appointment.date} alle {appointment.time}
+            {appointment?.date || 'N/A'} alle {appointment?.time || 'N/A'}
           </DialogDescription>
         </DialogHeader>
 
@@ -728,7 +729,7 @@ export default function EditAppointmentDialog({
             </div>
 
             {/* Checkout Section */}
-            {appointment.status === 'completed' ? (
+            {appointment?.status === 'completed' ? (
               <div className="pt-4 border-t-2 border-emerald-300 bg-emerald-50 -mx-5 px-5 pb-4 rounded-b-lg">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
@@ -737,8 +738,8 @@ export default function EditAppointmentDialog({
                   <div>
                     <p className="font-bold text-emerald-800">Pagamento completato</p>
                     <p className="text-sm text-emerald-600">
-                      {appointment.payment_method === 'cash' ? 'Contanti' : appointment.payment_method === 'pos' ? 'POS' : appointment.payment_method === 'sospeso' ? 'Sospeso' : appointment.payment_method === 'card' ? 'Carta' : appointment.payment_method === 'prepaid' ? 'Abb./Prepagata' : appointment.payment_method || 'N/A'}
-                      {appointment.amount_paid ? ` - \u20AC${appointment.amount_paid.toFixed(2)}` : ''}
+                      {appointment?.payment_method === 'cash' ? 'Contanti' : appointment?.payment_method === 'pos' ? 'POS' : appointment?.payment_method === 'sospeso' ? 'Sospeso' : appointment?.payment_method === 'card' ? 'Carta' : appointment?.payment_method === 'prepaid' ? 'Abb./Prepagata' : appointment?.payment_method || 'N/A'}
+                      {appointment?.amount_paid ? ` - \u20AC${appointment.amount_paid.toFixed(2)}` : ''}
                     </p>
                   </div>
                 </div>
