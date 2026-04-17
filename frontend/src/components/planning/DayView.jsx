@@ -187,13 +187,23 @@ export default function DayView({
                         }}
                         title={`Clicca per modificare - ${apt.client_name}`}
                       >
-                        {/* Header: client name + time */}
-                        <div className="flex items-center justify-between px-2 py-1 bg-[#2D1B14]/90 text-white flex-shrink-0" style={{ minHeight: '24px' }}>
+                        {/* Riga 1: nome, note, telefono */}
+                        <div className="flex items-start justify-between px-2 py-1 bg-[#2D1B14]/90 text-white flex-shrink-0" style={{ minHeight: '28px' }}>
                           <div className="flex-1 min-w-0">
-                            <span className="font-bold text-xs truncate block">
-                              {apt.status === 'completed' && '\u2713 '}{apt.client_name}
-                            </span>
-                            <span className="text-[10px] text-white/80">{apt.time} - {apt.end_time}</span>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-bold text-xs leading-tight">
+                                {apt.status === 'completed' && '✓ '}{apt.client_name}
+                              </span>
+                              {apt.notes && (
+                                <span className="text-[10px] text-amber-300 italic truncate max-w-[80px]" title={apt.notes}>
+                                  · {apt.notes}
+                                </span>
+                              )}
+                              {apt.client_phone && (
+                                <span className="text-[10px] text-white/60 truncate">· {apt.client_phone}</span>
+                              )}
+                            </div>
+                            <span className="text-[10px] text-white/60">{apt.time} – {apt.end_time}</span>
                           </div>
                           <button
                             onClick={(e) => { e.stopPropagation(); openRecurringDialog(apt); }}
@@ -204,7 +214,7 @@ export default function DayView({
                             <Repeat className="w-3 h-3" />
                           </button>
                         </div>
-                        {/* Service blocks proportional to duration */}
+                        {/* Riga 2: blocchi servizi colorati */}
                         <div className="flex flex-col flex-1 min-h-0" data-testid={`apt-colors-${apt.id}`}>
                           {apt.services.map((s, i) => {
                             const pct = ((s.duration || 15) / totalDuration) * 100;
