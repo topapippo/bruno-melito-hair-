@@ -365,11 +365,18 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, current_
             raise HTTPException(status_code=400, detail="Carta prepagata non trovata o non attiva")
         payment_doc["card_id"] = card["id"]
         payment_doc["card_name"] = card["name"]
-        prepaid_deduction = appointment["total_price"]
-        if data.discount_type == "percent" and data.discount_value:
-            prepaid_deduction = round(prepaid_deduction * (1 - data.discount_value / 100), 2)
-        elif data.discount_type == "fixed" and data.discount_value:
-            prepaid_deduction = max(0, round(prepaid_deduction - data.discount_value, 2))
+        num_services = len(appointment.get("services", [])) or 1
+        if card.get("card_type") == "subscription" and card.get("total_services") and card["total_services"] > 0:
+            # Abbonamento: scala il valore proporzionale per servizio (non il prezzo dell'appuntamento)
+            value_per_service = card["total_value"] / card["total_services"]
+            prepaid_deduction = round(value_per_service * num_services, 2)
+        else:
+            # Card prepagata: scala il prezzo dell'appuntamento
+            prepaid_deduction = appointment["total_price"]
+            if data.discount_type == "percent" and data.discount_value:
+                prepaid_deduction = round(prepaid_deduction * (1 - data.discount_value / 100), 2)
+            elif data.discount_type == "fixed" and data.discount_value:
+                prepaid_deduction = max(0, round(prepaid_deduction - data.discount_value, 2))
 
     if data.payment_method == "prepaid" and data.card_id and not card:
         payment_doc["card_id"] = data.card_id
@@ -492,12 +499,26 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, current_
         if client_doc:
             client_phone = client_doc.get("phone", "")
 
+    # Calcola il residuo della card dopo la deduzione
+    card_info = None
+    if card and prepaid_deduction is not None:
+        new_remaining = round(card["remaining_value"] - prepaid_deduction, 2)
+        new_used_services = card.get("used_services", 0) + len(appointment.get("services", []))
+        card_info = {
+            "card_name": card["name"],
+            "card_type": card.get("card_type", "prepaid"),
+            "card_remaining_value": max(0, new_remaining),
+            "card_used_services": new_used_services,
+            "card_total_services": card.get("total_services"),
+        }
+
     return {
         "success": True, "payment_id": payment_id, "message": "Pagamento registrato con successo",
         "loyalty_points_earned": points_earned, "loyalty_total_points": points_after,
         "loyalty_threshold_reached": threshold_reached,
         "client_phone": client_phone,
-        "client_name": appointment.get("client_name", "")
+        "client_name": appointment.get("client_name", ""),
+        **(card_info or {})
     }
 
 

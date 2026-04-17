@@ -341,6 +341,25 @@ export default function EditAppointmentDialog({
         : 'Pagamento registrato con successo!';
       toast.success(msg);
 
+      // Reminder residuo card/abbonamento
+      if (res.data.card_name) {
+        const isSubscription = res.data.card_type === 'subscription';
+        if (isSubscription && res.data.card_total_services != null) {
+          const remaining = res.data.card_total_services - res.data.card_used_services;
+          if (remaining <= 0) {
+            toast.warning(`Abbonamento "${res.data.card_name}" esaurito — tutti i servizi sono stati utilizzati.`, { duration: 6000 });
+          } else {
+            toast.info(`Abbonamento "${res.data.card_name}": ${res.data.card_used_services}/${res.data.card_total_services} servizi usati — residuo ${remaining} ${remaining === 1 ? 'seduta' : 'sedute'}`, { duration: 6000 });
+          }
+        } else if (!isSubscription) {
+          if (res.data.card_remaining_value <= 0) {
+            toast.warning(`Card "${res.data.card_name}" esaurita — credito terminato.`, { duration: 6000 });
+          } else {
+            toast.info(`Card "${res.data.card_name}": residuo €${res.data.card_remaining_value.toFixed(2)}`, { duration: 6000 });
+          }
+        }
+      }
+
       // Prepara i dati per il ringraziamento WhatsApp
       const clientPhone = String(res.data.client_phone || activeAppointment.client_phone || selectedClientInfo?.phone || '').trim();
       const clientName = res.data.client_name || activeAppointment.client_name || selectedClientInfo?.name || 'Cliente';
