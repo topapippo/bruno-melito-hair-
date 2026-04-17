@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import api from '../lib/api';
 import { getMediaUrl } from '../lib/mediaUrl';
 import { Button } from '@/components/ui/button';
-import { Scissors, ChevronDown, MapPin, Phone, CalendarDays, Printer, Download } from 'lucide-react';
+import { Scissors, ChevronDown, MapPin, Phone, CalendarDays, Printer, Download, X, MessageCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { groupServicesByCategory } from '../lib/categories';
@@ -19,6 +19,35 @@ import {
 } from '../components/website/sections/LandingSections';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
+// #10 — Typewriter effect: cicla frasi nel hero
+function Typewriter({ phrases, color }) {
+  const [idx, setIdx] = useState(0);
+  const [text, setText] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  useEffect(() => {
+    const current = phrases[idx];
+    if (!deleting && text === current) {
+      const t = setTimeout(() => setDeleting(true), 2400);
+      return () => clearTimeout(t);
+    }
+    if (deleting && text === '') {
+      setDeleting(false);
+      setIdx(p => (p + 1) % phrases.length);
+      return;
+    }
+    const t = setTimeout(() => {
+      setText(p => deleting ? p.slice(0, -1) : current.slice(0, p.length + 1));
+    }, deleting ? 35 : 75);
+    return () => clearTimeout(t);
+  }, [text, deleting, idx, phrases]);
+  return (
+    <span>
+      {text}
+      <span className="inline-block w-0.5 h-[0.9em] ml-0.5 align-middle animate-pulse rounded-sm" style={{ backgroundColor: color }} />
+    </span>
+  );
+}
 
 export default function WebsitePage() {
   const [siteData, setSiteData] = useState(null);
@@ -47,6 +76,21 @@ export default function WebsitePage() {
 
   // My Appointments
   const [showMyAppts, setShowMyAppts] = useState(false);
+
+  // #4 — Scroll inactivity CTA bar
+  const [showScrollCta, setShowScrollCta] = useState(false);
+  const [hasScrolled, setHasScrolled] = useState(false);
+  useEffect(() => {
+    let timer;
+    const onScroll = () => {
+      setHasScrolled(true);
+      setShowScrollCta(false);
+      clearTimeout(timer);
+      timer = setTimeout(() => setShowScrollCta(true), 3500);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => { window.removeEventListener('scroll', onScroll); clearTimeout(timer); };
+  }, []);
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -142,6 +186,12 @@ export default function WebsitePage() {
 
   const escapeHtml = (str) => String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
+  // #2 — Prenota da ogni servizio: pre-seleziona il servizio e apre il form
+  const bookService = (serviceId) => {
+    setFormData(prev => ({ ...prev, service_ids: [serviceId] }));
+    setShowBooking(true);
+  };
+
   const scrollTo = (ref) => { ref.current?.scrollIntoView({ behavior: 'smooth' }); };
   const openWhatsApp = () => {
     const num = config.whatsapp || '393397833526';
@@ -221,7 +271,7 @@ export default function WebsitePage() {
     if (hiddenSections.includes(sectionId)) return null;
     switch (sectionId) {
       case 'services':
-        return bookingServices.length > 0 ? <ServicesSection key="services" {...{ servicesRef, showServices, setShowServices, landingServiceGroups, cardTemplates, setShowBooking, T }} /> : null;
+        return bookingServices.length > 0 ? <ServicesSection key="services" {...{ servicesRef, showServices, setShowServices, landingServiceGroups, cardTemplates, setShowBooking, bookService, T }} /> : null;
       case 'salon':
         return salonPhotos.length > 0 ? <SalonSection key="salon" salonPhotos={salonPhotos} T={T} /> : null;
       case 'about':
@@ -229,7 +279,7 @@ export default function WebsitePage() {
       case 'promotions':
         return publicPromos.length > 0 ? <PromotionsSection key="promotions" publicPromos={publicPromos} setShowBooking={setShowBooking} T={T} /> : null;
       case 'reviews':
-        return reviews.length > 0 ? <ReviewsSection key="reviews" reviews={reviews} T={T} /> : null;
+        return reviews.length > 0 ? <ReviewsSection key="reviews" reviews={reviews} T={T} config={config} /> : null;
       case 'gallery':
         return hairstylePhotos.length > 0 ? <GallerySection key="gallery" config={config} hairstylePhotos={hairstylePhotos} setShowBooking={setShowBooking} T={T} /> : null;
       case 'loyalty':
@@ -335,6 +385,7 @@ export default function WebsitePage() {
         <div className="absolute bottom-20 right-[15%] w-48 h-48 rounded-full opacity-10 blur-3xl float-med" style={{ backgroundColor: T.accent }} />
         <div className="relative max-w-6xl mx-auto px-4 py-20 sm:py-32 w-full">
           <div className="text-center max-w-3xl mx-auto">
+            {/* Logo pill */}
             <div className="flex justify-center mb-6 hero-animate hero-d1">
               <div className="flex items-center gap-2.5 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 shadow-lg">
                 <img src="/logo.png?v=4" alt={config.salon_name} className="w-7 h-7 object-contain rounded-lg" />
@@ -347,6 +398,40 @@ export default function WebsitePage() {
                 {config.subtitle || 'SOLO PER APPUNTAMENTO'}
               </div>
             </div>
+
+            {/* #10 — Typewriter: specializzazioni */}
+            <p className="text-sm text-white/40 mb-2 hero-animate hero-d3">
+              Specializzati in{' '}
+              <span className="font-bold" style={{ color: T.accent }}>
+                <Typewriter
+                  phrases={['Taglio & Styling', 'Colorazione', 'Trattamenti', 'Barba & Rasatura', 'Piega & Volumi']}
+                  color={T.accent}
+                />
+              </span>
+            </p>
+
+            {/* #3 — Social proof counter */}
+            <div className="flex items-center justify-center gap-4 mb-5 hero-animate hero-d4">
+              <div className="flex -space-x-2">
+                {['bg-rose-400','bg-amber-400','bg-teal-400','bg-violet-400'].map((c,i) => (
+                  <div key={i} className={`w-7 h-7 ${c} rounded-full border-2 border-white/20 flex items-center justify-center`}>
+                    <span className="text-white text-[9px] font-bold">{String.fromCharCode(65+i)}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-white/50 text-xs font-semibold">
+                <span className="text-white font-black">500+</span> clienti soddisfatti · <span className="text-white font-black">⭐ 5.0</span> su Google
+              </p>
+            </div>
+
+            {/* #1 — Disponibilità online */}
+            <div className="flex justify-center mb-8 hero-animate hero-d4">
+              <div className="flex items-center gap-2 bg-emerald-500/15 border border-emerald-500/30 rounded-full px-4 py-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                <span className="text-emerald-300 text-xs font-semibold">Prenota online 24/7 · Conferma immediata</span>
+              </div>
+            </div>
+
             <p className="text-base sm:text-lg text-white/60 max-w-lg mx-auto mb-10 leading-relaxed hero-animate hero-d4">
               {config.hero_description || ''}
             </p>
@@ -502,11 +587,45 @@ export default function WebsitePage() {
         </div>
       </footer>
 
+      {/* Mobile bottom prenota bar */}
       <div className="fixed bottom-0 left-0 right-0 p-3 bg-white/95 backdrop-blur-xl border-t border-gray-200/50 sm:hidden z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
         <Button onClick={() => setShowBooking(true)} style={{ backgroundColor: T.primary }} className="w-full text-white hover:opacity-90 font-black py-5 rounded-2xl shadow-lg" data-testid="website-mobile-book-btn">
           <Scissors className="w-5 h-5 mr-2" /> PRENOTA ORA
         </Button>
       </div>
+
+      {/* #5 — WhatsApp floating button (desktop, bottom-right) */}
+      <a
+        href={`https://wa.me/${config.whatsapp || '393397833526'}?text=Ciao, vorrei prenotare un appuntamento!`}
+        target="_blank" rel="noopener noreferrer"
+        className="hidden sm:flex fixed bottom-6 right-6 z-50 items-center gap-2 bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold text-sm px-4 py-3 rounded-full shadow-xl hover:shadow-2xl hover:scale-110 transition-all duration-300 group"
+        title="Scrivici su WhatsApp"
+        data-testid="whatsapp-float-btn"
+      >
+        <MessageCircle className="w-5 h-5" />
+        <span className="max-w-0 overflow-hidden group-hover:max-w-[120px] transition-all duration-300 whitespace-nowrap">Scrivici ora</span>
+      </a>
+
+      {/* #4 — Scroll inactivity CTA bar */}
+      {showScrollCta && hasScrolled && (
+        <div className="fixed bottom-0 left-0 right-0 z-[60] hidden sm:flex items-center justify-between gap-4 px-6 py-3 bg-[#1C1008]/95 backdrop-blur-xl border-t shadow-2xl"
+          style={{ borderColor: `${T.primary}40` }}
+          data-testid="scroll-cta-bar"
+        >
+          <p className="text-white/80 text-sm font-semibold">
+            <span className="animate-pulse mr-1">✨</span>
+            Hai trovato quello che cercavi?
+          </p>
+          <div className="flex items-center gap-3">
+            <Button onClick={() => setShowBooking(true)} style={{ backgroundColor: T.primary }} className="text-white font-black text-sm px-6 py-2 rounded-xl hover:opacity-90 hover:scale-105 transition-all">
+              <Scissors className="w-4 h-4 mr-1.5" /> Prenota Ora
+            </Button>
+            <button onClick={() => setShowScrollCta(false)} className="text-white/40 hover:text-white/80 transition-colors p-1 rounded-lg hover:bg-white/10">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* MY APPOINTMENTS MODAL */}
       {showMyAppts && (

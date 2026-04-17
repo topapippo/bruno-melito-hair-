@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { getMediaUrl } from '../../../lib/mediaUrl';
 import { Button } from '@/components/ui/button';
-import { Scissors, CheckCircle, ChevronDown, ChevronUp, Star, MessageSquare, MapPin, Phone, Mail, Clock, Gift, CreditCard, Search, ArrowLeft, ArrowRight, X } from 'lucide-react';
+import { Scissors, CheckCircle, ChevronDown, ChevronUp, Star, MessageSquare, MapPin, Phone, Mail, Clock, Gift, CreditCard, Search, ArrowLeft, ArrowRight, X, ExternalLink, ThumbsUp } from 'lucide-react';
 import { getCategoryInfo } from '../../../lib/categories';
 import { SOCIAL_LINKS, BORDER_COLORS, GLOW_COLORS, AVATAR_BGS, AVATAR_TEXTS } from '../../../lib/websiteConstants';
 
@@ -20,7 +20,7 @@ function AnimatedSection({ children, className = '', delay = 0 }) {
 
 export { AnimatedSection };
 
-export function ServicesSection({ servicesRef, showServices, setShowServices, landingServiceGroups, cardTemplates, setShowBooking, T }) {
+export function ServicesSection({ servicesRef, showServices, setShowServices, landingServiceGroups, cardTemplates, setShowBooking, bookService, T }) {
   const [openLandingCats, setOpenLandingCats] = useState({});
   const toggleLCat = (key) => setOpenLandingCats(prev => ({ ...prev, [key]: !prev[key] }));
 
@@ -58,7 +58,14 @@ export function ServicesSection({ servicesRef, showServices, setShowServices, la
                             <span className="font-bold" style={{ color: T.text }}>{service.name}</span>
                             <span className="text-xs text-[#94A3B8] ml-2">{service.duration} min</span>
                           </div>
-                          <span className="font-black text-lg shrink-0 ml-4" style={{ color: catInfo.color }}>{'\u20AC'}{service.price}</span>
+                          <div className="flex items-center gap-2 ml-4 shrink-0">
+                            <span className="font-black text-lg" style={{ color: catInfo.color }}>{'\u20AC'}{service.price}</span>
+                            {bookService && (
+                              <button onClick={() => bookService(service.id)} className="text-xs font-bold px-2.5 py-1 rounded-lg text-white transition-all hover:opacity-80 active:scale-95" style={{ backgroundColor: catInfo.color }}>
+                                Prenota
+                              </button>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -225,20 +232,49 @@ export function PromotionsSection({ publicPromos, setShowBooking, T }) {
   );
 }
 
-export function ReviewsSection({ reviews, T }) {
+export function ReviewsSection({ reviews, T, config }) {
+  const avgRating = reviews.length > 0
+    ? (reviews.reduce((s, r) => s + (r.rating || 5), 0) / reviews.length).toFixed(1)
+    : '5.0';
+  const doubled = reviews.length >= 2 ? [...reviews, ...reviews] : reviews;
+  const googleReviewUrl = config?.google_review_url || config?.maps_url || '#';
+  const scrollDuration = Math.max(reviews.length * 6, 24);
+
   return (
-    <section className="py-20 sm:py-28" style={{ backgroundColor: `${T.text}F0`, color: '#fff' }}>
-      <div className="max-w-6xl mx-auto px-4">
+    <section className="py-20 sm:py-28 overflow-hidden" style={{ backgroundColor: `${T.text}F0`, color: '#fff' }}>
+      <style>{`
+        @keyframes scrollReviews { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        .reviews-track { animation: scrollReviews ${scrollDuration}s linear infinite; display: flex; }
+        .reviews-track:hover { animation-play-state: paused; }
+      `}</style>
+
+      {/* Header con rating aggregato — #8 */}
+      <div className="max-w-6xl mx-auto px-4 mb-12">
         <AnimatedSection>
-          <div className="text-center mb-12">
+          <div className="text-center">
             <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Recensioni</p>
-            <h2 className="text-3xl sm:text-4xl font-black text-white" style={{ fontFamily: T.fontDisplay }}>Cosa Dicono di Noi</h2>
+            <h2 className="text-3xl sm:text-4xl font-black text-white mb-5" style={{ fontFamily: T.fontDisplay }}>Cosa Dicono di Noi</h2>
+            <div className="inline-flex items-center gap-4 bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl px-6 py-3">
+              <span className="text-5xl font-black text-white leading-none">{avgRating}</span>
+              <div className="text-left">
+                <div className="flex gap-0.5 mb-1">
+                  {[1,2,3,4,5].map(i => (
+                    <Star key={i} className={`w-5 h-5 ${i <= Math.round(parseFloat(avgRating)) ? 'fill-amber-400 text-amber-400' : 'text-white/20'}`} />
+                  ))}
+                </div>
+                <p className="text-white/50 text-sm">{reviews.length} {reviews.length === 1 ? 'recensione' : 'recensioni'}</p>
+              </div>
+            </div>
           </div>
         </AnimatedSection>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {reviews.map((review, idx) => (
-            <AnimatedSection key={review.id || idx} delay={0.1 + idx * 0.1}>
-              <div className="bg-white/10 backdrop-blur-sm border border-white/15 rounded-3xl p-6 transition-all duration-500 hover:shadow-lg hover:bg-white/15 hover:scale-[1.03] hover:-translate-y-1 h-full flex flex-col">
+      </div>
+
+      {/* Carosello auto-scroll — #9 */}
+      {doubled.length > 0 && (
+        <div className="relative mb-12">
+          <div className="reviews-track gap-5" style={{ width: 'max-content', paddingLeft: '1rem' }}>
+            {doubled.map((review, idx) => (
+              <div key={`rv-${idx}`} className="w-72 sm:w-80 bg-white/10 backdrop-blur-sm border border-white/15 rounded-3xl p-6 flex flex-col shrink-0">
                 <div className="text-5xl leading-none opacity-15 -mb-1" style={{ color: T.accent, fontFamily: 'Georgia, serif' }}>{'\u201C'}</div>
                 <div className="flex gap-0.5 mb-3">
                   {[...Array(review.rating || 5)].map((_, i) => (<Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />))}
@@ -251,10 +287,41 @@ export function ReviewsSection({ reviews, T }) {
                   <span className="text-sm text-white/70 font-semibold">{review.name}</span>
                 </div>
               </div>
-            </AnimatedSection>
-          ))}
+            ))}
+          </div>
+          <div className="absolute inset-y-0 left-0 w-20 pointer-events-none" style={{ background: `linear-gradient(90deg, ${T.text}F0, transparent)` }} />
+          <div className="absolute inset-y-0 right-0 w-20 pointer-events-none" style={{ background: `linear-gradient(-90deg, ${T.text}F0, transparent)` }} />
         </div>
-      </div>
+      )}
+
+      {/* CTA lascia recensione — #6 */}
+      <AnimatedSection delay={0.2}>
+        <div className="max-w-xl mx-auto px-4 text-center">
+          <div className="bg-white/8 backdrop-blur-sm border border-white/15 rounded-3xl p-8">
+            <ThumbsUp className="w-10 h-10 mx-auto mb-3 text-amber-400" />
+            <h3 className="text-xl font-black text-white mb-2">La tua opinione vale oro</h3>
+            <p className="text-white/60 text-sm mb-5 leading-relaxed">Hai già visitato il salone? Aiuta altri clienti a sceglierci condividendo la tua esperienza.</p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              {googleReviewUrl && googleReviewUrl !== '#' && (
+                <a href={googleReviewUrl} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 bg-white text-[#1C1008] font-bold text-sm px-5 py-3 rounded-xl hover:bg-gray-100 transition-all hover:scale-105 shadow-lg">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                  Recensisci su Google
+                  <ExternalLink className="w-3 h-3 opacity-60" />
+                </a>
+              )}
+              {SOCIAL_LINKS.find(l => l.label?.toLowerCase().includes('facebook')) && (
+                <a href={SOCIAL_LINKS.find(l => l.label?.toLowerCase().includes('facebook')).url} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 bg-[#1877F2] text-white font-bold text-sm px-5 py-3 rounded-xl hover:bg-[#1563cc] transition-all hover:scale-105 shadow-lg">
+                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                  Recensisci su Facebook
+                  <ExternalLink className="w-3 h-3 opacity-60" />
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      </AnimatedSection>
     </section>
   );
 }
