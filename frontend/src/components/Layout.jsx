@@ -84,17 +84,18 @@ export default function Layout({ children }) {
       }
     }).catch(() => {});
 
-    const interval = setInterval(() => {
+    const handleStorage = (e) => {
+      if (e.key !== 'adminTheme') return;
       try {
-        const stored = localStorage.getItem('adminTheme');
-        if (stored && stored !== JSON.stringify(themeRef.current)) {
-          const parsed = JSON.parse(stored);
+        const parsed = JSON.parse(e.newValue);
+        if (parsed) {
           setAdminTheme(parsed);
           themeRef.current = parsed;
         }
       } catch {}
-    }, 200);
-    return () => clearInterval(interval);
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
   }, []);
 
   const t = adminTheme;

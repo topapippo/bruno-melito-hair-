@@ -8,6 +8,7 @@ import { format, addDays, subDays, startOfWeek, endOfWeek, addWeeks, subWeeks, s
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { CATEGORIES } from '../lib/categories';
+import { generateTimeSlots } from '../lib/timeSlots';
 
 // Sub-components
 import { isHoliday } from '../components/planning/holidays';
@@ -24,18 +25,6 @@ import PlanningSearch from '../components/planning/PlanningSearch';
 import ErrorBoundary from '../components/ErrorBoundary';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
-
-// Time slots from 08:00 to 20:00 every 15 minutes
-const generateTimeSlots = () => {
-  const slots = [];
-  for (let hour = 8; hour <= 20; hour++) {
-    for (let min = 0; min < 60; min += 15) {
-      if (hour === 20 && min > 0) break;
-      slots.push(`${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`);
-    }
-  }
-  return slots;
-};
 
 const TIME_SLOTS = generateTimeSlots();
 
@@ -109,6 +98,12 @@ export default function PlanningPage() {
   const touchStartRef = useRef(null);
 
   // --- Data fetching ---
+  // Static data (operators, clients, services) fetched once on mount
+  useEffect(() => {
+    fetchStaticData();
+  }, []);
+
+  // Date-dependent data re-fetched on date change
   useEffect(() => {
     fetchData();
     fetchReminderCounts();
@@ -144,23 +139,29 @@ export default function PlanningPage() {
     }
   }, [loading]);
 
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchStaticData = async () => {
     try {
-      const dateStr = format(selectedDate, 'yyyy-MM-dd');
-      const [appointmentsRes, operatorsRes, clientsRes, servicesRes, cardTemplatesRes] = await Promise.all([
-        api.get(`${API}/appointments?date=${dateStr}`),
+      const [operatorsRes, clientsRes, servicesRes, cardTemplatesRes] = await Promise.all([
         api.get(`${API}/operators`),
         api.get(`${API}/clients`),
         api.get(`${API}/services`),
         api.get(`${API}/public/website`).then(r => ({ data: r.data?.card_templates || [] })).catch(() => ({ data: [] }))
       ]);
-      setAppointments(appointmentsRes.data);
-      const activeOps = operatorsRes.data.filter(op => op.active);
-      setOperators(activeOps);
+      setOperators(operatorsRes.data.filter(op => op.active));
       setClients(clientsRes.data);
       setServices(servicesRes.data);
       setCardTemplates(cardTemplatesRes.data);
+    } catch (err) {
+      console.error('Error fetching static data:', err);
+    }
+  };
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      const appointmentsRes = await api.get(`${API}/appointments?date=${dateStr}`);
+      setAppointments(appointmentsRes.data);
       try {
         const blockedRes = await api.get(`${API}/public/blocked-slots/${dateStr}`);
         setBlockedSlots(blockedRes.data || []);

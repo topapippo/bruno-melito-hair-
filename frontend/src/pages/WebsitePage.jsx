@@ -76,17 +76,48 @@ export default function WebsitePage() {
   const salonPhotos = gallery.filter(g => g.section === 'salon');
   const hairstylePhotos = gallery.filter(g => g.section === 'gallery');
 
-  // Load CMS fonts
+  // SEO: title + meta tags dinamici
+  useEffect(() => {
+    if (!siteData) return;
+    const name = config.salon_name || 'Bruno Melito Hair';
+    const desc = config.hero_description || `Prenota online il tuo appuntamento da ${name}. Taglio, colore, trattamenti professionali.`;
+    const url = window.location.origin + '/sito';
+
+    document.title = `${name} — Prenota Online`;
+
+    const setMeta = (name, content, prop = false) => {
+      const attr = prop ? 'property' : 'name';
+      let el = document.querySelector(`meta[${attr}="${name}"]`);
+      if (!el) { el = document.createElement('meta'); el.setAttribute(attr, name); document.head.appendChild(el); }
+      el.setAttribute('content', content);
+    };
+
+    setMeta('description', desc);
+    setMeta('og:title', `${name} — Prenota Online`, true);
+    setMeta('og:description', desc, true);
+    setMeta('og:type', 'website', true);
+    setMeta('og:url', url, true);
+    if (config.hero_image) setMeta('og:image', config.hero_image, true);
+    setMeta('twitter:card', 'summary_large_image');
+    setMeta('twitter:title', `${name} — Prenota Online`);
+    setMeta('twitter:description', desc);
+
+    return () => { document.title = 'Bruno Melito Hair'; };
+  }, [siteData, config.salon_name, config.hero_description, config.hero_image]);
+
+  // Load CMS fonts — evita link duplicati
   useEffect(() => {
     if (!config.font_display && !config.font_body) return;
     const fonts = [config.font_display, config.font_body].filter(Boolean);
-    if (fonts.length > 0) {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = `https://fonts.googleapis.com/css2?${fonts.map(f => `family=${f.replace(/ /g, '+')}:wght@400;600;700;800;900`).join('&')}&display=swap`;
-      document.head.appendChild(link);
-      return () => document.head.removeChild(link);
-    }
+    if (fonts.length === 0) return;
+    const href = `https://fonts.googleapis.com/css2?${fonts.map(f => `family=${f.replace(/ /g, '+')}:wght@400;600;700;800;900`).join('&')}&display=swap`;
+    if (document.querySelector(`link[href="${href}"]`)) return; // già caricato
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    link.dataset.cmsFonts = 'true';
+    document.head.appendChild(link);
+    return () => { document.querySelector('link[data-cms-fonts="true"]')?.remove(); };
   }, [config.font_display, config.font_body]);
 
   const themeStyle = {
@@ -108,6 +139,8 @@ export default function WebsitePage() {
   };
 
   const selectedServices = bookingServices.filter(s => formData.service_ids.includes(s.id));
+
+  const escapeHtml = (str) => String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
   const scrollTo = (ref) => { ref.current?.scrollIntoView({ behavior: 'smooth' }); };
   const openWhatsApp = () => {
@@ -234,8 +267,18 @@ export default function WebsitePage() {
           </div>
           <div className="flex items-center gap-2 sm:gap-4">
             <div className="hidden sm:flex items-center gap-6 text-sm text-[#64748B]">
-              <button onClick={() => { setShowServices(true); setTimeout(() => scrollTo(servicesRef), 100); }} className="hover:text-[#0EA5E9] transition-colors font-semibold">Servizi</button>
-              <button onClick={() => scrollTo(contactRef)} className="hover:text-[#0EA5E9] transition-colors font-semibold">Contatti</button>
+              <button
+                onClick={() => { setShowServices(true); setTimeout(() => scrollTo(servicesRef), 100); }}
+                className="transition-colors font-semibold"
+                onMouseEnter={e => { e.currentTarget.style.color = T.primary; }}
+                onMouseLeave={e => { e.currentTarget.style.color = '#64748B'; }}
+              >Servizi</button>
+              <button
+                onClick={() => scrollTo(contactRef)}
+                className="transition-colors font-semibold"
+                onMouseEnter={e => { e.currentTarget.style.color = T.primary; }}
+                onMouseLeave={e => { e.currentTarget.style.color = '#64748B'; }}
+              >Contatti</button>
               <div className="flex items-center gap-3 border-l border-gray-300 pl-4">
                 {SOCIAL_LINKS.map((link, i) => (
                   <a key={i} href={link.url} target="_blank" rel="noopener noreferrer" className={`text-[#B89A7A] ${link.color} transition-colors`} title={link.label}>
@@ -261,8 +304,23 @@ export default function WebsitePage() {
         </div>
       </nav>
 
+      {/* MOBILE NAV STRIP — visible only on small screens */}
+      <div className="sm:hidden fixed top-[60px] left-0 right-0 z-40 flex items-center justify-center gap-6 bg-white/80 backdrop-blur-md border-b border-gray-200/50 py-1.5 px-4 shadow-sm">
+        <button
+          onClick={() => { setShowServices(true); setTimeout(() => scrollTo(servicesRef), 100); }}
+          className="text-xs font-bold transition-colors"
+          style={{ color: T.primary }}
+        >Servizi</button>
+        <span className="text-gray-300 text-sm">|</span>
+        <button
+          onClick={() => scrollTo(contactRef)}
+          className="text-xs font-bold transition-colors"
+          style={{ color: T.primary }}
+        >Contatti</button>
+      </div>
+
       {/* HERO */}
-      <section className="relative min-h-screen flex items-center pt-16 overflow-hidden">
+      <section className="relative min-h-screen flex items-center pt-24 md:pt-16 overflow-hidden">
         {config.hero_image ? (
           <>
             <div className="absolute inset-0">
@@ -277,10 +335,13 @@ export default function WebsitePage() {
         <div className="absolute bottom-20 right-[15%] w-48 h-48 rounded-full opacity-10 blur-3xl float-med" style={{ backgroundColor: T.accent }} />
         <div className="relative max-w-6xl mx-auto px-4 py-20 sm:py-32 w-full">
           <div className="text-center max-w-3xl mx-auto">
-            <div className="flex justify-center mb-8 hero-animate hero-d1">
-              <img src="/logo.png?v=4" alt={config.salon_name} className="w-40 h-40 sm:w-56 sm:h-56 object-contain drop-shadow-2xl rounded-3xl border-2 border-white/10 shadow-2xl hover:scale-105 transition-transform duration-500" />
+            <div className="flex justify-center mb-6 hero-animate hero-d1">
+              <div className="flex items-center gap-2.5 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 shadow-lg">
+                <img src="/logo.png?v=4" alt={config.salon_name} className="w-7 h-7 object-contain rounded-lg" />
+                <span className="text-white/80 text-xs font-bold tracking-widest uppercase">{config.salon_name || 'BRUNO MELITO HAIR'}</span>
+              </div>
             </div>
-            <h1 className="text-3xl sm:text-4xl lg:text-6xl font-black text-white mb-4 tracking-tight hero-animate hero-d2" style={{ fontFamily: `var(--theme-font-display)` }}>{config.salon_name || 'BRUNO MELITO HAIR'}</h1>
+            <h1 className="text-5xl sm:text-6xl lg:text-8xl font-black text-white mb-4 tracking-tight hero-animate hero-d2 leading-none" style={{ fontFamily: `var(--theme-font-display)` }}>{config.salon_name || 'BRUNO MELITO HAIR'}</h1>
             <div className="hero-animate hero-d3">
               <div className="inline-block backdrop-blur-sm text-xs font-bold px-5 py-2.5 rounded-full border mb-6" style={{ backgroundColor: `${T.primary}20`, color: T.primary, borderColor: `${T.primary}40` }}>
                 {config.subtitle || 'SOLO PER APPUNTAMENTO'}
@@ -360,7 +421,7 @@ export default function WebsitePage() {
                   const imgSrc = printContent.querySelector('img')?.src || '';
                   const win = window.open('', '_blank');
                   win.document.write(`
-                    <html><head><title>QR Code - ${config.salon_name || 'Bruno Melito Hair'}</title>
+                    <html><head><title>QR Code - ${escapeHtml(config.salon_name || 'Bruno Melito Hair')}</title>
                     <style>
                       @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap');
                       body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #fff; }
@@ -372,10 +433,10 @@ export default function WebsitePage() {
                       img { display: block; margin: 0 auto; }
                     </style></head><body>
                     <div class="card">
-                      <img src="${imgSrc}" width="250" height="250" />
-                      <h1>${config.salon_name || 'BRUNO MELITO HAIR'}</h1>
+                      <img src="${escapeHtml(imgSrc)}" width="250" height="250" />
+                      <h1>${escapeHtml(config.salon_name || 'BRUNO MELITO HAIR')}</h1>
                       <p>Prenota il tuo appuntamento</p>
-                      ${config.address ? `<p class="addr">${config.address}</p>` : ''}
+                      ${config.address ? `<p class="addr">${escapeHtml(config.address)}</p>` : ''}
                       <p class="hint">Inquadra il QR Code con la fotocamera</p>
                     </div>
                     </body></html>
@@ -430,7 +491,7 @@ export default function WebsitePage() {
               </div>
               <div className="flex items-center gap-6 text-sm text-white/50">
                 <a href="/sito" className="hover:text-white transition-colors">Prenota Online</a>
-                <a href="/sito" className="hover:text-white transition-colors">Sito Web</a>
+                <a href={`https://wa.me/${config.whatsapp || '393397833526'}?text=Ciao, vorrei prenotare un appuntamento!`} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">WhatsApp</a>
                 <a href={config.maps_url} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Come Raggiungerci</a>
               </div>
               <p className="text-white/30 text-xs">{config.address}</p>

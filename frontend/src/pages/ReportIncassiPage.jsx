@@ -128,8 +128,9 @@ export default function ReportIncassiPage() {
     ...payments.map(p => ({ ...p, _type: 'payment' })),
     ...expenses.map(e => ({ ...e, _type: 'expense' })),
   ].sort((a, b) => {
-    const da = a._type === 'payment' ? a.date : (a.paid_date || a.due_date);
-    const db2 = b._type === 'payment' ? b.date : (b.paid_date || b.due_date);
+    const da = a._type === 'payment' ? a.date : (a.paid_date || a.due_date || '');
+    const db2 = b._type === 'payment' ? b.date : (b.paid_date || b.due_date || '');
+    if (!da || !db2) return 0;
     return da.localeCompare(db2);
   });
 

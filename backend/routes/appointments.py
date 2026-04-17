@@ -191,7 +191,7 @@ async def create_appointment(data: AppointmentCreate, current_user: dict = Depen
     promo_name = None
     card_name = None
     if data.promo_id:
-        promo = await db.promotions.find_one({"id": data.promo_id}, {"_id": 0, "name": 1})
+        promo = await db.promotions.find_one({"id": data.promo_id, "user_id": current_user["id"]}, {"_id": 0, "name": 1})
         promo_name = promo["name"] if promo else None
     if data.card_id:
         card = await db.cards.find_one({"id": data.card_id}, {"_id": 0, "name": 1})
@@ -370,11 +370,6 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, current_
             prepaid_deduction = round(prepaid_deduction * (1 - data.discount_value / 100), 2)
         elif data.discount_type == "fixed" and data.discount_value:
             prepaid_deduction = max(0, round(prepaid_deduction - data.discount_value, 2))
-        if card["remaining_value"] < prepaid_deduction:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Credito insufficiente. Disponibile: €{card['remaining_value']:.2f}, richiesto: €{prepaid_deduction:.2f}"
-            )
 
     if data.payment_method == "prepaid" and data.card_id and not card:
         payment_doc["card_id"] = data.card_id

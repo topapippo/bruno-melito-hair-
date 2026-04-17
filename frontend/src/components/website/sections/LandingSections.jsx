@@ -28,17 +28,13 @@ export function ServicesSection({ servicesRef, showServices, setShowServices, la
     <section ref={servicesRef} className="py-20 sm:py-28 relative" style={{ background: `linear-gradient(180deg, ${T.primary}08, ${T.accent}05)` }}>
       <div className="max-w-6xl mx-auto px-4">
         <AnimatedSection>
-          <button onClick={() => setShowServices(!showServices)} className="w-full text-center mb-4 group">
+          <div className="w-full text-center mb-4">
             <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>I Nostri Servizi</p>
             <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>Scopri Cosa Offriamo</h2>
-            <p className="text-sm text-[#64748B] mt-2 max-w-md mx-auto">Sfoglia il listino completo e prenota il tuo trattamento preferito</p>
-            <div className="flex items-center justify-center gap-2 font-bold mt-4" style={{ color: T.accent }}>
-              {showServices ? <><span>Nascondi listino</span><ChevronUp className="w-5 h-5" /></> : <><span>Mostra listino completo</span><ChevronDown className="w-5 h-5" /></>}
-            </div>
-          </button>
+            <p className="text-sm mt-2 max-w-md mx-auto" style={{ color: `${T.text}80` }}>Sfoglia il listino completo e prenota il tuo trattamento preferito</p>
+          </div>
         </AnimatedSection>
-        {showServices && (
-          <div className="space-y-3 mt-8 animate-in fade-in duration-300 max-w-2xl mx-auto">
+        <div className="space-y-3 mt-8 max-w-2xl mx-auto">
             {landingServiceGroups.orderedKeys.map((catKey) => {
               const catInfo = getCategoryInfo(catKey);
               const catServices = landingServiceGroups.groups[catKey];
@@ -105,7 +101,6 @@ export function ServicesSection({ servicesRef, showServices, setShowServices, la
               </Button>
             </div>
           </div>
-        )}
       </div>
     </section>
   );
@@ -158,14 +153,14 @@ export function AboutSection({ config, salonPhotos, T }) {
             <div>
               <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Chi Siamo</p>
               <h2 className="text-3xl sm:text-4xl font-black mb-6" style={{ color: T.text, fontFamily: T.fontDisplay }}>{config.about_title}</h2>
-              {config.about_text && <p className="text-[#64748B] leading-relaxed mb-6">{config.about_text}</p>}
-              {config.about_text_2 && <p className="text-[#B89A7A] leading-relaxed mb-8">{config.about_text_2}</p>}
+              {config.about_text && <p className="leading-relaxed mb-6" style={{ color: `${T.text}99` }}>{config.about_text}</p>}
+              {config.about_text_2 && <p className="leading-relaxed mb-8" style={{ color: `${T.text}70` }}>{config.about_text_2}</p>}
               {config.about_features && config.about_features.length > 0 && (
                 <div className="grid grid-cols-2 gap-3">
                   {config.about_features.map((item, idx) => (
                     <div key={idx} className="flex items-center gap-2">
                       <CheckCircle className="w-4 h-4 text-teal-400 shrink-0" />
-                      <span className="text-sm text-[#D4B89A]">{item}</span>
+                      <span className="text-sm" style={{ color: `${T.text}80` }}>{item}</span>
                     </div>
                   ))}
                 </div>
@@ -180,7 +175,7 @@ export function AboutSection({ config, salonPhotos, T }) {
 
 export function PromotionsSection({ publicPromos, setShowBooking, T }) {
   return (
-    <section className="py-20 sm:py-28" style={{ backgroundColor: `${T.primary}08` }}>
+    <section className="py-20 sm:py-28" style={{ background: `linear-gradient(135deg, ${T.primary}12, ${T.accent}08)` }}>
       <div className="max-w-6xl mx-auto px-4">
         <AnimatedSection>
           <div className="text-center mb-12">
@@ -273,8 +268,8 @@ export function GallerySection({ config, hairstylePhotos, setShowBooking, T }) {
         <div className="max-w-6xl mx-auto px-4">
           <AnimatedSection>
             <div className="text-center mb-12">
-              <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>{config.gallery_title || 'I Nostri Lavori'}</p>
-              <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>I Nostri Lavori</h2>
+              <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Gallery</p>
+              <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>{config.gallery_title || 'I Nostri Lavori'}</h2>
               {config.gallery_subtitle && <p className="text-[#64748B] mt-3 max-w-xl mx-auto">{config.gallery_subtitle}</p>}
             </div>
           </AnimatedSection>
@@ -282,7 +277,9 @@ export function GallerySection({ config, hairstylePhotos, setShowBooking, T }) {
             {hairstylePhotos.map((item, idx) => (
               <AnimatedSection key={item.id} delay={0.05 * idx}>
                 <div onClick={() => item.file_type !== 'video' && setLightboxIdx(imagePhotos.indexOf(item))}
-                  className={`relative rounded-3xl overflow-hidden aspect-[3/4] group ${item.file_type !== 'video' ? 'cursor-pointer' : ''} border-2 border-gray-200 transition-all duration-500 hover:shadow-2xl hover:border-[#0EA5E9]/30 hover:scale-[1.02]`}>
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = `${T.primary}50`; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#e5e7eb'; }}
+                  className={`relative rounded-3xl overflow-hidden aspect-[3/4] group ${item.file_type !== 'video' ? 'cursor-pointer' : ''} border-2 border-gray-200 transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]`}>
                   {item.file_type === 'video' ? (
                     <video src={getMediaUrl(item?.image_url)} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" muted loop playsInline onMouseEnter={e => e.target.play()} onMouseLeave={e => { e.target.pause(); e.target.currentTime = 0; }} />
                   ) : (
@@ -362,7 +359,7 @@ export function LoyaltySection({ setShowBooking, T, loyalty }) {
   const colsClass = rewards.length <= 3 ? 'sm:grid-cols-3' : rewards.length === 4 ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-3 lg:grid-cols-5';
 
   return (
-    <section className="py-20 sm:py-28" style={{ backgroundColor: `${T.accent}10` }}>
+    <section className="py-20 sm:py-28" style={{ background: `linear-gradient(135deg, ${T.accent}15, ${T.primary}0A)` }}>
       <div className="max-w-6xl mx-auto px-4">
         <AnimatedSection>
           <div className="text-center mb-12">
@@ -446,12 +443,15 @@ export function ContactSection({ contactRef, config, hours, phones, setShowBooki
             <div className="bg-white/10 backdrop-blur-sm border border-white/15 rounded-3xl p-5 text-center hover:bg-white/15 hover:shadow-xl transition-all duration-500 group hover:-translate-y-1">
               <Clock className="w-7 h-7 text-violet-400 mx-auto mb-3 group-hover:scale-125 transition-transform duration-300" />
               <h3 className="font-bold text-white text-sm mb-1">Orari</h3>
-              {Object.entries(hours).filter(([, v]) => v !== 'Chiuso').length > 0 ? (
-                <>
-                  <p className="text-white/60 text-xs">{Object.entries(hours).filter(([, v]) => v !== 'Chiuso').map(([d]) => d.charAt(0).toUpperCase() + d.slice(1)).join(' - ')}</p>
-                  <p className="text-white/60 text-xs">{Object.values(hours).find(v => v !== 'Chiuso')}</p>
-                  <p className="text-white/40 text-xs mt-1">{Object.entries(hours).filter(([, v]) => v === 'Chiuso').map(([d]) => d.charAt(0).toUpperCase() + d.slice(1)).join(', ')}: Chiuso</p>
-                </>
+              {Object.entries(hours).length > 0 ? (
+                <div className="space-y-0.5 mt-1 w-full">
+                  {Object.entries(hours).map(([day, val]) => (
+                    <div key={day} className="flex justify-between gap-3">
+                      <span className="capitalize text-white/45 text-xs">{day}</span>
+                      <span className={`text-xs font-medium ${!val || val === 'Chiuso' || val === '-' ? 'text-white/25' : 'text-white/70'}`}>{val || 'Chiuso'}</span>
+                    </div>
+                  ))}
+                </div>
               ) : (
                 <p className="text-white/60 text-xs">Mar - Sab: 08:00 - 19:00</p>
               )}

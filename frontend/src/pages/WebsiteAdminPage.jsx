@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Save, Plus, Trash2, Upload, Image, Star, Globe, Eye, Loader2, X, GripVertical, Palette, Type, ArrowUp, ArrowDown, LayoutGrid, EyeOff, TrendingUp, Percent, Gift, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -40,6 +41,8 @@ export default function WebsiteAdminPage() {
   const [editPromo, setEditPromo] = useState(null);
   const [promoForm, setPromoForm] = useState({ name: '', description: '', discount_type: 'percent', discount_value: 10, active: true, show_on_booking: true });
   const heroInputRef = useRef(null);
+  const [isDirty, setIsDirty] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, type: null, id: null, label: '' });
 
   const handleHeroImageUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -82,6 +85,7 @@ export default function WebsiteAdminPage() {
     try {
       const res = await api.put('/website/config', config);
       setConfig(res.data);
+      setIsDirty(false);
       toast.success('Configurazione salvata!');
     } catch (err) { toast.error('Errore nel salvataggio'); }
     finally { setSaving(false); }
@@ -135,14 +139,15 @@ export default function WebsiteAdminPage() {
   const savePromo = async () => {
     try {
       if (editPromo) {
-        await api.put(`/promotions/${editPromo.id}`, promoForm);
+        const res = await api.put(`/promotions/${editPromo.id}`, promoForm);
+        const updated = res.data;
+        setPromotions(prev => prev.map(p => p.id === editPromo.id ? { ...p, ...updated } : p));
       } else {
-        await api.post('/promotions', promoForm);
+        const res = await api.post('/promotions', promoForm);
+        setPromotions(prev => [...prev, res.data]);
       }
       toast.success(editPromo ? 'Promozione aggiornata!' : 'Promozione creata!');
       setPromoDialog(false);
-      const res = await api.get('/promotions');
-      setPromotions(res.data || []);
     } catch (err) { toast.error('Errore salvataggio promozione'); }
   };
 
@@ -157,13 +162,21 @@ export default function WebsiteAdminPage() {
   const togglePromoActive = async (promo) => {
     try {
       await api.put(`/promotions/${promo.id}`, { ...promo, active: !promo.active });
-      const res = await api.get('/promotions');
-      setPromotions(res.data || []);
+      setPromotions(prev => prev.map(p => p.id === promo.id ? { ...p, active: !promo.active } : p));
     } catch (err) { toast.error('Errore aggiornamento'); }
   };
 
+  // Avviso modifiche non salvate — beforeunload
+  useEffect(() => {
+    if (!isDirty) return;
+    const handler = (e) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [isDirty]);
+
   const updateField = (field, value) => {
     setConfig(prev => ({ ...prev, [field]: value }));
+    setIsDirty(true);
   };
 
   // Reviews
@@ -193,12 +206,23 @@ export default function WebsiteAdminPage() {
   };
 
   const deleteReview = async (id) => {
-    if (!window.confirm('Eliminare questa recensione?')) return;
+    setDeleteConfirm({ open: true, type: 'review', id, label: 'questa recensione' });
+  };
+
+  const confirmDelete = async () => {
+    const { type, id } = deleteConfirm;
+    setDeleteConfirm({ open: false, type: null, id: null, label: '' });
     try {
-      await api.delete(`/website/reviews/${id}`);
-      setReviews(prev => prev.filter(r => r.id !== id));
-      toast.success('Recensione eliminata');
-    } catch (err) { toast.error('Errore'); }
+      if (type === 'review') {
+        await api.delete(`/website/reviews/${id}`);
+        setReviews(prev => prev.filter(r => r.id !== id));
+        toast.success('Recensione eliminata');
+      } else if (type === 'gallery') {
+        await api.delete(`/website/gallery/${id}`);
+        setGallery(prev => prev.filter(g => g.id !== id));
+        toast.success('Foto eliminata');
+      }
+    } catch (err) { toast.error('Errore eliminazione'); }
   };
 
   // Gallery upload (images + videos)
@@ -207,23 +231,22 @@ export default function WebsiteAdminPage() {
     if (files.length === 0) return;
     setUploading(true);
     try {
-      for (const file of files) {
+      const uploadFile = async (file) => {
         const formData = new FormData();
         formData.append('file', file);
-        const uploadRes = await api.post('/website/upload', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const uploadRes = await api.post('/website/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
         const fileType = uploadRes.data.file_type || (file.type.startsWith('video') ? 'video' : 'image');
-        await api.post('/website/gallery', {
+        const galleryRes = await api.post('/website/gallery', {
           image_url: uploadRes.data.url,
           label: file.name.split('.')[0],
           tag: '',
           section: section,
           file_type: fileType
         });
-      }
-      const res = await api.get('/website/gallery');
-      setGallery(res.data);
+        return galleryRes.data;
+      };
+      const newItems = await Promise.all(files.map(uploadFile));
+      setGallery(prev => [...prev, ...newItems]);
       const videoCount = files.filter(f => f.type.startsWith('video')).length;
       const imageCount = files.length - videoCount;
       const msg = [];
@@ -242,12 +265,7 @@ export default function WebsiteAdminPage() {
   };
 
   const deleteGalleryItem = async (id) => {
-    if (!window.confirm('Eliminare questa foto?')) return;
-    try {
-      await api.delete(`/website/gallery/${id}`);
-      setGallery(prev => prev.filter(g => g.id !== id));
-      toast.success('Foto eliminata');
-    } catch (err) { toast.error('Errore'); }
+    setDeleteConfirm({ open: true, type: 'gallery', id, label: 'questa foto/video' });
   };
 
   // getMediaUrl importato da ../lib/mediaUrl
@@ -381,7 +399,12 @@ export default function WebsiteAdminPage() {
             <h1 className="text-2xl font-bold text-[#2D1B14]">Gestione Sito Web</h1>
             <p className="text-sm text-[#7C5C4A]">Modifica i contenuti della tua pagina web pubblica</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            {isDirty && (
+              <span className="text-xs font-semibold text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg animate-pulse">
+                Modifiche non salvate
+              </span>
+            )}
             <Button onClick={async () => { await saveConfig(); window.open('/sito', '_blank'); }} variant="outline" className="border-[#0EA5E9] text-[#0EA5E9]" data-testid="preview-live-btn">
               <Globe className="w-4 h-4 mr-2" /> Salva e Vedi Live
             </Button>
@@ -950,7 +973,7 @@ export default function WebsiteAdminPage() {
                           <p className="text-sm text-gray-600">"{review.text}"</p>
                         </div>
                         <div className="flex gap-1 shrink-0">
-                          <Button variant="ghost" size="icon" onClick={() => openReviewDialog(review)} className="h-8 w-8"><Save className="w-3 h-3" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => openReviewDialog(review)} className="h-8 w-8"><Pencil className="w-3 h-3" /></Button>
                           <Button variant="ghost" size="icon" onClick={() => deleteReview(review.id)} className="h-8 w-8 text-red-500"><Trash2 className="w-3 h-3" /></Button>
                         </div>
                       </div>
@@ -1233,6 +1256,20 @@ export default function WebsiteAdminPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Delete Confirm Dialog */}
+        <AlertDialog open={deleteConfirm.open} onOpenChange={(open) => !open && setDeleteConfirm(prev => ({ ...prev, open: false }))}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Conferma eliminazione</AlertDialogTitle>
+              <AlertDialogDescription>Sei sicuro di voler eliminare {deleteConfirm.label}? L'azione non è reversibile.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annulla</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDelete} className="bg-red-500 hover:bg-red-600 text-white">Elimina</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Promo Dialog */}
         <Dialog open={promoDialog} onOpenChange={setPromoDialog}>

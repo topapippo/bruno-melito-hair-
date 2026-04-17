@@ -15,23 +15,9 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getCategoryInfo, groupServicesByCategory } from '../../lib/categories';
+import { ALL_SLOTS, DAY_MAP } from '../../lib/timeSlots';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
-
-const generateTimeSlots = () => {
-  const slots = [];
-  for (let hour = 8; hour <= 20; hour++) {
-    for (let min = 0; min < 60; min += 15) {
-      if (hour === 20 && min > 0) break;
-      slots.push(`${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`);
-    }
-  }
-  return slots;
-};
-
-const ALL_SLOTS = generateTimeSlots();
-
-const DAY_MAP = { 0: 'dom', 1: 'lun', 2: 'mar', 3: 'mer', 4: 'gio', 5: 'ven', 6: 'sab' };
 
 const getFilteredSlots = (dateStr, hoursConfig, blockedSlots = []) => {
   let slots = [...ALL_SLOTS];
