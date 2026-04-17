@@ -20,6 +20,12 @@ services:
         value: production
       - key: PYTHON_VERSION
         value: 3.11.0
+      - key: PUBLIC_ADMIN_EMAIL
+        value: melitobruno@gmail.com
+      - key: BACKUP_ROTATE_DAYS
+        value: "7"
+      - key: FRONTEND_URL
+        value: https://brunomelitohair.it
 
   # ── Frontend React (Static Site) ──────────────────────────────────────────
   - type: web
