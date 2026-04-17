@@ -191,6 +191,9 @@ class AppointmentResponse(BaseModel):
     promo_name: Optional[str] = None
     card_id: Optional[str] = None
     card_name: Optional[str] = None
+    confirmation_token: Optional[str] = None
+    confirmation_status: Optional[str] = None
+    confirmation_sent_at: Optional[str] = None
     created_at: str
 
 class AppointmentUpdate(BaseModel):

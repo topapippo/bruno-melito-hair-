@@ -31,32 +31,37 @@ except (PermissionError, OSError):
     os.makedirs(_BACKUP_DIR, exist_ok=True)
 
 BACKUP_FILE = os.path.join(_BACKUP_DIR, "salon_backup.json")
+BACKUP_ROTATE_DAYS = int(os.environ.get("BACKUP_ROTATE_DAYS", "7"))
+
+
+def _rotate_backups():
+    """Mantiene gli ultimi BACKUP_ROTATE_DAYS backup giornalieri, elimina i più vecchi."""
+    try:
+        files = sorted([
+            f for f in os.listdir(_BACKUP_DIR)
+            if f.startswith("salon_backup_") and f.endswith(".json")
+        ])
+        while len(files) >= BACKUP_ROTATE_DAYS:
+            oldest = os.path.join(_BACKUP_DIR, files.pop(0))
+            os.remove(oldest)
+            logger.info(f"Backup vecchio rimosso: {oldest}")
+    except Exception as e:
+        logger.warning(f"Rotazione backup fallita: {e}")
 
 
 async def run_backup() -> bool:
     """
     Esegue il backup completo di tutti i dati del salone.
-    Sovrascrive sempre lo stesso file (salon_backup.json).
+    Mantiene un file per data (rotante, max BACKUP_ROTATE_DAYS giorni).
+    Aggiorna sempre anche salon_backup.json come file "ultimo backup" per il download rapido.
     """
     try:
         logger.info("Backup serale avviato...")
 
-        # Raccoglie tutti i dati in parallelo
         (
-            appointments,
-            clients,
-            payments,
-            expenses,
-            cards,
-            card_templates,
-            loyalty,
-            loyalty_rewards,
-            operators,
-            services,
-            promotions,
-            blocked_slots,
-            sospesi,
-            users,
+            appointments, clients, payments, expenses, cards, card_templates,
+            loyalty, loyalty_rewards, operators, services, promotions,
+            blocked_slots, sospesi, users,
         ) = await _collect_all()
 
         backup_data = {
@@ -74,33 +79,38 @@ async def run_backup() -> bool:
             "promotions": promotions,
             "blocked_slots": blocked_slots,
             "sospesi": sospesi,
-            # utenti senza password
             "users": users,
         }
 
-        # Scrittura atomica: scrive su file temporaneo poi rinomina per evitare
-        # file corrotto in caso di interruzione durante la scrittura
-        tmp_file = BACKUP_FILE + ".tmp"
+        today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        dated_file = os.path.join(_BACKUP_DIR, f"salon_backup_{today_str}.json")
+
+        # Scrittura atomica su file datato
+        tmp_file = dated_file + ".tmp"
         with open(tmp_file, "w", encoding="utf-8") as f:
             json.dump(backup_data, f, ensure_ascii=False, indent=2, default=str)
-        os.replace(tmp_file, BACKUP_FILE)
+        os.replace(tmp_file, dated_file)
+
+        # Copia anche su salon_backup.json (per compatibilità con il download rapido)
+        import shutil
+        shutil.copy2(dated_file, BACKUP_FILE)
+
+        # Elimina backup più vecchi di BACKUP_ROTATE_DAYS
+        _rotate_backups()
 
         total_records = sum(len(v) for v in backup_data.values() if isinstance(v, list))
         logger.info(
-            f"Backup completato: {total_records} record totali — "
+            f"Backup completato [{today_str}]: {total_records} record — "
             f"appointments={len(appointments)}, clients={len(clients)}, "
-            f"payments={len(payments)}, expenses={len(expenses)}, "
-            f"cards={len(cards)}, loyalty={len(loyalty)}, "
-            f"operators={len(operators)}, services={len(services)}"
+            f"payments={len(payments)}, services={len(services)}"
         )
         return True
 
     except Exception as e:
         logger.error(f"Errore durante il backup: {e}", exc_info=True)
-        # Rimuove il file temporaneo se ancora presente
         try:
-            os.remove(BACKUP_FILE + ".tmp")
-        except OSError:
+            os.remove(dated_file + ".tmp")
+        except Exception:
             pass
         return False
 
@@ -181,12 +191,42 @@ async def backup_status(current_user: dict = Depends(get_current_user)):
     except Exception:
         pass
 
+    # Lista tutti i backup giornalieri disponibili
+    available = []
+    try:
+        for fname in sorted(os.listdir(_BACKUP_DIR), reverse=True):
+            if fname.startswith("salon_backup_") and fname.endswith(".json"):
+                fpath = os.path.join(_BACKUP_DIR, fname)
+                fstat = os.stat(fpath)
+                date_part = fname.replace("salon_backup_", "").replace(".json", "")
+                available.append({
+                    "date": date_part,
+                    "filename": fname,
+                    "size_kb": round(fstat.st_size / 1024, 1),
+                })
+    except Exception:
+        pass
+
     return {
         "exists": True,
         "size_kb": round(stat.st_size / 1024, 1),
         "last_modified": last_modified,
         "backup_date": backup_date,
+        "rotate_days": BACKUP_ROTATE_DAYS,
+        "available_backups": available,
     }
+
+
+@router.get("/backup/download/{date}")
+async def download_backup_by_date(date: str, current_user: dict = Depends(get_current_user)):
+    """Scarica il backup di una data specifica (formato YYYY-MM-DD)."""
+    import re as _re
+    if not _re.match(r'^\d{4}-\d{2}-\d{2}$', date):
+        raise HTTPException(status_code=400, detail="Formato data non valido (YYYY-MM-DD)")
+    fpath = os.path.join(_BACKUP_DIR, f"salon_backup_{date}.json")
+    if not os.path.exists(fpath):
+        raise HTTPException(status_code=404, detail=f"Nessun backup disponibile per {date}")
+    return FileResponse(fpath, media_type="application/json", filename=f"salon_backup_{date}.json")
 
 
 @router.post("/backup/send-email")

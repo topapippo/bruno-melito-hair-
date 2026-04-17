@@ -31,6 +31,8 @@ import WebsiteAdminPage from "./pages/WebsiteAdminPage";
 import ExpensesPage from "./pages/ExpensesPage";
 import PromotionsPage from "./pages/PromotionsPage";
 import LoginPage from "./pages/LoginPage";
+import ConfirmAppointmentPage from "./pages/ConfirmAppointmentPage";
+import PWAInstallBanner from "./components/PWAInstallBanner";
 import { useAuth } from "./context/AuthContext";
 
 // Offline indicator component
@@ -78,6 +80,7 @@ export default function App() {
   return (
     <AuthProvider>
       <OfflineIndicator />
+      <PWAInstallBanner />
       <BrowserRouter basename="/">
         <Routes>
           {/* LOGIN (non protetto) */}
@@ -252,6 +255,9 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* CONFERMA APPUNTAMENTO (pubblica, no auth) */}
+          <Route path="/conferma/:token" element={<ConfirmAppointmentPage />} />
 
           {/* SITO WEB PUBBLICO */}
           <Route path="/sito" element={<WebsitePage />} />

@@ -194,9 +194,20 @@ export default function DayView({
                         {/* Riga 1: nome + note/colori */}
                         <div className="flex items-start justify-between px-2 py-1 bg-[#2D1B14]/90 text-white flex-shrink-0" style={{ minHeight: '28px' }}>
                           <div className="flex-1 min-w-0">
-                            <span className="font-bold text-xs leading-tight block truncate">
-                              {apt.status === 'completed' && '✓ '}{apt.client_name}
-                            </span>
+                            <div className="flex items-center gap-1">
+                              <span className="font-bold text-xs leading-tight truncate">
+                                {apt.status === 'completed' && '✓ '}{apt.client_name}
+                              </span>
+                              {apt.confirmation_status === 'confirmed' && (
+                                <span title="Confermato dal cliente" className="text-green-400 text-[10px] font-bold flex-shrink-0">✓</span>
+                              )}
+                              {apt.confirmation_status === 'cancelled_by_client' && (
+                                <span title="Disdetto dal cliente" className="text-red-400 text-[10px] font-bold flex-shrink-0">✕</span>
+                              )}
+                              {apt.confirmation_status === 'pending' && (
+                                <span title="In attesa di conferma" className="text-yellow-300 text-[10px] flex-shrink-0">⏳</span>
+                              )}
+                            </div>
                             {clientNote ? (
                               <span className="text-[10px] text-amber-300 italic block truncate" title={clientNote}>
                                 {clientNote}
@@ -214,15 +225,18 @@ export default function DayView({
                           </button>
                         </div>
                         {/* Riga 2: blocchi servizi colorati */}
-                        <div className="flex flex-col flex-1 min-h-0" data-testid={`apt-colors-${apt.id}`}>
+                        <div
+                          className="flex flex-col flex-shrink-0"
+                          data-testid={`apt-colors-${apt.id}`}
+                          style={{ minHeight: `${apt.services.length * 18}px` }}
+                        >
                           {apt.services.map((s, i) => {
-                            const pct = ((s.duration || 15) / totalDuration) * 100;
                             const color = isCancelled ? '#EF4444' : (svcColors[i] || '#64748B');
                             return (
                               <div
                                 key={i}
-                                className="flex items-center px-2 overflow-hidden border-b border-white/20 last:border-b-0"
-                                style={{ backgroundColor: color, flex: `${pct} 0 0%`, minHeight: '16px' }}
+                                className="flex items-center px-2 overflow-hidden border-b border-white/20 last:border-b-0 flex-1"
+                                style={{ backgroundColor: color, minHeight: '18px' }}
                               >
                                 <span className="text-white font-semibold text-[11px] truncate drop-shadow-sm">
                                   {s.name}

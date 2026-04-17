@@ -1,12 +1,20 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import logging
 import os
+import uuid
+
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from database import client as mongo_client, db
 from routes import all_routers
+
+limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +119,6 @@ async def lifespan(app: FastAPI):
 
     # Start push notification scheduler
     import asyncio
-    from datetime import timedelta
     try:
         from routes.push import _send_push_reminders_core
         async def push_reminder_loop():
@@ -125,6 +132,68 @@ async def lifespan(app: FastAPI):
         logger.info("Push notification scheduler avviato")
     except Exception as e:
         logger.warning(f"Push scheduler non avviato: {e}")
+
+    # Scheduler conferme appuntamenti automatiche (ogni giorno alle 14:00 UTC = 16:00 Italia)
+    try:
+        from utils import send_sms_reminder
+        CONFIRMATION_HOUR_UTC = int(os.environ.get("CONFIRMATION_HOUR_UTC", "14"))
+        FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://brunomelitohair.it")
+
+        async def confirmation_loop():
+            while True:
+                now = datetime.now(timezone.utc)
+                next_run = now.replace(hour=CONFIRMATION_HOUR_UTC, minute=0, second=0, microsecond=0)
+                if now >= next_run:
+                    next_run += timedelta(days=1)
+                wait_seconds = (next_run - now).total_seconds()
+                logger.info(f"Prossima conferma automatica in {wait_seconds / 3600:.1f}h")
+                await asyncio.sleep(wait_seconds)
+                try:
+                    tomorrow = (datetime.now(timezone.utc) + timedelta(days=1)).strftime("%Y-%m-%d")
+                    appointments = await db.appointments.find(
+                        {"date": tomorrow, "status": {"$nin": ["cancelled"]},
+                         "confirmation_sent_at": {"$exists": False}},
+                        {"_id": 0}
+                    ).to_list(500)
+                    sent_count = 0
+                    for apt in appointments:
+                        client_phone = apt.get("client_phone", "")
+                        if not client_phone and apt.get("client_id"):
+                            cl = await db.clients.find_one({"id": apt["client_id"]}, {"_id": 0})
+                            if cl:
+                                client_phone = cl.get("phone", "")
+                        if not client_phone:
+                            continue
+                        user = await db.users.find_one({"id": apt["user_id"]}, {"_id": 0})
+                        salon_name = user.get("salon_name", "Salone") if user else "Salone"
+                        token = str(uuid.uuid4())
+                        confirm_link = f"{FRONTEND_URL}/conferma/{token}"
+                        services_text = ", ".join([s["name"] for s in apt.get("services", [])])
+                        message = (
+                            f"Ciao {apt.get('client_name', '')}! Ti ricordiamo l'appuntamento di domani "
+                            f"alle {apt['time']} per {services_text}. "
+                            f"Conferma o disdici: {confirm_link}"
+                        )
+                        result = await send_sms_reminder(client_phone, message, salon_name)
+                        if result.get("success"):
+                            await db.appointments.update_one(
+                                {"id": apt["id"]},
+                                {"$set": {
+                                    "confirmation_token": token,
+                                    "confirmation_status": "pending",
+                                    "confirmation_sent_at": datetime.now(timezone.utc).isoformat(),
+                                    "sms_sent": True,
+                                }}
+                            )
+                            sent_count += 1
+                    logger.info(f"Conferme automatiche inviate: {sent_count}/{len(appointments)}")
+                except Exception as e:
+                    logger.error(f"Errore scheduler conferme: {e}")
+
+        asyncio.ensure_future(confirmation_loop())
+        logger.info(f"Scheduler conferme appuntamenti avviato (ogni giorno alle {CONFIRMATION_HOUR_UTC:02d}:00 UTC)")
+    except Exception as e:
+        logger.warning(f"Scheduler conferme non avviato: {e}")
 
     # Start backup serale (ore 20:00 Italia = 19:00 UTC)
     try:
@@ -165,6 +234,9 @@ async def lifespan(app: FastAPI):
 
 # ── App ────────────────────────────────────────────────────────────────────────
 app = FastAPI(title="MBHS SALON API", lifespan=lifespan)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 # ── CORS ───────────────────────────────────────────────────────────────────────
 _cors_origins_raw = os.environ.get('CORS_ORIGINS', '')

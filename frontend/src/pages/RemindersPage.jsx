@@ -54,6 +54,7 @@ export default function RemindersPage() {
   const [autoCheck, setAutoCheck] = useState(null);
   const [batchSending, setBatchSending] = useState(false);
   const [colorReminders, setColorReminders] = useState([]);
+  const [sendingConfirmId, setSendingConfirmId] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -314,6 +315,21 @@ export default function RemindersPage() {
     } catch (err) {
       toast.error('Errore nell\'eliminazione');
     }
+  };
+
+  const sendConfirmationLink = async (apt) => {
+    if (!apt.client_phone) { toast.error('Numero non disponibile'); return; }
+    setSendingConfirmId(apt.id);
+    try {
+      await api.post(`${API}/reminders/appointment/${apt.id}/send-confirmation`);
+      setTomorrowReminders(prev => prev.map(r =>
+        r.id === apt.id ? { ...r, confirmation_status: 'pending', confirmation_sent_at: new Date().toISOString() } : r
+      ));
+      toast.success(`Link di conferma inviato via SMS a ${apt.client_name}`);
+    } catch (e) {
+      toast.error(e.response?.data?.detail || 'Errore invio SMS');
+    }
+    setSendingConfirmId(null);
   };
 
   const pendingReminders = tomorrowReminders.filter(r => !r.reminded);
@@ -594,12 +610,21 @@ export default function RemindersPage() {
                     data-testid={`reminder-apt-${apt.id}`}
                   >
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-bold text-[#2D1B14] truncate">{apt.client_name}</p>
                         {apt.reminded && (
                           <span className="text-xs bg-green-200 text-green-800 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
                             <Check className="w-3 h-3" /> Inviato
                           </span>
+                        )}
+                        {apt.confirmation_status === 'confirmed' && (
+                          <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">✓ Confermato</span>
+                        )}
+                        {apt.confirmation_status === 'cancelled_by_client' && (
+                          <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-semibold">✕ Disdetto</span>
+                        )}
+                        {apt.confirmation_status === 'pending' && (
+                          <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-semibold">⏳ In attesa</span>
                         )}
                       </div>
                       <div className="flex items-center gap-3 text-sm text-[#7C5C4A] mt-1 flex-wrap">
@@ -657,6 +682,21 @@ export default function RemindersPage() {
                           >
                             <Edit3 className="w-4 h-4" />
                           </Button>
+                          {!apt.confirmation_status && (
+                            <Button
+                              size="sm"
+                              onClick={() => sendConfirmationLink(apt)}
+                              disabled={sendingConfirmId === apt.id || !apt.client_phone}
+                              className="bg-blue-500 hover:bg-blue-600 text-white font-bold text-xs"
+                              title="Invia link conferma SI/NO via SMS"
+                            >
+                              {sendingConfirmId === apt.id ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                '📩 Conferma'
+                              )}
+                            </Button>
+                          )}
                         </>
                       )}
                     </div>

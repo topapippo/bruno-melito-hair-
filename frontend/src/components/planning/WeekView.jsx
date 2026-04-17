@@ -225,6 +225,9 @@ export default function WeekView({
                           {/* Header */}
                           <div className="flex items-center justify-between px-1 bg-[#2D1B14]/90 text-white flex-shrink-0" style={{ minHeight: '18px' }}>
                             <span className="font-bold text-[10px] truncate">{apt.time} {apt.client_name}</span>
+                            {apt.confirmation_status === 'confirmed' && <span className="text-green-400 text-[9px] flex-shrink-0">✓</span>}
+                            {apt.confirmation_status === 'cancelled_by_client' && <span className="text-red-400 text-[9px] flex-shrink-0">✕</span>}
+                            {apt.confirmation_status === 'pending' && <span className="text-yellow-300 text-[9px] flex-shrink-0">⏳</span>}
                           </div>
                           {/* Service blocks */}
                           <div className="flex flex-col flex-1 min-h-0">

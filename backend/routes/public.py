@@ -8,12 +8,19 @@ import re
 import requests as http_requests
 import logging
 
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
 from database import db
 from auth import get_current_user
 from models import PublicBookingRequest
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+limiter = Limiter(key_func=get_remote_address)
+
+# Email admin configurabile via env var (evita hardcoding)
+PUBLIC_ADMIN_EMAIL = os.environ.get("PUBLIC_ADMIN_EMAIL", "melitobruno@gmail.com")
 
 
 def _normalize_phone(phone: str) -> str:
@@ -185,7 +192,7 @@ DEFAULT_WEBSITE_CONFIG = {
 # ============== PUBLIC BOOKING ==============
 
 async def get_public_admin_user():
-    user = await db.users.find_one({"email": "admin@brunomelito.it"}, {"_id": 0, "id": 1})
+    user = await db.users.find_one({"email": PUBLIC_ADMIN_EMAIL}, {"_id": 0, "id": 1})
     if not user:
         user = await db.users.find_one({}, {"_id": 0, "id": 1})
     return user
@@ -200,7 +207,7 @@ async def get_public_services():
 
 @router.get("/public/operators")
 async def get_public_operators():
-    user = await db.users.find_one({"email": "admin@brunomelito.it"}, {"_id": 0, "id": 1})
+    user = await db.users.find_one({"email": PUBLIC_ADMIN_EMAIL}, {"_id": 0, "id": 1})
     if not user:
         user = await db.users.find_one({}, {"_id": 0, "id": 1})
     if not user:
@@ -209,8 +216,9 @@ async def get_public_operators():
 
 
 @router.post("/public/booking")
-async def create_public_booking(data: PublicBookingRequest):
-    user = await db.users.find_one({"email": "admin@brunomelito.it"}, {"_id": 0})
+@limiter.limit("5/minute;20/hour")
+async def create_public_booking(request: Request, data: PublicBookingRequest):
+    user = await db.users.find_one({"email": PUBLIC_ADMIN_EMAIL}, {"_id": 0})
     if not user:
         user = await db.users.find_one({}, {"_id": 0})
     if not user:
@@ -390,6 +398,19 @@ async def create_public_booking(data: PublicBookingRequest):
         "source": "online", "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.appointments.insert_one(appointment)
+
+    # Notifica push all'admin per la nuova prenotazione online
+    try:
+        from routes.push import send_push_to_all
+        services_names = ", ".join([s.get("name", "") for s in services])
+        await send_push_to_all(
+            title="🔔 Nuova Prenotazione Online!",
+            body=f"{data.client_name} • {data.date} alle {data.time} • {services_names}",
+            url="/planning",
+        )
+    except Exception as e:
+        logger.warning(f"Push notifica prenotazione fallita: {e}")
+
     return {"success": True, "appointment_id": appointment_id, "booking_code": appointment_id[:8].upper()}
 
 
@@ -397,7 +418,7 @@ async def create_public_booking(data: PublicBookingRequest):
 @router.get("/public/upselling")
 async def get_upselling_suggestions(service_ids: str):
     """Get upselling suggestions based on booked service IDs."""
-    user = await db.users.find_one({"email": "admin@brunomelito.it"}, {"_id": 0})
+    user = await db.users.find_one({"email": PUBLIC_ADMIN_EMAIL}, {"_id": 0})
     if not user:
         user = await db.users.find_one({}, {"_id": 0})
     if not user:
@@ -435,7 +456,7 @@ async def add_service_to_appointment(appointment_id: str, data: dict):
     phone = data.get("phone")
     if not service_id or not phone:
         raise HTTPException(status_code=400, detail="Servizio e telefono richiesti")
-    user = await db.users.find_one({"email": "admin@brunomelito.it"}, {"_id": 0})
+    user = await db.users.find_one({"email": PUBLIC_ADMIN_EMAIL}, {"_id": 0})
     if not user:
         user = await db.users.find_one({}, {"_id": 0})
     if not user:
@@ -485,7 +506,7 @@ class _PhoneLookupRequest(BaseModel):
 @router.post("/public/my-appointments")
 async def public_lookup_appointments(data: _PhoneLookupRequest):
     phone = data.phone
-    user = await db.users.find_one({"email": "admin@brunomelito.it"}, {"_id": 0})
+    user = await db.users.find_one({"email": PUBLIC_ADMIN_EMAIL}, {"_id": 0})
     if not user:
         user = await db.users.find_one({}, {"_id": 0})
     if not user:
@@ -532,7 +553,7 @@ async def public_update_appointment(appointment_id: str, data: dict):
     phone = data.get("phone", "")
     if not phone:
         raise HTTPException(status_code=400, detail="Numero di telefono richiesto")
-    user = await db.users.find_one({"email": "admin@brunomelito.it"}, {"_id": 0})
+    user = await db.users.find_one({"email": PUBLIC_ADMIN_EMAIL}, {"_id": 0})
     if not user:
         user = await db.users.find_one({}, {"_id": 0})
     if not user:
@@ -557,7 +578,7 @@ async def public_update_appointment(appointment_id: str, data: dict):
 
 @router.delete("/public/appointments/{appointment_id}")
 async def public_cancel_appointment(appointment_id: str, phone: str):
-    user = await db.users.find_one({"email": "admin@brunomelito.it"}, {"_id": 0})
+    user = await db.users.find_one({"email": PUBLIC_ADMIN_EMAIL}, {"_id": 0})
     if not user:
         user = await db.users.find_one({}, {"_id": 0})
     if not user:
@@ -776,3 +797,59 @@ async def public_get_website():
     }
     
     return {"config": config, "reviews": reviews, "gallery": gallery, "services": services, "card_templates": card_templates, "loyalty": loyalty_config}
+
+
+# ============== CONFERMA APPUNTAMENTO ==============
+
+@router.get("/public/confirm-info/{token}")
+@limiter.limit("20/minute")
+async def get_confirmation_info(request: Request, token: str):
+    """Restituisce i dati dell'appuntamento associato al token (endpoint pubblico, no auth)."""
+    apt = await db.appointments.find_one({"confirmation_token": token}, {"_id": 0, "user_id": 0})
+    if not apt:
+        raise HTTPException(status_code=404, detail="Link di conferma non valido o scaduto")
+    return {
+        "id": apt["id"],
+        "client_name": apt.get("client_name", ""),
+        "date": apt.get("date", ""),
+        "time": apt.get("time", ""),
+        "services": [s.get("name", "") for s in apt.get("services", [])],
+        "confirmation_status": apt.get("confirmation_status"),
+    }
+
+
+class ConfirmActionRequest(BaseModel):
+    action: str  # "si" o "no"
+
+
+@router.post("/public/confirm/{token}")
+@limiter.limit("10/minute")
+async def confirm_appointment_by_token(request: Request, token: str, data: ConfirmActionRequest):
+    """Il cliente conferma (si) o disdice (no) il proprio appuntamento tramite link."""
+    if data.action not in ("si", "no"):
+        raise HTTPException(status_code=400, detail="Azione non valida. Usa 'si' o 'no'")
+    apt = await db.appointments.find_one({"confirmation_token": token}, {"_id": 0})
+    if not apt:
+        raise HTTPException(status_code=404, detail="Link di conferma non valido o scaduto")
+    if apt.get("status") == "cancelled":
+        raise HTTPException(status_code=400, detail="Questo appuntamento è già stato cancellato")
+    new_status = "confirmed" if data.action == "si" else "cancelled_by_client"
+    await db.appointments.update_one(
+        {"confirmation_token": token},
+        {"$set": {
+            "confirmation_status": new_status,
+            "confirmation_responded_at": datetime.now(timezone.utc).isoformat(),
+        }}
+    )
+    if data.action == "no":
+        await db.appointments.update_one(
+            {"confirmation_token": token},
+            {"$set": {"status": "cancelled"}}
+        )
+    return {
+        "success": True,
+        "action": data.action,
+        "client_name": apt.get("client_name", ""),
+        "date": apt.get("date", ""),
+        "time": apt.get("time", ""),
+    }

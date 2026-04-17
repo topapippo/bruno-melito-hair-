@@ -50,6 +50,46 @@ async def send_push_reminders():
     return await _send_push_reminders_core()
 
 
+async def send_push_to_all(title: str, body: str, url: str = "/", icon: str = "/icons/icon-192x192.png"):
+    """Invia una notifica push a tutte le subscription attive."""
+    try:
+        from pywebpush import webpush
+    except ImportError:
+        return {"sent": 0, "error": "pywebpush not installed"}
+
+    if not VAPID_PRIVATE_KEY or not VAPID_PUBLIC_KEY:
+        return {"sent": 0, "error": "VAPID keys not configured"}
+
+    subscriptions = await db.push_subscriptions.find({"active": True}, {"_id": 0}).to_list(500)
+    if not subscriptions:
+        return {"sent": 0, "message": "No push subscriptions"}
+
+    private_key_b64 = VAPID_PRIVATE_KEY
+    pem_lines = ["-----BEGIN PRIVATE KEY-----"]
+    for i in range(0, len(private_key_b64), 64):
+        pem_lines.append(private_key_b64[i:i+64])
+    pem_lines.append("-----END PRIVATE KEY-----")
+    private_pem = "\n".join(pem_lines)
+
+    payload = json.dumps({"title": title, "body": body, "icon": icon, "url": url})
+    sent = 0
+    for sub in subscriptions:
+        try:
+            webpush(
+                subscription_info={"endpoint": sub["endpoint"], "keys": sub["keys"]},
+                data=payload,
+                vapid_private_key=private_pem,
+                vapid_claims={"sub": f"mailto:{VAPID_CLAIMS_EMAIL}"},
+            )
+            sent += 1
+        except Exception as e:
+            if "410" in str(e) or "404" in str(e):
+                await db.push_subscriptions.update_one(
+                    {"endpoint": sub["endpoint"]}, {"$set": {"active": False}}
+                )
+    return {"sent": sent}
+
+
 async def _send_push_reminders_core():
     """Core logic for sending push reminders, callable from scheduler."""
     try:

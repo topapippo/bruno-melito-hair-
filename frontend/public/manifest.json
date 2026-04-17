@@ -2,11 +2,15 @@
   "name": "Bruno Melito Hair Stylist",
   "short_name": "Bruno Melito",
   "description": "Parrucchiere a Santa Maria Capua Vetere dal 1983. Prenota il tuo appuntamento online.",
-  "start_url": "/sito",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#0EA5E9",
-  "theme_color": "#0EA5E9",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "background_color": "#FDF6F0",
+  "theme_color": "#E8477C",
   "orientation": "any",
+  "lang": "it",
+  "categories": ["lifestyle", "health"],
   "icons": [
     {
       "src": "/logo.png?v=4",
@@ -61,6 +65,22 @@
       "sizes": "72x72",
       "type": "image/png",
       "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Prenota Appuntamento",
+      "short_name": "Prenota",
+      "description": "Prenota il tuo appuntamento online",
+      "url": "/sito",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Planning",
+      "short_name": "Planning",
+      "description": "Visualizza il planning del giorno",
+      "url": "/planning",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
     }
   ]
 }

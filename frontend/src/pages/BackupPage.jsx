@@ -4,7 +4,7 @@ import Layout from '../components/Layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Database, Download, Users, Calendar, CreditCard, FileSpreadsheet, CheckCircle } from 'lucide-react';
+import { Database, Download, Users, Calendar, CreditCard, FileSpreadsheet, CheckCircle, History } from 'lucide-react';
 import { toast } from 'sonner';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -22,9 +22,10 @@ export default function BackupPage() {
   const [stats, setStats] = useState({ clients: 0, appointments: 0, payments: 0, expenses: 0, services: 0 });
   const [loading, setLoading] = useState(true);
   const [backupRunning, setBackupRunning] = useState(false);
-  const [backupStatus, setBackupStatus] = useState({ exists: false, size_kb: 0, backup_date: null, last_modified: null });
+  const [backupStatus, setBackupStatus] = useState({ exists: false, size_kb: 0, backup_date: null, last_modified: null, available_backups: [] });
   const [askSaveOnClose, setAskSaveOnClose] = useState(false);
   const [backupState, setBackupState] = useState('missing');
+  const [downloadingDate, setDownloadingDate] = useState(null);
 
   useEffect(() => {
     fetchStats();
@@ -114,6 +115,25 @@ export default function BackupPage() {
       toast.error('Errore nel download del backup');
       console.error(err);
     }
+  };
+
+  const downloadBackupByDate = async (date) => {
+    setDownloadingDate(date);
+    try {
+      const res = await api.get(`${API}/backup/download/${date}`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/json' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `salon_backup_${date}.json`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success(`Backup ${date} scaricato`);
+    } catch {
+      toast.error('Errore nel download');
+    }
+    setDownloadingDate(null);
   };
 
   const backupStateLabel = () => {
@@ -211,6 +231,41 @@ export default function BackupPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Storico backup */}
+            {backupStatus.available_backups?.length > 0 && (
+              <Card className="border-[#F0E6DC]/30">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <History className="w-5 h-5 text-[#C8617A]" />
+                    <h3 className="font-bold text-[#2D1B14] text-lg">Storico Backup</h3>
+                    <span className="text-xs bg-[#F0E6DC] text-[#7C5C4A] px-2 py-0.5 rounded-full">
+                      ultimi {backupStatus.rotate_days || 7} giorni
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {backupStatus.available_backups.map((b) => (
+                      <div key={b.date} className="flex items-center justify-between p-3 rounded-xl bg-[#FAF7F2] border border-[#F0E6DC]">
+                        <div>
+                          <p className="font-semibold text-[#2D1B14] text-sm">{b.date}</p>
+                          <p className="text-xs text-[#7C5C4A]">{b.size_kb} KB</p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => downloadBackupByDate(b.date)}
+                          disabled={downloadingDate === b.date}
+                          className="border-[#C8617A] text-[#C8617A] hover:bg-[#C8617A]/10"
+                        >
+                          <Download className="w-3.5 h-3.5 mr-1" />
+                          {downloadingDate === b.date ? '...' : 'Scarica'}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </>
         )}
       </div>

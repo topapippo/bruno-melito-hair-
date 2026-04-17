@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import Optional
 from datetime import datetime, timezone, timedelta
 import uuid
+import os
 
 from database import db
 from auth import get_current_user
@@ -189,7 +190,9 @@ async def get_tomorrow_reminders(current_user: dict = Depends(get_current_user))
             "client_phone": client_phone, "client_id": apt.get("client_id", ""),
             "date": apt["date"], "time": apt["time"],
             "services": apt.get("services", []), "operator_name": apt.get("operator_name", ""),
-            "reminded": apt["id"] in reminded_ids
+            "reminded": apt["id"] in reminded_ids,
+            "confirmation_status": apt.get("confirmation_status"),
+            "confirmation_sent_at": apt.get("confirmation_sent_at"),
         })
     return results
 
@@ -321,6 +324,48 @@ async def reset_inactive_recall(client_id: str, current_user: dict = Depends(get
         {"user_id": current_user["id"], "type": "inactive_recall", "client_id": client_id}
     )
     return {"success": True, "deleted": result.deleted_count}
+
+
+@router.post("/reminders/appointment/{appointment_id}/send-confirmation")
+async def send_confirmation_link(appointment_id: str, current_user: dict = Depends(get_current_user)):
+    """Invia SMS con link di conferma SI/NO al cliente."""
+    apt = await db.appointments.find_one({"id": appointment_id, "user_id": current_user["id"]}, {"_id": 0})
+    if not apt:
+        raise HTTPException(status_code=404, detail="Appuntamento non trovato")
+    if apt.get("status") == "cancelled":
+        raise HTTPException(status_code=400, detail="Appuntamento già cancellato")
+
+    client_phone = apt.get("client_phone", "")
+    if not client_phone and apt.get("client_id"):
+        cl = await db.clients.find_one({"id": apt["client_id"]}, {"_id": 0})
+        if cl:
+            client_phone = cl.get("phone", "")
+    if not client_phone:
+        raise HTTPException(status_code=400, detail="Cliente senza numero di telefono")
+
+    token = apt.get("confirmation_token") or str(uuid.uuid4())
+    await db.appointments.update_one(
+        {"id": appointment_id},
+        {"$set": {
+            "confirmation_token": token,
+            "confirmation_status": "pending",
+            "confirmation_sent_at": datetime.now(timezone.utc).isoformat(),
+        }}
+    )
+
+    frontend_url = os.environ.get("FRONTEND_URL", "https://brunomelitohair.it")
+    confirm_link = f"{frontend_url}/conferma/{token}"
+    services_text = ", ".join([s["name"] for s in apt.get("services", [])])
+    message = (
+        f"Ciao {apt.get('client_name', '')}! Ti ricordiamo il tuo appuntamento il "
+        f"{apt['date']} alle {apt['time']} per {services_text}. "
+        f"Conferma o disdici qui: {confirm_link}"
+    )
+
+    result = await send_sms_reminder(client_phone, message, current_user.get("salon_name", "Salone"))
+    if result["success"]:
+        return {"success": True, "message": "Link di conferma inviato via SMS"}
+    return {"success": False, "error": result.get("error", "Errore invio SMS")}
 
 
 @router.get("/reminders/thank-you-template")
