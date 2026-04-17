@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../lib/api';
+import { fmtDate } from '../lib/dateUtils';
 import * as XLSX from 'xlsx';
 import Layout from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -683,7 +684,7 @@ export default function ClientsPage() {
                         <div key={apt.id} className="p-3 bg-[#FAF7F2] rounded-xl border border-[#F0E6DC]">
                           <div className="flex justify-between items-start">
                             <div>
-                              <p className="font-semibold text-[#2D1B14]">{apt.date} - {apt.time}</p>
+                              <p className="font-semibold text-[#2D1B14]">{fmtDate(apt.date)} - {apt.time}</p>
                               <p className="text-sm text-[#7C5C4A]">{apt.services?.map(s => s.name).join(', ')}</p>
                             </div>
                             <span className={`text-xs px-2 py-1 rounded ${apt.paid ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
@@ -704,7 +705,7 @@ export default function ClientsPage() {
                       {clientHistory.payments.slice(0, 10).map((pay) => (
                         <div key={pay.id} className="p-3 bg-green-50 rounded-xl flex justify-between items-center">
                           <div>
-                            <p className="font-semibold text-[#2D1B14]">{pay.date}</p>
+                            <p className="font-semibold text-[#2D1B14]">{fmtDate(pay.date)}</p>
                             <p className="text-xs text-[#7C5C4A] capitalize">{pay.payment_method}</p>
                           </div>
                           <p className="font-black text-green-600">€{pay.total_paid.toFixed(2)}</p>

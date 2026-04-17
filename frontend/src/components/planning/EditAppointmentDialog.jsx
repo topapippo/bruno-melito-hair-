@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../../lib/api';
+import { fmtDate } from '../../lib/dateUtils';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -422,7 +423,7 @@ export default function EditAppointmentDialog({
                     <div key={s.id} className="flex items-center justify-between bg-white rounded-xl p-3 border border-red-200">
                       <div>
                         <p className="text-sm font-bold text-red-800">{'\u20AC'}{s.amount?.toFixed(2)}</p>
-                        <p className="text-xs text-red-500">{s.date} {s.services?.length > 0 ? `- ${s.services.join(', ')}` : ''}</p>
+                        <p className="text-xs text-red-500">{fmtDate(s.date)} {s.services?.length > 0 ? `- ${s.services.join(', ')}` : ''}</p>
                       </div>
                       <div className="flex gap-1.5">
                         <Button type="button" size="sm"
@@ -484,7 +485,7 @@ export default function EditAppointmentDialog({
                       clientHistory.appointments.map((apt, idx) => (
                         <div key={idx} className="flex items-center gap-2 bg-white/60 rounded-lg px-2 py-1.5 text-xs">
                           <Clock className="w-3 h-3 text-[#92400E] shrink-0" />
-                          <span className="font-bold text-[#92400E] w-20 shrink-0">{apt.date}</span>
+                          <span className="font-bold text-[#92400E] w-20 shrink-0">{fmtDate(apt.date)}</span>
                           <span className="text-[#92400E] w-12 shrink-0">{apt.time}</span>
                           <span className="text-[#92400E] flex-1 truncate">{(apt.services || []).map(s => s.name).join(', ')}</span>
                           {apt.status === 'completed' && <span className="text-emerald-600 font-bold">{'\u20AC'}{(apt.amount_paid || 0).toFixed(0)}</span>}

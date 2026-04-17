@@ -443,7 +443,7 @@ export default function CardsPage() {
                   {card.valid_until && (
                     <p className="text-xs text-[#7C5C4A] flex items-center gap-1 mb-3">
                       <Calendar className="w-3 h-3" />
-                      Valida fino al {format(new Date(card.valid_until), 'd MMM yyyy', { locale: it })}
+                      Valida fino al {format(new Date(card.valid_until), 'dd-MM-yy', { locale: it })}
                     </p>
                   )}
 
@@ -711,7 +711,7 @@ export default function CardsPage() {
                       <div>
                         <p className="text-sm text-[#2D1B14]">{tx.description}</p>
                         <p className="text-xs text-[#7C5C4A]">
-                          {format(new Date(tx.date), 'd MMM yyyy HH:mm', { locale: it })}
+                          {format(new Date(tx.date), 'dd-MM-yy HH:mm', { locale: it })}
                         </p>
                       </div>
                       <span className={`font-semibold ${tx.amount < 0 ? 'text-[#789F8A]' : 'text-[#E76F51]'}`}>

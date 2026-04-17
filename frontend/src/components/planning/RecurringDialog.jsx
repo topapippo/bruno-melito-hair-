@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import api from '../../lib/api';
+import { fmtDate } from '../../lib/dateUtils';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
@@ -48,7 +49,7 @@ export default function RecurringDialog({ open, onClose, appointment, operators,
           <DialogDescription>
             {appointment && (
               <span>
-                {appointment.client_name} - {appointment.date} alle {appointment.time}
+                {appointment.client_name} - {fmtDate(appointment.date)} alle {appointment.time}
               </span>
             )}
           </DialogDescription>

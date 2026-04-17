@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { fmtDate } from '../../lib/dateUtils';
 import { CalendarDays, Bell, Euro, X } from 'lucide-react';
 
 export function OnlineBookingBanner({ newOnlineBookings, dismissOnlineBooking, dismissAllOnlineBookings, goToBookingDate }) {
@@ -29,7 +30,7 @@ export function OnlineBookingBanner({ newOnlineBookings, dismissOnlineBooking, d
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-sm text-emerald-900 truncate">{booking.client_name}</p>
                 <p className="text-xs text-emerald-700">
-                  {booking.date} alle {booking.time} - {booking.services?.map(s => s.name).join(', ')}
+                  {fmtDate(booking.date)} alle {booking.time} - {booking.services?.map(s => s.name).join(', ')}
                 </p>
               </div>
               <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); dismissOnlineBooking(booking.id); }} className="h-7 w-7 shrink-0 text-emerald-500 hover:bg-emerald-100" data-testid={`dismiss-booking-${booking.id}`}>

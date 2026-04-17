@@ -194,7 +194,7 @@ export default function WeeklyView() {
     try {
       const updateData = { time, date: newDate };
       await api.put(`${API}/appointments/${draggedApt.id}`, updateData);
-      toast.success(`Spostato a ${format(day, 'EEE dd/MM', { locale: it })} ${time}`);
+      toast.success(`Spostato a ${format(day, 'EEE dd-MM', { locale: it })} ${time}`);
       fetchAll();
     } catch {
       toast.error('Errore nello spostamento');
@@ -209,7 +209,7 @@ export default function WeeklyView() {
           <div>
             <h1 className="font-display text-3xl font-medium text-[#2D1B14]">Vista Settimanale</h1>
             <p className="text-[#7C5C4A] mt-1">
-              {format(weekStart, "dd MMMM", { locale: it })} - {format(addDays(weekStart, 5), "dd MMMM yyyy", { locale: it })}
+              {format(weekStart, "dd-MM-yy", { locale: it })} - {format(addDays(weekStart, 5), "dd-MM-yy", { locale: it })}
             </p>
           </div>
           <div className="flex items-center gap-2">

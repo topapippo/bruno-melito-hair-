@@ -317,7 +317,7 @@ export default function PlanningPage() {
     try {
       const updateData = { time: newTime, date: newDate };
       await api.put(`${API}/appointments/${apt.id}`, updateData);
-      toast.success(`Spostato a ${format(new Date(newDate + 'T12:00:00'), 'EEE dd/MM', { locale: it })} ${newTime}`);
+      toast.success(`Spostato a ${format(new Date(newDate + 'T12:00:00'), 'EEE dd-MM', { locale: it })} ${newTime}`);
       fetchWeekData();
     } catch {
       toast.error('Errore nello spostamento');
@@ -435,7 +435,7 @@ export default function PlanningPage() {
             <div>
               <h1 className="text-4xl font-black text-black">Planning</h1>
               <p className="text-[#C8617A] mt-1 font-bold text-lg">
-                {format(selectedDate, "EEEE dd/MM/yy", { locale: it })}
+                {format(selectedDate, "EEEE dd-MM-yy", { locale: it })}
                 {isHoliday(selectedDate) && (
                   <span className="ml-2 inline-flex items-center gap-1 bg-red-100 text-red-600 text-xs font-black px-2.5 py-1 rounded-full align-middle" data-testid="holiday-badge">
                     {isHoliday(selectedDate).name}
@@ -550,7 +550,7 @@ export default function PlanningPage() {
             </div>
             <div>
               <p className="text-red-700 font-black text-lg">{isHoliday(selectedDate).name}</p>
-              <p className="text-red-500 text-sm font-medium">Giorno festivo - {format(selectedDate, "EEEE dd/MM/yy", { locale: it })}</p>
+              <p className="text-red-500 text-sm font-medium">Giorno festivo - {format(selectedDate, "EEEE dd-MM-yy", { locale: it })}</p>
             </div>
           </div>
         )}

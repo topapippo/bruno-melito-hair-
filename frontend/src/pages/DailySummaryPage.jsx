@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../lib/api';
+import { fmtDate } from '../lib/dateUtils';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -81,10 +82,10 @@ export default function DailySummaryPage() {
           <div>
             <h1 className="font-display text-3xl font-medium text-[#2D1B14]">Riepilogo Giornaliero</h1>
             <p className="text-[#7C5C4A] mt-1  capitalize">
-              {format(validSelectedDate, "EEEE dd/MM/yy", { locale: it })}
+              {format(validSelectedDate, "EEEE dd-MM-yy", { locale: it })}
             </p>
             {data?.date && data.date !== selectedDate && (
-              <p className="text-sm text-red-500 mt-1">Dati caricati per: {data.date}</p>
+              <p className="text-sm text-red-500 mt-1">Dati caricati per: {fmtDate(data.date)}</p>
             )}
           </div>
           <div className="flex items-center gap-2">

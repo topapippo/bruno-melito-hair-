@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import api from '../../lib/api';
+import { fmtDate } from '../../lib/dateUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, X, Loader2 } from 'lucide-react';
@@ -98,7 +99,7 @@ export default function PlanningSearch({ onHighlightClient, highlightedClientId,
                           key={apt.id}
                           className="px-4 py-1 pl-8 text-xs text-[#7C5C4A] bg-[#FAF7F2]/50"
                         >
-                          {apt.date} {apt.time} - {apt.services?.map(s => s.name).join(', ')}
+                          {fmtDate(apt.date)} {apt.time} - {apt.services?.map(s => s.name).join(', ')}
                         </div>
                       ))}
                     </div>

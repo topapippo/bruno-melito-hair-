@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../lib/api';
+import { fmtDate } from '../lib/dateUtils';
 import * as XLSX from 'xlsx';
 import Layout from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -276,7 +277,7 @@ export default function ReportIncassiPage() {
                                 <p className="font-bold text-[#2D1B14]">{entry.client_name}</p>
                               </div>
                               <p className="text-sm text-[#7C5C4A]">{entry.services?.map(s => s.name).join(', ')}</p>
-                              <p className="text-xs text-[#7C5C4A] mt-1">{entry.date}</p>
+                              <p className="text-xs text-[#7C5C4A] mt-1">{fmtDate(entry.date)}</p>
                             </div>
                             <div className="text-right">
                               <p className="text-xl font-black text-green-600">+€{entry.total_paid.toFixed(2)}</p>
@@ -295,7 +296,7 @@ export default function ReportIncassiPage() {
                                 <p className="font-bold text-[#2D1B14]">{entry.description}</p>
                               </div>
                               <p className="text-sm text-[#7C5C4A] capitalize">{entry.category}</p>
-                              <p className="text-xs text-[#7C5C4A] mt-1">{entry.paid_date || entry.due_date}</p>
+                              <p className="text-xs text-[#7C5C4A] mt-1">{fmtDate(entry.paid_date || entry.due_date)}</p>
                             </div>
                             <div className="text-right">
                               <p className="text-xl font-black text-red-600">−€{entry.amount.toFixed(2)}</p>
