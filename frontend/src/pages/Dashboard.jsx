@@ -43,9 +43,30 @@ export default function Dashboard() {
   const [cardAlerts, setCardAlerts] = useState({ expiring: [], low_balance: [], total: 0 });
   const [showAlerts, setShowAlerts] = useState(true);
   const [whatsappPending, setWhatsappPending] = useState({ reminders: 0, colors: 0, inactive: 0, total: 0 });
+  const [tomorrowApts, setTomorrowApts] = useState([]);
   const navigate = useNavigate();
 
-  useEffect(() => { fetchDashboardStats(); fetchCardAlerts(); fetchWhatsappPending(); }, []);
+  useEffect(() => { fetchDashboardStats(); fetchCardAlerts(); fetchWhatsappPending(); fetchTomorrow(); }, []);
+
+  const fetchTomorrow = async () => {
+    try {
+      const tomorrow = format(new Date(Date.now() + 86400000), 'yyyy-MM-dd');
+      const res = await api.get(`${API}/appointments?date=${tomorrow}`);
+      const apts = (res.data || []).filter(a => a.status !== 'cancelled').sort((a, b) => a.time.localeCompare(b.time));
+      setTomorrowApts(apts);
+    } catch {}
+  };
+
+  const sendReminderWhatsApp = (apt) => {
+    let phone = String(apt.client_phone || '').replace(/[\s\-\+]/g, '');
+    if (!phone) { toast.error('Numero non disponibile'); return; }
+    if (!phone.startsWith('39')) phone = '39' + phone;
+    const serviceNames = (apt.services || []).map(s => s.name).join(', ');
+    const dateStr = format(new Date(apt.date), 'dd/MM');
+    const msg = `Ciao ${apt.client_name}! 👋 Ti ricordiamo il tuo appuntamento di domani ${dateStr} alle ${apt.time} per ${serviceNames}. A domani! ✂️`;
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+    toast.success('WhatsApp aperto!');
+  };
 
   const fetchDashboardStats = async () => {
     try {
@@ -291,6 +312,43 @@ export default function Dashboard() {
             ))}
           </div>
         </div>
+
+        {/* ── Appuntamenti Domani ────────────────────────────────────────── */}
+        {tomorrowApts.length > 0 && (
+          <div className="rounded-2xl shadow-lg overflow-hidden" style={{background: 'linear-gradient(135deg, #0F2027, #203A43, #2C5364)'}}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-400" />
+                <h2 className="font-display text-lg text-white">Appuntamenti Domani</h2>
+                <span className="text-xs bg-green-500/20 text-green-300 px-2 py-0.5 rounded-full font-bold">{tomorrowApts.length}</span>
+              </div>
+              <p className="text-xs text-white/40 hidden sm:block">Clicca il tasto verde per inviare il promemoria WhatsApp</p>
+            </div>
+            <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {tomorrowApts.map((apt) => (
+                <div key={apt.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
+                  <div className="text-center w-12 flex-shrink-0">
+                    <p className="text-sm font-bold text-green-300">{apt.time}</p>
+                    <p className="text-[10px] text-white/40">{apt.total_duration}min</p>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-white text-sm truncate">{apt.client_name}</p>
+                    <p className="text-xs text-white/50 truncate">{(apt.services || []).map(s => s.name).join(', ')}</p>
+                  </div>
+                  {apt.client_phone && (
+                    <button
+                      onClick={() => sendReminderWhatsApp(apt)}
+                      className="w-8 h-8 rounded-full bg-green-500 hover:bg-green-400 flex items-center justify-center flex-shrink-0 transition-colors shadow"
+                      title="Invia promemoria WhatsApp"
+                    >
+                      <MessageCircle className="w-4 h-4 text-white" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ── Bottom: Today + Upcoming ───────────────────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">

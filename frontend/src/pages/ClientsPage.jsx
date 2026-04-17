@@ -28,7 +28,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Users, Plus, Search, Phone, Mail, Edit2, Trash2, Loader2, History, MessageSquare, Upload, FileSpreadsheet, Euro } from 'lucide-react';
+import { Users, Plus, Search, Phone, Mail, Edit2, Trash2, Loader2, History, MessageSquare, Upload, FileSpreadsheet, Euro, AlertTriangle, Scissors } from 'lucide-react';
 import { toast } from 'sonner';
 import PageHeader from '../components/PageHeader';
 
@@ -56,6 +56,8 @@ export default function ClientsPage() {
     phone: '',
     email: '',
     notes: '',
+    allergies: '',
+    hair_notes: '',
     send_sms_reminders: true
   });
 
@@ -93,7 +95,7 @@ export default function ClientsPage() {
       }
       setDialogOpen(false);
       setEditingClient(null);
-      setFormData({ name: '', phone: '', email: '', notes: '', send_sms_reminders: true });
+      setFormData({ name: '', phone: '', email: '', notes: '', allergies: '', hair_notes: '', send_sms_reminders: true });
       fetchClients();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Errore nel salvataggio');
@@ -109,6 +111,8 @@ export default function ClientsPage() {
       phone: client.phone,
       email: client.email,
       notes: client.notes,
+      allergies: client.allergies || '',
+      hair_notes: client.hair_notes || '',
       send_sms_reminders: client.send_sms_reminders !== false
     });
     setDialogOpen(true);
@@ -129,7 +133,7 @@ export default function ClientsPage() {
 
   const openNewDialog = () => {
     setEditingClient(null);
-    setFormData({ name: '', phone: '', email: '', notes: '', send_sms_reminders: true });
+    setFormData({ name: '', phone: '', email: '', notes: '', allergies: '', hair_notes: '', send_sms_reminders: true });
     setDialogOpen(true);
   };
 
@@ -383,9 +387,21 @@ export default function ClientsPage() {
                         <span className="truncate">{client.email}</span>
                       </div>
                     )}
+                    {client.allergies && (
+                      <div className="flex items-start gap-1.5 mt-2 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+                        <p className="text-amber-700 text-xs font-medium">{client.allergies.substring(0, 60)}{client.allergies.length > 60 ? '...' : ''}</p>
+                      </div>
+                    )}
+                    {client.hair_notes && (
+                      <div className="flex items-start gap-1.5 mt-1.5 bg-[#FAF0F5] border border-[#E8C8D4] rounded-lg px-2 py-1.5">
+                        <Scissors className="w-3.5 h-3.5 text-[#C8617A] shrink-0 mt-0.5" />
+                        <p className="text-[#7C5C4A] text-xs italic">{client.hair_notes.substring(0, 60)}{client.hair_notes.length > 60 ? '...' : ''}</p>
+                      </div>
+                    )}
                     {client.notes && (
-                      <p className="text-[#7C5C4A] text-xs mt-3 pt-3 border-t border-[#F0E6DC] italic">
-                        "{client.notes.substring(0, 80)}{client.notes.length > 80 ? '...' : ''}"
+                      <p className="text-[#7C5C4A] text-xs mt-2 pt-2 border-t border-[#F0E6DC] italic">
+                        "{client.notes.substring(0, 60)}{client.notes.length > 60 ? '...' : ''}"
                       </p>
                     )}
                   </div>
@@ -497,6 +513,30 @@ export default function ClientsPage() {
                   placeholder="Note aggiuntive..."
                   data-testid="client-notes-input"
                   className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A] min-h-[80px]"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-500" />
+                  Allergie / Intolleranze
+                </Label>
+                <Textarea
+                  value={formData.allergies}
+                  onChange={(e) => setFormData({ ...formData, allergies: e.target.value })}
+                  placeholder="Es. allergia al nichel, sensibilità al lattice..."
+                  className="bg-amber-50 border-amber-200 focus:border-amber-400 min-h-[60px] text-sm"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Scissors className="w-4 h-4 text-[#C8617A]" />
+                  Note Capelli / Preferenze
+                </Label>
+                <Textarea
+                  value={formData.hair_notes}
+                  onChange={(e) => setFormData({ ...formData, hair_notes: e.target.value })}
+                  placeholder="Es. tinta 7.3 + ossigeno 20vol, frangia laterale, non tagliare sopra le orecchie..."
+                  className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A] min-h-[70px] text-sm"
                 />
               </div>
               <div className="flex items-center justify-between p-3 rounded-xl bg-[#FAF7F2]">
@@ -658,6 +698,28 @@ export default function ClientsPage() {
                     <p className="text-xs text-[#7C5C4A] font-semibold">Ultima Visita</p>
                   </div>
                 </div>
+
+                {/* Allergie + Note Capelli */}
+                {(clientHistory.client.allergies || clientHistory.client.hair_notes) && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {clientHistory.client.allergies && (
+                      <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                        <p className="text-xs font-bold text-amber-700 flex items-center gap-1 mb-1">
+                          <AlertTriangle className="w-3.5 h-3.5" /> Allergie / Intolleranze
+                        </p>
+                        <p className="text-sm text-amber-800">{clientHistory.client.allergies}</p>
+                      </div>
+                    )}
+                    {clientHistory.client.hair_notes && (
+                      <div className="p-3 bg-[#FAF0F5] border border-[#E8C8D4] rounded-xl">
+                        <p className="text-xs font-bold text-[#C8617A] flex items-center gap-1 mb-1">
+                          <Scissors className="w-3.5 h-3.5" /> Note Capelli / Preferenze
+                        </p>
+                        <p className="text-sm text-[#5C3040]">{clientHistory.client.hair_notes}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Active Rewards */}
                 {clientHistory.active_rewards?.length > 0 && (

@@ -2,12 +2,22 @@ import json
 import os
 import tempfile
 import logging
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email.mime.text import MIMEText
+from email import encoders
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 
 from database import db
 from auth import get_current_user
+
+SMTP_HOST = os.environ.get("SMTP_HOST", "smtp.gmail.com")
+SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
+SMTP_USER = os.environ.get("SMTP_USER", "")
+SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -177,3 +187,54 @@ async def backup_status(current_user: dict = Depends(get_current_user)):
         "last_modified": last_modified,
         "backup_date": backup_date,
     }
+
+
+@router.post("/backup/send-email")
+async def send_backup_email(current_user: dict = Depends(get_current_user)):
+    """Esegue il backup e lo invia via email all'indirizzo configurato nelle impostazioni."""
+    if not SMTP_USER or not SMTP_PASSWORD:
+        raise HTTPException(status_code=503, detail="Email non configurata. Imposta SMTP_USER e SMTP_PASSWORD nelle variabili d'ambiente.")
+
+    # Leggi email di destinazione dalle impostazioni utente
+    settings = await db.settings.find_one({"user_id": current_user["id"]}, {"_id": 0})
+    recipient_email = (settings or {}).get("auto_backup_email") or current_user.get("email")
+    if not recipient_email:
+        raise HTTPException(status_code=400, detail="Nessuna email di destinazione configurata.")
+
+    # Esegui il backup
+    success = await run_backup()
+    if not success or not os.path.exists(BACKUP_FILE):
+        raise HTTPException(status_code=500, detail="Errore durante la creazione del backup.")
+
+    # Prepara l'email
+    today_str = datetime.now(timezone.utc).strftime("%d/%m/%Y")
+    salon_name = current_user.get("salon_name", "Salone")
+    filename = f"backup_{datetime.now(timezone.utc).strftime('%Y-%m-%d')}.json"
+
+    msg = MIMEMultipart()
+    msg["From"] = SMTP_USER
+    msg["To"] = recipient_email
+    msg["Subject"] = f"Backup Automatico — {salon_name} — {today_str}"
+
+    body = f"Ciao!\n\nIn allegato trovi il backup dei dati del salone del {today_str}.\nConserva questo file in un posto sicuro.\n\n— {salon_name}"
+    msg.attach(MIMEText(body, "plain"))
+
+    # Allegato
+    with open(BACKUP_FILE, "rb") as f:
+        part = MIMEBase("application", "octet-stream")
+        part.set_payload(f.read())
+    encoders.encode_base64(part)
+    part.add_header("Content-Disposition", f'attachment; filename="{filename}"')
+    msg.attach(part)
+
+    try:
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=30) as server:
+            server.starttls()
+            server.login(SMTP_USER, SMTP_PASSWORD)
+            server.sendmail(SMTP_USER, recipient_email, msg.as_string())
+        logger.info(f"Backup email inviata a {recipient_email}")
+        stat = os.stat(BACKUP_FILE)
+        return {"success": True, "sent_to": recipient_email, "size_kb": round(stat.st_size / 1024, 1)}
+    except Exception as e:
+        logger.error(f"Errore invio email backup: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore invio email: {str(e)}")

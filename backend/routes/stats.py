@@ -169,11 +169,58 @@ async def get_revenue_stats(start_date: str, end_date: str, current_user: dict =
             operator_stats[op_name] = {"count": 0, "revenue": 0, "color": apt.get("operator_color", "#78716C")}
         operator_stats[op_name]["count"] += 1
         operator_stats[op_name]["revenue"] += apt.get("total_price", 0)
+    # Fascia oraria (tutti gli appuntamenti del periodo, non solo completati)
+    all_period_apts = await db.appointments.find(
+        {"user_id": current_user["id"], "date": {"$gte": start_date, "$lte": end_date}, "status": {"$ne": "cancelled"}},
+        {"_id": 0, "time": 1}
+    ).to_list(10000)
+    hourly_counts = {f"{h:02d}:00": 0 for h in range(8, 21)}
+    for apt in all_period_apts:
+        hour_key = apt.get("time", "")[:2] + ":00"
+        if hour_key in hourly_counts:
+            hourly_counts[hour_key] += 1
+
+    # Confronto con periodo precedente (stessa durata, giorno prima dell'inizio)
+    try:
+        from datetime import date as ddate
+        sd = ddate.fromisoformat(start_date)
+        ed = ddate.fromisoformat(end_date)
+        duration_days = (ed - sd).days + 1
+        prev_end = sd - timedelta(days=1)
+        prev_start = prev_end - timedelta(days=duration_days - 1)
+        prev_payments = await db.payments.find(
+            {"user_id": current_user["id"], "date": {"$gte": prev_start.isoformat(), "$lte": prev_end.isoformat()}},
+            {"_id": 0, "total_paid": 1}
+        ).to_list(10000)
+        prev_revenue = sum(p.get("total_paid", 0) for p in prev_payments)
+        prev_apts_count = await db.appointments.count_documents(
+            {"user_id": current_user["id"], "date": {"$gte": prev_start.isoformat(), "$lte": prev_end.isoformat()}, "status": "completed"}
+        )
+    except Exception:
+        prev_revenue = 0
+        prev_apts_count = 0
+
+    # Top clienti per numero di visite
+    client_counts = {}
+    for apt in all_cash_appointments:
+        cname = apt.get("client_name", "Sconosciuto")
+        cid = apt.get("client_id", "")
+        if cid and cid not in ("", "generic"):
+            if cid not in client_counts:
+                client_counts[cid] = {"name": cname, "visits": 0, "revenue": 0}
+            client_counts[cid]["visits"] += 1
+            client_counts[cid]["revenue"] += apt.get("total_price", 0)
+    top_clients = sorted(client_counts.values(), key=lambda x: x["visits"], reverse=True)[:5]
+
     return {
         "total_revenue": total_revenue, "total_appointments": len(all_cash_appointments),
         "daily_revenue": [{"date": k, "revenue": v} for k, v in sorted(daily_revenue.items())],
         "service_breakdown": [{"name": k, **v} for k, v in sorted(service_revenue.items(), key=lambda x: x[1]["revenue"], reverse=True)],
-        "operator_breakdown": [{"name": k, **v} for k, v in sorted(operator_stats.items(), key=lambda x: x[1]["revenue"], reverse=True)]
+        "operator_breakdown": [{"name": k, **v} for k, v in sorted(operator_stats.items(), key=lambda x: x[1]["revenue"], reverse=True)],
+        "hourly_distribution": [{"hour": k, "count": v} for k, v in sorted(hourly_counts.items())],
+        "prev_period_revenue": prev_revenue,
+        "prev_period_appointments": prev_apts_count,
+        "top_clients": top_clients,
     }
 
 

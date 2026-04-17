@@ -5,6 +5,7 @@ import { getAppointmentColor, getServiceColors, buildServiceLookups } from '../.
 
 export default function DayView({
   columns,
+  // columns has { id, name, color } for each operator
   scrollRef,
   TIME_SLOTS,
   blockedSlots,
@@ -166,6 +167,7 @@ export default function DayView({
                     const svcColors = getServiceColors(apt, svcById, svcByName);
                     const isCancelled = apt.status === 'cancelled';
                     const totalDuration = apt.services.reduce((sum, s) => sum + (s.duration || 15), 0) || 1;
+                    const operatorColor = col.color || '#64748B';
                     return (
                       <div
                         key={apt.id}
@@ -181,6 +183,7 @@ export default function DayView({
                           ...style,
                           ...(overlapInfo ? {} : { left: '4px', right: '4px' }),
                           ...(apt.status === 'completed' ? { opacity: 0.65 } : {}),
+                          borderLeft: `4px solid ${operatorColor}`,
                         }}
                         title={`Clicca per modificare - ${apt.client_name}`}
                       >

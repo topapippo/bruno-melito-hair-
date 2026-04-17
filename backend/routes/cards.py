@@ -297,25 +297,40 @@ async def get_expiring_cards(days: int = 30, current_user: dict = Depends(get_cu
 
 @router.get("/cards/alerts/low-balance")
 async def get_low_balance_cards(threshold_percent: int = 20, current_user: dict = Depends(get_current_user)):
-    """Get cards with balance below X% of total value"""
+    """Get cards with balance below X% of total value, or subscriptions with ≤2 sessions remaining"""
     cards = await db.cards.find(
         {"user_id": current_user["id"], "active": True},
         {"_id": 0, "user_id": 0}
     ).to_list(500)
-    
+
     low_balance = []
     for card in cards:
         total = card.get("total_value", 0)
         remaining = card.get("remaining_value", 0)
+        total_svc = card.get("total_services")
+        used_svc = card.get("used_services", 0)
+        is_subscription = card.get("card_type") == "subscription"
+
+        # Per abbonamento: alert se rimangono ≤2 sedute
+        if is_subscription and total_svc:
+            remaining_sessions = total_svc - used_svc
+            if 0 < remaining_sessions <= 2:
+                client = await db.clients.find_one({"id": card["client_id"]}, {"_id": 0, "phone": 1, "name": 1})
+                card["percent_remaining"] = round((remaining / total) * 100, 1) if total > 0 else 0
+                card["remaining_sessions"] = remaining_sessions
+                card["client_phone"] = client.get("phone", "") if client else ""
+                low_balance.append(card)
+                continue
+
+        # Per card prepagata: alert se credito sotto soglia %
         if total > 0:
             percent_remaining = (remaining / total) * 100
             if percent_remaining <= threshold_percent and remaining > 0:
-                # Get client phone
                 client = await db.clients.find_one({"id": card["client_id"]}, {"_id": 0, "phone": 1, "name": 1})
                 card["percent_remaining"] = round(percent_remaining, 1)
                 card["client_phone"] = client.get("phone", "") if client else ""
                 low_balance.append(card)
-    
+
     # Sort by percent remaining (lowest first)
     low_balance.sort(key=lambda x: x.get("percent_remaining", 100))
     return low_balance

@@ -8,9 +8,31 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Settings, Save, Loader2, Clock, Building2, User, Lock, Palette, Type, RotateCcw, Plus, Trash2, Check } from 'lucide-react';
+import { Settings, Save, Loader2, Clock, Building2, User, Lock, Palette, Type, RotateCcw, Plus, Trash2, Check, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
+
+function BackupEmailButton({ email }) {
+  const [sending, setSending] = useState(false);
+  const handleSend = async () => {
+    setSending(true);
+    try {
+      await api.post(`${process.env.REACT_APP_BACKEND_URL}/api/backup/send-email`);
+      toast.success(`Backup inviato${email ? ` a ${email}` : ''}!`);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Errore invio email');
+    } finally {
+      setSending(false);
+    }
+  };
+  return (
+    <Button type="button" onClick={handleSend} disabled={sending} variant="outline"
+      className="border-[#C8617A] text-[#C8617A] hover:bg-[#C8617A]/10">
+      {sending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Mail className="w-4 h-4 mr-2" />}
+      {sending ? 'Invio...' : 'Invia Backup Ora per Email'}
+    </Button>
+  );
+}
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -131,7 +153,9 @@ export default function SettingsPage() {
         opening_time: settings.opening_time,
         closing_time: settings.closing_time,
         working_days: settings.working_days,
-        google_review_link: settings.google_review_link
+        google_review_link: settings.google_review_link,
+        auto_backup_enabled: settings.auto_backup_enabled,
+        auto_backup_email: settings.auto_backup_email
       });
       updateUser({ name: settings.name, salon_name: settings.salon_name });
       toast.success('Impostazioni salvate!');
@@ -415,6 +439,42 @@ export default function SettingsPage() {
                   ))}
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Backup Automatico */}
+          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+            <CardHeader>
+              <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
+                <Save className="w-5 h-5 text-[#C8617A]" />
+                Backup Automatico
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-3 rounded-xl bg-[#FAF7F2]">
+                <div>
+                  <p className="text-sm font-semibold text-[#2D1B14]">Abilita backup automatico settimanale</p>
+                  <p className="text-xs text-[#7C5C4A] mt-0.5">Ricevi un backup completo via email ogni settimana</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={settings.auto_backup_enabled || false}
+                  onChange={(e) => setSettings({ ...settings, auto_backup_enabled: e.target.checked })}
+                  className="w-5 h-5 accent-[#C8617A] cursor-pointer"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Email per il backup</Label>
+                <Input
+                  type="email"
+                  value={settings.auto_backup_email || ''}
+                  onChange={(e) => setSettings({ ...settings, auto_backup_email: e.target.value })}
+                  placeholder="tuaemail@esempio.it"
+                  className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
+                />
+                <p className="text-xs text-[#9C7060]">Se lasciato vuoto, verrà usata la tua email di accesso</p>
+              </div>
+              <BackupEmailButton email={settings.auto_backup_email} />
             </CardContent>
           </Card>
 

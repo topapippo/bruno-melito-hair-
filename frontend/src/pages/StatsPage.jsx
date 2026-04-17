@@ -5,7 +5,7 @@ import PageHeader from '../components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { BarChart3, Euro, TrendingUp, Calendar as CalendarIcon, Download, Users } from 'lucide-react';
+import { BarChart3, Euro, TrendingUp, TrendingDown, Calendar as CalendarIcon, Download, Users, Clock, Star } from 'lucide-react';
 import { format, subDays, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -315,6 +315,117 @@ export default function StatsPage() {
               </Card>
             </div>
 
+            {/* Confronto Periodo Precedente */}
+            {(stats?.prev_period_revenue !== undefined) && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-sm text-[#7C5C4A]">Periodo precedente — Incasso</p>
+                        <p className="text-3xl font-display font-medium text-[#2D1B14] mt-2">
+                          €{(stats.prev_period_revenue || 0).toFixed(2)}
+                        </p>
+                        {stats.total_revenue > 0 && (
+                          <p className={`text-sm font-semibold mt-1 flex items-center gap-1 ${stats.total_revenue >= stats.prev_period_revenue ? 'text-emerald-600' : 'text-red-500'}`}>
+                            {stats.total_revenue >= stats.prev_period_revenue
+                              ? <TrendingUp className="w-4 h-4" />
+                              : <TrendingDown className="w-4 h-4" />}
+                            {stats.prev_period_revenue > 0
+                              ? `${((stats.total_revenue - stats.prev_period_revenue) / stats.prev_period_revenue * 100).toFixed(1)}% vs periodo prec.`
+                              : 'Nessun dato periodo prec.'}
+                          </p>
+                        )}
+                      </div>
+                      <div className="w-12 h-12 rounded-xl bg-[#E9C46A]/10 flex items-center justify-center">
+                        <TrendingUp className="w-6 h-6 text-[#E9C46A]" strokeWidth={1.5} />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-sm text-[#7C5C4A]">Periodo precedente — Appuntamenti</p>
+                        <p className="text-3xl font-display font-medium text-[#2D1B14] mt-2">
+                          {stats.prev_period_appointments || 0}
+                        </p>
+                        {stats.total_appointments > 0 && (
+                          <p className={`text-sm font-semibold mt-1 flex items-center gap-1 ${stats.total_appointments >= stats.prev_period_appointments ? 'text-emerald-600' : 'text-red-500'}`}>
+                            {stats.total_appointments >= stats.prev_period_appointments
+                              ? <TrendingUp className="w-4 h-4" />
+                              : <TrendingDown className="w-4 h-4" />}
+                            {stats.prev_period_appointments > 0
+                              ? `${((stats.total_appointments - stats.prev_period_appointments) / stats.prev_period_appointments * 100).toFixed(1)}% vs periodo prec.`
+                              : 'Nessun dato periodo prec.'}
+                          </p>
+                        )}
+                      </div>
+                      <div className="w-12 h-12 rounded-xl bg-[#789F8A]/10 flex items-center justify-center">
+                        <CalendarIcon className="w-6 h-6 text-[#789F8A]" strokeWidth={1.5} />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Fascia Oraria di Punta */}
+            {stats?.hourly_distribution?.length > 0 && stats.hourly_distribution.some(h => h.count > 0) && (
+              <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-[#C8617A]" />
+                    Fasce Orarie di Punta
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <BarChart data={stats.hourly_distribution}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                      <XAxis dataKey="hour" tick={{ fontSize: 11, fill: '#334155' }} />
+                      <YAxis tick={{ fontSize: 11, fill: '#334155' }} allowDecimals={false} />
+                      <Tooltip
+                        formatter={(value) => [`${value} appuntamenti`, 'Fascia oraria']}
+                        contentStyle={{ backgroundColor: '#fff', border: '1px solid #E2E8F0', borderRadius: '8px' }}
+                      />
+                      <Bar dataKey="count" fill="#C8617A" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Top Clienti */}
+            {stats?.top_clients?.length > 0 && (
+              <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
+                    <Star className="w-5 h-5 text-[#C8617A]" />
+                    Top Clienti
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {stats.top_clients.map((client, idx) => (
+                      <div key={client.name} className="flex items-center gap-4 p-3 rounded-xl bg-[#FAF7F2]">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                          style={{ background: `linear-gradient(135deg, ${COLORS[idx % COLORS.length]}, ${COLORS[(idx + 1) % COLORS.length]})` }}>
+                          {idx + 1}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-[#2D1B14] truncate">{client.name}</p>
+                          <p className="text-xs text-[#7C5C4A]">{client.visits} {client.visits === 1 ? 'visita' : 'visite'}</p>
+                        </div>
+                        <span className="font-bold text-[#2D1B14]">€{(client.revenue || 0).toFixed(0)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Operator Stats */}
             {stats?.operator_breakdown?.length > 0 && (
               <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
@@ -327,7 +438,7 @@ export default function StatsPage() {
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {stats.operator_breakdown.map((operator, idx) => (
-                      <div 
+                      <div
                         key={operator.name}
                         className="p-4 rounded-xl bg-[#FAF7F2] border-l-4"
                         style={{ borderLeftColor: operator.color || COLORS[idx % COLORS.length] }}

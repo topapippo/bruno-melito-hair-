@@ -618,11 +618,17 @@ export default function PlanningPage() {
         )}
 
         {/* Legend */}
-        <div className="flex items-center gap-4 text-xs text-[#7C5C4A]">
+        <div className="flex flex-wrap items-center gap-4 text-xs text-[#7C5C4A]">
           <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-[#C8617A]" /> Da fare</div>
           <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-emerald-500" /> Completato</div>
           <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-red-100 border border-red-300" /> Festivo</div>
           <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-red-200 border border-red-400" /> Bloccato</div>
+          {operators.map(op => (
+            <div key={op.id} className="flex items-center gap-1.5">
+              <div className="w-1 h-5 rounded-full" style={{ backgroundColor: op.color }} />
+              {op.name}
+            </div>
+          ))}
         </div>
 
         {/* --- Dialogs --- */}

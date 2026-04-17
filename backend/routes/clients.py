@@ -56,6 +56,7 @@ async def create_client(data: ClientCreate, current_user: dict = Depends(get_cur
         "id": client_id, "user_id": current_user["id"],
         "name": data.name, "phone": data.phone or "",
         "email": data.email or "", "notes": data.notes or "",
+        "allergies": data.allergies or "", "hair_notes": data.hair_notes or "",
         "send_sms_reminders": data.send_sms_reminders if data.send_sms_reminders is not None else True,
         "total_visits": 0, "created_at": datetime.now(timezone.utc).isoformat()
     }
@@ -183,7 +184,7 @@ async def get_client_history(client_id: str, current_user: dict = Depends(get_cu
     last_visit = last_completed.get("date", "") if last_completed else ""
 
     return {
-        "client": {"id": client.get("id"), "name": client.get("name"), "phone": client.get("phone", "")},
+        "client": {"id": client.get("id"), "name": client.get("name"), "phone": client.get("phone", ""), "allergies": client.get("allergies", ""), "hair_notes": client.get("hair_notes", "")},
         "total_visits": client.get("total_visits", 0),
         "total_spent": total_spent,
         "loyalty_points": loyalty_points,

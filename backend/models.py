@@ -78,6 +78,8 @@ class ClientCreate(BaseModel):
     phone: Optional[str] = ""
     email: Optional[str] = ""
     notes: Optional[str] = ""
+    allergies: Optional[str] = ""
+    hair_notes: Optional[str] = ""
     send_sms_reminders: Optional[bool] = True  # campo canonico unificato
 
 class ClientResponse(BaseModel):
@@ -86,6 +88,8 @@ class ClientResponse(BaseModel):
     phone: Optional[str] = ""
     email: Optional[str] = ""
     notes: Optional[str] = ""
+    allergies: Optional[str] = ""
+    hair_notes: Optional[str] = ""
     send_sms_reminders: Optional[bool] = True  # unico campo canonico
     created_at: str
     total_visits: int = 0
@@ -95,6 +99,8 @@ class ClientUpdate(BaseModel):
     phone: Optional[str] = None
     email: Optional[str] = None
     notes: Optional[str] = None
+    allergies: Optional[str] = None
+    hair_notes: Optional[str] = None
     send_sms_reminders: Optional[bool] = None
 
 class ClientBulkImport(BaseModel):
@@ -227,6 +233,8 @@ class SettingsUpdate(BaseModel):
     closing_time: Optional[str] = None
     working_days: Optional[List[str]] = None
     google_review_link: Optional[str] = None
+    auto_backup_enabled: Optional[bool] = None
+    auto_backup_email: Optional[str] = None
 
 
 # ============== PREPAID CARD ==============
