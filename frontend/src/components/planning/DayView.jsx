@@ -187,23 +187,22 @@ export default function DayView({
                         }}
                         title={`Clicca per modificare - ${apt.client_name}`}
                       >
-                        {/* Riga 1: nome, note, telefono */}
+                        {/* Riga 1: nome + note/colori */}
                         <div className="flex items-start justify-between px-2 py-1 bg-[#2D1B14]/90 text-white flex-shrink-0" style={{ minHeight: '28px' }}>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="font-bold text-xs leading-tight">
-                                {apt.status === 'completed' && '✓ '}{apt.client_name}
+                            <span className="font-bold text-xs leading-tight block truncate">
+                              {apt.status === 'completed' && '✓ '}{apt.client_name}
+                            </span>
+                            {apt.notes ? (
+                              <span className="text-[10px] text-amber-300 italic block truncate" title={apt.notes}>
+                                {apt.notes}
                               </span>
-                              {apt.notes && (
-                                <span className="text-[10px] text-amber-300 italic truncate max-w-[80px]" title={apt.notes}>
-                                  · {apt.notes}
-                                </span>
-                              )}
-                              {apt.client_phone && (
-                                <span className="text-[10px] text-white/60 truncate">· {apt.client_phone}</span>
-                              )}
-                            </div>
-                            <span className="text-[10px] text-white/60">{apt.time} – {apt.end_time}</span>
+                            ) : (
+                              <span className="text-[10px] text-white/50">{apt.time} – {apt.end_time}</span>
+                            )}
+                            {apt.notes && (
+                              <span className="text-[10px] text-white/50">{apt.time} – {apt.end_time}</span>
+                            )}
                           </div>
                           <button
                             onClick={(e) => { e.stopPropagation(); openRecurringDialog(apt); }}
