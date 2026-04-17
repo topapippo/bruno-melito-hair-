@@ -13,8 +13,8 @@ import ClientsPage from "./pages/ClientsPage";
 import ServicesPage from "./pages/ServicesPage";
 import HistoryPage from "./pages/HistoryPage";
 import SettingsPage from "./pages/SettingsPage";
-import MonthlyView from "./pages/MonthlyView";
-import WeeklyView from "./pages/WeeklyView";
+import MonthlyView from "./pages/MonthlyView"; // mantenuto per route redirect
+import WeeklyView from "./pages/WeeklyView"; // mantenuto per route redirect
 import AppointmentsPage from "./pages/AppointmentsPage";
 import OperatorsPage from "./pages/OperatorsPage";
 import PlanningPage from "./pages/PlanningPage";
@@ -116,25 +116,9 @@ export default function App() {
             }
           />
 
-          {/* VISTA MENSILE */}
-          <Route
-            path="/month"
-            element={
-              <ProtectedRoute>
-                <MonthlyView />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* VISTA SETTIMANALE */}
-          <Route
-            path="/week"
-            element={
-              <ProtectedRoute>
-                <WeeklyView />
-              </ProtectedRoute>
-            }
-          />
+          {/* /month e /week → reindirizzano a Planning (le viste sono già nelle tab) */}
+          <Route path="/month" element={<ProtectedRoute><Navigate to="/" replace /></ProtectedRoute>} />
+          <Route path="/week" element={<ProtectedRoute><Navigate to="/" replace /></ProtectedRoute>} />
 
           {/* STATISTICHE */}
           <Route

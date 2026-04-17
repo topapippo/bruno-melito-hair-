@@ -7,9 +7,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import {
   Users, Euro, Calendar, Clock, TrendingUp, Plus, ChevronRight,
-  Scissors, UserCheck, CalendarDays, CalendarRange, BarChart3,
+  Scissors, UserCheck, BarChart3,
   CreditCard, Gift, Bell, Download, Globe, Settings, AlertTriangle,
-  MessageCircle, X, Sparkles, Heart, Star, ArrowDownCircle, FileBarChart, Database, History
+  MessageCircle, X, Sparkles, Star, ArrowDownCircle, FileBarChart
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -19,8 +19,6 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const MODULES = [
   { path: '/', label: 'Planning', desc: 'Vista giornaliera', icon: Calendar, from: '#E8477C', to: '#F49AB3' },
-  { path: '/week', label: 'Settimana', desc: 'Vista settimanale', icon: CalendarDays, from: '#2EC4B6', to: '#5EDECF' },
-  { path: '/month', label: 'Mese', desc: 'Vista mensile', icon: CalendarRange, from: '#22C55E', to: '#6EE7A0' },
   { path: '/appointments', label: 'Appuntamenti', desc: 'Nuovo appuntamento', icon: Plus, from: '#F59E0B', to: '#FCD34D' },
   { path: '/clients', label: 'Clienti', desc: 'Gestione clienti', icon: Users, from: '#3B82F6', to: '#93C5FD' },
   { path: '/services', label: 'Servizi', desc: 'Listino prezzi', icon: Scissors, from: '#8B5CF6', to: '#C4B5FD' },

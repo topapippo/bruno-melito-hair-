@@ -17,10 +17,10 @@ const navGroups = [
   {
     label: 'Agenda',
     items: [
+      { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { path: '/', label: 'Planning', icon: Calendar },
       { path: '/appointments', label: 'Appuntamenti', icon: CalendarDays },
-      { path: '/week', label: 'Settimana', icon: CalendarRange },
-      { path: '/month', label: 'Mese', icon: CalendarRange },
+      { path: '/history', label: 'Storico', icon: History },
     ]
   },
   {
@@ -49,9 +49,7 @@ const navGroups = [
       { path: '/services', label: 'Servizi', icon: Scissors },
       { path: '/operators', label: 'Operatori', icon: UserCircle },
       { path: '/gestione-sito', label: 'Gestione Sito', icon: Globe },
-      { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { path: '/backup', label: 'Backup Dati', icon: Database },
-      { path: '/history', label: 'Storico', icon: History },
       { path: '/settings', label: 'Impostazioni', icon: Settings },
     ]
   },
