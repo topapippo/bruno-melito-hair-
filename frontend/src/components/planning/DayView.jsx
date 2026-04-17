@@ -4,6 +4,7 @@ import { addDays, subDays } from 'date-fns';
 import { getAppointmentColor, getServiceColors, buildServiceLookups } from '../../lib/categories';
 
 export default function DayView({
+  clients = [],
   columns,
   // columns has { id, name, color } for each operator
   scrollRef,
@@ -29,6 +30,7 @@ export default function DayView({
   services,
 }) {
   const { svcById, svcByName } = buildServiceLookups(services);
+  const clientById = Object.fromEntries(clients.map(c => [c.id, c]));
 
   // Compute overlaps per operator
   const toMin = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
@@ -168,6 +170,8 @@ export default function DayView({
                     const isCancelled = apt.status === 'cancelled';
                     const totalDuration = apt.services.reduce((sum, s) => sum + (s.duration || 15), 0) || 1;
                     const operatorColor = col.color || '#64748B';
+                    const clientProfile = clientById[apt.client_id];
+                    const clientNote = clientProfile?.hair_notes || apt.notes || '';
                     return (
                       <div
                         key={apt.id}
@@ -193,16 +197,12 @@ export default function DayView({
                             <span className="font-bold text-xs leading-tight block truncate">
                               {apt.status === 'completed' && '✓ '}{apt.client_name}
                             </span>
-                            {apt.notes ? (
-                              <span className="text-[10px] text-amber-300 italic block truncate" title={apt.notes}>
-                                {apt.notes}
+                            {clientNote ? (
+                              <span className="text-[10px] text-amber-300 italic block truncate" title={clientNote}>
+                                {clientNote}
                               </span>
-                            ) : (
-                              <span className="text-[10px] text-white/50">{apt.time} – {apt.end_time}</span>
-                            )}
-                            {apt.notes && (
-                              <span className="text-[10px] text-white/50">{apt.time} – {apt.end_time}</span>
-                            )}
+                            ) : null}
+                            <span className="text-[10px] text-white/50">{apt.time} – {apt.end_time}</span>
                           </div>
                           <button
                             onClick={(e) => { e.stopPropagation(); openRecurringDialog(apt); }}

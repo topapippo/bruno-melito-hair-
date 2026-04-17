@@ -596,6 +596,7 @@ export default function PlanningPage() {
             onDrop={handleDrop}
             touchStartRef={touchStartRef}
             services={services}
+            clients={clients}
           />
         ) : viewMode === 'week' ? (
           <WeekView
