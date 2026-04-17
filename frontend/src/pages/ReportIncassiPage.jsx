@@ -53,12 +53,12 @@ export default function ReportIncassiPage() {
     setLoading(true);
     try {
       const { start, end } = getDateRange();
-      const startIso = start.toISOString();
-      const endIso = end.toISOString();
+      const startStr = format(start, 'yyyy-MM-dd');
+      const endStr = format(end, 'yyyy-MM-dd');
 
       const [paymentsRes, expensesRes] = await Promise.all([
-        api.get(`${API}/payments?start=${startIso}&end=${endIso}`),
-        api.get(`${API}/expenses?start=${startIso}&end=${endIso}`),
+        api.get(`${API}/payments?start=${startStr}&end=${endStr}`),
+        api.get(`${API}/expenses?start=${startStr}&end=${endStr}`),
       ]);
 
       const paymentsData = paymentsRes.data;
