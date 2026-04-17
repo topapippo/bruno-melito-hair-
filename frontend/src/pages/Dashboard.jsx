@@ -9,7 +9,7 @@ import {
   Users, Euro, Calendar, Clock, TrendingUp, Plus, ChevronRight,
   Scissors, UserCheck, BarChart3,
   CreditCard, Gift, Bell, Download, Globe, Settings, AlertTriangle,
-  MessageCircle, X, Sparkles, Star, ArrowDownCircle, FileBarChart
+  MessageCircle, X, Sparkles, Heart, Star, ArrowDownCircle, FileBarChart
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
