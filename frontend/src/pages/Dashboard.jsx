@@ -9,7 +9,7 @@ import {
   Users, Euro, Calendar, Clock, TrendingUp, Plus, ChevronRight,
   Scissors, UserCheck, BarChart3,
   CreditCard, Gift, Bell, Download, Globe, Settings, AlertTriangle,
-  MessageCircle, X, Sparkles, Heart, Star, ArrowDownCircle, FileBarChart
+  MessageCircle, X, Sparkles, Heart, Star, ArrowDownCircle, FileBarChart, Cake
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -44,9 +44,17 @@ export default function Dashboard() {
   const [showAlerts, setShowAlerts] = useState(true);
   const [whatsappPending, setWhatsappPending] = useState({ reminders: 0, colors: 0, inactive: 0, total: 0 });
   const [tomorrowApts, setTomorrowApts] = useState([]);
+  const [birthdayToday, setBirthdayToday] = useState([]);
   const navigate = useNavigate();
 
-  useEffect(() => { fetchDashboardStats(); fetchCardAlerts(); fetchWhatsappPending(); fetchTomorrow(); }, []);
+  useEffect(() => { fetchDashboardStats(); fetchCardAlerts(); fetchWhatsappPending(); fetchTomorrow(); fetchBirthdays(); }, []);
+
+  const fetchBirthdays = async () => {
+    try {
+      const res = await api.get(`${API}/reminders/birthdays?days=3`);
+      setBirthdayToday((res.data || []).filter(c => c.days_until <= 1));
+    } catch {}
+  };
 
   const fetchTomorrow = async () => {
     try {
@@ -242,6 +250,29 @@ export default function Dashboard() {
               <Button size="sm" className="bg-green-500 hover:bg-green-600 text-white text-xs h-7 rounded-lg shrink-0">
                 Vai ai Promemoria <ChevronRight className="w-3 h-3 ml-1" />
               </Button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Birthday Banner ────────────────────────────────────────────── */}
+        {birthdayToday.length > 0 && (
+          <div className="relative overflow-hidden rounded-2xl border border-pink-200 bg-gradient-to-r from-pink-50 via-rose-50 to-fuchsia-50 p-4 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => navigate('/reminders')}>
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-pink-500 flex items-center justify-center shrink-0">
+                  <Cake className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <p className="font-semibold text-pink-800 text-sm">
+                    🎂 {birthdayToday.length === 1 ? `Compleanno di ${birthdayToday[0].name}` : `${birthdayToday.length} compleanni`} {birthdayToday.some(c => c.days_until === 0) ? 'oggi!' : 'domani!'}
+                  </p>
+                  <p className="text-xs text-pink-600 mt-0.5">{birthdayToday.map(c => c.name).join(', ')}</p>
+                </div>
+              </div>
+              <button onClick={e => { e.stopPropagation(); navigate('/reminders'); }} className="text-xs bg-pink-500 hover:bg-pink-600 text-white px-3 py-1.5 rounded-lg font-semibold shrink-0">
+                Invia Auguri
+              </button>
             </div>
           </div>
         )}

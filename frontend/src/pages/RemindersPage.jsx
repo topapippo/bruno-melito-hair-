@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/select';
 import {
   Bell, MessageSquare, Clock, UserX, Check, Phone, Calendar,
-  RotateCcw, Pencil, Trash2, Plus, FileText, Send, Loader2, XCircle, Palette, Edit3
+  RotateCcw, Pencil, Trash2, Plus, FileText, Send, Loader2, XCircle, Palette, Edit3, Cake
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -55,6 +55,8 @@ export default function RemindersPage() {
   const [batchSending, setBatchSending] = useState(false);
   const [colorReminders, setColorReminders] = useState([]);
   const [sendingConfirmId, setSendingConfirmId] = useState(null);
+  const [birthdayClients, setBirthdayClients] = useState([]);
+  const [markingSentId, setMarkingSentId] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -63,16 +65,18 @@ export default function RemindersPage() {
 
   const fetchData = async () => {
     try {
-      const [remRes, inactRes, templRes, colorRes] = await Promise.all([
+      const [remRes, inactRes, templRes, colorRes, birthRes] = await Promise.all([
         api.get(`${API}/reminders/tomorrow`),
         api.get(`${API}/reminders/inactive-clients`),
         api.get(`${API}/reminders/templates`),
-        api.get(`${API}/reminders/color-expiry`).catch(() => ({ data: [] }))
+        api.get(`${API}/reminders/color-expiry`).catch(() => ({ data: [] })),
+        api.get(`${API}/reminders/birthdays`).catch(() => ({ data: [] })),
       ]);
       setTomorrowReminders(remRes.data);
       setInactiveClients(inactRes.data);
       setTemplates(templRes.data);
       setColorReminders(colorRes.data);
+      setBirthdayClients(birthRes.data);
     } catch (err) {
       console.error(err);
       toast.error('Errore nel caricamento');
@@ -876,6 +880,84 @@ export default function RemindersPage() {
                           className="bg-purple-500 hover:bg-purple-600 text-white font-bold"
                           data-testid={`send-color-${cr.client_id}`}>
                           <MessageSquare className="w-4 h-4 mr-2" /> Avvisa Colore
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Birthday Reminders */}
+        {birthdayClients.length > 0 && (
+          <Card className="border-[#F0E6DC]/30">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-bold text-[#2D1B14] flex items-center gap-2">
+                <Cake className="w-5 h-5 text-pink-500" />
+                Compleanni in Arrivo
+                <span className="text-xs bg-pink-100 text-pink-700 px-2 py-0.5 rounded-full font-semibold">
+                  {birthdayClients.length}
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {birthdayClients.map((client) => (
+                  <div key={client.id}
+                    className={`p-4 rounded-xl border-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
+                      client.already_sent ? 'border-green-200 bg-green-50' : 'border-pink-200 bg-pink-50'
+                    }`}>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-bold text-[#2D1B14] truncate">{client.name}</p>
+                        {client.days_until === 0 && (
+                          <span className="text-xs bg-pink-500 text-white px-2 py-0.5 rounded-full font-semibold">🎂 Oggi!</span>
+                        )}
+                        {client.days_until === 1 && (
+                          <span className="text-xs bg-orange-400 text-white px-2 py-0.5 rounded-full font-semibold">Domani</span>
+                        )}
+                        {client.already_sent && (
+                          <span className="text-xs bg-green-200 text-green-800 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                            <Check className="w-3 h-3" /> Auguri inviati
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 text-sm mt-1 flex-wrap">
+                        <span className="text-pink-700 font-semibold flex items-center gap-1">
+                          <Cake className="w-3.5 h-3.5" />
+                          {client.days_until === 0 ? 'Oggi!' : `Tra ${client.days_until} giorni`} — {client.birthday}
+                        </span>
+                        {client.phone && (
+                          <span className="text-[#7C5C4A] flex items-center gap-1">
+                            <Phone className="w-3.5 h-3.5" /> {client.phone}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {client.phone && !client.already_sent && (
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            const phone = formatPhone(client.phone);
+                            const msg = encodeURIComponent(`Ciao ${client.name}! 🎂 Tanti auguri di Buon Compleanno dal team di Bruno Melito Hair! Ti aspettiamo presto! ✂️`);
+                            window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+                            setMarkingSentId(client.id);
+                            api.post(`${API}/reminders/birthday/${client.id}/mark-sent`)
+                              .then(() => setBirthdayClients(prev => prev.map(c => c.id === client.id ? {...c, already_sent: true} : c)))
+                              .catch(() => {})
+                              .finally(() => setMarkingSentId(null));
+                          }}
+                          disabled={markingSentId === client.id}
+                          className="bg-pink-500 hover:bg-pink-600 text-white font-bold"
+                        >
+                          {markingSentId === client.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <><MessageSquare className="w-4 h-4 mr-1" /> Auguri WA</>
+                          )}
                         </Button>
                       )}
                     </div>

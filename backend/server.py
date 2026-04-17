@@ -225,6 +225,60 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Backup scheduler non avviato: {e}")
 
+    # Check env vars critiche e logga warning se mancanti
+    missing_vars = []
+    for var in ["FRONTEND_URL", "PUBLIC_ADMIN_EMAIL", "VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY"]:
+        if not os.environ.get(var):
+            missing_vars.append(var)
+    if missing_vars:
+        logger.warning(f"Env var non configurate: {', '.join(missing_vars)} — alcune funzionalità potrebbero non funzionare correttamente")
+
+    # Scheduler auguri compleanno automatici (ogni giorno alle 9:00 UTC = 11:00 Italia)
+    try:
+        BIRTHDAY_HOUR_UTC = int(os.environ.get("BIRTHDAY_HOUR_UTC", "9"))
+
+        async def birthday_loop():
+            while True:
+                now = datetime.now(timezone.utc)
+                next_run = now.replace(hour=BIRTHDAY_HOUR_UTC, minute=0, second=0, microsecond=0)
+                if now >= next_run:
+                    next_run += timedelta(days=1)
+                await asyncio.sleep((next_run - now).total_seconds())
+                try:
+                    today = datetime.now(timezone.utc)
+                    today_mm_dd = today.strftime("%m-%d")
+                    clients = await db.clients.find(
+                        {"birthday": {"$regex": f"(^{today_mm_dd}$|{today_mm_dd}$)"}},
+                        {"_id": 0}
+                    ).to_list(500)
+                    for client in clients:
+                        already = await db.reminders_sent.find_one({
+                            "type": "birthday", "client_id": client["id"],
+                            "date": today.strftime("%Y-%m-%d")
+                        })
+                        if already or not client.get("phone"):
+                            continue
+                        user = await db.users.find_one({"id": client.get("user_id")}, {"_id": 0})
+                        salon_name = user.get("salon_name", "Bruno Melito Hair") if user else "Bruno Melito Hair"
+                        from utils import send_sms_reminder
+                        msg = f"Ciao {client['name']}! Tanti auguri di Buon Compleanno! 🎂 Il team di {salon_name} ti augura una splendida giornata. Ti aspettiamo presto!"
+                        result = await send_sms_reminder(client["phone"], msg, salon_name)
+                        if result.get("success"):
+                            await db.reminders_sent.insert_one({
+                                "id": str(uuid.uuid4()), "user_id": client.get("user_id"),
+                                "type": "birthday", "client_id": client["id"],
+                                "date": today.strftime("%Y-%m-%d"),
+                                "sent_at": today.isoformat()
+                            })
+                            logger.info(f"Auguri compleanno inviati a {client['name']}")
+                except Exception as e:
+                    logger.error(f"Errore scheduler compleanno: {e}")
+
+        asyncio.ensure_future(birthday_loop())
+        logger.info(f"Scheduler auguri compleanno avviato (ogni giorno alle {BIRTHDAY_HOUR_UTC:02d}:00 UTC)")
+    except Exception as e:
+        logger.warning(f"Scheduler compleanno non avviato: {e}")
+
     yield
 
     # Shutdown

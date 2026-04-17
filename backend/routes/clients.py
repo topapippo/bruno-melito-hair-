@@ -58,6 +58,8 @@ async def create_client(data: ClientCreate, current_user: dict = Depends(get_cur
         "email": data.email or "", "notes": data.notes or "",
         "allergies": data.allergies or "", "hair_notes": data.hair_notes or "",
         "send_sms_reminders": data.send_sms_reminders if data.send_sms_reminders is not None else True,
+        "birthday": data.birthday or None,
+        "tags": data.tags or [],
         "total_visits": 0, "created_at": datetime.now(timezone.utc).isoformat()
     }
     try:
@@ -109,7 +111,7 @@ async def get_client(client_id: str, current_user: dict = Depends(get_current_us
 
 @router.put("/clients/{client_id}", response_model=ClientResponse)
 async def update_client(client_id: str, data: ClientUpdate, current_user: dict = Depends(get_current_user)):
-    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    update_data = {k: v for k, v in data.model_dump().items() if v is not None or k in ("birthday", "tags")}
     if not update_data:
         raise HTTPException(status_code=400, detail="Nessun dato da aggiornare")
     try:

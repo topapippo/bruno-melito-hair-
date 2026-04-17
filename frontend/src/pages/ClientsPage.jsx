@@ -28,7 +28,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Users, Plus, Search, Phone, Mail, Edit2, Trash2, Loader2, History, MessageSquare, Upload, FileSpreadsheet, Euro, AlertTriangle, Scissors } from 'lucide-react';
+import { Users, Plus, Search, Phone, Mail, Edit2, Trash2, Loader2, History, MessageSquare, Upload, FileSpreadsheet, Euro, AlertTriangle, Scissors, Cake, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 import PageHeader from '../components/PageHeader';
 
@@ -51,6 +51,8 @@ export default function ClientsPage() {
   const [importPreview, setImportPreview] = useState([]);
   const fileInputRef = useRef(null);
   
+  const AVAILABLE_TAGS = ['VIP', 'Fedele', 'Nuovo', 'Allergie', 'Trattamento Speciale', 'Sconto'];
+
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -58,7 +60,9 @@ export default function ClientsPage() {
     notes: '',
     allergies: '',
     hair_notes: '',
-    send_sms_reminders: true
+    send_sms_reminders: true,
+    birthday: '',
+    tags: [],
   });
 
   useEffect(() => {
@@ -95,7 +99,7 @@ export default function ClientsPage() {
       }
       setDialogOpen(false);
       setEditingClient(null);
-      setFormData({ name: '', phone: '', email: '', notes: '', allergies: '', hair_notes: '', send_sms_reminders: true });
+      setFormData({ name: '', phone: '', email: '', notes: '', allergies: '', hair_notes: '', send_sms_reminders: true, birthday: '', tags: [] });
       fetchClients();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Errore nel salvataggio');
@@ -113,7 +117,9 @@ export default function ClientsPage() {
       notes: client.notes,
       allergies: client.allergies || '',
       hair_notes: client.hair_notes || '',
-      send_sms_reminders: client.send_sms_reminders !== false
+      send_sms_reminders: client.send_sms_reminders !== false,
+      birthday: client.birthday || '',
+      tags: client.tags || [],
     });
     setDialogOpen(true);
   };
@@ -133,7 +139,7 @@ export default function ClientsPage() {
 
   const openNewDialog = () => {
     setEditingClient(null);
-    setFormData({ name: '', phone: '', email: '', notes: '', allergies: '', hair_notes: '', send_sms_reminders: true });
+    setFormData({ name: '', phone: '', email: '', notes: '', allergies: '', hair_notes: '', send_sms_reminders: true, birthday: '', tags: [] });
     setDialogOpen(true);
   };
 
@@ -399,6 +405,19 @@ export default function ClientsPage() {
                         <p className="text-[#7C5C4A] text-xs italic">{client.hair_notes.substring(0, 60)}{client.hair_notes.length > 60 ? '...' : ''}</p>
                       </div>
                     )}
+                    {client.birthday && (
+                      <div className="flex items-center gap-2 text-[#7C5C4A]">
+                        <Cake className="w-4 h-4 text-pink-400" />
+                        <span className="text-xs">Compleanno: {client.birthday}</span>
+                      </div>
+                    )}
+                    {client.tags?.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {client.tags.map(tag => (
+                          <span key={tag} className="text-[10px] bg-[#E8477C]/10 text-[#C8617A] px-2 py-0.5 rounded-full font-semibold">{tag}</span>
+                        ))}
+                      </div>
+                    )}
                     {client.notes && (
                       <p className="text-[#7C5C4A] text-xs mt-2 pt-2 border-t border-[#F0E6DC] italic">
                         "{client.notes.substring(0, 60)}{client.notes.length > 60 ? '...' : ''}"
@@ -538,6 +557,40 @@ export default function ClientsPage() {
                   placeholder="Es. tinta 7.3 + ossigeno 20vol, frangia laterale, non tagliare sopra le orecchie..."
                   className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A] min-h-[70px] text-sm"
                 />
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Cake className="w-4 h-4 text-pink-400" />
+                  Data di Compleanno
+                </Label>
+                <Input
+                  type="text"
+                  value={formData.birthday}
+                  onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
+                  placeholder="MM-DD (es. 03-15)"
+                  className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Tag className="w-4 h-4 text-[#C8617A]" />
+                  Tag Cliente
+                </Label>
+                <div className="flex flex-wrap gap-2">
+                  {AVAILABLE_TAGS.map(tag => (
+                    <button key={tag} type="button"
+                      onClick={() => setFormData(prev => ({
+                        ...prev,
+                        tags: prev.tags.includes(tag) ? prev.tags.filter(t => t !== tag) : [...prev.tags, tag]
+                      }))}
+                      className={`text-xs px-3 py-1 rounded-full border font-semibold transition-all ${
+                        formData.tags.includes(tag)
+                          ? 'bg-[#E8477C] text-white border-[#E8477C]'
+                          : 'bg-white text-[#7C5C4A] border-[#E8D5C8] hover:border-[#C8617A]'
+                      }`}
+                    >{tag}</button>
+                  ))}
+                </div>
               </div>
               <div className="flex items-center justify-between p-3 rounded-xl bg-[#FAF7F2]">
                 <div className="flex items-center gap-2">

@@ -326,6 +326,63 @@ async def reset_inactive_recall(client_id: str, current_user: dict = Depends(get
     return {"success": True, "deleted": result.deleted_count}
 
 
+@router.get("/reminders/birthdays")
+async def get_upcoming_birthdays(days: int = 7, current_user: dict = Depends(get_current_user)):
+    """Restituisce i clienti con compleanno nei prossimi N giorni (default 7)."""
+    today = datetime.now(timezone.utc)
+    upcoming = []
+    clients = await db.clients.find(
+        {"user_id": current_user["id"], "birthday": {"$ne": None, "$exists": True}},
+        {"_id": 0}
+    ).to_list(1000)
+    for client in clients:
+        bday = client.get("birthday")
+        if not bday:
+            continue
+        try:
+            # Supporta formato MM-DD
+            if len(bday) == 5 and bday[2] == '-':
+                month, day = int(bday[:2]), int(bday[3:])
+            elif len(bday) >= 8 and bday[4] == '-':
+                month, day = int(bday[5:7]), int(bday[8:10])
+            else:
+                continue
+            # Calcola il prossimo compleanno
+            this_year_bday = today.replace(month=month, day=day, hour=0, minute=0, second=0, microsecond=0)
+            if this_year_bday < today.replace(hour=0, minute=0, second=0, microsecond=0):
+                this_year_bday = this_year_bday.replace(year=today.year + 1)
+            days_until = (this_year_bday - today.replace(hour=0, minute=0, second=0, microsecond=0)).days
+            if 0 <= days_until <= days:
+                upcoming.append({
+                    "client_id": client["id"],
+                    "client_name": client["name"],
+                    "client_phone": client.get("phone", ""),
+                    "birthday": bday,
+                    "days_until": days_until,
+                    "is_today": days_until == 0,
+                })
+        except (ValueError, KeyError):
+            continue
+    upcoming.sort(key=lambda x: x["days_until"])
+    return upcoming
+
+
+@router.post("/reminders/birthday/{client_id}/mark-sent")
+async def mark_birthday_sent(client_id: str, current_user: dict = Depends(get_current_user)):
+    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    existing = await db.reminders_sent.find_one({
+        "user_id": current_user["id"], "type": "birthday",
+        "client_id": client_id, "date": today_str
+    })
+    if not existing:
+        await db.reminders_sent.insert_one({
+            "id": str(uuid.uuid4()), "user_id": current_user["id"],
+            "type": "birthday", "client_id": client_id, "date": today_str,
+            "sent_at": datetime.now(timezone.utc).isoformat()
+        })
+    return {"success": True}
+
+
 @router.post("/reminders/appointment/{appointment_id}/send-confirmation")
 async def send_confirmation_link(appointment_id: str, current_user: dict = Depends(get_current_user)):
     """Invia SMS con link di conferma SI/NO al cliente."""

@@ -80,7 +80,9 @@ class ClientCreate(BaseModel):
     notes: Optional[str] = ""
     allergies: Optional[str] = ""
     hair_notes: Optional[str] = ""
-    send_sms_reminders: Optional[bool] = True  # campo canonico unificato
+    send_sms_reminders: Optional[bool] = True
+    birthday: Optional[str] = None   # formato MM-DD (es. "03-15")
+    tags: Optional[List[str]] = []
 
 class ClientResponse(BaseModel):
     id: str
@@ -90,7 +92,9 @@ class ClientResponse(BaseModel):
     notes: Optional[str] = ""
     allergies: Optional[str] = ""
     hair_notes: Optional[str] = ""
-    send_sms_reminders: Optional[bool] = True  # unico campo canonico
+    send_sms_reminders: Optional[bool] = True
+    birthday: Optional[str] = None
+    tags: Optional[List[str]] = []
     created_at: str
     total_visits: int = 0
 
@@ -102,6 +106,8 @@ class ClientUpdate(BaseModel):
     allergies: Optional[str] = None
     hair_notes: Optional[str] = None
     send_sms_reminders: Optional[bool] = None
+    birthday: Optional[str] = None
+    tags: Optional[List[str]] = None
 
 class ClientBulkImport(BaseModel):
     clients: List[dict]
