@@ -13,19 +13,13 @@ services:
       - key: DB_NAME
         sync: false
       - key: JWT_SECRET
-        sync: false        # impostare manualmente nel dashboard Render (stringa casuale lunga)
+        generateValue: true
       - key: CORS_ORIGINS
         sync: false        # es: https://bruno-melito-hair.onrender.com
       - key: ENV
         value: production
       - key: PYTHON_VERSION
         value: 3.11.0
-      - key: PUBLIC_ADMIN_EMAIL
-        value: melitobruno@gmail.com
-      - key: BACKUP_ROTATE_DAYS
-        value: "7"
-      - key: FRONTEND_URL
-        value: https://brunomelitohair.it
 
   # ── Frontend React (Static Site) ──────────────────────────────────────────
   - type: web
