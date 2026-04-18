@@ -283,7 +283,6 @@ export default function PlanningPage() {
   };
 
   const sendConfirmation = async (booking) => {
-    if (!booking.client_phone) { toast.error('Numero non disponibile'); return; }
     setSendingConfirmId(booking.id);
     try {
       await api.post(`${API}/reminders/appointment/${booking.id}/send-confirmation`);
