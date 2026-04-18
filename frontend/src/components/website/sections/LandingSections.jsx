@@ -346,7 +346,7 @@ export function GallerySection({ config, hairstylePhotos, setShowBooking, T }) {
                   onMouseLeave={e => { e.currentTarget.style.borderColor = '#e5e7eb'; }}
                   className={`relative rounded-3xl overflow-hidden aspect-[3/4] group ${item.file_type !== 'video' ? 'cursor-pointer' : ''} border-2 border-gray-200 transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]`}>
                   {item.file_type === 'video' ? (
-                    <video src={getMediaUrl(item?.image_url)} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" muted loop playsInline onMouseEnter={e => e.target.play()} onMouseLeave={e => { e.target.pause(); e.target.currentTime = 0; }} />
+                    <video src={getMediaUrl(item?.image_url)} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" autoPlay muted loop playsInline preload="metadata" />
                   ) : (
                     <img src={getMediaUrl(item?.image_url)} alt={item.label} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                   )}
