@@ -53,13 +53,8 @@ export function ServicesSection({ servicesRef, showServices, setShowServices, la
                   {isOpen && (
                     <div className="bg-white rounded-2xl mt-1 p-4 border border-gray-100 shadow-sm animate-in fade-in duration-200">
                       {catServices.map((service) => (
-                        <div key={service.id} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0">
+                        <div key={service.id} className="py-3 border-b border-gray-100 last:border-0">
                           <span className="font-bold" style={{ color: T.text }}>{service.name}</span>
-                          {bookService && (
-                            <button onClick={() => bookService(service.id)} className="text-xs font-bold px-2.5 py-1 rounded-lg text-white transition-all hover:opacity-80 active:scale-95 shrink-0 ml-4" style={{ backgroundColor: catInfo.color }}>
-                              Prenota
-                            </button>
-                          )}
                         </div>
                       ))}
                     </div>
