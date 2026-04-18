@@ -193,7 +193,10 @@ export default function EditAppointmentDialog({
     return value;
   };
 
-  const calculateFinalAmount = () => Math.max(0, calculateTotal() - calculateDiscount());
+  const calculateFinalAmount = () => {
+    if (paymentMethod === 'prepaid' && selectedCardId) return 0;
+    return Math.max(0, calculateTotal() - calculateDiscount());
+  };
 
   const saveAppointment = async (openCheckout = false) => {
     if (!currentAppointment) return;
