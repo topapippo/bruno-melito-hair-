@@ -208,9 +208,9 @@ export default function DayView({
                                 <span title="In attesa di conferma" className="text-yellow-300 text-[10px] flex-shrink-0">⏳</span>
                               )}
                             </div>
-                            {apt.services?.length === 1 && (
-                              <span className="text-[10px] text-white/80 font-semibold block truncate">{apt.services[0].name}</span>
-                            )}
+                            {apt.services?.map((s, i) => (
+                              <span key={i} className="text-[10px] text-white/80 font-semibold block truncate">{s.name}</span>
+                            ))}
                             {clientNote ? (
                               <span className="text-[10px] text-amber-300 italic block truncate" title={clientNote}>
                                 {clientNote}
