@@ -17,9 +17,9 @@ export default function BookingForm({
   config, bookingServices, operators, cardTemplates, publicPromos,
   blockedSlots, setBlockedSlots,
   formData, setFormData,
-  onBack, onSuccess, T
+  onBack, onSuccess, T, initialStep = 1
 }) {
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(initialStep);
   const [submitting, setSubmitting] = useState(false);
   const [conflictData, setConflictData] = useState(null);
   const [openCats, setOpenCats] = useState({});

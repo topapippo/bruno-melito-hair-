@@ -76,6 +76,7 @@ export default function WebsitePage() {
 
   // My Appointments
   const [showMyAppts, setShowMyAppts] = useState(false);
+  const [bookingInitialStep, setBookingInitialStep] = useState(1);
 
   // #4 — Scroll inactivity CTA bar
   const [showScrollCta, setShowScrollCta] = useState(false);
@@ -189,6 +190,7 @@ export default function WebsitePage() {
   // #2 — Prenota da ogni servizio: pre-seleziona il servizio e apre il form
   const bookService = (serviceId) => {
     setFormData(prev => ({ ...prev, service_ids: [serviceId] }));
+    setBookingInitialStep(2);
     setShowBooking(true);
   };
 
@@ -209,6 +211,7 @@ export default function WebsitePage() {
     setShowBooking(false);
     setAppointmentId(null);
     setUpsellingSuggestions([]);
+    setBookingInitialStep(1);
     setFormData({ client_name: '', client_phone: '', service_ids: [], operator_id: '', date: format(new Date(), 'yyyy-MM-dd'), time: '09:00', notes: '' });
   };
 
@@ -248,9 +251,10 @@ export default function WebsitePage() {
         setBlockedSlots={setBlockedSlots}
         formData={formData}
         setFormData={setFormData}
-        onBack={() => setShowBooking(false)}
+        onBack={() => { setBookingInitialStep(1); setShowBooking(false); }}
         onSuccess={handleBookingSuccess}
         T={T}
+        initialStep={bookingInitialStep}
       />
     );
   }
