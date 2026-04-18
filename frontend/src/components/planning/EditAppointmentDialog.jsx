@@ -929,7 +929,7 @@ export default function EditAppointmentDialog({
                 return (
                   <div className="mb-2 space-y-1">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">{formData.service_ids.length} {formData.service_ids.length === 1 ? 'servizio' : 'servizi'} - {editTotalDuration} min</span>
+                      <span className="text-gray-600">{services.filter(s => formData.service_ids.includes(s.id)).map(s => s.name).join(', ') || `${formData.service_ids.length} ${formData.service_ids.length === 1 ? 'servizio' : 'servizi'}`} - {editTotalDuration} min</span>
                       <span className={`font-black ${cardDiscount > 0 ? 'text-gray-400 line-through text-xs' : 'text-[#2D1B14]'}`}>{'\u20AC'}{editTotalPrice.toFixed(2)}</span>
                     </div>
                     {selCard && (
