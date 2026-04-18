@@ -54,18 +54,12 @@ export function ServicesSection({ servicesRef, showServices, setShowServices, la
                     <div className="bg-white rounded-2xl mt-1 p-4 border border-gray-100 shadow-sm animate-in fade-in duration-200">
                       {catServices.map((service) => (
                         <div key={service.id} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0">
-                          <div>
-                            <span className="font-bold" style={{ color: T.text }}>{service.name}</span>
-                            <span className="text-xs text-[#94A3B8] ml-2">{service.duration} min</span>
-                          </div>
-                          <div className="flex items-center gap-2 ml-4 shrink-0">
-                            <span className="font-black text-lg" style={{ color: catInfo.color }}>{'\u20AC'}{service.price}</span>
-                            {bookService && (
-                              <button onClick={() => bookService(service.id)} className="text-xs font-bold px-2.5 py-1 rounded-lg text-white transition-all hover:opacity-80 active:scale-95" style={{ backgroundColor: catInfo.color }}>
-                                Prenota
-                              </button>
-                            )}
-                          </div>
+                          <span className="font-bold" style={{ color: T.text }}>{service.name}</span>
+                          {bookService && (
+                            <button onClick={() => bookService(service.id)} className="text-xs font-bold px-2.5 py-1 rounded-lg text-white transition-all hover:opacity-80 active:scale-95 shrink-0 ml-4" style={{ backgroundColor: catInfo.color }}>
+                              Prenota
+                            </button>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -89,12 +83,9 @@ export function ServicesSection({ servicesRef, showServices, setShowServices, la
                   {isOpen && (
                     <div className="bg-white rounded-2xl mt-1 p-4 border border-[#6366F1]/20 shadow-sm animate-in fade-in duration-200">
                       {cardTemplates.map((tmpl, i) => (
-                        <div key={tmpl.id || i} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0">
-                          <div>
-                            <span className="font-bold" style={{ color: T.text }}>{tmpl.name}</span>
-                            <span className="text-xs text-[#6366F1] ml-2">{tmpl.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}{tmpl.total_services ? ` · ${tmpl.total_services} servizi` : ''}</span>
-                          </div>
-                          <span className="font-black text-[#6366F1] text-lg shrink-0 ml-4">{'\u20AC'}{tmpl.total_value}</span>
+                        <div key={tmpl.id || i} className="py-3 border-b border-gray-100 last:border-0">
+                          <span className="font-bold" style={{ color: T.text }}>{tmpl.name}</span>
+                          <span className="text-xs text-[#6366F1] ml-2">{tmpl.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}{tmpl.total_services ? ` · ${tmpl.total_services} servizi` : ''}</span>
                         </div>
                       ))}
                     </div>
