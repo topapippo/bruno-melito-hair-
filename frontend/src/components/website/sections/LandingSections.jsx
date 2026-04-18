@@ -465,18 +465,51 @@ export function LoyaltySection({ setShowBooking, T, loyalty }) {
 }
 
 export function GalleryStrip({ photos, T }) {
-  if (!photos || photos.length === 0) return null;
-  const imagePhotos = photos.filter(p => p.file_type !== 'video');
+  const stripRef = useRef(null);
+  const imagePhotos = (photos || []).filter(p => p.file_type !== 'video' && p.image_url);
   if (imagePhotos.length === 0) return null;
+
+  useEffect(() => {
+    const el = stripRef.current;
+    if (!el) return;
+    let frame;
+    let paused = false;
+    const scroll = () => {
+      if (!paused) {
+        el.scrollLeft += 0.6;
+        if (el.scrollLeft >= el.scrollWidth / 2) el.scrollLeft = 0;
+      }
+      frame = requestAnimationFrame(scroll);
+    };
+    frame = requestAnimationFrame(scroll);
+    const pause = () => { paused = true; };
+    const resume = () => { paused = false; };
+    el.addEventListener('mouseenter', pause);
+    el.addEventListener('mouseleave', resume);
+    el.addEventListener('touchstart', pause, { passive: true });
+    el.addEventListener('touchend', resume);
+    return () => {
+      cancelAnimationFrame(frame);
+      el.removeEventListener('mouseenter', pause);
+      el.removeEventListener('mouseleave', resume);
+      el.removeEventListener('touchstart', pause);
+      el.removeEventListener('touchend', resume);
+    };
+  }, [imagePhotos.length]);
+
+  // Duplica le foto per lo scroll infinito
+  const doubled = [...imagePhotos, ...imagePhotos];
+
   return (
-    <div className="overflow-hidden py-3" style={{ background: `${T.primary}10` }}>
-      <div className="flex gap-2 px-2 overflow-x-auto scrollbar-hide snap-x snap-mandatory">
-        {imagePhotos.map((photo, i) => (
-          <div key={photo.id || i} className="flex-shrink-0 snap-start rounded-xl overflow-hidden shadow-md" style={{ width: '22vw', maxWidth: '180px', minWidth: '120px', aspectRatio: '1/1' }}>
+    <div className="py-2 overflow-hidden" style={{ background: `${T.primary}12` }}>
+      <div ref={stripRef} className="flex gap-2 px-2 overflow-x-hidden" style={{ scrollBehavior: 'auto' }}>
+        {doubled.map((photo, i) => (
+          <div key={`${photo.id}-${i}`} className="flex-shrink-0 rounded-xl overflow-hidden shadow-md cursor-pointer"
+            style={{ width: '140px', height: '140px' }}>
             <img
-              src={getMediaUrl(photo.url)}
-              alt={photo.caption || ''}
-              className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+              src={getMediaUrl(photo.image_url)}
+              alt={photo.label || ''}
+              className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
               loading="lazy"
             />
           </div>
