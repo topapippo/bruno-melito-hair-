@@ -194,6 +194,22 @@ export default function WebsitePage() {
     setShowBooking(true);
   };
 
+  const bookPromo = (promo) => {
+    setFormData(prev => ({
+      ...prev,
+      notes: `[PROMO: ${promo.name}]`,
+      service_ids: promo.free_service_id ? [promo.free_service_id] : prev.service_ids,
+    }));
+    setBookingInitialStep(1);
+    setShowBooking(true);
+  };
+
+  const bookCard = (tmpl) => {
+    setFormData(prev => ({ ...prev, notes: `[CARD: ${tmpl.name}]` }));
+    setBookingInitialStep(1);
+    setShowBooking(true);
+  };
+
   const scrollTo = (ref) => { ref.current?.scrollIntoView({ behavior: 'smooth' }); };
   const openWhatsApp = () => {
     const num = config.whatsapp || '393397833526';
@@ -275,13 +291,13 @@ export default function WebsitePage() {
     if (hiddenSections.includes(sectionId)) return null;
     switch (sectionId) {
       case 'services':
-        return bookingServices.length > 0 ? <ServicesSection key="services" {...{ servicesRef, showServices, setShowServices, landingServiceGroups, cardTemplates, setShowBooking, bookService, T }} /> : null;
+        return bookingServices.length > 0 ? <ServicesSection key="services" {...{ servicesRef, showServices, setShowServices, landingServiceGroups, cardTemplates, setShowBooking, bookService, bookCard, T }} /> : null;
       case 'salon':
         return salonPhotos.length > 0 ? <SalonSection key="salon" salonPhotos={salonPhotos} T={T} /> : null;
       case 'about':
         return config.about_title ? <AboutSection key="about" config={config} salonPhotos={salonPhotos} T={T} /> : null;
       case 'promotions':
-        return publicPromos.length > 0 ? <PromotionsSection key="promotions" publicPromos={publicPromos} setShowBooking={setShowBooking} T={T} /> : null;
+        return publicPromos.length > 0 ? <PromotionsSection key="promotions" publicPromos={publicPromos} setShowBooking={setShowBooking} bookPromo={bookPromo} T={T} /> : null;
       case 'reviews':
         return reviews.length > 0 ? <ReviewsSection key="reviews" reviews={reviews} T={T} config={config} /> : null;
       case 'gallery':

@@ -20,7 +20,7 @@ function AnimatedSection({ children, className = '', delay = 0 }) {
 
 export { AnimatedSection };
 
-export function ServicesSection({ servicesRef, showServices, setShowServices, landingServiceGroups, cardTemplates, setShowBooking, bookService, T }) {
+export function ServicesSection({ servicesRef, showServices, setShowServices, landingServiceGroups, cardTemplates, setShowBooking, bookService, bookCard, T }) {
   const [openLandingCats, setOpenLandingCats] = useState({});
   const toggleLCat = (key) => setOpenLandingCats(prev => ({ ...prev, [key]: !prev[key] }));
 
@@ -78,9 +78,16 @@ export function ServicesSection({ servicesRef, showServices, setShowServices, la
                   {isOpen && (
                     <div className="bg-white rounded-2xl mt-1 p-4 border border-[#6366F1]/20 shadow-sm animate-in fade-in duration-200">
                       {cardTemplates.map((tmpl, i) => (
-                        <div key={tmpl.id || i} className="py-3 border-b border-gray-100 last:border-0">
-                          <span className="font-bold" style={{ color: T.text }}>{tmpl.name}</span>
-                          <span className="text-xs text-[#6366F1] ml-2">{tmpl.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}{tmpl.total_services ? ` · ${tmpl.total_services} servizi` : ''}</span>
+                        <div key={tmpl.id || i} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0">
+                          <div>
+                            <span className="font-bold" style={{ color: T.text }}>{tmpl.name}</span>
+                            <span className="text-xs text-[#6366F1] ml-2">{tmpl.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}{tmpl.total_services ? ` · ${tmpl.total_services} servizi` : ''}</span>
+                          </div>
+                          {bookCard && (
+                            <button onClick={() => bookCard(tmpl)} className="text-xs font-bold px-2.5 py-1 rounded-lg text-white transition-all hover:opacity-80 active:scale-95 shrink-0 ml-4" style={{ backgroundColor: '#6366F1' }}>
+                              Prenota
+                            </button>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -166,7 +173,7 @@ export function AboutSection({ config, salonPhotos, T }) {
   );
 }
 
-export function PromotionsSection({ publicPromos, setShowBooking, T }) {
+export function PromotionsSection({ publicPromos, setShowBooking, bookPromo, T }) {
   return (
     <section className="py-20 sm:py-28" style={{ background: `linear-gradient(135deg, ${T.primary}12, ${T.accent}08)` }}>
       <div className="max-w-6xl mx-auto px-4">
@@ -197,10 +204,14 @@ export function PromotionsSection({ publicPromos, setShowBooking, T }) {
                       </div>
                     )}
                     {promo.promo_code && (
-                      <div className="flex items-center gap-2 text-xs text-white/70">
+                      <div className="flex items-center gap-2 text-xs text-white/70 mb-3">
                         Codice: <span className="font-mono font-bold text-white bg-white/20 px-2 py-0.5 rounded text-sm">{promo.promo_code}</span>
                       </div>
                     )}
+                    <button onClick={() => bookPromo ? bookPromo(promo) : setShowBooking(true)}
+                      className="mt-1 w-full py-2 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-sm transition-all active:scale-95">
+                      Prenota con questa promo
+                    </button>
                   </div>
                 </div>
               </AnimatedSection>
