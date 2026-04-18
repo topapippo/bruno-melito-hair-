@@ -15,7 +15,7 @@ import MyAppointmentsModal from '../components/website/MyAppointmentsModal';
 import {
   AnimatedSection,
   ServicesSection, SalonSection, AboutSection, PromotionsSection,
-  ReviewsSection, GallerySection, LoyaltySection, ContactSection
+  ReviewsSection, GallerySection, LoyaltySection, ContactSection, GalleryStrip
 } from '../components/website/sections/LandingSections';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -492,8 +492,30 @@ export default function WebsitePage() {
         </div>
       </section>
 
-      {/* Dynamic sections based on CMS order */}
-      {sectionOrder.map(id => renderSection(id))}
+      {/* Dynamic sections based on CMS order, con strip foto galleria tra le sezioni */}
+      {(() => {
+        const stripPhotos = hairstylePhotos.filter(p => p.file_type !== 'video');
+        const chunkSize = 5;
+        let stripIndex = 0;
+        const getStripPhotos = () => {
+          if (stripPhotos.length === 0) return [];
+          const start = (stripIndex * chunkSize) % stripPhotos.length;
+          const slice = [...stripPhotos.slice(start), ...stripPhotos.slice(0, start)];
+          stripIndex++;
+          return slice.slice(0, chunkSize);
+        };
+        const rendered = [];
+        sectionOrder.forEach((id, i) => {
+          const section = renderSection(id);
+          if (section) rendered.push(section);
+          // Inserisci strip tra sezioni (non dopo l'ultima, non prima di gallery o contact)
+          const nextId = sectionOrder[i + 1];
+          if (section && nextId && nextId !== 'contact' && id !== 'gallery' && stripPhotos.length > 0) {
+            rendered.push(<GalleryStrip key={`strip-${i}`} photos={getStripPhotos()} T={T} />);
+          }
+        });
+        return rendered;
+      })()}
 
       {/* QR CODE SECTION */}
       <section className="py-16 sm:py-20 bg-gradient-to-b from-white/40 to-white/80" data-testid="qr-code-section">

@@ -464,6 +464,28 @@ export function LoyaltySection({ setShowBooking, T, loyalty }) {
   );
 }
 
+export function GalleryStrip({ photos, T }) {
+  if (!photos || photos.length === 0) return null;
+  const imagePhotos = photos.filter(p => p.file_type !== 'video');
+  if (imagePhotos.length === 0) return null;
+  return (
+    <div className="overflow-hidden py-3" style={{ background: `${T.primary}10` }}>
+      <div className="flex gap-2 px-2 overflow-x-auto scrollbar-hide snap-x snap-mandatory">
+        {imagePhotos.map((photo, i) => (
+          <div key={photo.id || i} className="flex-shrink-0 snap-start rounded-xl overflow-hidden shadow-md" style={{ width: '22vw', maxWidth: '180px', minWidth: '120px', aspectRatio: '1/1' }}>
+            <img
+              src={getMediaUrl(photo.url)}
+              alt={photo.caption || ''}
+              className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+              loading="lazy"
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function ContactSection({ contactRef, config, hours, phones, setShowBooking, openWhatsApp, T }) {
   return (
     <section ref={contactRef} className="py-20 sm:py-28" style={{ backgroundColor: `${T.text}F0`, color: '#fff' }}>
