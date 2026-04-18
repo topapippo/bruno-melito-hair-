@@ -109,7 +109,7 @@ export default function DayView({
                     time.endsWith(':00') ? 'font-bold text-sm text-[#2D1B14] bg-[#E2E8F0]/20' : 'text-xs text-[#7C5C4A]'
                   }`}
                 >
-                  {time.endsWith(':00') || time.endsWith(':30') ? time : ''}
+                  {time}
                 </div>
               ))}
             </div>
@@ -208,6 +208,9 @@ export default function DayView({
                                 <span title="In attesa di conferma" className="text-yellow-300 text-[10px] flex-shrink-0">⏳</span>
                               )}
                             </div>
+                            {apt.services?.length === 1 && (
+                              <span className="text-[10px] text-white/80 font-semibold block truncate">{apt.services[0].name}</span>
+                            )}
                             {clientNote ? (
                               <span className="text-[10px] text-amber-300 italic block truncate" title={clientNote}>
                                 {clientNote}

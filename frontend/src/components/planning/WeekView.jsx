@@ -166,9 +166,9 @@ export default function WeekView({
                   style={{ height: `${SLOT_H}px` }}>
                   {idx % 4 === 0 ? (
                     <span className="text-xs font-bold text-[#2D1B14]">{time}</span>
-                  ) : idx % 2 === 0 ? (
-                    <span className="text-[10px] text-[#94A3B8]">{time}</span>
-                  ) : null}
+                  ) : (
+                    <span className="text-[9px] text-[#94A3B8]">{time}</span>
+                  )}
                 </div>
               ))}
             </div>
@@ -223,11 +223,18 @@ export default function WeekView({
                           title={`${apt.time} - ${apt.client_name}${opName ? ` (${opName})` : ''}\nTrascina per spostare`}
                           data-testid={`week-apt-${apt.id}`}>
                           {/* Header */}
-                          <div className="flex items-center justify-between px-1 bg-[#2D1B14]/90 text-white flex-shrink-0" style={{ minHeight: '18px' }}>
-                            <span className="font-bold text-[10px] truncate">{apt.time} {apt.client_name}</span>
-                            {apt.confirmation_status === 'confirmed' && <span className="text-green-400 text-[9px] flex-shrink-0">✓</span>}
-                            {apt.confirmation_status === 'cancelled_by_client' && <span className="text-red-400 text-[9px] flex-shrink-0">✕</span>}
-                            {apt.confirmation_status === 'pending' && <span className="text-yellow-300 text-[9px] flex-shrink-0">⏳</span>}
+                          <div className="flex items-start justify-between px-1 bg-[#2D1B14]/90 text-white flex-shrink-0" style={{ minHeight: '18px' }}>
+                            <div className="flex-1 min-w-0">
+                              <span className="font-bold text-[10px] truncate block">{apt.time} {apt.client_name}</span>
+                              {apt.services?.length === 1 && (
+                                <span className="text-[9px] text-white/80 font-semibold truncate block">{apt.services[0].name}</span>
+                              )}
+                            </div>
+                            <div className="flex-shrink-0">
+                              {apt.confirmation_status === 'confirmed' && <span className="text-green-400 text-[9px]">✓</span>}
+                              {apt.confirmation_status === 'cancelled_by_client' && <span className="text-red-400 text-[9px]">✕</span>}
+                              {apt.confirmation_status === 'pending' && <span className="text-yellow-300 text-[9px]">⏳</span>}
+                            </div>
                           </div>
                           {/* Service blocks */}
                           <div className="flex flex-col flex-1 min-h-0">
