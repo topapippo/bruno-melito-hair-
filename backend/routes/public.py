@@ -201,8 +201,11 @@ async def get_public_admin_user():
 async def get_public_services():
     user = await get_public_admin_user()
     if not user:
+        logger.error(f"[public/services] Utente admin non trovato per email={PUBLIC_ADMIN_EMAIL}")
         return []
-    return await db.services.find({"user_id": user["id"]}, {"_id": 0, "user_id": 0}).sort("order", 1).to_list(100)
+    services = await db.services.find({"user_id": user["id"]}, {"_id": 0, "user_id": 0}).sort("order", 1).to_list(100)
+    logger.info(f"[public/services] user_id={user['id']} email={PUBLIC_ADMIN_EMAIL} servizi={len(services)}")
+    return services
 
 
 @router.get("/public/operators")
