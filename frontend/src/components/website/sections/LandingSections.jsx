@@ -173,7 +173,8 @@ export function PromotionsSection({ publicPromos, setShowBooking, T }) {
         <AnimatedSection>
           <div className="text-center mb-12">
             <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.primary }}>Offerte Speciali</p>
-            <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>Promozioni Attive</h2>
+            <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>Le Nostre Promo</h2>
+            <p className="mt-3 text-sm font-semibold" style={{ color: `${T.primary}` }}>⚠️ Valide esclusivamente per prenotazioni online</p>
           </div>
         </AnimatedSection>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
