@@ -465,51 +465,29 @@ export function LoyaltySection({ setShowBooking, T, loyalty }) {
 }
 
 export function GalleryStrip({ photos, T }) {
-  const stripRef = useRef(null);
   const imagePhotos = (photos || []).filter(p => p.file_type !== 'video' && p.image_url);
   if (imagePhotos.length === 0) return null;
-
-  useEffect(() => {
-    const el = stripRef.current;
-    if (!el) return;
-    let frame;
-    let paused = false;
-    const scroll = () => {
-      if (!paused) {
-        el.scrollLeft += 0.6;
-        if (el.scrollLeft >= el.scrollWidth / 2) el.scrollLeft = 0;
-      }
-      frame = requestAnimationFrame(scroll);
-    };
-    frame = requestAnimationFrame(scroll);
-    const pause = () => { paused = true; };
-    const resume = () => { paused = false; };
-    el.addEventListener('mouseenter', pause);
-    el.addEventListener('mouseleave', resume);
-    el.addEventListener('touchstart', pause, { passive: true });
-    el.addEventListener('touchend', resume);
-    return () => {
-      cancelAnimationFrame(frame);
-      el.removeEventListener('mouseenter', pause);
-      el.removeEventListener('mouseleave', resume);
-      el.removeEventListener('touchstart', pause);
-      el.removeEventListener('touchend', resume);
-    };
-  }, [imagePhotos.length]);
-
-  // Duplica le foto per lo scroll infinito
   const doubled = [...imagePhotos, ...imagePhotos];
+  const totalWidth = doubled.length * 152; // 140px + 12px gap
 
   return (
-    <div className="py-2 overflow-hidden" style={{ background: `${T.primary}12` }}>
-      <div ref={stripRef} className="flex gap-2 px-2 overflow-x-hidden" style={{ scrollBehavior: 'auto' }}>
+    <div className="py-3 overflow-hidden" style={{ background: `${T.primary}12` }}>
+      <style>{`
+        @keyframes galleryScroll {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-${imagePhotos.length * 152}px); }
+        }
+        .gallery-strip-track { animation: galleryScroll ${imagePhotos.length * 3}s linear infinite; }
+        .gallery-strip-track:hover { animation-play-state: paused; }
+      `}</style>
+      <div className="gallery-strip-track flex gap-3" style={{ width: `${totalWidth}px` }}>
         {doubled.map((photo, i) => (
-          <div key={`${photo.id}-${i}`} className="flex-shrink-0 rounded-xl overflow-hidden shadow-md cursor-pointer"
+          <div key={`${photo.id}-${i}`} className="flex-shrink-0 rounded-2xl overflow-hidden shadow-lg"
             style={{ width: '140px', height: '140px' }}>
             <img
               src={getMediaUrl(photo.image_url)}
               alt={photo.label || ''}
-              className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
+              className="w-full h-full object-cover"
               loading="lazy"
             />
           </div>
