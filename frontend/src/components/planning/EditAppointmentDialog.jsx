@@ -46,7 +46,7 @@ const getFilteredSlots = (dateStr, hoursConfig, blockedSlots = []) => {
 };
 
 export default function EditAppointmentDialog({
-  open, onClose, appointment, operators, clients, services, onSuccess, onLoyaltyAlert, onThankYou,
+  open, onClose, appointment, operators, clients, services, onSuccess, onLoyaltyAlert, onLastServiceAlert, onThankYou,
 }) {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -397,6 +397,13 @@ export default function EditAppointmentDialog({
           clientPhone: res.data.client_phone,
           threshold: res.data.loyalty_threshold_reached,
           totalPoints: res.data.loyalty_total_points
+        });
+      }
+      if (res.data.last_service_warning) {
+        onLastServiceAlert?.({
+          clientName: res.data.client_name,
+          clientPhone: res.data.client_phone,
+          cardName: res.data.card_name,
         });
       }
     } catch (err) {

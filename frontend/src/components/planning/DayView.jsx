@@ -196,6 +196,7 @@ export default function DayView({
                           <span className="font-bold text-[11px] leading-none truncate flex-1">
                             {apt.status === 'completed' && '✓ '}{apt.client_name}
                           </span>
+                          {apt.card_last_service && <span title="Ultimo servizio abbonamento!" className="text-orange-300 text-[10px] flex-shrink-0">⚠️</span>}
                           <div className="flex items-center gap-0.5 flex-shrink-0">
                             {apt.confirmation_status === 'confirmed' && <span title="Confermato" className="text-green-400 text-[9px]">✓</span>}
                             {apt.confirmation_status === 'cancelled_by_client' && <span title="Disdetto" className="text-red-400 text-[9px]">✕</span>}

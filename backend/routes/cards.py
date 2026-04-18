@@ -311,10 +311,10 @@ async def get_low_balance_cards(threshold_percent: int = 20, current_user: dict 
         used_svc = card.get("used_services", 0)
         is_subscription = card.get("card_type") == "subscription"
 
-        # Per abbonamento: alert se rimangono ≤2 sedute
+        # Per abbonamento: alert se rimane 1 sola seduta
         if is_subscription and total_svc:
             remaining_sessions = total_svc - used_svc
-            if 0 < remaining_sessions <= 2:
+            if remaining_sessions == 1:
                 client = await db.clients.find_one({"id": card["client_id"]}, {"_id": 0, "phone": 1, "name": 1})
                 card["percent_remaining"] = round((remaining / total) * 100, 1) if total > 0 else 0
                 card["remaining_sessions"] = remaining_sessions

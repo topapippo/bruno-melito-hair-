@@ -20,7 +20,7 @@ import EditAppointmentDialog from '../components/planning/EditAppointmentDialog'
 import RecurringDialog from '../components/planning/RecurringDialog';
 import LoyaltyAlertDialog from '../components/planning/LoyaltyAlertDialog';
 import BlockSlotDialog from '../components/planning/BlockSlotDialog';
-import { OnlineBookingBanner, ReminderBanner, ExpensesBanner } from '../components/planning/PlanningBanners';
+import { OnlineBookingBanner, ReminderBanner, ExpensesBanner, LastServiceBanner } from '../components/planning/PlanningBanners';
 import PlanningSearch from '../components/planning/PlanningSearch';
 import ErrorBoundary from '../components/ErrorBoundary';
 
@@ -65,6 +65,7 @@ export default function PlanningPage() {
   const [recurringAppointment, setRecurringAppointment] = useState(null);
   const [loyaltyAlertOpen, setLoyaltyAlertOpen] = useState(false);
   const [loyaltyAlertData, setLoyaltyAlertData] = useState(null);
+  const [lastServiceAlerts, setLastServiceAlerts] = useState([]);
   const [blockDialogOpen, setBlockDialogOpen] = useState(false);
   const [blockInitialTime, setBlockInitialTime] = useState('');
 
@@ -428,6 +429,10 @@ export default function PlanningPage() {
           autoReminderPending={autoReminderPending}
         />
         <ExpensesBanner upcomingExpenses={upcomingExpenses} />
+        <LastServiceBanner
+          lastServiceAlerts={lastServiceAlerts}
+          onDismiss={() => setLastServiceAlerts([])}
+        />
 
         {/* Header */}
         <div className="flex flex-col gap-4">
@@ -656,6 +661,7 @@ export default function PlanningPage() {
             services={services}
             onSuccess={refreshAll}
             onLoyaltyAlert={(data) => { setLoyaltyAlertData(data); setLoyaltyAlertOpen(true); }}
+            onLastServiceAlert={(data) => setLastServiceAlerts(prev => [...prev, data])}
             onThankYou={setThankYouData}
           />
         </ErrorBoundary>

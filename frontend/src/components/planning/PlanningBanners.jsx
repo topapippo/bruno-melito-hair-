@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { fmtDate } from '../../lib/dateUtils';
-import { CalendarDays, Bell, Euro, X } from 'lucide-react';
+import { CalendarDays, Bell, Euro, X, AlertTriangle } from 'lucide-react';
 
 export function OnlineBookingBanner({ newOnlineBookings, dismissOnlineBooking, dismissAllOnlineBookings, goToBookingDate }) {
   if (newOnlineBookings.length === 0) return null;
@@ -76,6 +76,35 @@ export function ReminderBanner({ pendingRemindersCount, inactiveClientsCount, au
         {autoReminderPending > 0 ? 'Invia ora →' : 'Gestisci →'}
       </span>
     </a>
+  );
+}
+
+export function LastServiceBanner({ lastServiceAlerts, onDismiss }) {
+  if (!lastServiceAlerts || lastServiceAlerts.length === 0) return null;
+  return (
+    <div className="relative overflow-hidden rounded-xl border-2 border-orange-400 bg-gradient-to-r from-orange-50 to-amber-50 shadow-lg" data-testid="last-service-banner">
+      <div className="p-4">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-orange-500" />
+            <span className="font-black text-orange-800 text-sm">Abbonamento in esaurimento!</span>
+          </div>
+          {onDismiss && (
+            <Button variant="ghost" size="sm" onClick={onDismiss} className="text-xs text-orange-600 hover:bg-orange-100 h-7">
+              Chiudi
+            </Button>
+          )}
+        </div>
+        <div className="space-y-2">
+          {lastServiceAlerts.map((alert, i) => (
+            <div key={i} className="bg-white/80 rounded-xl p-2.5 border border-orange-200">
+              <p className="font-bold text-sm text-orange-900">{alert.clientName}</p>
+              <p className="text-xs text-orange-700">"{alert.cardName}" — rimane <strong>1 solo servizio</strong>. Proponi il rinnovo!</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
