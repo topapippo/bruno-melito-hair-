@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { fmtDate } from '../../lib/dateUtils';
 import { CalendarDays, Bell, Euro, X, AlertTriangle } from 'lucide-react';
 
-export function OnlineBookingBanner({ newOnlineBookings, dismissOnlineBooking, dismissAllOnlineBookings, goToBookingDate }) {
+export function OnlineBookingBanner({ newOnlineBookings, dismissOnlineBooking, dismissAllOnlineBookings, goToBookingDate, onSendConfirmation, sendingConfirmId }) {
   if (newOnlineBookings.length === 0) return null;
   return (
     <div className="relative overflow-hidden rounded-xl border-2 border-emerald-400 bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 shadow-lg animate-pulse-slow" data-testid="new-booking-banner">
@@ -33,9 +33,26 @@ export function OnlineBookingBanner({ newOnlineBookings, dismissOnlineBooking, d
                   {fmtDate(booking.date)} alle {booking.time} - {booking.services?.map(s => s.name).join(', ')}
                 </p>
               </div>
-              <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); dismissOnlineBooking(booking.id); }} className="h-7 w-7 shrink-0 text-emerald-500 hover:bg-emerald-100" data-testid={`dismiss-booking-${booking.id}`}>
-                <X className="w-4 h-4" />
-              </Button>
+              <div className="flex items-center gap-1 shrink-0">
+                {booking.confirmation_status === 'confirmed' ? (
+                  <span className="text-[10px] font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded-full">✓ Confermato</span>
+                ) : booking.confirmation_status === 'pending' ? (
+                  <span className="text-[10px] font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">⏳ In attesa</span>
+                ) : (
+                  <Button
+                    size="sm"
+                    onClick={(e) => { e.stopPropagation(); onSendConfirmation?.(booking); }}
+                    disabled={sendingConfirmId === booking.id}
+                    className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2"
+                    data-testid={`confirm-booking-${booking.id}`}
+                  >
+                    {sendingConfirmId === booking.id ? '...' : '📩 Invia conferma'}
+                  </Button>
+                )}
+                <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); dismissOnlineBooking(booking.id); }} className="h-7 w-7 shrink-0 text-emerald-500 hover:bg-emerald-100" data-testid={`dismiss-booking-${booking.id}`}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           ))}
           {newOnlineBookings.length > 3 && (

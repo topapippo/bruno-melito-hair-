@@ -55,6 +55,7 @@ export default function PlanningPage() {
   const [autoReminderPending, setAutoReminderPending] = useState(0);
   const [upcomingExpenses, setUpcomingExpenses] = useState([]);
   const [newOnlineBookings, setNewOnlineBookings] = useState([]);
+  const [sendingConfirmId, setSendingConfirmId] = useState(null);
 
   // Dialogs
   const [newDialogOpen, setNewDialogOpen] = useState(false);
@@ -281,6 +282,21 @@ export default function PlanningPage() {
     dismissOnlineBooking(booking.id);
   };
 
+  const sendConfirmation = async (booking) => {
+    if (!booking.client_phone) { toast.error('Numero non disponibile'); return; }
+    setSendingConfirmId(booking.id);
+    try {
+      await api.post(`${API}/reminders/appointment/${booking.id}/send-confirmation`);
+      setNewOnlineBookings(prev => prev.map(b =>
+        b.id === booking.id ? { ...b, confirmation_status: 'pending' } : b
+      ));
+      toast.success(`Messaggio di conferma inviato a ${booking.client_name}`);
+    } catch (e) {
+      toast.error(e.response?.data?.detail || 'Errore invio messaggio');
+    }
+    setSendingConfirmId(null);
+  };
+
   // --- Slot handlers ---
   const mbhsOperator = operators.find(op => op.name.toUpperCase().includes('MBHS')) || operators[0];
 
@@ -422,6 +438,8 @@ export default function PlanningPage() {
           dismissOnlineBooking={dismissOnlineBooking}
           dismissAllOnlineBookings={dismissAllOnlineBookings}
           goToBookingDate={goToBookingDate}
+          onSendConfirmation={sendConfirmation}
+          sendingConfirmId={sendingConfirmId}
         />
         <ReminderBanner
           pendingRemindersCount={pendingRemindersCount}
