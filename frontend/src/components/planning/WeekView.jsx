@@ -226,9 +226,6 @@ export default function WeekView({
                           <div className="flex items-start justify-between px-1 bg-[#2D1B14]/90 text-white flex-shrink-0" style={{ minHeight: '18px' }}>
                             <div className="flex-1 min-w-0">
                               <span className="font-bold text-[10px] truncate block">{apt.time} {apt.client_name}</span>
-                              {apt.services?.map((s, i) => (
-                                <span key={i} className="text-[9px] text-white/80 font-semibold truncate block">{s.name}</span>
-                              ))}
                             </div>
                             <div className="flex-shrink-0">
                               {apt.confirmation_status === 'confirmed' && <span className="text-green-400 text-[9px]">✓</span>}
