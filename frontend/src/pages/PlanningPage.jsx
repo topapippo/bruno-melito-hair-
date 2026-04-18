@@ -285,11 +285,14 @@ export default function PlanningPage() {
   const sendConfirmation = async (booking) => {
     setSendingConfirmId(booking.id);
     try {
-      await api.post(`${API}/reminders/appointment/${booking.id}/send-confirmation`);
+      const res = await api.post(`${API}/reminders/appointment/${booking.id}/send-confirmation`);
       setNewOnlineBookings(prev => prev.map(b =>
         b.id === booking.id ? { ...b, confirmation_status: 'pending' } : b
       ));
-      toast.success(`Messaggio di conferma inviato a ${booking.client_name}`);
+      if (res.data.whatsapp_url) {
+        window.open(res.data.whatsapp_url, '_blank');
+      }
+      toast.success(`Messaggio di conferma pronto per ${booking.client_name}`);
     } catch (e) {
       toast.error(e.response?.data?.detail || 'Errore invio messaggio');
     }

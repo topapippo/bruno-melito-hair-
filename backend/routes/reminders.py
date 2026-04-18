@@ -419,10 +419,25 @@ async def send_confirmation_link(appointment_id: str, current_user: dict = Depen
         f"Conferma o disdici qui: {confirm_link}"
     )
 
-    result = await send_sms_reminder(client_phone, message, current_user.get("salon_name", "Salone"))
-    if result["success"]:
-        return {"success": True, "message": "Link di conferma inviato via SMS"}
-    return {"success": False, "error": result.get("error", "Errore invio SMS")}
+    # Normalizza il numero per WhatsApp (rimuovi spazi, +, aggiungi prefisso Italia se necessario)
+    wa_phone = client_phone.replace(" ", "").replace("-", "")
+    if wa_phone.startswith("0"):
+        wa_phone = "39" + wa_phone[1:]
+    elif wa_phone.startswith("+"):
+        wa_phone = wa_phone[1:]
+    elif not wa_phone.startswith("39"):
+        wa_phone = "39" + wa_phone
+
+    import urllib.parse
+    whatsapp_url = f"https://wa.me/{wa_phone}?text={urllib.parse.quote(message)}"
+
+    # Prova anche SMS se configurato
+    try:
+        await send_sms_reminder(client_phone, message, current_user.get("salon_name", "Salone"))
+    except Exception:
+        pass
+
+    return {"success": True, "whatsapp_url": whatsapp_url, "message": message, "client_phone": client_phone}
 
 
 @router.get("/reminders/thank-you-template")
