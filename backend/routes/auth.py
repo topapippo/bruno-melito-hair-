@@ -13,8 +13,8 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 # ── Rate limiting su MongoDB (funziona con Gunicorn multi-worker) ─────────────
-LOGIN_MAX_ATTEMPTS = 10
-LOGIN_WINDOW_SECONDS = 300  # 5 minuti
+LOGIN_MAX_ATTEMPTS = 5
+LOGIN_WINDOW_SECONDS = 900  # 15 minuti
 
 
 async def _check_rate_limit(ip: str):
@@ -28,7 +28,8 @@ async def _check_rate_limit(ip: str):
     if count >= LOGIN_MAX_ATTEMPTS:
         raise HTTPException(
             status_code=429,
-            detail=f"Troppi tentativi di login. Riprova tra {LOGIN_WINDOW_SECONDS // 60} minuti."
+            detail=f"Troppi tentativi di login. Riprova tra {LOGIN_WINDOW_SECONDS // 60} minuti.",
+            headers={"Retry-After": str(LOGIN_WINDOW_SECONDS)},
         )
     await db.login_attempts.insert_one({
         "ip": ip,
@@ -201,8 +202,8 @@ async def get_me(current_user: dict = Depends(get_current_user)):
 # ── Change Password ───────────────────────────────────────────────────────────
 @router.put("/auth/change-password")
 async def change_password(data: ChangePasswordRequest, current_user: dict = Depends(get_current_user)):
-    if len(data.new_password) < 6:
-        raise HTTPException(status_code=400, detail="La nuova password deve avere almeno 6 caratteri")
+    if len(data.new_password) < 8:
+        raise HTTPException(status_code=400, detail="La nuova password deve avere almeno 8 caratteri")
     user = await db.users.find_one({"id": current_user["id"]})
     if not user or not verify_password(data.current_password, user["password"]):
         raise HTTPException(status_code=400, detail="Password corrente non corretta")

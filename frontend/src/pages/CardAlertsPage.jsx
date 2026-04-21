@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../lib/api';
+import api, { API } from '../lib/api';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,7 +20,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export default function CardAlertsPage() {
   const [loading, setLoading] = useState(true);

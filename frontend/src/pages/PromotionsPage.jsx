@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../lib/api';
+import api, { API } from '../lib/api';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,7 +21,6 @@ import {
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const RULE_TYPES = [
   { value: 'under_30', label: 'Under 30', icon: Users, color: 'bg-pink-100 text-pink-700' },

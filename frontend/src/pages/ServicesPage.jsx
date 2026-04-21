@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../lib/api';
+import api, { API } from '../lib/api';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
@@ -36,7 +36,6 @@ import { Scissors, Plus, Clock, Euro, Edit2, Trash2, Loader2 } from 'lucide-reac
 import { toast } from 'sonner';
 import { CATEGORIES, CATEGORY_ORDER, getCategoryInfo } from '../lib/categories';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const COLOR_PRESETS = [
   '#0EA5E9', '#0284C7', '#789F8A', '#10B981', '#E9C46A', '#F59E0B',

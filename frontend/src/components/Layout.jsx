@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import api from '../lib/api';
+import api, { API } from '../lib/api';
 import {
   LayoutDashboard, Calendar, CalendarDays, CalendarRange, Users, Scissors,
   UserCircle, BarChart3, History, Settings, LogOut, Menu, CreditCard,
@@ -11,7 +11,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const navGroups = [
   {

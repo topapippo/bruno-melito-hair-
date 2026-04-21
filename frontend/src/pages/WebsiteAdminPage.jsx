@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import api from '../lib/api';
+import api, { API } from '../lib/api';
 import { getCategoryInfo, groupServicesByCategory } from '../lib/categories';
 import { getMediaUrl } from '../lib/mediaUrl';
 import Layout from '../components/Layout';

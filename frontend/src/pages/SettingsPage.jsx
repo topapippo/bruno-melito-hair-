@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../lib/api';
+import api, { API } from '../lib/api';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,7 +34,6 @@ function BackupEmailButton({ email }) {
   );
 }
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const ADMIN_FONTS = [
   'Cormorant Garamond', 'Playfair Display', 'Montserrat', 'Poppins', 'Inter',

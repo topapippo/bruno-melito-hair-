@@ -88,37 +88,43 @@ async def use_card(card_id: str, data: CardTransaction, current_user: dict = Dep
         "description": data.description or f"Utilizzo card - €{data.amount:.2f}",
         "date": datetime.now(timezone.utc).isoformat()
     }
-    new_remaining = card["remaining_value"] - data.amount
-    new_used_services = card["used_services"] + 1
-    is_exhausted = new_remaining <= 0
-    if card.get("total_services"):
-        is_exhausted = is_exhausted or new_used_services >= card["total_services"]
-    await db.cards.update_one(
-        {"id": card_id},
-        {"$set": {"remaining_value": new_remaining, "used_services": new_used_services, "active": not is_exhausted},
-         "$push": {"transactions": transaction}}
+    # Aggiornamento atomico con $inc per evitare race condition
+    result = await db.cards.find_one_and_update(
+        {"id": card_id, "user_id": current_user["id"], "active": True, "remaining_value": {"$gte": data.amount}},
+        {"$inc": {"remaining_value": -data.amount, "used_services": 1},
+         "$push": {"transactions": transaction}},
+        return_document=True
     )
+    if not result:
+        raise HTTPException(status_code=409, detail="Transazione non completata: credito insufficiente o card non più attiva")
+    new_remaining = result["remaining_value"]
+    new_used_services = result["used_services"]
+    is_exhausted = new_remaining <= 0
+    if result.get("total_services"):
+        is_exhausted = is_exhausted or new_used_services >= result["total_services"]
+    if is_exhausted:
+        await db.cards.update_one({"id": card_id}, {"$set": {"active": False}})
     return {"success": True, "transaction": transaction, "remaining_value": new_remaining,
             "used_services": new_used_services, "card_active": not is_exhausted}
 
 
 @router.post("/cards/{card_id}/recharge")
 async def recharge_card(card_id: str, amount: float, current_user: dict = Depends(get_current_user)):
-    card = await db.cards.find_one({"id": card_id, "user_id": current_user["id"]}, {"_id": 0})
-    if not card:
-        raise HTTPException(status_code=404, detail="Card non trovata")
     transaction = {
         "id": str(uuid.uuid4()), "amount": -amount, "appointment_id": None,
         "description": f"Ricarica - €{amount:.2f}", "date": datetime.now(timezone.utc).isoformat()
     }
-    new_remaining = card["remaining_value"] + amount
-    new_total = card["total_value"] + amount
-    await db.cards.update_one(
-        {"id": card_id},
-        {"$set": {"remaining_value": new_remaining, "total_value": new_total, "active": True},
-         "$push": {"transactions": transaction}}
+    # Aggiornamento atomico con $inc per evitare race condition
+    result = await db.cards.find_one_and_update(
+        {"id": card_id, "user_id": current_user["id"]},
+        {"$inc": {"remaining_value": amount, "total_value": amount},
+         "$set": {"active": True},
+         "$push": {"transactions": transaction}},
+        return_document=True
     )
-    return {"success": True, "new_remaining": new_remaining, "new_total": new_total}
+    if not result:
+        raise HTTPException(status_code=404, detail="Card non trovata")
+    return {"success": True, "new_remaining": result["remaining_value"], "new_total": result["total_value"]}
 
 
 # ============== SELL CARD (from template) ==============

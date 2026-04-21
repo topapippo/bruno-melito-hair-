@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import api from '../lib/api';
+import api, { API } from '../lib/api';
 import Layout from '../components/Layout';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -15,7 +15,6 @@ import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const MODULES = [
   { path: '/', label: 'Planning', desc: 'Vista giornaliera', icon: Calendar, from: '#E8477C', to: '#F49AB3' },

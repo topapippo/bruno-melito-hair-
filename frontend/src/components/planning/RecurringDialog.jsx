@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import api from '../../lib/api';
+import api, { API } from '../../lib/api';
 import { fmtDate } from '../../lib/dateUtils';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter,
@@ -12,7 +12,6 @@ import { Button } from '@/components/ui/button';
 import { Check, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export default function RecurringDialog({ open, onClose, appointment, operators, onSuccess }) {
   const [recurringData, setRecurringData] = useState({ repeat_type: 'weeks', repeat_weeks: 3, repeat_months: 1, repeat_count: 4 });

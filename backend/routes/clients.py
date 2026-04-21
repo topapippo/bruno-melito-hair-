@@ -3,6 +3,7 @@ from typing import List
 from datetime import datetime, timezone, timedelta
 from urllib.parse import quote
 import uuid
+import re
 import logging
 
 from database import db
@@ -11,6 +12,19 @@ from models import ClientCreate, ClientResponse, ClientUpdate, ClientBulkImport
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+def _normalize_phone(phone: str) -> str:
+    if not phone:
+        return ""
+    digits = re.sub(r'\D', '', phone)
+    if digits.startswith('0039'):
+        digits = digits[4:]
+    elif digits.startswith('39') and len(digits) > 10:
+        digits = digits[2:]
+    if digits.startswith('0') and len(digits) > 9:
+        digits = digits[1:]
+    return digits
 
 
 def _normalize_client(doc: dict) -> dict:
@@ -27,23 +41,38 @@ def _normalize_client(doc: dict) -> dict:
 async def import_clients_bulk(data: ClientBulkImport, current_user: dict = Depends(get_current_user)):
     imported = 0
     skipped = 0
+    # Carica tutti i clienti esistenti per normalizzare i duplicati in modo efficiente
+    existing_clients = await db.clients.find(
+        {"user_id": current_user["id"]}, {"_id": 0, "name": 1, "phone": 1}
+    ).to_list(10000)
+    existing_names = {c["name"].lower() for c in existing_clients}
+    existing_phones_norm = {_normalize_phone(c.get("phone", "")) for c in existing_clients if c.get("phone")}
+
     for client_data in data.clients:
         name = client_data.get("name", "").strip()
         if not name:
             skipped += 1
             continue
-        exists = await db.clients.find_one({"user_id": current_user["id"], "name": name})
-        if exists:
+        incoming_phone = client_data.get("phone") or ""
+        incoming_phone_norm = _normalize_phone(incoming_phone)
+        # Salta se esiste già per nome (case-insensitive) o per telefono normalizzato
+        if name.lower() in existing_names:
+            skipped += 1
+            continue
+        if incoming_phone_norm and incoming_phone_norm in existing_phones_norm:
             skipped += 1
             continue
         client_doc = {
             "id": str(uuid.uuid4()), "user_id": current_user["id"],
-            "name": name, "phone": client_data.get("phone") or "",
+            "name": name, "phone": incoming_phone,
             "email": client_data.get("email") or "", "notes": client_data.get("notes") or "",
             "send_sms_reminders": client_data.get("send_sms_reminders", client_data.get("sms_reminder", True)),
             "total_visits": 0, "created_at": datetime.now(timezone.utc).isoformat()
         }
         await db.clients.insert_one(client_doc)
+        existing_names.add(name.lower())
+        if incoming_phone_norm:
+            existing_phones_norm.add(incoming_phone_norm)
         imported += 1
     logger.info(f"Importazione clienti: {imported} importati, {skipped} saltati per utente {current_user['id']}")
     return {"imported": imported, "skipped": skipped, "total": imported + skipped}

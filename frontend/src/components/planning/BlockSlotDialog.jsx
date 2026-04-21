@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../../lib/api';
+import api, { API } from '../../lib/api';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export default function BlockSlotDialog({ open, onClose, initialTime, selectedDate, onSuccess }) {
   const [blockForm, setBlockForm] = useState({ start_time: '', end_time: '', reason: '', type: 'one-time', date: '' });

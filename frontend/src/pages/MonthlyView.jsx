@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../lib/api';
+import api, { API } from '../lib/api';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,7 +9,6 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek } from 'date-fns';
 import { it } from 'date-fns/locale';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export default function MonthlyView() {
   const [appointments, setAppointments] = useState([]);

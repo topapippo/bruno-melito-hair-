@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../../lib/api';
+import api, { API } from '../../lib/api';
 import { fmtDate } from '../../lib/dateUtils';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
@@ -18,7 +18,6 @@ import { toast } from 'sonner';
 import { getCategoryInfo, groupServicesByCategory } from '../../lib/categories';
 import { ALL_SLOTS, DAY_MAP } from '../../lib/timeSlots';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const getFilteredSlots = (dateStr, hoursConfig, blockedSlots = []) => {
   let slots = [...ALL_SLOTS];

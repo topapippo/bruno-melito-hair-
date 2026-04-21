@@ -218,8 +218,11 @@ async def create_appointment(data: AppointmentCreate, current_user: dict = Depen
 async def get_appointments(
     date: Optional[str] = None, start_date: Optional[str] = None, end_date: Optional[str] = None,
     status: Optional[str] = None, operator_id: Optional[str] = None,
+    page: int = 1, limit: int = 200,
     current_user: dict = Depends(get_current_user)
 ):
+    limit = min(limit, 500)
+    skip = (page - 1) * limit
     query = {"user_id": current_user["id"]}
     if date:
         query["date"] = date
@@ -231,7 +234,7 @@ async def get_appointments(
         query["operator_id"] = operator_id
     appointments = await db.appointments.find(
         query, {"_id": 0, "user_id": 0}
-    ).sort([("date", 1), ("time", 1)]).to_list(1000)
+    ).sort([("date", 1), ("time", 1)]).skip(skip).to_list(limit)
 
     # Sync service names, categories, and prices from master services list
     master = await db.services.find(

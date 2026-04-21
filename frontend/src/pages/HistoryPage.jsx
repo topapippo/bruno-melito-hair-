@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../lib/api';
+import api, { API } from '../lib/api';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,7 +20,6 @@ import { History, Search, Clock, Euro, Calendar as CalendarIcon, Filter } from '
 import { format, subDays, subMonths } from 'date-fns';
 import { it } from 'date-fns/locale';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export default function HistoryPage() {
   const [appointments, setAppointments] = useState([]);

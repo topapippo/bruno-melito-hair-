@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../lib/api';
+import api, { API } from '../lib/api';
 import { fmtDate } from '../lib/dateUtils';
 import * as XLSX from 'xlsx';
 import Layout from '../components/Layout';
@@ -17,7 +17,6 @@ import { Euro, CreditCard, Banknote, FileSpreadsheet, TrendingDown, TrendingUp }
 import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays } from 'date-fns';
 import { toast } from 'sonner';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export default function ReportIncassiPage() {
   const [payments, setPayments] = useState([]);

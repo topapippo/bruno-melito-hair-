@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import api from '../../lib/api';
+import api, { API } from '../../lib/api';
 import { fmtDate } from '../../lib/dateUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, X, Loader2 } from 'lucide-react';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export default function PlanningSearch({ onHighlightClient, highlightedClientId, onClearHighlight }) {
   const [searchQuery, setSearchQuery] = useState('');

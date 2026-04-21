@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import api from '../../lib/api';
+import api, { API } from '../../lib/api';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Clock, Gift } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export default function BookingSuccess({
   config, formData, selectedServices,

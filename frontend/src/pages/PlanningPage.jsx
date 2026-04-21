@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import api from '../lib/api';
+import api, { API } from '../lib/api';
 import Layout from '../components/Layout';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -24,7 +24,6 @@ import { OnlineBookingBanner, ReminderBanner, ExpensesBanner, LastServiceBanner 
 import PlanningSearch from '../components/planning/PlanningSearch';
 import ErrorBoundary from '../components/ErrorBoundary';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const TIME_SLOTS = generateTimeSlots();
 

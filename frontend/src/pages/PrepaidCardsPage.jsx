@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../lib/api';
+import api, { API } from '../lib/api';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -52,7 +52,6 @@ import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export default function PrepaidCardsPage() {
   const navigate = useNavigate();

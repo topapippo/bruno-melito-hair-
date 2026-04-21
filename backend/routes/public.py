@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Request
 from fastapi.responses import Response, FileResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
+from typing import Optional, List, Any
 from datetime import datetime, timezone, timedelta
 import uuid
 import os
@@ -390,6 +391,7 @@ async def create_public_booking(request: Request, data: PublicBookingRequest):
             operator_color = first_op.get("color")
 
     appointment_id = str(uuid.uuid4())
+    booking_token = str(uuid.uuid4())
     appointment = {
         "id": appointment_id, "user_id": user_id, "client_id": client_id,
         "client_name": data.client_name, "service_ids": data.service_ids, "services": services,
@@ -398,7 +400,8 @@ async def create_public_booking(request: Request, data: PublicBookingRequest):
         "total_duration": total_duration, "total_price": total_price,
         "status": "scheduled",
         "notes": f"[Online] {data.notes}" if data.notes else "[Prenotazione Online]",
-        "source": "online", "created_at": datetime.now(timezone.utc).isoformat()
+        "source": "online", "booking_token": booking_token,
+        "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.appointments.insert_one(appointment)
 
@@ -414,7 +417,12 @@ async def create_public_booking(request: Request, data: PublicBookingRequest):
     except Exception as e:
         logger.warning(f"Push notifica prenotazione fallita: {e}")
 
-    return {"success": True, "appointment_id": appointment_id, "booking_code": appointment_id[:8].upper()}
+    return {
+        "success": True,
+        "appointment_id": appointment_id,
+        "booking_code": appointment_id[:8].upper(),
+        "booking_token": booking_token,
+    }
 
 
 
@@ -551,11 +559,22 @@ async def public_lookup_appointments(data: _PhoneLookupRequest):
     return {"upcoming": [fmt(a) for a in upcoming], "history": [fmt(a) for a in history], "client_name": client.get("name", "")}
 
 
+def _verify_public_appointment_access(apt: dict, client: dict, token: str, phone: str) -> bool:
+    """Verifica accesso pubblico: prima tramite booking_token, poi fallback a telefono."""
+    stored_token = apt.get("booking_token", "")
+    if stored_token and token and stored_token == token:
+        return True
+    if phone and client and _phones_match(client.get("phone", ""), phone):
+        return True
+    return False
+
+
 @router.put("/public/appointments/{appointment_id}")
 async def public_update_appointment(appointment_id: str, data: dict):
+    token = data.get("booking_token", "")
     phone = data.get("phone", "")
-    if not phone:
-        raise HTTPException(status_code=400, detail="Numero di telefono richiesto")
+    if not token and not phone:
+        raise HTTPException(status_code=400, detail="Token di prenotazione o numero di telefono richiesto")
     user = await db.users.find_one({"email": PUBLIC_ADMIN_EMAIL}, {"_id": 0})
     if not user:
         user = await db.users.find_one({}, {"_id": 0})
@@ -565,8 +584,8 @@ async def public_update_appointment(appointment_id: str, data: dict):
     if not apt:
         raise HTTPException(status_code=404, detail="Appuntamento non trovato")
     client = await db.clients.find_one({"id": apt["client_id"]}, {"_id": 0})
-    if not client or not _phones_match(client.get("phone", ""), phone):
-        raise HTTPException(status_code=403, detail="Numero non corrispondente")
+    if not _verify_public_appointment_access(apt, client, token, phone):
+        raise HTTPException(status_code=403, detail="Accesso non autorizzato")
     new_date = data.get("date", apt["date"])
     new_time = data.get("time", apt["time"])
     existing = await db.appointments.find_one({
@@ -580,7 +599,9 @@ async def public_update_appointment(appointment_id: str, data: dict):
 
 
 @router.delete("/public/appointments/{appointment_id}")
-async def public_cancel_appointment(appointment_id: str, phone: str):
+async def public_cancel_appointment(appointment_id: str, phone: str = "", booking_token: str = ""):
+    if not phone and not booking_token:
+        raise HTTPException(status_code=400, detail="Token di prenotazione o numero di telefono richiesto")
     user = await db.users.find_one({"email": PUBLIC_ADMIN_EMAIL}, {"_id": 0})
     if not user:
         user = await db.users.find_one({}, {"_id": 0})
@@ -590,8 +611,8 @@ async def public_cancel_appointment(appointment_id: str, phone: str):
     if not apt:
         raise HTTPException(status_code=404, detail="Appuntamento non trovato")
     client = await db.clients.find_one({"id": apt["client_id"]}, {"_id": 0})
-    if not client or not _phones_match(client.get("phone", ""), phone):
-        raise HTTPException(status_code=403, detail="Numero non corrispondente")
+    if not _verify_public_appointment_access(apt, client, booking_token, phone):
+        raise HTTPException(status_code=403, detail="Accesso non autorizzato")
     await db.appointments.update_one({"id": appointment_id}, {"$set": {"status": "cancelled"}})
     return {"success": True}
 
@@ -686,11 +707,45 @@ async def get_website_config(current_user: dict = Depends(get_current_user)):
     return {**DEFAULT_WEBSITE_CONFIG, **config}
 
 
+class WebsiteConfigUpdate(BaseModel):
+    salon_name: Optional[str] = None
+    slogan: Optional[str] = None
+    subtitle: Optional[str] = None
+    hero_description: Optional[str] = None
+    hero_image: Optional[str] = None
+    about_title: Optional[str] = None
+    about_text: Optional[str] = None
+    about_text_2: Optional[str] = None
+    about_features: Optional[List[str]] = None
+    years_experience: Optional[str] = None
+    year_founded: Optional[str] = None
+    phones: Optional[List[str]] = None
+    email: Optional[str] = None
+    address: Optional[str] = None
+    maps_url: Optional[str] = None
+    whatsapp: Optional[str] = None
+    hours: Optional[dict] = None
+    service_categories: Optional[List[Any]] = None
+    gallery_title: Optional[str] = None
+    gallery_subtitle: Optional[str] = None
+    section_order: Optional[List[str]] = None
+    upselling_rules: Optional[List[Any]] = None
+    upselling_discount: Optional[float] = None
+
+    @field_validator("upselling_discount")
+    @classmethod
+    def discount_range(cls, v):
+        if v is not None and not (0 <= v <= 100):
+            raise ValueError("Lo sconto deve essere tra 0 e 100")
+        return v
+
+
 @router.put("/website/config")
-async def update_website_config(data: dict, current_user: dict = Depends(get_current_user)):
-    data["user_id"] = current_user["id"]
-    data["updated_at"] = datetime.now(timezone.utc).isoformat()
-    await db.website_config.update_one({"user_id": current_user["id"]}, {"$set": data}, upsert=True)
+async def update_website_config(data: WebsiteConfigUpdate, current_user: dict = Depends(get_current_user)):
+    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    update_data["user_id"] = current_user["id"]
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    await db.website_config.update_one({"user_id": current_user["id"]}, {"$set": update_data}, upsert=True)
     return await db.website_config.find_one({"user_id": current_user["id"]}, {"_id": 0})
 
 

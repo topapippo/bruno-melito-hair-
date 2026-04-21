@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import api from '../lib/api';
+import api, { API } from '../lib/api';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,7 +30,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const CATEGORIES = [
   { value: 'affitto', label: 'Affitto', color: 'bg-purple-100 text-purple-700' },

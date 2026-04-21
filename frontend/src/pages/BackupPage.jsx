@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../lib/api';
+import api, { API } from '../lib/api';
 import Layout from '../components/Layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Database, Download, Users, Calendar, CreditCard, FileSpreadsheet, CheckCircle, History } from 'lucide-react';
 import { toast } from 'sonner';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const BACKUP_STALE_MS = 1000 * 60 * 60 * 24;
 
 const getBackupState = (status) => {

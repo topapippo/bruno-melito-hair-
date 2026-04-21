@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../lib/api';
+import api, { API } from '../lib/api';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,7 +28,6 @@ import { Switch } from '@/components/ui/switch';
 import { Users, Plus, Edit2, Trash2, Loader2, UserCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const COLORS = [
   { value: '#0EA5E9', name: 'Rosa Antico' },

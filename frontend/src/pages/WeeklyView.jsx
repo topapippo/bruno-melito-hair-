@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../lib/api';
+import api, { API } from '../lib/api';
 import Layout from '../components/Layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,6 @@ import EditAppointmentDialog from '../components/planning/EditAppointmentDialog'
 import LoyaltyAlertDialog from '../components/planning/LoyaltyAlertDialog';
 import { getCategoryInfo, CATEGORIES } from '../lib/categories';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const generateTimeSlots = () => {
   const slots = [];

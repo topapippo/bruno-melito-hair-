@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import api from '../lib/api';
+import api, { API } from '../lib/api';
 import { getMediaUrl } from '../lib/mediaUrl';
 import { Button } from '@/components/ui/button';
 import { Scissors, ChevronDown, MapPin, Phone, CalendarDays, Printer, Download, X, MessageCircle } from 'lucide-react';
@@ -18,7 +18,6 @@ import {
   ReviewsSection, GallerySection, LoyaltySection, ContactSection, GalleryStrip
 } from '../components/website/sections/LandingSections';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 // #10 — Typewriter effect: cicla frasi nel hero
 function Typewriter({ phrases, color }) {

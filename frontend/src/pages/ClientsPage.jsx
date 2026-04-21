@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import api from '../lib/api';
+import api, { API } from '../lib/api';
 import { fmtDate } from '../lib/dateUtils';
 import * as XLSX from 'xlsx';
 import Layout from '../components/Layout';
@@ -32,7 +32,6 @@ import { Users, Plus, Search, Phone, Mail, Edit2, Trash2, Loader2, History, Mess
 import { toast } from 'sonner';
 import PageHeader from '../components/PageHeader';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export default function ClientsPage() {
   const [clients, setClients] = useState([]);
