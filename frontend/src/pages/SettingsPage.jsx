@@ -8,12 +8,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Settings, Save, Loader2, Clock, Building2, User, Lock, Palette, Type, RotateCcw, Plus, Trash2, Check, Download, Share2 } from 'lucide-react';
+import { Settings, Save, Loader2, Clock, Building2, User, Lock, Palette, Type, RotateCcw, Plus, Trash2, Check, Download, Share2, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 
 function BackupButtons() {
   const [loading, setLoading] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   const runAndDownload = async () => {
     setLoading(true);
@@ -22,14 +23,13 @@ function BackupButtons() {
       const res = await api.get(`${API}/backup/download`, { responseType: 'blob' });
       const blob = new Blob([res.data], { type: 'application/json' });
       const date = new Date().toISOString().slice(0, 10);
-      const filename = `backup_${date}.json`;
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = filename;
+      a.download = `backup_${date}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success('Backup scaricato sul PC');
+      toast.success('Backup JSON scaricato sul PC');
     } catch {
       toast.error('Errore durante il backup');
     } finally {
@@ -48,14 +48,13 @@ function BackupButtons() {
       if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename)] })) {
         await navigator.share({ files: [new File([blob], filename)], title: 'Backup Salone' });
       } else {
-        // Fallback: scarica e apri WhatsApp con messaggio
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = filename;
         a.click();
         URL.revokeObjectURL(url);
-        toast('File scaricato. Aprilo e condividilo su WhatsApp manualmente.', { icon: '📲' });
+        toast('File scaricato. Aprilo e condividilo su WhatsApp.', { icon: '📲' });
       }
     } catch {
       toast.error('Errore durante la condivisione');
@@ -64,17 +63,71 @@ function BackupButtons() {
     }
   };
 
+  const downloadPDF = async () => {
+    setPdfLoading(true);
+    try {
+      const res = await api.get(`${API}/backup/download-pdf`, { responseType: 'blob' });
+      const date = new Date().toISOString().slice(0, 10);
+      const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `backup_${date}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('PDF scaricato sul PC');
+    } catch {
+      toast.error('Errore nella generazione del PDF');
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
+  const sharePDFWhatsApp = async () => {
+    setPdfLoading(true);
+    try {
+      const res = await api.get(`${API}/backup/download-pdf`, { responseType: 'blob' });
+      const date = new Date().toISOString().slice(0, 10);
+      const filename = `backup_${date}.pdf`;
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename)] })) {
+        await navigator.share({ files: [new File([blob], filename)], title: 'Backup Salone PDF' });
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast('PDF scaricato. Aprilo e condividilo su WhatsApp.', { icon: '📲' });
+      }
+    } catch {
+      toast.error('Errore durante la condivisione PDF');
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
   return (
-    <div className="flex flex-col sm:flex-row gap-2">
+    <div className="flex flex-wrap gap-2">
       <Button type="button" onClick={runAndDownload} disabled={loading} variant="outline"
         className="border-[#C8617A] text-[#C8617A] hover:bg-[#C8617A]/10">
         {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2" />}
-        Scarica sul PC
+        Scarica JSON (PC)
       </Button>
       <Button type="button" onClick={shareWhatsApp} disabled={loading} variant="outline"
         className="border-green-600 text-green-700 hover:bg-green-50">
         {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Share2 className="w-4 h-4 mr-2" />}
-        Condividi su WhatsApp
+        JSON su WhatsApp
+      </Button>
+      <Button type="button" onClick={downloadPDF} disabled={pdfLoading} variant="outline"
+        className="border-red-500 text-red-600 hover:bg-red-50">
+        {pdfLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FileText className="w-4 h-4 mr-2" />}
+        Scarica PDF (PC)
+      </Button>
+      <Button type="button" onClick={sharePDFWhatsApp} disabled={pdfLoading} variant="outline"
+        className="border-green-700 text-green-800 hover:bg-green-50">
+        {pdfLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Share2 className="w-4 h-4 mr-2" />}
+        PDF su WhatsApp
       </Button>
     </div>
   );

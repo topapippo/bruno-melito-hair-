@@ -229,6 +229,154 @@ async def download_backup_by_date(date: str, current_user: dict = Depends(get_cu
     return FileResponse(fpath, media_type="application/json", filename=f"salon_backup_{date}.json")
 
 
+@router.get("/backup/download-pdf")
+async def download_backup_pdf(current_user: dict = Depends(get_current_user)):
+    """Genera e scarica un PDF con il riepilogo completo dei dati del salone."""
+    from fpdf import FPDF
+
+    (
+        appointments, clients, payments, expenses, cards, card_templates,
+        loyalty, loyalty_rewards, operators, services, promotions,
+        blocked_slots, sospesi, users,
+    ) = await _collect_all()
+
+    # Filtra per utente corrente
+    uid = current_user["id"]
+    clients_u     = [c for c in clients if c.get("user_id") == uid]
+    services_u    = [s for s in services if s.get("user_id") == uid]
+    operators_u   = [o for o in operators if o.get("user_id") == uid]
+    appointments_u = [a for a in appointments if a.get("user_id") == uid]
+    payments_u    = [p for p in payments if p.get("user_id") == uid]
+    expenses_u    = [e for e in expenses if e.get("user_id") == uid]
+    cards_u       = [c for c in cards if c.get("user_id") == uid]
+
+    today = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M")
+    salon = current_user.get("salon_name", "Salone")
+
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.add_page()
+
+    # ── Intestazione ─────────────────────────────────────────────────────────
+    pdf.set_font("Helvetica", "B", 20)
+    pdf.cell(0, 10, salon, ln=True, align="C")
+    pdf.set_font("Helvetica", "", 11)
+    pdf.cell(0, 7, f"Backup dati — {today}", ln=True, align="C")
+    pdf.ln(6)
+
+    def section(title):
+        pdf.set_fill_color(200, 97, 122)
+        pdf.set_text_color(255, 255, 255)
+        pdf.set_font("Helvetica", "B", 12)
+        pdf.cell(0, 8, f"  {title}", ln=True, fill=True)
+        pdf.set_text_color(0, 0, 0)
+        pdf.set_font("Helvetica", "", 10)
+        pdf.ln(2)
+
+    def row(label, value):
+        pdf.set_font("Helvetica", "B", 10)
+        pdf.cell(60, 6, label, ln=False)
+        pdf.set_font("Helvetica", "", 10)
+        pdf.cell(0, 6, str(value), ln=True)
+
+    def table_header(*cols_widths):
+        pdf.set_fill_color(240, 230, 220)
+        pdf.set_font("Helvetica", "B", 9)
+        for col, w in cols_widths:
+            pdf.cell(w, 6, col, border=1, fill=True)
+        pdf.ln()
+        pdf.set_font("Helvetica", "", 9)
+
+    def safe(v, max_len=35):
+        return str(v or "")[:max_len]
+
+    # ── Riepilogo ─────────────────────────────────────────────────────────────
+    section("Riepilogo")
+    totale_incassi = sum(p.get("total_paid", 0) for p in payments_u)
+    totale_spese   = sum(e.get("amount", 0) for e in expenses_u)
+    row("Clienti", len(clients_u))
+    row("Operatori", len(operators_u))
+    row("Servizi", len(services_u))
+    row("Appuntamenti totali", len(appointments_u))
+    row("Pagamenti registrati", len(payments_u))
+    row("Totale incassato", f"EUR {totale_incassi:.2f}")
+    row("Totale spese", f"EUR {totale_spese:.2f}")
+    row("Utile netto", f"EUR {totale_incassi - totale_spese:.2f}")
+    row("Carte prepagate attive", len([c for c in cards_u if c.get("active")]))
+    pdf.ln(4)
+
+    # ── Clienti ───────────────────────────────────────────────────────────────
+    section(f"Clienti ({len(clients_u)})")
+    table_header(("Nome", 65), ("Telefono", 40), ("Email", 55), ("Visite", 20))
+    for c in sorted(clients_u, key=lambda x: x.get("name", "")):
+        pdf.cell(65, 5, safe(c.get("name")), border=1)
+        pdf.cell(40, 5, safe(c.get("phone")), border=1)
+        pdf.cell(55, 5, safe(c.get("email")), border=1)
+        pdf.cell(20, 5, str(c.get("total_visits", 0)), border=1)
+        pdf.ln()
+    pdf.ln(4)
+
+    # ── Servizi ───────────────────────────────────────────────────────────────
+    section(f"Servizi ({len(services_u)})")
+    table_header(("Nome", 80), ("Categoria", 40), ("Durata (min)", 30), ("Prezzo EUR", 30))
+    for s in sorted(services_u, key=lambda x: x.get("name", "")):
+        pdf.cell(80, 5, safe(s.get("name")), border=1)
+        pdf.cell(40, 5, safe(s.get("category")), border=1)
+        pdf.cell(30, 5, str(s.get("duration", "")), border=1)
+        pdf.cell(30, 5, f"{s.get('price', 0):.2f}", border=1)
+        pdf.ln()
+    pdf.ln(4)
+
+    # ── Operatori ─────────────────────────────────────────────────────────────
+    section(f"Operatori ({len(operators_u)})")
+    table_header(("Nome", 80), ("Telefono", 50), ("Attivo", 20))
+    for o in operators_u:
+        pdf.cell(80, 5, safe(o.get("name")), border=1)
+        pdf.cell(50, 5, safe(o.get("phone")), border=1)
+        pdf.cell(20, 5, "Si" if o.get("active") else "No", border=1)
+        pdf.ln()
+    pdf.ln(4)
+
+    # ── Ultimi 100 appuntamenti ───────────────────────────────────────────────
+    sorted_apts = sorted(appointments_u, key=lambda x: (x.get("date",""), x.get("time","")), reverse=True)[:100]
+    section(f"Ultimi appuntamenti (max 100 su {len(appointments_u)})")
+    table_header(("Data", 22), ("Ora", 16), ("Cliente", 50), ("Servizi", 60), ("Stato", 22), ("EUR", 20))
+    for a in sorted_apts:
+        svcs = ", ".join(s.get("name","") for s in (a.get("services") or []))
+        pdf.cell(22, 5, safe(a.get("date", "")), border=1)
+        pdf.cell(16, 5, safe(a.get("time", "")), border=1)
+        pdf.cell(50, 5, safe(a.get("client_name", ""), 28), border=1)
+        pdf.cell(60, 5, safe(svcs, 38), border=1)
+        pdf.cell(22, 5, safe(a.get("status", ""), 12), border=1)
+        pdf.cell(20, 5, f"{a.get('total_price', 0):.2f}", border=1)
+        pdf.ln()
+    pdf.ln(4)
+
+    # ── Carte prepagate ───────────────────────────────────────────────────────
+    if cards_u:
+        section(f"Carte prepagate ({len(cards_u)})")
+        table_header(("Cliente", 55), ("Nome carta", 50), ("Residuo EUR", 30), ("Attiva", 20), ("Scadenza", 35))
+        for c in cards_u:
+            pdf.cell(55, 5, safe(c.get("client_name")), border=1)
+            pdf.cell(50, 5, safe(c.get("name")), border=1)
+            pdf.cell(30, 5, f"{c.get('remaining_value', 0):.2f}", border=1)
+            pdf.cell(20, 5, "Si" if c.get("active") else "No", border=1)
+            pdf.cell(35, 5, safe(c.get("valid_until", "N/D")), border=1)
+            pdf.ln()
+        pdf.ln(4)
+
+    # ── Salva in memoria e restituisci ────────────────────────────────────────
+    import io
+    buf = io.BytesIO(pdf.output())
+    filename = f"backup_{datetime.now(timezone.utc).strftime('%Y-%m-%d')}.pdf"
+    from fastapi.responses import StreamingResponse
+    return StreamingResponse(
+        buf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
 @router.post("/backup/send-email")
 async def send_backup_email(current_user: dict = Depends(get_current_user)):
     """Esegue il backup e lo invia via email all'indirizzo configurato nelle impostazioni."""

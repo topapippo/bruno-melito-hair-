@@ -4,7 +4,7 @@ import Layout from '../components/Layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Database, Download, Users, Calendar, CreditCard, FileSpreadsheet, CheckCircle, History, Share2 } from 'lucide-react';
+import { Database, Download, Users, Calendar, CreditCard, FileSpreadsheet, CheckCircle, History, Share2, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
 const BACKUP_STALE_MS = 1000 * 60 * 60 * 24;
@@ -21,6 +21,7 @@ export default function BackupPage() {
   const [stats, setStats] = useState({ clients: 0, appointments: 0, payments: 0, expenses: 0, services: 0 });
   const [loading, setLoading] = useState(true);
   const [backupRunning, setBackupRunning] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
   const [backupStatus, setBackupStatus] = useState({ exists: false, size_kb: 0, backup_date: null, last_modified: null, available_backups: [] });
   const [askSaveOnClose, setAskSaveOnClose] = useState(false);
   const [backupState, setBackupState] = useState('missing');
@@ -143,6 +144,50 @@ export default function BackupPage() {
     }
   };
 
+  const downloadPDF = async () => {
+    setPdfLoading(true);
+    try {
+      const res = await api.get(`${API}/backup/download-pdf`, { responseType: 'blob' });
+      const date = new Date().toISOString().slice(0, 10);
+      const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `backup_${date}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('PDF scaricato sul PC');
+    } catch {
+      toast.error('Errore nella generazione del PDF');
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
+  const sharePDFWhatsApp = async () => {
+    setPdfLoading(true);
+    try {
+      const res = await api.get(`${API}/backup/download-pdf`, { responseType: 'blob' });
+      const date = new Date().toISOString().slice(0, 10);
+      const filename = `backup_${date}.pdf`;
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename)] })) {
+        await navigator.share({ files: [new File([blob], filename)], title: 'Backup Salone PDF' });
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast('PDF scaricato. Aprilo e condividilo su WhatsApp.', { icon: '📲' });
+      }
+    } catch {
+      toast.error('Errore durante la condivisione PDF');
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
   const downloadBackupByDate = async (date) => {
     setDownloadingDate(date);
     try {
@@ -261,6 +306,22 @@ export default function BackupPage() {
                   >
                     <Share2 className="w-5 h-5 mr-2" />
                     Condividi su WhatsApp
+                  </Button>
+                  <Button
+                    onClick={downloadPDF}
+                    disabled={pdfLoading}
+                    className="bg-white text-red-600 hover:bg-red-50 font-black text-lg px-8 py-4"
+                  >
+                    <FileText className="w-5 h-5 mr-2" />
+                    {pdfLoading ? 'Generando PDF...' : 'Scarica PDF'}
+                  </Button>
+                  <Button
+                    onClick={sharePDFWhatsApp}
+                    disabled={pdfLoading}
+                    className="bg-green-700 text-white hover:bg-green-800 font-black text-lg px-8 py-4"
+                  >
+                    <Share2 className="w-5 h-5 mr-2" />
+                    {pdfLoading ? 'Generando...' : 'PDF su WhatsApp'}
                   </Button>
                 </div>
               </CardContent>

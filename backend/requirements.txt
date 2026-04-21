@@ -10,3 +10,4 @@ python-multipart==0.0.26
 requests==2.33.1
 gunicorn==25.3.0
 slowapi==0.1.9
+fpdf2==2.8.3
