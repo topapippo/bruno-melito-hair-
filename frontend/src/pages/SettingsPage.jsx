@@ -8,29 +8,75 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Settings, Save, Loader2, Clock, Building2, User, Lock, Palette, Type, RotateCcw, Plus, Trash2, Check, Mail } from 'lucide-react';
+import { Settings, Save, Loader2, Clock, Building2, User, Lock, Palette, Type, RotateCcw, Plus, Trash2, Check, Download, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 
-function BackupEmailButton({ email }) {
-  const [sending, setSending] = useState(false);
-  const handleSend = async () => {
-    setSending(true);
+function BackupButtons() {
+  const [loading, setLoading] = useState(false);
+
+  const runAndDownload = async () => {
+    setLoading(true);
     try {
-      await api.post(`${process.env.REACT_APP_BACKEND_URL}/api/backup/send-email`);
-      toast.success(`Backup inviato${email ? ` a ${email}` : ''}!`);
-    } catch (err) {
-      toast.error(err.response?.data?.detail || 'Errore invio email');
+      await api.post(`${API}/backup/run`);
+      const res = await api.get(`${API}/backup/download`, { responseType: 'blob' });
+      const blob = new Blob([res.data], { type: 'application/json' });
+      const date = new Date().toISOString().slice(0, 10);
+      const filename = `backup_${date}.json`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Backup scaricato sul PC');
+    } catch {
+      toast.error('Errore durante il backup');
     } finally {
-      setSending(false);
+      setLoading(false);
     }
   };
+
+  const shareWhatsApp = async () => {
+    setLoading(true);
+    try {
+      await api.post(`${API}/backup/run`);
+      const res = await api.get(`${API}/backup/download`, { responseType: 'blob' });
+      const blob = new Blob([res.data], { type: 'application/json' });
+      const date = new Date().toISOString().slice(0, 10);
+      const filename = `backup_${date}.json`;
+      if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename)] })) {
+        await navigator.share({ files: [new File([blob], filename)], title: 'Backup Salone' });
+      } else {
+        // Fallback: scarica e apri WhatsApp con messaggio
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast('File scaricato. Aprilo e condividilo su WhatsApp manualmente.', { icon: '📲' });
+      }
+    } catch {
+      toast.error('Errore durante la condivisione');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <Button type="button" onClick={handleSend} disabled={sending} variant="outline"
-      className="border-[#C8617A] text-[#C8617A] hover:bg-[#C8617A]/10">
-      {sending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Mail className="w-4 h-4 mr-2" />}
-      {sending ? 'Invio...' : 'Invia Backup Ora per Email'}
-    </Button>
+    <div className="flex flex-col sm:flex-row gap-2">
+      <Button type="button" onClick={runAndDownload} disabled={loading} variant="outline"
+        className="border-[#C8617A] text-[#C8617A] hover:bg-[#C8617A]/10">
+        {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2" />}
+        Scarica sul PC
+      </Button>
+      <Button type="button" onClick={shareWhatsApp} disabled={loading} variant="outline"
+        className="border-green-600 text-green-700 hover:bg-green-50">
+        {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Share2 className="w-4 h-4 mr-2" />}
+        Condividi su WhatsApp
+      </Button>
+    </div>
   );
 }
 
@@ -441,39 +487,19 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          {/* Backup Automatico */}
+          {/* Backup */}
           <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
             <CardHeader>
               <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
                 <Save className="w-5 h-5 text-[#C8617A]" />
-                Backup Automatico
+                Backup Dati
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-3 rounded-xl bg-[#FAF7F2]">
-                <div>
-                  <p className="text-sm font-semibold text-[#2D1B14]">Abilita backup automatico settimanale</p>
-                  <p className="text-xs text-[#7C5C4A] mt-0.5">Ricevi un backup completo via email ogni settimana</p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={settings.auto_backup_enabled || false}
-                  onChange={(e) => setSettings({ ...settings, auto_backup_enabled: e.target.checked })}
-                  className="w-5 h-5 accent-[#C8617A] cursor-pointer"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Email per il backup</Label>
-                <Input
-                  type="email"
-                  value={settings.auto_backup_email || ''}
-                  onChange={(e) => setSettings({ ...settings, auto_backup_email: e.target.value })}
-                  placeholder="tuaemail@esempio.it"
-                  className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
-                />
-                <p className="text-xs text-[#9C7060]">Se lasciato vuoto, verrà usata la tua email di accesso</p>
-              </div>
-              <BackupEmailButton email={settings.auto_backup_email} />
+              <p className="text-sm text-[#7C5C4A]">
+                Salva una copia di tutti i dati del salone sul tuo PC o condividila su WhatsApp.
+              </p>
+              <BackupButtons />
             </CardContent>
           </Card>
 

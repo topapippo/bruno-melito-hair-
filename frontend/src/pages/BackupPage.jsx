@@ -4,7 +4,7 @@ import Layout from '../components/Layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Database, Download, Users, Calendar, CreditCard, FileSpreadsheet, CheckCircle, History } from 'lucide-react';
+import { Database, Download, Users, Calendar, CreditCard, FileSpreadsheet, CheckCircle, History, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const BACKUP_STALE_MS = 1000 * 60 * 60 * 24;
@@ -113,6 +113,33 @@ export default function BackupPage() {
     } catch (err) {
       toast.error('Errore nel download del backup');
       console.error(err);
+    }
+  };
+
+  const shareWhatsApp = async () => {
+    setBackupRunning(true);
+    try {
+      await api.post(`${API}/backup/run`);
+      const res = await api.get(`${API}/backup/download`, { responseType: 'blob' });
+      const blob = new Blob([res.data], { type: 'application/json' });
+      const date = new Date().toISOString().slice(0, 10);
+      const filename = `backup_${date}.json`;
+      if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename)] })) {
+        await navigator.share({ files: [new File([blob], filename)], title: 'Backup Salone' });
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast('File scaricato. Aprilo e condividilo su WhatsApp.', { icon: '📲' });
+      }
+      await fetchBackupStatus();
+    } catch {
+      toast.error('Errore durante la condivisione');
+    } finally {
+      setBackupRunning(false);
     }
   };
 
@@ -225,7 +252,15 @@ export default function BackupPage() {
                     className="bg-white text-[#C8617A] hover:bg-blue-50 font-black text-lg px-8 py-4"
                   >
                     <Download className="w-5 h-5 mr-2" />
-                    Scarica backup JSON
+                    Scarica sul PC
+                  </Button>
+                  <Button
+                    onClick={shareWhatsApp}
+                    disabled={backupRunning}
+                    className="bg-green-500 text-white hover:bg-green-600 font-black text-lg px-8 py-4"
+                  >
+                    <Share2 className="w-5 h-5 mr-2" />
+                    Condividi su WhatsApp
                   </Button>
                 </div>
               </CardContent>
