@@ -253,42 +253,47 @@ async def download_backup_pdf(current_user: dict = Depends(get_current_user)):
     today = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M")
     salon = current_user.get("salon_name", "Salone")
 
+    def _l1(text, max_len=200):
+        """Converte in stringa, tronca, e sostituisce caratteri non-Latin-1 con '?'."""
+        s = str(text or "")[:max_len]
+        return s.encode("latin-1", errors="replace").decode("latin-1")
+
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
 
     # ── Intestazione ─────────────────────────────────────────────────────────
     pdf.set_font("Helvetica", "B", 20)
-    pdf.cell(0, 10, salon, ln=True, align="C")
+    pdf.cell(0, 10, _l1(salon), ln=True, align="C")
     pdf.set_font("Helvetica", "", 11)
-    pdf.cell(0, 7, f"Backup dati — {today}", ln=True, align="C")
+    pdf.cell(0, 7, _l1(f"Backup dati - {today}"), ln=True, align="C")
     pdf.ln(6)
 
     def section(title):
         pdf.set_fill_color(200, 97, 122)
         pdf.set_text_color(255, 255, 255)
         pdf.set_font("Helvetica", "B", 12)
-        pdf.cell(0, 8, f"  {title}", ln=True, fill=True)
+        pdf.cell(0, 8, _l1(f"  {title}"), ln=True, fill=True)
         pdf.set_text_color(0, 0, 0)
         pdf.set_font("Helvetica", "", 10)
         pdf.ln(2)
 
     def row(label, value):
         pdf.set_font("Helvetica", "B", 10)
-        pdf.cell(60, 6, label, ln=False)
+        pdf.cell(60, 6, _l1(label), ln=False)
         pdf.set_font("Helvetica", "", 10)
-        pdf.cell(0, 6, str(value), ln=True)
+        pdf.cell(0, 6, _l1(str(value)), ln=True)
 
     def table_header(*cols_widths):
         pdf.set_fill_color(240, 230, 220)
         pdf.set_font("Helvetica", "B", 9)
         for col, w in cols_widths:
-            pdf.cell(w, 6, col, border=1, fill=True)
+            pdf.cell(w, 6, _l1(col), border=1, fill=True)
         pdf.ln()
         pdf.set_font("Helvetica", "", 9)
 
     def safe(v, max_len=35):
-        return str(v or "")[:max_len]
+        return _l1(v, max_len)
 
     # ── Riepilogo ─────────────────────────────────────────────────────────────
     section("Riepilogo")
