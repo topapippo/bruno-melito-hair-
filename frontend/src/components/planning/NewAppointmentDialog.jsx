@@ -445,11 +445,29 @@ export default function NewAppointmentDialog({
                         <Bell className="w-3 h-3" /> Telefono mancante!
                       </p>
                     )}
-                    {selectedClientInfo.notes && <p className="text-xs text-[#92400E] mt-0.5 truncate">{selectedClientInfo.notes}</p>}
+                    {selectedClientInfo.hair_notes && <p className="text-xs text-[#92400E] mt-0.5 italic truncate">{selectedClientInfo.hair_notes}</p>}
                   </div>
                 </div>
               </div>
             )}
+
+            {/* Banner note colore — visibile solo se c'è un servizio colore selezionato */}
+            {(() => {
+              const hasColor = formData.service_ids.some(id => {
+                const svc = services.find(s => s.id === id);
+                return svc?.category === 'colore';
+              });
+              const hairNotes = selectedClientInfo?.hair_notes;
+              if (!hasColor || !hairNotes) return null;
+              return (
+                <div className="p-3 rounded-xl border-2 border-[#C8617A] bg-[#FAF0F5]">
+                  <p className="text-xs font-bold text-[#C8617A] flex items-center gap-1.5 mb-1">
+                    🎨 Note Colore — {selectedClientInfo.name}
+                  </p>
+                  <p className="text-sm text-[#5C3040] whitespace-pre-line">{hairNotes}</p>
+                </div>
+              );
+            })()}
 
             {/* Orario + Operatore */}
             <div className="grid grid-cols-2 gap-3">

@@ -84,11 +84,9 @@ async def create_client(data: ClientCreate, current_user: dict = Depends(get_cur
     client_doc = {
         "id": client_id, "user_id": current_user["id"],
         "name": data.name, "phone": data.phone or "",
-        "email": data.email or "", "notes": data.notes or "",
-        "allergies": data.allergies or "", "hair_notes": data.hair_notes or "",
+        "email": data.email or "", "hair_notes": data.hair_notes or "",
         "send_sms_reminders": data.send_sms_reminders if data.send_sms_reminders is not None else True,
         "birthday": data.birthday or None,
-        "tags": data.tags or [],
         "total_visits": 0, "created_at": datetime.now(timezone.utc).isoformat()
     }
     try:

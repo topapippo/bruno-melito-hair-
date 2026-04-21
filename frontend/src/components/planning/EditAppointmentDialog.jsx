@@ -490,7 +490,7 @@ export default function EditAppointmentDialog({
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-sm text-[#92400E]">{selectedClientInfo.name}</p>
                     {selectedClientInfo.phone && <p className="text-xs text-[#92400E]">Tel: {selectedClientInfo.phone}</p>}
-                    {selectedClientInfo.notes && <p className="text-xs text-[#92400E] mt-0.5 truncate">{selectedClientInfo.notes}</p>}
+                    {selectedClientInfo.hair_notes && <p className="text-xs text-[#92400E] mt-0.5 italic truncate">{selectedClientInfo.hair_notes}</p>}
                   </div>
                   <Button type="button" variant="outline" size="sm" className="h-7 text-xs border-[#F59E0B] text-[#92400E] hover:bg-[#FEF3C7] shrink-0"
                     onClick={() => showHistory ? setShowHistory(false) : loadClientHistory(selectedClientInfo?.id || appointment?.client_id)}
@@ -527,6 +527,24 @@ export default function EditAppointmentDialog({
                 )}
               </div>
             )}
+
+            {/* Banner note colore — visibile solo se c'è un servizio colore selezionato */}
+            {(() => {
+              const hasColor = formData.service_ids.some(id => {
+                const svc = services.find(s => s.id === id);
+                return svc?.category === 'colore';
+              });
+              const hairNotes = selectedClientInfo?.hair_notes;
+              if (!hasColor || !hairNotes) return null;
+              return (
+                <div className="p-3 rounded-xl border-2 border-[#C8617A] bg-[#FAF0F5]">
+                  <p className="text-xs font-bold text-[#C8617A] flex items-center gap-1.5 mb-1">
+                    🎨 Note Colore — {selectedClientInfo.name}
+                  </p>
+                  <p className="text-sm text-[#5C3040] whitespace-pre-line">{hairNotes}</p>
+                </div>
+              );
+            })()}
 
             {/* Loyalty Points Display */}
             {appointment.client_id && appointment.client_id !== 'generic' && (
