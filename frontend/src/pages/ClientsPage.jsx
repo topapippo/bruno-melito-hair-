@@ -65,6 +65,23 @@ export default function ClientsPage() {
     fetchClients();
   }, []);
 
+  const [migrating, setMigrating] = useState(false);
+  const [migrationDone, setMigrationDone] = useState(false);
+
+  const runMigration = async () => {
+    setMigrating(true);
+    try {
+      const res = await api.post(`${API}/clients/migrate-notes`);
+      toast.success(`Migrazione completata: ${res.data.migrated} clienti aggiornati`);
+      setMigrationDone(true);
+      fetchClients();
+    } catch {
+      toast.error('Errore durante la migrazione');
+    } finally {
+      setMigrating(false);
+    }
+  };
+
   const fetchClients = async () => {
     try {
       const res = await api.get(`${API}/clients`);
@@ -297,6 +314,23 @@ export default function ClientsPage() {
             </Button>
           </div>
         </div>
+
+        {/* Banner migrazione note */}
+        {!migrationDone && (
+          <div className="flex items-center justify-between gap-3 p-3 bg-amber-50 border border-amber-300 rounded-xl text-sm">
+            <p className="text-amber-800 font-medium">
+              ⚠️ Le vecchie "Note aggiuntive" e "Allergie" non sono ancora state trasferite in "Note Capelli". Clicca per recuperarle.
+            </p>
+            <Button
+              size="sm"
+              onClick={runMigration}
+              disabled={migrating}
+              className="shrink-0 bg-amber-500 hover:bg-amber-600 text-white"
+            >
+              {migrating ? 'Migrazione...' : 'Trasferisci ora'}
+            </Button>
+          </div>
+        )}
 
         {/* Search */}
         <div className="relative">

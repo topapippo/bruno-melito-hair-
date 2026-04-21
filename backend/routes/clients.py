@@ -107,6 +107,27 @@ async def get_clients(current_user: dict = Depends(get_current_user)):
     return [ClientResponse(**_normalize_client(d)) for d in docs]
 
 
+@router.post("/clients/migrate-notes")
+async def migrate_notes_to_hair_notes(current_user: dict = Depends(get_current_user)):
+    """Migrazione una-tantum: copia notes e allergies in hair_notes per tutti i clienti."""
+    docs = await db.clients.find({"user_id": current_user["id"]}, {"_id": 0}).to_list(100_000)
+    migrated = 0
+    for doc in docs:
+        old_notes = (doc.get("notes") or "").strip()
+        old_allergies = (doc.get("allergies") or "").strip()
+        current_hair = (doc.get("hair_notes") or "").strip()
+        parts = [p for p in [current_hair, old_notes, old_allergies] if p]
+        merged = "\n".join(parts)
+        if merged != current_hair:
+            await db.clients.update_one(
+                {"id": doc["id"]},
+                {"$set": {"hair_notes": merged}, "$unset": {"notes": "", "allergies": "", "tags": ""}}
+            )
+            migrated += 1
+    logger.info(f"Migrazione note: {migrated} clienti aggiornati per user {current_user['id']}")
+    return {"migrated": migrated, "total": len(docs)}
+
+
 @router.get("/clients/search/appointments")
 async def search_client_appointments(query: str, current_user: dict = Depends(get_current_user)):
     clients = await db.clients.find(
