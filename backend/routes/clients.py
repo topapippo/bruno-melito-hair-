@@ -65,7 +65,7 @@ async def import_clients_bulk(data: ClientBulkImport, current_user: dict = Depen
         client_doc = {
             "id": str(uuid.uuid4()), "user_id": current_user["id"],
             "name": name, "phone": incoming_phone,
-            "email": client_data.get("email") or "", "notes": client_data.get("notes") or "",
+            "email": client_data.get("email") or "", "hair_notes": client_data.get("hair_notes") or client_data.get("notes") or "",
             "send_sms_reminders": client_data.get("send_sms_reminders", client_data.get("sms_reminder", True)),
             "total_visits": 0, "created_at": datetime.now(timezone.utc).isoformat()
         }
@@ -234,7 +234,7 @@ async def get_client_history(client_id: str, current_user: dict = Depends(get_cu
     last_visit = last_completed.get("date", "") if last_completed else ""
 
     return {
-        "client": {"id": client.get("id"), "name": client.get("name"), "phone": client.get("phone", ""), "allergies": client.get("allergies", ""), "hair_notes": client.get("hair_notes", "")},
+        "client": {"id": client.get("id"), "name": client.get("name"), "phone": client.get("phone", ""), "hair_notes": client.get("hair_notes", "")},
         "total_visits": client.get("total_visits", 0),
         "total_spent": total_spent,
         "loyalty_points": loyalty_points,

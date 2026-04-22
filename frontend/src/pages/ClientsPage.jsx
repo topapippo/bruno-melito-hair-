@@ -252,7 +252,7 @@ export default function ClientsPage() {
           name: c.name,
           phone: c.phone || '',
           email: c.email || '',
-          notes: c.notes || '',
+          hair_notes: c.notes || '',
           send_sms_reminders: true
         }))
       });

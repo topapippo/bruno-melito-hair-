@@ -282,7 +282,6 @@ export default function NewAppointmentDialog({
         payload.notes = (payload.notes ? payload.notes + ' ' : '') + notesParts.join(' ');
       }
 
-      console.log('[NewAppointment] Payload:', JSON.stringify(payload));
       await api.post(`${API}/appointments`, payload);
       toast.success('Appuntamento creato!' + (preSelectedCardId || preSelectedPromoId ? ' Card/Promo salvate.' : ''));
       onClose();
