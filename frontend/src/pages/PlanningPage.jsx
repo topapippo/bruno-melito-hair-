@@ -8,7 +8,7 @@ import { format, addDays, subDays, startOfWeek, endOfWeek, addWeeks, subWeeks, s
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { CATEGORIES } from '../lib/categories';
-import { generateTimeSlots } from '../lib/timeSlots';
+import { generateTimeSlots, ALL_SLOTS, DAY_MAP } from '../lib/timeSlots';
 
 // Sub-components
 import { isHoliday } from '../components/planning/holidays';
@@ -42,6 +42,7 @@ export default function PlanningPage() {
   const [weekAppointments, setWeekAppointments] = useState({});
   const [monthAppointments, setMonthAppointments] = useState({});
   const [blockedSlots, setBlockedSlots] = useState([]);
+  const [hoursConfig, setHoursConfig] = useState(null);
   const [selectedOperatorId, setSelectedOperatorId] = useState('');
   const [selectedServiceId, setSelectedServiceId] = useState('');
 
@@ -142,16 +143,17 @@ export default function PlanningPage() {
 
   const fetchStaticData = async () => {
     try {
-      const [operatorsRes, clientsRes, servicesRes, cardTemplatesRes] = await Promise.all([
+      const [operatorsRes, clientsRes, servicesRes, websiteRes] = await Promise.all([
         api.get(`${API}/operators`),
         api.get(`${API}/clients`),
         api.get(`${API}/services`),
-        api.get(`${API}/public/website`).then(r => ({ data: r.data?.card_templates || [] })).catch(() => ({ data: [] }))
+        api.get(`${API}/public/website`).catch(() => ({ data: {} }))
       ]);
       setOperators(operatorsRes.data.filter(op => op.active));
       setClients(clientsRes.data);
       setServices(servicesRes.data);
-      setCardTemplates(cardTemplatesRes.data);
+      setCardTemplates(websiteRes.data?.card_templates || []);
+      setHoursConfig(websiteRes.data?.config?.hours || null);
     } catch (err) {
       console.error('Error fetching static data:', err);
     }
@@ -298,12 +300,77 @@ export default function PlanningPage() {
     setSendingConfirmId(null);
   };
 
+  // --- Slot helpers ---
+  const getUnavailableSlots = () => {
+    const dateStr = format(selectedDate, 'yyyy-MM-dd');
+    const today = format(new Date(), 'yyyy-MM-dd');
+    const unavailable = new Set();
+
+    // 1. Slot nel passato (solo per oggi)
+    if (dateStr === today) {
+      const now = new Date();
+      const cur = now.getHours() * 60 + now.getMinutes();
+      ALL_SLOTS.forEach(s => {
+        const [h, m] = s.split(':').map(Number);
+        if (h * 60 + m <= cur) unavailable.add(s);
+      });
+    }
+
+    // 2. Slot fuori orario di lavoro
+    if (hoursConfig) {
+      const d = new Date(dateStr + 'T12:00:00');
+      const dow = d.getDay();
+      const configLower = {};
+      Object.keys(hoursConfig).forEach(k => { configLower[k.toLowerCase()] = hoursConfig[k]; });
+      const dayMapFull  = { 0:'domenica',1:'lunedì',2:'martedì',3:'mercoledì',4:'giovedì',5:'venerdì',6:'sabato' };
+      const dayMapShort = { 0:'dom',1:'lun',2:'mar',3:'mer',4:'gio',5:'ven',6:'sab' };
+      const dayHours = (configLower[dayMapFull[dow]] || configLower[dayMapShort[dow]] || '').toLowerCase();
+
+      if (!dayHours || dayHours === 'chiuso' || dayHours === '-') {
+        ALL_SLOTS.forEach(s => unavailable.add(s));
+      } else {
+        const rangePattern = /(\d{1,2})[.:](\d{2})\s*[-–]\s*(\d{1,2})[.:](\d{2})/g;
+        const allowed = new Set();
+        let match;
+        while ((match = rangePattern.exec(dayHours)) !== null) {
+          const openMin  = parseInt(match[1]) * 60 + parseInt(match[2]);
+          const closeMin = parseInt(match[3]) * 60 + parseInt(match[4]);
+          ALL_SLOTS.forEach(s => {
+            const [h, m] = s.split(':').map(Number);
+            const t = h * 60 + m;
+            if (t >= openMin && t < closeMin) allowed.add(s);
+          });
+        }
+        if (allowed.size > 0) {
+          ALL_SLOTS.forEach(s => { if (!allowed.has(s)) unavailable.add(s); });
+        }
+      }
+    }
+
+    return unavailable;
+  };
+
   // --- Slot handlers ---
   const mbhsOperator = operators.find(op => op.name.toUpperCase().includes('MBHS')) || operators[0];
+  const unavailableSlots = getUnavailableSlots();
 
   const handleSlotClick = (time, operatorId) => {
     if (blockedSlots.includes(time)) {
       toast.error('Questo orario è bloccato. Rimuovi il blocco dalle Impostazioni.');
+      return;
+    }
+    if (unavailableSlots.has(time)) {
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      const today = format(new Date(), 'yyyy-MM-dd');
+      if (dateStr === today) {
+        const [h, m] = time.split(':').map(Number);
+        const now = new Date();
+        if (h * 60 + m <= now.getHours() * 60 + now.getMinutes()) {
+          toast.error('Orario già passato.');
+          return;
+        }
+      }
+      toast.error('Orario fuori dagli orari di apertura.');
       return;
     }
     setNewDialogInitial({
@@ -316,7 +383,7 @@ export default function PlanningPage() {
 
   const handleSlotRightClick = (e, time) => {
     e.preventDefault();
-    if (blockedSlots.includes(time)) return;
+    if (blockedSlots.includes(time) || unavailableSlots.has(time)) return;
     setBlockInitialTime(time);
     setBlockDialogOpen(true);
   };
@@ -602,6 +669,7 @@ export default function PlanningPage() {
             scrollRef={scrollRef}
             TIME_SLOTS={TIME_SLOTS}
             blockedSlots={blockedSlots}
+            unavailableSlots={unavailableSlots}
             selectedDate={selectedDate}
             setSelectedDate={setSelectedDate}
             highlightedClientId={highlightedClientId}

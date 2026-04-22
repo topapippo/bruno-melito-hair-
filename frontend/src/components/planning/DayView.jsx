@@ -10,6 +10,7 @@ export default function DayView({
   scrollRef,
   TIME_SLOTS,
   blockedSlots,
+  unavailableSlots = new Set(),
   selectedDate,
   setSelectedDate,
   highlightedClientId,
@@ -123,33 +124,46 @@ export default function DayView({
                   className="flex-1 min-w-[150px] relative border-r border-[#F0E6DC]/20 last:border-r-0"
                 >
                   {/* Time slot backgrounds */}
-                  {TIME_SLOTS.map((time) => (
-                    <div
-                      key={time}
-                      onClick={() => !isSlotOccupied(time, col.id) && !blockedSlots.includes(time) && onSlotClick(time, col.id)}
-                      onContextMenu={(e) => onSlotRightClick(e, time)}
-                      onDragOver={(e) => onDragOver(e, time, col.id)}
-                      onDragLeave={onDragLeave}
-                      onDrop={(e) => onDrop(e, time, col.id)}
-                      className={`h-12 border-b border-[#F0E6DC]/20 transition-colors ${
-                        blockedSlots.includes(time)
-                          ? 'bg-red-100/80 cursor-not-allowed'
-                          : time.endsWith(':00') ? 'bg-white' : 'bg-[#FAF7F2]/50'
-                      } ${
-                        dragOverSlot === `${time}-${col.id}` ? 'bg-[#C8617A]/30 ring-2 ring-[#C8617A] ring-inset' : ''
-                      } ${
-                        !isSlotOccupied(time, col.id) && !blockedSlots.includes(time)
-                          ? 'hover:bg-[#C8617A]/20 cursor-pointer'
-                          : ''
-                      }`}
-                    >
-                      {blockedSlots.includes(time) && col.id === columns[0]?.id && (
-                        <div className="h-full flex items-center px-2">
-                          <span className="text-[10px] text-red-400 font-bold uppercase tracking-wider">Bloccato</span>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                  {TIME_SLOTS.map((time) => {
+                    const isBlocked = blockedSlots.includes(time);
+                    const isUnavailable = unavailableSlots.has(time);
+                    const isOccupied = isSlotOccupied(time, col.id);
+                    const isClickable = !isOccupied && !isBlocked;
+                    return (
+                      <div
+                        key={time}
+                        onClick={() => onSlotClick(time, col.id)}
+                        onContextMenu={(e) => onSlotRightClick(e, time)}
+                        onDragOver={(e) => !isUnavailable && onDragOver(e, time, col.id)}
+                        onDragLeave={onDragLeave}
+                        onDrop={(e) => !isUnavailable && onDrop(e, time, col.id)}
+                        className={`h-12 border-b border-[#F0E6DC]/20 transition-colors ${
+                          isBlocked
+                            ? 'bg-red-100/80 cursor-not-allowed'
+                            : isUnavailable
+                            ? 'bg-gray-100/80 cursor-not-allowed'
+                            : time.endsWith(':00') ? 'bg-white' : 'bg-[#FAF7F2]/50'
+                        } ${
+                          dragOverSlot === `${time}-${col.id}` ? 'bg-[#C8617A]/30 ring-2 ring-[#C8617A] ring-inset' : ''
+                        } ${
+                          isClickable && !isUnavailable
+                            ? 'hover:bg-[#C8617A]/20 cursor-pointer'
+                            : ''
+                        }`}
+                      >
+                        {isBlocked && col.id === columns[0]?.id && (
+                          <div className="h-full flex items-center px-2">
+                            <span className="text-[10px] text-red-400 font-bold uppercase tracking-wider">Bloccato</span>
+                          </div>
+                        )}
+                        {isUnavailable && !isBlocked && col.id === columns[0]?.id && (
+                          <div className="h-full flex items-center px-2">
+                            <span className="text-[10px] text-gray-400 uppercase tracking-wider">—</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
 
                   {/* Appointments overlay */}
                   {(() => {

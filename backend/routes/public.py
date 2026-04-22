@@ -237,6 +237,13 @@ async def create_public_booking(request: Request, data: PublicBookingRequest):
         day_of_week = day_names[booking_date.weekday()]
     except ValueError:
         raise HTTPException(status_code=400, detail="Data non valida")
+
+    # Reject bookings in the past
+    now_rome = datetime.now(timezone(timedelta(hours=2)))
+    booking_naive = dt.strptime(f"{data.date} {data.time}", "%Y-%m-%d %H:%M")
+    booking_aware = booking_naive.replace(tzinfo=timezone(timedelta(hours=2)))
+    if booking_aware <= now_rome:
+        raise HTTPException(status_code=400, detail="Non puoi prenotare per un orario già passato.")
     blocked_one = await db.blocked_slots.find_one(
         {"user_id": user_id, "type": "one-time", "date": data.date,
          "start_time": {"$lte": data.time}, "end_time": {"$gt": data.time}}, {"_id": 0})
