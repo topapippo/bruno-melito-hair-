@@ -324,13 +324,14 @@ export default function RemindersPage() {
     if (!apt.client_phone) { toast.error('Numero non disponibile'); return; }
     setSendingConfirmId(apt.id);
     try {
-      await api.post(`${API}/reminders/appointment/${apt.id}/send-confirmation`);
+      const res = await api.post(`${API}/reminders/appointment/${apt.id}/send-confirmation`);
+      window.open(res.data.whatsapp_url, '_blank');
       setTomorrowReminders(prev => prev.map(r =>
         r.id === apt.id ? { ...r, confirmation_status: 'pending', confirmation_sent_at: new Date().toISOString() } : r
       ));
-      toast.success(`Link di conferma inviato via SMS a ${apt.client_name}`);
+      toast.success(`Link di conferma inviato via WhatsApp a ${apt.client_name}`);
     } catch (e) {
-      toast.error(e.response?.data?.detail || 'Errore invio SMS');
+      toast.error(e.response?.data?.detail || 'Errore invio conferma');
     }
     setSendingConfirmId(null);
   };
@@ -691,12 +692,12 @@ export default function RemindersPage() {
                               onClick={() => sendConfirmationLink(apt)}
                               disabled={sendingConfirmId === apt.id || !apt.client_phone}
                               className="bg-blue-500 hover:bg-blue-600 text-white font-bold text-xs"
-                              title="Invia link conferma SI/NO via SMS"
+                              title="Invia link conferma SI/NO via WhatsApp"
                             >
                               {sendingConfirmId === apt.id ? (
                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                               ) : (
-                                '📩 Conferma'
+                                '✅ Conferma WA'
                               )}
                             </Button>
                           )}

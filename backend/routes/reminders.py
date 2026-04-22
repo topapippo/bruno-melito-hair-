@@ -385,7 +385,7 @@ async def mark_birthday_sent(client_id: str, current_user: dict = Depends(get_cu
 
 @router.post("/reminders/appointment/{appointment_id}/send-confirmation")
 async def send_confirmation_link(appointment_id: str, current_user: dict = Depends(get_current_user)):
-    """Invia SMS con link di conferma SI/NO al cliente."""
+    """Genera il link di conferma SI/NO e restituisce l'URL WhatsApp pronto all'apertura."""
     apt = await db.appointments.find_one({"id": appointment_id, "user_id": current_user["id"]}, {"_id": 0})
     if not apt:
         raise HTTPException(status_code=404, detail="Appuntamento non trovato")
@@ -419,7 +419,7 @@ async def send_confirmation_link(appointment_id: str, current_user: dict = Depen
         f"Conferma o disdici qui: {confirm_link}"
     )
 
-    # Normalizza il numero per WhatsApp (rimuovi spazi, +, aggiungi prefisso Italia se necessario)
+    import urllib.parse
     wa_phone = client_phone.replace(" ", "").replace("-", "")
     if wa_phone.startswith("0"):
         wa_phone = "39" + wa_phone[1:]
@@ -428,14 +428,7 @@ async def send_confirmation_link(appointment_id: str, current_user: dict = Depen
     elif not wa_phone.startswith("39"):
         wa_phone = "39" + wa_phone
 
-    import urllib.parse
     whatsapp_url = f"https://wa.me/{wa_phone}?text={urllib.parse.quote(message)}"
-
-    # Prova anche SMS se configurato
-    try:
-        await send_sms_reminder(client_phone, message, current_user.get("salon_name", "Salone"))
-    except Exception:
-        pass
 
     return {"success": True, "whatsapp_url": whatsapp_url, "message": message, "client_phone": client_phone}
 
