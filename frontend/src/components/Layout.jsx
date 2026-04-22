@@ -218,7 +218,7 @@ export default function Layout({ children }) {
 
       {/* Main Content */}
       <main className="md:ml-60 min-h-screen pt-16 md:pt-0">
-        <div key={location.pathname} className="p-5 md:p-7 lg:p-10 admin-page-in">
+        <div key={location.pathname} className="p-4 md:p-5 lg:p-7 admin-page-in">
           {children}
         </div>
       </main>
