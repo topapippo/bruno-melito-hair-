@@ -30,7 +30,6 @@ export default function DayView({
   services,
 }) {
   const { svcById, svcByName } = buildServiceLookups(services);
-  const clientById = Object.fromEntries(clients.map(c => [c.id, c]));
 
   // Compute overlaps per operator
   const toMin = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
@@ -170,8 +169,6 @@ export default function DayView({
                     const isCancelled = apt.status === 'cancelled';
                     const totalDuration = apt.services.reduce((sum, s) => sum + (s.duration || 15), 0) || 1;
                     const operatorColor = col.color || '#64748B';
-                    const clientProfile = clientById[apt.client_id];
-                    const clientNote = clientProfile?.hair_notes || apt.notes || '';
                     return (
                       <div
                         key={apt.id}
@@ -192,17 +189,17 @@ export default function DayView({
                         title={`Clicca per modificare - ${apt.client_name}`}
                       >
                         {/* Riga nome cliente */}
-                        <div className="flex items-center justify-between px-2 bg-[#2D1B14]/90 text-white flex-shrink-0" style={{ height: '20px' }}>
-                          <span className="font-bold text-[11px] leading-none truncate flex-1">
+                        <div className="flex items-center justify-between px-2 bg-[#2D1B14]/90 text-white flex-shrink-0" style={{ height: '22px' }}>
+                          <span className="font-bold text-[13px] leading-none truncate flex-1">
                             {apt.status === 'completed' && '✓ '}{apt.client_name}
                           </span>
-                          {apt.card_last_service && <span title="Ultimo servizio abbonamento!" className="text-orange-300 text-[10px] flex-shrink-0">⚠️</span>}
+                          {apt.card_last_service && <span title="Ultimo servizio abbonamento!" className="text-orange-300 text-[11px] flex-shrink-0">⚠️</span>}
                           <div className="flex items-center gap-0.5 flex-shrink-0">
-                            {apt.confirmation_status === 'confirmed' && <span title="Confermato" className="text-green-400 text-[9px]">✓</span>}
-                            {apt.confirmation_status === 'cancelled_by_client' && <span title="Disdetto" className="text-red-400 text-[9px]">✕</span>}
-                            {apt.confirmation_status === 'pending' && <span title="In attesa" className="text-yellow-300 text-[9px]">⏳</span>}
+                            {apt.confirmation_status === 'confirmed' && <span title="Confermato" className="text-green-400 text-[10px]">✓</span>}
+                            {apt.confirmation_status === 'cancelled_by_client' && <span title="Disdetto" className="text-red-400 text-[10px]">✕</span>}
+                            {apt.confirmation_status === 'pending' && <span title="In attesa" className="text-yellow-300 text-[10px]">⏳</span>}
                             <button onClick={(e) => { e.stopPropagation(); openRecurringDialog(apt); }} className="p-0.5 rounded hover:bg-white/20" title="Ripeti" data-testid={`repeat-btn-${apt.id}`}>
-                              <Repeat className="w-2.5 h-2.5" />
+                              <Repeat className="w-3 h-3" />
                             </button>
                           </div>
                         </div>
@@ -212,16 +209,11 @@ export default function DayView({
                             const color = isCancelled ? '#EF4444' : (svcColors[i] || '#64748B');
                             return (
                               <div key={i} className="flex items-center px-2 flex-1 min-h-0 border-t border-white/10" style={{ backgroundColor: color }}>
-                                <span className="text-white font-semibold text-[11px] truncate drop-shadow-sm flex-1">{s.name}</span>
-                                <span className="text-white/70 text-[9px] flex-shrink-0 ml-1">{s.duration || 15}&apos;</span>
+                                <span className="text-white font-bold text-[13px] truncate drop-shadow-sm flex-1">{s.name}</span>
+                                <span className="text-white/80 text-[10px] flex-shrink-0 ml-1">{s.duration || 15}&apos;</span>
                               </div>
                             );
                           })}
-                          {clientNote ? (
-                            <div className="px-2 bg-black/20 flex-shrink-0" style={{ height: '14px' }}>
-                              <span className="text-[9px] text-amber-300 italic truncate block">{clientNote}</span>
-                            </div>
-                          ) : null}
                         </div>
                       </div>
                     );
