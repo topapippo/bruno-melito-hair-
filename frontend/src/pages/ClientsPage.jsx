@@ -28,7 +28,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Users, Plus, Search, Phone, Mail, Edit2, Trash2, Loader2, History, MessageSquare, Upload, FileSpreadsheet, Euro, AlertTriangle, Scissors, Cake, Tag } from 'lucide-react';
+import { Users, Plus, Search, Phone, Mail, Edit2, Trash2, Loader2, History, MessageSquare, Upload, FileSpreadsheet, Euro, AlertTriangle, Scissors, Cake } from 'lucide-react';
 import { toast } from 'sonner';
 import PageHeader from '../components/PageHeader';
 
@@ -50,8 +50,6 @@ export default function ClientsPage() {
   const [importPreview, setImportPreview] = useState([]);
   const fileInputRef = useRef(null);
   
-  const AVAILABLE_TAGS = ['VIP', 'Fedele', 'Nuovo', 'Allergie', 'Trattamento Speciale', 'Sconto'];
-
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -149,7 +147,7 @@ export default function ClientsPage() {
 
   const openNewDialog = () => {
     setEditingClient(null);
-    setFormData({ name: '', phone: '', email: '', notes: '', allergies: '', hair_notes: '', send_sms_reminders: true, birthday: '', tags: [] });
+    setFormData({ name: '', phone: '', email: '', hair_notes: '', send_sms_reminders: true, birthday: '' });
     setDialogOpen(true);
   };
 
