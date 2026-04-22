@@ -338,7 +338,7 @@ export default function PlanningPage() {
           ALL_SLOTS.forEach(s => {
             const [h, m] = s.split(':').map(Number);
             const t = h * 60 + m;
-            if (t >= openMin && t < closeMin) allowed.add(s);
+            if (t >= openMin && t <= closeMin) allowed.add(s);
           });
         }
         if (allowed.size > 0) {

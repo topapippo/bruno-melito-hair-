@@ -50,7 +50,7 @@ export const getAvailableSlotsForDate = (dateStr, hoursConfig, blockedSlots = []
       TIME_SLOTS.forEach(slot => {
         const [h, m] = slot.split(':').map(Number);
         const t = h * 60 + m;
-        if (t >= openMin && t < closeMin) slots.push(slot);
+        if (t >= openMin && t <= closeMin) slots.push(slot);
       });
     }
     if (!foundRange && !dayHours) {
@@ -85,15 +85,8 @@ export const getAvailableSlotsForDate = (dateStr, hoursConfig, blockedSlots = []
 export const isAllSlotsPastForToday = (dateStr, hoursConfig) => {
   const today = format(new Date(), 'yyyy-MM-dd');
   if (dateStr !== today) return false;
-  const hasHoursConfig = hoursConfig && Object.keys(hoursConfig).some(k => {
-    const v = hoursConfig[k];
-    return v && v !== '' && (typeof v === 'string' ? v.toLowerCase() : '') !== 'chiuso' && v !== '-';
-  });
-  if (hasHoursConfig) {
-    const { isClosed } = getDayHoursForDate(dateStr, hoursConfig);
-    if (isClosed) return false;
-  }
-  return true;
+  const remaining = getAvailableSlotsForDate(dateStr, hoursConfig, []);
+  return remaining.length === 0;
 };
 
 export const getNextAvailableDate = (currentDateStr, hoursConfig, maxDays = 14) => {
