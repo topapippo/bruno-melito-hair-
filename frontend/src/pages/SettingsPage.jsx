@@ -140,7 +140,7 @@ const ADMIN_FONTS = [
 ];
 
 const ADMIN_PRESETS = [
-  { name: 'Elettrico', primary: '#2563EB', sidebar_bg: '#0F172A', sidebar_text: '#F8FAFC', accent: '#84CC16', content_bg: '#F0F4FF', content_text: '#0F172A' },
+  { name: 'Elettrico', primary: '#2563EB', sidebar_bg: '#0F172A', sidebar_text: '#F8FAFC', accent: '#22D3EE', content_bg: '#F0F6FF', content_text: '#0F172A' },
   { name: 'Fuoco', primary: '#EA580C', sidebar_bg: '#0C4A6E', sidebar_text: '#F0F9FF', accent: '#0891B2', content_bg: '#FFFBEB', content_text: '#1C1917' },
   { name: 'Lusso', primary: '#7C3AED', sidebar_bg: '#1E1033', sidebar_text: '#F5F3FF', accent: '#EAB308', content_bg: '#FAF5FF', content_text: '#1E1B4B' },
   { name: 'Smeraldo', primary: '#059669', sidebar_bg: '#052E16', sidebar_text: '#ECFDF5', accent: '#F97316', content_bg: '#F0FDF4', content_text: '#14532D' },

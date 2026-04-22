@@ -59,11 +59,11 @@ export default function Layout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const NEW_DEFAULTS = { primary: '#E8477C', sidebar_bg: '#FAFBFC', sidebar_text: '#1A1A2E', accent: '#2EC4B6', content_bg: '#FCFCFD', content_text: '#1A1A2E' };
+  const NEW_DEFAULTS = { primary: '#2563EB', sidebar_bg: '#0F172A', sidebar_text: '#F8FAFC', accent: '#22D3EE', content_bg: '#F0F6FF', content_text: '#0F172A' };
   const [adminTheme, setAdminTheme] = useState(() => {
     try {
       const stored = JSON.parse(localStorage.getItem('adminTheme'));
-      if (stored && stored.primary === '#C8617A') { localStorage.removeItem('adminTheme'); return NEW_DEFAULTS; }
+      if (stored && (stored.primary === '#C8617A' || stored.primary === '#E8477C')) { localStorage.removeItem('adminTheme'); return NEW_DEFAULTS; }
       return stored || NEW_DEFAULTS;
     }
     catch { return NEW_DEFAULTS; }

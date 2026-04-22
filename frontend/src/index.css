@@ -336,3 +336,92 @@ a, button { transition: all 0.2s ease; }
 }
 .greeting-in { animation: greetingIn 0.6s cubic-bezier(.16,1,.3,1) forwards; }
 
+/* ══════════════════════════════════════════════════════════════════════
+   INTERACTIVE ANIMATIONS — hover / active globali (scoped al gestionale)
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── BOTTONI: lift + brightness + press ─────────────────────────────── */
+[data-admin-theme="true"] button:not([disabled]):not([data-no-anim]) {
+  transition: transform 0.18s cubic-bezier(.16,1,.3,1),
+              box-shadow 0.18s ease,
+              filter      0.18s ease !important;
+}
+[data-admin-theme="true"] button:not([disabled]):not([data-no-anim]):hover {
+  transform:  translateY(-2px) scale(1.025);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--admin-primary, #2563EB) 30%, rgba(0,0,0,0.12));
+  filter:     brightness(1.08);
+}
+[data-admin-theme="true"] button:not([disabled]):not([data-no-anim]):active {
+  transform:  scale(0.96) translateY(0px);
+  filter:     brightness(0.94);
+  box-shadow: none;
+}
+
+/* ── TAB (Shadcn Tabs) ───────────────────────────────────────────────── */
+[data-admin-theme="true"] [role="tab"] {
+  transition: all 0.2s cubic-bezier(.16,1,.3,1) !important;
+}
+[data-admin-theme="true"] [role="tab"]:hover:not([data-state="active"]) {
+  transform:       translateY(-1px);
+  filter:          brightness(1.06);
+  background:      color-mix(in srgb, var(--admin-primary, #2563EB) 10%, transparent) !important;
+}
+[data-admin-theme="true"] [role="tab"][data-state="active"] {
+  box-shadow: 0 2px 12px color-mix(in srgb, var(--admin-primary, #2563EB) 25%, transparent);
+}
+
+/* ── CARD (Shadcn Card usa .bg-card) ────────────────────────────────── */
+[data-admin-theme="true"] .bg-card {
+  transition: transform 0.22s cubic-bezier(.16,1,.3,1),
+              box-shadow 0.22s ease;
+}
+[data-admin-theme="true"] .bg-card:hover {
+  transform:  translateY(-3px);
+  box-shadow: 0 10px 32px color-mix(in srgb, var(--admin-primary, #2563EB) 14%, rgba(0,0,0,0.08));
+}
+
+/* ── SWITCH ──────────────────────────────────────────────────────────── */
+[data-admin-theme="true"] [role="switch"] {
+  transition: transform 0.2s cubic-bezier(.16,1,.3,1),
+              filter      0.2s ease !important;
+}
+[data-admin-theme="true"] [role="switch"]:hover {
+  transform: scale(1.08);
+  filter:    brightness(1.12);
+}
+
+/* ── SELECT / COMBOBOX ───────────────────────────────────────────────── */
+[data-admin-theme="true"] button[aria-haspopup="listbox"],
+[data-admin-theme="true"] button[role="combobox"] {
+  transition: border-color 0.18s ease, box-shadow 0.18s ease !important;
+}
+[data-admin-theme="true"] button[aria-haspopup="listbox"]:hover,
+[data-admin-theme="true"] button[role="combobox"]:hover {
+  border-color: var(--admin-primary, #2563EB) !important;
+  box-shadow:   0 0 0 2px color-mix(in srgb, var(--admin-primary, #2563EB) 18%, transparent);
+}
+
+/* ── INPUT / TEXTAREA focus glow ─────────────────────────────────────── */
+[data-admin-theme="true"] input:not([type="color"]):focus,
+[data-admin-theme="true"] textarea:focus {
+  box-shadow:   0 0 0 3px color-mix(in srgb, var(--admin-primary, #2563EB) 22%, transparent) !important;
+  border-color: var(--admin-primary, #2563EB) !important;
+  transition:   box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+/* ── BADGE / PILL cliccabili ─────────────────────────────────────────── */
+[data-admin-theme="true"] a.rounded-full,
+[data-admin-theme="true"] button.rounded-full {
+  transition: transform 0.15s ease, filter 0.15s ease !important;
+}
+[data-admin-theme="true"] a.rounded-full:hover,
+[data-admin-theme="true"] button.rounded-full:hover {
+  transform: scale(1.07);
+  filter:    brightness(1.1);
+}
+
+/* ── LINK cliccabili (RouterLink, anchor) ────────────────────────────── */
+[data-admin-theme="true"] a:not(.sidebar-nav-link):hover {
+  filter: brightness(1.08);
+}
+
