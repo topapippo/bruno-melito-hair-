@@ -323,14 +323,17 @@ export default function RemindersPage() {
   const sendConfirmationLink = async (apt) => {
     if (!apt.client_phone) { toast.error('Numero non disponibile'); return; }
     setSendingConfirmId(apt.id);
+    // Apre la finestra subito nel contesto del click (evita il popup blocker)
+    const waWindow = window.open('', '_blank');
     try {
       const res = await api.post(`${API}/reminders/appointment/${apt.id}/send-confirmation`);
-      window.open(res.data.whatsapp_url, '_blank');
+      if (waWindow) waWindow.location.href = res.data.whatsapp_url;
       setTomorrowReminders(prev => prev.map(r =>
         r.id === apt.id ? { ...r, confirmation_status: 'pending', confirmation_sent_at: new Date().toISOString() } : r
       ));
       toast.success(`Link di conferma inviato via WhatsApp a ${apt.client_name}`);
     } catch (e) {
+      if (waWindow) waWindow.close();
       toast.error(e.response?.data?.detail || 'Errore invio conferma');
     }
     setSendingConfirmId(null);
