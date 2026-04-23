@@ -177,6 +177,15 @@ export default function PlanningPage() {
     }
   };
 
+  // Refresh silenzioso: non mostra il loader, usato dopo drag & drop
+  const refreshAppointments = async () => {
+    try {
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      const res = await api.get(`${API}/appointments?date=${dateStr}`);
+      setAppointments(res.data);
+    } catch { /* silenzioso */ }
+  };
+
   const fetchReminderCounts = async () => {
     try {
       const [remRes, inactRes, autoRes] = await Promise.all([
@@ -449,18 +458,26 @@ export default function PlanningPage() {
     setDragOverSlot(null);
     if (!draggedApt) return;
     if (draggedApt.time === time && draggedApt.operator_id === colId) return;
+
+    // Aggiornamento ottimistico: sposta subito nell'UI senza aspettare il server
+    const prevApts = appointments;
+    setAppointments(prev => prev.map(a =>
+      a.id === draggedApt.id
+        ? { ...a, time, operator_id: colId !== draggedApt.operator_id ? (colId || '') : a.operator_id }
+        : a
+    ));
+    setDraggedApt(null);
+
     try {
       const updateData = { time };
-      if (colId !== draggedApt.operator_id) {
-        updateData.operator_id = colId || '';
-      }
+      if (colId !== draggedApt.operator_id) updateData.operator_id = colId || '';
       await api.put(`${API}/appointments/${draggedApt.id}`, updateData);
       toast.success(`Spostato a ${time}`);
-      fetchData();
+      refreshAppointments(); // sync silenzioso con il server
     } catch {
       toast.error('Errore nello spostamento');
+      setAppointments(prevApts); // ripristina se fallisce
     }
-    setDraggedApt(null);
   };
 
   // --- Computed values ---
