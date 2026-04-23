@@ -43,7 +43,7 @@ const getFilteredSlots = (dateStr, hoursConfig, blockedSlots = []) => {
       ALL_SLOTS.forEach(slot => {
         const [h, m] = slot.split(':').map(Number);
         const t = h * 60 + m;
-        if (t >= openMin && t < closeMin) rangeSlots.push(slot);
+        if (t >= openMin && t <= closeMin) rangeSlots.push(slot);
       });
     }
     if (foundRange) {

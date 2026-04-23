@@ -24,18 +24,29 @@ const getFilteredSlots = (dateStr, hoursConfig, blockedSlots = []) => {
   if (hoursConfig) {
     const d = new Date(dateStr + 'T12:00:00');
     const dayKey = DAY_MAP[d.getDay()];
-    const dayHours = (hoursConfig[dayKey] || '').toLowerCase();
+    // Prova chiave corta (lun/mar/…) e chiave intera (lunedì/martedì/…)
+    const fullKeys = { 0:'domenica',1:'lunedì',2:'martedì',3:'mercoledì',4:'giovedì',5:'venerdì',6:'sabato' };
+    const configLower = {};
+    Object.keys(hoursConfig).forEach(k => { configLower[k.toLowerCase()] = hoursConfig[k]; });
+    const dayHours = (configLower[fullKeys[d.getDay()]] || configLower[dayKey] || '').toLowerCase().trim();
     if (!dayHours || dayHours === 'chiuso' || dayHours === '-') return { slots: [], closed: true };
-    const match = dayHours.match(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/);
-    if (match) {
-      const openMin = parseInt(match[1]) * 60 + parseInt(match[2]);
+
+    // Supporta più range (es. "08:00-13:00---14:00-19:00")
+    const rangePattern = /(\d{1,2})[.:](\d{2})\s*[-–]\s*(\d{1,2})[.:](\d{2})/g;
+    const allowed = new Set();
+    let match;
+    let foundRange = false;
+    while ((match = rangePattern.exec(dayHours)) !== null) {
+      foundRange = true;
+      const openMin  = parseInt(match[1]) * 60 + parseInt(match[2]);
       const closeMin = parseInt(match[3]) * 60 + parseInt(match[4]);
-      slots = slots.filter(slot => {
+      ALL_SLOTS.forEach(slot => {
         const [h, m] = slot.split(':').map(Number);
         const t = h * 60 + m;
-        return t >= openMin && t < closeMin;
+        if (t >= openMin && t <= closeMin) allowed.add(slot);
       });
     }
+    if (foundRange) slots = ALL_SLOTS.filter(s => allowed.has(s));
   }
   if (blockedSlots.length > 0) {
     const blockedSet = new Set(blockedSlots);
