@@ -140,12 +140,20 @@ const ADMIN_FONTS = [
 ];
 
 const ADMIN_PRESETS = [
-  { name: 'Elettrico', primary: '#2563EB', sidebar_bg: '#0F172A', sidebar_text: '#F8FAFC', accent: '#22D3EE', content_bg: '#F0F6FF', content_text: '#0F172A' },
-  { name: 'Fuoco', primary: '#EA580C', sidebar_bg: '#0C4A6E', sidebar_text: '#F0F9FF', accent: '#0891B2', content_bg: '#FFFBEB', content_text: '#1C1917' },
-  { name: 'Lusso', primary: '#7C3AED', sidebar_bg: '#1E1033', sidebar_text: '#F5F3FF', accent: '#EAB308', content_bg: '#FAF5FF', content_text: '#1E1B4B' },
-  { name: 'Smeraldo', primary: '#059669', sidebar_bg: '#052E16', sidebar_text: '#ECFDF5', accent: '#F97316', content_bg: '#F0FDF4', content_text: '#14532D' },
-  { name: 'Scuro', primary: '#3B82F6', sidebar_bg: '#0F172A', sidebar_text: '#F1F5F9', accent: '#FACC15', content_bg: '#1E293B', content_text: '#F1F5F9' },
-  { name: 'Rosa Vivace', primary: '#E8477C', sidebar_bg: '#FAFBFC', sidebar_text: '#1A1A2E', accent: '#2EC4B6', content_bg: '#FCFCFD', content_text: '#1A1A2E' },
+  // ── Temi Allegri (nuovi) ──
+  { name: '🎉 Viola Fest',   primary: '#A855F7', sidebar_bg: '#12053A', sidebar_text: '#FAF5FF', accent: '#FBBF24', content_bg: '#FAF5FF', content_text: '#12053A' },
+  { name: '🌊 Tropicale',    primary: '#06B6D4', sidebar_bg: '#0C1A2E', sidebar_text: '#ECFEFF', accent: '#F43F5E', content_bg: '#F0FDFF', content_text: '#0C1A2E' },
+  { name: '🌅 Tramonto',     primary: '#F97316', sidebar_bg: '#1A0A2E', sidebar_text: '#FFF7ED', accent: '#A855F7', content_bg: '#FFFBF5', content_text: '#1A0A2E' },
+  { name: '🌸 Corallo',      primary: '#F43F5E', sidebar_bg: '#1C0533', sidebar_text: '#FFF1F2', accent: '#34D399', content_bg: '#FFF1F2', content_text: '#1C0533' },
+  { name: '🍀 Bosco',        primary: '#10B981', sidebar_bg: '#042F2E', sidebar_text: '#ECFDF5', accent: '#FBBF24', content_bg: '#F0FDF9', content_text: '#042F2E' },
+  { name: '⭐ Ambra',        primary: '#F59E0B', sidebar_bg: '#1C1207', sidebar_text: '#FFFBEB', accent: '#6366F1', content_bg: '#FFFBEB', content_text: '#1C1207' },
+  // ── Temi Classici ──
+  { name: '⚡ Elettrico',    primary: '#2563EB', sidebar_bg: '#0F172A', sidebar_text: '#F8FAFC', accent: '#22D3EE', content_bg: '#F0F6FF', content_text: '#0F172A' },
+  { name: '🔥 Fuoco',        primary: '#EA580C', sidebar_bg: '#0C4A6E', sidebar_text: '#F0F9FF', accent: '#0891B2', content_bg: '#FFFBEB', content_text: '#1C1917' },
+  { name: '💎 Lusso',        primary: '#7C3AED', sidebar_bg: '#1E1033', sidebar_text: '#F5F3FF', accent: '#EAB308', content_bg: '#FAF5FF', content_text: '#1E1B4B' },
+  { name: '🌿 Smeraldo',     primary: '#059669', sidebar_bg: '#052E16', sidebar_text: '#ECFDF5', accent: '#F97316', content_bg: '#F0FDF4', content_text: '#14532D' },
+  { name: '🌙 Scuro',        primary: '#3B82F6', sidebar_bg: '#0F172A', sidebar_text: '#F1F5F9', accent: '#FACC15', content_bg: '#1E293B', content_text: '#F1F5F9' },
+  { name: '🌺 Rosa Vivace',  primary: '#E8477C', sidebar_bg: '#FAF7F2', sidebar_text: '#1A1A2E', accent: '#2EC4B6', content_bg: '#FCFCFD', content_text: '#1A1A2E' },
 ];
 
 const DAYS = [
@@ -207,12 +215,18 @@ export default function SettingsPage() {
     finally { setSavingTheme(false); }
   };
 
-  const applyPreset = (preset) => {
+  const applyPreset = async (preset) => {
     const newTheme = { ...adminTheme, ...preset };
     delete newTheme.name;
     setAdminTheme(newTheme);
-    applyAdminTheme(newTheme);
-    toast.success(`Preset "${preset.name}" applicato — salva per confermare`);
+    localStorage.setItem('adminTheme', JSON.stringify(newTheme));
+    window.dispatchEvent(new StorageEvent('storage', { key: 'adminTheme', newValue: JSON.stringify(newTheme) }));
+    try {
+      await api.put(`${API}/settings/admin-theme`, { admin_theme: newTheme });
+      toast.success(`Tema "${preset.name}" applicato e salvato!`);
+    } catch {
+      toast.success(`Tema "${preset.name}" applicato — salva per confermare`);
+    }
   };
 
   const fetchBlockedSlots = async () => {
@@ -589,7 +603,7 @@ export default function SettingsPage() {
             {/* Presets */}
             <div>
               <Label className="text-sm font-bold text-[#2D1B14] mb-2 block">Temi Rapidi</Label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
                 {ADMIN_PRESETS.map((preset, idx) => (
                   <button key={idx} onClick={() => applyPreset(preset)}
                     className="p-2 rounded-xl border-2 hover:shadow-md transition-all text-center group"

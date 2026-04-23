@@ -134,6 +134,111 @@ a, button { transition: all 0.2s ease; }
 
 
 /* ═══════════════════════════════════════════════════════════════════
+   Animazioni Allegre — Admin Panel
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Entrata card con rimbalzo */
+@keyframes bounceIn {
+  0%   { opacity: 0; transform: scale(0.92) translateY(12px); }
+  60%  { opacity: 1; transform: scale(1.03) translateY(-3px); }
+  100% { transform: scale(1) translateY(0); }
+}
+.admin-page-in > * { animation: bounceIn 0.35s cubic-bezier(.34,1.56,.64,1) both; }
+.admin-page-in > *:nth-child(1) { animation-delay: 0.00s; }
+.admin-page-in > *:nth-child(2) { animation-delay: 0.06s; }
+.admin-page-in > *:nth-child(3) { animation-delay: 0.12s; }
+.admin-page-in > *:nth-child(4) { animation-delay: 0.18s; }
+.admin-page-in > *:nth-child(5) { animation-delay: 0.24s; }
+.admin-page-in > *:nth-child(6) { animation-delay: 0.30s; }
+
+/* Glow pulsante sui bottoni primari */
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--admin-primary, #A855F7) 40%, transparent); }
+  50%       { box-shadow: 0 0 18px 6px color-mix(in srgb, var(--admin-primary, #A855F7) 25%, transparent); }
+}
+[data-admin-theme="true"] button[class*="bg-"]:not([disabled]):not([data-no-anim]) {
+  animation: glowPulse 3s ease-in-out infinite;
+}
+
+/* Sidebar nav link — slide+glow all'hover */
+[data-admin-theme="true"] .sidebar-nav-link {
+  transition: all 0.22s cubic-bezier(.34,1.56,.64,1);
+}
+[data-admin-theme="true"] .sidebar-nav-link:hover {
+  transform: translateX(4px) scale(1.03);
+  background: color-mix(in srgb, var(--admin-primary, #A855F7) 14%, transparent) !important;
+  color: var(--admin-primary, #A855F7) !important;
+}
+[data-admin-theme="true"] .sidebar-nav-link.nav-active {
+  box-shadow: 2px 0 12px color-mix(in srgb, var(--admin-primary, #A855F7) 30%, transparent);
+}
+
+/* Card hover — lift + glow colorato */
+[data-admin-theme="true"] .bg-card,
+[data-admin-theme="true"] .bg-white {
+  transition: transform 0.25s cubic-bezier(.34,1.56,.64,1), box-shadow 0.25s ease !important;
+}
+[data-admin-theme="true"] .bg-card:hover,
+[data-admin-theme="true"] .bg-white:hover {
+  transform: translateY(-4px) scale(1.01) !important;
+  box-shadow: 0 12px 36px color-mix(in srgb, var(--admin-primary, #A855F7) 18%, rgba(0,0,0,0.08)) !important;
+}
+
+/* Bottoni — spring bounce */
+[data-admin-theme="true"] button:not([disabled]):not([data-no-anim]):hover {
+  transform: translateY(-3px) scale(1.04) !important;
+  filter: brightness(1.1);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--admin-primary, #A855F7) 35%, rgba(0,0,0,0.15)) !important;
+  transition: all 0.2s cubic-bezier(.34,1.56,.64,1) !important;
+}
+[data-admin-theme="true"] button:not([disabled]):not([data-no-anim]):active {
+  transform: scale(0.95) translateY(0px) !important;
+  filter: brightness(0.92);
+  transition: all 0.08s ease !important;
+}
+
+/* Tab hover */
+[data-admin-theme="true"] [role="tab"]:hover:not([data-state="active"]) {
+  transform: translateY(-2px) scale(1.03);
+  background: color-mix(in srgb, var(--admin-primary, #A855F7) 12%, transparent) !important;
+  color: var(--admin-primary, #A855F7) !important;
+  transition: all 0.2s cubic-bezier(.34,1.56,.64,1) !important;
+}
+
+/* Input focus glow */
+[data-admin-theme="true"] input:not([type="color"]):focus,
+[data-admin-theme="true"] textarea:focus,
+[data-admin-theme="true"] select:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--admin-primary, #A855F7) 25%, transparent) !important;
+  border-color: var(--admin-primary, #A855F7) !important;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease !important;
+}
+
+/* Badge/Chip wiggle sugli alert */
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25%       { transform: rotate(-4deg); }
+  75%       { transform: rotate(4deg); }
+}
+[data-admin-theme="true"] [data-testid*="banner"] {
+  animation: wiggle 0.4s ease 0.6s both;
+}
+
+/* Scrollbar colorata col tema */
+[data-admin-theme="true"] ::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--admin-primary, #A855F7) 60%, transparent);
+  border-radius: 4px;
+}
+[data-admin-theme="true"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--admin-primary, #A855F7);
+}
+
+/* Ring focus col tema */
+[data-admin-theme="true"] *:focus-visible {
+  outline-color: var(--admin-primary, #A855F7) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
    Admin Theme Dynamic Color Overrides — Complete System
    Variabili: --admin-primary, --admin-accent, --admin-content-bg,
               --admin-content-text, --admin-font-display, --admin-font-body

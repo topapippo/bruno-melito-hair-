@@ -59,11 +59,16 @@ export default function Layout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const NEW_DEFAULTS = { primary: '#2563EB', sidebar_bg: '#0F172A', sidebar_text: '#F8FAFC', accent: '#22D3EE', content_bg: '#F0F6FF', content_text: '#0F172A' };
+  // Tema di default: Viola Fest — allegro, vivace, professionale
+  const NEW_DEFAULTS = { primary: '#A855F7', sidebar_bg: '#12053A', sidebar_text: '#FAF5FF', accent: '#FBBF24', content_bg: '#FAF5FF', content_text: '#12053A' };
   const [adminTheme, setAdminTheme] = useState(() => {
     try {
       const stored = JSON.parse(localStorage.getItem('adminTheme'));
-      if (stored && (stored.primary === '#C8617A' || stored.primary === '#E8477C')) { localStorage.removeItem('adminTheme'); return NEW_DEFAULTS; }
+      // Resetta solo se è rimasto il vecchio default rosa originale
+      const OLD = ['#C8617A', '#E8477C'];
+      if (stored && OLD.includes(stored.primary) && stored.sidebar_bg === '#FAF7F2') {
+        localStorage.removeItem('adminTheme'); return NEW_DEFAULTS;
+      }
       return stored || NEW_DEFAULTS;
     }
     catch { return NEW_DEFAULTS; }
