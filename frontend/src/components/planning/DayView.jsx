@@ -105,7 +105,7 @@ export default function DayView({
               {TIME_SLOTS.map((time) => (
                 <div
                   key={time}
-                  className={`h-12 flex items-start justify-center pt-0.5 border-b border-[#F0E6DC]/30 ${
+                  className={`h-[48px] flex items-start justify-center pt-0.5 border-b border-[#F0E6DC]/30 ${
                     time.endsWith(':00') ? 'font-bold text-sm text-[#2D1B14] bg-[#E2E8F0]/20' : 'text-xs text-[#7C5C4A]'
                   }`}
                 >
@@ -137,7 +137,7 @@ export default function DayView({
                         onDragOver={(e) => !isUnavailable && onDragOver(e, time, col.id)}
                         onDragLeave={onDragLeave}
                         onDrop={(e) => !isUnavailable && onDrop(e, time, col.id)}
-                        className={`h-12 border-b border-[#F0E6DC]/20 transition-colors ${
+                        className={`h-[48px] border-b border-[#F0E6DC]/20 transition-colors ${
                           isBlocked
                             ? 'bg-red-100/80 cursor-not-allowed'
                             : isUnavailable
