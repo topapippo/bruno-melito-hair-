@@ -100,7 +100,7 @@ export default function MyAppointmentsModal({ onClose, onRebook }) {
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <p className="font-bold text-[#1e293b]">
-                            {(() => { try { return format(new Date(appt.date), 'dd-MM-yy'); } catch { return appt.date; }})()}
+                            {(() => { try { return format(new Date(appt.date), 'dd/MM/yy'); } catch { return appt.date; }})()}
                             <span className="text-[#0EA5E9] ml-2">{appt.time}</span>
                           </p>
                           <p className="text-xs text-[#64748B]">{appt.services?.join(', ')}</p>
@@ -156,7 +156,7 @@ export default function MyAppointmentsModal({ onClose, onRebook }) {
                       <div className="flex justify-between items-start">
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-sm text-[#64748B]">
-                            {(() => { try { return format(new Date(appt.date), 'dd-MM-yy'); } catch { return appt.date; }})()}
+                            {(() => { try { return format(new Date(appt.date), 'dd/MM/yy'); } catch { return appt.date; }})()}
                             <span className="ml-2 text-[#94A3B8]">{appt.time}</span>
                           </p>
                           <p className="text-xs text-[#94A3B8] truncate">{appt.services?.join(', ')}</p>

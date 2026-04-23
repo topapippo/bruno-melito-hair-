@@ -105,7 +105,7 @@ export default function StatsPage() {
           <div>
             <h1 className="font-display text-3xl font-medium text-[#2D1B14]">Statistiche</h1>
             <p className="text-[#7C5C4A] mt-1 ">
-              {format(dateRange.start, "dd-MM-yy")} - {format(dateRange.end, "dd-MM-yy")}
+              {format(dateRange.start, "dd/MM/yy")} - {format(dateRange.end, "dd/MM/yy")}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -237,7 +237,7 @@ export default function StatsPage() {
                         />
                         <Tooltip 
                           formatter={(value) => [`€${value.toFixed(2)}`, 'Incasso']}
-                          labelFormatter={(val) => format(new Date(val), 'dd-MM-yy')}
+                          labelFormatter={(val) => format(new Date(val), 'dd/MM/yy')}
                           contentStyle={{ 
                             backgroundColor: '#fff', 
                             border: '1px solid #E2E8F0',

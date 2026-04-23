@@ -338,7 +338,7 @@ export default function BookingForm({
                           <button type="button" onClick={() => setFormData(prev => ({...prev, date: nextDate}))}
                             className="w-full p-3 rounded-xl bg-gradient-to-r from-[#C8617A] to-[#A0404F] text-white font-bold text-sm hover:scale-[1.02] transition-all"
                             data-testid="go-next-date-btn">
-                            Prenota per {format(new Date(nextDate + 'T12:00:00'), 'EEEE dd-MM-yy', { locale: it })}
+                            Prenota per {format(new Date(nextDate + 'T12:00:00'), 'EEEE dd/MM/yy', { locale: it })}
                           </button>
                         )}
                       </div>
@@ -425,7 +425,7 @@ export default function BookingForm({
               <p className="text-sm text-[#B89A7A]">Riepilogo:</p>
               {selectedServices.map(s => (<div key={s.id} className="flex justify-between text-sm"><span className="text-[#D4B89A]">{s.name}</span><span className="text-white font-bold">{'\u20AC'}{s.price}</span></div>))}
               <div className="border-t border-[#3A2A1A] pt-2 flex justify-between"><span className="text-white font-bold">Totale</span><span className="text-white font-black text-lg">{'\u20AC'}{totalPrice}</span></div>
-              <p className="text-xs text-[#8A6A4A]">{format(new Date(formData.date), 'dd-MM-yy')} alle {formData.time}</p>
+              <p className="text-xs text-[#8A6A4A]">{format(new Date(formData.date), 'dd/MM/yy')} alle {formData.time}</p>
             </div>
             <div className="flex gap-3">
               <Button onClick={() => setStep(2)} variant="outline" className="flex-1 border-[#4A3020] text-[#D4B89A] hover:bg-white/10">Indietro</Button>

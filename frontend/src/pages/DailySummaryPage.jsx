@@ -82,7 +82,7 @@ export default function DailySummaryPage() {
           <div>
             <h1 className="font-display text-3xl font-medium text-[#2D1B14]">Riepilogo Giornaliero</h1>
             <p className="text-[#7C5C4A] mt-1  capitalize">
-              {format(validSelectedDate, "EEEE dd-MM-yy", { locale: it })}
+              {format(validSelectedDate, "EEEE dd/MM/yy", { locale: it })}
             </p>
             {data?.date && data.date !== selectedDate && (
               <p className="text-sm text-red-500 mt-1">Dati caricati per: {fmtDate(data.date)}</p>
@@ -242,7 +242,7 @@ export default function DailySummaryPage() {
                       <div key={e.id} className="flex items-center justify-between px-3 py-2 rounded-lg bg-red-50 border border-red-200">
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-red-900 truncate">{e.description}</p>
-                          <p className="text-xs text-red-500">Scad. {e.due_date?.split('-').reverse().join('-')} · {e.category}</p>
+                          <p className="text-xs text-red-500">Scad. {fmtDate(e.due_date)} · {e.category}</p>
                         </div>
                         <span className="text-sm font-bold text-red-600 shrink-0 ml-3">−€{e.amount.toFixed(2)}</span>
                       </div>

@@ -466,7 +466,7 @@ export default function LoyaltyPage() {
                           <p className="font-bold text-green-800">{r.reward_name}</p>
                           <p className="text-xs text-green-600">
                             <Clock className="w-3 h-3 inline mr-1" />
-                            Riscattato il {format(new Date(r.created_at), 'dd-MM-yy')}
+                            Riscattato il {format(new Date(r.created_at), 'dd/MM/yy')}
                           </p>
                         </div>
                         <Button
@@ -499,7 +499,7 @@ export default function LoyaltyPage() {
                             )}
                             <div>
                               <p className="text-sm font-semibold text-[#2D1B14]">{h.description}</p>
-                              <p className="text-xs text-[#7C5C4A]">{format(new Date(h.date), 'dd-MM-yy')}</p>
+                              <p className="text-xs text-[#7C5C4A]">{format(new Date(h.date), 'dd/MM/yy')}</p>
                             </div>
                           </div>
                           <span className={`font-black text-sm ${h.points > 0 ? 'text-green-600' : 'text-red-500'}`}>

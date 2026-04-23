@@ -329,7 +329,7 @@ export default function NewAppointmentDialog({
           </DialogTitle>
           <DialogDescription className="text-sm">
             {formData.date
-              ? format(new Date(formData.date + 'T00:00:00'), "EEEE dd-MM-yy", { locale: it })
+              ? format(new Date(formData.date + 'T00:00:00'), "EEEE dd/MM/yy", { locale: it })
               : ''} alle {formData.time}
           </DialogDescription>
         </DialogHeader>

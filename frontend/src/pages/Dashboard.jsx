@@ -69,7 +69,7 @@ export default function Dashboard() {
     if (!phone) { toast.error('Numero non disponibile'); return; }
     if (!phone.startsWith('39')) phone = '39' + phone;
     const serviceNames = (apt.services || []).map(s => s.name).join(', ');
-    const dateStr = format(new Date(apt.date), 'dd/MM');
+    const dateStr = format(new Date(apt.date), 'dd/MM/yy');
     const msg = `Ciao ${apt.client_name}! 👋 Ti ricordiamo il tuo appuntamento di domani ${dateStr} alle ${apt.time} per ${serviceNames}. A domani! ✂️`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
     toast.success('WhatsApp aperto!');
@@ -141,7 +141,7 @@ export default function Dashboard() {
               <span className="text-sm font-medium text-[#8891A5] uppercase tracking-wider">Dashboard</span>
             </div>
             <h1 className="font-display text-3xl md:text-4xl text-[#1A1A2E] italic">{greeting}!</h1>
-            <p className="text-[#8891A5] mt-1 text-sm">{format(new Date(), "EEEE dd-MM-yy", { locale: it })}</p>
+            <p className="text-[#8891A5] mt-1 text-sm">{format(new Date(), "EEEE dd/MM/yy", { locale: it })}</p>
           </div>
           <Link to="/appointments">
             <Button data-testid="new-appointment-btn" className="bg-gradient-to-r from-[#E8477C] to-[#D03367] hover:from-[#D03367] hover:to-[#E8477C] text-white shadow-[0_4px_14px_rgba(200,97,122,0.35)] rounded-xl px-5 hover:scale-105 transition-transform duration-300">
@@ -452,7 +452,7 @@ export default function Dashboard() {
                       <div className="w-1.5 h-1.5 rounded-full bg-[#2EC4B6] shrink-0 mt-0.5" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-white truncate">{apt.client_name}</p>
-                        <p className="text-xs text-white/50">{format(new Date(apt.date), "dd-MM-yy")} {'\u00B7'} {apt.time}</p>
+                        <p className="text-xs text-white/50">{format(new Date(apt.date), "dd/MM/yy")} {'\u00B7'} {apt.time}</p>
                       </div>
                     </button>
                   ))}
