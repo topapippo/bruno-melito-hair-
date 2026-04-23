@@ -105,7 +105,7 @@ export default function DayView({
               {TIME_SLOTS.map((time) => (
                 <div
                   key={time}
-                  className={`h-12 flex items-center justify-center border-b border-[#F0E6DC]/30 ${
+                  className={`h-12 flex items-start justify-center pt-0.5 border-b border-[#F0E6DC]/30 ${
                     time.endsWith(':00') ? 'font-bold text-sm text-[#2D1B14] bg-[#E2E8F0]/20' : 'text-xs text-[#7C5C4A]'
                   }`}
                 >
