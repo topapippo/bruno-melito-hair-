@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Euro, Users, Clock, TrendingUp, TrendingDown, Minus,
-  BarChart3, ArrowLeft, ArrowRight, Scissors, CreditCard
+  BarChart3, ArrowLeft, ArrowRight, Scissors, CreditCard,
+  ArrowDownCircle, AlertTriangle, CheckCircle2, Wallet
 } from 'lucide-react';
 import { format, subDays, addDays } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -217,6 +218,82 @@ export default function DailySummaryPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Uscite del giorno */}
+        {((data?.expenses_due_today?.length > 0) || (data?.expenses_overdue?.length > 0)) && (
+          <Card className="bg-white border-red-200 shadow-sm">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
+                  <ArrowDownCircle className="w-5 h-5 text-red-500" /> Uscite
+                </CardTitle>
+                <a href="/uscite" className="text-xs text-red-500 font-bold hover:underline">Gestisci →</a>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {/* Scadute in giorni precedenti */}
+              {data.expenses_overdue?.length > 0 && (
+                <div>
+                  <p className="text-xs font-bold text-red-600 uppercase tracking-wider mb-2 flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" /> Scadute ({data.expenses_overdue.length})
+                  </p>
+                  <div className="space-y-1.5">
+                    {data.expenses_overdue.map(e => (
+                      <div key={e.id} className="flex items-center justify-between px-3 py-2 rounded-lg bg-red-50 border border-red-200">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-red-900 truncate">{e.description}</p>
+                          <p className="text-xs text-red-500">Scad. {e.due_date?.split('-').reverse().join('-')} · {e.category}</p>
+                        </div>
+                        <span className="text-sm font-bold text-red-600 shrink-0 ml-3">−€{e.amount.toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {/* Scadenti oggi */}
+              {data.expenses_due_today?.length > 0 && (
+                <div>
+                  <p className="text-xs font-bold text-orange-600 uppercase tracking-wider mb-2 flex items-center gap-1">
+                    <Clock className="w-3 h-3" /> Scadenti oggi ({data.expenses_due_today.length})
+                  </p>
+                  <div className="space-y-1.5">
+                    {data.expenses_due_today.map(e => (
+                      <div key={e.id} className="flex items-center justify-between px-3 py-2 rounded-lg bg-orange-50 border border-orange-200">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-orange-900 truncate">{e.description}</p>
+                          <p className="text-xs text-orange-500">{e.category}{e.is_recurring ? ' · ricorrente' : ''}</p>
+                        </div>
+                        <span className="text-sm font-bold text-orange-600 shrink-0 ml-3">−€{e.amount.toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {/* Saldo netto */}
+              <div className="border-t border-gray-100 pt-3 mt-1 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Wallet className="w-4 h-4 text-[#7C5C4A]" />
+                  <span className="text-sm font-semibold text-[#2D1B14]">Saldo netto stimato</span>
+                  <span className="text-xs text-[#7C5C4A]">(incassi − uscite odierne)</span>
+                </div>
+                <span className={`text-lg font-bold ${(data?.net_earnings ?? 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                  {(data?.net_earnings ?? 0) >= 0 ? '+' : ''}€{(data?.net_earnings ?? 0).toFixed(2)}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Saldo netto anche quando non ci sono uscite */}
+        {(data?.expenses_due_today?.length === 0 && data?.expenses_overdue?.length === 0 && (data?.total_earnings ?? 0) > 0) && (
+          <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+              <span className="text-sm font-semibold text-emerald-800">Nessuna uscita prevista oggi</span>
+            </div>
+            <span className="text-sm font-bold text-emerald-700">Incasso netto: €{(data?.total_earnings ?? 0).toFixed(2)}</span>
+          </div>
+        )}
 
         {/* Bottom Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -113,6 +113,19 @@ async def get_daily_summary(date: Optional[str] = None, current_user: dict = Dep
     for apt in completed:
         pm = apt.get("payment_method", "non specificato")
         payment_methods[pm] = payment_methods.get(pm, 0) + 1
+
+    # Uscite scadenti nel giorno selezionato (non pagate)
+    expenses_due = await db.expenses.find(
+        {"user_id": current_user["id"], "due_date": target_date, "paid": False},
+        {"_id": 0, "user_id": 0}
+    ).to_list(100)
+    # Uscite già scadute precedentemente (overdue rispetto al giorno selezionato)
+    expenses_overdue = await db.expenses.find(
+        {"user_id": current_user["id"], "due_date": {"$lt": target_date}, "paid": False},
+        {"_id": 0, "user_id": 0}
+    ).to_list(100)
+    total_expenses_due = round(sum(e.get("amount", 0) for e in expenses_due), 2)
+
     return {
         "date": target_date, "total_appointments": len(today_apts),
         "completed_appointments": len(completed), "total_earnings": total_earnings,
@@ -124,6 +137,10 @@ async def get_daily_summary(date: Optional[str] = None, current_user: dict = Dep
         "payment_methods": payment_methods,
         "busiest_hour": max(hourly, key=hourly.get) if any(hourly.values()) else None,
         "busiest_hour_count": max(hourly.values()) if any(hourly.values()) else 0,
+        "expenses_due_today": expenses_due,
+        "expenses_overdue": expenses_overdue,
+        "total_expenses_due": total_expenses_due,
+        "net_earnings": round(total_earnings - total_expenses_due, 2),
     }
 
 

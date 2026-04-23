@@ -125,34 +125,72 @@ export function LastServiceBanner({ lastServiceAlerts, onDismiss }) {
   );
 }
 
-export function ExpensesBanner({ upcomingExpenses }) {
+export function ExpensesBanner({ upcomingExpenses, selectedDate }) {
   if (upcomingExpenses.length === 0) return null;
+
+  // Uscite scadenti esattamente nel giorno aperto nel planning
+  const dateStr = selectedDate
+    ? (selectedDate instanceof Date
+        ? selectedDate.toISOString().slice(0, 10)
+        : String(selectedDate).slice(0, 10))
+    : null;
+  const dueToday = dateStr
+    ? upcomingExpenses.filter(e => e.due_date === dateStr)
+    : [];
+  const overdue = upcomingExpenses.filter(e => e.overdue);
+  const upcoming = upcomingExpenses.filter(e => !e.overdue && e.due_date !== dateStr);
+
   return (
-    <a
-      href="/uscite"
-      className="flex items-center gap-3 p-3 bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-xl hover:shadow-md transition-shadow"
-      data-testid="expenses-banner"
-    >
-      <Euro className="w-5 h-5 text-red-500 shrink-0" />
-      <div className="flex-1 text-sm">
-        {upcomingExpenses.filter(e => e.overdue).length > 0 && (
-          <span className="font-bold text-red-600">
-            {upcomingExpenses.filter(e => e.overdue).length} scadenze SCADUTE!
-          </span>
-        )}
-        {upcomingExpenses.filter(e => e.overdue).length > 0 && upcomingExpenses.filter(e => !e.overdue).length > 0 && (
-          <span className="text-[#7C5C4A]"> · </span>
-        )}
-        {upcomingExpenses.filter(e => !e.overdue).length > 0 && (
-          <span className="font-bold text-orange-600">
-            {upcomingExpenses.filter(e => !e.overdue).length} in scadenza (7 giorni)
-          </span>
-        )}
-        <span className="text-[#7C5C4A] ml-1">
-          — Totale: &euro;{upcomingExpenses.reduce((s, e) => s + e.amount, 0).toFixed(2)}
-        </span>
-      </div>
-      <span className="text-xs text-red-500 font-bold shrink-0">Vedi →</span>
-    </a>
+    <div className="space-y-2" data-testid="expenses-banner">
+      {/* Uscite scadenti nel giorno visualizzato: card espansa */}
+      {dueToday.length > 0 && (
+        <div className="rounded-xl border-2 border-orange-400 bg-gradient-to-r from-orange-50 to-amber-50 p-3">
+          <div className="flex items-center gap-2 mb-2">
+            <Euro className="w-4 h-4 text-orange-600 shrink-0" />
+            <span className="font-black text-orange-800 text-sm">
+              {dueToday.length === 1 ? '1 uscita in scadenza oggi' : `${dueToday.length} uscite in scadenza oggi`}
+            </span>
+            <a href="/uscite" className="ml-auto text-xs text-orange-600 font-bold hover:underline shrink-0">Gestisci →</a>
+          </div>
+          <div className="space-y-1.5">
+            {dueToday.map(e => (
+              <div key={e.id} className="flex items-center justify-between bg-white/80 rounded-lg px-3 py-2 border border-orange-200">
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-orange-900 truncate">{e.description}</p>
+                  <p className="text-xs text-orange-600">{e.category}{e.is_recurring ? ' · ricorrente' : ''}</p>
+                </div>
+                <span className="text-sm font-bold text-orange-700 shrink-0 ml-3">€{e.amount.toFixed(2)}</span>
+              </div>
+            ))}
+            <p className="text-xs text-orange-700 font-semibold text-right">
+              Totale: €{dueToday.reduce((s, e) => s + e.amount, 0).toFixed(2)}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Banner compatto per scadute + prossime */}
+      {(overdue.length > 0 || upcoming.length > 0) && (
+        <a
+          href="/uscite"
+          className="flex items-center gap-3 p-3 bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-xl hover:shadow-md transition-shadow"
+        >
+          <Euro className="w-5 h-5 text-red-500 shrink-0" />
+          <div className="flex-1 text-sm">
+            {overdue.length > 0 && (
+              <span className="font-bold text-red-600">{overdue.length} SCADUTE! </span>
+            )}
+            {overdue.length > 0 && upcoming.length > 0 && <span className="text-[#7C5C4A]"> · </span>}
+            {upcoming.length > 0 && (
+              <span className="font-bold text-orange-600">{upcoming.length} in scadenza (7 gg)</span>
+            )}
+            <span className="text-[#7C5C4A] ml-1">
+              — €{[...overdue, ...upcoming].reduce((s, e) => s + e.amount, 0).toFixed(2)}
+            </span>
+          </div>
+          <span className="text-xs text-red-500 font-bold shrink-0">Vedi →</span>
+        </a>
+      )}
+    </div>
   );
 }

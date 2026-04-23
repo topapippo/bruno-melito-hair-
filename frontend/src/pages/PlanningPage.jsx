@@ -531,7 +531,7 @@ export default function PlanningPage() {
           inactiveClientsCount={inactiveClientsCount}
           autoReminderPending={autoReminderPending}
         />
-        <ExpensesBanner upcomingExpenses={upcomingExpenses} />
+        <ExpensesBanner upcomingExpenses={upcomingExpenses} selectedDate={selectedDate} />
         <LastServiceBanner
           lastServiceAlerts={lastServiceAlerts}
           onDismiss={() => setLastServiceAlerts([])}
