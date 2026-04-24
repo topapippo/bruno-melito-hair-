@@ -95,25 +95,23 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Migrazione premi fedeltà: {e}")
 
-    # Migrazione: Aggiorna colori tema admin al nuovo palette "Vivace Bloom"
+    # Migrazione: Aggiorna colori tema admin al nuovo default "Viola Fest"
+    # Colpisce SOLO chi ha ancora i vecchi palette — non sovrascrive temi personalizzati
     try:
-        old_primaries = ["#C8617A", "#c8617a", "#B45309", "#b45309"]
+        old_primaries = ["#C8617A", "#c8617a", "#B45309", "#b45309", "#E8477C", "#e8477c"]
         result = await db.users.update_many(
-            {"$or": [
-                {"admin_theme.primary": {"$in": old_primaries}},
-                {"admin_theme.primary": {"$exists": True, "$nin": ["#E8477C"]}}
-            ]},
+            {"admin_theme.primary": {"$in": old_primaries}},
             {"$set": {
-                "admin_theme.primary": "#E8477C",
-                "admin_theme.sidebar_bg": "#FAFBFC",
-                "admin_theme.sidebar_text": "#1A1A2E",
-                "admin_theme.accent": "#2EC4B6",
-                "admin_theme.content_bg": "#FCFCFD",
-                "admin_theme.content_text": "#1A1A2E"
+                "admin_theme.primary": "#A855F7",
+                "admin_theme.sidebar_bg": "#12053A",
+                "admin_theme.sidebar_text": "#FAF5FF",
+                "admin_theme.accent": "#FBBF24",
+                "admin_theme.content_bg": "#FAF5FF",
+                "admin_theme.content_text": "#12053A"
             }}
         )
         if result.modified_count > 0:
-            logger.info(f"Migrazione tema: {result.modified_count} utenti aggiornati al nuovo palette")
+            logger.info(f"Migrazione tema Viola Fest: {result.modified_count} utenti aggiornati")
     except Exception as e:
         logger.warning(f"Migrazione tema: {e}")
 
