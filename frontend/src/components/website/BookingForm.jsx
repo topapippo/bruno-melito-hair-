@@ -4,8 +4,8 @@ import { fmtDate } from '../../lib/dateUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Clock, Scissors, CheckCircle, ArrowLeft, ArrowRight, Gift, CreditCard, ChevronDown, ChevronUp, History, Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
+import { Clock, CheckCircle, ArrowLeft, ArrowRight, Gift, CreditCard, ChevronDown, ChevronUp, History, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isBefore, startOfDay, getDay } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { getCategoryInfo, groupServicesByCategory } from '../../lib/categories';
@@ -25,6 +25,7 @@ export default function BookingForm({
   const [clientHistory, setClientHistory] = useState(null);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [calMonth, setCalMonth] = useState(() => new Date((formData.date || format(new Date(), 'yyyy-MM-dd')) + 'T12:00:00'));
 
   const loadMyHistory = async () => {
     const phone = formData.client_phone?.trim();
@@ -319,66 +320,161 @@ export default function BookingForm({
         {step === 2 && (
           <div className="space-y-4">
             <h2 className="text-xl font-black text-white">Data e Ora</h2>
-            <div className="space-y-3">
-              <div><label className="text-sm text-[#B89A7A] font-semibold mb-1 block">Data</label>
-                <Input type="date" value={formData.date} min={format(new Date(), 'yyyy-MM-dd')} onChange={(e) => setFormData({...formData, date: e.target.value})} className="bg-[#2A1A0E] border-[#3A2A1A] text-white" data-testid="booking-date-input" /></div>
-              <div><label className="text-sm text-[#B89A7A] font-semibold mb-1 block">Ora</label>
-                {(() => {
-                  const available = getAvailableSlotsForDate(formData.date, config.hours, blockedSlots);
-                  if (available.length === 0) {
-                    const { isClosed } = getDayHoursForDate(formData.date, config.hours);
-                    const todayPast = isAllSlotsPastForToday(formData.date, config.hours);
-                    const nextDate = getNextAvailableDate(formData.date, config.hours);
-                    return (
-                      <div className="space-y-3" data-testid="day-closed-msg">
-                        <p className="text-amber-400 font-bold text-sm p-3 bg-amber-500/10 rounded-lg border border-amber-500/30">
-                          {isClosed ? 'Giorno di chiusura. Scegli un altro giorno.' : todayPast ? 'Gli orari di oggi sono terminati.' : 'Nessun orario disponibile per questa data.'}
-                        </p>
-                        {nextDate && (
-                          <button type="button" onClick={() => setFormData(prev => ({...prev, date: nextDate}))}
-                            className="w-full p-3 rounded-xl bg-gradient-to-r from-[#C8617A] to-[#A0404F] text-white font-bold text-sm hover:scale-[1.02] transition-all"
-                            data-testid="go-next-date-btn">
-                            Prenota per {format(new Date(nextDate + 'T12:00:00'), 'EEEE dd/MM/yy', { locale: it })}
-                          </button>
-                        )}
-                      </div>
-                    );
-                  }
-                  return (
-                    <div className="space-y-2" data-testid="time-slots-grid">
-                      <select value={formData.time} onChange={(e) => setFormData(prev => ({...prev, time: e.target.value}))}
-                        className="w-full p-3.5 bg-[#2A1A0E] border border-[#3A2A1A] rounded-xl text-white font-bold text-base appearance-none cursor-pointer focus:border-[#C8617A] focus:ring-1 focus:ring-[#C8617A] transition-all"
-                        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23D4B89A' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center' }}
-                        data-testid="time-select">
-                        {(() => {
-                          const morning = available.filter(t => parseInt(t.split(':')[0]) < 13);
-                          const afternoon = available.filter(t => parseInt(t.split(':')[0]) >= 13);
-                          return (
-                            <>
-                              {morning.length > 0 && <optgroup label="Mattina">{morning.map(t => <option key={t} value={t}>{t}</option>)}</optgroup>}
-                              {afternoon.length > 0 && <optgroup label="Pomeriggio">{afternoon.map(t => <option key={t} value={t}>{t}</option>)}</optgroup>}
-                            </>
-                          );
-                        })()}
-                      </select>
-                      <p className="text-[10px] text-[#B89A7A]/60 text-center">Scorri per vedere tutti gli orari disponibili</p>
-                    </div>
-                  );
-                })()}
-                {blockedSlots.length > 0 && getAvailableSlotsForDate(formData.date, config.hours, blockedSlots).length > 0 && (
-                  <p className="text-xs text-amber-400/70 mt-2 flex items-center gap-1">
-                    <Clock className="w-3 h-3" /> Alcuni orari non sono disponibili per questa data
-                  </p>
-                )}
+
+            {/* Calendario visivo */}
+            <div className="bg-[#2A1A0E] rounded-2xl border border-[#3A2A1A] overflow-hidden" data-testid="booking-date-input">
+              {/* Navigazione mese */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-[#3A2A1A]">
+                <button type="button"
+                  onClick={() => setCalMonth(prev => subMonths(prev, 1))}
+                  disabled={startOfMonth(calMonth) <= startOfMonth(new Date())}
+                  className="p-1.5 rounded-lg hover:bg-white/10 text-[#B89A7A] disabled:opacity-20 disabled:cursor-not-allowed transition-all">
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="text-white font-bold capitalize text-sm">
+                  {format(calMonth, 'MMMM yyyy', { locale: it })}
+                </span>
+                <button type="button"
+                  onClick={() => setCalMonth(prev => addMonths(prev, 1))}
+                  className="p-1.5 rounded-lg hover:bg-white/10 text-[#B89A7A] transition-all">
+                  <ChevronRight className="w-4 h-4" />
+                </button>
               </div>
-              {operators.length > 0 && (
-                <div><label className="text-sm text-[#B89A7A] font-semibold mb-1 block">Operatore (opzionale)</label>
-                  <select value={formData.operator_id} onChange={(e) => setFormData({...formData, operator_id: e.target.value})} className="w-full p-3 bg-[#2A1A0E] border border-[#3A2A1A] rounded-lg text-white" data-testid="booking-operator-select">
-                    <option value="">Nessuna preferenza</option>
-                    {operators.map(op => <option key={op.id} value={op.id}>{op.name}</option>)}
-                  </select></div>
-              )}
+              {/* Intestazioni giorni */}
+              <div className="grid grid-cols-7 px-2 pt-2">
+                {['L','M','M','G','V','S','D'].map((d, i) => (
+                  <div key={i} className="text-center text-[10px] font-bold text-[#6A5A3A] py-1">{d}</div>
+                ))}
+              </div>
+              {/* Griglia giorni */}
+              <div className="grid grid-cols-7 gap-1 p-2 pt-1">
+                {(() => {
+                  const todayDate = startOfDay(new Date());
+                  const todayStr = format(todayDate, 'yyyy-MM-dd');
+                  const monthStart = startOfMonth(calMonth);
+                  const monthEnd = endOfMonth(calMonth);
+                  const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+                  const firstDow = getDay(monthStart);
+                  const padStart = firstDow === 0 ? 6 : firstDow - 1;
+                  const cells = [];
+                  for (let i = 0; i < padStart; i++) cells.push(<div key={`pad-${i}`} />);
+                  days.forEach(day => {
+                    const dateStr = format(day, 'yyyy-MM-dd');
+                    const isPast = isBefore(day, todayDate);
+                    const isSelected = formData.date === dateStr;
+                    const isToday = dateStr === todayStr;
+                    const { isClosed } = getDayHoursForDate(dateStr, config.hours);
+                    const isDisabled = isPast || isClosed;
+                    cells.push(
+                      <button key={dateStr} type="button" disabled={isDisabled}
+                        onClick={() => { setFormData(prev => ({...prev, date: dateStr})); }}
+                        className={`relative aspect-square rounded-xl flex flex-col items-center justify-center text-[13px] font-bold leading-none transition-all duration-150
+                          ${isSelected
+                            ? 'bg-gradient-to-br from-[#C8617A] to-[#A0404F] text-white shadow-lg scale-[1.08]'
+                            : isDisabled
+                              ? 'text-[#3A2A1A] cursor-not-allowed'
+                              : isToday
+                                ? 'bg-[#3A2A1A] text-amber-300 ring-1 ring-amber-500/50 hover:bg-[#4A3020]'
+                                : 'text-[#D4B89A] hover:bg-[#3A2A1A] hover:text-white'
+                          }`}>
+                        {format(day, 'd')}
+                        {isClosed && !isPast && (
+                          <span className="text-[7px] text-[#4A3A2A] font-normal mt-0.5 leading-none">chius.</span>
+                        )}
+                      </button>
+                    );
+                  });
+                  return cells;
+                })()}
+              </div>
             </div>
+
+            {/* Slot orari */}
+            {formData.date && (() => {
+              const available = getAvailableSlotsForDate(formData.date, config.hours, blockedSlots);
+              if (available.length === 0) {
+                const { isClosed } = getDayHoursForDate(formData.date, config.hours);
+                const todayPast = isAllSlotsPastForToday(formData.date, config.hours);
+                const nextDate = getNextAvailableDate(formData.date, config.hours);
+                return (
+                  <div className="space-y-3" data-testid="day-closed-msg">
+                    <p className="text-amber-400 font-bold text-sm p-3 bg-amber-500/10 rounded-lg border border-amber-500/30">
+                      {isClosed ? 'Giorno di chiusura. Scegli un altro giorno.' : todayPast ? 'Gli orari di oggi sono terminati.' : 'Nessun orario disponibile.'}
+                    </p>
+                    {nextDate && (
+                      <button type="button"
+                        onClick={() => { setFormData(prev => ({...prev, date: nextDate})); setCalMonth(new Date(nextDate + 'T12:00:00')); }}
+                        className="w-full p-3 rounded-xl bg-gradient-to-r from-[#C8617A] to-[#A0404F] text-white font-bold text-sm hover:scale-[1.02] transition-all"
+                        data-testid="go-next-date-btn">
+                        Vai al {format(new Date(nextDate + 'T12:00:00'), 'EEEE dd/MM/yy', { locale: it })}
+                      </button>
+                    )}
+                  </div>
+                );
+              }
+              const morning = available.filter(t => parseInt(t.split(':')[0]) < 13);
+              const afternoon = available.filter(t => parseInt(t.split(':')[0]) >= 13);
+              return (
+                <div className="space-y-3" data-testid="time-slots-grid">
+                  <label className="text-sm text-[#B89A7A] font-semibold block">
+                    Ora — <span className="text-white capitalize">{format(new Date(formData.date + 'T12:00:00'), 'EEEE dd/MM', { locale: it })}</span>
+                  </label>
+                  {morning.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-bold text-[#6A5A3A] uppercase tracking-wider mb-1.5">Mattina</p>
+                      <div className="grid grid-cols-4 gap-1.5">
+                        {morning.map(t => (
+                          <button key={t} type="button" data-testid="time-select"
+                            onClick={() => setFormData(prev => ({...prev, time: t}))}
+                            className={`py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95
+                              ${formData.time === t
+                                ? 'bg-gradient-to-r from-[#C8617A] to-[#A0404F] text-white shadow-md'
+                                : 'bg-[#2A1A0E] border border-[#3A2A1A] text-[#D4B89A] hover:border-[#C8617A]/50 hover:text-white'}`}>
+                            {t}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {afternoon.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-bold text-[#6A5A3A] uppercase tracking-wider mb-1.5">Pomeriggio</p>
+                      <div className="grid grid-cols-4 gap-1.5">
+                        {afternoon.map(t => (
+                          <button key={t} type="button" data-testid="time-select"
+                            onClick={() => setFormData(prev => ({...prev, time: t}))}
+                            className={`py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95
+                              ${formData.time === t
+                                ? 'bg-gradient-to-r from-[#C8617A] to-[#A0404F] text-white shadow-md'
+                                : 'bg-[#2A1A0E] border border-[#3A2A1A] text-[#D4B89A] hover:border-[#C8617A]/50 hover:text-white'}`}>
+                            {t}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {blockedSlots.length > 0 && (
+                    <p className="text-xs text-amber-400/70 flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> Alcuni orari non sono disponibili
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Operatore */}
+            {operators.length > 0 && (
+              <div>
+                <label className="text-sm text-[#B89A7A] font-semibold mb-1 block">Operatore (opzionale)</label>
+                <select value={formData.operator_id} onChange={(e) => setFormData({...formData, operator_id: e.target.value})}
+                  className="w-full p-3 bg-[#2A1A0E] border border-[#3A2A1A] rounded-lg text-white"
+                  data-testid="booking-operator-select">
+                  <option value="">Nessuna preferenza</option>
+                  {operators.map(op => <option key={op.id} value={op.id}>{op.name}</option>)}
+                </select>
+              </div>
+            )}
+
             <div className="flex gap-3">
               <Button onClick={() => setStep(1)} variant="outline" className="flex-1 border-[#4A3020] text-[#D4B89A] hover:bg-white/10">Indietro</Button>
               <Button onClick={() => setStep(3)} disabled={getAvailableSlotsForDate(formData.date, config.hours, blockedSlots).length === 0} className="flex-1 bg-gradient-to-r from-[#C8617A] to-[#A0404F] text-white hover:bg-gray-200 font-bold disabled:opacity-40" data-testid="website-step2-next">Continua <ArrowRight className="w-4 h-4 ml-2" /></Button>

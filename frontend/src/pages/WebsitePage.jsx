@@ -616,9 +616,18 @@ export default function WebsitePage() {
         </div>
       </footer>
 
-      {/* Mobile bottom prenota bar */}
-      <div className="fixed bottom-0 left-0 right-0 p-3 bg-white/95 backdrop-blur-xl border-t border-gray-200/50 sm:hidden z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-        <Button onClick={() => setShowBooking(true)} style={{ backgroundColor: T.primary }} className="w-full text-white hover:opacity-90 font-black py-5 rounded-2xl shadow-lg" data-testid="website-mobile-book-btn">
+      {/* Mobile bottom bar — WhatsApp + Prenota */}
+      <div className="fixed bottom-0 left-0 right-0 p-3 bg-white/95 backdrop-blur-xl border-t border-gray-200/50 sm:hidden z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] flex gap-2">
+        <a
+          href={`https://wa.me/${config.whatsapp || '393397833526'}?text=Ciao, vorrei prenotare un appuntamento!`}
+          target="_blank" rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20BD5A] text-white font-black py-4 px-4 rounded-2xl shadow-lg transition-all active:scale-95"
+          data-testid="website-mobile-wa-btn"
+        >
+          <MessageCircle className="w-5 h-5 shrink-0" />
+          <span className="text-sm">WA</span>
+        </a>
+        <Button onClick={() => setShowBooking(true)} style={{ backgroundColor: T.primary }} className="flex-1 text-white hover:opacity-90 font-black py-5 rounded-2xl shadow-lg" data-testid="website-mobile-book-btn">
           <Scissors className="w-5 h-5 mr-2" /> PRENOTA ORA
         </Button>
       </div>
