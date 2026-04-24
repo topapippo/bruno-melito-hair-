@@ -15,11 +15,12 @@ router = APIRouter()
 # ── Rate limiting su MongoDB (funziona con Gunicorn multi-worker) ─────────────
 LOGIN_MAX_ATTEMPTS = 5
 LOGIN_WINDOW_SECONDS = 900  # 15 minuti
+REGISTER_MAX_PER_DAY = 3
+REGISTER_WINDOW_SECONDS = 86400  # 24 ore
 
 
 async def _check_rate_limit(ip: str):
-    """Conta i tentativi di login falliti per IP negli ultimi 5 minuti tramite MongoDB.
-    Condiviso tra tutti i worker — resistente a riavvii del server."""
+    """Blocca l'IP dopo 5 tentativi falliti in 15 minuti."""
     window_start = datetime.now(timezone.utc) - timedelta(seconds=LOGIN_WINDOW_SECONDS)
     count = await db.login_attempts.count_documents({
         "ip": ip,
@@ -35,15 +36,72 @@ async def _check_rate_limit(ip: str):
         "ip": ip,
         "ts": datetime.now(timezone.utc).isoformat()
     })
-    # Pulizia asincrona dei record vecchi (non bloccante)
     await db.login_attempts.delete_many({
         "ts": {"$lt": window_start.isoformat()}
     })
 
 
+async def _check_register_rate_limit(ip: str):
+    """Blocca l'IP dopo 3 registrazioni nelle ultime 24 ore."""
+    window_start = datetime.now(timezone.utc) - timedelta(seconds=REGISTER_WINDOW_SECONDS)
+    count = await db.register_attempts.count_documents({
+        "ip": ip,
+        "ts": {"$gte": window_start.isoformat()}
+    })
+    if count >= REGISTER_MAX_PER_DAY:
+        raise HTTPException(
+            status_code=429,
+            detail="Troppi account creati da questo indirizzo. Riprova domani.",
+            headers={"Retry-After": str(REGISTER_WINDOW_SECONDS)},
+        )
+    await db.register_attempts.insert_one({
+        "ip": ip,
+        "ts": datetime.now(timezone.utc).isoformat()
+    })
+
+
+async def _notify_login_whatsapp(user: dict, ip: str):
+    """Invia WA a Bruno quando qualcuno accede al gestionale (background task)."""
+    try:
+        instance_id = user.get("green_api_instance_id", "")
+        api_token = user.get("green_api_token", "")
+        phone = user.get("whatsapp") or user.get("phone", "")
+        if not instance_id or not api_token or not phone:
+            return
+        import re as _re
+        phone_clean = _re.sub(r'\D', '', str(phone))
+        if phone_clean.startswith('0039'):
+            phone_clean = phone_clean[4:]
+        elif phone_clean.startswith('39') and len(phone_clean) > 10:
+            phone_clean = phone_clean[2:]
+        if not phone_clean.startswith('39'):
+            phone_clean = '39' + phone_clean
+        now_str = datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')
+        email_masked = user['email'][:3] + '***@' + user['email'].split('@')[-1]
+        msg = (
+            f"🔐 *Accesso al gestionale*\n\n"
+            f"👤 Account: {email_masked}\n"
+            f"🕐 Orario: {now_str} UTC\n"
+            f"🌐 IP: {ip}\n\n"
+            f"Se non sei stato tu, cambia subito la password da Impostazioni!"
+        )
+        import requests as _req
+        import asyncio
+        url = f"https://api.greenapi.com/waInstance{instance_id}/sendMessage/{api_token}"
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(
+            None,
+            lambda: _req.post(url, json={"chatId": phone_clean + "@c.us", "message": msg}, timeout=10)
+        )
+    except Exception as e:
+        logger.warning(f"Notifica login WA fallita: {e}")
+
+
 # ── Register ──────────────────────────────────────────────────────────────────
 @router.post("/auth/register", response_model=TokenResponse)
-async def register(data: UserCreate):
+async def register(data: UserCreate, request: Request):
+    client_ip = request.client.host if request.client else "unknown"
+    await _check_register_rate_limit(client_ip)
     existing = await db.users.find_one({"email": data.email}, {"_id": 0})
     if existing:
         raise HTTPException(status_code=400, detail="Email già registrata")
@@ -174,11 +232,12 @@ async def login(data: UserLogin, request: Request, background_tasks: BackgroundT
         logger.warning(f"Tentativo login fallito per: {data.email} da IP: {client_ip}")
         raise HTTPException(status_code=401, detail="Credenziali non valide")
 
-    logger.info(f"Login riuscito per: {data.email}")
+    logger.info(f"Login riuscito per: {data.email} da IP: {client_ip}")
     token = create_token(user["id"])
 
-    # Auto-repair: patch category on old appointments in background
+    # Auto-repair categorie + notifica WA accesso
     background_tasks.add_task(_repair_categories, user["id"])
+    background_tasks.add_task(_notify_login_whatsapp, user, client_ip)
 
     return TokenResponse(
         access_token=token,

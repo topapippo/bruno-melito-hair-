@@ -220,8 +220,23 @@ async def get_public_operators():
 
 
 @router.post("/public/booking")
-@limiter.limit("5/minute;20/hour")
+@limiter.limit("2/minute;8/hour")
 async def create_public_booking(request: Request, data: PublicBookingRequest):
+    # Blocca lo stesso numero di telefono se ha già 3 prenotazioni nelle ultime 24h
+    if data.client_phone:
+        phone_norm = re.sub(r'\D', '', data.client_phone)
+        since_24h = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+        recent_count = await db.appointments.count_documents({
+            "client_phone": {"$regex": phone_norm[-9:] if len(phone_norm) >= 9 else phone_norm},
+            "created_at": {"$gte": since_24h},
+            "status": {"$ne": "cancelled"}
+        })
+        if recent_count >= 3:
+            raise HTTPException(
+                status_code=429,
+                detail="Hai già effettuato troppe prenotazioni nelle ultime 24 ore. Contattaci direttamente."
+            )
+
     user = await db.users.find_one({"email": PUBLIC_ADMIN_EMAIL}, {"_id": 0})
     if not user:
         user = await db.users.find_one({}, {"_id": 0})

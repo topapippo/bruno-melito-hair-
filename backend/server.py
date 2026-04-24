@@ -1,5 +1,6 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone, timedelta
 import logging
@@ -48,9 +49,12 @@ async def lifespan(app: FastAPI):
         await db.loyalty.create_index([("client_id", 1), ("user_id", 1)])
         await db.users.create_index([("email", 1)], unique=True)
         await db.waitlist.create_index([("user_id", 1), ("status", 1)])
-        # Indice TTL: pulisce automaticamente i tentativi di login vecchi dopo 10 minuti
+        # Indice TTL: pulisce automaticamente i tentativi di login vecchi dopo 15 minuti
         await db.login_attempts.create_index([("ip", 1)])
-        await db.login_attempts.create_index("ts", expireAfterSeconds=600)
+        await db.login_attempts.create_index("ts", expireAfterSeconds=900)
+        # Indice TTL: pulisce i tentativi di registrazione dopo 24 ore
+        await db.register_attempts.create_index([("ip", 1)])
+        await db.register_attempts.create_index("ts", expireAfterSeconds=86400)
         logger.info("Indici MongoDB creati/verificati")
     except Exception as e:
         logger.error(f"Errore creazione indici MongoDB: {e}")
@@ -290,6 +294,19 @@ app = FastAPI(title="MBHS SALON API", lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
+
+# ── Security Headers ───────────────────────────────────────────────────────────
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        return response
+
+app.add_middleware(SecurityHeadersMiddleware)
 
 # ── CORS ───────────────────────────────────────────────────────────────────────
 _cors_origins_raw = os.environ.get('CORS_ORIGINS', '')
