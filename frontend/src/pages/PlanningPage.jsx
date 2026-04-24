@@ -438,10 +438,10 @@ export default function PlanningPage() {
     try {
       const res = await api.post(`${API}/whatsapp/send-direct`, { phone, message: msg });
       if (res.data.sent) {
-        toast.success('Messaggio inviato!');
+        toast.success('Messaggio inviato direttamente!');
       } else {
+        if (res.data.error) toast.error(`Green API: ${res.data.error}`);
         window.open(res.data.url, '_blank');
-        toast.success('WhatsApp aperto!');
       }
     } catch {
       let p = phone.replace(/[\s\-\+]/g, '');

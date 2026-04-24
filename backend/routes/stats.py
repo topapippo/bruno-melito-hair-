@@ -377,26 +377,65 @@ async def get_settings(current_user: dict = Depends(get_current_user)):
 @router.get("/settings/whatsapp-test")
 async def test_whatsapp_api(current_user: dict = Depends(get_current_user)):
     """Verifica che l'istanza Green API sia attiva e autorizzata."""
+    import asyncio
+    import requests as _req
     instance_id = current_user.get("green_api_instance_id", "")
     api_token = current_user.get("green_api_token", "")
     if not instance_id or not api_token:
         return {"ok": False, "status": "not_configured", "message": "Instance ID o Token non impostati"}
     try:
-        import requests as _req
-        import asyncio
         url = f"https://api.greenapi.com/waInstance{instance_id}/getStateInstance/{api_token}"
-        loop = asyncio.get_event_loop()
-        resp = await loop.run_in_executor(None, lambda: _req.get(url, timeout=10))
+        resp = await asyncio.to_thread(_req.get, url, timeout=10)
         data = resp.json()
         state = data.get("stateInstance", "unknown")
         if state == "authorized":
             return {"ok": True, "status": state, "message": "✅ Connesso — WhatsApp diretto attivo"}
         elif state == "notAuthorized":
-            return {"ok": False, "status": state, "message": "⚠️ Non autorizzato — scansiona il QR code con WhatsApp"}
+            return {"ok": False, "status": state, "message": "⚠️ Non autorizzato — scansiona il QR code"}
         else:
-            return {"ok": False, "status": state, "message": f"Stato: {state}"}
+            return {"ok": False, "status": state, "message": f"Stato: {state} — risposta raw: {str(data)[:200]}"}
     except Exception as e:
         return {"ok": False, "status": "error", "message": f"Errore connessione: {str(e)}"}
+
+
+@router.post("/settings/whatsapp-send-test")
+async def test_whatsapp_send(data: dict, current_user: dict = Depends(get_current_user)):
+    """Invia un messaggio di prova al numero configurato per verificare che l'invio funzioni."""
+    import asyncio
+    import requests as _req
+    import re as _re
+    instance_id = current_user.get("green_api_instance_id", "")
+    api_token = current_user.get("green_api_token", "")
+    if not instance_id or not api_token:
+        return {"ok": False, "message": "Green API non configurata"}
+    phone = data.get("phone", "")
+    if not phone:
+        return {"ok": False, "message": "Numero di telefono mancante"}
+    phone_clean = _re.sub(r'\D', '', phone)
+    if phone_clean.startswith('0039'):
+        phone_clean = phone_clean[4:]
+    elif phone_clean.startswith('39') and len(phone_clean) > 10:
+        phone_clean = phone_clean[2:]
+    if not phone_clean.startswith('39'):
+        phone_clean = '39' + phone_clean
+    try:
+        url = f"https://api.greenapi.com/waInstance{instance_id}/sendMessage/{api_token}"
+        resp = await asyncio.to_thread(
+            _req.post, url,
+            json={"chatId": phone_clean + "@c.us", "message": "✅ Test invio WhatsApp — Bruno Melito Hair funziona!"},
+            timeout=15
+        )
+        rjson = {}
+        try:
+            rjson = resp.json()
+        except Exception:
+            pass
+        if resp.status_code == 200 and rjson.get("idMessage"):
+            return {"ok": True, "message": f"✅ Messaggio inviato! ID: {rjson['idMessage']}"}
+        err = rjson.get("message") or rjson.get("error") or resp.text[:300]
+        return {"ok": False, "message": f"Errore Green API ({resp.status_code}): {err}"}
+    except Exception as e:
+        return {"ok": False, "message": f"Errore: {str(e)}"}
 
 
 @router.put("/settings/whatsapp-api")

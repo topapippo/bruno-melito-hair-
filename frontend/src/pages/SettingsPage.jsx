@@ -186,6 +186,7 @@ export default function SettingsPage() {
   const [savingWa, setSavingWa] = useState(false);
   const [waTest, setWaTest] = useState(null);
   const [testingWa, setTestingWa] = useState(false);
+  const [waSendTest, setWaSendTest] = useState({ phone: '', result: null, loading: false });
 
   useEffect(() => {
     fetchSettings();
@@ -232,6 +233,17 @@ export default function SettingsPage() {
       setWaTest(res.data);
     } catch { setWaTest({ ok: false, message: 'Errore di connessione al server' }); }
     finally { setTestingWa(false); }
+  };
+
+  const sendWaTestMessage = async () => {
+    if (!waSendTest.phone) return;
+    setWaSendTest(p => ({ ...p, loading: true, result: null }));
+    try {
+      const res = await api.post(`${API}/settings/whatsapp-send-test`, { phone: waSendTest.phone });
+      setWaSendTest(p => ({ ...p, result: res.data, loading: false }));
+    } catch (e) {
+      setWaSendTest(p => ({ ...p, result: { ok: false, message: 'Errore server: ' + (e?.response?.data?.detail || e.message) }, loading: false }));
+    }
   };
 
   const saveAdminTheme = async () => {
@@ -797,6 +809,32 @@ export default function SettingsPage() {
                 )}
               </div>
             )}
+
+            {/* Test invio reale */}
+            <div className="border-t border-green-100 pt-4 space-y-2">
+              <Label className="text-[#2D1B14] font-semibold text-sm">Prova invio reale</Label>
+              <p className="text-xs text-gray-500">Inserisci il tuo numero per verificare che il messaggio arrivi davvero su WhatsApp (non solo che la connessione sia attiva).</p>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Es. 339 783 3526"
+                  value={waSendTest.phone}
+                  onChange={e => setWaSendTest(p => ({ ...p, phone: e.target.value, result: null }))}
+                  className="border-green-200 focus:border-green-400"
+                />
+                <Button
+                  onClick={sendWaTestMessage}
+                  disabled={waSendTest.loading || !waSendTest.phone}
+                  className="bg-green-600 hover:bg-green-700 text-white shrink-0"
+                >
+                  {waSendTest.loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Invia prova'}
+                </Button>
+              </div>
+              {waSendTest.result && (
+                <div className={`p-3 rounded-xl text-sm font-medium ${waSendTest.result.ok ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                  {waSendTest.result.message}
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 

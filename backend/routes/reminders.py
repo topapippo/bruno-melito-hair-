@@ -449,6 +449,9 @@ async def send_whatsapp_direct(data: dict, current_user: dict = Depends(get_curr
     """Invia WhatsApp via Green API (gratuito) se configurata, altrimenti restituisce link wa.me."""
     import re as _re
     import urllib.parse
+    import asyncio
+    import requests as _req
+
     phone = data.get("phone", "")
     message = data.get("message", "")
     if not phone or not message:
@@ -462,34 +465,40 @@ async def send_whatsapp_direct(data: dict, current_user: dict = Depends(get_curr
         phone_clean = phone_clean[2:]
     if not phone_clean.startswith('39'):
         phone_clean = '39' + phone_clean
-    wa_number = phone_clean + "@c.us"  # formato Green API
+    wa_number = phone_clean + "@c.us"
 
     instance_id = current_user.get("green_api_instance_id", "")
     api_token = current_user.get("green_api_token", "")
 
     if instance_id and api_token:
         try:
-            import requests as _req
-            import asyncio
             url = f"https://api.greenapi.com/waInstance{instance_id}/sendMessage/{api_token}"
-            loop = asyncio.get_event_loop()
-            resp = await loop.run_in_executor(
-                None,
-                lambda: _req.post(url, json={"chatId": wa_number, "message": message}, timeout=15)
+            resp = await asyncio.to_thread(
+                _req.post, url,
+                json={"chatId": wa_number, "message": message},
+                timeout=15
             )
-            if resp.status_code == 200 and resp.json().get("idMessage"):
+            rjson = {}
+            try:
+                rjson = resp.json()
+            except Exception:
+                pass
+            if resp.status_code == 200 and rjson.get("idMessage"):
                 return {"sent": True, "method": "greenapi"}
-            else:
-                # Logga l'errore per debug
-                import logging
-                logging.getLogger(__name__).warning(f"Green API error {resp.status_code}: {resp.text[:200]}")
+            # Risposta Green API non valida — restituiamo il dettaglio al frontend
+            err_detail = rjson.get("message") or rjson.get("error") or resp.text[:200]
+            logger.warning(f"Green API send failed {resp.status_code}: {resp.text[:300]}")
+            wa_url = f"https://wa.me/{phone_clean}?text={urllib.parse.quote(message)}"
+            return {"sent": False, "method": "link", "url": wa_url,
+                    "error": f"Green API {resp.status_code}: {err_detail}"}
         except Exception as e:
-            import logging
-            logging.getLogger(__name__).warning(f"Green API exception: {e}")
+            logger.warning(f"Green API exception: {e}")
+            wa_url = f"https://wa.me/{phone_clean}?text={urllib.parse.quote(message)}"
+            return {"sent": False, "method": "link", "url": wa_url, "error": str(e)}
 
-    # Fallback: link wa.me (apre WhatsApp Web con messaggio precompilato)
+    # Green API non configurata
     wa_url = f"https://wa.me/{phone_clean}?text={urllib.parse.quote(message)}"
-    return {"sent": False, "method": "link", "url": wa_url}
+    return {"sent": False, "method": "link", "url": wa_url, "error": "Green API non configurata"}
 
 
 @router.get("/reminders/thank-you-template")

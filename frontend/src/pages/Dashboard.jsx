@@ -76,13 +76,12 @@ export default function Dashboard() {
       if (res.data.sent) {
         toast.success('Messaggio inviato direttamente!');
       } else {
+        if (res.data.error) toast.error(`Green API: ${res.data.error}`);
         window.open(res.data.url, '_blank');
-        toast.success('WhatsApp aperto!');
       }
     } catch {
       if (!phone.startsWith('39')) phone = '39' + phone;
       window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
-      toast.success('WhatsApp aperto!');
     }
   };
 
