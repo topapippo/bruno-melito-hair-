@@ -1,6 +1,17 @@
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Optional
 from datetime import datetime, timezone, timedelta
+
+
+def _fmt_date_it(date_str: str) -> str:
+    """Format YYYY-MM-DD as dd/MM/yy for Italian display in messages."""
+    try:
+        parts = str(date_str).split("-")
+        if len(parts) == 3:
+            return f"{parts[2]}/{parts[1]}/{parts[0][2:]}"
+        return date_str
+    except Exception:
+        return date_str
 import uuid
 import os
 
@@ -36,7 +47,7 @@ async def send_appointment_reminder(data: SMSRequest, current_user: dict = Depen
     if not client.get("sms_reminder", True):
         raise HTTPException(status_code=400, detail="Cliente ha disabilitato promemoria SMS")
     services_text = ", ".join([s["name"] for s in appointment["services"]])
-    default_message = f"Promemoria: hai un appuntamento il {appointment['date']} alle {appointment['time']} per {services_text}. Ti aspettiamo!"
+    default_message = f"Promemoria: hai un appuntamento il {_fmt_date_it(appointment['date'])} alle {appointment['time']} per {services_text}. Ti aspettiamo!"
     message = data.message or default_message
     result = await send_sms_reminder(client["phone"], message, current_user["salon_name"])
     if result["success"]:
@@ -415,7 +426,7 @@ async def send_confirmation_link(appointment_id: str, current_user: dict = Depen
     services_text = ", ".join([s["name"] for s in apt.get("services", [])])
     message = (
         f"Ciao {apt.get('client_name', '')}! Ti ricordiamo il tuo appuntamento il "
-        f"{apt['date']} alle {apt['time']} per {services_text}. "
+        f"{_fmt_date_it(apt['date'])} alle {apt['time']} per {services_text}. "
         f"Conferma o disdici qui: {confirm_link}"
     )
 

@@ -85,6 +85,7 @@ export default function EditAppointmentDialog({
   const [clientSospesi, setClientSospesi] = useState([]);
   const [sospesiTotal, setSospesiTotal] = useState(0);
   const [showSospesiPopup, setShowSospesiPopup] = useState(false);
+  const [customPrices, setCustomPrices] = useState({});
   const [settlingId, setSettlingId] = useState(null);
   const [clientHistory, setClientHistory] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
@@ -132,6 +133,7 @@ export default function EditAppointmentDialog({
       setUseLoyaltyPoints(false);
       setSelectedPromo(null);
       setEligiblePromos([]);
+      setCustomPrices({});
 
       if (appointment.client_id && appointment.client_id !== 'generic') {
         Promise.all([
@@ -189,11 +191,20 @@ export default function EditAppointmentDialog({
     }));
   };
 
-  const calculateTotal = () => {
-    const activeAppointment = localAppointment || appointment || { services: [] };
-    const servicesList = Array.isArray(activeAppointment.services) ? activeAppointment.services : [];
-    return servicesList.reduce((sum, s) => sum + (s.price || 0), 0);
+  // Build the service list using stored prices (preserves upselling discounts).
+  // For IDs already in the appointment use appointment.services (has discounted price);
+  // for newly-added IDs fall back to the catalog services prop.
+  const getComputedServices = () => {
+    const activeApt = localAppointment || appointment;
+    const aptSvcMap = {};
+    (activeApt?.services || []).forEach(s => { aptSvcMap[s.id] = s; });
+    return formData.service_ids.map(id =>
+      aptSvcMap[id] || (services || []).find(s => s.id === id) || { id, price: 0, duration: 0, name: '' }
+    );
   };
+
+  const calculateTotal = () =>
+    getComputedServices().reduce((sum, s, i) => sum + (customPrices[`${s.id}_${i}`] ?? s.price ?? 0), 0);
 
   const calculateDiscount = () => {
     const total = calculateTotal();
@@ -287,6 +298,7 @@ export default function EditAppointmentDialog({
     setSelectedCardId('');
     setUseLoyaltyPoints(false);
     setSelectedPromo(null);
+    setCustomPrices({});
     setEligiblePromos([]);
   };
 
@@ -427,9 +439,9 @@ export default function EditAppointmentDialog({
   if (!currentAppointment) return null;
 
   const toggleCat = (catKey) => setOpenCats(prev => ({ ...prev, [catKey]: !prev[catKey] }));
-  const selectedServicesInfo = (services || []).filter(s => formData.service_ids.includes(s.id));
-  const editTotalPrice = selectedServicesInfo.reduce((sum, s) => sum + (s.price || 0), 0);
-  const editTotalDuration = selectedServicesInfo.reduce((sum, s) => sum + (s.duration || 0), 0);
+  const computedSvcList = getComputedServices();
+  const editTotalPrice = computedSvcList.reduce((sum, s) => sum + (s.price || 0), 0);
+  const editTotalDuration = computedSvcList.reduce((sum, s) => sum + (s.duration || 0), 0);
 
   if (!appointment) return null;
 
@@ -808,6 +820,56 @@ export default function EditAppointmentDialog({
                   <Euro className="w-5 h-5" /> INCASSO
                 </h3>
 
+                {/* Prezzi servizi — modifica manuale per singolo servizio */}
+                <div className="space-y-2 mb-4">
+                  <Label className="text-[#2D1B14] font-bold text-sm flex items-center gap-1">
+                    <Edit3 className="w-4 h-4" /> Prezzi servizi
+                  </Label>
+                  <div className="rounded-xl border-2 border-gray-200 overflow-hidden divide-y divide-gray-100 bg-gray-50">
+                    {getComputedServices().map((s, i) => {
+                      const key = `${s.id}_${i}`;
+                      const basePrice = s.price ?? 0;
+                      const currentPrice = customPrices[key] ?? basePrice;
+                      const isModified = customPrices[key] !== undefined && Math.abs(customPrices[key] - basePrice) > 0.001;
+                      return (
+                        <div key={key} className={`flex items-center gap-2 px-3 py-2 ${isModified ? "bg-amber-50" : ""}`}>
+                          <span className="flex-1 text-sm text-gray-700 truncate">
+                            {s.upselling && <Gift className="w-3 h-3 text-emerald-500 inline mr-1" />}
+                            {s.name || `Servizio ${i + 1}`}
+                          </span>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button type="button" className="w-7 h-7 rounded-lg border-2 border-gray-300 flex items-center justify-center text-gray-600 hover:border-red-400 hover:text-red-600 font-bold transition-colors text-lg leading-none"
+                              onClick={() => setCustomPrices(prev => ({ ...prev, [key]: Math.max(0, (prev[key] ?? basePrice) - 0.5) }))}>
+                              −
+                            </button>
+                            <div className="relative">
+                              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm pointer-events-none">{"€"}</span>
+                              <Input
+                                type="number" min="0" step="0.50"
+                                value={currentPrice}
+                                onChange={(e) => { const v = parseFloat(e.target.value); setCustomPrices(prev => ({ ...prev, [key]: isNaN(v) ? 0 : Math.max(0, v) })); }}
+                                className={`w-24 h-8 pl-6 text-right font-bold text-sm border-2 ${isModified ? "border-amber-400 bg-amber-50" : "border-gray-200"}`}
+                                data-testid={`price-input-${key}`}
+                              />
+                            </div>
+                            <button type="button" className="w-7 h-7 rounded-lg border-2 border-gray-300 flex items-center justify-center text-gray-600 hover:border-green-500 hover:text-green-600 font-bold transition-colors text-lg leading-none"
+                              onClick={() => setCustomPrices(prev => ({ ...prev, [key]: (prev[key] ?? basePrice) + 0.5 }))}>
+                              +
+                            </button>
+                            {isModified && (
+                              <button type="button" title="Ripristina prezzo originale"
+                                onClick={() => setCustomPrices(prev => { const n = { ...prev }; delete n[key]; return n; })}
+                                className="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors">
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 {/* Payment Method */}
                 <div className="space-y-2 mb-4">
                   <Label className="text-[#2D1B14] font-bold text-sm">Metodo di pagamento</Label>
@@ -932,10 +994,28 @@ export default function EditAppointmentDialog({
 
                 {/* Summary */}
                 <div className="bg-white rounded-xl p-4 border-2 border-green-200 space-y-2">
-                  <div className="flex justify-between text-sm"><span className="font-semibold">Subtotale:</span><span>{'\u20AC'}{calculateTotal().toFixed(2)}</span></div>
+                  {/* Upselling rows: original price struck-through + discounted */}
+                  {getComputedServices().some(s => s.upselling) && (
+                    <div className="pb-2 mb-1 border-b border-dashed border-emerald-200 space-y-1">
+                      {getComputedServices().filter(s => s.upselling).map((s, i) => (
+                        <div key={i} className="flex items-center justify-between text-xs">
+                          <span className="flex items-center gap-1 text-emerald-700 font-semibold">
+                            <Gift className="w-3 h-3 flex-shrink-0" />
+                            {s.name}
+                            {s.original_price != null && (
+                              <span className="text-gray-400 line-through ml-1">{'€'}{Number(s.original_price).toFixed(2)}</span>
+                            )}
+                          </span>
+                          <span className="font-black text-emerald-600">{'€'}{(s.price || 0).toFixed(2)}</span>
+                        </div>
+                      ))}
+                      <p className="text-[10px] text-emerald-500 font-semibold">Sconto upselling già applicato</p>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-sm"><span className="font-semibold">Subtotale:</span><span>{'€'}{calculateTotal().toFixed(2)}</span></div>
                   {selectedPromo && <div className="flex justify-between text-sm text-pink-600"><span className="font-semibold flex items-center gap-1"><Gift className="w-3.5 h-3.5" /> Omaggio:</span><span>{selectedPromo.free_service_name}</span></div>}
-                  {discountType !== 'none' && calculateDiscount() > 0 && <div className="flex justify-between text-sm text-red-600"><span className="font-semibold">Sconto:</span><span>-{'\u20AC'}{calculateDiscount().toFixed(2)}</span></div>}
-                  <div className="flex justify-between text-xl font-black pt-2 border-t border-green-200"><span>TOTALE:</span><span className="text-green-600">{'\u20AC'}{calculateFinalAmount().toFixed(2)}</span></div>
+                  {discountType !== 'none' && calculateDiscount() > 0 && <div className="flex justify-between text-sm text-red-600"><span className="font-semibold">Sconto:</span><span>-{'€'}{calculateDiscount().toFixed(2)}</span></div>}
+                  <div className="flex justify-between text-xl font-black pt-2 border-t border-green-200"><span>TOTALE:</span><span className="text-green-600">{'€'}{calculateFinalAmount().toFixed(2)}</span></div>
                   {calculateFinalAmount() >= 20 && !selectedCardId && !selectedPromo && (
                     <div className="flex items-center gap-1.5 text-sm text-amber-600 pt-1" data-testid="loyalty-points-preview">
                       <Star className="w-4 h-4 text-amber-500" /><span className="font-semibold">+{Math.floor(calculateFinalAmount() / 20)} punti fedeltà</span>
@@ -964,7 +1044,7 @@ export default function EditAppointmentDialog({
                 return (
                   <div className="mb-2 space-y-1">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">{services.filter(s => formData.service_ids.includes(s.id)).map(s => s.name).join(', ') || `${formData.service_ids.length} ${formData.service_ids.length === 1 ? 'servizio' : 'servizi'}`} - {editTotalDuration} min</span>
+                      <span className="text-gray-600">{computedSvcList.map(s => s.name).filter(Boolean).join(', ') || `${formData.service_ids.length} ${formData.service_ids.length === 1 ? 'servizio' : 'servizi'}`} - {editTotalDuration} min</span>
                       <span className={`font-black ${cardDiscount > 0 ? 'text-gray-400 line-through text-xs' : 'text-[#2D1B14]'}`}>{'\u20AC'}{editTotalPrice.toFixed(2)}</span>
                     </div>
                     {selCard && (

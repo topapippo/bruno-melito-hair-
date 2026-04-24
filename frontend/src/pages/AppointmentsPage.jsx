@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api, { API } from '../lib/api';
+import { fmtDate } from '../lib/dateUtils';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
@@ -227,7 +228,7 @@ export default function AppointmentsPage() {
   const openSmsDialog = (apt) => {
     setAppointmentForSms(apt);
     const servicesText = apt.services.map(s => s.name).join(', ');
-    setSmsMessage(`Promemoria: hai un appuntamento il ${apt.date} alle ${apt.time} per ${servicesText}. Ti aspettiamo!`);
+    setSmsMessage(`Promemoria: hai un appuntamento il ${fmtDate(apt.date)} alle ${apt.time} per ${servicesText}. Ti aspettiamo!`);
     setSmsDialogOpen(true);
   };
 

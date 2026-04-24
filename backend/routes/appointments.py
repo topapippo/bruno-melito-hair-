@@ -284,15 +284,33 @@ async def update_appointment(appointment_id: str, data: AppointmentUpdate, curre
         update_data["client_phone"] = client.get("phone", "")
 
     if data.service_ids:
-        services = await db.services.find(
-            {"id": {"$in": data.service_ids}, "user_id": current_user["id"]}, {"_id": 0, "user_id": 0}
-        ).to_list(100)
-        if len(services) != len(data.service_ids):
-            raise HTTPException(status_code=404, detail="Uno o più servizi non trovati")
+        # Preserve existing service data (including upselling discounts) for unchanged services.
+        # Only re-fetch from catalog for service IDs that are NEW (not already in the appointment).
+        existing_svc_map = {s["id"]: s for s in appointment.get("services", [])}
+        truly_new_ids = [sid for sid in data.service_ids if sid not in existing_svc_map]
+
+        fetched_new = {}
+        if truly_new_ids:
+            new_from_catalog = await db.services.find(
+                {"id": {"$in": truly_new_ids}, "user_id": current_user["id"]}, {"_id": 0, "user_id": 0}
+            ).to_list(100)
+            if len(new_from_catalog) != len(truly_new_ids):
+                raise HTTPException(status_code=404, detail="Uno o più servizi non trovati")
+            fetched_new = {s["id"]: s for s in new_from_catalog}
+
+        ordered = []
+        for sid in data.service_ids:
+            if sid in existing_svc_map:
+                ordered.append(existing_svc_map[sid])  # preserves upselling discount
+            elif sid in fetched_new:
+                s = fetched_new[sid]
+                ordered.append({"id": s["id"], "name": s["name"], "duration": s["duration"],
+                                 "price": s["price"], "category": s.get("category", "")})
+
         update_data["service_ids"] = data.service_ids
-        update_data["services"] = [{"id": s["id"], "name": s["name"], "duration": s["duration"], "price": s["price"], "category": s.get("category", "")} for s in services]
-        update_data["total_duration"] = sum(s["duration"] for s in services)
-        update_data["total_price"] = sum(s["price"] for s in services)
+        update_data["services"] = ordered
+        update_data["total_duration"] = sum(s.get("duration", 0) for s in ordered)
+        update_data["total_price"] = sum(s.get("price", 0) for s in ordered)
 
     if data.operator_id is not None:
         if data.operator_id:

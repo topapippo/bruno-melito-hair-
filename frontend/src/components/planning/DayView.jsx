@@ -208,6 +208,7 @@ export default function DayView({
                             {apt.status === 'completed' && '✓ '}{apt.client_name}
                           </span>
                           {apt.card_last_service && <span title="Ultimo servizio abbonamento!" className="text-orange-300 text-[11px] flex-shrink-0">⚠️</span>}
+                          {apt.services?.some(s => s.upselling) && <span title="Contiene servizio scontato upselling" className="text-emerald-300 text-[11px] flex-shrink-0">🎁</span>}
                           <div className="flex items-center gap-0.5 flex-shrink-0">
                             {apt.confirmation_status === 'confirmed' && <span title="Confermato" className="text-green-400 text-[10px]">✓</span>}
                             {apt.confirmation_status === 'cancelled_by_client' && <span title="Disdetto" className="text-red-400 text-[10px]">✕</span>}

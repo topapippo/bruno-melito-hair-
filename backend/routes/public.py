@@ -416,9 +416,11 @@ async def create_public_booking(request: Request, data: PublicBookingRequest):
     try:
         from routes.push import send_push_to_all
         services_names = ", ".join([s.get("name", "") for s in services])
+        d = data.date.split("-")
+        date_it = f"{d[2]}/{d[1]}/{d[0][2:]}" if len(d) == 3 else data.date
         await send_push_to_all(
             title="🔔 Nuova Prenotazione Online!",
-            body=f"{data.client_name} • {data.date} alle {data.time} • {services_names}",
+            body=f"{data.client_name} • {date_it} alle {data.time} • {services_names}",
             url="/planning",
         )
     except Exception as e:

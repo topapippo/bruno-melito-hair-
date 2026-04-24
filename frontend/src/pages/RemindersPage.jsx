@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import api, { API } from '../lib/api';
+import { fmtDate } from '../lib/dateUtils';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -108,7 +109,7 @@ export default function RemindersPage() {
       .replace('{ora}', nextApt.time || '')
       .replace('{servizi}', nextApt.services?.map(s => s.name).join(', ') || '')
       .replace('{operatore}', '')
-      .replace('{data}', autoCheck.tomorrow_date || '');
+      .replace('{data}', fmtDate(autoCheck.tomorrow_date || ''));
 
     const phone = formatPhone(nextApt.client_phone);
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
@@ -132,7 +133,7 @@ export default function RemindersPage() {
       .replace('{ora}', apt.time || '')
       .replace('{servizi}', apt.services?.map(s => s.name).join(', ') || '')
       .replace('{operatore}', apt.operator_name || '')
-      .replace('{data}', apt.date || '');
+      .replace('{data}', fmtDate(apt.date || ''));
     const phone = formatPhone(apt.client_phone);
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
     try {
@@ -153,7 +154,7 @@ export default function RemindersPage() {
       text = text.replace('{ora}', apt.time || '');
       text = text.replace('{servizi}', apt.services?.map(s => s.name).join(', ') || '');
       text = text.replace('{operatore}', apt.operator_name || '');
-      text = text.replace('{data}', apt.date || '');
+      text = text.replace('{data}', fmtDate(apt.date || ''));
     } else {
       const client = target.data;
       text = text.replace('{nome}', client.client_name || '');
