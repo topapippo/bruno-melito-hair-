@@ -184,6 +184,8 @@ export default function SettingsPage() {
   const [savingBlock, setSavingBlock] = useState(false);
   const [waForm, setWaForm] = useState({ green_api_instance_id: '', green_api_token: '' });
   const [savingWa, setSavingWa] = useState(false);
+  const [waTest, setWaTest] = useState(null);
+  const [testingWa, setTestingWa] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -216,9 +218,20 @@ export default function SettingsPage() {
     setSavingWa(true);
     try {
       await api.put(`${API}/settings/whatsapp-api`, waForm);
-      toast.success('WhatsApp diretto configurato!');
+      toast.success('Salvato! Clicca "Testa connessione" per verificare.');
+      setWaTest(null);
     } catch { toast.error('Errore nel salvataggio'); }
     finally { setSavingWa(false); }
+  };
+
+  const testWaConnection = async () => {
+    setTestingWa(true);
+    setWaTest(null);
+    try {
+      const res = await api.get(`${API}/settings/whatsapp-test`);
+      setWaTest(res.data);
+    } catch { setWaTest({ ok: false, message: 'Errore di connessione al server' }); }
+    finally { setTestingWa(false); }
   };
 
   const saveAdminTheme = async () => {
@@ -765,14 +778,25 @@ export default function SettingsPage() {
                 <p className="text-xs text-gray-400">Visibile nella pagina della tua istanza</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <Button onClick={saveWaSettings} disabled={savingWa} className="bg-green-600 hover:bg-green-700 text-white">
                 {savingWa ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-2" /> Salva</>}
               </Button>
-              {settings?.wa_configured && (
-                <span className="text-sm text-green-600 font-semibold">✓ Attivo — invio diretto abilitato</span>
-              )}
+              <Button onClick={testWaConnection} disabled={testingWa} variant="outline" className="border-2 border-green-200 text-green-700 hover:bg-green-50">
+                {testingWa ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Testa connessione
+              </Button>
             </div>
+            {waTest && (
+              <div className={`p-3 rounded-xl text-sm font-medium ${waTest.ok ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                {waTest.message}
+                {!waTest.ok && waTest.status === 'notAuthorized' && (
+                  <p className="text-xs mt-1 text-red-600">
+                    Apri WhatsApp → Dispositivi collegati → Collega un dispositivo → scansiona il QR code dal sito Green API
+                  </p>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
 

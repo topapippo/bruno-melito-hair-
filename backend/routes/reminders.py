@@ -469,14 +469,23 @@ async def send_whatsapp_direct(data: dict, current_user: dict = Depends(get_curr
 
     if instance_id and api_token:
         try:
-            import httpx
+            import requests as _req
+            import asyncio
             url = f"https://api.greenapi.com/waInstance{instance_id}/sendMessage/{api_token}"
-            async with httpx.AsyncClient(timeout=15.0) as client:
-                resp = await client.post(url, json={"chatId": wa_number, "message": message})
+            loop = asyncio.get_event_loop()
+            resp = await loop.run_in_executor(
+                None,
+                lambda: _req.post(url, json={"chatId": wa_number, "message": message}, timeout=15)
+            )
             if resp.status_code == 200 and resp.json().get("idMessage"):
                 return {"sent": True, "method": "greenapi"}
-        except Exception:
-            pass
+            else:
+                # Logga l'errore per debug
+                import logging
+                logging.getLogger(__name__).warning(f"Green API error {resp.status_code}: {resp.text[:200]}")
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(f"Green API exception: {e}")
 
     # Fallback: link wa.me (apre WhatsApp Web con messaggio precompilato)
     wa_url = f"https://wa.me/{phone_clean}?text={urllib.parse.quote(message)}"

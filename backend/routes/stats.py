@@ -374,6 +374,31 @@ async def get_settings(current_user: dict = Depends(get_current_user)):
     }
 
 
+@router.get("/settings/whatsapp-test")
+async def test_whatsapp_api(current_user: dict = Depends(get_current_user)):
+    """Verifica che l'istanza Green API sia attiva e autorizzata."""
+    instance_id = current_user.get("green_api_instance_id", "")
+    api_token = current_user.get("green_api_token", "")
+    if not instance_id or not api_token:
+        return {"ok": False, "status": "not_configured", "message": "Instance ID o Token non impostati"}
+    try:
+        import requests as _req
+        import asyncio
+        url = f"https://api.greenapi.com/waInstance{instance_id}/getStateInstance/{api_token}"
+        loop = asyncio.get_event_loop()
+        resp = await loop.run_in_executor(None, lambda: _req.get(url, timeout=10))
+        data = resp.json()
+        state = data.get("stateInstance", "unknown")
+        if state == "authorized":
+            return {"ok": True, "status": state, "message": "✅ Connesso — WhatsApp diretto attivo"}
+        elif state == "notAuthorized":
+            return {"ok": False, "status": state, "message": "⚠️ Non autorizzato — scansiona il QR code con WhatsApp"}
+        else:
+            return {"ok": False, "status": state, "message": f"Stato: {state}"}
+    except Exception as e:
+        return {"ok": False, "status": "error", "message": f"Errore connessione: {str(e)}"}
+
+
 @router.put("/settings/whatsapp-api")
 async def update_whatsapp_api(data: dict, current_user: dict = Depends(get_current_user)):
     await db.users.update_one(
