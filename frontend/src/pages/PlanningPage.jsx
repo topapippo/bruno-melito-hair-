@@ -75,8 +75,6 @@ export default function PlanningPage() {
   const sendThankYouWhatsApp = async (data) => {
     const { clientName, clientPhone, reviewLink } = data;
     if (!clientPhone || clientPhone.length < 6) return;
-    const cleanPhone = clientPhone.replace(/\D/g, '').replace(/^0/, '39');
-    const phoneNum = cleanPhone.startsWith('39') ? cleanPhone : '39' + cleanPhone;
     // Carica il template di ringraziamento dal DB
     let msg = '';
     try {
@@ -88,7 +86,16 @@ export default function PlanningPage() {
       msg = `Ciao ${clientName || ''}! Grazie per essere venuto da Bruno Melito Hair.\n\nTi aspettiamo presto per il tuo prossimo appuntamento!\n\nA presto!`;
     }
     if (reviewLink) msg += `\n\nSe ti sei trovato bene, ci farebbe molto piacere una tua recensione: ${reviewLink}`;
-    window.open(`https://wa.me/${phoneNum}?text=${encodeURIComponent(msg)}`, '_blank');
+    try {
+      const res = await api.post(`${API}/whatsapp/send-direct`, { phone: clientPhone, message: msg });
+      if (res.data.sent) { toast.success('Ringraziamento inviato!'); return; }
+      if (res.data.error) toast.error(`Green API: ${res.data.error}`);
+      window.open(res.data.url, '_blank');
+    } catch {
+      let p = clientPhone.replace(/\D/g, '');
+      if (!p.startsWith('39')) p = '39' + p;
+      window.open(`https://wa.me/${p}?text=${encodeURIComponent(msg)}`, '_blank');
+    }
   };
 
   // Drag & Drop

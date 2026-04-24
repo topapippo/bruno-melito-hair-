@@ -111,8 +111,7 @@ export default function RemindersPage() {
       .replace('{operatore}', '')
       .replace('{data}', fmtDate(autoCheck.tomorrow_date || ''));
 
-    const phone = formatPhone(nextApt.client_phone);
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+    await sendWhatsAppDirect(nextApt.client_phone, msg);
 
     try {
       await api.post(`${API}/reminders/appointment/${nextApt.id}/mark-sent`);
@@ -134,8 +133,7 @@ export default function RemindersPage() {
       .replace('{servizi}', apt.services?.map(s => s.name).join(', ') || '')
       .replace('{operatore}', apt.operator_name || '')
       .replace('{data}', fmtDate(apt.date || ''));
-    const phone = formatPhone(apt.client_phone);
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+    await sendWhatsAppDirect(apt.client_phone, msg);
     try {
       await api.post(`${API}/reminders/appointment/${apt.id}/mark-sent`);
       setTomorrowReminders(prev => prev.map(r => r.id === apt.id ? { ...r, reminded: true } : r));
@@ -203,6 +201,20 @@ export default function RemindersPage() {
     return p;
   };
 
+  // Invia via Green API; fallback wa.me solo se Green API non disponibile
+  const sendWhatsAppDirect = async (phone, message) => {
+    const p = formatPhone(phone);
+    try {
+      const res = await api.post(`${API}/whatsapp/send-direct`, { phone: p, message });
+      if (res.data.sent) return true;
+      if (res.data.error) toast.error(`Green API: ${res.data.error}`);
+      window.open(res.data.url, '_blank');
+    } catch {
+      window.open(`https://wa.me/${p}?text=${encodeURIComponent(message)}`, '_blank');
+    }
+    return false;
+  };
+
   const sendMessage = async () => {
     if (!msgTarget) return;
     const { type, data } = msgTarget;
@@ -219,12 +231,7 @@ export default function RemindersPage() {
       return;
     }
 
-    const formattedPhone = formatPhone(phone);
-    const encoded = encodeURIComponent(msgText);
-    const url = `https://wa.me/${formattedPhone}?text=${encoded}`;
-
-    // Open WhatsApp
-    window.open(url, '_blank');
+    await sendWhatsAppDirect(phone, msgText);
 
     // Mark as sent
     const id = type === 'appointment' ? data.id : data.client_id;
@@ -349,11 +356,10 @@ export default function RemindersPage() {
     if (!next) { toast('Tutti i promemoria colore sono stati inviati!'); return; }
     setBatchSending(true);
     const colorTemplate = templates.find(t => t.template_type === 'color_expiry');
-    const phone = formatPhone(next.phone);
     let msg = colorTemplate
       ? colorTemplate.text.replace('{nome}', next.client_name || '').replace('{giorni}', String(next.days_ago || ''))
       : `Ciao ${next.client_name}! Sono passati ${next.days_ago} giorni dal tuo ultimo colore. E' il momento di rinfrescare il look! Prenota da Bruno Melito Hair.`;
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+    await sendWhatsAppDirect(next.phone, msg);
     try {
       await api.post(`${API}/reminders/color-expiry/${next.client_id}/mark-sent`);
       setColorReminders(prev => prev.map(c => c.client_id === next.client_id ? { ...c, already_sent: true } : c));
@@ -367,11 +373,10 @@ export default function RemindersPage() {
     if (!next) { toast('Tutti i richiami sono stati inviati!'); return; }
     setBatchSending(true);
     const recallTemplate = templates.find(t => t.template_type === 'recall');
-    const phone = formatPhone(next.client_phone);
     let msg = recallTemplate
       ? recallTemplate.text.replace('{nome}', next.client_name || '').replace('{giorni}', String(next.days_ago || '')).replace('{servizi}', next.last_services?.join(', ') || '')
       : `Ciao ${next.client_name}! Sono passati ${next.days_ago} giorni dalla tua ultima visita presso Bruno Melito Hair. Torna a trovarci, ti aspettiamo!`;
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+    await sendWhatsAppDirect(next.client_phone, msg);
     try {
       await api.post(`${API}/reminders/inactive/${next.client_id}/mark-sent`);
       setInactiveClients(prev => prev.map(c => c.client_id === next.client_id ? { ...c, already_recalled: true } : c));
@@ -868,11 +873,10 @@ export default function RemindersPage() {
                         </Button>
                       ) : (
                         <Button
-                          onClick={() => {
+                          onClick={async () => {
                             if (!cr.phone) { toast.error('Numero mancante'); return; }
-                            const phone = formatPhone(cr.phone);
-                            const msg = encodeURIComponent(`Ciao ${cr.client_name}! Sono passati ${cr.days_ago} giorni dal tuo ultimo colore. E' il momento di rinfrescare il look! Prenota su Bruno Melito Hair.`);
-                            window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+                            const msg = `Ciao ${cr.client_name}! Sono passati ${cr.days_ago} giorni dal tuo ultimo colore. E' il momento di rinfrescare il look! Prenota su Bruno Melito Hair.`;
+                            await sendWhatsAppDirect(cr.phone, msg);
                             api.post(`${API}/reminders/color-expiry/${cr.client_id}/mark-sent`)
                               .then(() => {
                                 setColorReminders(prev => prev.map(c => c.client_id === cr.client_id ? {...c, already_sent: true} : c));
@@ -944,10 +948,9 @@ export default function RemindersPage() {
                       {client.phone && !client.already_sent && (
                         <Button
                           size="sm"
-                          onClick={() => {
-                            const phone = formatPhone(client.phone);
-                            const msg = encodeURIComponent(`Ciao ${client.name}! 🎂 Tanti auguri di Buon Compleanno dal team di Bruno Melito Hair! Ti aspettiamo presto! ✂️`);
-                            window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+                          onClick={async () => {
+                            const msg = `Ciao ${client.name}! 🎂 Tanti auguri di Buon Compleanno dal team di Bruno Melito Hair! Ti aspettiamo presto! ✂️`;
+                            await sendWhatsAppDirect(client.phone, msg);
                             setMarkingSentId(client.id);
                             api.post(`${API}/reminders/birthday/${client.id}/mark-sent`)
                               .then(() => setBirthdayClients(prev => prev.map(c => c.id === client.id ? {...c, already_sent: true} : c)))
