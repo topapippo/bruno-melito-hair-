@@ -413,11 +413,11 @@ async def create_public_booking(request: Request, data: PublicBookingRequest):
     await db.appointments.insert_one(appointment)
 
     # Notifica push all'admin per la nuova prenotazione online
+    services_names = ", ".join([s.get("name", "") for s in services])
+    d = data.date.split("-")
+    date_it = f"{d[2]}/{d[1]}/{d[0][2:]}" if len(d) == 3 else data.date
     try:
         from routes.push import send_push_to_all
-        services_names = ", ".join([s.get("name", "") for s in services])
-        d = data.date.split("-")
-        date_it = f"{d[2]}/{d[1]}/{d[0][2:]}" if len(d) == 3 else data.date
         await send_push_to_all(
             title="🔔 Nuova Prenotazione Online!",
             body=f"{data.client_name} • {date_it} alle {data.time} • {services_names}",
@@ -425,6 +425,38 @@ async def create_public_booking(request: Request, data: PublicBookingRequest):
         )
     except Exception as e:
         logger.warning(f"Push notifica prenotazione fallita: {e}")
+
+    # WhatsApp di conferma automatica al cliente via Green API
+    try:
+        import re as _re
+        import requests as _req
+        instance_id = user.get("green_api_instance_id", "")
+        api_token = user.get("green_api_token", "")
+        if instance_id and api_token and data.client_phone:
+            phone_clean = _re.sub(r'\D', '', data.client_phone)
+            if phone_clean.startswith('0039'):
+                phone_clean = phone_clean[4:]
+            elif phone_clean.startswith('39') and len(phone_clean) > 10:
+                phone_clean = phone_clean[2:]
+            if not phone_clean.startswith('39'):
+                phone_clean = '39' + phone_clean
+            salon_name = user.get("salon_name", "Bruno Melito Hair")
+            msg = (
+                f"✅ Prenotazione confermata!\n\n"
+                f"Ciao {data.client_name}! La tua prenotazione da *{salon_name}* è confermata:\n\n"
+                f"📅 {date_it} alle {data.time}\n"
+                f"✂️ {services_names}\n"
+                f"🔖 Codice: {appointment_id[:8].upper()}\n\n"
+                f"Per disdire o modificare rispondi a questo messaggio. A presto! 💇"
+            )
+            _req.post(
+                f"https://api.greenapi.com/waInstance{instance_id}/sendMessage/{api_token}",
+                json={"chatId": phone_clean + "@c.us", "message": msg},
+                timeout=6
+            )
+            logger.info(f"WA conferma inviata a {data.client_phone}")
+    except Exception as e:
+        logger.warning(f"WA conferma prenotazione fallita: {e}")
 
     return {
         "success": True,
