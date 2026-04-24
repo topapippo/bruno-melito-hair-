@@ -51,17 +51,6 @@ const getFilteredSlots = (dateStr, hoursConfig, blockedSlots = []) => {
     }
   }
 
-  // Filter past times for today
-  const today = format(new Date(), 'yyyy-MM-dd');
-  if (dateStr === today) {
-    const now = new Date();
-    const cur = now.getHours() * 60 + now.getMinutes();
-    slots = slots.filter(slot => {
-      const [h, m] = slot.split(':').map(Number);
-      return h * 60 + m >= cur;
-    });
-  }
-
   // Filter blocked slots
   if (blockedSlots.length > 0) {
     const blockedSet = new Set(blockedSlots);
