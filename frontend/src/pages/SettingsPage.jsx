@@ -182,7 +182,7 @@ export default function SettingsPage() {
   const [blockedSlots, setBlockedSlots] = useState([]);
   const [newBlock, setNewBlock] = useState({ type: 'recurring', day_of_week: 'lunedì', date: '', start_time: '13:00', end_time: '14:00', reason: '' });
   const [savingBlock, setSavingBlock] = useState(false);
-  const [waForm, setWaForm] = useState({ wa_phone_number_id: '', wa_access_token: '' });
+  const [waForm, setWaForm] = useState({ green_api_instance_id: '', green_api_token: '' });
   const [savingWa, setSavingWa] = useState(false);
 
   useEffect(() => {
@@ -195,7 +195,7 @@ export default function SettingsPage() {
       const res = await api.get(`${API}/settings`);
       setSettings(res.data);
       if (res.data.admin_theme) setAdminTheme(res.data.admin_theme);
-      if (res.data.wa_phone_number_id) setWaForm(f => ({ ...f, wa_phone_number_id: res.data.wa_phone_number_id }));
+      if (res.data.green_api_instance_id) setWaForm(f => ({ ...f, green_api_instance_id: res.data.green_api_instance_id }));
     } catch (err) {
       console.error('Error fetching settings:', err);
       toast.error('Errore nel caricamento delle impostazioni');
@@ -209,10 +209,14 @@ export default function SettingsPage() {
   };
 
   const saveWaSettings = async () => {
+    if (!waForm.green_api_instance_id || !waForm.green_api_token) {
+      toast.error('Inserisci sia Instance ID che API Token');
+      return;
+    }
     setSavingWa(true);
     try {
       await api.put(`${API}/settings/whatsapp-api`, waForm);
-      toast.success('Impostazioni WhatsApp salvate!');
+      toast.success('WhatsApp diretto configurato!');
     } catch { toast.error('Errore nel salvataggio'); }
     finally { setSavingWa(false); }
   };
@@ -719,41 +723,46 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* WhatsApp Business API */}
+        {/* WhatsApp Diretto — Green API (gratuito) */}
         <Card className="border-2 border-green-100">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-[#2D1B14]">
               <Share2 className="w-5 h-5 text-green-600" />
-              WhatsApp Business API — Invio Diretto
+              WhatsApp Diretto — Invio senza aprire l'app
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="p-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-800">
-              <p className="font-bold mb-1">Cos'è e come funziona</p>
-              <p>Con l'API ufficiale Meta, i messaggi WhatsApp vengono inviati direttamente dall'app senza aprire WhatsApp sul telefono. Serve un account <strong>WhatsApp Business</strong> verificato su Meta.</p>
-              <p className="mt-1 text-xs text-green-600">Se non configurata, l'app apre WhatsApp Web con il messaggio precompilato (comportamento attuale).</p>
+            <div className="p-4 bg-green-50 border border-green-200 rounded-xl text-sm text-green-800 space-y-2">
+              <p className="font-bold">✅ Gratuito — fino a 1500 messaggi/mese</p>
+              <p>Usa il tuo numero WhatsApp normale (non serve un account Business). Setup in 2 minuti:</p>
+              <ol className="list-decimal list-inside space-y-1 text-green-700">
+                <li>Vai su <strong>greenapi.com</strong> e crea un account gratuito</li>
+                <li>Crea una nuova istanza e scansiona il QR code con WhatsApp (come WhatsApp Web)</li>
+                <li>Copia <strong>Instance ID</strong> e <strong>API Token</strong> qui sotto e salva</li>
+              </ol>
+              <p className="text-xs text-green-600">Se non configurato, i messaggi aprono WhatsApp Web con il testo precompilato (comportamento attuale).</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <Label className="font-semibold text-sm">Phone Number ID</Label>
+                <Label className="font-semibold text-sm">Instance ID</Label>
                 <Input
-                  value={waForm.wa_phone_number_id}
-                  onChange={e => setWaForm(f => ({ ...f, wa_phone_number_id: e.target.value }))}
-                  placeholder="es. 123456789012345"
+                  value={waForm.green_api_instance_id}
+                  onChange={e => setWaForm(f => ({ ...f, green_api_instance_id: e.target.value }))}
+                  placeholder="es. 1101234567"
                   className="border-2"
                 />
-                <p className="text-xs text-gray-400">Trovalo su Meta for Developers → WhatsApp → API Setup</p>
+                <p className="text-xs text-gray-400">Trovalo nella dashboard di Green API</p>
               </div>
               <div className="space-y-1">
-                <Label className="font-semibold text-sm">Access Token</Label>
+                <Label className="font-semibold text-sm">API Token</Label>
                 <Input
-                  value={waForm.wa_access_token}
-                  onChange={e => setWaForm(f => ({ ...f, wa_access_token: e.target.value }))}
-                  placeholder="Token da Meta Business"
+                  value={waForm.green_api_token}
+                  onChange={e => setWaForm(f => ({ ...f, green_api_token: e.target.value }))}
+                  placeholder="Token dalla dashboard Green API"
                   type="password"
                   className="border-2"
                 />
-                <p className="text-xs text-gray-400">Token permanente o temporaneo da Meta for Developers</p>
+                <p className="text-xs text-gray-400">Visibile nella pagina della tua istanza</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -761,7 +770,7 @@ export default function SettingsPage() {
                 {savingWa ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-2" /> Salva</>}
               </Button>
               {settings?.wa_configured && (
-                <span className="text-sm text-green-600 font-semibold flex items-center gap-1">✓ API attiva — invio diretto abilitato</span>
+                <span className="text-sm text-green-600 font-semibold">✓ Attivo — invio diretto abilitato</span>
               )}
             </div>
           </CardContent>

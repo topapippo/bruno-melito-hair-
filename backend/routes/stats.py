@@ -369,8 +369,8 @@ async def get_settings(current_user: dict = Depends(get_current_user)):
             "font_display": "Cormorant Garamond", "font_body": "Poppins"
         }),
         "google_review_link": current_user.get("google_review_link", ""),
-        "wa_phone_number_id": current_user.get("wa_phone_number_id", ""),
-        "wa_configured": bool(current_user.get("wa_access_token") and current_user.get("wa_phone_number_id")),
+        "green_api_instance_id": current_user.get("green_api_instance_id", ""),
+        "wa_configured": bool(current_user.get("green_api_instance_id") and current_user.get("green_api_token")),
     }
 
 
@@ -379,8 +379,8 @@ async def update_whatsapp_api(data: dict, current_user: dict = Depends(get_curre
     await db.users.update_one(
         {"id": current_user["id"]},
         {"$set": {
-            "wa_access_token": data.get("wa_access_token", ""),
-            "wa_phone_number_id": data.get("wa_phone_number_id", ""),
+            "green_api_instance_id": data.get("green_api_instance_id", ""),
+            "green_api_token": data.get("green_api_token", ""),
         }}
     )
     return {"success": True}

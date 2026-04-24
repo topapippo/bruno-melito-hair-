@@ -446,7 +446,7 @@ async def send_confirmation_link(appointment_id: str, current_user: dict = Depen
 
 @router.post("/whatsapp/send-direct")
 async def send_whatsapp_direct(data: dict, current_user: dict = Depends(get_current_user)):
-    """Invia WhatsApp direttamente via Meta Business API se configurata, altrimenti restituisce link wa.me."""
+    """Invia WhatsApp via Green API (gratuito) se configurata, altrimenti restituisce link wa.me."""
     import re as _re
     import urllib.parse
     phone = data.get("phone", "")
@@ -454,7 +454,7 @@ async def send_whatsapp_direct(data: dict, current_user: dict = Depends(get_curr
     if not phone or not message:
         raise HTTPException(status_code=400, detail="Phone e message obbligatori")
 
-    # Normalizza numero
+    # Normalizza numero in formato internazionale (es. 393401234567)
     phone_clean = _re.sub(r'\D', '', phone)
     if phone_clean.startswith('0039'):
         phone_clean = phone_clean[4:]
@@ -462,30 +462,23 @@ async def send_whatsapp_direct(data: dict, current_user: dict = Depends(get_curr
         phone_clean = phone_clean[2:]
     if not phone_clean.startswith('39'):
         phone_clean = '39' + phone_clean
+    wa_number = phone_clean + "@c.us"  # formato Green API
 
-    wa_token = current_user.get("wa_access_token", "")
-    wa_phone_id = current_user.get("wa_phone_number_id", "")
+    instance_id = current_user.get("green_api_instance_id", "")
+    api_token = current_user.get("green_api_token", "")
 
-    if wa_token and wa_phone_id:
+    if instance_id and api_token:
         try:
             import httpx
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                resp = await client.post(
-                    f"https://graph.facebook.com/v19.0/{wa_phone_id}/messages",
-                    headers={"Authorization": f"Bearer {wa_token}", "Content-Type": "application/json"},
-                    json={
-                        "messaging_product": "whatsapp",
-                        "to": phone_clean,
-                        "type": "text",
-                        "text": {"body": message}
-                    }
-                )
-            if resp.status_code == 200:
-                return {"sent": True, "method": "api"}
+            url = f"https://api.greenapi.com/waInstance{instance_id}/sendMessage/{api_token}"
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                resp = await client.post(url, json={"chatId": wa_number, "message": message})
+            if resp.status_code == 200 and resp.json().get("idMessage"):
+                return {"sent": True, "method": "greenapi"}
         except Exception:
             pass
 
-    # Fallback: link wa.me
+    # Fallback: link wa.me (apre WhatsApp Web con messaggio precompilato)
     wa_url = f"https://wa.me/{phone_clean}?text={urllib.parse.quote(message)}"
     return {"sent": False, "method": "link", "url": wa_url}
 
