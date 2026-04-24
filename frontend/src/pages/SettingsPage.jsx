@@ -182,6 +182,8 @@ export default function SettingsPage() {
   const [blockedSlots, setBlockedSlots] = useState([]);
   const [newBlock, setNewBlock] = useState({ type: 'recurring', day_of_week: 'lunedì', date: '', start_time: '13:00', end_time: '14:00', reason: '' });
   const [savingBlock, setSavingBlock] = useState(false);
+  const [waForm, setWaForm] = useState({ wa_phone_number_id: '', wa_access_token: '' });
+  const [savingWa, setSavingWa] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -193,6 +195,7 @@ export default function SettingsPage() {
       const res = await api.get(`${API}/settings`);
       setSettings(res.data);
       if (res.data.admin_theme) setAdminTheme(res.data.admin_theme);
+      if (res.data.wa_phone_number_id) setWaForm(f => ({ ...f, wa_phone_number_id: res.data.wa_phone_number_id }));
     } catch (err) {
       console.error('Error fetching settings:', err);
       toast.error('Errore nel caricamento delle impostazioni');
@@ -203,6 +206,15 @@ export default function SettingsPage() {
 
   const applyAdminTheme = (theme) => {
     localStorage.setItem('adminTheme', JSON.stringify(theme));
+  };
+
+  const saveWaSettings = async () => {
+    setSavingWa(true);
+    try {
+      await api.put(`${API}/settings/whatsapp-api`, waForm);
+      toast.success('Impostazioni WhatsApp salvate!');
+    } catch { toast.error('Errore nel salvataggio'); }
+    finally { setSavingWa(false); }
   };
 
   const saveAdminTheme = async () => {
@@ -703,6 +715,54 @@ export default function SettingsPage() {
               }} className="text-[#7C5C4A]" data-testid="reset-admin-theme-btn">
                 <RotateCcw className="w-4 h-4 mr-2" /> Ripristina Default
               </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* WhatsApp Business API */}
+        <Card className="border-2 border-green-100">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-[#2D1B14]">
+              <Share2 className="w-5 h-5 text-green-600" />
+              WhatsApp Business API — Invio Diretto
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="p-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-800">
+              <p className="font-bold mb-1">Cos'è e come funziona</p>
+              <p>Con l'API ufficiale Meta, i messaggi WhatsApp vengono inviati direttamente dall'app senza aprire WhatsApp sul telefono. Serve un account <strong>WhatsApp Business</strong> verificato su Meta.</p>
+              <p className="mt-1 text-xs text-green-600">Se non configurata, l'app apre WhatsApp Web con il messaggio precompilato (comportamento attuale).</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label className="font-semibold text-sm">Phone Number ID</Label>
+                <Input
+                  value={waForm.wa_phone_number_id}
+                  onChange={e => setWaForm(f => ({ ...f, wa_phone_number_id: e.target.value }))}
+                  placeholder="es. 123456789012345"
+                  className="border-2"
+                />
+                <p className="text-xs text-gray-400">Trovalo su Meta for Developers → WhatsApp → API Setup</p>
+              </div>
+              <div className="space-y-1">
+                <Label className="font-semibold text-sm">Access Token</Label>
+                <Input
+                  value={waForm.wa_access_token}
+                  onChange={e => setWaForm(f => ({ ...f, wa_access_token: e.target.value }))}
+                  placeholder="Token da Meta Business"
+                  type="password"
+                  className="border-2"
+                />
+                <p className="text-xs text-gray-400">Token permanente o temporaneo da Meta for Developers</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button onClick={saveWaSettings} disabled={savingWa} className="bg-green-600 hover:bg-green-700 text-white">
+                {savingWa ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-2" /> Salva</>}
+              </Button>
+              {settings?.wa_configured && (
+                <span className="text-sm text-green-600 font-semibold flex items-center gap-1">✓ API attiva — invio diretto abilitato</span>
+              )}
             </div>
           </CardContent>
         </Card>

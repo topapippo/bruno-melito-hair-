@@ -3,7 +3,7 @@ import api, { API } from '../lib/api';
 import Layout from '../components/Layout';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ChevronLeft, ChevronRight, Plus, CalendarDays, CheckCircle, RefreshCcw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, CalendarDays, CheckCircle, RefreshCcw, MessageCircle } from 'lucide-react';
 import { format, addDays, subDays, startOfWeek, endOfWeek, addWeeks, subWeeks, startOfMonth, endOfMonth, addMonths, subMonths, eachDayOfInterval } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -429,6 +429,27 @@ export default function PlanningPage() {
     setRecurringDialogOpen(true);
   };
 
+  const handleSendWhatsApp = async (apt) => {
+    const phone = apt.client_phone || apt.client?.phone || '';
+    if (!phone) { toast.error('Numero non disponibile'); return; }
+    const services = (apt.services || []).map(s => s.name).join(', ');
+    const dateStr = format(selectedDate, 'dd/MM/yy');
+    const msg = `Ciao ${apt.client_name}! 👋 Ricordiamo il tuo appuntamento del ${dateStr} alle ${apt.time}${services ? ` per ${services}` : ''}. A presto! ✂️`;
+    try {
+      const res = await api.post(`${API}/whatsapp/send-direct`, { phone, message: msg });
+      if (res.data.sent) {
+        toast.success('Messaggio inviato!');
+      } else {
+        window.open(res.data.url, '_blank');
+        toast.success('WhatsApp aperto!');
+      }
+    } catch {
+      let p = phone.replace(/[\s\-\+]/g, '');
+      if (!p.startsWith('39')) p = '39' + p;
+      window.open(`https://wa.me/${p}?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+  };
+
   // --- Drag & Drop ---
   const handleDragStart = (e, apt) => {
     setDraggedApt(apt);
@@ -697,6 +718,7 @@ export default function PlanningPage() {
             getAppointmentStyle={getAppointmentStyle}
             openEditDialog={openEditDialog}
             openRecurringDialog={openRecurringDialog}
+            onSendWhatsApp={handleSendWhatsApp}
             dragOverSlot={dragOverSlot}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}

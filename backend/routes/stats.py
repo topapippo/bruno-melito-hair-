@@ -56,16 +56,56 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
     # Ricavo di oggi: solo da payments (checkout contanti + vendite abbonamento odierne)
     today_payments = await db.payments.find(
         {"user_id": current_user["id"], "date": today},
-        {"_id": 0, "total_paid": 1}
+        {"_id": 0, "total_paid": 1, "payment_method": 1}
     ).to_list(500)
     today_revenue = sum(p.get("total_paid", 0) for p in today_payments)
+
+    # Pagamenti sospesi non ancora incassati
+    sospeso_payments = await db.payments.find(
+        {"user_id": current_user["id"], "payment_method": "sospeso"},
+        {"_id": 0, "total_paid": 1}
+    ).to_list(1000)
+    sospeso_count = len(sospeso_payments)
+    sospeso_total = sum(p.get("total_paid", 0) for p in sospeso_payments)
+
+    # Prossimi appuntamenti nelle prossime 2 ore
+    now_utc = datetime.now(timezone.utc)
+    now_time = now_utc.strftime("%H:%M")
+    in_2h_time = (now_utc + timedelta(hours=2)).strftime("%H:%M")
+    next_2h = [
+        a for a in today_appointments
+        if a.get("status") != "cancelled" and now_time <= a.get("time", "00:00") <= in_2h_time
+    ]
+
+    # Slot liberi oggi: (ore lavoro * operatori) in slot da 15min − appuntamenti occupati
+    opening = current_user.get("opening_time", "09:00")
+    closing = current_user.get("closing_time", "19:00")
+    def _to_min(t):
+        try:
+            h, m = t.split(":")
+            return int(h) * 60 + int(m)
+        except Exception:
+            return 0
+    total_slots = max(0, (_to_min(closing) - _to_min(opening)) // 15) * max(1, total_operators)
+    occupied_slots = sum(
+        max(1, (a.get("total_duration") or sum(s.get("duration", 15) for s in a.get("services", []))) // 15)
+        for a in today_appointments if a.get("status") != "cancelled"
+    )
+    free_slots = max(0, total_slots - occupied_slots)
+
+    # Lista d'attesa: conta quante persone in attesa
+    waitlist_count = await db.waitlist.count_documents({"user_id": current_user["id"], "status": "waiting"})
+
     return {
         "today_appointments": today_appointments, "today_appointments_count": len(today_appointments),
         "today_revenue": today_revenue,
         "total_clients": total_clients, "total_operators": total_operators,
         "monthly_revenue": monthly_revenue, "monthly_appointments": len(monthly_appointments),
         "yearly_revenue": yearly_revenue, "yearly_appointments": len(yearly_appointments),
-        "upcoming_appointments": upcoming
+        "upcoming_appointments": upcoming,
+        "sospeso_count": sospeso_count, "sospeso_total": sospeso_total,
+        "next_2h": next_2h, "free_slots": free_slots,
+        "waitlist_count": waitlist_count,
     }
 
 
@@ -328,8 +368,45 @@ async def get_settings(current_user: dict = Depends(get_current_user)):
             "accent": "#FBBF24", "content_bg": "#FAF5FF", "content_text": "#12053A",
             "font_display": "Cormorant Garamond", "font_body": "Poppins"
         }),
-        "google_review_link": current_user.get("google_review_link", "")
+        "google_review_link": current_user.get("google_review_link", ""),
+        "wa_phone_number_id": current_user.get("wa_phone_number_id", ""),
+        "wa_configured": bool(current_user.get("wa_access_token") and current_user.get("wa_phone_number_id")),
     }
+
+
+@router.put("/settings/whatsapp-api")
+async def update_whatsapp_api(data: dict, current_user: dict = Depends(get_current_user)):
+    await db.users.update_one(
+        {"id": current_user["id"]},
+        {"$set": {
+            "wa_access_token": data.get("wa_access_token", ""),
+            "wa_phone_number_id": data.get("wa_phone_number_id", ""),
+        }}
+    )
+    return {"success": True}
+
+
+# ============== RICERCA GLOBALE ==============
+
+@router.get("/search")
+async def global_search(q: str = "", current_user: dict = Depends(get_current_user)):
+    if not q or len(q.strip()) < 2:
+        return {"clients": [], "appointments": []}
+    query_str = q.strip()
+    import re as _re
+    regex = {"$regex": _re.escape(query_str), "$options": "i"}
+
+    clients = await db.clients.find(
+        {"user_id": current_user["id"], "$or": [{"name": regex}, {"phone": regex}]},
+        {"_id": 0, "user_id": 0}
+    ).to_list(10)
+
+    appointments = await db.appointments.find(
+        {"user_id": current_user["id"], "client_name": regex, "status": {"$ne": "cancelled"}},
+        {"_id": 0, "user_id": 0, "client_id": 1, "client_name": 1, "date": 1, "time": 1, "services": 1, "status": 1}
+    ).sort([("date", -1)]).to_list(10)
+
+    return {"clients": clients, "appointments": appointments}
 
 
 # ============== PAYMENTS ==============

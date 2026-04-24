@@ -444,6 +444,52 @@ async def send_confirmation_link(appointment_id: str, current_user: dict = Depen
     return {"success": True, "whatsapp_url": whatsapp_url, "message": message, "client_phone": client_phone}
 
 
+@router.post("/whatsapp/send-direct")
+async def send_whatsapp_direct(data: dict, current_user: dict = Depends(get_current_user)):
+    """Invia WhatsApp direttamente via Meta Business API se configurata, altrimenti restituisce link wa.me."""
+    import re as _re
+    import urllib.parse
+    phone = data.get("phone", "")
+    message = data.get("message", "")
+    if not phone or not message:
+        raise HTTPException(status_code=400, detail="Phone e message obbligatori")
+
+    # Normalizza numero
+    phone_clean = _re.sub(r'\D', '', phone)
+    if phone_clean.startswith('0039'):
+        phone_clean = phone_clean[4:]
+    elif phone_clean.startswith('39') and len(phone_clean) > 10:
+        phone_clean = phone_clean[2:]
+    if not phone_clean.startswith('39'):
+        phone_clean = '39' + phone_clean
+
+    wa_token = current_user.get("wa_access_token", "")
+    wa_phone_id = current_user.get("wa_phone_number_id", "")
+
+    if wa_token and wa_phone_id:
+        try:
+            import httpx
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                resp = await client.post(
+                    f"https://graph.facebook.com/v19.0/{wa_phone_id}/messages",
+                    headers={"Authorization": f"Bearer {wa_token}", "Content-Type": "application/json"},
+                    json={
+                        "messaging_product": "whatsapp",
+                        "to": phone_clean,
+                        "type": "text",
+                        "text": {"body": message}
+                    }
+                )
+            if resp.status_code == 200:
+                return {"sent": True, "method": "api"}
+        except Exception:
+            pass
+
+    # Fallback: link wa.me
+    wa_url = f"https://wa.me/{phone_clean}?text={urllib.parse.quote(message)}"
+    return {"sent": False, "method": "link", "url": wa_url}
+
+
 @router.get("/reminders/thank-you-template")
 async def get_thank_you_template(current_user: dict = Depends(get_current_user)):
     """Restituisce il template di ringraziamento post-incasso."""

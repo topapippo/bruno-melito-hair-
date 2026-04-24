@@ -30,6 +30,7 @@ import WebsitePage from "./pages/WebsitePage";
 import WebsiteAdminPage from "./pages/WebsiteAdminPage";
 import ExpensesPage from "./pages/ExpensesPage";
 import PromotionsPage from "./pages/PromotionsPage";
+import WaitlistPage from "./pages/WaitlistPage";
 import LoginPage from "./pages/LoginPage";
 import ConfirmAppointmentPage from "./pages/ConfirmAppointmentPage";
 import PWAInstallBanner from "./components/PWAInstallBanner";
@@ -288,6 +289,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <PromotionsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/waitlist"
+            element={
+              <ProtectedRoute>
+                <WaitlistPage />
               </ProtectedRoute>
             }
           />

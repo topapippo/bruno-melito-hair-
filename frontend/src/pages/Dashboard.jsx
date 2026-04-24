@@ -9,7 +9,8 @@ import {
   Users, Euro, Calendar, Clock, TrendingUp, Plus, ChevronRight,
   Scissors, UserCheck, BarChart3,
   CreditCard, Gift, Bell, Download, Globe, Settings, AlertTriangle,
-  MessageCircle, X, Sparkles, Heart, Star, ArrowDownCircle, FileBarChart, Cake
+  MessageCircle, X, Sparkles, Heart, Star, ArrowDownCircle, FileBarChart, Cake,
+  ClockArrowUp, CheckCircle2, AlertCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -64,15 +65,25 @@ export default function Dashboard() {
     } catch {}
   };
 
-  const sendReminderWhatsApp = (apt) => {
+  const sendReminderWhatsApp = async (apt) => {
     let phone = String(apt.client_phone || '').replace(/[\s\-\+]/g, '');
     if (!phone) { toast.error('Numero non disponibile'); return; }
-    if (!phone.startsWith('39')) phone = '39' + phone;
     const serviceNames = (apt.services || []).map(s => s.name).join(', ');
     const dateStr = format(new Date(apt.date), 'dd/MM/yy');
     const msg = `Ciao ${apt.client_name}! 👋 Ti ricordiamo il tuo appuntamento di domani ${dateStr} alle ${apt.time} per ${serviceNames}. A domani! ✂️`;
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
-    toast.success('WhatsApp aperto!');
+    try {
+      const res = await api.post(`${API}/whatsapp/send-direct`, { phone: apt.client_phone, message: msg });
+      if (res.data.sent) {
+        toast.success('Messaggio inviato direttamente!');
+      } else {
+        window.open(res.data.url, '_blank');
+        toast.success('WhatsApp aperto!');
+      }
+    } catch {
+      if (!phone.startsWith('39')) phone = '39' + phone;
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+      toast.success('WhatsApp aperto!');
+    }
   };
 
   const fetchDashboardStats = async () => {
@@ -275,6 +286,72 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+
+        {/* ── Smart Info Row (sospesi, slot liberi, prossime 2h, waitlist) ── */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {/* Pagamenti sospesi */}
+          <button
+            onClick={() => navigate('/incassi')}
+            className={`rounded-2xl p-4 text-left shadow-sm hover:shadow-md transition-shadow border ${stats?.sospeso_count > 0 ? 'bg-red-50 border-red-200' : 'bg-white border-gray-100'}`}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <AlertCircle className={`w-4 h-4 ${stats?.sospeso_count > 0 ? 'text-red-500' : 'text-gray-300'}`} />
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Sospesi</span>
+            </div>
+            <p className={`text-2xl font-black ${stats?.sospeso_count > 0 ? 'text-red-600' : 'text-gray-300'}`}>
+              {stats?.sospeso_count > 0 ? `€${(stats.sospeso_total || 0).toFixed(0)}` : '—'}
+            </p>
+            <p className="text-xs text-gray-400 mt-0.5">{stats?.sospeso_count > 0 ? `${stats.sospeso_count} da incassare` : 'Tutto incassato'}</p>
+          </button>
+
+          {/* Slot liberi oggi */}
+          <button
+            onClick={() => navigate('/')}
+            className="rounded-2xl p-4 text-left shadow-sm hover:shadow-md transition-shadow border bg-white border-gray-100"
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <CheckCircle2 className={`w-4 h-4 ${(stats?.free_slots || 0) > 0 ? 'text-green-500' : 'text-gray-300'}`} />
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Slot Liberi</span>
+            </div>
+            <p className={`text-2xl font-black ${(stats?.free_slots || 0) > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+              {stats?.free_slots ?? '—'}
+            </p>
+            <p className="text-xs text-gray-400 mt-0.5">slot da 15 min disponibili</p>
+          </button>
+
+          {/* Prossime 2 ore */}
+          <button
+            onClick={() => navigate('/')}
+            className={`rounded-2xl p-4 text-left shadow-sm hover:shadow-md transition-shadow border ${stats?.next_2h?.length > 0 ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-100'}`}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <Clock className={`w-4 h-4 ${stats?.next_2h?.length > 0 ? 'text-blue-500' : 'text-gray-300'}`} />
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Prossime 2h</span>
+            </div>
+            <p className={`text-2xl font-black ${stats?.next_2h?.length > 0 ? 'text-blue-600' : 'text-gray-300'}`}>
+              {stats?.next_2h?.length > 0 ? stats.next_2h.length : '—'}
+            </p>
+            {stats?.next_2h?.length > 0 && (
+              <p className="text-xs text-blue-400 mt-0.5 truncate">{stats.next_2h.map(a => `${a.time} ${a.client_name}`).join(' · ')}</p>
+            )}
+            {!stats?.next_2h?.length && <p className="text-xs text-gray-400 mt-0.5">nessun appuntamento</p>}
+          </button>
+
+          {/* Lista d'attesa */}
+          <button
+            onClick={() => navigate('/waitlist')}
+            className={`rounded-2xl p-4 text-left shadow-sm hover:shadow-md transition-shadow border ${stats?.waitlist_count > 0 ? 'bg-amber-50 border-amber-200' : 'bg-white border-gray-100'}`}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <ClockArrowUp className={`w-4 h-4 ${stats?.waitlist_count > 0 ? 'text-amber-500' : 'text-gray-300'}`} />
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">In Attesa</span>
+            </div>
+            <p className={`text-2xl font-black ${stats?.waitlist_count > 0 ? 'text-amber-600' : 'text-gray-300'}`}>
+              {stats?.waitlist_count > 0 ? stats.waitlist_count : '—'}
+            </p>
+            <p className="text-xs text-gray-400 mt-0.5">{stats?.waitlist_count > 0 ? 'da contattare' : 'lista vuota'}</p>
+          </button>
+        </div>
 
         {/* ── Stats Row ──────────────────────────────────────────────────── */}
         <div className="flex items-center justify-between gap-2 mb-2">

@@ -1,5 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { Clock, Repeat } from 'lucide-react';
+import { Clock, Repeat, MessageCircle } from 'lucide-react';
 import { addDays, subDays } from 'date-fns';
 import { getAppointmentColor, getServiceColors, buildServiceLookups } from '../../lib/categories';
 
@@ -21,6 +21,7 @@ export default function DayView({
   getAppointmentStyle,
   openEditDialog,
   openRecurringDialog,
+  onSendWhatsApp,
   dragOverSlot,
   onDragStart,
   onDragEnd,
@@ -213,6 +214,16 @@ export default function DayView({
                             {apt.confirmation_status === 'confirmed' && <span title="Confermato" className="text-green-400 text-[10px]">✓</span>}
                             {apt.confirmation_status === 'cancelled_by_client' && <span title="Disdetto" className="text-red-400 text-[10px]">✕</span>}
                             {apt.confirmation_status === 'pending' && <span title="In attesa" className="text-yellow-300 text-[10px]">⏳</span>}
+                            {apt.client_phone && onSendWhatsApp && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); onSendWhatsApp(apt); }}
+                                className="p-0.5 rounded hover:bg-green-500/60"
+                                title="Invia WhatsApp"
+                                data-testid={`wa-btn-${apt.id}`}
+                              >
+                                <MessageCircle className="w-3 h-3 text-green-300" />
+                              </button>
+                            )}
                             <button onClick={(e) => { e.stopPropagation(); openRecurringDialog(apt); }} className="p-0.5 rounded hover:bg-white/20" title="Ripeti" data-testid={`repeat-btn-${apt.id}`}>
                               <Repeat className="w-3 h-3" />
                             </button>

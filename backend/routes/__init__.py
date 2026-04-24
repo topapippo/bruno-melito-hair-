@@ -14,6 +14,7 @@ from routes.public import router as public_router
 from routes.push import router as push_router
 from routes.blocked_slots import router as blocked_slots_router
 from routes.backup import router as backup_router
+from routes.waitlist import router as waitlist_router
 
 all_routers = [
     auth_router,
@@ -32,4 +33,5 @@ all_routers = [
     push_router,
     blocked_slots_router,
     backup_router,
+    waitlist_router,
 ]
