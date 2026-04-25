@@ -10,9 +10,10 @@ router = APIRouter()
 
 
 class BlockedSlotCreate(BaseModel):
-    type: str  # "one-time" or "recurring"
-    day_of_week: Optional[str] = None  # "lunedì", "martedì", etc. (for recurring)
+    type: str  # "one-time", "recurring", "daily", "monthly"
+    day_of_week: Optional[str] = None  # "lunedì", ... (for recurring)
     date: Optional[str] = None  # "2026-04-01" (for one-time)
+    day_of_month: Optional[int] = None  # 1-31 (for monthly)
     start_time: str  # "13:00"
     end_time: str  # "14:00"
     reason: Optional[str] = ""
@@ -32,12 +33,15 @@ async def create_blocked_slot(data: BlockedSlotCreate, current_user: dict = Depe
         raise HTTPException(status_code=400, detail="Giorno della settimana richiesto per blocchi ricorrenti")
     if data.type == "one-time" and not data.date:
         raise HTTPException(status_code=400, detail="Data richiesta per blocchi singoli")
+    if data.type == "monthly" and not data.day_of_month:
+        raise HTTPException(status_code=400, detail="Giorno del mese richiesto per blocchi mensili")
     slot = {
         "id": str(uuid.uuid4()),
         "user_id": current_user["id"],
         "type": data.type,
         "day_of_week": data.day_of_week,
         "date": data.date,
+        "day_of_month": data.day_of_month,
         "start_time": data.start_time,
         "end_time": data.end_time,
         "reason": data.reason or "",
@@ -75,16 +79,25 @@ async def get_public_blocked_for_date(date: str):
     except ValueError:
         return []
 
-    # Get one-time blocks for this date + recurring blocks for this day of week
+    # one-time blocks for this date
     one_time = await db.blocked_slots.find(
         {"user_id": user_id, "type": "one-time", "date": date}, {"_id": 0}
     ).to_list(100)
+    # recurring weekly blocks for this day of week
     recurring = await db.blocked_slots.find(
         {"user_id": user_id, "type": "recurring", "day_of_week": day_of_week}, {"_id": 0}
     ).to_list(100)
+    # daily blocks (apply every day)
+    daily = await db.blocked_slots.find(
+        {"user_id": user_id, "type": "daily"}, {"_id": 0}
+    ).to_list(100)
+    # monthly blocks for this day-of-month
+    monthly = await db.blocked_slots.find(
+        {"user_id": user_id, "type": "monthly", "day_of_month": d.day}, {"_id": 0}
+    ).to_list(100)
 
     blocked_times = []
-    for slot in one_time + recurring:
+    for slot in one_time + recurring + daily + monthly:
         try:
             sh, sm = map(int, slot["start_time"].split(":"))
             eh, em = map(int, slot["end_time"].split(":"))

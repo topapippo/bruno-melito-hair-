@@ -11,7 +11,9 @@ import { toast } from 'sonner';
 
 
 export default function BlockSlotDialog({ open, onClose, initialTime, selectedDate, onSuccess }) {
-  const [blockForm, setBlockForm] = useState({ start_time: '', end_time: '', reason: '', type: 'one-time', date: '' });
+  const [blockForm, setBlockForm] = useState({
+    start_time: '', end_time: '', reason: '', type: 'one-time', date: '', day_of_month: 1
+  });
 
   useEffect(() => {
     if (open && initialTime) {
@@ -23,10 +25,18 @@ export default function BlockSlotDialog({ open, onClose, initialTime, selectedDa
         end_time: endTime,
         reason: '',
         type: 'one-time',
-        date: format(selectedDate, 'yyyy-MM-dd')
+        date: format(selectedDate, 'yyyy-MM-dd'),
+        day_of_month: selectedDate.getDate(),
       });
     }
   }, [open, initialTime, selectedDate]);
+
+  const TYPE_LABELS = {
+    'one-time': `Solo il ${blockForm.date}`,
+    'recurring': 'Ogni settimana (stesso giorno)',
+    'daily': 'Ogni giorno',
+    'monthly': 'Ogni mese (stesso giorno)',
+  };
 
   const handleBlock = async () => {
     const data = { ...blockForm };
@@ -36,7 +46,7 @@ export default function BlockSlotDialog({ open, onClose, initialTime, selectedDa
     }
     try {
       await api.post(`${API}/blocked-slots`, data);
-      toast.success(`Orario ${blockForm.start_time}-${blockForm.end_time} bloccato!`);
+      toast.success(`Orario ${blockForm.start_time}–${blockForm.end_time} bloccato (${TYPE_LABELS[blockForm.type]})`);
       onClose();
       onSuccess?.();
     } catch (err) {
@@ -50,7 +60,7 @@ export default function BlockSlotDialog({ open, onClose, initialTime, selectedDa
         <DialogHeader>
           <DialogTitle className="font-display text-xl text-[#2D1B14]">Blocca Orario</DialogTitle>
           <DialogDescription className="text-sm text-[#7C5C4A]">
-            Blocca questo orario per impedire le prenotazioni
+            Blocca questa fascia oraria per impedire le prenotazioni
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-2">
@@ -67,16 +77,33 @@ export default function BlockSlotDialog({ open, onClose, initialTime, selectedDa
             </div>
           </div>
           <div>
-            <Label className="text-xs font-semibold">Tipo</Label>
+            <Label className="text-xs font-semibold">Tipo di blocco</Label>
             <select value={blockForm.type} onChange={e => setBlockForm({ ...blockForm, type: e.target.value })}
               className="w-full p-2 border rounded-lg text-sm" data-testid="block-dialog-type">
-              <option value="one-time">Solo {blockForm.date}</option>
-              <option value="recurring">Ogni settimana (stesso giorno)</option>
+              <option value="one-time">Solo il {blockForm.date}</option>
+              <option value="recurring">Ricorrente — ogni settimana (stesso giorno)</option>
+              <option value="daily">Ricorrente — ogni giorno</option>
+              <option value="monthly">Ricorrente — ogni mese (stesso giorno)</option>
             </select>
           </div>
+
+          {blockForm.type === 'monthly' && (
+            <div>
+              <Label className="text-xs font-semibold">Giorno del mese (1–31)</Label>
+              <Input
+                type="number" min={1} max={31}
+                value={blockForm.day_of_month}
+                onChange={e => setBlockForm({ ...blockForm, day_of_month: parseInt(e.target.value) || 1 })}
+              />
+              <p className="text-xs text-[#7C5C4A] mt-1">
+                Si ripete ogni mese il giorno {blockForm.day_of_month}
+              </p>
+            </div>
+          )}
+
           <div>
             <Label className="text-xs font-semibold">Motivo (opzionale)</Label>
-            <Input placeholder="es. Pausa pranzo, Riunione..." value={blockForm.reason}
+            <Input placeholder="es. Pausa pranzo, Riunione, Ferie..." value={blockForm.reason}
               onChange={e => setBlockForm({ ...blockForm, reason: e.target.value })} data-testid="block-dialog-reason" />
           </div>
         </div>
