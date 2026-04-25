@@ -38,14 +38,60 @@ export default function BookingSuccess({
     finally { setAddingUpsell(null); }
   };
 
+  const CONFETTI_COLORS = ['#E8477C','#FBBF24','#34D399','#60A5FA','#A78BFA','#F87171','#FCD34D'];
+  const confetti = Array.from({length: 22}, (_, i) => ({
+    id: i,
+    color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+    left: `${(i * 4.5) % 100}%`,
+    delay: `${(i * 0.13)}s`,
+    size: `${8 + (i % 5) * 3}px`,
+    duration: `${1.8 + (i % 4) * 0.3}s`,
+    shape: i % 3 === 0 ? 'circle' : i % 3 === 1 ? 'square' : 'rect',
+  }));
+
   return (
-    <div className="min-h-screen bg-[#1C1008] flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #1C1008 0%, #2A100C 45%, #1A0814 100%)' }}>
+      <style>{`
+        @keyframes confettiFall {
+          0%   { transform: translateY(-60px) rotate(0deg) scale(1); opacity: 1; }
+          80%  { opacity: 1; }
+          100% { transform: translateY(110vh) rotate(720deg) scale(0.8); opacity: 0; }
+        }
+        @keyframes successPop {
+          0%  { transform: scale(0); opacity: 0; }
+          60% { transform: scale(1.2); }
+          100%{ transform: scale(1); opacity: 1; }
+        }
+        .confetti-piece { position: fixed; top: -20px; animation: confettiFall linear forwards; pointer-events: none; z-index: 0; }
+        .success-pop { animation: successPop 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+      `}</style>
+
+      {/* Coriandoli */}
+      {confetti.map(c => (
+        <div key={c.id} className="confetti-piece"
+          style={{
+            left: c.left,
+            backgroundColor: c.color,
+            width: c.shape === 'rect' ? `${parseInt(c.size) * 2}px` : c.size,
+            height: c.size,
+            borderRadius: c.shape === 'circle' ? '50%' : c.shape === 'square' ? '2px' : '2px',
+            animationDuration: c.duration,
+            animationDelay: c.delay,
+          }}
+        />
+      ))}
+
+      <div className="max-w-md w-full relative z-10">
         <div className="text-center">
-          <CheckCircle className="w-20 h-20 mx-auto text-emerald-400 mb-6" />
-          <h1 className="text-3xl font-black text-white mb-3">Prenotazione Confermata!</h1>
+          <div className="success-pop inline-block mb-6">
+            <div className="w-24 h-24 rounded-full mx-auto flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #10B981, #059669)', boxShadow: '0 0 40px rgba(16,185,129,0.5)' }}>
+              <CheckCircle className="w-14 h-14 text-white" strokeWidth={2.5} />
+            </div>
+          </div>
+          <h1 className="text-4xl font-black text-white mb-2">🎉 Fatto!</h1>
+          <p className="text-emerald-400 font-black text-xl mb-2">Prenotazione Confermata!</p>
           <p className="text-[#D4B89A] mb-2">Ti aspettiamo il <span className="text-white font-bold">{dateFormatted}</span> alle <span className="text-white font-bold">{formData.time}</span></p>
-          <p className="text-sm text-[#8A6A4A] mb-6">Riceverai un promemoria prima dell'appuntamento.</p>
+          <p className="text-sm text-[#8A6A4A] mb-6">Riceverai un promemoria prima dell'appuntamento. 💌</p>
         </div>
 
         {/* Upselling suggestions */}

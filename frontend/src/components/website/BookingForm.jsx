@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import api, { API } from '../../lib/api';
 import { fmtDate } from '../../lib/dateUtils';
 import { Button } from '@/components/ui/button';
@@ -115,8 +115,14 @@ export default function BookingForm({
   const toggleCat = (key) => setOpenCats(prev => ({ ...prev, [key]: !prev[key] }));
 
   return (
-    <div className="min-h-screen bg-[#1C1008]">
-      <div className="bg-[#2A1A0E] border-b border-[#3A2A1A] py-4 px-4 sticky top-0 z-50">
+    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #1C1008 0%, #2A100C 45%, #1A0814 100%)' }}>
+      <style>{`
+        @keyframes stepIn { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes popIn { 0% { transform: scale(0.7); opacity: 0; } 70% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+        .step-in { animation: stepIn 0.28s ease forwards; }
+        .pop-in { animation: popIn 0.3s ease forwards; }
+      `}</style>
+      <div className="border-b border-white/5 py-4 px-4 sticky top-0 z-50" style={{ background: 'rgba(26,8,20,0.85)', backdropFilter: 'blur(12px)' }}>
         <div className="max-w-lg mx-auto flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={onBack} className="text-[#B89A7A] hover:text-white hover:bg-white/10 shrink-0" data-testid="website-booking-back-btn">
             <ArrowLeft className="w-5 h-5" />
@@ -125,27 +131,43 @@ export default function BookingForm({
             <img src="/logo.png?v=4" alt={config.salon_name} className="w-9 h-9 rounded-lg" />
             <div>
               <h1 className="text-white text-sm font-black leading-tight">{config.salon_name || 'BRUNO MELITO HAIR'}</h1>
-              <p className="text-[#8A6A4A] text-xs">Prenota il tuo appuntamento</p>
+              <p className="text-[#C8617A] text-xs font-semibold">✨ Prenota il tuo appuntamento</p>
             </div>
           </div>
         </div>
       </div>
       <div className="max-w-lg mx-auto px-4 py-6">
-        <div className="flex items-center justify-center gap-2 mb-6">
-          {[1, 2, 3].map(s => (
-            <div key={s} className="flex items-center gap-2">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${step >= s ? 'bg-gradient-to-r from-[#C8617A] to-[#A0404F] text-white' : 'bg-[#3A2A1A] text-[#8A6A4A]'}`}>
-                {step > s ? <CheckCircle className="w-4 h-4" /> : s}
+        {/* Progress indicator */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-3">
+            {[{n:1,label:'Servizi',emoji:'✂️'},{n:2,label:'Quando',emoji:'📅'},{n:3,label:'Dati',emoji:'👤'}].map((s) => (
+              <div key={s.n} className="flex flex-col items-center flex-1">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-base font-black mb-1 transition-all duration-300
+                  ${step > s.n
+                    ? 'bg-emerald-500 text-white scale-95'
+                    : step === s.n
+                      ? 'text-white ring-4 ring-[#C8617A]/40 scale-110'
+                      : 'bg-[#3A2A1A] text-[#6A5A3A]'}
+                `} style={step === s.n ? { background: 'linear-gradient(135deg,#E8477C,#A0404F)' } : {}}>
+                  {step > s.n ? '✓' : s.emoji}
+                </div>
+                <span className={`text-[10px] font-bold ${step >= s.n ? 'text-white' : 'text-[#5A4A3A]'}`}>{s.label}</span>
               </div>
-              {s < 3 && <div className={`w-12 h-0.5 ${step > s ? 'bg-white' : 'bg-[#3A2A1A]'}`} />}
-            </div>
-          ))}
+            ))}
+          </div>
+          <div className="relative h-1.5 bg-[#3A2A1A] rounded-full mx-5">
+            <div className="absolute left-0 top-0 h-full rounded-full transition-all duration-500"
+              style={{ width: `${(step - 1) * 50}%`, background: 'linear-gradient(90deg, #E8477C, #A0404F)' }} />
+          </div>
         </div>
 
         {/* STEP 1 — Servizi */}
         {step === 1 && (
-          <div className="flex flex-col" style={{ maxHeight: '70vh' }}>
-            <h2 className="text-xl font-black text-white mb-3">Scegli i Servizi</h2>
+          <div className="flex flex-col step-in" style={{ maxHeight: '70vh' }}>
+            <div className="mb-3">
+              <h2 className="text-2xl font-black text-white">✂️ Scegli il tuo look</h2>
+              <p className="text-sm text-[#C8617A] mt-0.5 font-semibold">Cosa vuoi fare oggi?</p>
+            </div>
             <div className="flex-1 overflow-y-auto space-y-3 pr-1 pb-2">
               {(() => {
                 const { groups: byCat, orderedKeys: cats } = groupServicesByCategory(bookingServices);
@@ -171,11 +193,17 @@ export default function BookingForm({
                             <div className="mt-1 space-y-2 pb-2 animate-in fade-in duration-200">
                               {byCat[cat].map(service => (
                                 <div key={service.id} onClick={() => toggleService(service.id)}
-                                  className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${formData.service_ids.includes(service.id) ? 'border-[#D4A847] bg-[#D4A847]/15' : 'border-[#3A2A1A] bg-[#2A1A0E] hover:border-[#6A4A2A]'}`}
+                                  className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${formData.service_ids.includes(service.id) ? 'border-[#E8477C] bg-gradient-to-r from-[#E8477C]/20 to-[#A0404F]/10 shadow-[0_0_16px_rgba(232,71,124,0.25)]' : 'border-[#3A2A1A] bg-[#2A1A0E] hover:border-[#6A4A2A] hover:bg-[#321A0E]'}`}
                                   data-testid={`website-service-${service.id}`}>
                                   <div className="flex justify-between items-center">
-                                    <div><p className="font-bold text-white">{service.name}</p><p className="text-sm text-[#8A6A4A]">{service.duration} min</p></div>
-                                    <p className="font-black text-white">{'\u20AC'}{service.price}</p>
+                                    <div>
+                                      <p className="font-bold text-white flex items-center gap-1.5">
+                                        {formData.service_ids.includes(service.id) && <span className="pop-in inline-block text-emerald-400">✓</span>}
+                                        {service.name}
+                                      </p>
+                                      <p className="text-sm text-[#8A6A4A]">{service.duration} min</p>
+                                    </div>
+                                    <p className={`font-black text-lg ${formData.service_ids.includes(service.id) ? 'text-[#E8477C]' : 'text-white'}`}>{'\u20AC'}{service.price}</p>
                                   </div>
                                 </div>
                               ))}
@@ -226,7 +254,7 @@ export default function BookingForm({
                                         </p>
                                       </div>
                                       <div className="text-right">
-                                        <p className="font-black text-white">{'\u20AC'}{tmpl.total_value}</p>
+                                        <p className={}>{'\u20AC'}{tmpl.total_value}</p>
                                         {isSelected && <span className="text-xs font-bold text-[#6366F1]">SELEZIONATO</span>}
                                       </div>
                                     </div>
@@ -318,8 +346,11 @@ export default function BookingForm({
 
         {/* STEP 2 — Data e Ora */}
         {step === 2 && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-black text-white">Data e Ora</h2>
+          <div className="space-y-4 step-in">
+            <div>
+              <h2 className="text-2xl font-black text-white">📅 Quando ci vediamo?</h2>
+              <p className="text-sm text-[#C8617A] mt-0.5 font-semibold">Scegli il giorno e l'orario</p>
+            </div>
 
             {/* Calendario visivo */}
             <div className="bg-[#2A1A0E] rounded-2xl border border-[#3A2A1A] overflow-hidden" data-testid="booking-date-input">
@@ -484,8 +515,11 @@ export default function BookingForm({
 
         {/* STEP 3 — Dati personali + Riepilogo */}
         {step === 3 && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-black text-white">I Tuoi Dati</h2>
+          <div className="space-y-4 step-in">
+            <div>
+              <h2 className="text-2xl font-black text-white">🎉 Quasi fatto!</h2>
+              <p className="text-sm text-[#C8617A] mt-0.5 font-semibold">Inserisci i tuoi dati per confermare</p>
+            </div>
             <div className="space-y-3">
               <div><label className="text-sm text-[#B89A7A] font-semibold mb-1 block">Nome e Cognome *</label>
                 <Input value={formData.client_name} onChange={(e) => setFormData({...formData, client_name: e.target.value})} placeholder="Es. Maria Rossi" className="bg-[#2A1A0E] border-[#3A2A1A] text-white placeholder:text-[#7A5A3A]" data-testid="website-booking-name" /></div>
