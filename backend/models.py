@@ -371,3 +371,5 @@ class CheckoutData(BaseModel):
     loyalty_points_used: Optional[int] = 0
     promo_id: Optional[str] = None
     promo_free_service: Optional[str] = None
+    sell_card_on_checkout: bool = False
+    sell_card_payment_method: str = 'cash'

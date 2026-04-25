@@ -92,6 +92,8 @@ export default function EditAppointmentDialog({
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [localAppointment, setLocalAppointment] = useState(null);
   const [saveAndCheckout, setSaveAndCheckout] = useState(false);
+  const [sellCardOnCheckout, setSellCardOnCheckout] = useState(false);
+  const [sellCardPaymentMethod, setSellCardPaymentMethod] = useState('cash');
 
   const sortedServices = groupServicesByCategory(services);
 
@@ -300,6 +302,8 @@ export default function EditAppointmentDialog({
     setSelectedPromo(null);
     setCustomPrices({});
     setEligiblePromos([]);
+    setSellCardOnCheckout(false);
+    setSellCardPaymentMethod('cash');
   };
 
   const openCheckoutMode = (apt = null) => {
@@ -358,7 +362,9 @@ export default function EditAppointmentDialog({
         card_id: paymentMethod === 'prepaid' ? selectedCardId : null,
         loyalty_points_used: loyaltyPointsUsed,
         promo_id: selectedPromo?.id || null,
-        promo_free_service: selectedPromo?.free_service_name || null
+        promo_free_service: selectedPromo?.free_service_name || null,
+        sell_card_on_checkout: paymentMethod === 'prepaid' && sellCardOnCheckout,
+        sell_card_payment_method: sellCardPaymentMethod,
       });
       const pointsEarned = res.data.loyalty_points_earned || 0;
       const msg = pointsEarned > 0
@@ -397,11 +403,14 @@ export default function EditAppointmentDialog({
       } catch {}
 
       // Mostra il dialog di ringraziamento (nel parent)
+      const cardSaleCard = (paymentMethod === 'prepaid' && sellCardOnCheckout)
+        ? clientCards.find(c => c.id === selectedCardId) : null;
+      const displayAmount = cardSaleCard ? (cardSaleCard.total_value || 0) : finalAmount;
       if (onThankYou) {
         onThankYou({
           clientName,
           clientPhone,
-          amount: finalAmount,
+          amount: displayAmount,
           salonName,
           reviewLink,
           pointsEarned,
@@ -923,6 +932,42 @@ export default function EditAppointmentDialog({
                       )}
                     </div>
                   )}
+                  {paymentMethod === 'prepaid' && selectedCardId && (() => {
+                    const selCard = clientCards.find(c => c.id === selectedCardId);
+                    if (!selCard) return null;
+                    return (
+                      <div className="mt-3 p-3 rounded-xl border-2 border-blue-200 bg-blue-50">
+                        <button type="button"
+                          onClick={() => setSellCardOnCheckout(prev => !prev)}
+                          className="w-full flex items-center justify-between">
+                          <span className="text-sm font-bold text-blue-800 flex items-center gap-2">
+                            <CreditCard className="w-4 h-4" /> Incassa prezzo card ({'€'}{selCard.total_value?.toFixed(2)})
+                          </span>
+                          <div className={`w-10 h-5 rounded-full transition-colors flex items-center px-0.5 ${sellCardOnCheckout ? 'bg-blue-500' : 'bg-gray-300'}`}>
+                            <div className={`w-4 h-4 rounded-full bg-white shadow transition-transform ${sellCardOnCheckout ? 'translate-x-5' : ''}`} />
+                          </div>
+                        </button>
+                        <p className="text-xs text-blue-600 mt-1">Attiva se il cliente acquista la card in questa seduta</p>
+                        {sellCardOnCheckout && (
+                          <div className="mt-2 space-y-2">
+                            <p className="text-xs font-semibold text-blue-700">Come incassi i {'€'}{selCard.total_value?.toFixed(2)}?</p>
+                            <div className="flex gap-2">
+                              <Button type="button" size="sm" variant={sellCardPaymentMethod === 'cash' ? 'default' : 'outline'}
+                                className={sellCardPaymentMethod === 'cash' ? 'bg-green-600 text-white' : 'border-2'}
+                                onClick={() => setSellCardPaymentMethod('cash')}>
+                                <Banknote className="w-3.5 h-3.5 mr-1" /> Contanti
+                              </Button>
+                              <Button type="button" size="sm" variant={sellCardPaymentMethod === 'pos' ? 'default' : 'outline'}
+                                className={sellCardPaymentMethod === 'pos' ? 'bg-blue-600 text-white' : 'border-2'}
+                                onClick={() => setSellCardPaymentMethod('pos')}>
+                                <Smartphone className="w-3.5 h-3.5 mr-1" /> POS
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Loyalty Points */}
@@ -1015,6 +1060,15 @@ export default function EditAppointmentDialog({
                   <div className="flex justify-between text-sm"><span className="font-semibold">Subtotale:</span><span>{'€'}{calculateTotal().toFixed(2)}</span></div>
                   {selectedPromo && <div className="flex justify-between text-sm text-pink-600"><span className="font-semibold flex items-center gap-1"><Gift className="w-3.5 h-3.5" /> Omaggio:</span><span>{selectedPromo.free_service_name}</span></div>}
                   {discountType !== 'none' && calculateDiscount() > 0 && <div className="flex justify-between text-sm text-red-600"><span className="font-semibold">Sconto:</span><span>-{'€'}{calculateDiscount().toFixed(2)}</span></div>}
+                  {paymentMethod === 'prepaid' && sellCardOnCheckout && selectedCardId && (() => {
+                    const selCard = clientCards.find(c => c.id === selectedCardId);
+                    return selCard ? (
+                      <div className="flex justify-between text-sm text-blue-700 font-bold pt-1 border-t border-blue-100">
+                        <span className="flex items-center gap-1"><CreditCard className="w-3.5 h-3.5" /> Vendita card ({sellCardPaymentMethod === 'cash' ? 'Contanti' : 'POS'}):</span>
+                        <span>{'€'}{selCard.total_value?.toFixed(2)}</span>
+                      </div>
+                    ) : null;
+                  })()}
                   <div className="flex justify-between text-xl font-black pt-2 border-t border-green-200"><span>TOTALE:</span><span className="text-green-600">{'€'}{calculateFinalAmount().toFixed(2)}</span></div>
                   {calculateFinalAmount() >= 20 && !selectedCardId && !selectedPromo && (
                     <div className="flex items-center gap-1.5 text-sm text-amber-600 pt-1" data-testid="loyalty-points-preview">

@@ -402,6 +402,28 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, current_
 
     await db.payments.insert_one(payment_doc)
 
+    # Vendita card in cassa: registra il pagamento separato per il prezzo della card
+    if data.sell_card_on_checkout and card and data.payment_method == "prepaid":
+        card_sale_doc = {
+            "id": str(uuid.uuid4()),
+            "user_id": current_user["id"],
+            "appointment_id": appointment_id,
+            "client_id": appointment["client_id"],
+            "client_name": appointment["client_name"],
+            "services": [],
+            "original_amount": card.get("total_value", 0),
+            "discount_type": "none",
+            "discount_value": 0,
+            "total_paid": card.get("total_value", 0),
+            "payment_method": data.sell_card_payment_method,
+            "card_id": card["id"],
+            "card_name": card["name"],
+            "card_sale": True,
+            "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.payments.insert_one(card_sale_doc)
+
     await db.appointments.update_one(
         {"id": appointment_id},
         {"$set": {"status": "completed", "paid": True, "payment_id": payment_id,
