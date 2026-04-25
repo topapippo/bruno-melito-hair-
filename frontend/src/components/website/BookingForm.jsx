@@ -254,7 +254,7 @@ export default function BookingForm({
                                         </p>
                                       </div>
                                       <div className="text-right">
-                                        <p className={}>{'\u20AC'}{tmpl.total_value}</p>
+                                        <p className="font-black text-white">{'\u20AC'}{tmpl.total_value}</p>
                                         {isSelected && <span className="text-xs font-bold text-[#6366F1]">SELEZIONATO</span>}
                                       </div>
                                     </div>
