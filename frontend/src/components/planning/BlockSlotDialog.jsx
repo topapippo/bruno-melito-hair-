@@ -12,7 +12,8 @@ import { toast } from 'sonner';
 
 export default function BlockSlotDialog({ open, onClose, initialTime, selectedDate, onSuccess }) {
   const [blockForm, setBlockForm] = useState({
-    start_time: '', end_time: '', reason: '', type: 'one-time', date: '', day_of_month: 1
+    start_time: '', end_time: '', reason: '', type: 'one-time',
+    date: '', day_of_month: 1, month_of_year: 1,
   });
 
   useEffect(() => {
@@ -27,15 +28,20 @@ export default function BlockSlotDialog({ open, onClose, initialTime, selectedDa
         type: 'one-time',
         date: format(selectedDate, 'yyyy-MM-dd'),
         day_of_month: selectedDate.getDate(),
+        month_of_year: selectedDate.getMonth() + 1,
       });
     }
   }, [open, initialTime, selectedDate]);
 
-  const TYPE_LABELS = {
-    'one-time': `Solo il ${blockForm.date}`,
-    'recurring': 'Ogni settimana (stesso giorno)',
-    'daily': 'Ogni giorno',
-    'monthly': 'Ogni mese (stesso giorno)',
+  const MONTH_NAMES = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+
+  const typeLabel = () => {
+    if (blockForm.type === 'one-time') return `Solo il ${blockForm.date}`;
+    if (blockForm.type === 'recurring') return 'ogni settimana';
+    if (blockForm.type === 'daily') return 'ogni giorno';
+    if (blockForm.type === 'monthly') return `ogni mese il giorno ${blockForm.day_of_month}`;
+    if (blockForm.type === 'yearly') return `ogni anno il ${blockForm.day_of_month} ${MONTH_NAMES[blockForm.month_of_year - 1]}`;
+    return '';
   };
 
   const handleBlock = async () => {
@@ -46,7 +52,7 @@ export default function BlockSlotDialog({ open, onClose, initialTime, selectedDa
     }
     try {
       await api.post(`${API}/blocked-slots`, data);
-      toast.success(`Orario ${blockForm.start_time}–${blockForm.end_time} bloccato (${TYPE_LABELS[blockForm.type]})`);
+      toast.success(`Orario ${blockForm.start_time}–${blockForm.end_time} bloccato (${typeLabel()})`);
       onClose();
       onSuccess?.();
     } catch (err) {
@@ -80,25 +86,44 @@ export default function BlockSlotDialog({ open, onClose, initialTime, selectedDa
             <Label className="text-xs font-semibold">Tipo di blocco</Label>
             <select value={blockForm.type} onChange={e => setBlockForm({ ...blockForm, type: e.target.value })}
               className="w-full p-2 border rounded-lg text-sm" data-testid="block-dialog-type">
-              <option value="one-time">Solo il {blockForm.date}</option>
+              <option value="one-time">Singola data — solo il {blockForm.date}</option>
               <option value="recurring">Ricorrente — ogni settimana (stesso giorno)</option>
               <option value="daily">Ricorrente — ogni giorno</option>
-              <option value="monthly">Ricorrente — ogni mese (stesso giorno)</option>
+              <option value="monthly">Ricorrente — ogni mese (stesso giorno del mese)</option>
+              <option value="yearly">Ricorrente — ogni anno (stesso giorno e mese)</option>
             </select>
           </div>
 
-          {blockForm.type === 'monthly' && (
-            <div>
-              <Label className="text-xs font-semibold">Giorno del mese (1–31)</Label>
-              <Input
-                type="number" min={1} max={31}
-                value={blockForm.day_of_month}
-                onChange={e => setBlockForm({ ...blockForm, day_of_month: parseInt(e.target.value) || 1 })}
-              />
-              <p className="text-xs text-[#7C5C4A] mt-1">
-                Si ripete ogni mese il giorno {blockForm.day_of_month}
-              </p>
+          {(blockForm.type === 'monthly' || blockForm.type === 'yearly') && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs font-semibold">Giorno del mese</Label>
+                <Input
+                  type="number" min={1} max={31}
+                  value={blockForm.day_of_month}
+                  onChange={e => setBlockForm({ ...blockForm, day_of_month: parseInt(e.target.value) || 1 })}
+                />
+              </div>
+              {blockForm.type === 'yearly' && (
+                <div>
+                  <Label className="text-xs font-semibold">Mese</Label>
+                  <select
+                    value={blockForm.month_of_year}
+                    onChange={e => setBlockForm({ ...blockForm, month_of_year: parseInt(e.target.value) })}
+                    className="w-full p-2 border rounded-lg text-sm"
+                  >
+                    {MONTH_NAMES.map((m, i) => (
+                      <option key={i + 1} value={i + 1}>{m}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
+          )}
+          {(blockForm.type === 'monthly' || blockForm.type === 'yearly') && (
+            <p className="text-xs text-[#7C5C4A] -mt-2">
+              Si ripete {typeLabel()}
+            </p>
           )}
 
           <div>

@@ -10,10 +10,11 @@ router = APIRouter()
 
 
 class BlockedSlotCreate(BaseModel):
-    type: str  # "one-time", "recurring", "daily", "monthly"
+    type: str  # "one-time", "recurring", "daily", "monthly", "yearly"
     day_of_week: Optional[str] = None  # "lunedì", ... (for recurring)
     date: Optional[str] = None  # "2026-04-01" (for one-time)
-    day_of_month: Optional[int] = None  # 1-31 (for monthly)
+    day_of_month: Optional[int] = None  # 1-31 (for monthly/yearly)
+    month_of_year: Optional[int] = None  # 1-12 (for yearly)
     start_time: str  # "13:00"
     end_time: str  # "14:00"
     reason: Optional[str] = ""
@@ -35,6 +36,8 @@ async def create_blocked_slot(data: BlockedSlotCreate, current_user: dict = Depe
         raise HTTPException(status_code=400, detail="Data richiesta per blocchi singoli")
     if data.type == "monthly" and not data.day_of_month:
         raise HTTPException(status_code=400, detail="Giorno del mese richiesto per blocchi mensili")
+    if data.type == "yearly" and (not data.day_of_month or not data.month_of_year):
+        raise HTTPException(status_code=400, detail="Giorno e mese richiesti per blocchi annuali")
     slot = {
         "id": str(uuid.uuid4()),
         "user_id": current_user["id"],
@@ -42,6 +45,7 @@ async def create_blocked_slot(data: BlockedSlotCreate, current_user: dict = Depe
         "day_of_week": data.day_of_week,
         "date": data.date,
         "day_of_month": data.day_of_month,
+        "month_of_year": data.month_of_year,
         "start_time": data.start_time,
         "end_time": data.end_time,
         "reason": data.reason or "",
@@ -95,9 +99,13 @@ async def get_public_blocked_for_date(date: str):
     monthly = await db.blocked_slots.find(
         {"user_id": user_id, "type": "monthly", "day_of_month": d.day}, {"_id": 0}
     ).to_list(100)
+    # yearly blocks for this day and month
+    yearly = await db.blocked_slots.find(
+        {"user_id": user_id, "type": "yearly", "day_of_month": d.day, "month_of_year": d.month}, {"_id": 0}
+    ).to_list(100)
 
     blocked_times = []
-    for slot in one_time + recurring + daily + monthly:
+    for slot in one_time + recurring + daily + monthly + yearly:
         try:
             sh, sm = map(int, slot["start_time"].split(":"))
             eh, em = map(int, slot["end_time"].split(":"))
