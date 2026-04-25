@@ -3,7 +3,7 @@ import api, { API } from '../lib/api';
 import Layout from '../components/Layout';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ChevronLeft, ChevronRight, Plus, CalendarDays, CheckCircle, RefreshCcw, MessageCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, CalendarDays, CheckCircle, RefreshCcw, MessageCircle, Lock, Unlock } from 'lucide-react';
 import { format, addDays, subDays, startOfWeek, endOfWeek, addWeeks, subWeeks, startOfMonth, endOfMonth, addMonths, subMonths, eachDayOfInterval } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -69,6 +69,8 @@ export default function PlanningPage() {
   const [lastServiceAlerts, setLastServiceAlerts] = useState([]);
   const [blockDialogOpen, setBlockDialogOpen] = useState(false);
   const [blockInitialTime, setBlockInitialTime] = useState('');
+  const [dayClosureBlock, setDayClosureBlock] = useState(null);
+  const [closingDay, setClosingDay] = useState(false);
 
   // Thank You dialog
   const [thankYouData, setThankYouData] = useState(null);
@@ -176,6 +178,13 @@ export default function PlanningPage() {
         const blockedRes = await api.get(`${API}/public/blocked-slots/${dateStr}`);
         setBlockedSlots(blockedRes.data || []);
       } catch { setBlockedSlots([]); }
+      try {
+        const adminBlocksRes = await api.get(`${API}/blocked-slots`);
+        const closure = (adminBlocksRes.data || []).find(
+          b => b.type === 'one-time' && b.date === dateStr && b.reason === 'Giorno Chiuso'
+        );
+        setDayClosureBlock(closure || null);
+      } catch { setDayClosureBlock(null); }
     } catch (err) {
       console.error('Error fetching data:', err);
       toast.error('Errore nel caricamento dei dati');
@@ -369,6 +378,31 @@ export default function PlanningPage() {
   // --- Slot handlers ---
   const mbhsOperator = operators.find(op => op.name.toUpperCase().includes('MBHS')) || operators[0];
   const unavailableSlots = getUnavailableSlots();
+
+  const handleToggleDayClosure = async () => {
+    setClosingDay(true);
+    const dateStr = format(selectedDate, 'yyyy-MM-dd');
+    try {
+      if (dayClosureBlock) {
+        await api.delete(`${API}/blocked-slots/${dayClosureBlock.id}`);
+        toast.success('Giorno riaperto!');
+      } else {
+        await api.post(`${API}/blocked-slots`, {
+          type: 'one-time',
+          date: dateStr,
+          start_time: '00:00',
+          end_time: '23:59',
+          reason: 'Giorno Chiuso',
+        });
+        toast.success('Giorno chiuso — nessuna prenotazione online accettata');
+      }
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Errore');
+    } finally {
+      setClosingDay(false);
+    }
+  };
 
   const handleSlotClick = (time, operatorId) => {
     if (blockedSlots.includes(time)) {
@@ -565,6 +599,22 @@ export default function PlanningPage() {
           onDismiss={() => setLastServiceAlerts([])}
         />
 
+        {/* Banner giorno chiuso */}
+        {dayClosureBlock && (
+          <div className="flex items-center gap-3 px-4 py-3 bg-red-50 border border-red-300 rounded-xl text-sm">
+            <Lock className="w-4 h-4 text-red-500 shrink-0" />
+            <p className="text-red-700 font-semibold flex-1">
+              Giorno chiuso — le prenotazioni online non sono accettate per questo giorno.
+            </p>
+            <button
+              onClick={handleToggleDayClosure}
+              className="text-red-600 underline text-xs font-bold shrink-0 hover:text-red-800"
+            >
+              Riapri
+            </button>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
@@ -638,6 +688,19 @@ export default function PlanningPage() {
               data-testid="refresh-planning-btn"
             >
               <RefreshCcw className="w-4 h-4 mr-1" /> Aggiorna
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleToggleDayClosure}
+              disabled={closingDay}
+              data-testid="toggle-day-closure-btn"
+              className={dayClosureBlock
+                ? "border-green-400 text-green-700 hover:bg-green-50 h-10 px-4 font-semibold"
+                : "border-red-300 text-red-600 hover:bg-red-50 h-10 px-4 font-semibold"}
+            >
+              {dayClosureBlock
+                ? <><Unlock className="w-4 h-4 mr-1" /> Riapri Giorno</>
+                : <><Lock className="w-4 h-4 mr-1" /> Chiudi Giorno</>}
             </Button>
             <div className="flex items-center gap-2 border border-[#F0E6DC] rounded-xl px-3 h-10 bg-white">
               <span className="text-sm text-slate-500">Operatore</span>
