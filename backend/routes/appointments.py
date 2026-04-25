@@ -639,6 +639,17 @@ async def create_recurring_appointments(data: RecurringAppointmentCreate, curren
 
 # ============== SOSPESI (SUSPENDED PAYMENTS) ==============
 
+@router.get("/sospesi")
+async def get_all_sospesi(current_user: dict = Depends(get_current_user)):
+    """Restituisce tutti i sospesi non saldati dell'utente (tutte le clienti)."""
+    sospesi = await db.sospesi.find(
+        {"user_id": current_user["id"], "settled": False},
+        {"_id": 0}
+    ).sort("date", -1).to_list(500)
+    total = sum(s.get("amount", 0) for s in sospesi)
+    return {"sospesi": sospesi, "total": total}
+
+
 @router.get("/sospesi/client/{client_id}")
 async def get_client_sospesi(client_id: str, current_user: dict = Depends(get_current_user)):
     """Restituisce tutti i sospesi non saldati di un cliente."""

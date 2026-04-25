@@ -290,7 +290,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {/* Pagamenti sospesi */}
           <button
-            onClick={() => navigate('/incassi')}
+            onClick={() => navigate('/incassi', { state: { tab: 'sospesi' } })}
             className={`rounded-2xl p-4 text-left shadow-sm hover:shadow-md transition-shadow border ${stats?.sospeso_count > 0 ? 'bg-red-50 border-red-200' : 'bg-white border-gray-100'}`}
           >
             <div className="flex items-center gap-2 mb-1">

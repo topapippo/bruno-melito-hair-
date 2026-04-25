@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import api, { API } from '../lib/api';
 import { fmtDate } from '../lib/dateUtils';
 import * as XLSX from 'xlsx';
@@ -13,21 +14,65 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Euro, CreditCard, Banknote, FileSpreadsheet, TrendingDown, TrendingUp } from 'lucide-react';
+import { Euro, CreditCard, Banknote, FileSpreadsheet, TrendingDown, TrendingUp, AlertTriangle, Loader2 } from 'lucide-react';
 import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays } from 'date-fns';
 import { toast } from 'sonner';
 
 
 export default function ReportIncassiPage() {
+  const location = useLocation();
+  const sospesiRef = useRef(null);
   const [payments, setPayments] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('today');
   const [stats, setStats] = useState({ total: 0, count: 0, cash: 0, pos: 0, prepaid: 0, totalExpenses: 0, net: 0 });
+  const [sospesi, setSospesi] = useState([]);
+  const [sospesiTotal, setSospesiTotal] = useState(0);
+  const [loadingSospesi, setLoadingSospesi] = useState(false);
+  const [settlingId, setSettlingId] = useState(null);
 
   useEffect(() => {
     fetchData();
   }, [period]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    fetchSospesi();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (location.state?.tab === 'sospesi' && sospesiRef.current) {
+      setTimeout(() => sospesiRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
+    }
+  }, [location.state, loadingSospesi]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const fetchSospesi = async () => {
+    setLoadingSospesi(true);
+    try {
+      const res = await api.get(`${API}/sospesi`);
+      setSospesi(res.data.sospesi || []);
+      setSospesiTotal(res.data.total || 0);
+    } catch (err) {
+      console.error('Errore caricamento sospesi:', err);
+    } finally {
+      setLoadingSospesi(false);
+    }
+  };
+
+  const handleSettleSospeso = async (sospesoId, method) => {
+    setSettlingId(sospesoId);
+    try {
+      await api.post(`${API}/sospesi/${sospesoId}/settle/${method}`);
+      toast.success('Sospeso saldato!');
+      setSospesi(prev => prev.filter(s => s.id !== sospesoId));
+      const settled = sospesi.find(s => s.id === sospesoId);
+      if (settled) setSospesiTotal(prev => Math.max(0, prev - (settled.amount || 0)));
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Errore nel saldo');
+    } finally {
+      setSettlingId(null);
+    }
+  };
 
   const getDateRange = () => {
     const now = new Date();
@@ -251,6 +296,54 @@ export default function ReportIncassiPage() {
                   </div>
                 </CardContent>
               </Card>
+            </div>
+
+            {/* Sezione Sospesi */}
+            <div ref={sospesiRef}>
+            <Card className={`border-2 ${sospesi.length > 0 ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-white'}`}>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-xl font-black text-[#2D1B14] flex items-center gap-2">
+                  <AlertTriangle className={`w-5 h-5 ${sospesi.length > 0 ? 'text-red-500' : 'text-gray-300'}`} />
+                  Pagamenti Sospesi
+                  {sospesi.length > 0 && (
+                    <span className="ml-auto text-base font-black text-red-600">€{sospesiTotal.toFixed(2)} da incassare</span>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loadingSospesi ? (
+                  <div className="space-y-2">{[1,2].map(i => <Skeleton key={i} className="h-16" />)}</div>
+                ) : sospesi.length === 0 ? (
+                  <p className="text-center py-6 text-gray-400 font-semibold">Nessun sospeso da incassare ✓</p>
+                ) : (
+                  <div className="space-y-3">
+                    {sospesi.map(s => (
+                      <div key={s.id} className="flex items-center justify-between p-4 bg-white rounded-xl border-2 border-red-200">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-black text-[#2D1B14]">{s.client_name}</p>
+                          <p className="text-sm text-[#7C5C4A]">{s.services?.join(', ')}</p>
+                          <p className="text-xs text-gray-400 mt-0.5">{fmtDate(s.date)}</p>
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0 ml-4">
+                          <span className="text-xl font-black text-red-600">€{(s.amount || 0).toFixed(2)}</span>
+                          <Button size="sm" disabled={settlingId === s.id}
+                            className="bg-green-600 hover:bg-green-700 text-white font-bold h-9 px-3"
+                            onClick={() => handleSettleSospeso(s.id, 'cash')}>
+                            {settlingId === s.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <><Banknote className="w-3.5 h-3.5 mr-1" />Contanti</>}
+                          </Button>
+                          <Button size="sm" disabled={settlingId === s.id}
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold h-9 px-3"
+                            onClick={() => handleSettleSospeso(s.id, 'pos')}>
+                            {settlingId === s.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <><CreditCard className="w-3.5 h-3.5 mr-1" />POS</>}
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             </div>
 
             {/* Lista unificata pagamenti + uscite */}
