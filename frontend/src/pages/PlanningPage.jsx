@@ -328,20 +328,9 @@ export default function PlanningPage() {
   // --- Slot helpers ---
   const getUnavailableSlots = () => {
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
-    const today = format(new Date(), 'yyyy-MM-dd');
     const unavailable = new Set();
 
-    // 1. Slot nel passato (solo per oggi)
-    if (dateStr === today) {
-      const now = new Date();
-      const cur = now.getHours() * 60 + now.getMinutes();
-      ALL_SLOTS.forEach(s => {
-        const [h, m] = s.split(':').map(Number);
-        if (h * 60 + m <= cur) unavailable.add(s);
-      });
-    }
-
-    // 2. Slot fuori orario di lavoro
+    // Slot fuori orario di lavoro
     if (hoursConfig) {
       const d = new Date(dateStr + 'T12:00:00');
       const dow = d.getDay();
@@ -410,16 +399,6 @@ export default function PlanningPage() {
       return;
     }
     if (unavailableSlots.has(time)) {
-      const dateStr = format(selectedDate, 'yyyy-MM-dd');
-      const today = format(new Date(), 'yyyy-MM-dd');
-      if (dateStr === today) {
-        const [h, m] = time.split(':').map(Number);
-        const now = new Date();
-        if (h * 60 + m <= now.getHours() * 60 + now.getMinutes()) {
-          toast.error('Orario già passato.');
-          return;
-        }
-      }
       toast.error('Orario fuori dagli orari di apertura.');
       return;
     }
