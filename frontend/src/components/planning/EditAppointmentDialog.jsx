@@ -142,7 +142,9 @@ export default function EditAppointmentDialog({
           api.get(`${API}/cards?client_id=${appointment.client_id}`).catch(() => ({ data: [] })),
           api.get(`${API}/clients/${appointment.client_id}/loyalty`).catch(() => ({ data: { points: 0 } })),
           api.get(`${API}/sospesi/client/${appointment.client_id}`).catch(() => ({ data: { sospesi: [], total: 0 } })),
-        ]).then(([cardsRes, loyaltyRes, sospesiRes]) => {
+          api.get(`${API}/clients/${appointment.client_id}`).catch(() => ({ data: null })),
+        ]).then(([cardsRes, loyaltyRes, sospesiRes, clientRes]) => {
+          if (clientRes.data) setSelectedClientInfo(clientRes.data);
           const activeCards = (cardsRes.data || []).filter(c => c.active && c.remaining_value > 0);
           setClientCards(activeCards);
           setClientLoyalty(loyaltyRes.data);

@@ -161,10 +161,12 @@ export default function NewAppointmentDialog({
     setSelectedClientInfo(client);
     if (clientId && clientId !== 'generic') {
       try {
-        const [cardsRes, promosRes] = await Promise.all([
+        const [cardsRes, promosRes, clientRes] = await Promise.all([
           api.get(`${API}/cards?client_id=${clientId}`),
-          api.get(`${API}/promotions/check/${clientId}`)
+          api.get(`${API}/promotions/check/${clientId}`),
+          api.get(`${API}/clients/${clientId}`).catch(() => ({ data: null })),
         ]);
+        if (clientRes.data) setSelectedClientInfo(clientRes.data);
         const activeCards = cardsRes.data.filter(c => c.active && c.remaining_value > 0);
         setDialogClientCards(activeCards);
         setDialogClientPromos(promosRes.data);

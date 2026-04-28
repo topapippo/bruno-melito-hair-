@@ -172,8 +172,12 @@ export default function PlanningPage() {
     setLoading(true);
     try {
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
-      const appointmentsRes = await api.get(`${API}/appointments?date=${dateStr}`);
+      const [appointmentsRes, clientsRes] = await Promise.all([
+        api.get(`${API}/appointments?date=${dateStr}`),
+        api.get(`${API}/clients`).catch(() => ({ data: null })),
+      ]);
       setAppointments(appointmentsRes.data);
+      if (clientsRes.data) setClients(clientsRes.data);
       try {
         const blockedRes = await api.get(`${API}/public/blocked-slots/${dateStr}`);
         setBlockedSlots(blockedRes.data || []);
