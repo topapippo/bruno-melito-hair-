@@ -57,11 +57,16 @@ export default function RemindersPage() {
   const [sendingConfirmId, setSendingConfirmId] = useState(null);
   const [birthdayClients, setBirthdayClients] = useState([]);
   const [markingSentId, setMarkingSentId] = useState(null);
+  const [birthdayDays, setBirthdayDays] = useState(7);
 
   useEffect(() => {
     fetchData();
     checkAutoReminder();
   }, []);
+
+  useEffect(() => {
+    api.get(`${API}/reminders/birthdays?days=${birthdayDays}`).then(r => setBirthdayClients(r.data || [])).catch(() => {});
+  }, [birthdayDays]);
 
   const fetchData = async () => {
     try {
@@ -70,7 +75,7 @@ export default function RemindersPage() {
         api.get(`${API}/reminders/inactive-clients`),
         api.get(`${API}/reminders/templates`),
         api.get(`${API}/reminders/color-expiry`).catch(() => ({ data: [] })),
-        api.get(`${API}/reminders/birthdays`).catch(() => ({ data: [] })),
+        api.get(`${API}/reminders/birthdays?days=${birthdayDays}`).catch(() => ({ data: [] })),
       ]);
       setTomorrowReminders(remRes.data);
       setInactiveClients(inactRes.data);
@@ -899,18 +904,35 @@ export default function RemindersPage() {
         )}
 
         {/* Birthday Reminders */}
-        {birthdayClients.length > 0 && (
-          <Card className="border-[#F0E6DC]/30">
-            <CardHeader className="pb-3">
+        <Card className="border-[#F0E6DC]/30">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <CardTitle className="text-lg font-bold text-[#2D1B14] flex items-center gap-2">
                 <Cake className="w-5 h-5 text-pink-500" />
                 Compleanni in Arrivo
-                <span className="text-xs bg-pink-100 text-pink-700 px-2 py-0.5 rounded-full font-semibold">
-                  {birthdayClients.length}
-                </span>
+                {birthdayClients.length > 0 && (
+                  <span className="text-xs bg-pink-100 text-pink-700 px-2 py-0.5 rounded-full font-semibold">
+                    {birthdayClients.length}
+                  </span>
+                )}
               </CardTitle>
-            </CardHeader>
+              <Select value={String(birthdayDays)} onValueChange={v => setBirthdayDays(Number(v))}>
+                <SelectTrigger className="w-32 h-7 text-xs border-pink-200">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="3">Prossimi 3gg</SelectItem>
+                  <SelectItem value="7">Prossimi 7gg</SelectItem>
+                  <SelectItem value="14">Prossimi 14gg</SelectItem>
+                  <SelectItem value="30">Prossimi 30gg</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardHeader>
             <CardContent>
+              {birthdayClients.length === 0 ? (
+                <p className="text-sm text-[#7C5C4A] text-center py-6">Nessun compleanno nei prossimi {birthdayDays} giorni</p>
+              ) : (
               <div className="space-y-3">
                 {birthdayClients.map((client) => (
                   <div key={client.id}
@@ -971,9 +993,9 @@ export default function RemindersPage() {
                   </div>
                 ))}
               </div>
+              )}
             </CardContent>
           </Card>
-        )}
 
         {/* Send Message Dialog */}
         <Dialog open={msgDialog} onOpenChange={setMsgDialog}>
@@ -1088,6 +1110,20 @@ export default function RemindersPage() {
                   Variabili: <code className="bg-[#F5EDE0] px-1 rounded">{'{nome}'}</code> <code className="bg-[#F5EDE0] px-1 rounded">{'{ora}'}</code> <code className="bg-[#F5EDE0] px-1 rounded">{'{servizi}'}</code> <code className="bg-[#F5EDE0] px-1 rounded">{'{giorni}'}</code> <code className="bg-[#F5EDE0] px-1 rounded">{'{operatore}'}</code>
                 </p>
               </div>
+              {templateForm.text && (
+                <div className="space-y-1">
+                  <Label className="text-xs text-[#7C5C4A]">Anteprima (valori di esempio)</Label>
+                  <div className="p-3 rounded-xl bg-green-50 border border-green-200 text-sm text-[#2D1B14] whitespace-pre-wrap">
+                    {templateForm.text
+                      .replace(/\{nome\}/g, 'Maria')
+                      .replace(/\{ora\}/g, '10:00')
+                      .replace(/\{servizi\}/g, 'Taglio, Colore')
+                      .replace(/\{operatore\}/g, 'Bruno')
+                      .replace(/\{giorni\}/g, '45')
+                      .replace(/\{data\}/g, new Date().toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit', year:'2-digit' }))}
+                  </div>
+                </div>
+              )}
             </div>
             <DialogFooter className="mt-4">
               <Button variant="outline" onClick={() => setTemplateDialog(false)}>Annulla</Button>

@@ -38,24 +38,27 @@ export default function DayView({
   const computeOverlaps = (apts) => {
     if (!apts.length) return {};
     const sorted = [...apts].sort((a, b) => a.time.localeCompare(b.time));
-    const map = {};
-    for (let i = 0; i < sorted.length; i++) {
-      const a = sorted[i];
-      const aStart = toMin(a.time);
-      const aEnd = aStart + (a.total_duration || 15);
-      const group = [a];
-      for (let j = i + 1; j < sorted.length; j++) {
-        const b = sorted[j];
-        const bStart = toMin(b.time);
-        if (bStart < aEnd) group.push(b);
-      }
-      if (group.length > 1) {
-        group.forEach((g, idx) => {
-          if (!map[g.id]) map[g.id] = { total: group.length, index: idx };
-        });
-      }
+    // Greedy interval graph coloring: assign each apt to the first free column
+    const colEnds = [];
+    const assigned = {};
+    for (const apt of sorted) {
+      const start = toMin(apt.time);
+      const end = start + (apt.total_duration || 15);
+      let colIdx = colEnds.findIndex(e => e <= start);
+      if (colIdx === -1) { colIdx = colEnds.length; colEnds.push(end); }
+      else colEnds[colIdx] = end;
+      assigned[apt.id] = { colIdx, start, end };
     }
-    return map;
+    const result = {};
+    for (const apt of sorted) {
+      const { start, end, colIdx } = assigned[apt.id];
+      const overlapping = sorted.filter(b => {
+        const bs = toMin(b.time); const be = bs + (b.total_duration || 15);
+        return bs < end && be > start;
+      });
+      if (overlapping.length > 1) result[apt.id] = { total: overlapping.length, index: colIdx };
+    }
+    return result;
   };
 
   return (

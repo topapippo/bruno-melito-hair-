@@ -504,6 +504,18 @@ export default function PlanningPage() {
     if (!draggedApt) return;
     if (draggedApt.time === time && draggedApt.operator_id === colId) return;
 
+    // Avvisa se c'è già un appuntamento nel slot di destinazione
+    const [dropH, dropM] = time.split(':').map(Number);
+    const dropStart = dropH * 60 + dropM;
+    const dropEnd = dropStart + (draggedApt.total_duration || 15);
+    const hasConflict = getOperatorAppointments(colId).some(apt => {
+      if (apt.id === draggedApt.id) return false;
+      const [h, m] = apt.time.split(':').map(Number);
+      const s = h * 60 + m; const en = s + (apt.total_duration || 15);
+      return dropStart < en && dropEnd > s;
+    });
+    if (hasConflict) toast.warning('Attenzione: slot sovrapposto con un altro appuntamento');
+
     // Aggiornamento ottimistico: sposta subito nell'UI senza aspettare il server
     const prevApts = appointments;
     setAppointments(prev => prev.map(a =>

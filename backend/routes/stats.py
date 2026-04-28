@@ -154,6 +154,14 @@ async def get_daily_summary(date: Optional[str] = None, current_user: dict = Dep
         pm = apt.get("payment_method", "non specificato")
         payment_methods[pm] = payment_methods.get(pm, 0) + 1
 
+    # Sospesi del giorno: importo totale degli appuntamenti pagati come sospeso
+    sospeso_payments_today = await db.payments.find(
+        {"user_id": current_user["id"], "date": target_date, "payment_method": "sospeso"},
+        {"_id": 0, "total_paid": 1, "original_amount": 1}
+    ).to_list(200)
+    sospeso_amount = round(sum(p.get("original_amount", p.get("total_paid", 0)) for p in sospeso_payments_today), 2)
+    sospeso_count = len(sospeso_payments_today)
+
     # Uscite scadenti nel giorno selezionato (non pagate)
     expenses_due = await db.expenses.find(
         {"user_id": current_user["id"], "due_date": target_date, "paid": False},
@@ -181,6 +189,8 @@ async def get_daily_summary(date: Optional[str] = None, current_user: dict = Dep
         "expenses_overdue": expenses_overdue,
         "total_expenses_due": total_expenses_due,
         "net_earnings": round(total_earnings - total_expenses_due, 2),
+        "sospeso_amount": sospeso_amount,
+        "sospeso_count": sospeso_count,
     }
 
 

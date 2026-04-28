@@ -184,7 +184,7 @@ async def get_client_history(client_id: str, current_user: dict = Depends(get_cu
         raise HTTPException(status_code=404, detail="Cliente non trovato")
 
     # Appuntamenti (ultimi 3 mesi, ordinati per data decrescente)
-    three_months_ago = (datetime.now(timezone.utc) - timedelta(days=90)).strftime("%Y-%m-%d")
+    three_months_ago = (datetime.now(timezone.utc) - timedelta(days=365)).strftime("%Y-%m-%d")
     appointments_raw = await db.appointments.find(
         {"client_id": client_id, "user_id": current_user["id"], "date": {"$gte": three_months_ago}},
         {"_id": 0, "user_id": 0}

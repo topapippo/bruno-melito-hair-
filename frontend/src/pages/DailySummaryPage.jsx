@@ -186,6 +186,19 @@ export default function DailySummaryPage() {
           </Card>
         </div>
 
+        {/* Banner sospesi del giorno */}
+        {(data?.sospeso_amount > 0) && (
+          <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-300">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+              <span className="text-sm font-semibold text-amber-800">
+                {data.sospeso_count} appuntament{data.sospeso_count === 1 ? 'o' : 'i'} sospeso{data.sospeso_count !== 1 ? 'i' : ''} oggi
+              </span>
+            </div>
+            <span className="text-sm font-bold text-amber-700">€{data.sospeso_amount.toFixed(2)} da riscuotere</span>
+          </div>
+        )}
+
         {/* Hourly Distribution Chart */}
         <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
           <CardHeader className="pb-2">
