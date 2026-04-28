@@ -81,10 +81,6 @@ export default function ClientsPage() {
       toast.error('Inserisci il nome del cliente');
       return;
     }
-    if (!formData.phone.trim()) {
-      toast.error('Inserisci il numero di telefono');
-      return;
-    }
     
     setSaving(true);
     try {
