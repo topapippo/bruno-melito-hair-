@@ -2,6 +2,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Clock, Repeat, MessageCircle } from 'lucide-react';
 import { addDays, subDays } from 'date-fns';
 import { getAppointmentColor, getServiceColors, buildServiceLookups } from '../../lib/categories';
+import ClientAvatar from '../ClientAvatar';
 
 export default function DayView({
   clients = [],
@@ -207,7 +208,8 @@ export default function DayView({
                         title={`Clicca per modificare - ${apt.client_name}`}
                       >
                         {/* Riga nome cliente */}
-                        <div className="flex items-center justify-between px-2 bg-[#2D1B14]/90 text-white flex-shrink-0" style={{ height: '22px' }}>
+                        <div className="flex items-center justify-between px-1 bg-[#2D1B14]/90 text-white flex-shrink-0 gap-1" style={{ height: '22px' }}>
+                          <ClientAvatar name={apt.client_name} size="xs" />
                           <span className="font-bold text-[13px] leading-none truncate flex-1">
                             {apt.status === 'completed' && '✓ '}{apt.client_name}
                           </span>

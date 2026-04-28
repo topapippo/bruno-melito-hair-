@@ -15,14 +15,35 @@ import {
 import { format, subDays, addDays } from 'date-fns';
 import { it } from 'date-fns/locale';
 
+const SparkLine = ({ data }) => {
+  if (!data || data.length < 2) return null;
+  const vals = data.map(d => d.total || 0);
+  const max = Math.max(...vals, 1);
+  const W = 72, H = 28;
+  const pts = vals.map((v, i) => `${(i / (vals.length - 1)) * W},${H - (v / max) * (H - 4) - 2}`).join(' ');
+  return (
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="opacity-70">
+      <polyline points={pts} fill="none" stroke="#10B981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      {vals.map((v, i) => (
+        <circle key={i} cx={(i / (vals.length - 1)) * W} cy={H - (v / max) * (H - 4) - 2} r="2" fill="#10B981" />
+      ))}
+    </svg>
+  );
+};
+
 
 export default function DailySummaryPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [error, setError] = useState('');
+  const [weeklyEarnings, setWeeklyEarnings] = useState([]);
 
   useEffect(() => { fetchSummary(); }, [selectedDate]);
+
+  useEffect(() => {
+    api.get(`${API}/stats/weekly-earnings`).then(res => setWeeklyEarnings(res.data || [])).catch(() => {});
+  }, []);
 
   const isValidDateString = (value) => {
     return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(new Date(`${value}T00:00:00`).getTime());
@@ -126,6 +147,12 @@ export default function DailySummaryPage() {
                       <><Minus className="w-3 h-3 text-gray-400" /><span className="text-xs text-gray-400">Uguale a ieri</span></>
                     )}
                   </div>
+                  {weeklyEarnings.length > 0 && (
+                    <div className="mt-2">
+                      <SparkLine data={weeklyEarnings} />
+                      <p className="text-[10px] text-gray-400 mt-0.5">Ultimi 7 giorni</p>
+                    </div>
+                  )}
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center">
                   <Euro className="w-6 h-6 text-emerald-500" strokeWidth={1.5} />

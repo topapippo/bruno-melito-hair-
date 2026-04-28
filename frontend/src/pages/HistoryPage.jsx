@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { History, Search, Clock, Euro, Calendar as CalendarIcon, Filter } from 'lucide-react';
+import ClientAvatar from '../components/ClientAvatar';
 import { format, subDays, subMonths } from 'date-fns';
 import { it } from 'date-fns/locale';
 
@@ -165,11 +166,17 @@ export default function HistoryPage() {
           <div className="space-y-6">
             {Object.entries(groupedByDate).map(([date, dayAppointments]) => (
               <div key={date}>
-                <h3 className="font-display text-lg text-[#2D1B14] mb-3 flex items-center gap-2">
-                  <CalendarIcon className="w-5 h-5 text-[#C8617A]" />
-                  {format(new Date(date), "EEEE dd/MM/yy", { locale: it })}
-                </h3>
-                <div className="space-y-3">
+                {/* Separatore data */}
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-bold text-white shadow-sm"
+                    style={{ background: 'linear-gradient(to right, #C8617A, #A0404F)' }}>
+                    <CalendarIcon className="w-4 h-4" />
+                    {format(new Date(date + 'T12:00:00'), "EEEE dd/MM/yy", { locale: it })}
+                  </div>
+                  <div className="flex-1 h-px bg-[#F0E6DC]" />
+                  <span className="text-xs text-[#7C5C4A] font-medium shrink-0">{dayAppointments.length} appuntament{dayAppointments.length === 1 ? 'o' : 'i'}</span>
+                </div>
+                <div className="space-y-2">
                   {dayAppointments.map((apt) => (
                     <Card
                       key={apt.id}
@@ -178,30 +185,31 @@ export default function HistoryPage() {
                     >
                       <CardContent className="p-4">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                          <div className="flex items-start gap-4">
-                            <div className="text-center min-w-[60px]">
-                              <p className="text-lg font-semibold text-[#2D1B14] ">{apt.time}</p>
-                              <p className="text-xs text-[#7C5C4A]">{apt.end_time}</p>
+                          <div className="flex items-center gap-3">
+                            <ClientAvatar name={apt.client_name} size="md" />
+                            <div className="text-center min-w-[48px]">
+                              <p className="text-base font-semibold text-[#2D1B14]">{apt.time}</p>
+                              <p className="text-[10px] text-[#7C5C4A]">{apt.end_time}</p>
                             </div>
                             <div>
-                              <div className="flex items-center gap-3 mb-1">
-                                <h4 className="font-medium text-[#2D1B14]">{apt.client_name}</h4>
+                              <div className="flex items-center gap-2 mb-0.5">
+                                <h4 className="font-semibold text-[#2D1B14]">{apt.client_name}</h4>
                                 {getStatusBadge(apt.status)}
                               </div>
                               <p className="text-sm text-[#7C5C4A]">
                                 {apt.services.map(s => s.name).join(' + ')}
                               </p>
                               {apt.notes && (
-                                <p className="text-sm text-[#7C5C4A] mt-1 italic">"{apt.notes}"</p>
+                                <p className="text-xs text-[#7C5C4A] mt-0.5 italic">"{apt.notes}"</p>
                               )}
                             </div>
                           </div>
-                          <div className="flex items-center gap-6 text-sm">
+                          <div className="flex items-center gap-4 text-sm shrink-0">
                             <span className="flex items-center gap-1 text-[#7C5C4A]">
-                              <Clock className="w-4 h-4" /> {apt.total_duration} min
+                              <Clock className="w-3.5 h-3.5" /> {apt.total_duration} min
                             </span>
-                            <span className="flex items-center gap-1 font-semibold text-[#2D1B14]">
-                              <Euro className="w-4 h-4" /> {apt.total_price.toFixed(2)}
+                            <span className="flex items-center gap-1 font-bold text-emerald-600">
+                              <Euro className="w-3.5 h-3.5" /> {apt.total_price.toFixed(2)}
                             </span>
                           </div>
                         </div>

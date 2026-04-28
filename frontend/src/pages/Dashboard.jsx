@@ -12,9 +12,10 @@ import {
   MessageCircle, X, Sparkles, Heart, Star, ArrowDownCircle, FileBarChart, Cake,
   ClockArrowUp, CheckCircle2, AlertCircle
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
+import ClientAvatar from '../components/ClientAvatar';
 
 
 const MODULES = [
@@ -45,9 +46,11 @@ export default function Dashboard() {
   const [whatsappPending, setWhatsappPending] = useState({ reminders: 0, colors: 0, inactive: 0, total: 0 });
   const [tomorrowApts, setTomorrowApts] = useState([]);
   const [birthdayToday, setBirthdayToday] = useState([]);
+  const [topClients, setTopClients] = useState([]);
+  const [colorExpiry, setColorExpiry] = useState([]);
   const navigate = useNavigate();
 
-  useEffect(() => { fetchDashboardStats(); fetchCardAlerts(); fetchWhatsappPending(); fetchTomorrow(); fetchBirthdays(); }, []);
+  useEffect(() => { fetchDashboardStats(); fetchCardAlerts(); fetchWhatsappPending(); fetchTomorrow(); fetchBirthdays(); fetchTopClients(); }, []);
 
   const fetchBirthdays = async () => {
     try {
@@ -111,6 +114,14 @@ export default function Dashboard() {
       const col = (colorRes.data || []).filter(c => !c.already_sent).length;
       const ina = (inactRes.data || []).filter(c => !c.already_recalled).length;
       setWhatsappPending({ reminders: rem, colors: col, inactive: ina, total: rem + col + ina });
+      setColorExpiry(colorRes.data || []);
+    } catch {}
+  };
+
+  const fetchTopClients = async () => {
+    try {
+      const res = await api.get(`${API}/stats/top-clients?limit=5`);
+      setTopClients(res.data || []);
     } catch {}
   };
 
@@ -437,6 +448,7 @@ export default function Dashboard() {
                     <p className="text-sm font-bold text-green-300">{apt.time}</p>
                     <p className="text-[10px] text-white/40">{apt.total_duration}min</p>
                   </div>
+                  <ClientAvatar name={apt.client_name} size="sm" />
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-white text-sm truncate">{apt.client_name}</p>
                     <p className="text-xs text-white/50 truncate">{(apt.services || []).map(s => s.name).join(', ')}</p>
@@ -478,13 +490,13 @@ export default function Dashboard() {
                       type="button"
                       onClick={() => navigate('/planning')}
                       data-testid={`appointment-${apt.id}`}
-                      className="appt-row flex items-center gap-4 w-full p-3 rounded-xl bg-white/5 hover:bg-white/10 transition duration-200 ease-in-out transform hover:-translate-y-0.5 text-left"
+                      className="appt-row flex items-center gap-3 w-full p-3 rounded-xl bg-white/5 hover:bg-white/10 transition duration-200 ease-in-out transform hover:-translate-y-0.5 text-left"
                     >
-                      <div className="flex-shrink-0 text-center w-14">
+                      <ClientAvatar name={apt.client_name} size="sm" />
+                      <div className="flex-shrink-0 text-center w-12">
                         <p className="text-sm font-bold text-[#E8477C]">{apt.time}</p>
                         <p className="text-[10px] text-white/40">{apt.end_time}</p>
                       </div>
-                      <div className="w-0.5 h-8 rounded-full bg-gradient-to-b from-[#E8477C] to-[#F49AB3]" />
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-white text-sm truncate">{apt.client_name}</p>
                         <p className="text-xs text-white/50 truncate">{apt.services.map(s => s.name).join(', ')}</p>
@@ -525,7 +537,7 @@ export default function Dashboard() {
                       onClick={() => navigate('/planning')}
                       className="flex items-center gap-3 py-2 w-full text-left border-b border-white/5 last:border-0 hover:bg-white/10 rounded-xl transition-colors"
                     >
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#2EC4B6] shrink-0 mt-0.5" />
+                      <ClientAvatar name={apt.client_name} size="xs" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-white truncate">{apt.client_name}</p>
                         <p className="text-xs text-white/50">{format(new Date(apt.date), "dd/MM/yy")} {'\u00B7'} {apt.time}</p>
@@ -538,6 +550,104 @@ export default function Dashboard() {
               )}
             </div>
           </div>
+        </div>
+
+        {/* ── VIP Board + Timeline Colore ─────────────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+          {/* Top Clienti */}
+          {topClients.length > 0 && (
+            <div className="rounded-2xl shadow-lg overflow-hidden bg-white border border-[#F0E6DC]/50">
+              <div className="flex items-center gap-2 px-5 py-4 border-b border-[#F0E6DC]">
+                <Star className="w-4 h-4 text-amber-400" />
+                <h2 className="font-display text-lg text-[#1A1A2E]">Clienti VIP</h2>
+                <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold ml-auto">Top {topClients.length}</span>
+              </div>
+              <div className="p-4 space-y-3">
+                {topClients.map((c, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <span className="text-xs font-bold text-[#7C5C4A] w-4 shrink-0">{i + 1}</span>
+                    <ClientAvatar name={c.name} size="sm" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-sm font-semibold text-[#2D1B14] truncate">{c.name}</p>
+                        <span className="text-sm font-bold text-emerald-600 shrink-0 ml-2">€{c.total.toFixed(0)}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-1.5 bg-[#F5EDE0] rounded-full overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full transition-all"
+                            style={{ width: `${c.percent}%` }} />
+                        </div>
+                        <span className="text-[10px] text-[#7C5C4A] shrink-0">{c.visits} visite</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Timeline Scadenze Colore */}
+          {colorExpiry.length > 0 && (
+            <div className="rounded-2xl shadow-lg overflow-hidden bg-white border border-purple-100">
+              <div className="flex items-center gap-2 px-5 py-4 border-b border-purple-100">
+                <Sparkles className="w-4 h-4 text-purple-500" />
+                <h2 className="font-display text-lg text-[#1A1A2E]">Scadenze Colore</h2>
+                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-bold ml-auto">{colorExpiry.filter(c => !c.already_sent).length} da contattare</span>
+              </div>
+              <div className="p-4">
+                {(() => {
+                  const today = new Date(); today.setHours(0,0,0,0);
+                  const weekEnd = addDays(today, 7);
+                  const nextWeekEnd = addDays(today, 14);
+                  const thisWeek = colorExpiry.filter(c => { const d = new Date(c.due_date); return d >= today && d < weekEnd; });
+                  const nextWeek = colorExpiry.filter(c => { const d = new Date(c.due_date); return d >= weekEnd && d < nextWeekEnd; });
+                  const later = colorExpiry.filter(c => new Date(c.due_date) >= nextWeekEnd);
+                  return (
+                    <div className="space-y-3">
+                      {thisWeek.length > 0 && (
+                        <div>
+                          <p className="text-xs font-bold text-purple-700 uppercase tracking-wider mb-2 flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-purple-500 inline-block" /> Questa settimana ({thisWeek.length})
+                          </p>
+                          <div className="space-y-1.5">
+                            {thisWeek.slice(0,4).map((c,i) => (
+                              <div key={i} className={`flex items-center gap-2 px-3 py-2 rounded-lg ${c.already_sent ? 'bg-gray-50' : 'bg-purple-50 border border-purple-200'}`}>
+                                <ClientAvatar name={c.client_name} size="xs" />
+                                <span className="text-sm font-medium text-[#2D1B14] flex-1 truncate">{c.client_name}</span>
+                                {c.already_sent && <span className="text-[10px] text-gray-400">inviato</span>}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {nextWeek.length > 0 && (
+                        <div>
+                          <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-2 flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-indigo-400 inline-block" /> Settimana prossima ({nextWeek.length})
+                          </p>
+                          <div className="space-y-1.5">
+                            {nextWeek.slice(0,3).map((c,i) => (
+                              <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-50 border border-indigo-100">
+                                <ClientAvatar name={c.client_name} size="xs" />
+                                <span className="text-sm text-[#2D1B14] flex-1 truncate">{c.client_name}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {later.length > 0 && (
+                        <p className="text-xs text-[#7C5C4A] text-center pt-1">+ {later.length} altri nei prossimi giorni</p>
+                      )}
+                      <button onClick={() => navigate('/reminders')} className="w-full mt-1 text-xs text-purple-600 font-semibold hover:underline text-center">
+                        Gestisci tutti i promemoria colore →
+                      </button>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          )}
         </div>
 
       </div>

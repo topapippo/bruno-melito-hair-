@@ -274,7 +274,20 @@ export default function NewAppointmentDialog({
       }
 
       await api.post(`${API}/appointments`, payload);
-      toast.success('Appuntamento creato!' + (preSelectedCardId || preSelectedPromoId ? ' Card/Promo salvate.' : ''));
+      // Invia conferma WhatsApp se disponibile il numero
+      const clientPhone = selectedClientInfo?.phone || newClientPhone;
+      let waSent = false;
+      if (clientPhone) {
+        const clientDisplayName = selectedClientInfo?.name || newClientName || 'Cliente';
+        const serviceNames = selectedServicesInfo.map(s => s.name).join(', ');
+        const dateStr = format(new Date(formData.date + 'T00:00:00'), 'dd/MM/yy');
+        const waMsg = `Ciao ${clientDisplayName}! ✂️ Appuntamento confermato per ${dateStr} alle ${formData.time} per ${serviceNames}. A presto da Bruno Melito Hair! 💛`;
+        try {
+          const sendRes = await api.post(`${API}/whatsapp/send-direct`, { phone: clientPhone, message: waMsg });
+          waSent = sendRes.data?.sent === true;
+        } catch {}
+      }
+      toast.success('Appuntamento creato!' + (waSent ? ' Conferma WhatsApp inviata!' : '') + (preSelectedCardId || preSelectedPromoId ? ' Card/Promo salvate.' : ''));
       onClose();
       onSuccess?.();
     } catch (err) {

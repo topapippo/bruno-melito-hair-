@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date as date_type, timedelta
 import uuid
 from database import db
 from routes.auth import get_current_user
@@ -54,6 +54,50 @@ async def create_blocked_slot(data: BlockedSlotCreate, current_user: dict = Depe
     await db.blocked_slots.insert_one(slot)
     del slot["_id"]
     return slot
+
+
+class BulkBlockCreate(BaseModel):
+    start_date: str
+    end_date: str
+    start_time: str = "00:00"
+    end_time: str = "23:59"
+    reason: str = "Ferie"
+
+
+@router.post("/blocked-slots/bulk")
+async def create_bulk_blocked_slots(data: BulkBlockCreate, current_user: dict = Depends(get_current_user)):
+    """Blocca un intero periodo (es. ferie) giorno per giorno."""
+    try:
+        start = date_type.fromisoformat(data.start_date)
+        end = date_type.fromisoformat(data.end_date)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Formato data non valido (usa YYYY-MM-DD)")
+    if end < start:
+        raise HTTPException(status_code=400, detail="La data di fine deve essere successiva a quella di inizio")
+    if (end - start).days > 90:
+        raise HTTPException(status_code=400, detail="Il periodo non può superare i 90 giorni")
+
+    slots = []
+    current = start
+    while current <= end:
+        slots.append({
+            "id": str(uuid.uuid4()),
+            "user_id": current_user["id"],
+            "type": "one-time",
+            "date": current.isoformat(),
+            "day_of_week": None,
+            "day_of_month": None,
+            "month_of_year": None,
+            "start_time": data.start_time,
+            "end_time": data.end_time,
+            "reason": data.reason,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+        current += timedelta(days=1)
+
+    if slots:
+        await db.blocked_slots.insert_many(slots)
+    return {"success": True, "inserted": len(slots)}
 
 
 @router.delete("/blocked-slots/{slot_id}")

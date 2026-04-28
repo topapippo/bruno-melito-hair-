@@ -344,6 +344,50 @@ async def export_stats_pdf(start_date: str, end_date: str, current_user: dict = 
     )
 
 
+@router.get("/stats/weekly-earnings")
+async def get_weekly_earnings(current_user: dict = Depends(get_current_user)):
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    week_ago = (datetime.now(timezone.utc) - timedelta(days=6)).strftime("%Y-%m-%d")
+    payments = await db.payments.find(
+        {"user_id": current_user["id"], "date": {"$gte": week_ago, "$lte": today}},
+        {"_id": 0, "date": 1, "total_paid": 1}
+    ).to_list(2000)
+    daily = {}
+    for p in payments:
+        d = p["date"][:10]
+        daily[d] = daily.get(d, 0) + p.get("total_paid", 0)
+    result = []
+    for i in range(6, -1, -1):
+        d = (datetime.now(timezone.utc) - timedelta(days=i)).strftime("%Y-%m-%d")
+        result.append({"date": d, "amount": round(daily.get(d, 0), 2)})
+    return result
+
+
+@router.get("/stats/top-clients")
+async def get_top_clients(limit: int = 5, current_user: dict = Depends(get_current_user)):
+    payments = await db.payments.find(
+        {"user_id": current_user["id"], "client_id": {"$exists": True}},
+        {"_id": 0, "client_id": 1, "client_name": 1, "total_paid": 1}
+    ).to_list(50000)
+    totals = {}
+    for p in payments:
+        cid = p.get("client_id", "")
+        if not cid or cid == "generic": continue
+        if cid not in totals:
+            totals[cid] = {"name": p.get("client_name", ""), "total": 0, "visits": 0}
+        totals[cid]["total"] += p.get("total_paid", 0)
+        totals[cid]["visits"] += 1
+    top = sorted(totals.values(), key=lambda x: x["total"], reverse=True)[:limit]
+    max_total = top[0]["total"] if top else 1
+    for c in top:
+        c["total"] = round(c["total"], 2)
+        c["percent"] = round(c["total"] / max_total * 100) if max_total else 0
+    # Aggiungi punti fedeltà
+    for c in top:
+        pass  # loyalty opzionale, skip per semplicità
+    return top
+
+
 # ============== SETTINGS ==============
 
 @router.put("/settings", response_model=UserResponse)

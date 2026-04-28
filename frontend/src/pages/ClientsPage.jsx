@@ -31,6 +31,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Users, Plus, Search, Phone, Mail, Edit2, Trash2, Loader2, History, MessageSquare, Upload, FileSpreadsheet, Euro, AlertTriangle, Scissors, Cake } from 'lucide-react';
 import { toast } from 'sonner';
 import PageHeader from '../components/PageHeader';
+import ClientAvatar from '../components/ClientAvatar';
 
 
 export default function ClientsPage() {
@@ -327,13 +328,9 @@ export default function ClientsPage() {
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#C8617A] to-[#A0404F]/10 flex items-center justify-center">
-                        <span className="text-lg font-display text-[#C8617A]">
-                          {client.name.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
+                      <ClientAvatar name={client.name} size="lg" />
                       <div>
-                        <h3 className="font-medium text-[#2D1B14]">{client.name}</h3>
+                        <h3 className="font-semibold text-[#2D1B14]">{client.name}</h3>
                         <div className="flex items-center gap-1 text-xs text-[#7C5C4A]">
                           <History className="w-3 h-3" />
                           {client.total_visits} visite
