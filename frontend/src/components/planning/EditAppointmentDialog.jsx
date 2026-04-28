@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import {
   Loader2, User, CreditCard, Banknote, Euro, CheckCircle, Check,
@@ -64,6 +65,9 @@ export default function EditAppointmentDialog({
   const [openCats, setOpenCats] = useState({});
   const [formData, setFormData] = useState({ service_ids: [], operator_id: '', time: '', notes: '' });
   const [selectedClientInfo, setSelectedClientInfo] = useState(null);
+  const [editingClient, setEditingClient] = useState(false);
+  const [clientFormData, setClientFormData] = useState({});
+  const [savingClient, setSavingClient] = useState(false);
 
   // Checkout state
   const [checkoutMode, setCheckoutMode] = useState(false);
@@ -96,6 +100,34 @@ export default function EditAppointmentDialog({
   const [sellCardPaymentMethod, setSellCardPaymentMethod] = useState('cash');
 
   const sortedServices = groupServicesByCategory(services);
+
+  const openClientEdit = () => {
+    setClientFormData({
+      name: selectedClientInfo.name || '',
+      phone: selectedClientInfo.phone || '',
+      email: selectedClientInfo.email || '',
+      birthday: selectedClientInfo.birthday || '',
+      hair_notes: selectedClientInfo.hair_notes || '',
+      send_sms_reminders: selectedClientInfo.send_sms_reminders !== false,
+    });
+    setEditingClient(true);
+    setShowHistory(false);
+  };
+
+  const saveClientChanges = async () => {
+    if (!clientFormData.name?.trim()) { toast.error('Inserisci il nome'); return; }
+    setSavingClient(true);
+    try {
+      const res = await api.put(`${API}/clients/${selectedClientInfo.id}`, clientFormData);
+      setSelectedClientInfo(res.data);
+      setEditingClient(false);
+      toast.success('Cliente aggiornato!');
+    } catch {
+      toast.error('Errore nel salvataggio');
+    } finally {
+      setSavingClient(false);
+    }
+  };
 
   const loadClientHistory = async (clientId) => {
     if (!clientId || clientId === 'generic') return;
@@ -526,14 +558,54 @@ export default function EditAppointmentDialog({
                     {selectedClientInfo.phone && <p className="text-xs text-[#92400E]">Tel: {selectedClientInfo.phone}</p>}
                     {selectedClientInfo.hair_notes && <p className="text-xs text-[#92400E] mt-0.5 italic truncate">{selectedClientInfo.hair_notes}</p>}
                   </div>
-                  <Button type="button" variant="outline" size="sm" className="h-7 text-xs border-[#F59E0B] text-[#92400E] hover:bg-[#FEF3C7] shrink-0"
-                    onClick={() => showHistory ? setShowHistory(false) : loadClientHistory(selectedClientInfo?.id || appointment?.client_id)}
-                    disabled={loadingHistory}
-                    data-testid="client-history-toggle-btn">
-                    {loadingHistory ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <History className="w-3 h-3 mr-1" />}
-                    Storico
-                  </Button>
+                  <div className="flex gap-1 shrink-0">
+                    <Button type="button" variant="outline" size="sm" className="h-7 text-xs border-[#F59E0B] text-[#92400E] hover:bg-[#FEF3C7]"
+                      onClick={() => editingClient ? setEditingClient(false) : openClientEdit()}>
+                      {editingClient ? <X className="w-3 h-3" /> : <Edit3 className="w-3 h-3 mr-1" />}
+                      {!editingClient && 'Modifica'}
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" className="h-7 text-xs border-[#F59E0B] text-[#92400E] hover:bg-[#FEF3C7]"
+                      onClick={() => showHistory ? setShowHistory(false) : loadClientHistory(selectedClientInfo?.id || appointment?.client_id)}
+                      disabled={loadingHistory}
+                      data-testid="client-history-toggle-btn">
+                      {loadingHistory ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <History className="w-3 h-3 mr-1" />}
+                      Storico
+                    </Button>
+                  </div>
                 </div>
+
+                {/* Inline client edit form */}
+                {editingClient && (
+                  <div className="mt-3 pt-3 border-t border-[#F59E0B]/30 space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-xs text-[#92400E]">Nome</Label>
+                        <Input className="h-7 text-xs" value={clientFormData.name || ''} onChange={e => setClientFormData(p => ({ ...p, name: e.target.value }))} />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-[#92400E]">Telefono</Label>
+                        <Input className="h-7 text-xs" value={clientFormData.phone || ''} onChange={e => setClientFormData(p => ({ ...p, phone: e.target.value }))} />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-[#92400E]">Email</Label>
+                        <Input className="h-7 text-xs" value={clientFormData.email || ''} onChange={e => setClientFormData(p => ({ ...p, email: e.target.value }))} />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-[#92400E]">Compleanno</Label>
+                        <Input className="h-7 text-xs" type="date" value={clientFormData.birthday || ''} onChange={e => setClientFormData(p => ({ ...p, birthday: e.target.value }))} />
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-[#92400E]">Note Colore / Capelli</Label>
+                      <Textarea className="text-xs min-h-[60px] resize-none" value={clientFormData.hair_notes || ''} onChange={e => setClientFormData(p => ({ ...p, hair_notes: e.target.value }))} placeholder="Es. meches 30vol, radice coperta..." />
+                    </div>
+                    <Button type="button" size="sm" className="w-full h-7 text-xs bg-[#F59E0B] hover:bg-[#D97706] text-white"
+                      onClick={saveClientChanges} disabled={savingClient}>
+                      {savingClient ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                      Salva modifiche cliente
+                    </Button>
+                  </div>
+                )}
 
                 {/* Client History Panel */}
                 {showHistory && clientHistory && (
