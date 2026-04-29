@@ -1,16 +1,15 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import api, { API } from '../../lib/api';
 import { fmtDate } from '../../lib/dateUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Clock, CheckCircle, ArrowLeft, ArrowRight, Gift, CreditCard, ChevronDown, ChevronUp, History, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Clock, ArrowLeft, ArrowRight, Gift, CreditCard, ChevronDown, History, Loader2, ChevronLeft, ChevronRight, Lock, Scissors } from 'lucide-react';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isBefore, startOfDay, getDay } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { getCategoryInfo, groupServicesByCategory } from '../../lib/categories';
 import { getAvailableSlotsForDate, getDayHoursForDate, isAllSlotsPastForToday, getNextAvailableDate } from '../../lib/bookingUtils';
-
 
 export default function BookingForm({
   config, bookingServices, operators, cardTemplates, publicPromos,
@@ -28,12 +27,15 @@ export default function BookingForm({
   const [calMonth, setCalMonth] = useState(() => new Date((formData.date || format(new Date(), 'yyyy-MM-dd')) + 'T12:00:00'));
   const [allDayBlocked, setAllDayBlocked] = useState({ dates: new Set(), recurring_days: new Set() });
 
+  // Auto-open first service category
+  useEffect(() => {
+    const { orderedKeys: cats } = groupServicesByCategory(bookingServices);
+    if (cats.length > 0) setOpenCats(prev => ({ [`b_${cats[0]}`]: true, ...prev }));
+  }, [bookingServices]);
+
   useEffect(() => {
     api.get(`${API}/public/blocked-all-day`)
-      .then(res => setAllDayBlocked({
-        dates: new Set(res.data.dates || []),
-        recurring_days: new Set(res.data.recurring_days || [])
-      }))
+      .then(res => setAllDayBlocked({ dates: new Set(res.data.dates || []), recurring_days: new Set(res.data.recurring_days || []) }))
       .catch(() => {});
   }, []);
 
@@ -43,8 +45,7 @@ export default function BookingForm({
     setLoadingHistory(true);
     try {
       const res = await api.post(`${API}/public/my-appointments`, { phone });
-      const data = res.data;
-      const past = (data.past || []).slice(0, 10);
+      const past = (res.data.past || []).slice(0, 10);
       setClientHistory(past);
       setShowHistory(true);
       if (past.length === 0) toast.info('Nessun appuntamento negli ultimi 3 mesi');
@@ -57,7 +58,8 @@ export default function BookingForm({
 
   const toggleService = (id) => {
     setFormData(prev => ({
-      ...prev, service_ids: prev.service_ids.includes(id) ? prev.service_ids.filter(s => s !== id) : [...prev.service_ids, id]
+      ...prev,
+      service_ids: prev.service_ids.includes(id) ? prev.service_ids.filter(s => s !== id) : [...prev.service_ids, id]
     }));
   };
 
@@ -65,51 +67,42 @@ export default function BookingForm({
   const totalPrice = selectedServices.reduce((sum, s) => sum + (s.price || 0), 0);
   const totalDuration = selectedServices.reduce((sum, s) => sum + (s.duration || 0), 0);
 
-  // Fetch blocked slots when date changes
   useEffect(() => {
     if (!formData.date) return;
-    const fetchBlocked = async () => {
-      try {
-        const res = await api.get(`${API}/public/blocked-slots/${formData.date}`);
-        setBlockedSlots(res.data || []);
-      } catch { setBlockedSlots([]); }
-    };
-    fetchBlocked();
+    api.get(`${API}/public/blocked-slots/${formData.date}`)
+      .then(res => setBlockedSlots(res.data || []))
+      .catch(() => setBlockedSlots([]));
   }, [formData.date, setBlockedSlots]);
 
-  // Auto-select first available time when date or blockedSlots change
   useEffect(() => {
     if (!config.hours && !blockedSlots.length) return;
     const available = getAvailableSlotsForDate(formData.date, config.hours, blockedSlots);
     if (available.length > 0) {
-      if (!available.includes(formData.time)) {
-        setFormData(prev => ({ ...prev, time: available[0] }));
-      }
+      if (!available.includes(formData.time)) setFormData(prev => ({ ...prev, time: available[0] }));
     } else {
       const today = format(new Date(), 'yyyy-MM-dd');
       if (formData.date === today) {
         const nextDate = getNextAvailableDate(formData.date, config.hours);
-        if (nextDate) {
-          setFormData(prev => ({ ...prev, date: nextDate }));
-        }
+        if (nextDate) setFormData(prev => ({ ...prev, date: nextDate }));
       }
     }
   }, [formData.date, blockedSlots, config.hours, formData.time, setFormData]);
 
   const handleSubmit = async (e, overrideOperatorId) => {
-    if (!overrideOperatorId && (!formData.client_name || !formData.client_phone)) { toast.error('Inserisci nome e telefono'); return; }
+    if (!overrideOperatorId && (!formData.client_name || !formData.client_phone)) {
+      toast.error('Inserisci nome e telefono'); return;
+    }
     setSubmitting(true);
     setConflictData(null);
     const bookingData = overrideOperatorId ? { ...formData, operator_id: overrideOperatorId } : formData;
     try {
       const res = await api.post(`${API}/public/booking`, bookingData);
       const aptId = res.data.appointment_id;
-      // Fetch upselling suggestions
       let upsells = [];
       try {
         const upsellRes = await api.get(`${API}/public/upselling?service_ids=${formData.service_ids.join(',')}`);
         upsells = upsellRes.data || [];
-      } catch { /* upselling not critical */ }
+      } catch {}
       onSuccess(aptId, upsells);
     } catch (err) {
       if (err.response?.status === 409 && err.response?.data?.detail?.conflict) {
@@ -124,64 +117,81 @@ export default function BookingForm({
   const handleBookingSubmit = (e, operatorId) => handleSubmit(e, operatorId);
   const toggleCat = (key) => setOpenCats(prev => ({ ...prev, [key]: !prev[key] }));
 
+  // Compute slots for display: all slots for day (no blocked filter), then separate available vs occupied
+  const allSlotsForDay = formData.date ? getAvailableSlotsForDate(formData.date, config.hours, []) : [];
+  const blockedSet = new Set(blockedSlots);
+  const availableSlots = allSlotsForDay.filter(s => !blockedSet.has(s));
+
+  const STEPS = [
+    { n: 1, label: 'Servizi', emoji: '✂️' },
+    { n: 2, label: 'Quando', emoji: '📅' },
+    { n: 3, label: 'Dati', emoji: '👤' },
+  ];
+
+  const primaryLight = T.primary + '18';
+  const primaryBorder = T.primary + '35';
+
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #1C1008 0%, #2A100C 45%, #1A0814 100%)' }}>
+    <div className="min-h-screen" style={{ background: 'linear-gradient(160deg, #FFF0F5 0%, #FFFFFF 55%, #F5F0FF 100%)' }}>
       <style>{`
-        @keyframes stepIn { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
-        @keyframes popIn { 0% { transform: scale(0.7); opacity: 0; } 70% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
-        .step-in { animation: stepIn 0.28s ease forwards; }
-        .pop-in { animation: popIn 0.3s ease forwards; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes popIn { 0% { transform: scale(0.75); opacity: 0; } 70% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+        .slide-up { animation: slideUp 0.25s ease forwards; }
+        .pop-in { animation: popIn 0.22s ease forwards; }
       `}</style>
-      <div className="border-b border-white/5 py-4 px-4 sticky top-0 z-50" style={{ background: 'rgba(26,8,20,0.85)', backdropFilter: 'blur(12px)' }}>
+
+      {/* ── HEADER ── */}
+      <div className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm py-3 px-4">
         <div className="max-w-lg mx-auto flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={onBack} className="text-[#B89A7A] hover:text-white hover:bg-white/10 shrink-0" data-testid="website-booking-back-btn">
+          <button onClick={onBack} className="p-2 rounded-xl hover:bg-gray-100 transition-colors text-gray-500" data-testid="website-booking-back-btn">
             <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div className="flex items-center gap-3">
-            <img src="/logo.png?v=4" alt={config.salon_name} className="w-9 h-9 rounded-lg" />
-            <div>
-              <h1 className="text-white text-sm font-black leading-tight">{config.salon_name || 'BRUNO MELITO HAIR'}</h1>
-              <p className="text-[#C8617A] text-xs font-semibold">✨ Prenota il tuo appuntamento</p>
-            </div>
+          </button>
+          <img src="/logo.png?v=4" alt={config.salon_name} className="w-9 h-9 rounded-xl border border-gray-100" />
+          <div>
+            <p className="font-black text-gray-900 text-sm leading-tight">{config.salon_name || 'BRUNO MELITO HAIR'}</p>
+            <p className="text-xs font-semibold" style={{ color: T.primary }}>✨ Prenota il tuo appuntamento</p>
           </div>
         </div>
       </div>
-      <div className="max-w-lg mx-auto px-4 py-6">
-        {/* Progress indicator */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-3">
-            {[{n:1,label:'Servizi',emoji:'✂️'},{n:2,label:'Quando',emoji:'📅'},{n:3,label:'Dati',emoji:'👤'}].map((s) => (
-              <div key={s.n} className="flex flex-col items-center flex-1">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-base font-black mb-1 transition-all duration-300
-                  ${step > s.n
-                    ? 'bg-emerald-500 text-white scale-95'
-                    : step === s.n
-                      ? 'text-white ring-4 ring-[#C8617A]/40 scale-110'
-                      : 'bg-[#3A2A1A] text-[#6A5A3A]'}
-                `} style={step === s.n ? { background: 'linear-gradient(135deg,#E8477C,#A0404F)' } : {}}>
+
+      <div className="max-w-lg mx-auto px-4 py-5">
+
+        {/* ── STEP INDICATOR ── */}
+        <div className="flex items-start mb-6">
+          {STEPS.map((s, idx) => (
+            <div key={s.n} className={`flex items-start ${idx < STEPS.length - 1 ? 'flex-1' : ''}`}>
+              <div className="flex flex-col items-center">
+                <div
+                  className={`w-11 h-11 rounded-2xl flex items-center justify-center text-base font-black shadow-sm transition-all duration-300
+                    ${step > s.n ? 'bg-emerald-500 text-white' : step === s.n ? 'text-white shadow-md scale-110' : 'bg-gray-100 text-gray-400'}`}
+                  style={step === s.n ? { background: `linear-gradient(135deg, ${T.primary}, ${T.primary}BB)` } : {}}>
                   {step > s.n ? '✓' : s.emoji}
                 </div>
-                <span className={`text-[10px] font-bold ${step >= s.n ? 'text-white' : 'text-[#5A4A3A]'}`}>{s.label}</span>
+                <span className={`text-[10px] font-bold mt-1.5 ${step >= s.n ? 'text-gray-700' : 'text-gray-300'}`}>{s.label}</span>
               </div>
-            ))}
-          </div>
-          <div className="relative h-1.5 bg-[#3A2A1A] rounded-full mx-5">
-            <div className="absolute left-0 top-0 h-full rounded-full transition-all duration-500"
-              style={{ width: `${(step - 1) * 50}%`, background: 'linear-gradient(90deg, #E8477C, #A0404F)' }} />
-          </div>
+              {idx < STEPS.length - 1 && (
+                <div className="flex-1 h-1.5 mt-5 mx-2 rounded-full bg-gray-100 overflow-hidden">
+                  <div className="h-full rounded-full transition-all duration-500"
+                    style={{ width: step > s.n ? '100%' : '0%', background: `linear-gradient(90deg, ${T.primary}, ${T.primary}BB)` }} />
+                </div>
+              )}
+            </div>
+          ))}
         </div>
 
-        {/* STEP 1 — Servizi */}
+        {/* ══════════════════════════════════════════════════
+            STEP 1 — SERVIZI
+        ══════════════════════════════════════════════════ */}
         {step === 1 && (
-          <div className="flex flex-col step-in" style={{ maxHeight: '70vh' }}>
-            <div className="mb-3">
-              <h2 className="text-2xl font-black text-white">✂️ Scegli il tuo look</h2>
-              <p className="text-sm text-[#C8617A] mt-0.5 font-semibold">Cosa vuoi fare oggi?</p>
+          <div className="slide-up flex flex-col" style={{ maxHeight: '72vh' }}>
+            <div className="mb-4">
+              <h2 className="text-2xl font-black text-gray-900">✂️ Cosa facciamo oggi?</h2>
+              <p className="text-sm text-gray-500 mt-0.5">Tocca per selezionare uno o più servizi</p>
             </div>
-            <div className="flex-1 overflow-y-auto space-y-3 pr-1 pb-2">
+
+            <div className="flex-1 overflow-y-auto space-y-2.5 pr-0.5 pb-2">
               {(() => {
                 const { groups: byCat, orderedKeys: cats } = groupServicesByCategory(bookingServices);
-                const hasCardCat = cardTemplates.length > 0;
                 return (
                   <>
                     {cats.map(cat => {
@@ -191,32 +201,41 @@ export default function BookingForm({
                       return (
                         <div key={cat} data-testid={`booking-cat-${cat}`}>
                           <button type="button" onClick={() => toggleCat(`b_${cat}`)}
-                            className="w-full flex items-center justify-between px-5 py-3.5 rounded-2xl font-black text-white text-left transition-all hover:brightness-110 active:scale-[0.98]"
+                            className="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl font-black text-white text-left transition-all hover:brightness-105 active:scale-[0.99] shadow-sm"
                             style={{ backgroundColor: catInfo.color }}>
-                            <span className="flex items-center gap-2">
+                            <span className="flex items-center gap-2.5">
                               <span className="text-base">{catInfo.label}</span>
-                              {selectedInCat > 0 && <span className="bg-white/30 text-white text-xs font-bold px-2 py-0.5 rounded-full">{selectedInCat}</span>}
+                              {selectedInCat > 0 && (
+                                <span className="bg-white/30 text-white text-xs font-bold px-2 py-0.5 rounded-full">{selectedInCat} ✓</span>
+                              )}
                             </span>
-                            {isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                            <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
                           </button>
                           {isOpen && (
-                            <div className="mt-1 space-y-2 pb-2 animate-in fade-in duration-200">
-                              {byCat[cat].map(service => (
-                                <div key={service.id} onClick={() => toggleService(service.id)}
-                                  className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${formData.service_ids.includes(service.id) ? 'border-[#E8477C] bg-gradient-to-r from-[#E8477C]/20 to-[#A0404F]/10 shadow-[0_0_16px_rgba(232,71,124,0.25)]' : 'border-[#3A2A1A] bg-[#2A1A0E] hover:border-[#6A4A2A] hover:bg-[#321A0E]'}`}
-                                  data-testid={`website-service-${service.id}`}>
-                                  <div className="flex justify-between items-center">
-                                    <div>
-                                      <p className="font-bold text-white flex items-center gap-1.5">
-                                        {formData.service_ids.includes(service.id) && <span className="pop-in inline-block text-emerald-400">✓</span>}
-                                        {service.name}
-                                      </p>
-                                      <p className="text-sm text-[#8A6A4A]">{service.duration} min</p>
+                            <div className="mt-2 space-y-2 animate-in fade-in duration-200">
+                              {byCat[cat].map(service => {
+                                const isSel = formData.service_ids.includes(service.id);
+                                return (
+                                  <div key={service.id} onClick={() => toggleService(service.id)}
+                                    className="px-4 py-3.5 rounded-2xl border-2 cursor-pointer transition-all duration-150 bg-white hover:shadow-sm active:scale-[0.99]"
+                                    style={isSel ? { borderColor: T.primary, backgroundColor: primaryLight } : { borderColor: '#E5E7EB' }}
+                                    data-testid={`website-service-${service.id}`}>
+                                    <div className="flex items-center justify-between gap-3">
+                                      <div className="flex items-center gap-3 min-w-0">
+                                        <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
+                                          style={isSel ? { backgroundColor: T.primary, borderColor: T.primary } : { borderColor: '#D1D5DB' }}>
+                                          {isSel && <span className="text-white text-[10px] font-black pop-in">✓</span>}
+                                        </div>
+                                        <div className="min-w-0">
+                                          <p className="font-bold text-gray-900 text-sm truncate">{service.name}</p>
+                                          <p className="text-xs text-gray-400 mt-0.5">⏱ {service.duration} min</p>
+                                        </div>
+                                      </div>
+                                      <p className="font-black text-base flex-shrink-0" style={{ color: isSel ? T.primary : '#374151' }}>€{service.price}</p>
                                     </div>
-                                    <p className={`font-black text-lg ${formData.service_ids.includes(service.id) ? 'text-[#E8477C]' : 'text-white'}`}>{'\u20AC'}{service.price}</p>
                                   </div>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
                           )}
                         </div>
@@ -224,48 +243,42 @@ export default function BookingForm({
                     })}
 
                     {/* Card & Abbonamenti */}
-                    {hasCardCat && (() => {
+                    {cardTemplates.length > 0 && (() => {
                       const isOpen = openCats['b_cards'];
                       return (
                         <div data-testid="booking-cat-cards">
                           <button type="button" onClick={() => toggleCat('b_cards')}
-                            className="w-full flex items-center justify-between px-5 py-3.5 rounded-2xl font-black text-white text-left transition-all hover:brightness-110 active:scale-[0.98]"
+                            className="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl font-black text-white text-left transition-all hover:brightness-105 active:scale-[0.99] shadow-sm"
                             style={{ backgroundColor: '#6366F1' }}>
-                            <span className="flex items-center gap-2">
-                              <CreditCard className="w-4 h-4" />
-                              <span className="text-base">Card & Abbonamenti</span>
-                            </span>
-                            {isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                            <span className="flex items-center gap-2.5"><CreditCard className="w-4 h-4" /><span>Card & Abbonamenti</span></span>
+                            <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
                           </button>
                           {isOpen && (
-                            <div className="mt-1 space-y-2 pb-2 animate-in fade-in duration-200">
+                            <div className="mt-2 space-y-2 animate-in fade-in duration-200">
                               {cardTemplates.map((tmpl, i) => {
-                                const isSelected = formData.notes?.includes(`[CARD: ${tmpl.name}]`);
+                                const isSel = formData.notes?.includes(`[CARD: ${tmpl.name}]`);
                                 return (
                                   <div key={tmpl.id || i}
                                     onClick={() => {
-                                      if (isSelected) {
+                                      if (isSel) {
                                         setFormData(prev => ({ ...prev, notes: prev.notes.replace(`[CARD: ${tmpl.name}] `, '').replace(`[CARD: ${tmpl.name}]`, '') }));
-                                        toast('Card rimossa');
                                       } else {
                                         const cleanNotes = (formData.notes || '').replace(/\[CARD: [^\]]+\] ?/g, '');
                                         setFormData(prev => ({ ...prev, notes: `[CARD: ${tmpl.name}] ${cleanNotes}`.trim() }));
                                         toast.success(`"${tmpl.name}" selezionato!`);
                                       }
                                     }}
-                                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${isSelected ? 'border-[#6366F1] bg-[#6366F1]/15' : 'border-[#3A2A1A] bg-[#2A1A0E] hover:border-[#6366F1]/60'}`}
+                                    className="px-4 py-3.5 rounded-2xl border-2 cursor-pointer transition-all bg-white hover:shadow-sm active:scale-[0.99]"
+                                    style={isSel ? { borderColor: '#6366F1', backgroundColor: '#EEF2FF' } : { borderColor: '#E5E7EB' }}
                                     data-testid={`website-card-template-${i}`}>
-                                    <div className="flex justify-between items-center">
+                                    <div className="flex items-center justify-between">
                                       <div>
-                                        <p className="font-bold text-white">{tmpl.name}</p>
-                                        <p className="text-sm text-[#8B5CF6]">
-                                          {tmpl.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}
-                                          {tmpl.total_services ? ` · ${tmpl.total_services} servizi` : ''}
-                                        </p>
+                                        <p className="font-bold text-gray-900 text-sm">{tmpl.name}</p>
+                                        <p className="text-xs text-indigo-500 mt-0.5">{tmpl.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}{tmpl.total_services ? ` · ${tmpl.total_services} servizi` : ''}</p>
                                       </div>
                                       <div className="text-right">
-                                        <p className="font-black text-white">{'\u20AC'}{tmpl.total_value}</p>
-                                        {isSelected && <span className="text-xs font-bold text-[#6366F1]">SELEZIONATO</span>}
+                                        <p className="font-black text-gray-900">€{tmpl.total_value}</p>
+                                        {isSel && <span className="text-[10px] font-bold text-indigo-500">✓ Selezionato</span>}
                                       </div>
                                     </div>
                                   </div>
@@ -277,38 +290,31 @@ export default function BookingForm({
                       );
                     })()}
 
-                    {/* Promozioni attive */}
+                    {/* Promozioni */}
                     {publicPromos.length > 0 && (() => {
                       const isOpen = openCats['b_promos'];
+                      const selectedPromos = publicPromos.filter(p => (formData.notes || '').includes(`[PROMO: ${p.name}]`)).length;
                       return (
                         <div data-testid="booking-cat-promos">
                           <button type="button" onClick={() => toggleCat('b_promos')}
-                            className="w-full flex items-center justify-between px-5 py-3.5 rounded-2xl font-black text-white text-left transition-all hover:brightness-110 active:scale-[0.98]"
+                            className="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl font-black text-white text-left transition-all hover:brightness-105 active:scale-[0.99] shadow-sm"
                             style={{ backgroundColor: '#F59E0B' }}>
-                            <span className="flex items-center gap-2">
-                              <Gift className="w-4 h-4" />
-                              <span className="text-base">Promozioni Attive</span>
-                              {publicPromos.filter(p => (formData.notes || '').includes(`[PROMO: ${p.name}]`)).length > 0 && (
-                                <span className="bg-white/30 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                                  {publicPromos.filter(p => (formData.notes || '').includes(`[PROMO: ${p.name}]`)).length}
-                                </span>
-                              )}
+                            <span className="flex items-center gap-2.5">
+                              <Gift className="w-4 h-4" /><span>🎁 Promozioni Attive</span>
+                              {selectedPromos > 0 && <span className="bg-white/30 text-white text-xs font-bold px-2 py-0.5 rounded-full">{selectedPromos}</span>}
                             </span>
-                            {isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                            <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
                           </button>
                           {isOpen && (
-                            <div className="mt-1 space-y-2 pb-2 animate-in fade-in duration-200">
-                              {publicPromos.map((promo) => {
-                                const isSelected = (formData.notes || '').includes(`[PROMO: ${promo.name}]`);
+                            <div className="mt-2 space-y-2 animate-in fade-in duration-200">
+                              {publicPromos.map(promo => {
+                                const isSel = (formData.notes || '').includes(`[PROMO: ${promo.name}]`);
                                 return (
                                   <div key={promo.id}
                                     onClick={() => {
-                                      if (isSelected) {
+                                      if (isSel) {
                                         setFormData(prev => ({ ...prev, notes: prev.notes.replace(`[PROMO: ${promo.name}] `, '').replace(`[PROMO: ${promo.name}]`, '') }));
-                                        if (promo.free_service_id) {
-                                          setFormData(prev => ({ ...prev, service_ids: prev.service_ids.filter(id => id !== promo.free_service_id) }));
-                                        }
-                                        toast('Promo rimossa');
+                                        if (promo.free_service_id) setFormData(prev => ({ ...prev, service_ids: prev.service_ids.filter(id => id !== promo.free_service_id) }));
                                       } else {
                                         if (promo.free_service_id && !formData.service_ids.includes(promo.free_service_id)) {
                                           setFormData(prev => ({ ...prev, service_ids: [...prev.service_ids, promo.free_service_id], notes: (prev.notes ? prev.notes + ' ' : '') + `[PROMO: ${promo.name}]` }));
@@ -318,16 +324,17 @@ export default function BookingForm({
                                         toast.success(`Promo "${promo.name}" aggiunta!`);
                                       }
                                     }}
-                                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${isSelected ? 'border-amber-500 bg-amber-500/15' : 'border-[#3A2A1A] bg-[#2A1A0E] hover:border-amber-400/60'}`}
+                                    className="px-4 py-3.5 rounded-2xl border-2 cursor-pointer transition-all bg-white hover:shadow-sm active:scale-[0.99]"
+                                    style={isSel ? { borderColor: '#F59E0B', backgroundColor: '#FFFBEB' } : { borderColor: '#E5E7EB' }}
                                     data-testid={`website-promo-${promo.id}`}>
-                                    <div className="flex justify-between items-center">
+                                    <div className="flex items-center justify-between">
                                       <div>
-                                        <p className="font-bold text-white">{promo.name}</p>
-                                        <p className="text-sm text-amber-300">{promo.free_service_name || promo.description || 'Clicca per applicare'}</p>
+                                        <p className="font-bold text-gray-900 text-sm">{promo.name}</p>
+                                        <p className="text-xs text-amber-600 mt-0.5">{promo.free_service_name || promo.description || ''}</p>
                                       </div>
-                                      <div className="text-right">
-                                        {isSelected ? <span className="text-xs font-bold text-amber-400">SELEZIONATO</span> : <div className="bg-amber-400 text-[#1C1008] text-xs font-bold px-3 py-1 rounded-full">PROMO</div>}
-                                      </div>
+                                      {isSel
+                                        ? <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full">✓ Aggiunta</span>
+                                        : <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full">PROMO</span>}
                                     </div>
                                   </div>
                                 );
@@ -343,52 +350,59 @@ export default function BookingForm({
             </div>
 
             {/* Sticky bottom */}
-            <div className="sticky bottom-0 bg-[#1C1008] pt-3 border-t border-[#3A2A1A] mt-2 space-y-2">
+            <div className="sticky bottom-0 bg-white/95 backdrop-blur-sm pt-3 border-t border-gray-100 mt-2 space-y-2">
               {formData.service_ids.length > 0 && (
-                <div className="bg-[#2A1A0E] p-3 rounded-xl border border-[#3A2A1A]">
-                  <p className="font-bold text-white text-sm">Riepilogo: {totalDuration} min - {'\u20AC'}{totalPrice}</p>
+                <div className="flex items-center justify-between px-4 py-2.5 rounded-2xl" style={{ backgroundColor: primaryLight, border: `1.5px solid ${primaryBorder}` }}>
+                  <span className="text-sm font-bold text-gray-700">
+                    {selectedServices.length} servizio{selectedServices.length > 1 ? 'i' : ''} · {totalDuration} min
+                  </span>
+                  <span className="font-black text-base" style={{ color: T.primary }}>€{totalPrice}</span>
                 </div>
               )}
-              <Button onClick={() => setStep(2)} disabled={formData.service_ids.length === 0} className="w-full bg-gradient-to-r from-[#C8617A] to-[#A0404F] text-white hover:bg-gray-200 font-bold py-6" data-testid="website-step1-next">Continua <ArrowRight className="w-4 h-4 ml-2" /></Button>
+              <Button
+                onClick={() => setStep(2)}
+                disabled={formData.service_ids.length === 0}
+                className="w-full text-white font-black py-6 rounded-2xl shadow-md hover:shadow-lg hover:scale-[1.01] transition-all disabled:opacity-40"
+                style={{ background: formData.service_ids.length > 0 ? `linear-gradient(135deg, ${T.primary}, ${T.primary}CC)` : undefined }}
+                data-testid="website-step1-next">
+                Scegli il giorno <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
             </div>
           </div>
         )}
 
-        {/* STEP 2 — Data e Ora */}
+        {/* ══════════════════════════════════════════════════
+            STEP 2 — DATA E ORA
+        ══════════════════════════════════════════════════ */}
         {step === 2 && (
-          <div className="space-y-4 step-in">
+          <div className="space-y-4 slide-up">
             <div>
-              <h2 className="text-2xl font-black text-white">📅 Quando ci vediamo?</h2>
-              <p className="text-sm text-[#C8617A] mt-0.5 font-semibold">Scegli il giorno e l'orario</p>
+              <h2 className="text-2xl font-black text-gray-900">📅 Quando ci vediamo?</h2>
+              <p className="text-sm text-gray-500 mt-0.5">Scegli il giorno e l'orario preferito</p>
             </div>
 
-            {/* Calendario visivo */}
-            <div className="bg-[#2A1A0E] rounded-2xl border border-[#3A2A1A] overflow-hidden" data-testid="booking-date-input">
-              {/* Navigazione mese */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-[#3A2A1A]">
+            {/* CALENDARIO */}
+            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden" data-testid="booking-date-input">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
                 <button type="button"
                   onClick={() => setCalMonth(prev => subMonths(prev, 1))}
                   disabled={startOfMonth(calMonth) <= startOfMonth(new Date())}
-                  className="p-1.5 rounded-lg hover:bg-white/10 text-[#B89A7A] disabled:opacity-20 disabled:cursor-not-allowed transition-all">
+                  className="w-9 h-9 rounded-xl hover:bg-gray-100 flex items-center justify-center text-gray-400 disabled:opacity-20 transition-all">
                   <ChevronLeft className="w-4 h-4" />
                 </button>
-                <span className="text-white font-bold capitalize text-sm">
-                  {format(calMonth, 'MMMM yyyy', { locale: it })}
-                </span>
+                <span className="font-black text-gray-900 capitalize">{format(calMonth, 'MMMM yyyy', { locale: it })}</span>
                 <button type="button"
                   onClick={() => setCalMonth(prev => addMonths(prev, 1))}
-                  className="p-1.5 rounded-lg hover:bg-white/10 text-[#B89A7A] transition-all">
+                  className="w-9 h-9 rounded-xl hover:bg-gray-100 flex items-center justify-center text-gray-400 transition-all">
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
-              {/* Intestazioni giorni */}
-              <div className="grid grid-cols-7 px-2 pt-2">
-                {['L','M','M','G','V','S','D'].map((d, i) => (
-                  <div key={i} className="text-center text-[10px] font-bold text-[#6A5A3A] py-1">{d}</div>
+              <div className="grid grid-cols-7 px-3 pt-2">
+                {['Lun','Mar','Mer','Gio','Ven','Sab','Dom'].map((d, i) => (
+                  <div key={i} className="text-center text-[10px] font-bold text-gray-400 py-1">{d}</div>
                 ))}
               </div>
-              {/* Griglia giorni */}
-              <div className="grid grid-cols-7 gap-1 p-2 pt-1">
+              <div className="grid grid-cols-7 gap-1 p-3 pt-1">
                 {(() => {
                   const todayDate = startOfDay(new Date());
                   const todayStr = format(todayDate, 'yyyy-MM-dd');
@@ -411,22 +425,20 @@ export default function BookingForm({
                     const isDisabled = isPast || isClosed || isAllDay;
                     cells.push(
                       <button key={dateStr} type="button" disabled={isDisabled}
-                        onClick={() => { setFormData(prev => ({...prev, date: dateStr})); }}
+                        onClick={() => setFormData(prev => ({ ...prev, date: dateStr }))}
                         className={`relative aspect-square rounded-xl flex flex-col items-center justify-center text-[13px] font-bold leading-none transition-all duration-150
                           ${isSelected
-                            ? 'bg-gradient-to-br from-[#C8617A] to-[#A0404F] text-white shadow-lg scale-[1.08]'
+                            ? 'text-white shadow-md scale-[1.08]'
                             : isDisabled
-                              ? 'text-[#3A2A1A] cursor-not-allowed'
+                              ? 'text-gray-200 cursor-not-allowed'
                               : isToday
-                                ? 'bg-[#3A2A1A] text-amber-300 ring-1 ring-amber-500/50 hover:bg-[#4A3020]'
-                                : 'text-[#D4B89A] hover:bg-[#3A2A1A] hover:text-white'
-                          }`}>
+                                ? 'text-amber-600 bg-amber-50 ring-1 ring-amber-300 hover:bg-amber-100'
+                                : 'text-gray-800 hover:bg-gray-100 hover:scale-[1.05]'
+                          }`}
+                        style={isSelected ? { background: `linear-gradient(135deg, ${T.primary}, ${T.primary}BB)` } : {}}>
                         {format(day, 'd')}
-                        {(isClosed || isAllDay) && !isPast && (
-                          <span className="text-[7px] text-[#4A3A2A] font-normal mt-0.5 leading-none">
-                            {isAllDay ? '🔒' : 'chius.'}
-                          </span>
-                        )}
+                        {!isPast && isClosed && <span className="text-[7px] text-gray-300 font-normal mt-0.5 leading-none">chiuso</span>}
+                        {!isPast && !isClosed && isAllDay && <span className="text-[9px] mt-0.5 leading-none">🔒</span>}
                       </button>
                     );
                   });
@@ -435,162 +447,291 @@ export default function BookingForm({
               </div>
             </div>
 
-            {/* Slot orari */}
+            {/* SLOT ORARI */}
             {formData.date && (() => {
-              const available = getAvailableSlotsForDate(formData.date, config.hours, blockedSlots);
-              if (available.length === 0) {
-                const { isClosed } = getDayHoursForDate(formData.date, config.hours);
-                const todayPast = isAllSlotsPastForToday(formData.date, config.hours);
+              const { isClosed } = getDayHoursForDate(formData.date, config.hours);
+              const todayPast = isAllSlotsPastForToday(formData.date, config.hours);
+              const dayNamesIt = ['domenica', 'lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato'];
+              const dayItName = dayNamesIt[getDay(new Date(formData.date + 'T12:00:00'))];
+              const isFullyBlocked = allDayBlocked.dates.has(formData.date) || allDayBlocked.recurring_days.has(dayItName);
+
+              // Nessun orario disponibile
+              if (availableSlots.length === 0) {
+                let icon = '📅', title = 'Nessun orario disponibile', desc = 'Scegli un altro giorno nel calendario.';
+                if (isClosed) { icon = '😴'; title = 'Salone chiuso'; desc = 'In questo giorno il salone è chiuso. Seleziona un altro giorno.'; }
+                else if (isFullyBlocked) { icon = '🔒'; title = 'Giorno non disponibile'; desc = 'Questo giorno è riservato. Scegli un altro giorno disponibile.'; }
+                else if (todayPast) { icon = '⏰'; title = 'Orari di oggi terminati'; desc = 'Non puoi più prenotare per oggi. Scegli domani o un altro giorno.'; }
+                else if (allSlotsForDay.length > 0) { icon = '😔'; title = 'Tutti gli orari sono occupati'; desc = 'Questo giorno è al completo. Prova con un giorno vicino.'; }
+
                 const nextDate = getNextAvailableDate(formData.date, config.hours);
                 return (
                   <div className="space-y-3" data-testid="day-closed-msg">
-                    <p className="text-amber-400 font-bold text-sm p-3 bg-amber-500/10 rounded-lg border border-amber-500/30">
-                      {isClosed ? 'Giorno di chiusura. Scegli un altro giorno.' : todayPast ? 'Gli orari di oggi sono terminati.' : 'Nessun orario disponibile.'}
-                    </p>
+                    <div className="p-5 bg-white rounded-2xl shadow-sm border border-gray-100 text-center">
+                      <div className="text-4xl mb-2">{icon}</div>
+                      <p className="font-black text-gray-800 text-base">{title}</p>
+                      <p className="text-sm text-gray-500 mt-1 leading-relaxed">{desc}</p>
+                    </div>
                     {nextDate && (
                       <button type="button"
-                        onClick={() => { setFormData(prev => ({...prev, date: nextDate})); setCalMonth(new Date(nextDate + 'T12:00:00')); }}
-                        className="w-full p-3 rounded-xl bg-gradient-to-r from-[#C8617A] to-[#A0404F] text-white font-bold text-sm hover:scale-[1.02] transition-all"
+                        onClick={() => { setFormData(prev => ({ ...prev, date: nextDate })); setCalMonth(new Date(nextDate + 'T12:00:00')); }}
+                        className="w-full p-4 rounded-2xl font-bold text-white text-sm hover:opacity-90 hover:scale-[1.01] transition-all shadow-sm"
+                        style={{ background: `linear-gradient(135deg, ${T.primary}, ${T.primary}CC)` }}
                         data-testid="go-next-date-btn">
-                        Vai al {format(new Date(nextDate + 'T12:00:00'), 'EEEE dd/MM/yy', { locale: it })}
+                        🗓 Prossimo giorno disponibile — {format(new Date(nextDate + 'T12:00:00'), 'EEEE dd MMMM', { locale: it })}
                       </button>
                     )}
                   </div>
                 );
               }
-              const morning = available.filter(t => parseInt(t.split(':')[0]) < 13);
-              const afternoon = available.filter(t => parseInt(t.split(':')[0]) >= 13);
+
+              const morningAll = allSlotsForDay.filter(t => parseInt(t.split(':')[0]) < 13);
+              const afternoonAll = allSlotsForDay.filter(t => parseInt(t.split(':')[0]) >= 13);
+              const hasOccupied = blockedSlots.length > 0;
+
               return (
-                <div className="space-y-3" data-testid="time-slots-grid">
-                  <label className="text-sm text-[#B89A7A] font-semibold block">
-                    Ora — <span className="text-white capitalize">{format(new Date(formData.date + 'T12:00:00'), 'EEEE dd/MM', { locale: it })}</span>
-                  </label>
-                  {morning.length > 0 && (
+                <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-4 space-y-4" data-testid="time-slots-grid">
+                  <div className="flex items-center justify-between">
+                    <p className="font-bold text-gray-800 capitalize">
+                      {format(new Date(formData.date + 'T12:00:00'), 'EEEE dd MMMM', { locale: it })}
+                    </p>
+                    {hasOccupied && (
+                      <span className="flex items-center gap-1 text-[10px] text-gray-400 font-semibold bg-gray-50 px-2 py-1 rounded-full">
+                        <Lock className="w-2.5 h-2.5" /> occupato
+                      </span>
+                    )}
+                  </div>
+
+                  {morningAll.length > 0 && (
                     <div>
-                      <p className="text-[10px] font-bold text-[#6A5A3A] uppercase tracking-wider mb-1.5">Mattina</p>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">🌅 Mattina</p>
                       <div className="grid grid-cols-4 gap-1.5">
-                        {morning.map(t => (
-                          <button key={t} type="button" data-testid="time-select"
-                            onClick={() => setFormData(prev => ({...prev, time: t}))}
-                            className={`py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95
-                              ${formData.time === t
-                                ? 'bg-gradient-to-r from-[#C8617A] to-[#A0404F] text-white shadow-md'
-                                : 'bg-[#2A1A0E] border border-[#3A2A1A] text-[#D4B89A] hover:border-[#C8617A]/50 hover:text-white'}`}>
-                            {t}
-                          </button>
-                        ))}
+                        {morningAll.map(t => {
+                          const isAvail = !blockedSet.has(t);
+                          const isSel = formData.time === t && isAvail;
+                          return (
+                            <button key={t} type="button" disabled={!isAvail}
+                              onClick={() => isAvail && setFormData(prev => ({ ...prev, time: t }))}
+                              className="py-3 rounded-xl text-sm font-bold transition-all active:scale-95"
+                              style={isSel
+                                ? { background: `linear-gradient(135deg, ${T.primary}, ${T.primary}BB)`, color: 'white' }
+                                : isAvail
+                                  ? { backgroundColor: primaryLight, color: T.primary, border: `1.5px solid ${primaryBorder}` }
+                                  : { backgroundColor: '#F5F5F5', color: '#C8C8C8', cursor: 'not-allowed' }}
+                              data-testid="time-select">
+                              {isAvail ? t : (
+                                <span className="flex flex-col items-center gap-0.5 leading-none">
+                                  <span className="text-xs">{t}</span>
+                                  <Lock className="w-2.5 h-2.5" />
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
-                  {afternoon.length > 0 && (
+
+                  {afternoonAll.length > 0 && (
                     <div>
-                      <p className="text-[10px] font-bold text-[#6A5A3A] uppercase tracking-wider mb-1.5">Pomeriggio</p>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">🌆 Pomeriggio</p>
                       <div className="grid grid-cols-4 gap-1.5">
-                        {afternoon.map(t => (
-                          <button key={t} type="button" data-testid="time-select"
-                            onClick={() => setFormData(prev => ({...prev, time: t}))}
-                            className={`py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95
-                              ${formData.time === t
-                                ? 'bg-gradient-to-r from-[#C8617A] to-[#A0404F] text-white shadow-md'
-                                : 'bg-[#2A1A0E] border border-[#3A2A1A] text-[#D4B89A] hover:border-[#C8617A]/50 hover:text-white'}`}>
-                            {t}
-                          </button>
-                        ))}
+                        {afternoonAll.map(t => {
+                          const isAvail = !blockedSet.has(t);
+                          const isSel = formData.time === t && isAvail;
+                          return (
+                            <button key={t} type="button" disabled={!isAvail}
+                              onClick={() => isAvail && setFormData(prev => ({ ...prev, time: t }))}
+                              className="py-3 rounded-xl text-sm font-bold transition-all active:scale-95"
+                              style={isSel
+                                ? { background: `linear-gradient(135deg, ${T.primary}, ${T.primary}BB)`, color: 'white' }
+                                : isAvail
+                                  ? { backgroundColor: primaryLight, color: T.primary, border: `1.5px solid ${primaryBorder}` }
+                                  : { backgroundColor: '#F5F5F5', color: '#C8C8C8', cursor: 'not-allowed' }}
+                              data-testid="time-select">
+                              {isAvail ? t : (
+                                <span className="flex flex-col items-center gap-0.5 leading-none">
+                                  <span className="text-xs">{t}</span>
+                                  <Lock className="w-2.5 h-2.5" />
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
-                  {blockedSlots.length > 0 && (
-                    <p className="text-xs text-amber-400/70 flex items-center gap-1">
-                      <Clock className="w-3 h-3" /> Alcuni orari non sono disponibili
+
+                  {hasOccupied && (
+                    <p className="text-xs text-gray-400 text-center">
+                      Gli orari con 🔒 sono già prenotati — scegli uno di quelli disponibili
                     </p>
                   )}
                 </div>
               );
             })()}
 
-            {/* Operatore */}
-            {operators.length > 0 && (
-              <div>
-                <label className="text-sm text-[#B89A7A] font-semibold mb-1 block">Operatore (opzionale)</label>
-                <select value={formData.operator_id} onChange={(e) => setFormData({...formData, operator_id: e.target.value})}
-                  className="w-full p-3 bg-[#2A1A0E] border border-[#3A2A1A] rounded-lg text-white"
-                  data-testid="booking-operator-select">
-                  <option value="">Nessuna preferenza</option>
-                  {operators.map(op => <option key={op.id} value={op.id}>{op.name}</option>)}
-                </select>
+            {/* OPERATORE */}
+            {operators.filter(o => o.active !== false).length > 0 && (
+              <div data-testid="booking-operator-select">
+                <p className="text-sm font-bold text-gray-700 mb-2">
+                  Con chi vorresti venire? <span className="font-normal text-gray-400">(opzionale)</span>
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, operator_id: '' }))}
+                    className="px-4 py-2 rounded-xl text-sm font-bold border-2 transition-all"
+                    style={!formData.operator_id
+                      ? { borderColor: T.primary, backgroundColor: primaryLight, color: T.primary }
+                      : { borderColor: '#E5E7EB', backgroundColor: 'white', color: '#6B7280' }}>
+                    🙂 Nessuna preferenza
+                  </button>
+                  {operators.filter(o => o.active !== false).map(op => (
+                    <button key={op.id} type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, operator_id: op.id }))}
+                      className="px-4 py-2 rounded-xl text-sm font-bold border-2 transition-all"
+                      style={formData.operator_id === op.id
+                        ? { borderColor: T.primary, backgroundColor: primaryLight, color: T.primary }
+                        : { borderColor: '#E5E7EB', backgroundColor: 'white', color: '#374151' }}>
+                      💇 {op.name}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
-            <div className="flex gap-3">
-              <Button onClick={() => setStep(1)} variant="outline" className="flex-1 border-[#4A3020] text-[#D4B89A] hover:bg-white/10">Indietro</Button>
-              <Button onClick={() => setStep(3)} disabled={getAvailableSlotsForDate(formData.date, config.hours, blockedSlots).length === 0} className="flex-1 bg-gradient-to-r from-[#C8617A] to-[#A0404F] text-white hover:bg-gray-200 font-bold disabled:opacity-40" data-testid="website-step2-next">Continua <ArrowRight className="w-4 h-4 ml-2" /></Button>
+            <div className="flex gap-3 pt-1">
+              <Button onClick={() => setStep(1)} variant="outline" className="flex-1 border-gray-200 text-gray-600 hover:bg-gray-50 font-bold rounded-2xl py-5">
+                ← Indietro
+              </Button>
+              <Button
+                onClick={() => setStep(3)}
+                disabled={availableSlots.length === 0}
+                className="flex-[2] text-white font-black py-5 rounded-2xl shadow-md hover:shadow-lg hover:scale-[1.01] transition-all disabled:opacity-40"
+                style={{ background: availableSlots.length > 0 ? `linear-gradient(135deg, ${T.primary}, ${T.primary}CC)` : undefined }}
+                data-testid="website-step2-next">
+                Inserisci i tuoi dati <ArrowRight className="w-4 h-4 ml-1.5" />
+              </Button>
             </div>
           </div>
         )}
 
-        {/* STEP 3 — Dati personali + Riepilogo */}
+        {/* ══════════════════════════════════════════════════
+            STEP 3 — DATI PERSONALI
+        ══════════════════════════════════════════════════ */}
         {step === 3 && (
-          <div className="space-y-4 step-in">
+          <div className="space-y-4 slide-up">
             <div>
-              <h2 className="text-2xl font-black text-white">🎉 Quasi fatto!</h2>
-              <p className="text-sm text-[#C8617A] mt-0.5 font-semibold">Inserisci i tuoi dati per confermare</p>
+              <h2 className="text-2xl font-black text-gray-900">🎉 Quasi fatto!</h2>
+              <p className="text-sm text-gray-500 mt-0.5">Inserisci i tuoi dati per confermare</p>
             </div>
+
+            {/* Riepilogo appuntamento */}
+            <div className="p-4 rounded-3xl border-2" style={{ borderColor: primaryBorder, backgroundColor: primaryLight }}>
+              <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: T.primary }}>Il tuo appuntamento</p>
+              <p className="font-black text-gray-900">
+                📆 {format(new Date(formData.date + 'T12:00:00'), 'EEEE dd MMMM', { locale: it })} · ⏰ {formData.time}
+              </p>
+              <div className="mt-3 space-y-1.5">
+                {selectedServices.map(s => (
+                  <div key={s.id} className="flex items-center justify-between text-sm">
+                    <span className="text-gray-700">✂️ {s.name}</span>
+                    <span className="font-bold text-gray-900">€{s.price}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-3 pt-2 border-t flex items-center justify-between" style={{ borderColor: primaryBorder }}>
+                <span className="font-bold text-gray-700">Totale stimato</span>
+                <span className="font-black text-lg" style={{ color: T.primary }}>€{totalPrice}</span>
+              </div>
+            </div>
+
+            {/* Form dati */}
             <div className="space-y-3">
-              <div><label className="text-sm text-[#B89A7A] font-semibold mb-1 block">Nome e Cognome *</label>
-                <Input value={formData.client_name} onChange={(e) => setFormData({...formData, client_name: e.target.value})} placeholder="Es. Maria Rossi" className="bg-[#2A1A0E] border-[#3A2A1A] text-white placeholder:text-[#7A5A3A]" data-testid="website-booking-name" /></div>
-              <div><label className="text-sm text-[#B89A7A] font-semibold mb-1 block">Telefono *</label>
-                <Input value={formData.client_phone} onChange={(e) => { setFormData({...formData, client_phone: e.target.value}); setShowHistory(false); setClientHistory(null); }} placeholder="Es. 339 123 4567" className="bg-[#2A1A0E] border-[#3A2A1A] text-white placeholder:text-[#7A5A3A]" data-testid="website-booking-phone" />
-                <Button type="button" variant="outline" size="sm"
+              <div>
+                <label className="text-sm font-bold text-gray-700 mb-1.5 block">Il tuo nome *</label>
+                <Input
+                  value={formData.client_name}
+                  onChange={e => setFormData({ ...formData, client_name: e.target.value })}
+                  placeholder="Es. Maria Rossi"
+                  className="bg-white border-2 border-gray-200 rounded-xl py-3 text-gray-900 focus:border-pink-300"
+                  data-testid="website-booking-name" />
+              </div>
+              <div>
+                <label className="text-sm font-bold text-gray-700 mb-1.5 block">Numero di telefono *</label>
+                <Input
+                  value={formData.client_phone}
+                  onChange={e => { setFormData({ ...formData, client_phone: e.target.value }); setShowHistory(false); setClientHistory(null); }}
+                  placeholder="Es. 339 123 4567"
+                  className="bg-white border-2 border-gray-200 rounded-xl py-3 text-gray-900 focus:border-pink-300"
+                  data-testid="website-booking-phone" />
+                <button type="button"
                   onClick={showHistory ? () => setShowHistory(false) : loadMyHistory}
                   disabled={loadingHistory || !formData.client_phone || formData.client_phone.length < 6}
-                  className="mt-2 h-8 text-xs border-[#C8617A]/50 text-[#C8617A] hover:bg-[#C8617A]/10 disabled:opacity-30"
+                  className="mt-2 flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 transition-all disabled:opacity-30"
                   data-testid="booking-history-btn">
-                  {loadingHistory ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <History className="w-3 h-3 mr-1" />}
-                  {showHistory ? 'Chiudi Storico' : 'Il Mio Storico'}
-                </Button>
+                  {loadingHistory ? <Loader2 className="w-3 h-3 animate-spin" /> : <History className="w-3 h-3" />}
+                  {showHistory ? 'Chiudi storico' : 'Vedi i miei appuntamenti passati'}
+                </button>
                 {showHistory && clientHistory && (
-                  <div className="mt-2 rounded-xl border border-[#C8617A]/30 bg-[#2A1A0E] p-3 space-y-2 max-h-44 overflow-y-auto" data-testid="booking-history-panel">
+                  <div className="mt-2 rounded-2xl border border-gray-100 bg-white p-3 space-y-2 max-h-44 overflow-y-auto shadow-sm" data-testid="booking-history-panel">
                     {clientHistory.length > 0 ? clientHistory.map((apt, idx) => (
-                      <div key={idx} className="flex items-center gap-2 text-xs bg-[#3A2A1A] rounded-lg px-3 py-2">
-                        <Clock className="w-3 h-3 text-[#C8617A] shrink-0" />
-                        <span className="font-bold text-white w-16 shrink-0">{fmtDate(apt.date)}</span>
-                        <span className="text-[#B89A7A] w-10 shrink-0">{apt.time}</span>
-                        <span className="text-[#D4B89A] flex-1 truncate">{(apt.services || []).map(s => s.name || s).join(', ')}</span>
+                      <div key={idx} className="flex items-center gap-2 text-xs bg-gray-50 rounded-xl px-3 py-2">
+                        <Clock className="w-3 h-3 text-gray-400 shrink-0" />
+                        <span className="font-bold text-gray-700 w-16 shrink-0">{fmtDate(apt.date)}</span>
+                        <span className="text-gray-500 w-10 shrink-0">{apt.time}</span>
+                        <span className="text-gray-600 flex-1 truncate">{(apt.services || []).map(s => s.name || s).join(', ')}</span>
                       </div>
                     )) : (
-                      <p className="text-xs text-[#8A6A4A] text-center py-2">Nessun appuntamento negli ultimi 3 mesi</p>
+                      <p className="text-xs text-gray-400 text-center py-2">Nessun appuntamento negli ultimi 3 mesi</p>
                     )}
                   </div>
                 )}
               </div>
-              <div><label className="text-sm text-[#B89A7A] font-semibold mb-1 block">Note (opzionale)</label>
-                <Textarea value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})} placeholder="Richieste particolari..." className="bg-[#2A1A0E] border-[#3A2A1A] text-white placeholder:text-[#7A5A3A]" rows={3} /></div>
+              <div>
+                <label className="text-sm font-bold text-gray-700 mb-1.5 block">
+                  Note <span className="font-normal text-gray-400">(opzionale)</span>
+                </label>
+                <Textarea
+                  value={formData.notes}
+                  onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                  placeholder="Richieste particolari, allergie, preferenze di colore..."
+                  className="bg-white border-2 border-gray-200 rounded-xl text-gray-900 focus:border-pink-300"
+                  rows={2} />
+              </div>
             </div>
-            <div className="bg-[#2A1A0E] p-4 rounded-xl border border-[#3A2A1A] space-y-2">
-              <p className="text-sm text-[#B89A7A]">Riepilogo:</p>
-              {selectedServices.map(s => (<div key={s.id} className="flex justify-between text-sm"><span className="text-[#D4B89A]">{s.name}</span><span className="text-white font-bold">{'\u20AC'}{s.price}</span></div>))}
-              <div className="border-t border-[#3A2A1A] pt-2 flex justify-between"><span className="text-white font-bold">Totale</span><span className="text-white font-black text-lg">{'\u20AC'}{totalPrice}</span></div>
-              <p className="text-xs text-[#8A6A4A]">{format(new Date(formData.date), 'dd/MM/yy')} alle {formData.time}</p>
-            </div>
+
             <div className="flex gap-3">
-              <Button onClick={() => setStep(2)} variant="outline" className="flex-1 border-[#4A3020] text-[#D4B89A] hover:bg-white/10">Indietro</Button>
-              <Button onClick={handleSubmit} disabled={submitting} className="flex-1 bg-gradient-to-r from-[#C8617A] to-[#A0404F] text-white hover:bg-gray-200 font-bold" data-testid="website-submit-btn">
-                {submitting ? <Clock className="w-4 h-4 animate-spin" /> : 'Conferma Prenotazione'}
+              <Button onClick={() => setStep(2)} variant="outline" className="flex-1 border-gray-200 text-gray-600 hover:bg-gray-50 font-bold rounded-2xl py-5">
+                ← Indietro
+              </Button>
+              <Button
+                onClick={handleSubmit}
+                disabled={submitting || !formData.client_name || !formData.client_phone}
+                className="flex-[2] text-white font-black py-5 rounded-2xl shadow-md hover:shadow-lg hover:scale-[1.01] transition-all disabled:opacity-40"
+                style={{ background: `linear-gradient(135deg, ${T.primary}, ${T.primary}CC)` }}
+                data-testid="website-submit-btn">
+                {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : '🎉 Conferma Prenotazione'}
               </Button>
             </div>
+
+            {/* Pannello conflitto */}
             {conflictData && (
-              <div className="mt-4 p-4 rounded-xl border-2 border-amber-500/40 bg-amber-500/10 space-y-3" data-testid="conflict-panel">
-                <p className="text-amber-300 font-bold text-sm">{conflictData.message || 'Orario occupato!'}</p>
+              <div className="p-4 rounded-2xl border-2 border-amber-200 bg-amber-50 space-y-3" data-testid="conflict-panel">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">⚠️</span>
+                  <p className="font-black text-amber-800">{conflictData.message || 'Orario già occupato!'}</p>
+                </div>
                 {conflictData.available_operators?.length > 0 && (
                   <div>
-                    <p className="text-xs text-white/70 mb-2 font-semibold">Scegli un operatore disponibile:</p>
-                    <div className="space-y-1.5">
+                    <p className="text-xs text-amber-700 mb-2 font-semibold">✅ Scegli un operatore disponibile:</p>
+                    <div className="space-y-2">
                       {conflictData.available_operators.map(op => (
-                        <button key={op.id} onClick={() => { setFormData(prev => ({...prev, operator_id: op.id})); setConflictData(null); handleBookingSubmit(null, op.id); }}
-                          className="w-full p-3 rounded-lg bg-emerald-500/20 border-2 border-emerald-500/40 text-emerald-300 font-bold text-sm text-left hover:bg-emerald-500/30 transition-all flex items-center justify-between"
+                        <button key={op.id}
+                          onClick={() => { setFormData(prev => ({ ...prev, operator_id: op.id })); setConflictData(null); handleBookingSubmit(null, op.id); }}
+                          className="w-full p-3 rounded-xl bg-white border-2 border-emerald-200 text-emerald-700 font-bold text-sm text-left hover:bg-emerald-50 transition-all flex items-center justify-between"
                           data-testid={`conflict-op-${op.id}`}>
-                          <span>{op.name}</span>
-                          <span className="text-xs bg-emerald-500/30 px-2 py-1 rounded-full">DISPONIBILE</span>
+                          <span>💇 {op.name}</span>
+                          <span className="text-xs bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full">Disponibile</span>
                         </button>
                       ))}
                     </div>
@@ -598,11 +739,12 @@ export default function BookingForm({
                 )}
                 {conflictData.alternative_slots?.length > 0 && (
                   <div>
-                    <p className="text-xs text-white/70 mb-2 font-semibold">Oppure scegli un orario alternativo:</p>
-                    <div className="grid grid-cols-2 gap-1.5">
+                    <p className="text-xs text-amber-700 mb-2 font-semibold">🕐 Oppure scegli un orario alternativo:</p>
+                    <div className="grid grid-cols-3 gap-2">
                       {conflictData.alternative_slots.map((slot, i) => (
-                        <button key={i} onClick={() => { setFormData(prev => ({...prev, time: slot.time, operator_id: slot.operator_id || prev.operator_id})); setConflictData(null); toast.success(`Orario ${slot.time} selezionato`); }}
-                          className="p-2 rounded-lg bg-sky-500/15 border border-sky-500/30 text-sky-300 font-bold text-sm text-center hover:bg-sky-500/25 transition-all"
+                        <button key={i}
+                          onClick={() => { setFormData(prev => ({ ...prev, time: slot.time, operator_id: slot.operator_id || prev.operator_id })); setConflictData(null); toast.success(`Orario ${slot.time} selezionato`); }}
+                          className="p-2.5 rounded-xl bg-white border-2 border-blue-200 text-blue-600 font-bold text-sm text-center hover:bg-blue-50 transition-all"
                           data-testid={`conflict-slot-${i}`}>
                           {slot.time}
                         </button>
