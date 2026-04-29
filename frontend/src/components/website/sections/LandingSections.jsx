@@ -588,4 +588,140 @@ export function ContactSection({ contactRef, config, hours, phones, setShowBooki
       </div>
     </section>
   );
+
+}
+
+// ── SEZIONE TRASFORMAZIONI (Before/After portfolio) ────────────────────────
+export function TransformationsSection({ hairstylePhotos, setShowBooking, T }) {
+  const [lightbox, setLightbox] = useState(null);
+  const photos = hairstylePhotos.slice(0, 12);
+  if (photos.length < 2) return null;
+
+  return (
+    <section className="py-20 sm:py-28 overflow-hidden" style={{ background: `linear-gradient(180deg, ${T.bg}, ${T.primary}06)` }}>
+      <div className="max-w-6xl mx-auto px-4">
+        <AnimatedSection>
+          <div className="text-center mb-12">
+            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Portfolio</p>
+            <h2 className="text-3xl sm:text-4xl font-black mb-3" style={{ color: T.text, fontFamily: T.fontDisplay }}>Le Nostre Trasformazioni</h2>
+            <p className="text-sm max-w-md mx-auto" style={{ color: `${T.text}70` }}>
+              Ogni taglio, ogni colore, ogni trattamento racconta una storia unica.
+            </p>
+          </div>
+        </AnimatedSection>
+
+        {/* Griglia masonry-like */}
+        <div className="columns-2 sm:columns-3 lg:columns-4 gap-3 space-y-3">
+          {photos.map((photo, i) => (
+            <AnimatedSection key={i} delay={i * 0.05}>
+              <div
+                className="break-inside-avoid rounded-2xl overflow-hidden cursor-pointer group relative shadow-md hover:shadow-xl transition-all duration-500 hover:-translate-y-1"
+                onClick={() => setLightbox(photo)}
+              >
+                <img
+                  src={getMediaUrl(photo.url)}
+                  alt={photo.caption || `Trasformazione ${i + 1}`}
+                  className="w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  style={{ aspectRatio: i % 3 === 0 ? '3/4' : i % 3 === 1 ? '1/1' : '4/5' }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3">
+                  {photo.caption && (
+                    <p className="text-white text-xs font-semibold">{photo.caption}</p>
+                  )}
+                  <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                    <Search className="w-4 h-4 text-white" />
+                  </div>
+                </div>
+              </div>
+            </AnimatedSection>
+          ))}
+        </div>
+
+        <AnimatedSection delay={0.3}>
+          <div className="text-center mt-10">
+            <Button onClick={() => setShowBooking(true)} style={{ backgroundColor: T.primary }}
+              className="text-white font-black px-10 py-6 rounded-2xl hover:opacity-90 hover:scale-105 transition-all duration-300 shadow-lg">
+              <Scissors className="w-5 h-5 mr-2" /> Prenota la Tua Trasformazione
+            </Button>
+          </div>
+        </AnimatedSection>
+      </div>
+
+      {/* Lightbox */}
+      {lightbox && (
+        <div className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center p-4" onClick={() => setLightbox(null)}>
+          <button onClick={() => setLightbox(null)} className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
+            <X className="w-5 h-5 text-white" />
+          </button>
+          <img src={getMediaUrl(lightbox.url)} alt={lightbox.caption || ''} className="max-w-full max-h-[90vh] rounded-2xl object-contain shadow-2xl" onClick={e => e.stopPropagation()} />
+          {lightbox.caption && <p className="absolute bottom-6 text-white/70 text-sm text-center px-4">{lightbox.caption}</p>}
+        </div>
+      )}
+    </section>
+  );
+}
+
+// ── SEZIONE TEAM ────────────────────────────────────────────────────────────
+export function TeamSection({ operators, T }) {
+  const active = (operators || []).filter(op => op.active !== false);
+  if (active.length === 0) return null;
+
+  const getInitials = (name) => {
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
+
+  const roles = ['Hair Stylist', 'Colorista', 'Barbiere', 'Stylist', 'Specialista Colore', 'Parrucchiere'];
+
+  return (
+    <section className="py-20 sm:py-28 relative overflow-hidden">
+      {/* Sfondo decorativo */}
+      <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${T.primary}08 0%, ${T.accent}06 50%, ${T.primary}04 100%)` }} />
+      <div className="absolute top-0 left-0 right-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${T.primary}30, transparent)` }} />
+
+      <div className="relative max-w-6xl mx-auto px-4">
+        <AnimatedSection>
+          <div className="text-center mb-14">
+            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Il Nostro Team</p>
+            <h2 className="text-3xl sm:text-4xl font-black mb-3" style={{ color: T.text, fontFamily: T.fontDisplay }}>Professionisti al Tuo Servizio</h2>
+            <p className="text-sm max-w-md mx-auto" style={{ color: `${T.text}70` }}>
+              Un team di esperti appassionati, pronti a valorizzare la tua bellezza.
+            </p>
+          </div>
+        </AnimatedSection>
+
+        <div className={`grid gap-6 ${active.length === 1 ? 'grid-cols-1 max-w-xs mx-auto' : active.length === 2 ? 'grid-cols-2 max-w-lg mx-auto' : active.length === 3 ? 'grid-cols-3 max-w-2xl mx-auto' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'}`}>
+          {active.map((op, i) => (
+            <AnimatedSection key={op.id} delay={i * 0.1}>
+              <div className="group text-center">
+                {/* Avatar cerchio grande */}
+                <div className="relative mx-auto mb-4" style={{ width: '120px', height: '120px' }}>
+                  <div className="w-full h-full rounded-full flex items-center justify-center text-white text-3xl font-black shadow-lg group-hover:scale-105 transition-transform duration-300"
+                    style={{ background: `linear-gradient(135deg, ${op.color || T.primary}, ${op.color || T.primary}CC)` }}>
+                    {getInitials(op.name)}
+                  </div>
+                  {/* Anello decorativo */}
+                  <div className="absolute -inset-1.5 rounded-full border-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    style={{ borderColor: op.color || T.primary }} />
+                  {/* Punto verde "disponibile" */}
+                  <div className="absolute bottom-1 right-1 w-5 h-5 bg-emerald-400 rounded-full border-2 border-white shadow-sm flex items-center justify-center">
+                    <div className="w-2 h-2 bg-white rounded-full" />
+                  </div>
+                </div>
+
+                <h3 className="font-black text-lg leading-tight" style={{ color: T.text }}>{op.name}</h3>
+                <p className="text-sm font-semibold mt-1" style={{ color: op.color || T.primary }}>{roles[i % roles.length]}</p>
+                <div className="flex items-center justify-center gap-0.5 mt-2">
+                  {[1,2,3,4,5].map(s => (
+                    <Star key={s} className="w-3 h-3 fill-amber-400 text-amber-400" />
+                  ))}
+                </div>
+              </div>
+            </AnimatedSection>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
 }
