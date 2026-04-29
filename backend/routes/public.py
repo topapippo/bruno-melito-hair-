@@ -885,24 +885,32 @@ async def public_get_website():
         return _website_cache["data"]
 
     user = await get_public_admin_user()
-    config = await db.website_config.find_one({"user_id": user["id"]} if user else {}, {"_id": 0, "user_id": 0})
-    if not config:
-        config = {k: v for k, v in DEFAULT_WEBSITE_CONFIG.items()}
-    else:
-        config = {**DEFAULT_WEBSITE_CONFIG, **{k: v for k, v in config.items() if k != "user_id"}}
-    reviews = await db.website_reviews.find({"user_id": user["id"]} if user else {}, {"_id": 0, "user_id": 0}).to_list(100)
-    gallery = await db.website_gallery.find({"user_id": user["id"], "is_deleted": {"$ne": True}} if user else {"is_deleted": {"$ne": True}}, {"_id": 0, "user_id": 0}).sort("sort_order", 1).to_list(100)
-    services = await db.services.find({"user_id": user["id"]} if user else {}, {"_id": 0}).sort("order", 1).to_list(100)
+    uid = user["id"] if user else None
+    uid_filter = {"user_id": uid} if uid else {}
 
-    card_templates_raw = await db.card_templates.find({"user_id": user["id"], "is_deleted": {"$ne": True}} if user else {"is_deleted": {"$ne": True}}, {"_id": 0}).to_list(100)
+    # Tutte le query in parallelo
+    import asyncio as _asyncio
+    (
+        config_raw, reviews, gallery, services,
+        card_templates_raw, operators, promotions
+    ) = await _asyncio.gather(
+        db.website_config.find_one({**uid_filter}, {"_id": 0, "user_id": 0}),
+        db.website_reviews.find({**uid_filter}, {"_id": 0, "user_id": 0}).to_list(100),
+        db.website_gallery.find({**uid_filter, "is_deleted": {"$ne": True}}, {"_id": 0, "user_id": 0}).sort("sort_order", 1).to_list(100),
+        db.services.find({**uid_filter}, {"_id": 0}).sort("order", 1).to_list(100),
+        db.card_templates.find({**uid_filter, "is_deleted": {"$ne": True}}, {"_id": 0}).to_list(100),
+        db.operators.find({**uid_filter}, {"_id": 0, "user_id": 0}).to_list(50),
+        db.promotions.find({"active": True, "show_on_booking": True}, {"_id": 0, "user_id": 0}).to_list(20),
+    )
+
+    config = {**DEFAULT_WEBSITE_CONFIG, **{k: v for k, v in (config_raw or {}).items() if k != "user_id"}} if config_raw else {k: v for k, v in DEFAULT_WEBSITE_CONFIG.items()}
     card_templates = [{"id": ct.get("id",""), "name": ct.get("name",""), "card_type": ct.get("card_type",""), "total_value": ct.get("total_value",0), "total_services": ct.get("total_services",0), "duration_months": ct.get("duration_months",0), "notes": ct.get("notes","")} for ct in card_templates_raw]
 
     from models import get_loyalty_rewards, LOYALTY_POINTS_PER_EURO
-    admin_user_id = user["id"] if user else ""
-    loyalty_rewards_data = await get_loyalty_rewards(admin_user_id)
+    loyalty_rewards_data = await get_loyalty_rewards(uid or "")
     loyalty_config = {"points_per_euro": LOYALTY_POINTS_PER_EURO, "rewards": loyalty_rewards_data}
 
-    result = {"config": config, "reviews": reviews, "gallery": gallery, "services": services, "card_templates": card_templates, "loyalty": loyalty_config}
+    result = {"config": config, "reviews": reviews, "gallery": gallery, "services": services, "card_templates": card_templates, "operators": operators, "promotions": promotions, "loyalty": loyalty_config}
     _website_cache["data"] = result
     _website_cache["ts"] = now
     return result

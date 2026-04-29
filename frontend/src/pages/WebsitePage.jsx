@@ -127,19 +127,13 @@ export default function WebsitePage() {
     const slowTimer = setTimeout(() => setLoadingSlow(true), 4000);
     const fetchAll = async () => {
       try {
-        const [siteRes, opsRes, svcRes] = await Promise.all([
-          api.get(`${API}/public/website`),
-          api.get(`${API}/public/operators`).catch(() => ({ data: [] })),
-          api.get(`${API}/public/services`).catch(() => ({ data: [] }))
-        ]);
-        setSiteData(siteRes.data);
-        setOperators(opsRes.data);
-        setBookingServices(svcRes.data);
-        setCardTemplates(siteRes.data?.card_templates || []);
-        try {
-          const promosRes = await api.get(`${API}/public/promotions/all`);
-          setPublicPromos(promosRes.data);
-        } catch (e) { /* promos not critical */ }
+        const res = await api.get(`${API}/public/website`);
+        const d = res.data;
+        setSiteData(d);
+        setOperators(d.operators || []);
+        setBookingServices(d.services || []);
+        setCardTemplates(d.card_templates || []);
+        setPublicPromos(d.promotions || []);
       } catch (err) { console.error(err); }
       finally { clearTimeout(slowTimer); setLoading(false); }
     };
