@@ -472,25 +472,11 @@ export default function WebsitePage() {
               Specializzati in{' '}
               <span className="font-bold" style={{ color: T.accent }}>
                 <Typewriter
-                  phrases={['Taglio & Styling', 'Colorazione', 'Trattamenti', 'Barba & Rasatura', 'Piega & Volumi']}
+                  phrases={['Taglio & Styling', 'Colorazione', 'Trattamenti', 'Piega & Volumi']}
                   color={T.accent}
                 />
               </span>
             </p>
-
-            {/* #3 — Social proof counter */}
-            <div className="flex items-center justify-center gap-4 mb-5 hero-animate hero-d4">
-              <div className="flex -space-x-2">
-                {['bg-rose-400','bg-amber-400','bg-teal-400','bg-violet-400'].map((c,i) => (
-                  <div key={i} className={`w-7 h-7 ${c} rounded-full border-2 border-white/20 flex items-center justify-center`}>
-                    <span className="text-white text-[9px] font-bold">{String.fromCharCode(65+i)}</span>
-                  </div>
-                ))}
-              </div>
-              <p className="text-white/50 text-xs font-semibold">
-                <span className="text-white font-black">500+</span> clienti soddisfatti · <span className="text-white font-black">⭐ 5.0</span> su Google
-              </p>
-            </div>
 
             {/* #1 — Disponibilità online */}
             <div className="flex justify-center mb-8 hero-animate hero-d4">
@@ -528,7 +514,7 @@ export default function WebsitePage() {
             </div>
 
             {/* ── Contatori animati ── */}
-            <div className="mt-12 pt-8 border-t border-white/10 grid grid-cols-2 sm:grid-cols-4 gap-6 hero-animate hero-d5">
+            <div className="mt-14 pt-10 border-t border-white/10 grid grid-cols-2 sm:grid-cols-4 gap-8 hero-animate hero-d5">
               {[
                 { value: 500, suffix: '+', label: 'Clienti Soddisfatti', icon: '👥' },
                 { value: config.years_experience || 10, suffix: '+', label: 'Anni di Esperienza', icon: '🏆' },
@@ -536,11 +522,11 @@ export default function WebsitePage() {
                 { value: 5.0, suffix: '', label: 'Stelle su Google', icon: '⭐', decimals: 1 },
               ].map((c, i) => (
                 <div key={i} className="text-center group">
-                  <div className="text-2xl mb-1">{c.icon}</div>
-                  <p className="text-3xl sm:text-4xl font-black text-white leading-none" style={{ fontFamily: T.fontDisplay }}>
+                  <div className="text-3xl mb-2">{c.icon}</div>
+                  <p className="text-4xl sm:text-5xl font-black text-white leading-none" style={{ fontFamily: T.fontDisplay }}>
                     <CountUp to={c.value} decimals={c.decimals || 0} />{c.suffix}
                   </p>
-                  <p className="text-[11px] text-white/45 mt-1.5 font-semibold uppercase tracking-widest">{c.label}</p>
+                  <p className="text-xs text-white/45 mt-2 font-semibold uppercase tracking-widest">{c.label}</p>
                 </div>
               ))}
             </div>
