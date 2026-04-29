@@ -19,6 +19,33 @@ import {
 } from '../components/website/sections/LandingSections';
 
 
+// Count-up animato con IntersectionObserver
+function CountUp({ to, duration = 1800, decimals = 0 }) {
+  const [count, setCount] = useState(0);
+  const ref = useRef(null);
+  const started = useRef(false);
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !started.current) {
+        started.current = true;
+        const steps = Math.round(duration / 16);
+        let step = 0;
+        const timer = setInterval(() => {
+          step++;
+          const progress = step / steps;
+          const ease = 1 - Math.pow(1 - progress, 3);
+          const val = ease * to;
+          setCount(decimals ? parseFloat(val.toFixed(decimals)) : Math.floor(val));
+          if (step >= steps) { setCount(to); clearInterval(timer); }
+        }, 16);
+      }
+    }, { threshold: 0.4 });
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [to, duration, decimals]);
+  return <span ref={ref}>{decimals ? count.toFixed(decimals) : count}</span>;
+}
+
 // #10 — Typewriter effect: cicla frasi nel hero
 function Typewriter({ phrases, color }) {
   const [idx, setIdx] = useState(0);
@@ -77,14 +104,16 @@ export default function WebsitePage() {
   const [showMyAppts, setShowMyAppts] = useState(false);
   const [bookingInitialStep, setBookingInitialStep] = useState(1);
 
-  // #4 — Scroll inactivity CTA bar
+  // #4 — Scroll inactivity CTA bar + navbar scroll state
   const [showScrollCta, setShowScrollCta] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
+  const [navScrolled, setNavScrolled] = useState(false);
   useEffect(() => {
     let timer;
     const onScroll = () => {
       setHasScrolled(true);
       setShowScrollCta(false);
+      setNavScrolled(window.scrollY > 80);
       clearTimeout(timer);
       timer = setTimeout(() => setShowScrollCta(true), 3500);
     };
@@ -328,45 +357,60 @@ export default function WebsitePage() {
       `}</style>
 
       {/* NAVBAR */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/70 backdrop-blur-xl border-b border-gray-200/50 shadow-sm">
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navScrolled ? 'bg-white shadow-md border-b border-gray-200' : 'bg-transparent border-b border-white/10'}`}>
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src="/logo.png?v=4" alt={config.salon_name} className="w-10 h-10 rounded-lg" />
-            <span className="font-black text-sm sm:text-base tracking-tight">{config.salon_name || 'BRUNO MELITO HAIR'}</span>
+            <span className={`font-black text-sm sm:text-base tracking-tight transition-colors duration-300 ${navScrolled ? '' : 'text-white'}`}
+              style={navScrolled ? { color: T.text } : {}}>
+              {config.salon_name || 'BRUNO MELITO HAIR'}
+            </span>
           </div>
           <div className="flex items-center gap-2 sm:gap-4">
-            <div className="hidden sm:flex items-center gap-6 text-sm text-[#64748B]">
+            <div className="hidden sm:flex items-center gap-6 text-sm">
               <button
                 onClick={() => { setShowServices(true); setTimeout(() => scrollTo(servicesRef), 100); }}
                 className="transition-colors font-semibold"
+                style={{ color: navScrolled ? '#64748B' : 'rgba(255,255,255,0.75)' }}
                 onMouseEnter={e => { e.currentTarget.style.color = T.primary; }}
-                onMouseLeave={e => { e.currentTarget.style.color = '#64748B'; }}
+                onMouseLeave={e => { e.currentTarget.style.color = navScrolled ? '#64748B' : 'rgba(255,255,255,0.75)'; }}
               >Servizi</button>
               <button
                 onClick={() => scrollTo(contactRef)}
                 className="transition-colors font-semibold"
+                style={{ color: navScrolled ? '#64748B' : 'rgba(255,255,255,0.75)' }}
                 onMouseEnter={e => { e.currentTarget.style.color = T.primary; }}
-                onMouseLeave={e => { e.currentTarget.style.color = '#64748B'; }}
+                onMouseLeave={e => { e.currentTarget.style.color = navScrolled ? '#64748B' : 'rgba(255,255,255,0.75)'; }}
               >Contatti</button>
-              <div className="flex items-center gap-3 border-l border-gray-300 pl-4">
+              <div className={`flex items-center gap-3 border-l pl-4 ${navScrolled ? 'border-gray-300' : 'border-white/20'}`}>
                 {SOCIAL_LINKS.map((link, i) => (
-                  <a key={i} href={link.url} target="_blank" rel="noopener noreferrer" className={`text-[#B89A7A] ${link.color} transition-colors`} title={link.label}>
+                  <a key={i} href={link.url} target="_blank" rel="noopener noreferrer"
+                    className={`transition-colors ${navScrolled ? `text-[#B89A7A] ${link.color}` : 'text-white/50 hover:text-white'}`}
+                    title={link.label}>
                     <link.icon className="w-4 h-4" />
                   </a>
                 ))}
               </div>
             </div>
-            <Button asChild variant="outline" className="border-none bg-gray-100 hover:bg-gray-200 rounded-lg px-2.5 py-1.5 sm:px-3 sm:py-2" data-testid="admin-link" title="Area Riservata">
-              <a href="/login" className="flex items-center gap-1.5 text-[#64748B] hover:text-[#0EA5E9] transition-colors">
+            <Button asChild variant="outline"
+              className={`border-none rounded-lg px-2.5 py-1.5 sm:px-3 sm:py-2 ${navScrolled ? 'bg-gray-100 hover:bg-gray-200' : 'bg-white/10 hover:bg-white/20'}`}
+              data-testid="admin-link" title="Area Riservata">
+              <a href="/login" className={`flex items-center gap-1.5 transition-colors ${navScrolled ? 'text-[#64748B] hover:text-[#0EA5E9]' : 'text-white/60 hover:text-white'}`}>
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
                 <span className="text-xs font-bold hidden xs:inline sm:inline">Accedi</span>
               </a>
             </Button>
-            <button onClick={() => setShowMyAppts(true)} className="flex flex-col items-center text-amber-600 hover:text-amber-700 transition-colors px-2 py-1" data-testid="my-appointments-btn" title="Inserisci il tuo numero di telefono per vedere le tue prenotazioni">
+            <button onClick={() => setShowMyAppts(true)}
+              className={`flex flex-col items-center transition-colors px-2 py-1 ${navScrolled ? 'text-amber-600 hover:text-amber-700' : 'text-white/60 hover:text-white'}`}
+              data-testid="my-appointments-btn" title="Inserisci il tuo numero di telefono per vedere le tue prenotazioni">
               <span className="flex items-center gap-1 font-bold text-[10px] sm:text-sm"><CalendarDays className="w-3 h-3 sm:w-4 sm:h-4" />I Miei Appuntamenti</span>
-              <span className="text-[7px] sm:text-[9px] text-amber-400 font-normal sm:hidden">Verifica prenotazione</span>
+              <span className={`text-[7px] sm:text-[9px] font-normal sm:hidden ${navScrolled ? 'text-amber-400' : 'text-white/40'}`}>Verifica prenotazione</span>
             </button>
-            <Button onClick={() => setShowBooking(true)} style={{ backgroundColor: T.primary }} className="text-white font-bold text-sm px-4 sm:px-6 hover:opacity-90" data-testid="website-book-btn">
+            <Button
+              onClick={() => setShowBooking(true)}
+              style={{ backgroundColor: T.primary }}
+              className={`text-white font-bold text-sm px-4 sm:px-6 hover:opacity-90 transition-all duration-300 ${navScrolled ? 'shadow-lg shadow-pink-400/30 scale-105' : ''}`}
+              data-testid="website-book-btn">
               PRENOTA ORA
             </Button>
           </div>
@@ -374,17 +418,17 @@ export default function WebsitePage() {
       </nav>
 
       {/* MOBILE NAV STRIP — visible only on small screens */}
-      <div className="sm:hidden fixed top-[60px] left-0 right-0 z-40 flex items-center justify-center gap-6 bg-white/80 backdrop-blur-md border-b border-gray-200/50 py-1.5 px-4 shadow-sm">
+      <div className={`sm:hidden fixed top-[60px] left-0 right-0 z-40 flex items-center justify-center gap-6 border-b py-1.5 px-4 transition-all duration-300 ${navScrolled ? 'bg-white/90 backdrop-blur-md border-gray-200/50 shadow-sm' : 'bg-transparent border-white/10'}`}>
         <button
           onClick={() => { setShowServices(true); setTimeout(() => scrollTo(servicesRef), 100); }}
           className="text-xs font-bold transition-colors"
-          style={{ color: T.primary }}
+          style={{ color: navScrolled ? T.primary : 'rgba(255,255,255,0.75)' }}
         >Servizi</button>
-        <span className="text-gray-300 text-sm">|</span>
+        <span className={`text-sm ${navScrolled ? 'text-gray-300' : 'text-white/20'}`}>|</span>
         <button
           onClick={() => scrollTo(contactRef)}
           className="text-xs font-bold transition-colors"
-          style={{ color: T.primary }}
+          style={{ color: navScrolled ? T.primary : 'rgba(255,255,255,0.75)' }}
         >Contatti</button>
       </div>
 
@@ -476,6 +520,24 @@ export default function WebsitePage() {
                   <MapPin className="w-4 h-4 group-hover:scale-110 transition-transform" /> {config.address}
                 </a>
               )}
+            </div>
+
+            {/* ── Contatori animati ── */}
+            <div className="mt-12 pt-8 border-t border-white/10 grid grid-cols-2 sm:grid-cols-4 gap-6 hero-animate hero-d5">
+              {[
+                { value: 500, suffix: '+', label: 'Clienti Soddisfatti', icon: '👥' },
+                { value: config.years_experience || 10, suffix: '+', label: 'Anni di Esperienza', icon: '🏆' },
+                { value: bookingServices.length || 20, suffix: '', label: 'Servizi Disponibili', icon: '✂️' },
+                { value: 5.0, suffix: '', label: 'Stelle su Google', icon: '⭐', decimals: 1 },
+              ].map((c, i) => (
+                <div key={i} className="text-center group">
+                  <div className="text-2xl mb-1">{c.icon}</div>
+                  <p className="text-3xl sm:text-4xl font-black text-white leading-none" style={{ fontFamily: T.fontDisplay }}>
+                    <CountUp to={c.value} decimals={c.decimals || 0} />{c.suffix}
+                  </p>
+                  <p className="text-[11px] text-white/45 mt-1.5 font-semibold uppercase tracking-widest">{c.label}</p>
+                </div>
+              ))}
             </div>
           </div>
           {config.years_experience && (
