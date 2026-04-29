@@ -874,8 +874,16 @@ async def delete_website_gallery_item(item_id: str, current_user: dict = Depends
     return {"success": True}
 
 
+_website_cache: dict = {"data": None, "ts": 0}
+_WEBSITE_CACHE_TTL = 300  # 5 minuti
+
 @router.get("/public/website")
 async def public_get_website():
+    import time as _time
+    now = _time.time()
+    if _website_cache["data"] and now - _website_cache["ts"] < _WEBSITE_CACHE_TTL:
+        return _website_cache["data"]
+
     user = await get_public_admin_user()
     config = await db.website_config.find_one({"user_id": user["id"]} if user else {}, {"_id": 0, "user_id": 0})
     if not config:
@@ -885,31 +893,26 @@ async def public_get_website():
     reviews = await db.website_reviews.find({"user_id": user["id"]} if user else {}, {"_id": 0, "user_id": 0}).to_list(100)
     gallery = await db.website_gallery.find({"user_id": user["id"], "is_deleted": {"$ne": True}} if user else {"is_deleted": {"$ne": True}}, {"_id": 0, "user_id": 0}).sort("sort_order", 1).to_list(100)
     services = await db.services.find({"user_id": user["id"]} if user else {}, {"_id": 0}).sort("order", 1).to_list(100)
-    
-    # Card templates for public booking
-    card_templates_raw = await db.card_templates.find({"user_id": user["id"], "is_deleted": {"$ne": True}} if user else {"is_deleted": {"$ne": True}}, {"_id": 0}).to_list(100)
-    card_templates = []
-    for ct in card_templates_raw:
-        card_templates.append({
-            "id": ct.get("id", ""),
-            "name": ct.get("name", ""),
-            "card_type": ct.get("card_type", ""),
-            "total_value": ct.get("total_value", 0),
-            "total_services": ct.get("total_services", 0),
-            "duration_months": ct.get("duration_months", 0),
-            "notes": ct.get("notes", ""),
-        })
 
-    # Loyalty program info for public display - use same admin user as public services
+    card_templates_raw = await db.card_templates.find({"user_id": user["id"], "is_deleted": {"$ne": True}} if user else {"is_deleted": {"$ne": True}}, {"_id": 0}).to_list(100)
+    card_templates = [{"id": ct.get("id",""), "name": ct.get("name",""), "card_type": ct.get("card_type",""), "total_value": ct.get("total_value",0), "total_services": ct.get("total_services",0), "duration_months": ct.get("duration_months",0), "notes": ct.get("notes","")} for ct in card_templates_raw]
+
     from models import get_loyalty_rewards, LOYALTY_POINTS_PER_EURO
     admin_user_id = user["id"] if user else ""
     loyalty_rewards_data = await get_loyalty_rewards(admin_user_id)
-    loyalty_config = {
-        "points_per_euro": LOYALTY_POINTS_PER_EURO,
-        "rewards": loyalty_rewards_data
-    }
-    
-    return {"config": config, "reviews": reviews, "gallery": gallery, "services": services, "card_templates": card_templates, "loyalty": loyalty_config}
+    loyalty_config = {"points_per_euro": LOYALTY_POINTS_PER_EURO, "rewards": loyalty_rewards_data}
+
+    result = {"config": config, "reviews": reviews, "gallery": gallery, "services": services, "card_templates": card_templates, "loyalty": loyalty_config}
+    _website_cache["data"] = result
+    _website_cache["ts"] = now
+    return result
+
+
+@router.post("/public/website/cache/clear")
+async def clear_website_cache():
+    _website_cache["data"] = None
+    _website_cache["ts"] = 0
+    return {"cleared": True}
 
 
 # ============== CONFERMA APPUNTAMENTO ==============
