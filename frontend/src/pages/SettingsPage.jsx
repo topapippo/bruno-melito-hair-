@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Settings, Save, Loader2, Clock, Building2, User, Lock, Palette, Type, RotateCcw, Plus, Trash2, Check, Download, Share2, FileText } from 'lucide-react';
+import { Settings, Save, Loader2, Clock, Building2, User, Lock, Palette, Type, RotateCcw, Plus, Trash2, Check, Download, Share2, FileText, ChevronLeft, ChevronRight, CalendarDays, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 
@@ -182,6 +182,13 @@ export default function SettingsPage() {
   const [blockedSlots, setBlockedSlots] = useState([]);
   const [newBlock, setNewBlock] = useState({ type: 'recurring', day_of_week: 'lunedì', date: '', start_time: '13:00', end_time: '14:00', reason: '' });
   const [savingBlock, setSavingBlock] = useState(false);
+  // Calendario blocco
+  const today = new Date();
+  const [calYear, setCalYear] = useState(today.getFullYear());
+  const [calMonth, setCalMonth] = useState(today.getMonth()); // 0-based
+  const [selectedDates, setSelectedDates] = useState(new Set());
+  const [calForm, setCalForm] = useState({ start_time: '09:00', end_time: '18:00', reason: '', all_day: true });
+  const [bulkSaving, setBulkSaving] = useState(false);
   const [waForm, setWaForm] = useState({ green_api_instance_id: '', green_api_token: '' });
   const [savingWa, setSavingWa] = useState(false);
   const [waTest, setWaTest] = useState(null);
@@ -294,6 +301,87 @@ export default function SettingsPage() {
       toast.success('Blocco rimosso!');
       fetchBlockedSlots();
     } catch { toast.error('Errore nella rimozione'); }
+  };
+
+  // ── Calendario festività ──────────────────────────────────────────
+  const easterSunday = (year) => {
+    const a = year % 19, b = Math.floor(year / 100), c = year % 100;
+    const d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25);
+    const g = Math.floor((b - f + 1) / 3);
+    const h = (19 * a + b - d - g + 15) % 30;
+    const i = Math.floor(c / 4), k = c % 4;
+    const l = (32 + 2 * e + 2 * i - h - k) % 7;
+    const m = Math.floor((a + 11 * h + 22 * l) / 451);
+    const month = Math.floor((h + l - 7 * m + 114) / 31);
+    const day = ((h + l - 7 * m + 114) % 31) + 1;
+    return new Date(year, month - 1, day);
+  };
+
+  const getItalianHolidays = (year) => {
+    const fixed = [
+      [1, 1, 'Capodanno'], [1, 6, 'Epifania'], [4, 25, 'Liberazione'],
+      [5, 1, 'Festa del Lavoro'], [6, 2, 'Repubblica'], [8, 15, 'Ferragosto'],
+      [11, 1, 'Tutti i Santi'], [12, 8, 'Immacolata'], [12, 25, 'Natale'], [12, 26, 'S. Stefano'],
+    ];
+    const map = {};
+    fixed.forEach(([m, d, label]) => {
+      const key = `${year}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      map[key] = label;
+    });
+    const easter = easterSunday(year);
+    const easterMonday = new Date(easter); easterMonday.setDate(easterMonday.getDate() + 1);
+    const fmt = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    map[fmt(easter)] = 'Pasqua';
+    map[fmt(easterMonday)] = 'Lunedì di Pasqua';
+    return map;
+  };
+
+  const fmtDateKey = (year, month, day) =>
+    `${year}-${String(month + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+
+  const blockedDateSet = new Set(
+    blockedSlots.filter(s => s.type === 'one-time' && s.date).map(s => s.date)
+  );
+
+  const calPrevMonth = () => { if (calMonth === 0) { setCalYear(y => y - 1); setCalMonth(11); } else setCalMonth(m => m - 1); };
+  const calNextMonth = () => { if (calMonth === 11) { setCalYear(y => y + 1); setCalMonth(0); } else setCalMonth(m => m + 1); };
+
+  const calHolidays = getItalianHolidays(calYear);
+
+  const selectHolidaysInMonth = () => {
+    const keys = Object.keys(calHolidays).filter(k => {
+      const d = new Date(k + 'T12:00:00');
+      return d.getFullYear() === calYear && d.getMonth() === calMonth;
+    });
+    setSelectedDates(prev => { const next = new Set(prev); keys.forEach(k => next.add(k)); return next; });
+  };
+
+  const selectAllInMonth = () => {
+    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+    const next = new Set(selectedDates);
+    for (let d = 1; d <= daysInMonth; d++) next.add(fmtDateKey(calYear, calMonth, d));
+    setSelectedDates(next);
+  };
+
+  const bulkBlockDates = async () => {
+    if (selectedDates.size === 0) return;
+    setBulkSaving(true);
+    let saved = 0;
+    for (const date of selectedDates) {
+      try {
+        await api.post(`${API}/blocked-slots`, {
+          type: 'one-time', date,
+          start_time: calForm.all_day ? '00:00' : calForm.start_time,
+          end_time: calForm.all_day ? '23:59' : calForm.end_time,
+          reason: calForm.reason || (calHolidays[date] ? calHolidays[date] : 'Chiusura'),
+        });
+        saved++;
+      } catch {}
+    }
+    setBulkSaving(false);
+    setSelectedDates(new Set());
+    fetchBlockedSlots();
+    toast.success(`${saved} giorn${saved === 1 ? 'o bloccato' : 'i bloccati'}!`);
   };
 
   const handleSubmit = async (e) => {
@@ -508,56 +596,223 @@ export default function SettingsPage() {
                 <Lock className="w-5 h-5 text-red-500" />
                 Blocco Orari
               </CardTitle>
-              <p className="text-sm text-[#7C5C4A] mt-1">Blocca fasce orarie specifiche o ricorrenti per impedire le prenotazioni</p>
+              <p className="text-sm text-[#7C5C4A] mt-1">Clicca i giorni nel calendario per bloccarli in blocco. Le festività italiane sono evidenziate in giallo.</p>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Add new block */}
-              <div className="p-4 border-2 border-dashed border-red-200 rounded-xl bg-red-50/50 space-y-3">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div>
-                    <Label className="text-xs font-semibold">Tipo</Label>
-                    <select value={newBlock.type} onChange={e => setNewBlock({...newBlock, type: e.target.value})}
-                      className="w-full p-2 border rounded-lg text-sm" data-testid="block-type-select">
-                      <option value="recurring">Ricorrente (ogni settimana)</option>
-                      <option value="one-time">Singolo (una data)</option>
-                    </select>
+            <CardContent className="space-y-5">
+
+              {/* ── CALENDARIO ─────────────────────────────────────── */}
+              <div className="rounded-2xl border border-[#F0E6DC] overflow-hidden">
+                {/* Navigazione mese */}
+                <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-red-50 to-orange-50 border-b border-[#F0E6DC]">
+                  <button onClick={calPrevMonth} className="w-8 h-8 rounded-full hover:bg-white/70 flex items-center justify-center transition-colors">
+                    <ChevronLeft className="w-4 h-4 text-[#7C5C4A]" />
+                  </button>
+                  <div className="text-center">
+                    <p className="font-bold text-[#2D1B14] capitalize">
+                      {new Date(calYear, calMonth, 1).toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}
+                    </p>
+                    <div className="flex items-center justify-center gap-3 mt-1">
+                      <span className="flex items-center gap-1 text-[10px] text-[#7C5C4A]"><span className="w-2.5 h-2.5 rounded-sm bg-amber-300 inline-block" /> Festività</span>
+                      <span className="flex items-center gap-1 text-[10px] text-[#7C5C4A]"><span className="w-2.5 h-2.5 rounded-sm bg-red-400 inline-block" /> Già bloccato</span>
+                      <span className="flex items-center gap-1 text-[10px] text-[#7C5C4A]"><span className="w-2.5 h-2.5 rounded-sm bg-[#C8617A] inline-block" /> Selezionato</span>
+                    </div>
                   </div>
-                  {newBlock.type === 'recurring' ? (
+                  <button onClick={calNextMonth} className="w-8 h-8 rounded-full hover:bg-white/70 flex items-center justify-center transition-colors">
+                    <ChevronRight className="w-4 h-4 text-[#7C5C4A]" />
+                  </button>
+                </div>
+
+                {/* Pulsanti rapidi */}
+                <div className="flex flex-wrap gap-2 px-4 py-2 bg-[#FAF7F2] border-b border-[#F0E6DC]">
+                  <button onClick={selectHolidaysInMonth}
+                    className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-100 text-amber-800 hover:bg-amber-200 transition-colors">
+                    🎉 Aggiungi festività del mese
+                  </button>
+                  <button onClick={selectAllInMonth}
+                    className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors">
+                    <CalendarDays className="w-3 h-3" /> Seleziona tutto il mese
+                  </button>
+                  {selectedDates.size > 0 && (
+                    <button onClick={() => setSelectedDates(new Set())}
+                      className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors ml-auto">
+                      <X className="w-3 h-3" /> Deseleziona tutto
+                    </button>
+                  )}
+                </div>
+
+                {/* Griglia calendario */}
+                <div className="p-3">
+                  {/* Intestazione giorni */}
+                  <div className="grid grid-cols-7 mb-1">
+                    {['Lun','Mar','Mer','Gio','Ven','Sab','Dom'].map(d => (
+                      <div key={d} className="text-center text-[10px] font-bold text-[#7C5C4A] uppercase py-1">{d}</div>
+                    ))}
+                  </div>
+                  {/* Celle giorni */}
+                  <div className="grid grid-cols-7 gap-0.5">
+                    {(() => {
+                      const firstDay = new Date(calYear, calMonth, 1);
+                      // Lunedì = 0, ... Domenica = 6
+                      const startOffset = (firstDay.getDay() + 6) % 7;
+                      const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+                      const cells = [];
+                      // Celle vuote prima del 1°
+                      for (let i = 0; i < startOffset; i++) {
+                        cells.push(<div key={`e-${i}`} />);
+                      }
+                      for (let d = 1; d <= daysInMonth; d++) {
+                        const key = fmtDateKey(calYear, calMonth, d);
+                        const isHoliday = !!calHolidays[key];
+                        const isBlocked = blockedDateSet.has(key);
+                        const isSelected = selectedDates.has(key);
+                        const isToday = key === fmtDateKey(today.getFullYear(), today.getMonth(), today.getDate());
+                        const isSunday = new Date(calYear, calMonth, d).getDay() === 0;
+                        const isSaturday = new Date(calYear, calMonth, d).getDay() === 6;
+
+                        let bg = 'bg-white hover:bg-[#FFF0F3]';
+                        let text = 'text-[#2D1B14]';
+                        let border = 'border border-[#F0E6DC]';
+
+                        if (isSelected) { bg = 'bg-[#C8617A]'; text = 'text-white'; border = 'border border-[#A0404F]'; }
+                        else if (isBlocked) { bg = 'bg-red-400'; text = 'text-white'; border = 'border border-red-500'; }
+                        else if (isHoliday) { bg = 'bg-amber-100 hover:bg-amber-200'; text = 'text-amber-900'; border = 'border border-amber-300'; }
+                        else if (isSunday || isSaturday) { bg = 'bg-slate-50 hover:bg-slate-100'; text = 'text-slate-500'; }
+
+                        cells.push(
+                          <button
+                            key={key}
+                            onClick={() => {
+                              if (isBlocked) return;
+                              setSelectedDates(prev => {
+                                const next = new Set(prev);
+                                if (next.has(key)) next.delete(key); else next.add(key);
+                                return next;
+                              });
+                            }}
+                            disabled={isBlocked}
+                            title={isHoliday ? calHolidays[key] : isBlocked ? 'Già bloccato' : key}
+                            className={`relative rounded-lg text-xs font-semibold h-9 flex flex-col items-center justify-center transition-all ${bg} ${text} ${border} ${isBlocked ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'} ${isToday && !isSelected ? 'ring-2 ring-[#C8617A] ring-offset-1' : ''}`}
+                          >
+                            <span>{d}</span>
+                            {isHoliday && !isSelected && <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-amber-400" />}
+                          </button>
+                        );
+                      }
+                      return cells;
+                    })()}
+                  </div>
+                </div>
+
+                {/* Pannello selezione attiva */}
+                {selectedDates.size > 0 && (
+                  <div className="border-t border-[#F0E6DC] bg-[#FFF5F7] px-4 py-3 space-y-3">
+                    <p className="text-sm font-bold text-[#C8617A]">
+                      {selectedDates.size} giorn{selectedDates.size === 1 ? 'o selezionato' : 'i selezionati'} — imposta il blocco:
+                    </p>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <div
+                          onClick={() => setCalForm(f => ({...f, all_day: !f.all_day}))}
+                          className={`w-10 h-5 rounded-full transition-colors relative ${calForm.all_day ? 'bg-[#C8617A]' : 'bg-gray-300'}`}>
+                          <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${calForm.all_day ? 'left-5' : 'left-0.5'}`} />
+                        </div>
+                        <span className="text-sm font-semibold text-[#2D1B14]">Giornata intera</span>
+                      </label>
+                      {!calForm.all_day && (
+                        <>
+                          <div className="flex items-center gap-1">
+                            <Label className="text-xs text-[#7C5C4A]">Da</Label>
+                            <Input type="time" value={calForm.start_time}
+                              onChange={e => setCalForm(f => ({...f, start_time: e.target.value}))}
+                              className="w-24 text-sm h-8" />
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Label className="text-xs text-[#7C5C4A]">A</Label>
+                            <Input type="time" value={calForm.end_time}
+                              onChange={e => setCalForm(f => ({...f, end_time: e.target.value}))}
+                              className="w-24 text-sm h-8" />
+                          </div>
+                        </>
+                      )}
+                      <Input placeholder="Motivo (es. Ferie, Festività...)"
+                        value={calForm.reason}
+                        onChange={e => setCalForm(f => ({...f, reason: e.target.value}))}
+                        className="flex-1 min-w-[160px] text-sm h-8" />
+                      <Button onClick={bulkBlockDates} disabled={bulkSaving}
+                        className="bg-red-500 hover:bg-red-600 text-white font-bold h-9 shrink-0">
+                        {bulkSaving
+                          ? <><Loader2 className="w-4 h-4 animate-spin mr-1" /> Salvo...</>
+                          : <><Lock className="w-4 h-4 mr-1" /> Blocca {selectedDates.size} giorn{selectedDates.size === 1 ? 'o' : 'i'}</>}
+                      </Button>
+                    </div>
+                    {/* Elenco giorni selezionati */}
+                    <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto">
+                      {[...selectedDates].sort().map(d => (
+                        <span key={d} className="flex items-center gap-1 bg-[#C8617A]/10 text-[#C8617A] text-xs font-semibold px-2 py-0.5 rounded-full border border-[#C8617A]/20">
+                          {d.slice(8)}/{d.slice(5,7)}
+                          {calHolidays[d] && <span className="text-amber-600">🎉</span>}
+                          <button onClick={() => setSelectedDates(prev => { const n = new Set(prev); n.delete(d); return n; })} className="hover:text-red-600 ml-0.5">×</button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ── Aggiungi singolo (ricorrente o data specifica) ── */}
+              <details className="group">
+                <summary className="cursor-pointer text-sm font-semibold text-[#7C5C4A] hover:text-[#C8617A] flex items-center gap-2 list-none">
+                  <Plus className="w-4 h-4" />
+                  Aggiungi blocco ricorrente o fascia oraria singola
+                  <span className="text-[10px] bg-[#F0E6DC] text-[#7C5C4A] px-2 py-0.5 rounded-full ml-auto group-open:hidden">espandi</span>
+                </summary>
+                <div className="mt-3 p-4 border-2 border-dashed border-red-200 rounded-xl bg-red-50/50 space-y-3">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div>
-                      <Label className="text-xs font-semibold">Giorno</Label>
-                      <select value={newBlock.day_of_week} onChange={e => setNewBlock({...newBlock, day_of_week: e.target.value})}
-                        className="w-full p-2 border rounded-lg text-sm" data-testid="block-day-select">
-                        {DAYS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+                      <Label className="text-xs font-semibold">Tipo</Label>
+                      <select value={newBlock.type} onChange={e => setNewBlock({...newBlock, type: e.target.value})}
+                        className="w-full p-2 border rounded-lg text-sm" data-testid="block-type-select">
+                        <option value="recurring">Ricorrente (ogni settimana)</option>
+                        <option value="one-time">Singolo (una data)</option>
                       </select>
                     </div>
-                  ) : (
+                    {newBlock.type === 'recurring' ? (
+                      <div>
+                        <Label className="text-xs font-semibold">Giorno</Label>
+                        <select value={newBlock.day_of_week} onChange={e => setNewBlock({...newBlock, day_of_week: e.target.value})}
+                          className="w-full p-2 border rounded-lg text-sm" data-testid="block-day-select">
+                          {DAYS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+                        </select>
+                      </div>
+                    ) : (
+                      <div>
+                        <Label className="text-xs font-semibold">Data</Label>
+                        <Input type="date" value={newBlock.date} onChange={e => setNewBlock({...newBlock, date: e.target.value})}
+                          className="text-sm" data-testid="block-date-input" />
+                      </div>
+                    )}
                     <div>
-                      <Label className="text-xs font-semibold">Data</Label>
-                      <Input type="date" value={newBlock.date} onChange={e => setNewBlock({...newBlock, date: e.target.value})}
-                        className="text-sm" data-testid="block-date-input" />
+                      <Label className="text-xs font-semibold">Da</Label>
+                      <Input type="time" value={newBlock.start_time} onChange={e => setNewBlock({...newBlock, start_time: e.target.value})}
+                        className="text-sm" data-testid="block-start-time" />
                     </div>
-                  )}
-                  <div>
-                    <Label className="text-xs font-semibold">Da</Label>
-                    <Input type="time" value={newBlock.start_time} onChange={e => setNewBlock({...newBlock, start_time: e.target.value})}
-                      className="text-sm" data-testid="block-start-time" />
+                    <div>
+                      <Label className="text-xs font-semibold">A</Label>
+                      <Input type="time" value={newBlock.end_time} onChange={e => setNewBlock({...newBlock, end_time: e.target.value})}
+                        className="text-sm" data-testid="block-end-time" />
+                    </div>
                   </div>
-                  <div>
-                    <Label className="text-xs font-semibold">A</Label>
-                    <Input type="time" value={newBlock.end_time} onChange={e => setNewBlock({...newBlock, end_time: e.target.value})}
-                      className="text-sm" data-testid="block-end-time" />
+                  <div className="flex items-center gap-3">
+                    <Input placeholder="Motivo (opzionale, es. Pausa pranzo)" value={newBlock.reason}
+                      onChange={e => setNewBlock({...newBlock, reason: e.target.value})}
+                      className="flex-1 text-sm" data-testid="block-reason-input" />
+                    <Button onClick={addBlockedSlot} disabled={savingBlock}
+                      className="bg-red-500 hover:bg-red-600 text-white shrink-0" data-testid="add-block-btn">
+                      {savingBlock ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4 mr-1" /> Blocca</>}
+                    </Button>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Input placeholder="Motivo (opzionale, es. Pausa pranzo)" value={newBlock.reason}
-                    onChange={e => setNewBlock({...newBlock, reason: e.target.value})}
-                    className="flex-1 text-sm" data-testid="block-reason-input" />
-                  <Button onClick={addBlockedSlot} disabled={savingBlock}
-                    className="bg-red-500 hover:bg-red-600 text-white shrink-0" data-testid="add-block-btn">
-                    {savingBlock ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4 mr-1" /> Blocca</>}
-                  </Button>
-                </div>
-              </div>
+              </details>
 
               {/* Existing blocks */}
               {blockedSlots.length === 0 ? (
