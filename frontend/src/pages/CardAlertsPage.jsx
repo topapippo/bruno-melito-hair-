@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api, { API } from '../lib/api';
+import { sendWA } from '../lib/sendWA';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -82,24 +83,15 @@ export default function CardAlertsPage() {
       toast.error('Numero di telefono non disponibile per questo cliente');
       return;
     }
-    
     setSending(true);
     try {
-      // Format phone number
-      let phone = selectedCard.client_phone.replace(/[\s\-\+]/g, '');
-      if (!phone.startsWith('39')) phone = '39' + phone;
-      
-      // Open WhatsApp
-      const encodedMessage = encodeURIComponent(messageTemplate);
-      window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
-      
-      // Mark as notified
-      await api.post(`${API}/cards/alerts/mark-notified/${selectedCard.id}?notification_type=whatsapp`);
-      
-      toast.success('WhatsApp aperto! Notifica registrata.');
-      setWhatsappDialogOpen(false);
-      fetchAlerts(); // Refresh to update notification status
-    } catch (err) {
+      const sent = await sendWA(selectedCard.client_phone, messageTemplate, { successMsg: '✅ Notifica card inviata!' });
+      if (sent) {
+        await api.post(`${API}/cards/alerts/mark-notified/${selectedCard.id}?notification_type=whatsapp`);
+        setWhatsappDialogOpen(false);
+        fetchAlerts();
+      }
+    } catch {
       toast.error('Errore nell\'invio della notifica');
     } finally {
       setSending(false);

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api, { API } from '../lib/api';
+import { sendWA } from '../lib/sendWA';
 import Layout from '../components/Layout';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -69,23 +70,11 @@ export default function Dashboard() {
   };
 
   const sendReminderWhatsApp = async (apt) => {
-    let phone = String(apt.client_phone || '').replace(/[\s\-\+]/g, '');
-    if (!phone) { toast.error('Numero non disponibile'); return; }
+    if (!apt.client_phone) { toast.error('Numero non disponibile'); return; }
     const serviceNames = (apt.services || []).map(s => s.name).join(', ');
     const dateStr = format(new Date(apt.date), 'dd/MM/yy');
     const msg = `Ciao ${apt.client_name}! 👋 Ti ricordiamo il tuo appuntamento di domani ${dateStr} alle ${apt.time} per ${serviceNames}. A domani! ✂️`;
-    try {
-      const res = await api.post(`${API}/whatsapp/send-direct`, { phone: apt.client_phone, message: msg });
-      if (res.data.sent) {
-        toast.success('Messaggio inviato direttamente!');
-      } else {
-        if (res.data.error) toast.error(`Green API: ${res.data.error}`);
-        window.open(res.data.url, '_blank');
-      }
-    } catch {
-      if (!phone.startsWith('39')) phone = '39' + phone;
-      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
-    }
+    await sendWA(apt.client_phone, msg, { successMsg: '✅ Promemoria inviato!' });
   };
 
   const fetchDashboardStats = async () => {
@@ -125,15 +114,12 @@ export default function Dashboard() {
     } catch {}
   };
 
-  const sendQuickWhatsApp = (card, type) => {
+  const sendQuickWhatsApp = async (card, type) => {
     if (!card.client_phone) { toast.error('Numero non disponibile'); return; }
-    let phone = card.client_phone.replace(/[\s\-\+]/g, '');
-    if (!phone.startsWith('39')) phone = '39' + phone;
     const msg = type === 'expiring'
       ? `Ciao ${card.client_name}! 👋 La tua card "${card.name}" scade tra ${card.days_until_expiry} giorni. Credito: €${card.remaining_value?.toFixed(2)}`
       : `Ciao ${card.client_name}! 👋 Il credito della tua card "${card.name}" è quasi esaurito (€${card.remaining_value?.toFixed(2)}). Vieni a ricaricarla!`;
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
-    toast.success('WhatsApp aperto!');
+    await sendWA(card.client_phone, msg, { successMsg: '✅ Notifica card inviata!' });
   };
 
   if (loading) return (

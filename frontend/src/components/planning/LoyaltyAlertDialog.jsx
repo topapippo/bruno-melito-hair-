@@ -4,19 +4,16 @@ import {
 import { Button } from '@/components/ui/button';
 import { Star, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
+import { sendWA } from '../../lib/sendWA';
 
 export default function LoyaltyAlertDialog({ open, onClose, alertData }) {
-  const openWhatsApp = () => {
+  const openWhatsApp = async () => {
     if (!alertData?.clientPhone) {
       toast.error('Numero di telefono non disponibile');
       return;
     }
-    let phone = alertData.clientPhone.replace(/[\s\-\+]/g, '');
-    if (!phone.startsWith('39')) phone = '39' + phone;
-    const message = encodeURIComponent(
-      `Ciao, hai raggiunto ${alertData.totalPoints} punti fedeltà presso Bruno Melito Hair! Puoi riscattare premi esclusivi. Prenota il tuo prossimo appuntamento!`
-    );
-    window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+    const msg = `Ciao, hai raggiunto ${alertData.totalPoints} punti fedeltà presso Bruno Melito Hair! Puoi riscattare premi esclusivi. Prenota il tuo prossimo appuntamento!`;
+    await sendWA(alertData.clientPhone, msg, { successMsg: '✅ Notifica fedeltà inviata!' });
     onClose();
   };
 

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import api, { API } from '../lib/api';
+import { sendWA } from '../lib/sendWA';
 import Layout from '../components/Layout';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -89,16 +90,7 @@ export default function PlanningPage() {
       msg = `Ciao ${clientName || ''}! Grazie per essere venuto da Bruno Melito Hair.\n\nTi aspettiamo presto per il tuo prossimo appuntamento!\n\nA presto!`;
     }
     if (reviewLink) msg += `\n\nSe ti sei trovato bene, ci farebbe molto piacere una tua recensione: ${reviewLink}`;
-    try {
-      const res = await api.post(`${API}/whatsapp/send-direct`, { phone: clientPhone, message: msg });
-      if (res.data.sent) { toast.success('Ringraziamento inviato!'); return; }
-      if (res.data.error) toast.error(`Green API: ${res.data.error}`);
-      window.open(res.data.url, '_blank');
-    } catch {
-      let p = clientPhone.replace(/\D/g, '');
-      if (!p.startsWith('39')) p = '39' + p;
-      window.open(`https://wa.me/${p}?text=${encodeURIComponent(msg)}`, '_blank');
-    }
+    await sendWA(clientPhone, msg, { successMsg: '✅ Ringraziamento inviato!' });
   };
 
   // Drag & Drop
@@ -331,10 +323,11 @@ export default function PlanningPage() {
       setNewOnlineBookings(prev => prev.map(b =>
         b.id === booking.id ? { ...b, confirmation_status: 'pending' } : b
       ));
-      if (res.data.whatsapp_url) {
-        window.open(res.data.whatsapp_url, '_blank');
+      if (res.data.sent) {
+        toast.success(`✅ Conferma inviata a ${booking.client_name}!`);
+      } else {
+        toast.success(`Conferma preparata per ${booking.client_name}`);
       }
-      toast.success(`Messaggio di conferma pronto per ${booking.client_name}`);
     } catch (e) {
       toast.error(e.response?.data?.detail || 'Errore invio messaggio');
     }
@@ -471,19 +464,7 @@ export default function PlanningPage() {
     const services = (apt.services || []).map(s => s.name).join(', ');
     const dateStr = format(selectedDate, 'dd/MM/yy');
     const msg = `Ciao ${apt.client_name}! 👋 Ricordiamo il tuo appuntamento del ${dateStr} alle ${apt.time}${services ? ` per ${services}` : ''}. A presto! ✂️`;
-    try {
-      const res = await api.post(`${API}/whatsapp/send-direct`, { phone, message: msg });
-      if (res.data.sent) {
-        toast.success('Messaggio inviato direttamente!');
-      } else {
-        if (res.data.error) toast.error(`Green API: ${res.data.error}`);
-        window.open(res.data.url, '_blank');
-      }
-    } catch {
-      let p = phone.replace(/[\s\-\+]/g, '');
-      if (!p.startsWith('39')) p = '39' + p;
-      window.open(`https://wa.me/${p}?text=${encodeURIComponent(msg)}`, '_blank');
-    }
+    await sendWA(phone, msg, { successMsg: '✅ Promemoria inviato!' });
   };
 
   // --- Drag & Drop ---

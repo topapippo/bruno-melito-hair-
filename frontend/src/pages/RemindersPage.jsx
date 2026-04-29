@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import api, { API } from '../lib/api';
+import { sendWA } from '../lib/sendWA';
 import { fmtDate } from '../lib/dateUtils';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
@@ -206,18 +207,8 @@ export default function RemindersPage() {
     return p;
   };
 
-  // Invia via Green API; fallback wa.me solo se Green API non disponibile
   const sendWhatsAppDirect = async (phone, message) => {
-    const p = formatPhone(phone);
-    try {
-      const res = await api.post(`${API}/whatsapp/send-direct`, { phone: p, message });
-      if (res.data.sent) return true;
-      if (res.data.error) toast.error(`Green API: ${res.data.error}`);
-      window.open(res.data.url, '_blank');
-    } catch {
-      window.open(`https://wa.me/${p}?text=${encodeURIComponent(message)}`, '_blank');
-    }
-    return false;
+    return await sendWA(formatPhone(phone), message);
   };
 
   const sendMessage = async () => {
@@ -336,17 +327,17 @@ export default function RemindersPage() {
   const sendConfirmationLink = async (apt) => {
     if (!apt.client_phone) { toast.error('Numero non disponibile'); return; }
     setSendingConfirmId(apt.id);
-    // Apre la finestra subito nel contesto del click (evita il popup blocker)
-    const waWindow = window.open('', '_blank');
     try {
       const res = await api.post(`${API}/reminders/appointment/${apt.id}/send-confirmation`);
-      if (waWindow) waWindow.location.href = res.data.whatsapp_url;
       setTomorrowReminders(prev => prev.map(r =>
         r.id === apt.id ? { ...r, confirmation_status: 'pending', confirmation_sent_at: new Date().toISOString() } : r
       ));
-      toast.success(`Link di conferma inviato via WhatsApp a ${apt.client_name}`);
+      if (res.data.sent) {
+        toast.success(`✅ Conferma inviata a ${apt.client_name}!`);
+      } else {
+        toast.success(`Conferma preparata per ${apt.client_name}`);
+      }
     } catch (e) {
-      if (waWindow) waWindow.close();
       toast.error(e.response?.data?.detail || 'Errore invio conferma');
     }
     setSendingConfirmId(null);

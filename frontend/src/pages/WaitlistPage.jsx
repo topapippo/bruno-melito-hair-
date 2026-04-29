@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api, { API } from '../lib/api';
+import { sendWA } from '../lib/sendWA';
 import Layout from '../components/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -63,19 +64,7 @@ export default function WaitlistPage() {
     const services = item.service_names ? ` per ${item.service_names}` : '';
     const date = item.preferred_date ? ` il ${fmtDate(item.preferred_date)}` : '';
     const msg = `Ciao ${item.client_name}! 👋 Siamo lieti di informarti che si è liberato un posto${date}${services}. Vuoi fissare l'appuntamento? ✂️`;
-    try {
-      const res = await api.post(`${API}/whatsapp/send-direct`, { phone: item.client_phone, message: msg });
-      if (res.data.sent) {
-        toast.success('Messaggio inviato!');
-      } else {
-        window.open(res.data.url, '_blank');
-        toast.success('WhatsApp aperto!');
-      }
-    } catch {
-      let p = item.client_phone.replace(/[\s\-\+]/g, '');
-      if (!p.startsWith('39')) p = '39' + p;
-      window.open(`https://wa.me/${p}?text=${encodeURIComponent(msg)}`, '_blank');
-    }
+    await sendWA(item.client_phone, msg, { successMsg: '✅ Notifica lista d\'attesa inviata!' });
   };
 
   return (
