@@ -412,65 +412,62 @@ async def create_public_booking(request: Request, data: PublicBookingRequest):
     }
     await db.appointments.insert_one(appointment)
 
-    # Notifica push all'admin per la nuova prenotazione online
     services_names = ", ".join([s.get("name", "") for s in services])
     d = data.date.split("-")
     date_it = f"{d[2]}/{d[1]}/{d[0][2:]}" if len(d) == 3 else data.date
-    try:
-        from routes.push import send_push_to_all
-        await send_push_to_all(
-            title="🔔 Nuova Prenotazione Online!",
-            body=f"{data.client_name} • {date_it} alle {data.time} • {services_names}",
-            url="/planning",
-        )
-    except Exception as e:
-        logger.warning(f"Push notifica prenotazione fallita: {e}")
 
-    # WhatsApp di conferma automatica al cliente via Green API
-    try:
-        import re as _re
-        import asyncio as _asyncio
-        import requests as _req
-        instance_id = user.get("green_api_instance_id", "")
-        api_token = user.get("green_api_token", "")
-        if not instance_id or not api_token:
-            logger.warning("WA conferma saltata: Green API non configurata (instance_id o token mancante)")
-        elif not data.client_phone:
-            logger.warning("WA conferma saltata: numero di telefono cliente mancante")
-        else:
-            phone_clean = _re.sub(r'\D', '', data.client_phone)
-            if phone_clean.startswith('0039'):
-                phone_clean = phone_clean[4:]
-            elif phone_clean.startswith('39') and len(phone_clean) > 10:
-                phone_clean = phone_clean[2:]
-            if not phone_clean.startswith('39'):
-                phone_clean = '39' + phone_clean
-            salon_name = user.get("salon_name", "Bruno Melito Hair")
-            msg = (
-                f"✅ Prenotazione confermata!\n\n"
-                f"Ciao {data.client_name}! La tua prenotazione da *{salon_name}* è confermata:\n\n"
-                f"📅 {date_it} alle {data.time}\n"
-                f"✂️ {services_names}\n"
-                f"🔖 Codice: {appointment_id[:8].upper()}\n\n"
-                f"Per disdire o modificare rispondi a questo messaggio. A presto! 💇"
+    # Risposta immediata al browser — push e WhatsApp partono in background
+    import asyncio as _asyncio
+
+    async def _background_notifications():
+        # Push admin
+        try:
+            from routes.push import send_push_to_all
+            await send_push_to_all(
+                title="🔔 Nuova Prenotazione Online!",
+                body=f"{data.client_name} • {date_it} alle {data.time} • {services_names}",
+                url="/planning",
             )
-            wa_url = f"https://api.greenapi.com/waInstance{instance_id}/sendMessage/{api_token}"
-            resp = await _asyncio.to_thread(
-                _req.post, wa_url,
-                json={"chatId": phone_clean + "@c.us", "message": msg},
-                timeout=10
-            )
-            rjson = {}
-            try:
-                rjson = resp.json()
-            except Exception:
-                pass
-            if resp.status_code == 200 and rjson.get("idMessage"):
-                logger.info(f"WA conferma inviata a {data.client_phone} (id={rjson['idMessage']})")
+        except Exception as e:
+            logger.warning(f"Push notifica prenotazione fallita: {e}")
+
+        # WhatsApp conferma al cliente via Green API
+        try:
+            import re as _re
+            import requests as _req
+            instance_id = user.get("green_api_instance_id", "")
+            api_token = user.get("green_api_token", "")
+            if not instance_id or not api_token:
+                logger.warning("WA conferma saltata: Green API non configurata")
+            elif not data.client_phone:
+                logger.warning("WA conferma saltata: telefono mancante")
             else:
-                logger.warning(f"WA conferma FALLITA per {data.client_phone}: HTTP {resp.status_code} — {resp.text[:300]}")
-    except Exception as e:
-        logger.warning(f"WA conferma prenotazione eccezione: {e}")
+                phone_clean = _re.sub(r'\D', '', data.client_phone)
+                if phone_clean.startswith('0039'): phone_clean = phone_clean[4:]
+                elif phone_clean.startswith('39') and len(phone_clean) > 10: phone_clean = phone_clean[2:]
+                if not phone_clean.startswith('39'): phone_clean = '39' + phone_clean
+                salon_name = user.get("salon_name", "Bruno Melito Hair")
+                msg = (
+                    f"✅ Prenotazione confermata!\n\n"
+                    f"Ciao {data.client_name}! La tua prenotazione da *{salon_name}* è confermata:\n\n"
+                    f"📅 {date_it} alle {data.time}\n"
+                    f"✂️ {services_names}\n"
+                    f"🔖 Codice: {appointment_id[:8].upper()}\n\n"
+                    f"Per disdire o modificare rispondi a questo messaggio. A presto! 💇"
+                )
+                wa_url = f"https://api.greenapi.com/waInstance{instance_id}/sendMessage/{api_token}"
+                resp = await _asyncio.to_thread(_req.post, wa_url, json={"chatId": phone_clean + "@c.us", "message": msg}, timeout=10)
+                rjson = {}
+                try: rjson = resp.json()
+                except Exception: pass
+                if resp.status_code == 200 and rjson.get("idMessage"):
+                    logger.info(f"WA conferma inviata a {data.client_phone}")
+                else:
+                    logger.warning(f"WA conferma FALLITA {data.client_phone}: HTTP {resp.status_code} — {resp.text[:200]}")
+        except Exception as e:
+            logger.warning(f"WA conferma eccezione: {e}")
+
+    _asyncio.create_task(_background_notifications())
 
     return {
         "success": True,
