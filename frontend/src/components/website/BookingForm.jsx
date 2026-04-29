@@ -26,6 +26,16 @@ export default function BookingForm({
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [calMonth, setCalMonth] = useState(() => new Date((formData.date || format(new Date(), 'yyyy-MM-dd')) + 'T12:00:00'));
+  const [allDayBlocked, setAllDayBlocked] = useState({ dates: new Set(), recurring_days: new Set() });
+
+  useEffect(() => {
+    api.get(`${API}/public/blocked-all-day`)
+      .then(res => setAllDayBlocked({
+        dates: new Set(res.data.dates || []),
+        recurring_days: new Set(res.data.recurring_days || [])
+      }))
+      .catch(() => {});
+  }, []);
 
   const loadMyHistory = async () => {
     const phone = formData.client_phone?.trim();
@@ -389,13 +399,16 @@ export default function BookingForm({
                   const padStart = firstDow === 0 ? 6 : firstDow - 1;
                   const cells = [];
                   for (let i = 0; i < padStart; i++) cells.push(<div key={`pad-${i}`} />);
+                  const dayNamesIt = ['domenica', 'lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato'];
                   days.forEach(day => {
                     const dateStr = format(day, 'yyyy-MM-dd');
                     const isPast = isBefore(day, todayDate);
                     const isSelected = formData.date === dateStr;
                     const isToday = dateStr === todayStr;
                     const { isClosed } = getDayHoursForDate(dateStr, config.hours);
-                    const isDisabled = isPast || isClosed;
+                    const dayItName = dayNamesIt[getDay(day)];
+                    const isAllDay = allDayBlocked.dates.has(dateStr) || allDayBlocked.recurring_days.has(dayItName);
+                    const isDisabled = isPast || isClosed || isAllDay;
                     cells.push(
                       <button key={dateStr} type="button" disabled={isDisabled}
                         onClick={() => { setFormData(prev => ({...prev, date: dateStr})); }}
@@ -409,8 +422,10 @@ export default function BookingForm({
                                 : 'text-[#D4B89A] hover:bg-[#3A2A1A] hover:text-white'
                           }`}>
                         {format(day, 'd')}
-                        {isClosed && !isPast && (
-                          <span className="text-[7px] text-[#4A3A2A] font-normal mt-0.5 leading-none">chius.</span>
+                        {(isClosed || isAllDay) && !isPast && (
+                          <span className="text-[7px] text-[#4A3A2A] font-normal mt-0.5 leading-none">
+                            {isAllDay ? '🔒' : 'chius.'}
+                          </span>
                         )}
                       </button>
                     );

@@ -162,3 +162,29 @@ async def get_public_blocked_for_date(date: str):
             blocked_times.append(f"{t // 60:02d}:{t % 60:02d}")
             t += 15
     return list(set(blocked_times))
+
+
+@router.get("/public/blocked-all-day")
+async def get_public_all_day_blocked():
+    """Returns fully-blocked dates and recurring weekdays for the public booking calendar."""
+    user = await db.users.find_one({"email": "admin@brunomelito.it"}, {"_id": 0})
+    if not user:
+        user = await db.users.find_one({}, {"_id": 0})
+    if not user:
+        return {"dates": [], "recurring_days": []}
+    user_id = user["id"]
+
+    one_time = await db.blocked_slots.find(
+        {"user_id": user_id, "type": "one-time", "start_time": "00:00", "end_time": "23:59"},
+        {"_id": 0, "date": 1}
+    ).to_list(500)
+
+    recurring = await db.blocked_slots.find(
+        {"user_id": user_id, "type": "recurring", "start_time": "00:00", "end_time": "23:59"},
+        {"_id": 0, "day_of_week": 1}
+    ).to_list(100)
+
+    return {
+        "dates": [s["date"] for s in one_time if s.get("date")],
+        "recurring_days": [s["day_of_week"] for s in recurring if s.get("day_of_week")]
+    }
