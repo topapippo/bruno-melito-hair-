@@ -27,7 +27,6 @@ export default function BookingForm({
   const [calMonth, setCalMonth] = useState(() => new Date((formData.date || format(new Date(), 'yyyy-MM-dd')) + 'T12:00:00'));
   const [allDayBlocked, setAllDayBlocked] = useState({ dates: new Set(), recurring_days: new Set() });
 
-  // Auto-open first service category
   useEffect(() => {
     const { orderedKeys: cats } = groupServicesByCategory(bookingServices);
     if (cats.length > 0) setOpenCats(prev => ({ [`b_${cats[0]}`]: true, ...prev }));
@@ -117,7 +116,6 @@ export default function BookingForm({
   const handleBookingSubmit = (e, operatorId) => handleSubmit(e, operatorId);
   const toggleCat = (key) => setOpenCats(prev => ({ ...prev, [key]: !prev[key] }));
 
-  // Compute slots for display: all slots for day (no blocked filter), then separate available vs occupied
   const allSlotsForDay = formData.date ? getAvailableSlotsForDate(formData.date, config.hours, []) : [];
   const blockedSet = new Set(blockedSlots);
   const availableSlots = allSlotsForDay.filter(s => !blockedSet.has(s));
@@ -128,28 +126,88 @@ export default function BookingForm({
     { n: 3, label: 'Dati', emoji: '👤' },
   ];
 
-  const primaryLight = T.primary + '18';
-  const primaryBorder = T.primary + '35';
+  const P = T.primary;
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(160deg, #FFF0F5 0%, #FFFFFF 55%, #F5F0FF 100%)' }}>
+    <div className="min-h-screen" style={{ background: 'linear-gradient(160deg, #FFF0F5 0%, #FEFEFE 55%, #F3EEFF 100%)' }}>
       <style>{`
-        @keyframes slideUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes popIn { 0% { transform: scale(0.75); opacity: 0; } 70% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
-        .slide-up { animation: slideUp 0.25s ease forwards; }
-        .pop-in { animation: popIn 0.22s ease forwards; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes popIn  { 0% { transform: scale(0.7); opacity: 0; } 65% { transform: scale(1.12); } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes pulseRing { 0%,100%{box-shadow:0 0 0 0 ${P}40} 50%{box-shadow:0 0 0 6px ${P}00} }
+        .slide-up { animation: slideUp 0.28s cubic-bezier(.16,1,.3,1) forwards; }
+        .pop-in   { animation: popIn  0.22s ease forwards; }
+
+        /* ── Giorni calendario ── */
+        .bk-day { transition: all 0.14s cubic-bezier(.34,1.56,.64,1); }
+        .bk-day-avail:hover {
+          background: linear-gradient(135deg, ${P}22, ${P}14) !important;
+          color: ${P} !important;
+          transform: scale(1.18) !important;
+          box-shadow: 0 3px 10px ${P}28 !important;
+        }
+        .bk-day-today:hover {
+          background: #FEF3C7 !important;
+          transform: scale(1.12) !important;
+        }
+        .bk-day-sel {
+          animation: pulseRing 2s ease-in-out infinite;
+        }
+
+        /* ── Slot orari ── */
+        .bk-ts { transition: all 0.14s cubic-bezier(.34,1.56,.64,1); }
+        .bk-ts-avail {
+          background: white;
+          color: ${P};
+          border: 2px solid ${P}55;
+          font-weight: 700;
+        }
+        .bk-ts-avail:hover {
+          background: ${P} !important;
+          color: white !important;
+          border-color: ${P} !important;
+          transform: scale(1.07) translateY(-2px) !important;
+          box-shadow: 0 5px 16px ${P}45 !important;
+        }
+        .bk-ts-sel {
+          background: linear-gradient(135deg, ${P}, ${P}CC) !important;
+          color: white !important;
+          border: 2px solid ${P} !important;
+          box-shadow: 0 5px 16px ${P}45 !important;
+          transform: scale(1.05) !important;
+        }
+        .bk-ts-occ {
+          background: #F1F5F9 !important;
+          color: #94A3B8 !important;
+          border: 2px solid transparent !important;
+          cursor: not-allowed !important;
+        }
+
+        /* ── Servizi ── */
+        .bk-svc { transition: all 0.18s cubic-bezier(.34,1.56,.64,1); }
+        .bk-svc:hover {
+          transform: translateY(-2px) !important;
+          box-shadow: 0 6px 22px rgba(0,0,0,0.09) !important;
+        }
+
+        /* ── Operatori ── */
+        .bk-op { transition: all 0.15s ease; }
+        .bk-op:hover { transform: scale(1.04); }
+
+        /* ── Pulsante prossimo giorno ── */
+        .bk-nextday { transition: all 0.18s cubic-bezier(.34,1.56,.64,1); }
+        .bk-nextday:hover { transform: scale(1.025) translateY(-1px) !important; box-shadow: 0 6px 20px ${P}35 !important; }
       `}</style>
 
       {/* ── HEADER ── */}
-      <div className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm py-3 px-4">
+      <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm py-3 px-4">
         <div className="max-w-lg mx-auto flex items-center gap-3">
-          <button onClick={onBack} className="p-2 rounded-xl hover:bg-gray-100 transition-colors text-gray-500" data-testid="website-booking-back-btn">
+          <button onClick={onBack} className="p-2 rounded-xl hover:bg-gray-100 transition-colors text-gray-600" data-testid="website-booking-back-btn">
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <img src="/logo.png?v=4" alt={config.salon_name} className="w-9 h-9 rounded-xl border border-gray-100" />
+          <img src="/logo.png?v=4" alt={config.salon_name} className="w-9 h-9 rounded-xl border border-gray-200" />
           <div>
-            <p className="font-black text-gray-900 text-sm leading-tight">{config.salon_name || 'BRUNO MELITO HAIR'}</p>
-            <p className="text-xs font-semibold" style={{ color: T.primary }}>✨ Prenota il tuo appuntamento</p>
+            <p className="font-black text-gray-950 text-sm leading-tight">{config.salon_name || 'BRUNO MELITO HAIR'}</p>
+            <p className="text-xs font-semibold" style={{ color: P }}>✨ Prenota il tuo appuntamento</p>
           </div>
         </div>
       </div>
@@ -157,22 +215,22 @@ export default function BookingForm({
       <div className="max-w-lg mx-auto px-4 py-5">
 
         {/* ── STEP INDICATOR ── */}
-        <div className="flex items-start mb-6">
+        <div className="flex items-start mb-7">
           {STEPS.map((s, idx) => (
             <div key={s.n} className={`flex items-start ${idx < STEPS.length - 1 ? 'flex-1' : ''}`}>
               <div className="flex flex-col items-center">
                 <div
-                  className={`w-11 h-11 rounded-2xl flex items-center justify-center text-base font-black shadow-sm transition-all duration-300
-                    ${step > s.n ? 'bg-emerald-500 text-white' : step === s.n ? 'text-white shadow-md scale-110' : 'bg-gray-100 text-gray-400'}`}
-                  style={step === s.n ? { background: `linear-gradient(135deg, ${T.primary}, ${T.primary}BB)` } : {}}>
+                  className={`w-12 h-12 rounded-2xl flex items-center justify-center text-base font-black shadow-sm transition-all duration-300
+                    ${step > s.n ? 'bg-emerald-500 text-white' : step === s.n ? 'text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-500'}`}
+                  style={step === s.n ? { background: `linear-gradient(135deg, ${P}, ${P}BB)` } : {}}>
                   {step > s.n ? '✓' : s.emoji}
                 </div>
-                <span className={`text-[10px] font-bold mt-1.5 ${step >= s.n ? 'text-gray-700' : 'text-gray-300'}`}>{s.label}</span>
+                <span className={`text-[10px] font-bold mt-1.5 ${step >= s.n ? 'text-gray-800' : 'text-gray-400'}`}>{s.label}</span>
               </div>
               {idx < STEPS.length - 1 && (
-                <div className="flex-1 h-1.5 mt-5 mx-2 rounded-full bg-gray-100 overflow-hidden">
+                <div className="flex-1 h-1.5 mt-5 mx-2 rounded-full bg-gray-200 overflow-hidden">
                   <div className="h-full rounded-full transition-all duration-500"
-                    style={{ width: step > s.n ? '100%' : '0%', background: `linear-gradient(90deg, ${T.primary}, ${T.primary}BB)` }} />
+                    style={{ width: step > s.n ? '100%' : '0%', background: `linear-gradient(90deg, ${P}, ${P}BB)` }} />
                 </div>
               )}
             </div>
@@ -185,8 +243,8 @@ export default function BookingForm({
         {step === 1 && (
           <div className="slide-up flex flex-col" style={{ maxHeight: '72vh' }}>
             <div className="mb-4">
-              <h2 className="text-2xl font-black text-gray-900">✂️ Cosa facciamo oggi?</h2>
-              <p className="text-sm text-gray-500 mt-0.5">Tocca per selezionare uno o più servizi</p>
+              <h2 className="text-2xl font-black text-gray-950">✂️ Cosa facciamo oggi?</h2>
+              <p className="text-sm text-gray-600 mt-0.5">Tocca per selezionare uno o più servizi</p>
             </div>
 
             <div className="flex-1 overflow-y-auto space-y-2.5 pr-0.5 pb-2">
@@ -201,7 +259,7 @@ export default function BookingForm({
                       return (
                         <div key={cat} data-testid={`booking-cat-${cat}`}>
                           <button type="button" onClick={() => toggleCat(`b_${cat}`)}
-                            className="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl font-black text-white text-left transition-all hover:brightness-105 active:scale-[0.99] shadow-sm"
+                            className="w-full flex items-center justify-between px-4 py-4 rounded-2xl font-black text-white text-left transition-all hover:brightness-110 active:scale-[0.98] shadow"
                             style={{ backgroundColor: catInfo.color }}>
                             <span className="flex items-center gap-2.5">
                               <span className="text-base">{catInfo.label}</span>
@@ -217,21 +275,23 @@ export default function BookingForm({
                                 const isSel = formData.service_ids.includes(service.id);
                                 return (
                                   <div key={service.id} onClick={() => toggleService(service.id)}
-                                    className="px-4 py-3.5 rounded-2xl border-2 cursor-pointer transition-all duration-150 bg-white hover:shadow-sm active:scale-[0.99]"
-                                    style={isSel ? { borderColor: T.primary, backgroundColor: primaryLight } : { borderColor: '#E5E7EB' }}
+                                    className="bk-svc px-4 py-4 rounded-2xl border-2 cursor-pointer bg-white active:scale-[0.98]"
+                                    style={isSel
+                                      ? { borderColor: P, backgroundColor: P + '12', boxShadow: `0 2px 12px ${P}20` }
+                                      : { borderColor: '#D1D5DB' }}
                                     data-testid={`website-service-${service.id}`}>
                                     <div className="flex items-center justify-between gap-3">
                                       <div className="flex items-center gap-3 min-w-0">
                                         <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
-                                          style={isSel ? { backgroundColor: T.primary, borderColor: T.primary } : { borderColor: '#D1D5DB' }}>
+                                          style={isSel ? { backgroundColor: P, borderColor: P } : { borderColor: '#9CA3AF' }}>
                                           {isSel && <span className="text-white text-[10px] font-black pop-in">✓</span>}
                                         </div>
                                         <div className="min-w-0">
-                                          <p className="font-bold text-gray-900 text-sm truncate">{service.name}</p>
-                                          <p className="text-xs text-gray-400 mt-0.5">⏱ {service.duration} min</p>
+                                          <p className="font-bold text-gray-950 truncate">{service.name}</p>
+                                          <p className="text-xs text-gray-500 mt-0.5">⏱ {service.duration} min</p>
                                         </div>
                                       </div>
-                                      <p className="font-black text-base flex-shrink-0" style={{ color: isSel ? T.primary : '#374151' }}>€{service.price}</p>
+                                      <p className="font-black text-lg flex-shrink-0" style={{ color: isSel ? P : '#111827' }}>€{service.price}</p>
                                     </div>
                                   </div>
                                 );
@@ -242,13 +302,12 @@ export default function BookingForm({
                       );
                     })}
 
-                    {/* Card & Abbonamenti */}
                     {cardTemplates.length > 0 && (() => {
                       const isOpen = openCats['b_cards'];
                       return (
                         <div data-testid="booking-cat-cards">
                           <button type="button" onClick={() => toggleCat('b_cards')}
-                            className="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl font-black text-white text-left transition-all hover:brightness-105 active:scale-[0.99] shadow-sm"
+                            className="w-full flex items-center justify-between px-4 py-4 rounded-2xl font-black text-white text-left transition-all hover:brightness-110 active:scale-[0.98] shadow"
                             style={{ backgroundColor: '#6366F1' }}>
                             <span className="flex items-center gap-2.5"><CreditCard className="w-4 h-4" /><span>Card & Abbonamenti</span></span>
                             <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
@@ -268,17 +327,17 @@ export default function BookingForm({
                                         toast.success(`"${tmpl.name}" selezionato!`);
                                       }
                                     }}
-                                    className="px-4 py-3.5 rounded-2xl border-2 cursor-pointer transition-all bg-white hover:shadow-sm active:scale-[0.99]"
-                                    style={isSel ? { borderColor: '#6366F1', backgroundColor: '#EEF2FF' } : { borderColor: '#E5E7EB' }}
+                                    className="bk-svc px-4 py-4 rounded-2xl border-2 cursor-pointer bg-white active:scale-[0.98]"
+                                    style={isSel ? { borderColor: '#6366F1', backgroundColor: '#EEF2FF' } : { borderColor: '#D1D5DB' }}
                                     data-testid={`website-card-template-${i}`}>
                                     <div className="flex items-center justify-between">
                                       <div>
-                                        <p className="font-bold text-gray-900 text-sm">{tmpl.name}</p>
+                                        <p className="font-bold text-gray-950">{tmpl.name}</p>
                                         <p className="text-xs text-indigo-500 mt-0.5">{tmpl.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}{tmpl.total_services ? ` · ${tmpl.total_services} servizi` : ''}</p>
                                       </div>
                                       <div className="text-right">
-                                        <p className="font-black text-gray-900">€{tmpl.total_value}</p>
-                                        {isSel && <span className="text-[10px] font-bold text-indigo-500">✓ Selezionato</span>}
+                                        <p className="font-black text-gray-950 text-lg">€{tmpl.total_value}</p>
+                                        {isSel && <span className="text-[10px] font-bold text-indigo-600">✓ Selezionato</span>}
                                       </div>
                                     </div>
                                   </div>
@@ -290,14 +349,13 @@ export default function BookingForm({
                       );
                     })()}
 
-                    {/* Promozioni */}
                     {publicPromos.length > 0 && (() => {
                       const isOpen = openCats['b_promos'];
                       const selectedPromos = publicPromos.filter(p => (formData.notes || '').includes(`[PROMO: ${p.name}]`)).length;
                       return (
                         <div data-testid="booking-cat-promos">
                           <button type="button" onClick={() => toggleCat('b_promos')}
-                            className="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl font-black text-white text-left transition-all hover:brightness-105 active:scale-[0.99] shadow-sm"
+                            className="w-full flex items-center justify-between px-4 py-4 rounded-2xl font-black text-white text-left transition-all hover:brightness-110 active:scale-[0.98] shadow"
                             style={{ backgroundColor: '#F59E0B' }}>
                             <span className="flex items-center gap-2.5">
                               <Gift className="w-4 h-4" /><span>🎁 Promozioni Attive</span>
@@ -324,17 +382,17 @@ export default function BookingForm({
                                         toast.success(`Promo "${promo.name}" aggiunta!`);
                                       }
                                     }}
-                                    className="px-4 py-3.5 rounded-2xl border-2 cursor-pointer transition-all bg-white hover:shadow-sm active:scale-[0.99]"
-                                    style={isSel ? { borderColor: '#F59E0B', backgroundColor: '#FFFBEB' } : { borderColor: '#E5E7EB' }}
+                                    className="bk-svc px-4 py-4 rounded-2xl border-2 cursor-pointer bg-white active:scale-[0.98]"
+                                    style={isSel ? { borderColor: '#F59E0B', backgroundColor: '#FFFBEB' } : { borderColor: '#D1D5DB' }}
                                     data-testid={`website-promo-${promo.id}`}>
                                     <div className="flex items-center justify-between">
                                       <div>
-                                        <p className="font-bold text-gray-900 text-sm">{promo.name}</p>
-                                        <p className="text-xs text-amber-600 mt-0.5">{promo.free_service_name || promo.description || ''}</p>
+                                        <p className="font-bold text-gray-950">{promo.name}</p>
+                                        <p className="text-xs text-amber-700 mt-0.5">{promo.free_service_name || promo.description || ''}</p>
                                       </div>
                                       {isSel
-                                        ? <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full">✓ Aggiunta</span>
-                                        : <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full">PROMO</span>}
+                                        ? <span className="text-xs font-bold text-amber-800 bg-amber-100 px-2.5 py-1 rounded-full">✓ Aggiunta</span>
+                                        : <span className="text-xs font-bold text-amber-800 bg-amber-100 px-2.5 py-1 rounded-full">PROMO</span>}
                                     </div>
                                   </div>
                                 );
@@ -350,20 +408,21 @@ export default function BookingForm({
             </div>
 
             {/* Sticky bottom */}
-            <div className="sticky bottom-0 bg-white/95 backdrop-blur-sm pt-3 border-t border-gray-100 mt-2 space-y-2">
+            <div className="sticky bottom-0 bg-white/95 backdrop-blur-sm pt-3 border-t border-gray-200 mt-2 space-y-2">
               {formData.service_ids.length > 0 && (
-                <div className="flex items-center justify-between px-4 py-2.5 rounded-2xl" style={{ backgroundColor: primaryLight, border: `1.5px solid ${primaryBorder}` }}>
-                  <span className="text-sm font-bold text-gray-700">
+                <div className="flex items-center justify-between px-4 py-3 rounded-2xl border-2"
+                  style={{ backgroundColor: P + '12', borderColor: P + '40' }}>
+                  <span className="text-sm font-bold text-gray-800">
                     {selectedServices.length} servizio{selectedServices.length > 1 ? 'i' : ''} · {totalDuration} min
                   </span>
-                  <span className="font-black text-base" style={{ color: T.primary }}>€{totalPrice}</span>
+                  <span className="font-black text-lg" style={{ color: P }}>€{totalPrice}</span>
                 </div>
               )}
               <Button
                 onClick={() => setStep(2)}
                 disabled={formData.service_ids.length === 0}
-                className="w-full text-white font-black py-6 rounded-2xl shadow-md hover:shadow-lg hover:scale-[1.01] transition-all disabled:opacity-40"
-                style={{ background: formData.service_ids.length > 0 ? `linear-gradient(135deg, ${T.primary}, ${T.primary}CC)` : undefined }}
+                className="w-full text-white font-black py-6 rounded-2xl shadow-md hover:shadow-xl hover:scale-[1.02] transition-all duration-200 disabled:opacity-40"
+                style={{ background: formData.service_ids.length > 0 ? `linear-gradient(135deg, ${P}, ${P}CC)` : undefined }}
                 data-testid="website-step1-next">
                 Scegli il giorno <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
@@ -377,31 +436,33 @@ export default function BookingForm({
         {step === 2 && (
           <div className="space-y-4 slide-up">
             <div>
-              <h2 className="text-2xl font-black text-gray-900">📅 Quando ci vediamo?</h2>
-              <p className="text-sm text-gray-500 mt-0.5">Scegli il giorno e l'orario preferito</p>
+              <h2 className="text-2xl font-black text-gray-950">📅 Quando ci vediamo?</h2>
+              <p className="text-sm text-gray-600 mt-0.5">Scegli il giorno e l'orario preferito</p>
             </div>
 
             {/* CALENDARIO */}
-            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden" data-testid="booking-date-input">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+            <div className="bg-white rounded-3xl shadow-md border border-gray-200 overflow-hidden" data-testid="booking-date-input">
+              <div className="flex items-center justify-between px-4 py-3.5 border-b border-gray-200">
                 <button type="button"
                   onClick={() => setCalMonth(prev => subMonths(prev, 1))}
                   disabled={startOfMonth(calMonth) <= startOfMonth(new Date())}
-                  className="w-9 h-9 rounded-xl hover:bg-gray-100 flex items-center justify-center text-gray-400 disabled:opacity-20 transition-all">
-                  <ChevronLeft className="w-4 h-4" />
+                  className="w-9 h-9 rounded-xl hover:bg-gray-100 flex items-center justify-center text-gray-600 disabled:opacity-20 transition-all hover:scale-110">
+                  <ChevronLeft className="w-5 h-5" />
                 </button>
-                <span className="font-black text-gray-900 capitalize">{format(calMonth, 'MMMM yyyy', { locale: it })}</span>
+                <span className="font-black text-gray-950 capitalize text-base">{format(calMonth, 'MMMM yyyy', { locale: it })}</span>
                 <button type="button"
                   onClick={() => setCalMonth(prev => addMonths(prev, 1))}
-                  className="w-9 h-9 rounded-xl hover:bg-gray-100 flex items-center justify-center text-gray-400 transition-all">
-                  <ChevronRight className="w-4 h-4" />
+                  className="w-9 h-9 rounded-xl hover:bg-gray-100 flex items-center justify-center text-gray-600 transition-all hover:scale-110">
+                  <ChevronRight className="w-5 h-5" />
                 </button>
               </div>
-              <div className="grid grid-cols-7 px-3 pt-2">
+              {/* Intestazioni giorni */}
+              <div className="grid grid-cols-7 px-3 pt-2.5">
                 {['Lun','Mar','Mer','Gio','Ven','Sab','Dom'].map((d, i) => (
-                  <div key={i} className="text-center text-[10px] font-bold text-gray-400 py-1">{d}</div>
+                  <div key={i} className="text-center text-[11px] font-black text-gray-500 py-1 tracking-wide">{d}</div>
                 ))}
               </div>
+              {/* Griglia giorni */}
               <div className="grid grid-cols-7 gap-1 p-3 pt-1">
                 {(() => {
                   const todayDate = startOfDay(new Date());
@@ -423,21 +484,27 @@ export default function BookingForm({
                     const dayItName = dayNamesIt[getDay(day)];
                     const isAllDay = allDayBlocked.dates.has(dateStr) || allDayBlocked.recurring_days.has(dayItName);
                     const isDisabled = isPast || isClosed || isAllDay;
+
+                    let cls = 'bk-day aspect-square rounded-xl flex flex-col items-center justify-center text-sm font-bold leading-none ';
+                    let st = {};
+                    if (isSelected) {
+                      cls += 'bk-day-sel text-white shadow-lg ';
+                      st = { background: `linear-gradient(135deg, ${P}, ${P}BB)`, transform: 'scale(1.1)' };
+                    } else if (isDisabled) {
+                      cls += 'text-gray-300 cursor-not-allowed ';
+                    } else if (isToday) {
+                      cls += 'bk-day-today text-amber-700 font-black ';
+                      st = { background: '#FEF3C7', boxShadow: `inset 0 0 0 2px #FCD34D` };
+                    } else {
+                      cls += 'bk-day-avail text-gray-900 cursor-pointer ';
+                    }
+
                     cells.push(
                       <button key={dateStr} type="button" disabled={isDisabled}
-                        onClick={() => setFormData(prev => ({ ...prev, date: dateStr }))}
-                        className={`relative aspect-square rounded-xl flex flex-col items-center justify-center text-[13px] font-bold leading-none transition-all duration-150
-                          ${isSelected
-                            ? 'text-white shadow-md scale-[1.08]'
-                            : isDisabled
-                              ? 'text-gray-200 cursor-not-allowed'
-                              : isToday
-                                ? 'text-amber-600 bg-amber-50 ring-1 ring-amber-300 hover:bg-amber-100'
-                                : 'text-gray-800 hover:bg-gray-100 hover:scale-[1.05]'
-                          }`}
-                        style={isSelected ? { background: `linear-gradient(135deg, ${T.primary}, ${T.primary}BB)` } : {}}>
+                        onClick={() => !isDisabled && setFormData(prev => ({ ...prev, date: dateStr }))}
+                        className={cls} style={st}>
                         {format(day, 'd')}
-                        {!isPast && isClosed && <span className="text-[7px] text-gray-300 font-normal mt-0.5 leading-none">chiuso</span>}
+                        {!isPast && isClosed && <span className="text-[7px] text-gray-400 font-normal mt-0.5 leading-none">chiuso</span>}
                         {!isPast && !isClosed && isAllDay && <span className="text-[9px] mt-0.5 leading-none">🔒</span>}
                       </button>
                     );
@@ -455,7 +522,6 @@ export default function BookingForm({
               const dayItName = dayNamesIt[getDay(new Date(formData.date + 'T12:00:00'))];
               const isFullyBlocked = allDayBlocked.dates.has(formData.date) || allDayBlocked.recurring_days.has(dayItName);
 
-              // Nessun orario disponibile
               if (availableSlots.length === 0) {
                 let icon = '📅', title = 'Nessun orario disponibile', desc = 'Scegli un altro giorno nel calendario.';
                 if (isClosed) { icon = '😴'; title = 'Salone chiuso'; desc = 'In questo giorno il salone è chiuso. Seleziona un altro giorno.'; }
@@ -466,16 +532,16 @@ export default function BookingForm({
                 const nextDate = getNextAvailableDate(formData.date, config.hours);
                 return (
                   <div className="space-y-3" data-testid="day-closed-msg">
-                    <div className="p-5 bg-white rounded-2xl shadow-sm border border-gray-100 text-center">
+                    <div className="p-5 bg-white rounded-2xl shadow-md border border-gray-200 text-center">
                       <div className="text-4xl mb-2">{icon}</div>
-                      <p className="font-black text-gray-800 text-base">{title}</p>
-                      <p className="text-sm text-gray-500 mt-1 leading-relaxed">{desc}</p>
+                      <p className="font-black text-gray-900 text-base">{title}</p>
+                      <p className="text-sm text-gray-600 mt-1 leading-relaxed">{desc}</p>
                     </div>
                     {nextDate && (
                       <button type="button"
                         onClick={() => { setFormData(prev => ({ ...prev, date: nextDate })); setCalMonth(new Date(nextDate + 'T12:00:00')); }}
-                        className="w-full p-4 rounded-2xl font-bold text-white text-sm hover:opacity-90 hover:scale-[1.01] transition-all shadow-sm"
-                        style={{ background: `linear-gradient(135deg, ${T.primary}, ${T.primary}CC)` }}
+                        className="bk-nextday w-full p-4 rounded-2xl font-bold text-white text-sm shadow-md"
+                        style={{ background: `linear-gradient(135deg, ${P}, ${P}CC)` }}
                         data-testid="go-next-date-btn">
                         🗓 Prossimo giorno disponibile — {format(new Date(nextDate + 'T12:00:00'), 'EEEE dd MMMM', { locale: it })}
                       </button>
@@ -489,34 +555,29 @@ export default function BookingForm({
               const hasOccupied = blockedSlots.length > 0;
 
               return (
-                <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-4 space-y-4" data-testid="time-slots-grid">
+                <div className="bg-white rounded-3xl shadow-md border border-gray-200 p-5 space-y-4" data-testid="time-slots-grid">
                   <div className="flex items-center justify-between">
-                    <p className="font-bold text-gray-800 capitalize">
+                    <p className="font-black text-gray-900 capitalize">
                       {format(new Date(formData.date + 'T12:00:00'), 'EEEE dd MMMM', { locale: it })}
                     </p>
                     {hasOccupied && (
-                      <span className="flex items-center gap-1 text-[10px] text-gray-400 font-semibold bg-gray-50 px-2 py-1 rounded-full">
-                        <Lock className="w-2.5 h-2.5" /> occupato
+                      <span className="flex items-center gap-1 text-[10px] text-gray-500 font-bold bg-gray-100 px-2.5 py-1 rounded-full border border-gray-200">
+                        <Lock className="w-2.5 h-2.5" /> = già prenotato
                       </span>
                     )}
                   </div>
 
                   {morningAll.length > 0 && (
                     <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">🌅 Mattina</p>
-                      <div className="grid grid-cols-4 gap-1.5">
+                      <p className="text-xs font-black text-gray-600 uppercase tracking-widest mb-2.5">🌅 Mattina</p>
+                      <div className="grid grid-cols-4 gap-2">
                         {morningAll.map(t => {
                           const isAvail = !blockedSet.has(t);
                           const isSel = formData.time === t && isAvail;
                           return (
                             <button key={t} type="button" disabled={!isAvail}
                               onClick={() => isAvail && setFormData(prev => ({ ...prev, time: t }))}
-                              className="py-3 rounded-xl text-sm font-bold transition-all active:scale-95"
-                              style={isSel
-                                ? { background: `linear-gradient(135deg, ${T.primary}, ${T.primary}BB)`, color: 'white' }
-                                : isAvail
-                                  ? { backgroundColor: primaryLight, color: T.primary, border: `1.5px solid ${primaryBorder}` }
-                                  : { backgroundColor: '#F5F5F5', color: '#C8C8C8', cursor: 'not-allowed' }}
+                              className={`bk-ts py-3 rounded-xl text-sm active:scale-95 ${isSel ? 'bk-ts-sel' : isAvail ? 'bk-ts-avail' : 'bk-ts-occ'}`}
                               data-testid="time-select">
                               {isAvail ? t : (
                                 <span className="flex flex-col items-center gap-0.5 leading-none">
@@ -533,20 +594,15 @@ export default function BookingForm({
 
                   {afternoonAll.length > 0 && (
                     <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">🌆 Pomeriggio</p>
-                      <div className="grid grid-cols-4 gap-1.5">
+                      <p className="text-xs font-black text-gray-600 uppercase tracking-widest mb-2.5">🌆 Pomeriggio</p>
+                      <div className="grid grid-cols-4 gap-2">
                         {afternoonAll.map(t => {
                           const isAvail = !blockedSet.has(t);
                           const isSel = formData.time === t && isAvail;
                           return (
                             <button key={t} type="button" disabled={!isAvail}
                               onClick={() => isAvail && setFormData(prev => ({ ...prev, time: t }))}
-                              className="py-3 rounded-xl text-sm font-bold transition-all active:scale-95"
-                              style={isSel
-                                ? { background: `linear-gradient(135deg, ${T.primary}, ${T.primary}BB)`, color: 'white' }
-                                : isAvail
-                                  ? { backgroundColor: primaryLight, color: T.primary, border: `1.5px solid ${primaryBorder}` }
-                                  : { backgroundColor: '#F5F5F5', color: '#C8C8C8', cursor: 'not-allowed' }}
+                              className={`bk-ts py-3 rounded-xl text-sm active:scale-95 ${isSel ? 'bk-ts-sel' : isAvail ? 'bk-ts-avail' : 'bk-ts-occ'}`}
                               data-testid="time-select">
                               {isAvail ? t : (
                                 <span className="flex flex-col items-center gap-0.5 leading-none">
@@ -562,8 +618,8 @@ export default function BookingForm({
                   )}
 
                   {hasOccupied && (
-                    <p className="text-xs text-gray-400 text-center">
-                      Gli orari con 🔒 sono già prenotati — scegli uno di quelli disponibili
+                    <p className="text-xs text-gray-500 text-center font-semibold">
+                      Gli orari con 🔒 sono già prenotati — scegli uno degli orari colorati
                     </p>
                   )}
                 </div>
@@ -573,25 +629,25 @@ export default function BookingForm({
             {/* OPERATORE */}
             {operators.filter(o => o.active !== false).length > 0 && (
               <div data-testid="booking-operator-select">
-                <p className="text-sm font-bold text-gray-700 mb-2">
-                  Con chi vorresti venire? <span className="font-normal text-gray-400">(opzionale)</span>
+                <p className="text-sm font-bold text-gray-800 mb-2">
+                  Con chi vorresti venire? <span className="font-normal text-gray-500">(opzionale)</span>
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <button type="button"
                     onClick={() => setFormData(prev => ({ ...prev, operator_id: '' }))}
-                    className="px-4 py-2 rounded-xl text-sm font-bold border-2 transition-all"
+                    className="bk-op px-4 py-2.5 rounded-xl text-sm font-bold border-2 transition-all"
                     style={!formData.operator_id
-                      ? { borderColor: T.primary, backgroundColor: primaryLight, color: T.primary }
-                      : { borderColor: '#E5E7EB', backgroundColor: 'white', color: '#6B7280' }}>
+                      ? { borderColor: P, backgroundColor: P + '15', color: P }
+                      : { borderColor: '#D1D5DB', backgroundColor: 'white', color: '#374151' }}>
                     🙂 Nessuna preferenza
                   </button>
                   {operators.filter(o => o.active !== false).map(op => (
                     <button key={op.id} type="button"
                       onClick={() => setFormData(prev => ({ ...prev, operator_id: op.id }))}
-                      className="px-4 py-2 rounded-xl text-sm font-bold border-2 transition-all"
+                      className="bk-op px-4 py-2.5 rounded-xl text-sm font-bold border-2"
                       style={formData.operator_id === op.id
-                        ? { borderColor: T.primary, backgroundColor: primaryLight, color: T.primary }
-                        : { borderColor: '#E5E7EB', backgroundColor: 'white', color: '#374151' }}>
+                        ? { borderColor: P, backgroundColor: P + '15', color: P }
+                        : { borderColor: '#D1D5DB', backgroundColor: 'white', color: '#374151' }}>
                       💇 {op.name}
                     </button>
                   ))}
@@ -600,14 +656,14 @@ export default function BookingForm({
             )}
 
             <div className="flex gap-3 pt-1">
-              <Button onClick={() => setStep(1)} variant="outline" className="flex-1 border-gray-200 text-gray-600 hover:bg-gray-50 font-bold rounded-2xl py-5">
+              <Button onClick={() => setStep(1)} variant="outline" className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-100 font-bold rounded-2xl py-5">
                 ← Indietro
               </Button>
               <Button
                 onClick={() => setStep(3)}
                 disabled={availableSlots.length === 0}
-                className="flex-[2] text-white font-black py-5 rounded-2xl shadow-md hover:shadow-lg hover:scale-[1.01] transition-all disabled:opacity-40"
-                style={{ background: availableSlots.length > 0 ? `linear-gradient(135deg, ${T.primary}, ${T.primary}CC)` : undefined }}
+                className="flex-[2] text-white font-black py-5 rounded-2xl shadow-md hover:shadow-xl hover:scale-[1.02] transition-all duration-200 disabled:opacity-40"
+                style={{ background: availableSlots.length > 0 ? `linear-gradient(135deg, ${P}, ${P}CC)` : undefined }}
                 data-testid="website-step2-next">
                 Inserisci i tuoi dati <ArrowRight className="w-4 h-4 ml-1.5" />
               </Button>
@@ -621,94 +677,94 @@ export default function BookingForm({
         {step === 3 && (
           <div className="space-y-4 slide-up">
             <div>
-              <h2 className="text-2xl font-black text-gray-900">🎉 Quasi fatto!</h2>
-              <p className="text-sm text-gray-500 mt-0.5">Inserisci i tuoi dati per confermare</p>
+              <h2 className="text-2xl font-black text-gray-950">🎉 Quasi fatto!</h2>
+              <p className="text-sm text-gray-600 mt-0.5">Inserisci i tuoi dati per confermare</p>
             </div>
 
-            {/* Riepilogo appuntamento */}
-            <div className="p-4 rounded-3xl border-2" style={{ borderColor: primaryBorder, backgroundColor: primaryLight }}>
-              <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: T.primary }}>Il tuo appuntamento</p>
-              <p className="font-black text-gray-900">
+            {/* Riepilogo */}
+            <div className="p-5 rounded-3xl border-2" style={{ borderColor: P + '45', background: `linear-gradient(135deg, ${P}10, ${P}05)` }}>
+              <p className="text-xs font-black uppercase tracking-wider mb-2" style={{ color: P }}>Il tuo appuntamento</p>
+              <p className="font-black text-gray-950">
                 📆 {format(new Date(formData.date + 'T12:00:00'), 'EEEE dd MMMM', { locale: it })} · ⏰ {formData.time}
               </p>
               <div className="mt-3 space-y-1.5">
                 {selectedServices.map(s => (
                   <div key={s.id} className="flex items-center justify-between text-sm">
-                    <span className="text-gray-700">✂️ {s.name}</span>
+                    <span className="text-gray-700 font-medium">✂️ {s.name}</span>
                     <span className="font-bold text-gray-900">€{s.price}</span>
                   </div>
                 ))}
               </div>
-              <div className="mt-3 pt-2 border-t flex items-center justify-between" style={{ borderColor: primaryBorder }}>
+              <div className="mt-3 pt-2.5 border-t-2 flex items-center justify-between" style={{ borderColor: P + '30' }}>
                 <span className="font-bold text-gray-700">Totale stimato</span>
-                <span className="font-black text-lg" style={{ color: T.primary }}>€{totalPrice}</span>
+                <span className="font-black text-xl" style={{ color: P }}>€{totalPrice}</span>
               </div>
             </div>
 
-            {/* Form dati */}
+            {/* Form */}
             <div className="space-y-3">
               <div>
-                <label className="text-sm font-bold text-gray-700 mb-1.5 block">Il tuo nome *</label>
+                <label className="text-sm font-bold text-gray-800 mb-1.5 block">Il tuo nome *</label>
                 <Input
                   value={formData.client_name}
                   onChange={e => setFormData({ ...formData, client_name: e.target.value })}
                   placeholder="Es. Maria Rossi"
-                  className="bg-white border-2 border-gray-200 rounded-xl py-3 text-gray-900 focus:border-pink-300"
+                  className="bg-white border-2 border-gray-300 rounded-xl py-3 text-gray-950 placeholder:text-gray-400 focus:border-pink-400"
                   data-testid="website-booking-name" />
               </div>
               <div>
-                <label className="text-sm font-bold text-gray-700 mb-1.5 block">Numero di telefono *</label>
+                <label className="text-sm font-bold text-gray-800 mb-1.5 block">Numero di telefono *</label>
                 <Input
                   value={formData.client_phone}
                   onChange={e => { setFormData({ ...formData, client_phone: e.target.value }); setShowHistory(false); setClientHistory(null); }}
                   placeholder="Es. 339 123 4567"
-                  className="bg-white border-2 border-gray-200 rounded-xl py-3 text-gray-900 focus:border-pink-300"
+                  className="bg-white border-2 border-gray-300 rounded-xl py-3 text-gray-950 placeholder:text-gray-400 focus:border-pink-400"
                   data-testid="website-booking-phone" />
                 <button type="button"
                   onClick={showHistory ? () => setShowHistory(false) : loadMyHistory}
                   disabled={loadingHistory || !formData.client_phone || formData.client_phone.length < 6}
-                  className="mt-2 flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 transition-all disabled:opacity-30"
+                  className="mt-2 flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border-2 border-gray-200 text-gray-600 hover:bg-gray-50 transition-all disabled:opacity-30"
                   data-testid="booking-history-btn">
                   {loadingHistory ? <Loader2 className="w-3 h-3 animate-spin" /> : <History className="w-3 h-3" />}
                   {showHistory ? 'Chiudi storico' : 'Vedi i miei appuntamenti passati'}
                 </button>
                 {showHistory && clientHistory && (
-                  <div className="mt-2 rounded-2xl border border-gray-100 bg-white p-3 space-y-2 max-h-44 overflow-y-auto shadow-sm" data-testid="booking-history-panel">
+                  <div className="mt-2 rounded-2xl border-2 border-gray-200 bg-white p-3 space-y-2 max-h-44 overflow-y-auto shadow-sm" data-testid="booking-history-panel">
                     {clientHistory.length > 0 ? clientHistory.map((apt, idx) => (
                       <div key={idx} className="flex items-center gap-2 text-xs bg-gray-50 rounded-xl px-3 py-2">
-                        <Clock className="w-3 h-3 text-gray-400 shrink-0" />
-                        <span className="font-bold text-gray-700 w-16 shrink-0">{fmtDate(apt.date)}</span>
-                        <span className="text-gray-500 w-10 shrink-0">{apt.time}</span>
-                        <span className="text-gray-600 flex-1 truncate">{(apt.services || []).map(s => s.name || s).join(', ')}</span>
+                        <Clock className="w-3 h-3 text-gray-500 shrink-0" />
+                        <span className="font-bold text-gray-800 w-16 shrink-0">{fmtDate(apt.date)}</span>
+                        <span className="text-gray-600 w-10 shrink-0">{apt.time}</span>
+                        <span className="text-gray-700 flex-1 truncate">{(apt.services || []).map(s => s.name || s).join(', ')}</span>
                       </div>
                     )) : (
-                      <p className="text-xs text-gray-400 text-center py-2">Nessun appuntamento negli ultimi 3 mesi</p>
+                      <p className="text-xs text-gray-500 text-center py-2">Nessun appuntamento negli ultimi 3 mesi</p>
                     )}
                   </div>
                 )}
               </div>
               <div>
-                <label className="text-sm font-bold text-gray-700 mb-1.5 block">
-                  Note <span className="font-normal text-gray-400">(opzionale)</span>
+                <label className="text-sm font-bold text-gray-800 mb-1.5 block">
+                  Note <span className="font-normal text-gray-500">(opzionale)</span>
                 </label>
                 <Textarea
                   value={formData.notes}
                   onChange={e => setFormData({ ...formData, notes: e.target.value })}
                   placeholder="Richieste particolari, allergie, preferenze di colore..."
-                  className="bg-white border-2 border-gray-200 rounded-xl text-gray-900 focus:border-pink-300"
+                  className="bg-white border-2 border-gray-300 rounded-xl text-gray-950 placeholder:text-gray-400 focus:border-pink-400"
                   rows={2} />
               </div>
             </div>
 
             <div className="flex gap-3">
-              <Button onClick={() => setStep(2)} variant="outline" className="flex-1 border-gray-200 text-gray-600 hover:bg-gray-50 font-bold rounded-2xl py-5">
+              <Button onClick={() => setStep(2)} variant="outline" className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-100 font-bold rounded-2xl py-5">
                 ← Indietro
               </Button>
               <Button
                 onClick={handleSubmit}
                 disabled={submitting || !formData.client_name || !formData.client_phone}
-                className="flex-[2] text-white font-black py-5 rounded-2xl shadow-md hover:shadow-lg hover:scale-[1.01] transition-all disabled:opacity-40"
-                style={{ background: `linear-gradient(135deg, ${T.primary}, ${T.primary}CC)` }}
+                className="flex-[2] text-white font-black py-5 rounded-2xl shadow-md hover:shadow-xl hover:scale-[1.01] transition-all duration-200 disabled:opacity-40"
+                style={{ background: `linear-gradient(135deg, ${P}, ${P}CC)` }}
                 data-testid="website-submit-btn">
                 {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : '🎉 Conferma Prenotazione'}
               </Button>
@@ -716,22 +772,22 @@ export default function BookingForm({
 
             {/* Pannello conflitto */}
             {conflictData && (
-              <div className="p-4 rounded-2xl border-2 border-amber-200 bg-amber-50 space-y-3" data-testid="conflict-panel">
+              <div className="p-4 rounded-2xl border-2 border-amber-300 bg-amber-50 space-y-3" data-testid="conflict-panel">
                 <div className="flex items-center gap-2">
                   <span className="text-xl">⚠️</span>
-                  <p className="font-black text-amber-800">{conflictData.message || 'Orario già occupato!'}</p>
+                  <p className="font-black text-amber-900">{conflictData.message || 'Orario già occupato!'}</p>
                 </div>
                 {conflictData.available_operators?.length > 0 && (
                   <div>
-                    <p className="text-xs text-amber-700 mb-2 font-semibold">✅ Scegli un operatore disponibile:</p>
+                    <p className="text-xs text-amber-800 mb-2 font-bold">✅ Scegli un operatore disponibile:</p>
                     <div className="space-y-2">
                       {conflictData.available_operators.map(op => (
                         <button key={op.id}
                           onClick={() => { setFormData(prev => ({ ...prev, operator_id: op.id })); setConflictData(null); handleBookingSubmit(null, op.id); }}
-                          className="w-full p-3 rounded-xl bg-white border-2 border-emerald-200 text-emerald-700 font-bold text-sm text-left hover:bg-emerald-50 transition-all flex items-center justify-between"
+                          className="w-full p-3 rounded-xl bg-white border-2 border-emerald-300 text-emerald-800 font-bold text-sm text-left hover:bg-emerald-50 transition-all flex items-center justify-between"
                           data-testid={`conflict-op-${op.id}`}>
                           <span>💇 {op.name}</span>
-                          <span className="text-xs bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full">Disponibile</span>
+                          <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">Disponibile</span>
                         </button>
                       ))}
                     </div>
@@ -739,12 +795,12 @@ export default function BookingForm({
                 )}
                 {conflictData.alternative_slots?.length > 0 && (
                   <div>
-                    <p className="text-xs text-amber-700 mb-2 font-semibold">🕐 Oppure scegli un orario alternativo:</p>
+                    <p className="text-xs text-amber-800 mb-2 font-bold">🕐 Oppure scegli un orario alternativo:</p>
                     <div className="grid grid-cols-3 gap-2">
                       {conflictData.alternative_slots.map((slot, i) => (
                         <button key={i}
                           onClick={() => { setFormData(prev => ({ ...prev, time: slot.time, operator_id: slot.operator_id || prev.operator_id })); setConflictData(null); toast.success(`Orario ${slot.time} selezionato`); }}
-                          className="p-2.5 rounded-xl bg-white border-2 border-blue-200 text-blue-600 font-bold text-sm text-center hover:bg-blue-50 transition-all"
+                          className="p-2.5 rounded-xl bg-white border-2 border-blue-300 text-blue-700 font-bold text-sm text-center hover:bg-blue-50 transition-all"
                           data-testid={`conflict-slot-${i}`}>
                           {slot.time}
                         </button>
