@@ -79,6 +79,7 @@ function Typewriter({ phrases, color }) {
 export default function WebsitePage() {
   const [siteData, setSiteData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadingSlow, setLoadingSlow] = useState(false);
   const [showBooking, setShowBooking] = useState(false);
   const [showServices, setShowServices] = useState(true);
   const [bookingServices, setBookingServices] = useState([]);
@@ -123,6 +124,7 @@ export default function WebsitePage() {
   }, []);
 
   useEffect(() => {
+    const slowTimer = setTimeout(() => setLoadingSlow(true), 4000);
     const fetchAll = async () => {
       try {
         const [siteRes, opsRes, svcRes] = await Promise.all([
@@ -139,9 +141,10 @@ export default function WebsitePage() {
           setPublicPromos(promosRes.data);
         } catch (e) { /* promos not critical */ }
       } catch (err) { console.error(err); }
-      finally { setLoading(false); }
+      finally { clearTimeout(slowTimer); setLoading(false); }
     };
     fetchAll();
+    return () => clearTimeout(slowTimer);
   }, []);
 
   const config = siteData?.config || {};
@@ -262,8 +265,15 @@ export default function WebsitePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#1C1008] flex items-center justify-center">
+      <div className="min-h-screen bg-[#1C1008] flex flex-col items-center justify-center gap-5 px-6">
+        <img src="/logo.png?v=4" alt="Bruno Melito Hair" className="w-16 h-16 rounded-2xl border-2 border-amber-400/40" />
         <div className="w-10 h-10 border-4 border-amber-400 border-t-transparent rounded-full animate-spin" />
+        {loadingSlow && (
+          <div className="text-center max-w-xs animate-pulse">
+            <p className="text-amber-300 font-bold text-sm">☕ Un momento…</p>
+            <p className="text-amber-200/70 text-xs mt-1">Il server si sta avviando.<br />Ci vorranno ancora pochi secondi.</p>
+          </div>
+        )}
       </div>
     );
   }
