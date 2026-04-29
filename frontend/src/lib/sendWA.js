@@ -17,12 +17,16 @@ export async function sendWA(phone, message, { successMsg = '✅ WhatsApp inviat
     const err = res.data?.error || '';
     if (err === 'Green API non configurata') {
       toast.warning('Green API non configurata — vai su Impostazioni → WhatsApp per abilitare l\'invio automatico.');
+    } else if (err.includes('401') || err.includes('403') || err.includes('unauthorized') || err.toLowerCase().includes('auth')) {
+      toast.error('❌ Credenziali Green API non valide. Controlla Instance ID e Token in Impostazioni → WhatsApp.');
+    } else if (err.includes('404') || err.includes('notFound') || err.toLowerCase().includes('not found')) {
+      toast.error('❌ Numero non trovato su WhatsApp. Verifica che il numero sia attivo su WhatsApp.');
     } else {
-      toast.error(`WhatsApp: ${err || 'Invio fallito'}`);
+      toast.error(`❌ Messaggio non inviato: ${err || 'errore sconosciuto'}. Controlla Green API in Impostazioni.`);
     }
     return false;
   } catch {
-    toast.error('Errore di connessione all\'API WhatsApp');
+    toast.error('❌ Impossibile contattare il server. Riprova tra un momento.');
     return false;
   }
 }

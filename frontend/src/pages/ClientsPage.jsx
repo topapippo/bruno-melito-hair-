@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import api, { API } from '../lib/api';
+import { sendWA } from '../lib/sendWA';
 import { fmtDate } from '../lib/dateUtils';
 import * as XLSX from 'xlsx';
 import Layout from '../components/Layout';
@@ -151,12 +152,9 @@ export default function ClientsPage() {
 
   // WhatsApp
   const openWhatsApp = async (client) => {
-    try {
-      const res = await api.get(`${API}/clients/${client.id}/whatsapp`);
-      window.open(res.data.url, '_blank');
-    } catch (err) {
-      toast.error(err.response?.data?.detail || 'Errore WhatsApp');
-    }
+    if (!client.phone) { toast.error('Il cliente non ha un numero di telefono'); return; }
+    const msg = `Ciao ${client.name || client.client_name || ''}!`;
+    await sendWA(client.phone, msg, { successMsg: `✅ Messaggio inviato a ${client.name || 'cliente'}!` });
   };
 
   // Excel Import Functions
