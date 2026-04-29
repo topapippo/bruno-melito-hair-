@@ -70,6 +70,7 @@ export default function PlanningPage() {
   const [blockDialogOpen, setBlockDialogOpen] = useState(false);
   const [blockInitialTime, setBlockInitialTime] = useState('');
   const [dayClosureBlock, setDayClosureBlock] = useState(null);
+  const [dayHolidayBlock, setDayHolidayBlock] = useState(null);
   const [closingDay, setClosingDay] = useState(false);
 
   // Thank You dialog
@@ -184,11 +185,22 @@ export default function PlanningPage() {
       } catch { setBlockedSlots([]); }
       try {
         const adminBlocksRes = await api.get(`${API}/blocked-slots`);
-        const closure = (adminBlocksRes.data || []).find(
+        const allBlocks = adminBlocksRes.data || [];
+        const jsDay = new Date(dateStr + 'T12:00:00').getDay();
+        const dayNameMap = { 0:'domenica',1:'lunedì',2:'martedì',3:'mercoledì',4:'giovedì',5:'venerdì',6:'sabato' };
+        const dayName = dayNameMap[jsDay];
+        const closure = allBlocks.find(
           b => b.type === 'one-time' && b.date === dateStr && b.reason === 'Giorno Chiuso'
         );
+        const holidayBlock = allBlocks.find(
+          b => b.reason !== 'Giorno Chiuso' && (
+            (b.type === 'one-time' && b.date === dateStr && b.start_time === '00:00' && b.end_time === '23:59') ||
+            (b.type === 'recurring' && b.day_of_week === dayName && b.start_time === '00:00' && b.end_time === '23:59')
+          )
+        );
         setDayClosureBlock(closure || null);
-      } catch { setDayClosureBlock(null); }
+        setDayHolidayBlock(holidayBlock || null);
+      } catch { setDayClosureBlock(null); setDayHolidayBlock(null); }
     } catch (err) {
       console.error('Error fetching data:', err);
       toast.error('Errore nel caricamento dei dati');
@@ -607,6 +619,16 @@ export default function PlanningPage() {
             >
               Riapri
             </button>
+          </div>
+        )}
+
+        {/* Banner festività / giorno bloccato da impostazioni */}
+        {dayHolidayBlock && !dayClosureBlock && (
+          <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-300 rounded-xl text-sm">
+            <CalendarDays className="w-4 h-4 text-amber-600 shrink-0" />
+            <p className="text-amber-800 font-semibold flex-1">
+              🎉 {dayHolidayBlock.reason || 'Giorno bloccato'} — il salone non accetta prenotazioni online per questo giorno.
+            </p>
           </div>
         )}
 

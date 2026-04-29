@@ -166,6 +166,8 @@ const DAYS = [
   { value: 'domenica', label: 'Domenica' },
 ];
 
+const DAY_OF_WEEK_MAP = { 'lunedì': 1, 'martedì': 2, 'mercoledì': 3, 'giovedì': 4, 'venerdì': 5, 'sabato': 6, 'domenica': 0 };
+
 export default function SettingsPage() {
   const { updateUser } = useAuth();
   const [settings, setSettings] = useState(null);
@@ -189,6 +191,7 @@ export default function SettingsPage() {
   const [selectedDates, setSelectedDates] = useState(new Set());
   const [calForm, setCalForm] = useState({ start_time: '09:00', end_time: '18:00', reason: '', all_day: true });
   const [bulkSaving, setBulkSaving] = useState(false);
+  const [editingBlock, setEditingBlock] = useState(null);
   const [waForm, setWaForm] = useState({ green_api_instance_id: '', green_api_token: '' });
   const [savingWa, setSavingWa] = useState(false);
   const [waTest, setWaTest] = useState(null);
@@ -339,9 +342,25 @@ export default function SettingsPage() {
   const fmtDateKey = (year, month, day) =>
     `${year}-${String(month + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
 
-  const blockedDateSet = new Set(
-    blockedSlots.filter(s => s.type === 'one-time' && s.date).map(s => s.date)
-  );
+  const oneTimeBlockMap = {};
+  blockedSlots.filter(s => s.type === 'one-time' && s.date).forEach(s => { oneTimeBlockMap[s.date] = s; });
+
+  const recurringBlockMap = {};
+  const recurringSlots = blockedSlots.filter(s => s.type === 'recurring' && s.day_of_week);
+  if (recurringSlots.length > 0) {
+    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+    for (let d = 1; d <= daysInMonth; d++) {
+      const jsDay = new Date(calYear, calMonth, d).getDay();
+      const matchingSlot = recurringSlots.find(s => DAY_OF_WEEK_MAP[s.day_of_week] === jsDay);
+      if (matchingSlot) {
+        const k = fmtDateKey(calYear, calMonth, d);
+        if (!oneTimeBlockMap[k]) recurringBlockMap[k] = matchingSlot;
+      }
+    }
+  }
+
+  const blockedDateMap = { ...oneTimeBlockMap, ...recurringBlockMap };
+  const blockedDateSet = new Set(Object.keys(blockedDateMap));
 
   const calPrevMonth = () => { if (calMonth === 0) { setCalYear(y => y - 1); setCalMonth(11); } else setCalMonth(m => m - 1); };
   const calNextMonth = () => { if (calMonth === 11) { setCalYear(y => y + 1); setCalMonth(0); } else setCalMonth(m => m + 1); };
@@ -613,7 +632,8 @@ export default function SettingsPage() {
                     </p>
                     <div className="flex items-center justify-center gap-3 mt-1">
                       <span className="flex items-center gap-1 text-[10px] text-[#7C5C4A]"><span className="w-2.5 h-2.5 rounded-sm bg-amber-300 inline-block" /> Festività</span>
-                      <span className="flex items-center gap-1 text-[10px] text-[#7C5C4A]"><span className="w-2.5 h-2.5 rounded-sm bg-red-400 inline-block" /> Già bloccato</span>
+                      <span className="flex items-center gap-1 text-[10px] text-[#7C5C4A]"><span className="w-2.5 h-2.5 rounded-sm bg-red-400 inline-block" /> Bloccato</span>
+                      <span className="flex items-center gap-1 text-[10px] text-[#7C5C4A]"><span className="w-2.5 h-2.5 rounded-sm bg-orange-400 inline-block" /> Ricorrente</span>
                       <span className="flex items-center gap-1 text-[10px] text-[#7C5C4A]"><span className="w-2.5 h-2.5 rounded-sm bg-[#C8617A] inline-block" /> Selezionato</span>
                     </div>
                   </div>
@@ -664,17 +684,20 @@ export default function SettingsPage() {
                         const key = fmtDateKey(calYear, calMonth, d);
                         const isHoliday = !!calHolidays[key];
                         const isBlocked = blockedDateSet.has(key);
+                        const isRecurringBlocked = isBlocked && !oneTimeBlockMap[key];
                         const isSelected = selectedDates.has(key);
                         const isToday = key === fmtDateKey(today.getFullYear(), today.getMonth(), today.getDate());
                         const isSunday = new Date(calYear, calMonth, d).getDay() === 0;
                         const isSaturday = new Date(calYear, calMonth, d).getDay() === 6;
+                        const isEditing = editingBlock?.date === key;
 
                         let bg = 'bg-white hover:bg-[#FFF0F3]';
                         let text = 'text-[#2D1B14]';
                         let border = 'border border-[#F0E6DC]';
 
                         if (isSelected) { bg = 'bg-[#C8617A]'; text = 'text-white'; border = 'border border-[#A0404F]'; }
-                        else if (isBlocked) { bg = 'bg-red-400'; text = 'text-white'; border = 'border border-red-500'; }
+                        else if (isBlocked && !isRecurringBlocked) { bg = 'bg-red-400 hover:bg-red-500'; text = 'text-white'; border = 'border border-red-500'; }
+                        else if (isRecurringBlocked) { bg = 'bg-orange-400 hover:bg-orange-500'; text = 'text-white'; border = 'border border-orange-500'; }
                         else if (isHoliday) { bg = 'bg-amber-100 hover:bg-amber-200'; text = 'text-amber-900'; border = 'border border-amber-300'; }
                         else if (isSunday || isSaturday) { bg = 'bg-slate-50 hover:bg-slate-100'; text = 'text-slate-500'; }
 
@@ -682,19 +705,23 @@ export default function SettingsPage() {
                           <button
                             key={key}
                             onClick={() => {
-                              if (isBlocked) return;
+                              if (isBlocked) {
+                                setEditingBlock(prev => prev?.date === key ? null : { date: key, slot: blockedDateMap[key] });
+                                return;
+                              }
+                              setEditingBlock(null);
                               setSelectedDates(prev => {
                                 const next = new Set(prev);
                                 if (next.has(key)) next.delete(key); else next.add(key);
                                 return next;
                               });
                             }}
-                            disabled={isBlocked}
-                            title={isHoliday ? calHolidays[key] : isBlocked ? 'Già bloccato' : key}
-                            className={`relative rounded-lg text-xs font-semibold h-9 flex flex-col items-center justify-center transition-all ${bg} ${text} ${border} ${isBlocked ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'} ${isToday && !isSelected ? 'ring-2 ring-[#C8617A] ring-offset-1' : ''}`}
+                            title={isHoliday ? calHolidays[key] : isBlocked ? `${blockedDateMap[key]?.reason || 'Bloccato'} — clicca per gestire` : key}
+                            className={`relative rounded-lg text-xs font-semibold h-9 flex flex-col items-center justify-center transition-all ${bg} ${text} ${border} cursor-pointer ${isToday && !isSelected ? 'ring-2 ring-[#C8617A] ring-offset-1' : ''} ${isEditing ? 'ring-2 ring-orange-400 ring-offset-1' : ''}`}
                           >
                             <span>{d}</span>
-                            {isHoliday && !isSelected && <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-amber-400" />}
+                            {isHoliday && !isSelected && !isBlocked && <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-amber-400" />}
+                            {isBlocked && <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-white/50" />}
                           </button>
                         );
                       }
@@ -757,62 +784,41 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 )}
+                {editingBlock && (
+                  <div className="border-t border-[#F0E6DC] bg-orange-50 px-4 py-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-orange-700 flex items-center gap-1.5">
+                          <Lock className="w-3.5 h-3.5" />
+                          {editingBlock.date} — Blocco attivo
+                        </p>
+                        <p className="text-sm text-[#2D1B14] mt-0.5">
+                          {editingBlock.slot.start_time} – {editingBlock.slot.end_time}
+                          {editingBlock.slot.start_time === '00:00' && editingBlock.slot.end_time === '23:59' &&
+                            <span className="ml-1.5 text-xs font-semibold text-orange-600">Giornata intera</span>}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${editingBlock.slot.type === 'recurring' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'}`}>
+                            {editingBlock.slot.type === 'recurring' ? `Ogni ${editingBlock.slot.day_of_week}` : 'Una tantum'}
+                          </span>
+                          {editingBlock.slot.reason && <span className="text-xs text-[#7C5C4A]">{editingBlock.slot.reason}</span>}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <Button size="sm" variant="ghost"
+                          onClick={() => { deleteBlockedSlot(editingBlock.slot.id); setEditingBlock(null); }}
+                          className="text-red-500 hover:bg-red-100 h-8 px-3 text-xs font-bold">
+                          <Trash2 className="w-3.5 h-3.5 mr-1" /> Elimina
+                        </Button>
+                        <button onClick={() => setEditingBlock(null)}
+                          className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400">
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-
-              {/* ── Aggiungi singolo (ricorrente o data specifica) ── */}
-              <details className="group">
-                <summary className="cursor-pointer text-sm font-semibold text-[#7C5C4A] hover:text-[#C8617A] flex items-center gap-2 list-none">
-                  <Plus className="w-4 h-4" />
-                  Aggiungi blocco ricorrente o fascia oraria singola
-                  <span className="text-[10px] bg-[#F0E6DC] text-[#7C5C4A] px-2 py-0.5 rounded-full ml-auto group-open:hidden">espandi</span>
-                </summary>
-                <div className="mt-3 p-4 border-2 border-dashed border-red-200 rounded-xl bg-red-50/50 space-y-3">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div>
-                      <Label className="text-xs font-semibold">Tipo</Label>
-                      <select value={newBlock.type} onChange={e => setNewBlock({...newBlock, type: e.target.value})}
-                        className="w-full p-2 border rounded-lg text-sm" data-testid="block-type-select">
-                        <option value="recurring">Ricorrente (ogni settimana)</option>
-                        <option value="one-time">Singolo (una data)</option>
-                      </select>
-                    </div>
-                    {newBlock.type === 'recurring' ? (
-                      <div>
-                        <Label className="text-xs font-semibold">Giorno</Label>
-                        <select value={newBlock.day_of_week} onChange={e => setNewBlock({...newBlock, day_of_week: e.target.value})}
-                          className="w-full p-2 border rounded-lg text-sm" data-testid="block-day-select">
-                          {DAYS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
-                        </select>
-                      </div>
-                    ) : (
-                      <div>
-                        <Label className="text-xs font-semibold">Data</Label>
-                        <Input type="date" value={newBlock.date} onChange={e => setNewBlock({...newBlock, date: e.target.value})}
-                          className="text-sm" data-testid="block-date-input" />
-                      </div>
-                    )}
-                    <div>
-                      <Label className="text-xs font-semibold">Da</Label>
-                      <Input type="time" value={newBlock.start_time} onChange={e => setNewBlock({...newBlock, start_time: e.target.value})}
-                        className="text-sm" data-testid="block-start-time" />
-                    </div>
-                    <div>
-                      <Label className="text-xs font-semibold">A</Label>
-                      <Input type="time" value={newBlock.end_time} onChange={e => setNewBlock({...newBlock, end_time: e.target.value})}
-                        className="text-sm" data-testid="block-end-time" />
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Input placeholder="Motivo (opzionale, es. Pausa pranzo)" value={newBlock.reason}
-                      onChange={e => setNewBlock({...newBlock, reason: e.target.value})}
-                      className="flex-1 text-sm" data-testid="block-reason-input" />
-                    <Button onClick={addBlockedSlot} disabled={savingBlock}
-                      className="bg-red-500 hover:bg-red-600 text-white shrink-0" data-testid="add-block-btn">
-                      {savingBlock ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4 mr-1" /> Blocca</>}
-                    </Button>
-                  </div>
-                </div>
-              </details>
 
               {/* Existing blocks */}
               {blockedSlots.length === 0 ? (
