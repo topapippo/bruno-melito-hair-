@@ -429,10 +429,15 @@ async def create_public_booking(request: Request, data: PublicBookingRequest):
     # WhatsApp di conferma automatica al cliente via Green API
     try:
         import re as _re
+        import asyncio as _asyncio
         import requests as _req
         instance_id = user.get("green_api_instance_id", "")
         api_token = user.get("green_api_token", "")
-        if instance_id and api_token and data.client_phone:
+        if not instance_id or not api_token:
+            logger.warning("WA conferma saltata: Green API non configurata (instance_id o token mancante)")
+        elif not data.client_phone:
+            logger.warning("WA conferma saltata: numero di telefono cliente mancante")
+        else:
             phone_clean = _re.sub(r'\D', '', data.client_phone)
             if phone_clean.startswith('0039'):
                 phone_clean = phone_clean[4:]
@@ -449,14 +454,23 @@ async def create_public_booking(request: Request, data: PublicBookingRequest):
                 f"🔖 Codice: {appointment_id[:8].upper()}\n\n"
                 f"Per disdire o modificare rispondi a questo messaggio. A presto! 💇"
             )
-            _req.post(
-                f"https://api.greenapi.com/waInstance{instance_id}/sendMessage/{api_token}",
+            wa_url = f"https://api.greenapi.com/waInstance{instance_id}/sendMessage/{api_token}"
+            resp = await _asyncio.to_thread(
+                _req.post, wa_url,
                 json={"chatId": phone_clean + "@c.us", "message": msg},
-                timeout=6
+                timeout=10
             )
-            logger.info(f"WA conferma inviata a {data.client_phone}")
+            rjson = {}
+            try:
+                rjson = resp.json()
+            except Exception:
+                pass
+            if resp.status_code == 200 and rjson.get("idMessage"):
+                logger.info(f"WA conferma inviata a {data.client_phone} (id={rjson['idMessage']})")
+            else:
+                logger.warning(f"WA conferma FALLITA per {data.client_phone}: HTTP {resp.status_code} — {resp.text[:300]}")
     except Exception as e:
-        logger.warning(f"WA conferma prenotazione fallita: {e}")
+        logger.warning(f"WA conferma prenotazione eccezione: {e}")
 
     return {
         "success": True,
