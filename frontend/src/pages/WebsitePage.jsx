@@ -126,16 +126,27 @@ export default function WebsitePage() {
   useEffect(() => {
     const slowTimer = setTimeout(() => setLoadingSlow(true), 4000);
     const fetchAll = async () => {
-      try {
-        const res = await api.get(`${API}/public/website`);
-        const d = res.data;
-        setSiteData(d);
-        setOperators(d.operators || []);
-        setBookingServices(d.services || []);
-        setCardTemplates(d.card_templates || []);
-        setPublicPromos(d.promotions || []);
-      } catch (err) { console.error(err); }
-      finally { clearTimeout(slowTimer); setLoading(false); }
+      // Retry fino a 3 volte: se il server è in cold start il primo tentativo può scadere
+      // (Axios timeout 90s), ma il server è già sveglio al secondo tentativo (1-2s)
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          if (attempt > 0) await new Promise(r => setTimeout(r, 5000));
+          const res = await api.get(`${API}/public/website`);
+          const d = res.data;
+          setSiteData(d);
+          setOperators(d.operators || []);
+          setBookingServices(d.services || []);
+          setCardTemplates(d.card_templates || []);
+          setPublicPromos(d.promotions || []);
+          clearTimeout(slowTimer);
+          setLoading(false);
+          return;
+        } catch (err) {
+          console.error(`Caricamento sito tentativo ${attempt + 1}/3 fallito:`, err);
+        }
+      }
+      clearTimeout(slowTimer);
+      setLoading(false);
     };
     fetchAll();
     // Keepalive: ping ogni 14 minuti per evitare il cold start di Render sul booking
