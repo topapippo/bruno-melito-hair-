@@ -51,6 +51,10 @@ async def lifespan(app: FastAPI):
         await db.waitlist.create_index([("user_id", 1), ("status", 1)])
         # Indice TTL: pulisce automaticamente i tentativi di login vecchi dopo 15 minuti
         await db.login_attempts.create_index([("ip", 1)])
+        try:
+            await db.login_attempts.drop_index("ts_1")
+        except Exception:
+            pass
         await db.login_attempts.create_index("ts", expireAfterSeconds=900)
         # Indice TTL: pulisce i tentativi di registrazione dopo 24 ore
         await db.register_attempts.create_index([("ip", 1)])
