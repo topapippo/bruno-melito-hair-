@@ -14,6 +14,7 @@ def _fmt_date_it(date_str: str) -> str:
         return date_str
 import uuid
 import os
+import asyncio
 
 from database import db
 from auth import get_current_user
@@ -290,26 +291,40 @@ async def reset_reminder(appointment_id: str, current_user: dict = Depends(get_c
 
 @router.get("/reminders/inactive-clients")
 async def get_inactive_clients(current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
     cutoff_date = (datetime.now(timezone.utc) - timedelta(days=60)).strftime("%Y-%m-%d")
-    clients = await db.clients.find({"user_id": current_user["id"]}, {"_id": 0}).to_list(1000)
-    recent_recalls = await db.reminders_sent.find(
-        {"user_id": current_user["id"], "type": "inactive_recall",
-         "sent_at": {"$gte": (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()}},
-        {"_id": 0}
-    ).to_list(500)
+    # Aggregation: ultima visita completata per ogni cliente — 1 query invece di N
+    pipeline = [
+        {"$match": {"user_id": uid, "status": "completed"}},
+        {"$sort": {"date": -1}},
+        {"$group": {
+            "_id": "$client_id",
+            "last_date": {"$first": "$date"},
+            "last_services": {"$first": "$services"}
+        }}
+    ]
+    clients, last_apts_raw, recent_recalls = await asyncio.gather(
+        db.clients.find({"user_id": uid}, {"_id": 0}).to_list(1000),
+        db.appointments.aggregate(pipeline).to_list(5000),
+        db.reminders_sent.find(
+            {"user_id": uid, "type": "inactive_recall",
+             "sent_at": {"$gte": (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()}},
+            {"_id": 0}
+        ).to_list(500)
+    )
+    last_apts = {a["_id"]: a for a in last_apts_raw}
     recently_recalled_ids = {r.get("client_id") for r in recent_recalls}
+    today = datetime.now(timezone.utc)
     inactive = []
     for client in clients:
-        last_apt = await db.appointments.find_one(
-            {"client_id": client["id"], "user_id": current_user["id"], "status": "completed"},
-            {"_id": 0}, sort=[("date", -1)]
-        )
-        if last_apt and last_apt["date"] <= cutoff_date:
-            days_ago = (datetime.now(timezone.utc) - datetime.strptime(last_apt["date"], "%Y-%m-%d").replace(tzinfo=timezone.utc)).days
+        last = last_apts.get(client["id"])
+        if last and last["last_date"] <= cutoff_date:
+            days_ago = (today - datetime.strptime(last["last_date"], "%Y-%m-%d").replace(tzinfo=timezone.utc)).days
             inactive.append({
                 "client_id": client["id"], "client_name": client["name"],
-                "client_phone": client.get("phone", ""), "last_visit": last_apt["date"],
-                "days_ago": days_ago, "last_services": [s.get("name", "") for s in last_apt.get("services", [])],
+                "client_phone": client.get("phone", ""), "last_visit": last["last_date"],
+                "days_ago": days_ago,
+                "last_services": [s.get("name", "") for s in last.get("last_services", [])],
                 "already_recalled": client["id"] in recently_recalled_ids
             })
     inactive.sort(key=lambda x: x["days_ago"], reverse=True)

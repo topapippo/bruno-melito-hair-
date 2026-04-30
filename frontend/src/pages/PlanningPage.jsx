@@ -165,14 +165,12 @@ export default function PlanningPage() {
     setLoading(true);
     try {
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
-      const [appointmentsRes, clientsRes, blockedRes, adminBlocksRes] = await Promise.all([
+      const [appointmentsRes, blockedRes, adminBlocksRes] = await Promise.all([
         api.get(`${API}/appointments?date=${dateStr}`),
-        api.get(`${API}/clients`).catch(() => ({ data: null })),
         api.get(`${API}/public/blocked-slots/${dateStr}`).catch(() => ({ data: [] })),
         api.get(`${API}/blocked-slots`).catch(() => ({ data: [] })),
       ]);
       setAppointments(appointmentsRes.data);
-      if (clientsRes.data) setClients(clientsRes.data);
       setBlockedSlots(blockedRes.data || []);
       const allBlocks = adminBlocksRes.data || [];
       const jsDay = new Date(dateStr + 'T12:00:00').getDay();
