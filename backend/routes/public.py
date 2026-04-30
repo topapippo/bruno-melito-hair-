@@ -457,19 +457,23 @@ async def create_public_booking(request: Request, data: PublicBookingRequest):
     date_it = f"{d[2]}/{d[1]}/{d[0][2:]}" if len(d) == 3 else data.date
 
     try:
-        await _send_booking_notifications(
-            client_name=data.client_name,
-            client_phone=data.client_phone or "",
-            date_it=date_it,
-            time=data.time,
-            services_names=services_names,
-            appointment_id=appointment_id,
-            instance_id=user.get("green_api_instance_id", ""),
-            api_token=user.get("green_api_token", ""),
-            salon_name=user.get("salon_name", "Bruno Melito Hair"),
+        import asyncio as _asyncio
+        await _asyncio.wait_for(
+            _send_booking_notifications(
+                client_name=data.client_name,
+                client_phone=data.client_phone or "",
+                date_it=date_it,
+                time=data.time,
+                services_names=services_names,
+                appointment_id=appointment_id,
+                instance_id=user.get("green_api_instance_id", ""),
+                api_token=user.get("green_api_token", ""),
+                salon_name=user.get("salon_name", "Bruno Melito Hair"),
+            ),
+            timeout=6.0,
         )
     except Exception as e:
-        logger.warning(f"Notifiche prenotazione fallite: {e}")
+        logger.warning(f"Notifiche prenotazione fallite/timeout: {e}")
 
     return {
         "success": True,
