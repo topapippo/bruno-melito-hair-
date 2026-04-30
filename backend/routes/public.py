@@ -260,7 +260,6 @@ async def _send_booking_notifications(client_name, client_phone, date_it, time, 
 
 
 @router.post("/public/booking")
-@limiter.limit("2/minute;8/hour")
 async def create_public_booking(request: Request, data: PublicBookingRequest):
     user = await db.users.find_one({"email": PUBLIC_ADMIN_EMAIL}, {"_id": 0})
     if not user:
