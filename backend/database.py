@@ -14,7 +14,12 @@ db_name = os.environ.get('DB_NAME')
 if not db_name:
     raise RuntimeError("Variabile d'ambiente DB_NAME non impostata")
 
-client = AsyncIOMotorClient(mongo_url)
+client = AsyncIOMotorClient(
+    mongo_url,
+    serverSelectionTimeoutMS=8000,
+    connectTimeoutMS=8000,
+    socketTimeoutMS=20000,
+)
 db = client[db_name]
 
 # Sync client for file serving (used in synchronous get_object)
