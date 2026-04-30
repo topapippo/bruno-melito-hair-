@@ -274,22 +274,21 @@ export default function NewAppointmentDialog({
       }
 
       await api.post(`${API}/appointments`, payload);
-      // Invia conferma WhatsApp se disponibile il numero
+      // Chiudi subito il dialog e aggiorna il planning
+      toast.success('Appuntamento creato!' + (preSelectedCardId || preSelectedPromoId ? ' Card/Promo salvate.' : ''));
+      onClose();
+      onSuccess?.();
+      // Invia conferma WhatsApp in background (non blocca il dialog)
       const clientPhone = selectedClientInfo?.phone || newClientPhone;
-      let waSent = false;
       if (clientPhone) {
         const clientDisplayName = selectedClientInfo?.name || newClientName || 'Cliente';
         const serviceNames = selectedServicesInfo.map(s => s.name).join(', ');
         const dateStr = format(new Date(formData.date + 'T00:00:00'), 'dd/MM/yy');
         const waMsg = `Ciao ${clientDisplayName}! ✂️ Appuntamento confermato per ${dateStr} alle ${formData.time} per ${serviceNames}. A presto da Bruno Melito Hair! 💛`;
-        try {
-          const sendRes = await api.post(`${API}/whatsapp/send-direct`, { phone: clientPhone, message: waMsg });
-          waSent = sendRes.data?.sent === true;
-        } catch {}
+        api.post(`${API}/whatsapp/send-direct`, { phone: clientPhone, message: waMsg })
+          .then(sendRes => { if (sendRes.data?.sent) toast.success('Conferma WhatsApp inviata!'); })
+          .catch(() => {});
       }
-      toast.success('Appuntamento creato!' + (waSent ? ' Conferma WhatsApp inviata!' : '') + (preSelectedCardId || preSelectedPromoId ? ' Card/Promo salvate.' : ''));
-      onClose();
-      onSuccess?.();
     } catch (err) {
       console.error('[NewAppointment] Error:', err.response?.status, err.response?.data, err.message);
       const status = err.response?.status;

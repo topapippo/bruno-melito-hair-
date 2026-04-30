@@ -4,6 +4,7 @@ from typing import List, Optional
 from datetime import datetime, timezone, timedelta
 import uuid
 import logging
+import asyncio
 
 from database import db
 from auth import get_current_user
@@ -232,14 +233,14 @@ async def get_appointments(
         query["status"] = status
     if operator_id:
         query["operator_id"] = operator_id
-    appointments = await db.appointments.find(
-        query, {"_id": 0, "user_id": 0}
-    ).sort([("date", 1), ("time", 1)]).skip(skip).to_list(limit)
-
-    # Sync service names, categories, and prices from master services list
-    master = await db.services.find(
-        {"user_id": current_user["id"]}, {"_id": 0}
-    ).to_list(1000)
+    appointments, master = await asyncio.gather(
+        db.appointments.find(
+            query, {"_id": 0, "user_id": 0}
+        ).sort([("date", 1), ("time", 1)]).skip(skip).to_list(limit),
+        db.services.find(
+            {"user_id": current_user["id"]}, {"_id": 0}
+        ).to_list(1000),
+    )
     master_by_id = {s["id"]: s for s in master}
 
     for apt in appointments:

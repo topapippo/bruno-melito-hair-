@@ -105,13 +105,13 @@ export default function PlanningPage() {
   // Static data (operators, clients, services) fetched once on mount
   useEffect(() => {
     fetchStaticData();
+    fetchReminderCounts();
+    fetchUpcomingExpenses();
   }, []);
 
   // Date-dependent data re-fetched on date change
   useEffect(() => {
     fetchData();
-    fetchReminderCounts();
-    fetchUpcomingExpenses();
   }, [selectedDate]);
 
   useEffect(() => {
@@ -165,34 +165,30 @@ export default function PlanningPage() {
     setLoading(true);
     try {
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
-      const [appointmentsRes, clientsRes] = await Promise.all([
+      const [appointmentsRes, clientsRes, blockedRes, adminBlocksRes] = await Promise.all([
         api.get(`${API}/appointments?date=${dateStr}`),
         api.get(`${API}/clients`).catch(() => ({ data: null })),
+        api.get(`${API}/public/blocked-slots/${dateStr}`).catch(() => ({ data: [] })),
+        api.get(`${API}/blocked-slots`).catch(() => ({ data: [] })),
       ]);
       setAppointments(appointmentsRes.data);
       if (clientsRes.data) setClients(clientsRes.data);
-      try {
-        const blockedRes = await api.get(`${API}/public/blocked-slots/${dateStr}`);
-        setBlockedSlots(blockedRes.data || []);
-      } catch { setBlockedSlots([]); }
-      try {
-        const adminBlocksRes = await api.get(`${API}/blocked-slots`);
-        const allBlocks = adminBlocksRes.data || [];
-        const jsDay = new Date(dateStr + 'T12:00:00').getDay();
-        const dayNameMap = { 0:'domenica',1:'lunedì',2:'martedì',3:'mercoledì',4:'giovedì',5:'venerdì',6:'sabato' };
-        const dayName = dayNameMap[jsDay];
-        const closure = allBlocks.find(
-          b => b.type === 'one-time' && b.date === dateStr && b.reason === 'Giorno Chiuso'
-        );
-        const holidayBlock = allBlocks.find(
-          b => b.reason !== 'Giorno Chiuso' && (
-            (b.type === 'one-time' && b.date === dateStr && b.start_time === '00:00' && b.end_time === '23:59') ||
-            (b.type === 'recurring' && b.day_of_week === dayName && b.start_time === '00:00' && b.end_time === '23:59')
-          )
-        );
-        setDayClosureBlock(closure || null);
-        setDayHolidayBlock(holidayBlock || null);
-      } catch { setDayClosureBlock(null); setDayHolidayBlock(null); }
+      setBlockedSlots(blockedRes.data || []);
+      const allBlocks = adminBlocksRes.data || [];
+      const jsDay = new Date(dateStr + 'T12:00:00').getDay();
+      const dayNameMap = { 0:'domenica',1:'lunedì',2:'martedì',3:'mercoledì',4:'giovedì',5:'venerdì',6:'sabato' };
+      const dayName = dayNameMap[jsDay];
+      const closure = allBlocks.find(
+        b => b.type === 'one-time' && b.date === dateStr && b.reason === 'Giorno Chiuso'
+      );
+      const holidayBlock = allBlocks.find(
+        b => b.reason !== 'Giorno Chiuso' && (
+          (b.type === 'one-time' && b.date === dateStr && b.start_time === '00:00' && b.end_time === '23:59') ||
+          (b.type === 'recurring' && b.day_of_week === dayName && b.start_time === '00:00' && b.end_time === '23:59')
+        )
+      );
+      setDayClosureBlock(closure || null);
+      setDayHolidayBlock(holidayBlock || null);
     } catch (err) {
       console.error('Error fetching data:', err);
       toast.error('Errore nel caricamento dei dati');
