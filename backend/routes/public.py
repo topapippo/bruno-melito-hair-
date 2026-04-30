@@ -20,6 +20,12 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 limiter = Limiter(key_func=get_remote_address)
 
+
+@router.get("/ping")
+async def ping():
+    """Endpoint keepalive — usato dal frontend per mantenere il server sveglio su Render free tier."""
+    return {"ok": True}
+
 # Email admin configurabile via env var (evita hardcoding)
 PUBLIC_ADMIN_EMAIL = os.environ.get("PUBLIC_ADMIN_EMAIL", "melitobruno@gmail.com")
 
@@ -285,15 +291,18 @@ async def create_public_booking(request: Request, data: PublicBookingRequest, ba
     if booking_aware <= now_rome:
         raise HTTPException(status_code=400, detail="Non puoi prenotare per un orario già passato.")
 
-    # Step 2: tutte le query iniziali in PARALLELO (da 8 query sequenziali a 1 batch)
+    # Step 2: tutte le query iniziali in PARALLELO
+    phone_variants_list = _phone_variants(data.client_phone) if data.client_phone else []
+    # Se non ci sono varianti telefono, usiamo un filtro impossibile che ritorna None immediatamente
+    phone_filter = {"user_id": user_id, "phone": {"$in": phone_variants_list}} if phone_variants_list else {"_id": "__no_match__"}
     (
-        blocked_one, blocked_rec, busy_at_time, all_operators, all_clients_raw, services
+        blocked_one, blocked_rec, busy_at_time, all_operators, client_by_phone, services
     ) = await _asyncio.gather(
         db.blocked_slots.find_one({"user_id": user_id, "type": "one-time", "date": data.date, "start_time": {"$lte": data.time}, "end_time": {"$gt": data.time}}, {"_id": 0}),
         db.blocked_slots.find_one({"user_id": user_id, "type": "recurring", "day_of_week": day_of_week, "start_time": {"$lte": data.time}, "end_time": {"$gt": data.time}}, {"_id": 0}),
         db.appointments.find({"user_id": user_id, "date": data.date, "time": data.time, "status": {"$ne": "cancelled"}}, {"_id": 0, "operator_id": 1}).to_list(50),
         db.operators.find({"user_id": user_id, "active": True}, {"_id": 0, "id": 1, "name": 1, "color": 1}).to_list(50),
-        db.clients.find({"user_id": user_id}, {"_id": 0, "id": 1, "name": 1, "phone": 1}).to_list(2000),
+        db.clients.find_one(phone_filter, {"_id": 0, "id": 1, "name": 1, "phone": 1}),
         db.services.find({"id": {"$in": data.service_ids}, "user_id": user_id}, {"_id": 0, "user_id": 0}).to_list(20),
     )
 
@@ -336,21 +345,24 @@ async def create_public_booking(request: Request, data: PublicBookingRequest, ba
             conflict_msg = f"Orario occupato. Disponibili: {', '.join(o['name'] for o in available_operators)}. Scegli un operatore o un orario alternativo."
         raise HTTPException(status_code=409, detail={"message": conflict_msg, "conflict": True, "available_operators": available_operators, "alternative_slots": alternative_slots})
 
-    # Ricerca cliente (Python-side su dati già caricati — nessuna query extra)
-    incoming_phone_norm = _normalize_phone(data.client_phone)
-    incoming_name_lower = (data.client_name or "").strip().lower()
-    client = None
-    if incoming_phone_norm and len(incoming_phone_norm) >= 6:
-        for c in all_clients_raw:
-            sn = _normalize_phone(c.get("phone", ""))
-            if sn and (sn == incoming_phone_norm or (len(sn) >= 9 and len(incoming_phone_norm) >= 9 and sn[-9:] == incoming_phone_norm[-9:])):
-                client = c
-                break
-    if not client and incoming_name_lower:
-        for c in all_clients_raw:
-            if c.get("name", "").strip().lower() == incoming_name_lower:
-                client = c
-                break
+    # Ricerca cliente: prima via $in (veloce), poi fallback per numeri con formati diversi
+    client = client_by_phone
+    if not client:
+        incoming_phone_norm = _normalize_phone(data.client_phone)
+        incoming_name_lower = (data.client_name or "").strip().lower()
+        # Fallback: regex sulle ultime 9 cifre (copre numeri salvati con spazi/trattini)
+        if incoming_phone_norm and len(incoming_phone_norm) >= 9:
+            suffix = incoming_phone_norm[-9:]
+            client = await db.clients.find_one(
+                {"user_id": user_id, "phone": {"$regex": suffix}},
+                {"_id": 0, "id": 1, "name": 1, "phone": 1}
+            )
+        # Fallback finale: cerca per nome esatto
+        if not client and incoming_name_lower:
+            client = await db.clients.find_one(
+                {"user_id": user_id, "name": {"$regex": f"^{re.escape(incoming_name_lower)}$", "$options": "i"}},
+                {"_id": 0, "id": 1, "name": 1, "phone": 1}
+            )
 
     if client:
         client_id = client["id"]

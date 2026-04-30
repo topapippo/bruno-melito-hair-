@@ -138,7 +138,11 @@ export default function WebsitePage() {
       finally { clearTimeout(slowTimer); setLoading(false); }
     };
     fetchAll();
-    return () => clearTimeout(slowTimer);
+    // Keepalive: ping ogni 14 minuti per evitare il cold start di Render sul booking
+    const keepalive = setInterval(() => {
+      api.get(`${API}/ping`).catch(() => {});
+    }, 14 * 60 * 1000);
+    return () => { clearTimeout(slowTimer); clearInterval(keepalive); };
   }, []);
 
   const config = siteData?.config || {};
