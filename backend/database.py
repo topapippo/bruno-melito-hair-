@@ -16,9 +16,9 @@ if not db_name:
 
 client = AsyncIOMotorClient(
     mongo_url,
-    serverSelectionTimeoutMS=8000,
-    connectTimeoutMS=8000,
-    socketTimeoutMS=20000,
+    serverSelectionTimeoutMS=30000,
+    connectTimeoutMS=30000,
+    socketTimeoutMS=30000,
 )
 db = client[db_name]
 
