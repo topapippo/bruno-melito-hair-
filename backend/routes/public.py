@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Request, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Request
 from fastapi.responses import Response, FileResponse
 from pydantic import BaseModel, field_validator
 from typing import Optional, List, Any
@@ -261,7 +261,7 @@ async def _send_booking_notifications(client_name, client_phone, date_it, time, 
 
 @router.post("/public/booking")
 @limiter.limit("2/minute;8/hour")
-async def create_public_booking(request: Request, data: PublicBookingRequest, background_tasks: BackgroundTasks):
+async def create_public_booking(request: Request, data: PublicBookingRequest):
     user = await db.users.find_one({"email": PUBLIC_ADMIN_EMAIL}, {"_id": 0})
     if not user:
         user = await db.users.find_one({}, {"_id": 0})
@@ -456,18 +456,20 @@ async def create_public_booking(request: Request, data: PublicBookingRequest, ba
     d = data.date.split("-")
     date_it = f"{d[2]}/{d[1]}/{d[0][2:]}" if len(d) == 3 else data.date
 
-    background_tasks.add_task(
-        _send_booking_notifications,
-        client_name=data.client_name,
-        client_phone=data.client_phone or "",
-        date_it=date_it,
-        time=data.time,
-        services_names=services_names,
-        appointment_id=appointment_id,
-        instance_id=user.get("green_api_instance_id", ""),
-        api_token=user.get("green_api_token", ""),
-        salon_name=user.get("salon_name", "Bruno Melito Hair"),
-    )
+    try:
+        await _send_booking_notifications(
+            client_name=data.client_name,
+            client_phone=data.client_phone or "",
+            date_it=date_it,
+            time=data.time,
+            services_names=services_names,
+            appointment_id=appointment_id,
+            instance_id=user.get("green_api_instance_id", ""),
+            api_token=user.get("green_api_token", ""),
+            salon_name=user.get("salon_name", "Bruno Melito Hair"),
+        )
+    except Exception as e:
+        logger.warning(f"Notifiche prenotazione fallite: {e}")
 
     return {
         "success": True,
