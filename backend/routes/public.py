@@ -261,6 +261,10 @@ async def _send_booking_notifications(client_name, client_phone, date_it, time, 
 
 @router.post("/public/booking")
 async def create_public_booking(request: Request, data: PublicBookingRequest, background_tasks: BackgroundTasks):
+    import asyncio as _asyncio
+    from datetime import datetime as dt
+
+    # Step 1: ottieni utente (necessario per tutte le query successive)
     user = await db.users.find_one({"email": PUBLIC_ADMIN_EMAIL}, {"_id": 0})
     if not user:
         user = await db.users.find_one({}, {"_id": 0})
@@ -268,27 +272,32 @@ async def create_public_booking(request: Request, data: PublicBookingRequest, ba
         raise HTTPException(status_code=400, detail="Salone non configurato")
     user_id = user["id"]
 
-    # Check if time is blocked
+    # Validazione data/ora (puro Python, istantanea)
     day_names = ["lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato", "domenica"]
-    from datetime import datetime as dt
     try:
         booking_date = dt.strptime(data.date, "%Y-%m-%d")
         day_of_week = day_names[booking_date.weekday()]
     except ValueError:
         raise HTTPException(status_code=400, detail="Data non valida")
 
-    # Reject bookings in the past
     now_rome = datetime.now(timezone(timedelta(hours=2)))
-    booking_naive = dt.strptime(f"{data.date} {data.time}", "%Y-%m-%d %H:%M")
-    booking_aware = booking_naive.replace(tzinfo=timezone(timedelta(hours=2)))
+    booking_aware = dt.strptime(f"{data.date} {data.time}", "%Y-%m-%d %H:%M").replace(tzinfo=timezone(timedelta(hours=2)))
     if booking_aware <= now_rome:
         raise HTTPException(status_code=400, detail="Non puoi prenotare per un orario già passato.")
-    blocked_one = await db.blocked_slots.find_one(
-        {"user_id": user_id, "type": "one-time", "date": data.date,
-         "start_time": {"$lte": data.time}, "end_time": {"$gt": data.time}}, {"_id": 0})
-    blocked_rec = await db.blocked_slots.find_one(
-        {"user_id": user_id, "type": "recurring", "day_of_week": day_of_week,
-         "start_time": {"$lte": data.time}, "end_time": {"$gt": data.time}}, {"_id": 0})
+
+    # Step 2: tutte le query iniziali in PARALLELO (da 8 query sequenziali a 1 batch)
+    (
+        blocked_one, blocked_rec, busy_at_time, all_operators, all_clients_raw, services
+    ) = await _asyncio.gather(
+        db.blocked_slots.find_one({"user_id": user_id, "type": "one-time", "date": data.date, "start_time": {"$lte": data.time}, "end_time": {"$gt": data.time}}, {"_id": 0}),
+        db.blocked_slots.find_one({"user_id": user_id, "type": "recurring", "day_of_week": day_of_week, "start_time": {"$lte": data.time}, "end_time": {"$gt": data.time}}, {"_id": 0}),
+        db.appointments.find({"user_id": user_id, "date": data.date, "time": data.time, "status": {"$ne": "cancelled"}}, {"_id": 0, "operator_id": 1}).to_list(50),
+        db.operators.find({"user_id": user_id, "active": True}, {"_id": 0, "id": 1, "name": 1, "color": 1}).to_list(50),
+        db.clients.find({"user_id": user_id}, {"_id": 0, "id": 1, "name": 1, "phone": 1}).to_list(2000),
+        db.services.find({"id": {"$in": data.service_ids}, "user_id": user_id}, {"_id": 0, "user_id": 0}).to_list(20),
+    )
+
+    # Controllo slot bloccati
     if blocked_one or blocked_rec:
         reason = (blocked_one or blocked_rec).get("reason", "")
         raise HTTPException(status_code=409, detail={
@@ -296,38 +305,19 @@ async def create_public_booking(request: Request, data: PublicBookingRequest, ba
             "conflict": True, "blocked": True, "available_operators": [], "alternative_slots": []
         })
 
-    # Check for conflicts at requested time slot
-    busy_at_time = await db.appointments.find(
-        {"user_id": user_id, "date": data.date, "time": data.time, "status": {"$ne": "cancelled"}},
-        {"_id": 0, "operator_id": 1}
-    ).to_list(50)
+    # Controllo conflitti
     busy_op_ids = [a.get("operator_id") for a in busy_at_time if a.get("operator_id")]
-
-    all_operators = await db.operators.find(
-        {"user_id": user_id, "active": True}, {"_id": 0, "id": 1, "name": 1}
-    ).to_list(50)
     available_operators = [{"id": o["id"], "name": o["name"]} for o in all_operators if o["id"] not in busy_op_ids]
 
-    has_conflict = False
-    if data.operator_id:
-        if data.operator_id in busy_op_ids:
-            has_conflict = True
-    else:
-        if len(busy_at_time) > 0:
-            # Mostra sempre gli operatori disponibili come scelta quando almeno uno è occupato
-            has_conflict = True
+    has_conflict = (data.operator_id in busy_op_ids) if data.operator_id else (len(busy_at_time) > 0)
 
     if has_conflict:
         all_apts = await db.appointments.find(
             {"user_id": user_id, "date": data.date, "status": {"$ne": "cancelled"}},
             {"_id": 0, "time": 1, "operator_id": 1}
         ).to_list(200)
-        busy_times_for_op = set()
         target_op = data.operator_id
-        for a in all_apts:
-            if not target_op or a.get("operator_id") == target_op:
-                busy_times_for_op.add(a.get("time"))
-
+        busy_times = {a.get("time") for a in all_apts if not target_op or a.get("operator_id") == target_op}
         h, m = map(int, data.time.split(":"))
         base = h * 60 + m
         alternative_slots = []
@@ -336,109 +326,66 @@ async def create_public_booking(request: Request, data: PublicBookingRequest, ba
             if t_min < 480 or t_min > 1200 or offset == 0:
                 continue
             t_str = f"{t_min // 60:02d}:{t_min % 60:02d}"
-            if t_str not in busy_times_for_op:
-                op_name = None
-                if target_op:
-                    op = next((o for o in all_operators if o["id"] == target_op), None)
-                    op_name = op["name"] if op else None
-                alternative_slots.append({"date": data.date, "time": t_str, "operator_id": target_op or "", "operator_name": op_name or "Disponibile"})
+            if t_str not in busy_times:
+                op = next((o for o in all_operators if o["id"] == target_op), None) if target_op else None
+                alternative_slots.append({"date": data.date, "time": t_str, "operator_id": target_op or "", "operator_name": op["name"] if op else "Disponibile"})
                 if len(alternative_slots) >= 4:
                     break
-
         conflict_msg = "Orario già occupato. Scegli un altro orario."
         if available_operators:
-            names = ", ".join([o["name"] for o in available_operators])
-            conflict_msg = f"Orario occupato da un operatore. Disponibili: {names}. Scegli un operatore o un orario alternativo."
-        raise HTTPException(
-            status_code=409,
-            detail={
-                "message": conflict_msg,
-                "conflict": True,
-                "available_operators": available_operators,
-                "alternative_slots": alternative_slots
-            }
-        )
+            conflict_msg = f"Orario occupato. Disponibili: {', '.join(o['name'] for o in available_operators)}. Scegli un operatore o un orario alternativo."
+        raise HTTPException(status_code=409, detail={"message": conflict_msg, "conflict": True, "available_operators": available_operators, "alternative_slots": alternative_slots})
 
-    # Cerca cliente esistente per telefono (normalizzato) o per nome
+    # Ricerca cliente (Python-side su dati già caricati — nessuna query extra)
     incoming_phone_norm = _normalize_phone(data.client_phone)
     incoming_name_lower = (data.client_name or "").strip().lower()
     client = None
-
     if incoming_phone_norm and len(incoming_phone_norm) >= 6:
-        # Cerca per telefono normalizzato
-        all_clients = await db.clients.find(
-            {"user_id": user_id}, {"_id": 0, "id": 1, "name": 1, "phone": 1}
-        ).to_list(5000)
-        for c in all_clients:
-            stored_norm = _normalize_phone(c.get("phone", ""))
-            if stored_norm and stored_norm == incoming_phone_norm:
+        for c in all_clients_raw:
+            sn = _normalize_phone(c.get("phone", ""))
+            if sn and (sn == incoming_phone_norm or (len(sn) >= 9 and len(incoming_phone_norm) >= 9 and sn[-9:] == incoming_phone_norm[-9:])):
                 client = c
                 break
-            # Match anche sulle ultime 9+ cifre per formati diversi
-            if stored_norm and len(stored_norm) >= 9 and len(incoming_phone_norm) >= 9:
-                if stored_norm[-9:] == incoming_phone_norm[-9:]:
-                    client = c
-                    break
-
-    # Fallback: cerca per nome esatto (case-insensitive) se il telefono non ha dato risultati
     if not client and incoming_name_lower:
-        name_match = await db.clients.find_one(
-            {"user_id": user_id, "name": {"$regex": f"^{re.escape(incoming_name_lower)}$", "$options": "i"}},
-            {"_id": 0}
-        )
-        if name_match:
-            client = name_match
+        for c in all_clients_raw:
+            if c.get("name", "").strip().lower() == incoming_name_lower:
+                client = c
+                break
 
     if client:
         client_id = client["id"]
-        # Aggiorna il telefono se il cliente esistente non ce l'ha
-        stored_phone = client.get("phone", "")
-        if not stored_phone and data.client_phone:
-            await db.clients.update_one(
-                {"id": client_id, "user_id": user_id},
-                {"$set": {"phone": data.client_phone}}
-            )
-            logger.info(f"Aggiornato telefono per cliente esistente: {client.get('name')} -> {data.client_phone}")
-        logger.info(f"Cliente esistente trovato: {client.get('name')} (ID: {client_id})")
+        if not client.get("phone") and data.client_phone:
+            await db.clients.update_one({"id": client_id, "user_id": user_id}, {"$set": {"phone": data.client_phone}})
     else:
         client_id = str(uuid.uuid4())
-        client = {
+        await db.clients.insert_one({
             "id": client_id, "user_id": user_id, "name": data.client_name,
             "phone": data.client_phone,
             "notes": f"[Online] {data.notes}" if data.notes else "[Prenotazione Online]",
             "send_sms_reminders": True, "created_at": datetime.now(timezone.utc).isoformat()
-        }
-        await db.clients.insert_one(client)
-        logger.info(f"Nuovo cliente creato: {data.client_name} ({data.client_phone})")
+        })
 
-    services = await db.services.find({"id": {"$in": data.service_ids}, "user_id": user_id}, {"_id": 0, "user_id": 0}).to_list(20)
     if not services:
         raise HTTPException(status_code=400, detail="Servizi non validi")
 
     total_duration = sum(s["duration"] for s in services)
     total_price = sum(s["price"] for s in services)
     start_hour, start_min = map(int, data.time.split(":"))
-    end_minutes = start_hour * 60 + start_min + total_duration
-    end_time = f"{end_minutes // 60:02d}:{end_minutes % 60:02d}"
+    end_time = f"{(start_hour * 60 + start_min + total_duration) // 60:02d}:{(start_hour * 60 + start_min + total_duration) % 60:02d}"
 
+    # Operatore (da dati già caricati — nessuna query extra)
     assigned_operator_id = data.operator_id or None
-    operator_name = None
-    operator_color = None
-    if assigned_operator_id:
-        operator = await db.operators.find_one({"id": assigned_operator_id, "user_id": user_id}, {"_id": 0})
-        if operator:
-            operator_name = operator["name"]
-            operator_color = operator.get("color")
-    if not assigned_operator_id:
-        first_op = await db.operators.find_one({"user_id": user_id, "active": True}, {"_id": 0})
-        if first_op:
-            assigned_operator_id = first_op["id"]
-            operator_name = first_op["name"]
-            operator_color = first_op.get("color")
+    operator_name = operator_color = None
+    op_match = next((o for o in all_operators if o["id"] == assigned_operator_id), None) if assigned_operator_id else None
+    if op_match:
+        operator_name, operator_color = op_match["name"], op_match.get("color")
+    elif not assigned_operator_id and all_operators:
+        first_op = all_operators[0]
+        assigned_operator_id, operator_name, operator_color = first_op["id"], first_op["name"], first_op.get("color")
 
     appointment_id = str(uuid.uuid4())
     booking_token = str(uuid.uuid4())
-    appointment = {
+    await db.appointments.insert_one({
         "id": appointment_id, "user_id": user_id, "client_id": client_id,
         "client_name": data.client_name, "service_ids": data.service_ids, "services": services,
         "operator_id": assigned_operator_id, "operator_name": operator_name, "operator_color": operator_color,
@@ -448,32 +395,22 @@ async def create_public_booking(request: Request, data: PublicBookingRequest, ba
         "notes": f"[Online] {data.notes}" if data.notes else "[Prenotazione Online]",
         "source": "online", "booking_token": booking_token,
         "created_at": datetime.now(timezone.utc).isoformat()
-    }
-    await db.appointments.insert_one(appointment)
+    })
 
-    services_names = ", ".join([s.get("name", "") for s in services])
     d = data.date.split("-")
     date_it = f"{d[2]}/{d[1]}/{d[0][2:]}" if len(d) == 3 else data.date
-
     background_tasks.add_task(
         _send_booking_notifications,
-        client_name=data.client_name,
-        client_phone=data.client_phone or "",
-        date_it=date_it,
-        time=data.time,
-        services_names=services_names,
+        client_name=data.client_name, client_phone=data.client_phone or "",
+        date_it=date_it, time=data.time,
+        services_names=", ".join(s.get("name", "") for s in services),
         appointment_id=appointment_id,
         instance_id=user.get("green_api_instance_id", ""),
         api_token=user.get("green_api_token", ""),
         salon_name=user.get("salon_name", "Bruno Melito Hair"),
     )
 
-    return {
-        "success": True,
-        "appointment_id": appointment_id,
-        "booking_code": appointment_id[:8].upper(),
-        "booking_token": booking_token,
-    }
+    return {"success": True, "appointment_id": appointment_id, "booking_code": appointment_id[:8].upper(), "booking_token": booking_token}
 
 
 
