@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api, { API } from '../../lib/api';
+import { sendWA } from '../../lib/sendWA';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -285,9 +286,7 @@ export default function NewAppointmentDialog({
         const serviceNames = selectedServicesInfo.map(s => s.name).join(', ');
         const dateStr = format(new Date(formData.date + 'T00:00:00'), 'dd/MM/yy');
         const waMsg = `Ciao ${clientDisplayName}! ✂️ Appuntamento confermato per ${dateStr} alle ${formData.time} per ${serviceNames}. A presto da Bruno Melito Hair! 💛`;
-        api.post(`${API}/whatsapp/send-direct`, { phone: clientPhone, message: waMsg })
-          .then(sendRes => { if (sendRes.data?.sent) toast.success('Conferma WhatsApp inviata!'); })
-          .catch(() => {});
+        sendWA(clientPhone, waMsg, { successMsg: '✅ Conferma WhatsApp inviata!' });
       }
     } catch (err) {
       console.error('[NewAppointment] Error:', err.response?.status, err.response?.data, err.message);
