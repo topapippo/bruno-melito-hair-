@@ -117,7 +117,16 @@ export default function Layout({ children }) {
       } catch {}
     };
     window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
+
+    // Keepalive: ping ogni 14 min per tenere sveglio il server Render (dorme dopo 15 min)
+    const keepalive = setInterval(() => {
+      api.get(`${API}/ping`).catch(() => {});
+    }, 14 * 60 * 1000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      clearInterval(keepalive);
+    };
   }, []);
 
   const t = adminTheme;
