@@ -506,6 +506,19 @@ async def send_whatsapp_direct(data: dict, current_user: dict = Depends(get_curr
     api_token = current_user.get("green_api_token", "")
 
     if instance_id and api_token:
+        # Verifica che la sessione WhatsApp sia attiva prima di inviare
+        try:
+            state_url = f"https://api.greenapi.com/waInstance{instance_id}/getStateInstance/{api_token}"
+            state_resp = await asyncio.to_thread(_req.get, state_url, timeout=8)
+            state = state_resp.json().get("stateInstance", "unknown")
+            if state != "authorized":
+                wa_url = f"https://wa.me/{phone_clean}?text={urllib.parse.quote(message)}"
+                logger.warning(f"Green API instance not authorized, state={state}")
+                return {"sent": False, "method": "link", "url": wa_url,
+                        "error": f"sessione_scaduta:{state}"}
+        except Exception:
+            pass  # Se il check fallisce, tentiamo comunque l'invio
+
         try:
             url = f"https://api.greenapi.com/waInstance{instance_id}/sendMessage/{api_token}"
             resp = await asyncio.to_thread(

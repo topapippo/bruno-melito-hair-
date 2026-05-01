@@ -17,6 +17,8 @@ export async function sendWA(phone, message, { successMsg = '✅ WhatsApp inviat
     const err = res.data?.error || '';
     if (err === 'Green API non configurata') {
       toast.warning('Green API non configurata — vai su Impostazioni → WhatsApp per abilitare l\'invio automatico.');
+    } else if (err.startsWith('sessione_scaduta')) {
+      toast.error('⚠️ Sessione WhatsApp scaduta. Vai su Impostazioni → WhatsApp, clicca "Testa connessione" e riscannerizza il QR code dal tuo telefono.');
     } else if (err.includes('401') || err.includes('403') || err.includes('unauthorized') || err.toLowerCase().includes('auth')) {
       toast.error('❌ Credenziali Green API non valide. Controlla Instance ID e Token in Impostazioni → WhatsApp.');
     } else if (err.includes('404') || err.includes('notFound') || err.toLowerCase().includes('not found')) {
