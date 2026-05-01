@@ -39,14 +39,20 @@ async def lifespan(app: FastAPI):
     # Crea indici MongoDB per performance
     try:
         await db.appointments.create_index([("user_id", 1), ("date", 1)])
+        await db.appointments.create_index([("user_id", 1), ("date", 1), ("status", 1)])
         await db.appointments.create_index([("user_id", 1), ("client_id", 1)])
         await db.appointments.create_index([("user_id", 1), ("status", 1)])
         await db.clients.create_index([("user_id", 1), ("name", 1)])
         await db.clients.create_index([("user_id", 1)])
+        await db.clients.create_index([("id", 1), ("user_id", 1)])
         await db.services.create_index([("user_id", 1)])
         await db.operators.create_index([("user_id", 1)])
         await db.payments.create_index([("user_id", 1), ("date", 1)])
+        await db.payments.create_index([("user_id", 1), ("payment_method", 1)])
+        await db.cards.create_index([("user_id", 1), ("active", 1)])
+        await db.cards.create_index([("id", 1), ("user_id", 1)])
         await db.loyalty.create_index([("client_id", 1), ("user_id", 1)])
+        await db.reminders_sent.create_index([("user_id", 1), ("type", 1)])
         await db.users.create_index([("email", 1)], unique=True)
         await db.waitlist.create_index([("user_id", 1), ("status", 1)])
         # Indice TTL: pulisce automaticamente i tentativi di login vecchi dopo 15 minuti

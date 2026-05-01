@@ -190,11 +190,20 @@ async def get_tomorrow_reminders(current_user: dict = Depends(get_current_user))
     ).to_list(500)
     for r in reminders_sent:
         reminded_ids.add(r.get("appointment_id"))
+    missing_phone_ids = [apt["client_id"] for apt in appointments if not apt.get("client_phone") and apt.get("client_id")]
+    if missing_phone_ids:
+        missing_list = await db.clients.find(
+            {"id": {"$in": missing_phone_ids}}, {"_id": 0, "id": 1, "phone": 1}
+        ).to_list(len(missing_phone_ids) + 1)
+        missing_map = {c["id"]: c for c in missing_list}
+    else:
+        missing_map = {}
+
     results = []
     for apt in appointments:
         client_phone = apt.get("client_phone", "")
         if not client_phone and apt.get("client_id"):
-            cl = await db.clients.find_one({"id": apt["client_id"]}, {"_id": 0})
+            cl = missing_map.get(apt["client_id"])
             if cl:
                 client_phone = cl.get("phone", "")
         results.append({

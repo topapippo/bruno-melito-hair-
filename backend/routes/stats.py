@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import StreamingResponse
 from typing import Optional
 from datetime import datetime, timezone, timedelta
+import asyncio
 import io
 
 from database import db
@@ -16,60 +17,51 @@ router = APIRouter()
 
 @router.get("/stats/dashboard")
 async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    today_appointments = await db.appointments.find(
-        {"user_id": current_user["id"], "date": today, "status": {"$ne": "cancelled"}},
-        {"_id": 0, "user_id": 0}
-    ).sort("time", 1).to_list(100)
-    total_clients = await db.clients.count_documents({"user_id": current_user["id"]})
-    total_operators = await db.operators.count_documents({"user_id": current_user["id"], "active": True})
-    first_of_month = datetime.now(timezone.utc).replace(day=1).strftime("%Y-%m-%d")
-    last_of_month = (datetime.now(timezone.utc).replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
-    last_of_month = last_of_month.strftime("%Y-%m-%d")
-    # Conteggio appuntamenti completati del mese (tutti, inclusi prepagati)
-    monthly_appointments = await db.appointments.find(
-        {"user_id": current_user["id"], "date": {"$gte": first_of_month, "$lte": last_of_month}, "status": "completed"},
-        {"_id": 0, "total_price": 1}
-    ).to_list(1000)
-    # Ricavi reali dal mese: usa payments (contiene checkout contanti + vendite abbonamento, esclude consumi carta)
-    monthly_payments = await db.payments.find(
-        {"user_id": current_user["id"], "date": {"$gte": first_of_month, "$lte": last_of_month}},
-        {"_id": 0, "total_paid": 1}
-    ).to_list(10000)
-    monthly_revenue = sum(p.get("total_paid", 0) for p in monthly_payments)
-    first_of_year = datetime.now(timezone.utc).replace(month=1, day=1).strftime("%Y-%m-%d")
-    last_of_year = datetime.now(timezone.utc).replace(month=12, day=31).strftime("%Y-%m-%d")
-    yearly_appointments = await db.appointments.find(
-        {"user_id": current_user["id"], "date": {"$gte": first_of_year, "$lte": last_of_year}, "status": "completed"},
-        {"_id": 0, "total_price": 1}
-    ).to_list(10000)
-    _yearly_agg = await db.payments.aggregate([
-        {"$match": {"user_id": current_user["id"], "date": {"$gte": first_of_year, "$lte": last_of_year}}},
-        {"$group": {"_id": None, "total": {"$sum": "$total_paid"}}}
-    ]).to_list(1)
-    yearly_revenue = _yearly_agg[0]["total"] if _yearly_agg else 0
-    next_week = (datetime.now(timezone.utc) + timedelta(days=7)).strftime("%Y-%m-%d")
-    upcoming = await db.appointments.find(
-        {"user_id": current_user["id"], "date": {"$gte": today, "$lte": next_week}, "status": "scheduled"},
-        {"_id": 0, "user_id": 0}
-    ).sort([("date", 1), ("time", 1)]).to_list(10)
-    # Ricavo di oggi: solo da payments (checkout contanti + vendite abbonamento odierne)
-    today_payments = await db.payments.find(
-        {"user_id": current_user["id"], "date": today},
-        {"_id": 0, "total_paid": 1, "payment_method": 1}
-    ).to_list(500)
-    today_revenue = sum(p.get("total_paid", 0) for p in today_payments)
+    uid = current_user["id"]
+    now_utc = datetime.now(timezone.utc)
+    today = now_utc.strftime("%Y-%m-%d")
+    first_of_month = now_utc.replace(day=1).strftime("%Y-%m-%d")
+    last_of_month = ((now_utc.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)).strftime("%Y-%m-%d")
+    first_of_year = now_utc.replace(month=1, day=1).strftime("%Y-%m-%d")
+    last_of_year = now_utc.replace(month=12, day=31).strftime("%Y-%m-%d")
+    next_week = (now_utc + timedelta(days=7)).strftime("%Y-%m-%d")
 
-    # Pagamenti sospesi non ancora incassati
-    sospeso_payments = await db.payments.find(
-        {"user_id": current_user["id"], "payment_method": "sospeso"},
-        {"_id": 0, "total_paid": 1}
-    ).to_list(1000)
+    # Tutte le query in parallelo — da ~10 roundtrip sequenziali a 1 batch
+    (
+        today_appointments,
+        total_clients,
+        total_operators,
+        monthly_appointments,
+        monthly_payments,
+        yearly_appointments,
+        yearly_agg,
+        upcoming,
+        today_payments,
+        sospeso_payments,
+        waitlist_count,
+    ) = await asyncio.gather(
+        db.appointments.find({"user_id": uid, "date": today, "status": {"$ne": "cancelled"}}, {"_id": 0, "user_id": 0}).sort("time", 1).to_list(100),
+        db.clients.count_documents({"user_id": uid}),
+        db.operators.count_documents({"user_id": uid, "active": True}),
+        db.appointments.find({"user_id": uid, "date": {"$gte": first_of_month, "$lte": last_of_month}, "status": "completed"}, {"_id": 0, "total_price": 1}).to_list(1000),
+        db.payments.find({"user_id": uid, "date": {"$gte": first_of_month, "$lte": last_of_month}}, {"_id": 0, "total_paid": 1}).to_list(10000),
+        db.appointments.find({"user_id": uid, "date": {"$gte": first_of_year, "$lte": last_of_year}, "status": "completed"}, {"_id": 0, "total_price": 1}).to_list(10000),
+        db.payments.aggregate([
+            {"$match": {"user_id": uid, "date": {"$gte": first_of_year, "$lte": last_of_year}}},
+            {"$group": {"_id": None, "total": {"$sum": "$total_paid"}}}
+        ]).to_list(1),
+        db.appointments.find({"user_id": uid, "date": {"$gte": today, "$lte": next_week}, "status": "scheduled"}, {"_id": 0, "user_id": 0}).sort([("date", 1), ("time", 1)]).to_list(10),
+        db.payments.find({"user_id": uid, "date": today}, {"_id": 0, "total_paid": 1, "payment_method": 1}).to_list(500),
+        db.payments.find({"user_id": uid, "payment_method": "sospeso"}, {"_id": 0, "total_paid": 1}).to_list(1000),
+        db.waitlist.count_documents({"user_id": uid, "status": "waiting"}),
+    )
+
+    monthly_revenue = sum(p.get("total_paid", 0) for p in monthly_payments)
+    yearly_revenue = yearly_agg[0]["total"] if yearly_agg else 0
+    today_revenue = sum(p.get("total_paid", 0) for p in today_payments)
     sospeso_count = len(sospeso_payments)
     sospeso_total = sum(p.get("total_paid", 0) for p in sospeso_payments)
 
-    # Prossimi appuntamenti nelle prossime 2 ore
-    now_utc = datetime.now(timezone.utc)
     now_time = now_utc.strftime("%H:%M")
     in_2h_time = (now_utc + timedelta(hours=2)).strftime("%H:%M")
     next_2h = [
@@ -77,7 +69,6 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
         if a.get("status") != "cancelled" and now_time <= a.get("time", "00:00") <= in_2h_time
     ]
 
-    # Slot liberi oggi: (ore lavoro * operatori) in slot da 15min − appuntamenti occupati
     opening = current_user.get("opening_time", "09:00")
     closing = current_user.get("closing_time", "19:00")
     def _to_min(t):
@@ -92,9 +83,6 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
         for a in today_appointments if a.get("status") != "cancelled"
     )
     free_slots = max(0, total_slots - occupied_slots)
-
-    # Lista d'attesa: conta quante persone in attesa
-    waitlist_count = await db.waitlist.count_documents({"user_id": current_user["id"], "status": "waiting"})
 
     return {
         "today_appointments": today_appointments, "today_appointments_count": len(today_appointments),

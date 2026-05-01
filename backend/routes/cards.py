@@ -286,17 +286,23 @@ async def get_expiring_cards(days: int = 30, current_user: dict = Depends(get_cu
             try:
                 exp_date = datetime.strptime(card["valid_until"], "%Y-%m-%d").date()
                 if exp_date <= limit_date:
-                    days_left = (exp_date - today).days
-                    # Get client phone
-                    client = await db.clients.find_one({"id": card["client_id"]}, {"_id": 0, "phone": 1, "name": 1})
-                    card["days_until_expiry"] = days_left
-                    card["is_expired"] = days_left < 0
-                    card["client_phone"] = client.get("phone", "") if client else ""
+                    card["days_until_expiry"] = (exp_date - today).days
+                    card["is_expired"] = card["days_until_expiry"] < 0
                     expiring.append(card)
             except (ValueError, TypeError):
                 pass
-    
-    # Sort by days until expiry (most urgent first)
+
+    if expiring:
+        client_ids = list({c["client_id"] for c in expiring})
+        clients_list = await db.clients.find(
+            {"id": {"$in": client_ids}, "user_id": current_user["id"]},
+            {"_id": 0, "id": 1, "phone": 1, "name": 1}
+        ).to_list(len(client_ids) + 1)
+        clients_map = {c["id"]: c for c in clients_list}
+        for card in expiring:
+            cl = clients_map.get(card["client_id"])
+            card["client_phone"] = cl.get("phone", "") if cl else ""
+
     expiring.sort(key=lambda x: x.get("days_until_expiry", 999))
     return expiring
 
@@ -317,27 +323,31 @@ async def get_low_balance_cards(threshold_percent: int = 20, current_user: dict 
         used_svc = card.get("used_services", 0)
         is_subscription = card.get("card_type") == "subscription"
 
-        # Per abbonamento: alert se rimane 1 sola seduta
         if is_subscription and total_svc:
             remaining_sessions = total_svc - used_svc
             if remaining_sessions == 1:
-                client = await db.clients.find_one({"id": card["client_id"]}, {"_id": 0, "phone": 1, "name": 1})
                 card["percent_remaining"] = round((remaining / total) * 100, 1) if total > 0 else 0
                 card["remaining_sessions"] = remaining_sessions
-                card["client_phone"] = client.get("phone", "") if client else ""
                 low_balance.append(card)
                 continue
 
-        # Per card prepagata: alert se credito sotto soglia %
         if total > 0:
             percent_remaining = (remaining / total) * 100
             if percent_remaining <= threshold_percent and remaining > 0:
-                client = await db.clients.find_one({"id": card["client_id"]}, {"_id": 0, "phone": 1, "name": 1})
                 card["percent_remaining"] = round(percent_remaining, 1)
-                card["client_phone"] = client.get("phone", "") if client else ""
                 low_balance.append(card)
 
-    # Sort by percent remaining (lowest first)
+    if low_balance:
+        client_ids = list({c["client_id"] for c in low_balance})
+        clients_list = await db.clients.find(
+            {"id": {"$in": client_ids}, "user_id": current_user["id"]},
+            {"_id": 0, "id": 1, "phone": 1, "name": 1}
+        ).to_list(len(client_ids) + 1)
+        clients_map = {c["id"]: c for c in clients_list}
+        for card in low_balance:
+            cl = clients_map.get(card["client_id"])
+            card["client_phone"] = cl.get("phone", "") if cl else ""
+
     low_balance.sort(key=lambda x: x.get("percent_remaining", 100))
     return low_balance
 

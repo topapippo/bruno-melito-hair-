@@ -44,10 +44,16 @@ async def award_loyalty_points(client_id: str, user_id: str, amount_paid: float,
 @router.get("/loyalty")
 async def get_all_loyalty(current_user: dict = Depends(get_current_user)):
     loyalties = await db.loyalty.find({"user_id": current_user["id"]}, {"_id": 0}).to_list(1000)
+    if not loyalties:
+        return loyalties
+    client_ids = list({loy["client_id"] for loy in loyalties})
+    clients_list = await db.clients.find(
+        {"id": {"$in": client_ids}, "user_id": current_user["id"]},
+        {"_id": 0, "id": 1, "name": 1, "phone": 1}
+    ).to_list(len(client_ids) + 1)
+    clients_map = {c["id"]: c for c in clients_list}
     for loy in loyalties:
-        client = await db.clients.find_one(
-            {"id": loy["client_id"], "user_id": current_user["id"]}, {"_id": 0, "name": 1, "phone": 1}
-        )
+        client = clients_map.get(loy["client_id"])
         loy["client_name"] = client["name"] if client else "Sconosciuto"
         loy["client_phone"] = client.get("phone", "") if client else ""
     return loyalties
