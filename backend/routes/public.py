@@ -6,6 +6,7 @@ from datetime import datetime, timezone, timedelta
 import uuid
 import os
 import re
+import base64
 import requests as http_requests
 import logging
 
@@ -94,8 +95,10 @@ def init_storage():
 
 def put_object(path: str, data: bytes, content_type: str) -> dict:
     global _use_local_storage
-    
-    # Try remote storage first
+    filename = path.split("/")[-1]
+    b64_data = base64.b64encode(data).decode('utf-8')
+
+    # Prova storage remoto
     if not _use_local_storage:
         try:
             key = init_storage()
@@ -106,37 +109,31 @@ def put_object(path: str, data: bytes, content_type: str) -> dict:
                     data=data, timeout=120
                 )
                 resp.raise_for_status()
-                return resp.json()
+                result = resp.json()
+                # Salva sempre in MongoDB come backup — così le foto sopravvivono
+                # anche se lo storage remoto va offline in futuro
+                result["_mongo_data"] = b64_data
+                result["_content_type"] = content_type
+                return result
         except Exception as e:
-            logger.warning(f"Remote storage failed, falling back to MongoDB: {e}")
+            logger.warning(f"Remote storage failed, using MongoDB: {e}")
             _use_local_storage = True
-    
-    # Fallback to MongoDB storage (survives Render redeploys)
-    import base64
-    filename = path.split("/")[-1]
-    b64_data = base64.b64encode(data).decode('utf-8')
-    # Store will happen in the upload handler via db directly
+
+    # MongoDB puro — path mongo:// sopravvive ai redeploy
     return {"path": f"mongo://{filename}", "size": len(data), "_mongo_data": b64_data, "_content_type": content_type}
 
 
 def get_object(path: str):
-    global _use_local_storage
-    
-    # Check MongoDB storage
+    from database import sync_db
+
+    # Path MongoDB (mongo:// o local://)
     if path.startswith("mongo://") or path.startswith("local://"):
-        import base64
         filename = path.replace("mongo://", "").replace("local://", "")
         file_id = filename.split(".")[0]
-        
-        # Use sync pymongo for this
-        from database import sync_db
         record = sync_db.website_files.find_one({"id": file_id})
         if record and record.get("file_data"):
             data = base64.b64decode(record["file_data"])
-            ct = record.get("content_type", "application/octet-stream")
-            return data, ct
-        
-        # Fallback to local filesystem (old files)
+            return data, record.get("content_type", "application/octet-stream")
         if path.startswith("local://"):
             local_path = os.path.join(LOCAL_UPLOAD_DIR, filename)
             if os.path.exists(local_path):
@@ -146,20 +143,28 @@ def get_object(path: str):
                 mime_map = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png", "gif": "image/gif", "webp": "image/webp"}
                 return data, mime_map.get(ext, "application/octet-stream")
         raise HTTPException(status_code=404, detail="File non trovato")
-    
-    # Try remote storage
+
+    # Path remoto — prova storage esterno
     try:
-        key = init_storage()
+        key = _storage_key or init_storage()
         if key:
             resp = http_requests.get(
                 f"{STORAGE_URL}/objects/{path}",
                 headers={"X-Storage-Key": key}, timeout=60
             )
-            resp.raise_for_status()
-            return resp.content, resp.headers.get("Content-Type", "application/octet-stream")
+            if resp.ok:
+                return resp.content, resp.headers.get("Content-Type", "application/octet-stream")
     except Exception as e:
-        logger.error(f"Failed to get object from remote storage: {e}")
-    
+        logger.warning(f"Remote storage GET failed, trying MongoDB fallback: {e}")
+
+    # Fallback MongoDB per file remoti — cerca per file_id estratto dal path
+    filename = path.split("/")[-1]
+    file_id = filename.rsplit(".", 1)[0]
+    record = sync_db.website_files.find_one({"id": file_id})
+    if record and record.get("file_data"):
+        data = base64.b64decode(record["file_data"])
+        return data, record.get("content_type", "application/octet-stream")
+
     raise HTTPException(status_code=404, detail="File non trovato")
 
 
