@@ -292,6 +292,14 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Scheduler compleanno non avviato: {e}")
 
+    # Scalda la cache del sito pubblico all'avvio (evita cold start visibile agli utenti)
+    try:
+        from routes.public import public_get_website
+        await public_get_website()
+        logger.info("Cache sito pubblico scaldata all'avvio")
+    except Exception as e:
+        logger.warning(f"Warmup cache sito: {e}")
+
     yield
 
     # Shutdown

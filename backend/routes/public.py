@@ -27,6 +27,15 @@ async def ping():
     """Endpoint keepalive — usato dal frontend per mantenere il server sveglio su Render free tier."""
     return {"ok": True}
 
+@router.get("/warmup")
+async def warmup():
+    """Sveglia il server e scalda la cache del sito pubblico. Usato da UptimeRobot ogni 5 min."""
+    try:
+        await public_get_website()
+    except Exception:
+        pass
+    return {"ok": True}
+
 # Email admin configurabile via env var (evita hardcoding)
 PUBLIC_ADMIN_EMAIL = os.environ.get("PUBLIC_ADMIN_EMAIL", "melitobruno@gmail.com")
 
@@ -825,7 +834,7 @@ async def delete_website_gallery_item(item_id: str, current_user: dict = Depends
 
 
 _website_cache: dict = {"data": None, "ts": 0}
-_WEBSITE_CACHE_TTL = 300  # 5 minuti
+_WEBSITE_CACHE_TTL = 600  # 10 minuti
 
 @router.get("/public/website")
 async def public_get_website():
@@ -838,11 +847,12 @@ async def public_get_website():
     uid = user["id"] if user else None
     uid_filter = {"user_id": uid} if uid else {}
 
-    # Tutte le query in parallelo
+    # Tutte le query in parallelo — inclusa loyalty rewards (era sequenziale)
     import asyncio as _asyncio
+    from models import get_loyalty_rewards, LOYALTY_POINTS_PER_EURO
     (
         config_raw, reviews, gallery, services,
-        card_templates_raw, operators, promotions
+        card_templates_raw, operators, promotions, loyalty_rewards_data
     ) = await _asyncio.gather(
         db.website_config.find_one({**uid_filter}, {"_id": 0, "user_id": 0}),
         db.website_reviews.find({**uid_filter}, {"_id": 0, "user_id": 0}).to_list(100),
@@ -851,13 +861,11 @@ async def public_get_website():
         db.card_templates.find({**uid_filter, "is_deleted": {"$ne": True}}, {"_id": 0}).to_list(100),
         db.operators.find({**uid_filter}, {"_id": 0, "user_id": 0}).to_list(50),
         db.promotions.find({"active": True, "show_on_booking": True}, {"_id": 0, "user_id": 0}).to_list(20),
+        get_loyalty_rewards(uid or ""),
     )
 
     config = {**DEFAULT_WEBSITE_CONFIG, **{k: v for k, v in (config_raw or {}).items() if k != "user_id"}} if config_raw else {k: v for k, v in DEFAULT_WEBSITE_CONFIG.items()}
     card_templates = [{"id": ct.get("id",""), "name": ct.get("name",""), "card_type": ct.get("card_type",""), "total_value": ct.get("total_value",0), "total_services": ct.get("total_services",0), "duration_months": ct.get("duration_months",0), "notes": ct.get("notes","")} for ct in card_templates_raw]
-
-    from models import get_loyalty_rewards, LOYALTY_POINTS_PER_EURO
-    loyalty_rewards_data = await get_loyalty_rewards(uid or "")
     loyalty_config = {"points_per_euro": LOYALTY_POINTS_PER_EURO, "rewards": loyalty_rewards_data}
 
     result = {"config": config, "reviews": reviews, "gallery": gallery, "services": services, "card_templates": card_templates, "operators": operators, "promotions": promotions, "loyalty": loyalty_config}
