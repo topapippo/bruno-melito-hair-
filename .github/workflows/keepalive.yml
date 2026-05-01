@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Ping backend Render
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 https://bruno-melito-hair-backend.onrender.com/api/ping)
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 https://bruno-melito-hair-2497.onrender.com/api/ping)
           echo "Ping status: $STATUS"
           if [ "$STATUS" = "200" ]; then
             echo "Server sveglio"
