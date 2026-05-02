@@ -306,7 +306,7 @@ export default function LoyaltyPage() {
 
         {/* Client Loyalty List */}
         {filtered.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-fast">
             {filtered.sort((a, b) => b.points - a.points).map((loy) => (
               <Card
                 key={loy.id}

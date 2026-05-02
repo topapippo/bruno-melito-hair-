@@ -197,7 +197,7 @@ export default function PromotionsPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 stagger-fast">
             {promotions.map((promo) => {
               const ruleInfo = getRuleInfo(promo.rule_type);
               const RuleIcon = ruleInfo.icon;

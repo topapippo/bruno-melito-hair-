@@ -129,7 +129,7 @@ export default function DailySummaryPage() {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-fast">
           <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
             <CardContent className="p-6">
               <div className="flex items-start justify-between">

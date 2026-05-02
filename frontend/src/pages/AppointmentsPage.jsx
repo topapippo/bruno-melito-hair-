@@ -541,7 +541,7 @@ export default function AppointmentsPage() {
                 ))}
               </div>
             ) : appointments.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-4 stagger-fast">
                 {appointments.map((apt) => (
                   <div
                     key={apt.id}

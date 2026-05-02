@@ -351,7 +351,7 @@ export default function WebsitePage() {
       case 'transformations':
         return hairstylePhotos.length >= 2 ? <TransformationsSection key="transformations" hairstylePhotos={hairstylePhotos} setShowBooking={setShowBooking} T={T} /> : null;
       case 'team':
-        return operators.filter(o => o.active !== false).length > 0 ? <TeamSection key="team" operators={operators} T={T} /> : null;
+        return operators.filter(o => o.active !== false).length > 0 ? <TeamSection key="team" operators={operators} T={T} setShowBooking={setShowBooking} /> : null;
       case 'gallery':
         return hairstylePhotos.length > 0 ? <GallerySection key="gallery" config={config} hairstylePhotos={hairstylePhotos} setShowBooking={setShowBooking} T={T} /> : null;
       case 'loyalty':

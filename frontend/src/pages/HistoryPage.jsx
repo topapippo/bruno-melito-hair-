@@ -163,7 +163,7 @@ export default function HistoryPage() {
             ))}
           </div>
         ) : Object.keys(groupedByDate).length > 0 ? (
-          <div className="space-y-6">
+          <div className="space-y-6 stagger-fast">
             {Object.entries(groupedByDate).map(([date, dayAppointments]) => (
               <div key={date}>
                 {/* Separatore data */}

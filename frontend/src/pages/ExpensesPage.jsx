@@ -293,7 +293,7 @@ export default function ExpensesPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-3 stagger-fast">
             {filteredExpenses.map((exp) => {
               const catInfo = getCategoryInfo(exp.category);
               const isOverdue = !exp.paid && exp.due_date < today;

@@ -700,7 +700,7 @@ export function TransformationsSection({ hairstylePhotos, setShowBooking, T }) {
 }
 
 // ── SEZIONE TEAM ────────────────────────────────────────────────────────────
-export function TeamSection({ operators, T }) {
+export function TeamSection({ operators, T, setShowBooking }) {
   const active = (operators || []).filter(op => op.active !== false);
   if (active.length === 0) return null;
 
@@ -767,10 +767,31 @@ export function TeamSection({ operators, T }) {
                     <Star key={s} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                   ))}
                 </div>
+                {setShowBooking && (
+                  <button
+                    onClick={() => setShowBooking(true)}
+                    className="mt-4 text-xs font-black px-5 py-2 rounded-xl text-white transition-all duration-200 hover:scale-105 active:scale-95 shadow-md opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0"
+                    style={{ backgroundColor: op.color || T.primary, boxShadow: `0 4px 14px ${op.color || T.primary}50`, transition: 'all 0.25s cubic-bezier(.34,1.56,.64,1)' }}>
+                    ✂️ Prenota
+                  </button>
+                )}
               </div>
             </AnimatedSection>
           ))}
         </div>
+
+        {setShowBooking && (
+          <AnimatedSection delay={0.4}>
+            <div className="text-center mt-10">
+              <button
+                onClick={() => setShowBooking(true)}
+                className="font-black text-white px-10 py-5 rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 text-base"
+                style={{ background: `linear-gradient(135deg, ${T.primary}, ${T.accent})`, boxShadow: `0 8px 32px ${T.primary}40` }}>
+                <Scissors className="w-5 h-5 inline mr-2" /> Scegli il Tuo Stylist e Prenota
+              </button>
+            </div>
+          </AnimatedSection>
+        )}
       </div>
     </section>
   );

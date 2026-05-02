@@ -147,7 +147,7 @@ export default function WaitlistPage() {
             </Button>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-3 stagger-fast">
             {items.map((item, idx) => (
               <div key={item.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-start gap-4 hover:shadow-md transition-shadow">
                 {/* Posizione */}

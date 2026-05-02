@@ -480,7 +480,7 @@ export default function SettingsPage() {
           <p className="text-[#7C5C4A] mt-1 ">Gestisci le impostazioni del tuo salone</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6 stagger-in">
           {/* Profile Settings */}
           <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
             <CardHeader>

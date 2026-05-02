@@ -231,7 +231,7 @@ export default function BackupPage() {
           <Skeleton className="h-64" />
         ) : (
           <>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 stagger-fast">
               <Card className="bg-white border-2 border-[#F0E6DC]">
                 <CardContent className="p-6 text-center">
                   <Users className="w-10 h-10 mx-auto text-[#C8617A] mb-2" />

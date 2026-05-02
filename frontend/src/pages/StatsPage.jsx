@@ -162,7 +162,7 @@ export default function StatsPage() {
         ) : (
           <>
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 stagger-fast">
               <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between">

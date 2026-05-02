@@ -866,7 +866,7 @@ export default function WebsiteAdminPage() {
                     <p>Nessuna foto del salone. Carica le prime foto!</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 stagger-fast">
                     {salonPhotos.map((item) => (
                       <div key={item.id} className="relative group rounded-xl overflow-hidden border">
                         {item.file_type === 'video' ? (

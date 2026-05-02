@@ -215,7 +215,7 @@ export default function ReportIncassiPage() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 stagger-fast">
               {/* Totale Incassato */}
               <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white col-span-2 md:col-span-1">
                 <CardContent className="p-5">

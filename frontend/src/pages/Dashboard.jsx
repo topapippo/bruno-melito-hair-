@@ -157,7 +157,7 @@ export default function Dashboard() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 stagger-fast">
           <button onClick={() => navigate('/appointments')} className="rounded-2xl border border-slate-200 bg-white/90 p-4 text-left shadow-sm hover:shadow-lg transition-shadow">
             <div className="flex items-center gap-3 mb-2">
               <Plus className="w-5 h-5 text-[#E8477C]" />
