@@ -15,6 +15,7 @@ def _fmt_date_it(date_str: str) -> str:
 import uuid
 import os
 import asyncio
+import logging
 
 from database import db
 from auth import get_current_user
@@ -23,6 +24,7 @@ from utils import send_sms_reminder, twilio_client, TWILIO_PHONE_NUMBER
 from pydantic import BaseModel
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 class MessageTemplateCreate(BaseModel):
@@ -224,20 +226,30 @@ async def batch_mark_reminders_sent(data: dict, current_user: dict = Depends(get
     if not appointment_ids:
         raise HTTPException(status_code=400, detail="Nessun appuntamento specificato")
     count = 0
+    # Batch: 1 query per tutti gli appuntamenti + 1 per quelli già segnati
+    apts_list, already_sent_list = await asyncio.gather(
+        db.appointments.find(
+            {"id": {"$in": appointment_ids}, "user_id": current_user["id"]}, {"_id": 0}
+        ).to_list(len(appointment_ids) + 1),
+        db.reminders_sent.find(
+            {"user_id": current_user["id"], "type": "appointment", "appointment_id": {"$in": appointment_ids}}
+        ).to_list(len(appointment_ids) + 1),
+    )
+    apts_map = {a["id"]: a for a in apts_list}
+    already_sent_ids = {r["appointment_id"] for r in already_sent_list}
+    new_reminders = []
     for apt_id in appointment_ids:
-        apt = await db.appointments.find_one({"id": apt_id, "user_id": current_user["id"]}, {"_id": 0})
-        if apt:
-            existing = await db.reminders_sent.find_one(
-                {"user_id": current_user["id"], "type": "appointment", "appointment_id": apt_id}
-            )
-            if not existing:
-                await db.reminders_sent.insert_one({
-                    "id": str(uuid.uuid4()), "user_id": current_user["id"],
-                    "type": "appointment", "appointment_id": apt_id,
-                    "client_id": apt.get("client_id"), "date": apt["date"],
-                    "sent_at": datetime.now(timezone.utc).isoformat()
-                })
-                count += 1
+        apt = apts_map.get(apt_id)
+        if apt and apt_id not in already_sent_ids:
+            new_reminders.append({
+                "id": str(uuid.uuid4()), "user_id": current_user["id"],
+                "type": "appointment", "appointment_id": apt_id,
+                "client_id": apt.get("client_id"), "date": apt["date"],
+                "sent_at": datetime.now(timezone.utc).isoformat()
+            })
+            count += 1
+    if new_reminders:
+        await db.reminders_sent.insert_many(new_reminders)
     return {"success": True, "marked_count": count}
 
 
@@ -255,12 +267,21 @@ async def auto_reminder_check(current_user: dict = Depends(get_current_user)):
     ).to_list(500)
     for r in reminders_sent:
         reminded_ids.add(r.get("appointment_id"))
+    # Batch lookup per clienti senza phone salvato nell'appuntamento
+    missing_phone_ids = [apt["client_id"] for apt in appointments if not apt.get("client_phone") and apt.get("client_id")]
+    if missing_phone_ids:
+        missing_list = await db.clients.find(
+            {"id": {"$in": missing_phone_ids}}, {"_id": 0, "id": 1, "phone": 1}
+        ).to_list(len(missing_phone_ids) + 1)
+        missing_map = {c["id"]: c for c in missing_list}
+    else:
+        missing_map = {}
     pending = []
     for apt in appointments:
         if apt["id"] not in reminded_ids:
             client_phone = apt.get("client_phone", "")
             if not client_phone and apt.get("client_id"):
-                cl = await db.clients.find_one({"id": apt["client_id"]}, {"_id": 0})
+                cl = missing_map.get(apt["client_id"])
                 if cl:
                     client_phone = cl.get("phone", "")
             if client_phone:
@@ -478,8 +499,10 @@ async def send_confirmation_link(appointment_id: str, current_user: dict = Depen
             url = f"https://api.greenapi.com/waInstance{instance_id}/sendMessage/{api_token}"
             resp = await asyncio.to_thread(_req.post, url, json={"chatId": wa_number, "message": message}, timeout=15)
             rjson = {}
-            try: rjson = resp.json()
-            except: pass
+            try:
+                rjson = resp.json()
+            except Exception:
+                rjson = {}
             if resp.status_code == 200 and rjson.get("idMessage"):
                 return {"success": True, "sent": True, "message": message, "client_phone": client_phone}
         except Exception:

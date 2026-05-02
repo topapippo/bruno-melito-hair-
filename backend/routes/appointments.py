@@ -249,7 +249,8 @@ async def get_appointments(
             if ms:
                 svc["name"] = ms.get("name", svc.get("name", ""))
                 svc["category"] = ms.get("category", svc.get("category", ""))
-                svc["price"] = ms.get("price", svc.get("price", 0))
+                # Il prezzo NON viene sovrascritto: si preserva quello salvato nell'appuntamento
+                # (include sconti upselling e prezzi personalizzati).
                 svc["duration"] = ms.get("duration", svc.get("duration", 15))
             elif not svc.get("category"):
                 svc["category"] = _infer_category_from_name(svc.get("name", ""))

@@ -100,6 +100,7 @@ export default function PlanningPage() {
   // Refs
   const scrollRef = useRef(null);
   const touchStartRef = useRef(null);
+  const hasScrolledRef = useRef(false);
 
   // --- Data fetching ---
   // Static data (operators, clients, services) fetched once on mount
@@ -133,9 +134,10 @@ export default function PlanningPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Scroll to current hour on load
+  // Scroll all'ora corrente solo al primo caricamento, non ad ogni cambio data
   useEffect(() => {
-    if (scrollRef.current) {
+    if (!loading && !hasScrolledRef.current && scrollRef.current) {
+      hasScrolledRef.current = true;
       const currentHour = new Date().getHours();
       const targetHour = currentHour >= 8 && currentHour <= 20 ? currentHour : 9;
       const slotIndex = (targetHour - 8) * 4;
