@@ -23,6 +23,8 @@ export async function sendWA(phone, message, { successMsg = '✅ WhatsApp inviat
       toast.error('❌ Credenziali Green API non valide. Controlla Instance ID e Token in Impostazioni → WhatsApp.');
     } else if (err.includes('404') || err.includes('notFound') || err.toLowerCase().includes('not found')) {
       toast.error('❌ Numero non trovato su WhatsApp. Verifica che il numero sia attivo su WhatsApp.');
+    } else if (err.includes('QUOTE_ALLOWED') || err.includes('quota has been exceeded') || err.includes('Monthly quota')) {
+      toast.warning('⚠️ Quota mensile WhatsApp esaurita. Puoi inviare/ricevere messaggi solo dai numeri autorizzati. Aggiorna il piano Green API in Impostazioni → WhatsApp.', { duration: 8000 });
     } else {
       toast.error(`❌ Messaggio non inviato: ${err || 'errore sconosciuto'}. Controlla Green API in Impostazioni.`);
     }

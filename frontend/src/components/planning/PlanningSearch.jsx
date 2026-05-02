@@ -50,7 +50,7 @@ export default function PlanningSearch({ onHighlightClient, highlightedClientId,
 
   return (
     <>
-      <div className="relative z-[60]" ref={containerRef}>
+      <div className="relative" ref={containerRef}>
         <div className="flex items-center">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#C8617A]" />
@@ -77,7 +77,7 @@ export default function PlanningSearch({ onHighlightClient, highlightedClientId,
           </div>
         </div>
         {searchOpen && searchQuery.length >= 2 && (
-          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#F0E6DC] rounded-xl shadow-lg z-50 max-h-80 overflow-auto">
+          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#F0E6DC] rounded-xl shadow-lg z-[200] max-h-80 overflow-auto">
             {searching ? (
               <div className="p-4 text-center">
                 <Loader2 className="w-5 h-5 animate-spin mx-auto text-[#C8617A]" />

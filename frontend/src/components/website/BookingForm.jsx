@@ -265,10 +265,10 @@ export default function BookingForm({
             STEP 1 — SERVIZI
         ══════════════════════════════════════════════════ */}
         {step === 1 && (
-          <div className="slide-up flex flex-col" style={{ maxHeight: '72vh' }}>
+          <div className="slide-up flex flex-col">
 
             {/* ── Hero welcome card ── */}
-            <div className="relative rounded-3xl overflow-hidden mb-5 shadow-xl" style={{ background: `linear-gradient(135deg, ${P} 0%, ${P}BB 50%, #9333EA 100%)` }}>
+            <div className="relative rounded-3xl overflow-hidden mb-4 shadow-xl flex-shrink-0" style={{ background: `linear-gradient(135deg, ${P} 0%, ${P}BB 50%, #9333EA 100%)` }}>
               <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'repeating-linear-gradient(45deg, white 0, white 1px, transparent 0, transparent 50%)', backgroundSize: '12px 12px' }} />
               <div className="relative z-10 p-5 flex items-center gap-4">
                 <div className="float-scissors text-5xl drop-shadow-lg select-none">✂️</div>
@@ -286,12 +286,12 @@ export default function BookingForm({
               <div className="absolute -right-2 bottom-0 w-16 h-16 rounded-full opacity-10 bg-white" />
             </div>
 
-            <div className="mb-3">
+            <div className="mb-3 flex-shrink-0">
               <h2 className="text-xl font-black text-gray-950">✂️ Cosa facciamo oggi?</h2>
               <p className="text-sm text-gray-500 mt-0.5">Tocca una categoria per aprirla e seleziona i servizi</p>
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-2.5 pr-0.5 pb-2">
+            <div className="overflow-y-auto space-y-2.5 pr-0.5 pb-2" style={{ maxHeight: '38vh', minHeight: '80px' }}>
               {(() => {
                 const { groups: byCat, orderedKeys: cats } = groupServicesByCategory(bookingServices);
                 return (
@@ -454,8 +454,8 @@ export default function BookingForm({
               })()}
             </div>
 
-            {/* Sticky bottom */}
-            <div className="sticky bottom-0 bg-white/95 backdrop-blur-md pt-3 border-t border-gray-100 mt-3 space-y-2.5 shadow-[0_-8px_24px_rgba(0,0,0,0.06)]">
+            {/* CTA bottom */}
+            <div className="flex-shrink-0 bg-white/95 backdrop-blur-md pt-3 border-t border-gray-100 mt-3 space-y-2.5 shadow-[0_-8px_24px_rgba(0,0,0,0.06)]">
               {formData.service_ids.length > 0 && (
                 <div className="flex items-center justify-between px-4 py-3 rounded-2xl border-2"
                   style={{ background: `linear-gradient(135deg, ${P}14, ${P}08)`, borderColor: P + '35' }}>

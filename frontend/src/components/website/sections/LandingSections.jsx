@@ -23,15 +23,27 @@ export { AnimatedSection };
 export function ServicesSection({ servicesRef, showServices, setShowServices, landingServiceGroups, cardTemplates, setShowBooking, bookService, bookCard, T }) {
   const [openLandingCats, setOpenLandingCats] = useState({});
   const toggleLCat = (key) => setOpenLandingCats(prev => ({ ...prev, [key]: !prev[key] }));
+  const P = T.primary;
 
   return (
-    <section ref={servicesRef} className="py-20 sm:py-28 relative" style={{ background: `linear-gradient(180deg, ${T.primary}08, ${T.accent}05)` }}>
+    <section ref={servicesRef} className="py-20 sm:py-28 relative" style={{ background: `linear-gradient(180deg, ${P}08, ${T.accent}05)` }}>
+      <style>{`
+        @keyframes svcShimmer { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+        .svc-cta {
+          background: linear-gradient(270deg, ${P}, ${P}CC, #C084FC, ${P}CC, ${P});
+          background-size: 300% 300%;
+          animation: svcShimmer 4s ease infinite;
+        }
+        .svc-cta:hover { transform: scale(1.04) translateY(-2px); box-shadow: 0 10px 28px ${P}50; }
+        .svc-book-btn { transition: all 0.15s cubic-bezier(.34,1.56,.64,1); }
+        .svc-book-btn:hover { transform: scale(1.08) translateY(-1px); }
+      `}</style>
       <div className="max-w-6xl mx-auto px-4">
         <AnimatedSection>
           <div className="w-full text-center mb-4">
-            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>I Nostri Servizi</p>
+            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>✂️ I Nostri Servizi</p>
             <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>Scopri Cosa Offriamo</h2>
-            <p className="text-sm mt-2 max-w-md mx-auto" style={{ color: `${T.text}80` }}>Sfoglia il listino completo e prenota il tuo trattamento preferito</p>
+            <p className="text-sm mt-2 max-w-md mx-auto" style={{ color: `${T.text}80` }}>Sfoglia il listino completo e prenota direttamente il tuo trattamento</p>
           </div>
         </AnimatedSection>
         <div className="space-y-3 mt-8 max-w-2xl mx-auto">
@@ -42,19 +54,34 @@ export function ServicesSection({ servicesRef, showServices, setShowServices, la
               return (
                 <div key={catKey} data-testid={`landing-cat-${catKey}`}>
                   <button type="button" onClick={() => toggleLCat(catKey)}
-                    className="w-full flex items-center justify-between px-6 py-4 rounded-2xl font-black text-white text-left transition-all hover:brightness-110 hover:shadow-lg active:scale-[0.98]"
-                    style={{ backgroundColor: catInfo.color }}>
+                    className="w-full flex items-center justify-between px-6 py-4 rounded-2xl font-black text-white text-left transition-all hover:brightness-110 hover:shadow-lg active:scale-[0.98] shadow-md"
+                    style={{ background: `linear-gradient(135deg, ${catInfo.color}, ${catInfo.color}CC)`, boxShadow: `0 4px 16px ${catInfo.color}40` }}>
                     <span className="text-lg">{catInfo.label}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-normal opacity-80">{catServices.length} servizi</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-bold opacity-90 bg-white/20 px-2.5 py-0.5 rounded-full">{catServices.length} servizi</span>
                       {isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                     </div>
                   </button>
                   {isOpen && (
-                    <div className="bg-white rounded-2xl mt-1 p-4 border border-gray-100 shadow-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl mt-1 border border-gray-100 shadow-sm animate-in fade-in duration-200 overflow-hidden">
                       {catServices.map((service) => (
-                        <div key={service.id} className="py-3 border-b border-gray-100 last:border-0">
-                          <span className="font-bold" style={{ color: T.text }}>{service.name}</span>
+                        <div key={service.id} className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 last:border-0 hover:bg-gray-50/70 transition-colors group">
+                          <div className="min-w-0">
+                            <p className="font-bold text-sm" style={{ color: T.text }}>{service.name}</p>
+                            {service.duration > 0 && <p className="text-xs text-gray-400 mt-0.5">⏱ {service.duration} min</p>}
+                          </div>
+                          <div className="flex items-center gap-3 shrink-0 ml-4">
+                            {service.price > 0 && (
+                              <span className="font-black text-base" style={{ color: catInfo.color }}>€{service.price}</span>
+                            )}
+                            {bookService && (
+                              <button onClick={(e) => { e.stopPropagation(); bookService(service.id); }}
+                                className="svc-book-btn text-xs font-black px-3 py-1.5 rounded-xl text-white shadow-sm"
+                                style={{ backgroundColor: catInfo.color }}>
+                                Prenota →
+                              </button>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -67,27 +94,30 @@ export function ServicesSection({ servicesRef, showServices, setShowServices, la
               return (
                 <div data-testid="landing-cat-cards">
                   <button type="button" onClick={() => toggleLCat('cards')}
-                    className="w-full flex items-center justify-between px-6 py-4 rounded-2xl font-black text-white text-left transition-all hover:brightness-110 hover:shadow-lg active:scale-[0.98]"
-                    style={{ backgroundColor: '#6366F1' }}>
+                    className="w-full flex items-center justify-between px-6 py-4 rounded-2xl font-black text-white text-left transition-all hover:brightness-110 hover:shadow-lg active:scale-[0.98] shadow-md"
+                    style={{ background: 'linear-gradient(135deg, #6366F1, #4F46E5)', boxShadow: '0 4px 16px rgba(99,102,241,0.35)' }}>
                     <span className="flex items-center gap-2 text-lg"><CreditCard className="w-5 h-5" /> Card & Abbonamenti</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-normal opacity-80">{cardTemplates.length}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-bold opacity-90 bg-white/20 px-2.5 py-0.5 rounded-full">{cardTemplates.length}</span>
                       {isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                     </div>
                   </button>
                   {isOpen && (
-                    <div className="bg-white rounded-2xl mt-1 p-4 border border-[#6366F1]/20 shadow-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl mt-1 border border-[#6366F1]/20 shadow-sm animate-in fade-in duration-200 overflow-hidden">
                       {cardTemplates.map((tmpl, i) => (
-                        <div key={tmpl.id || i} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0">
+                        <div key={tmpl.id || i} className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 last:border-0 hover:bg-indigo-50/40 transition-colors">
                           <div>
-                            <span className="font-bold" style={{ color: T.text }}>{tmpl.name}</span>
-                            <span className="text-xs text-[#6366F1] ml-2">{tmpl.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}{tmpl.total_services ? ` · ${tmpl.total_services} servizi` : ''}</span>
+                            <p className="font-bold text-sm" style={{ color: T.text }}>{tmpl.name}</p>
+                            <p className="text-xs text-[#6366F1] mt-0.5">{tmpl.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}{tmpl.total_services ? ` · ${tmpl.total_services} servizi` : ''}</p>
                           </div>
-                          {bookCard && (
-                            <button onClick={() => bookCard(tmpl)} className="text-xs font-bold px-2.5 py-1 rounded-lg text-white transition-all hover:opacity-80 active:scale-95 shrink-0 ml-4" style={{ backgroundColor: '#6366F1' }}>
-                              Prenota
-                            </button>
-                          )}
+                          <div className="flex items-center gap-3 shrink-0 ml-4">
+                            {tmpl.total_value > 0 && <span className="font-black text-base text-indigo-600">€{tmpl.total_value}</span>}
+                            {bookCard && (
+                              <button onClick={() => bookCard(tmpl)} className="svc-book-btn text-xs font-black px-3 py-1.5 rounded-xl text-white bg-indigo-500 hover:bg-indigo-600 shadow-sm">
+                                Prenota →
+                              </button>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -95,10 +125,11 @@ export function ServicesSection({ servicesRef, showServices, setShowServices, la
                 </div>
               );
             })()}
-            <div className="text-center pt-4">
-              <Button onClick={() => setShowBooking(true)} style={{ backgroundColor: T.primary }} className="text-white hover:opacity-90 font-bold px-8 py-6 rounded-xl shadow-lg">
-                <Scissors className="w-4 h-4 mr-2" /> PRENOTA ORA
-              </Button>
+            <div className="text-center pt-6">
+              <button onClick={() => setShowBooking(true)}
+                className="svc-cta text-white font-black px-10 py-5 rounded-2xl text-base shadow-xl transition-all">
+                ✂️ PRENOTA SUBITO
+              </button>
             </div>
           </div>
       </div>
@@ -272,17 +303,24 @@ export function ReviewsSection({ reviews, T, config }) {
         <div className="relative mb-12">
           <div className="reviews-track gap-5" style={{ width: 'max-content', paddingLeft: '1rem' }}>
             {doubled.map((review, idx) => (
-              <div key={`rv-${idx}`} className="w-72 sm:w-80 bg-white/10 backdrop-blur-sm border border-white/15 rounded-3xl p-6 flex flex-col shrink-0">
-                <div className="text-5xl leading-none opacity-15 -mb-1" style={{ color: T.accent, fontFamily: 'Georgia, serif' }}>{'\u201C'}</div>
-                <div className="flex gap-0.5 mb-3">
-                  {[...Array(review.rating || 5)].map((_, i) => (<Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />))}
-                </div>
-                <p className="text-white/80 text-sm leading-relaxed mb-4 flex-1">{review.text}</p>
-                <div className="flex items-center gap-3 pt-3 border-t border-white/10">
-                  <div className={`w-10 h-10 ${AVATAR_BGS[idx % 4]} rounded-full flex items-center justify-center ring-2 ring-white/10`}>
-                    <span className={`${AVATAR_TEXTS[idx % 4]} font-bold text-sm`}>{(review.name || '?')[0]}</span>
+              <div key={`rv-${idx}`}
+                className="w-72 sm:w-80 rounded-3xl p-6 flex flex-col shrink-0 relative overflow-hidden"
+                style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.13), rgba(255,255,255,0.06))', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.18)', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
+                <div className="absolute -top-3 -left-1 text-[84px] leading-none font-black select-none pointer-events-none" style={{ color: T.accent, opacity: 0.22, fontFamily: 'Georgia, serif' }}>{'\u201C'}</div>
+                <div className="relative z-10">
+                  <div className="flex gap-0.5 mb-3">
+                    {[...Array(review.rating || 5)].map((_, i) => (<Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />))}
                   </div>
-                  <span className="text-sm text-white/70 font-semibold">{review.name}</span>
+                  <p className="text-white/85 text-sm leading-relaxed mb-4 flex-1">{review.text}</p>
+                  <div className="flex items-center gap-3 pt-3 border-t border-white/15">
+                    <div className={`w-11 h-11 ${AVATAR_BGS[idx % 4]} rounded-full flex items-center justify-center ring-2 ring-white/20 shadow-lg shrink-0`}>
+                      <span className={`${AVATAR_TEXTS[idx % 4]} font-black text-sm`}>{(review.name || '?')[0]}</span>
+                    </div>
+                    <div>
+                      <p className="text-sm text-white font-bold">{review.name}</p>
+                      <p className="text-[10px] text-white/45 font-semibold">Cliente verificato \u2713</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
@@ -676,6 +714,14 @@ export function TeamSection({ operators, T }) {
 
   return (
     <section className="py-20 sm:py-28 relative overflow-hidden">
+      <style>{`
+        @keyframes teamRingPulse { 0%,100%{transform:scale(1);opacity:0.5} 50%{transform:scale(1.12);opacity:1} }
+        @keyframes teamRingSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+        .team-ring { animation: teamRingPulse 2.5s ease-in-out infinite; }
+        .team-avatar { transition: transform 0.3s cubic-bezier(.34,1.56,.64,1); }
+        .team-card:hover .team-avatar { transform: scale(1.08) translateY(-4px); }
+        .team-card:hover .team-ring { animation-duration: 1.2s; }
+      `}</style>
       {/* Sfondo decorativo */}
       <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${T.primary}08 0%, ${T.accent}06 50%, ${T.primary}04 100%)` }} />
       <div className="absolute top-0 left-0 right-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${T.primary}30, transparent)` }} />
@@ -683,7 +729,7 @@ export function TeamSection({ operators, T }) {
       <div className="relative max-w-6xl mx-auto px-4">
         <AnimatedSection>
           <div className="text-center mb-14">
-            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Il Nostro Team</p>
+            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>👑 Il Nostro Team</p>
             <h2 className="text-3xl sm:text-4xl font-black mb-3" style={{ color: T.text, fontFamily: T.fontDisplay }}>Professionisti al Tuo Servizio</h2>
             <p className="text-sm max-w-md mx-auto" style={{ color: `${T.text}70` }}>
               Un team di esperti appassionati, pronti a valorizzare la tua bellezza.
@@ -691,22 +737,26 @@ export function TeamSection({ operators, T }) {
           </div>
         </AnimatedSection>
 
-        <div className={`grid gap-6 ${active.length === 1 ? 'grid-cols-1 max-w-xs mx-auto' : active.length === 2 ? 'grid-cols-2 max-w-lg mx-auto' : active.length === 3 ? 'grid-cols-3 max-w-2xl mx-auto' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'}`}>
+        <div className={`grid gap-8 ${active.length === 1 ? 'grid-cols-1 max-w-xs mx-auto' : active.length === 2 ? 'grid-cols-2 max-w-lg mx-auto' : active.length === 3 ? 'grid-cols-3 max-w-2xl mx-auto' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'}`}>
           {active.map((op, i) => (
             <AnimatedSection key={op.id} delay={i * 0.1}>
-              <div className="group text-center">
+              <div className="team-card group text-center">
                 {/* Avatar cerchio grande */}
-                <div className="relative mx-auto mb-4" style={{ width: '120px', height: '120px' }}>
-                  <div className="w-full h-full rounded-full flex items-center justify-center text-white text-3xl font-black shadow-lg group-hover:scale-105 transition-transform duration-300"
-                    style={{ background: `linear-gradient(135deg, ${op.color || T.primary}, ${op.color || T.primary}CC)` }}>
+                <div className="relative mx-auto mb-5" style={{ width: '130px', height: '130px' }}>
+                  {/* Anello pulsante - sempre visibile */}
+                  <div className="team-ring absolute -inset-2 rounded-full border-2"
+                    style={{ borderColor: op.color || T.primary, borderStyle: 'dashed', opacity: 0.4 }} />
+                  {/* Anello solido su hover */}
+                  <div className="absolute -inset-1 rounded-full border-2 opacity-0 group-hover:opacity-80 transition-opacity duration-300"
+                    style={{ borderColor: op.color || T.primary }} />
+                  <div className="team-avatar w-full h-full rounded-full flex items-center justify-center text-white text-3xl font-black shadow-xl"
+                    style={{ background: `linear-gradient(135deg, ${op.color || T.primary}, ${op.color || T.primary}CC)`, boxShadow: `0 8px 24px ${op.color || T.primary}50` }}>
                     {getInitials(op.name)}
                   </div>
-                  {/* Anello decorativo */}
-                  <div className="absolute -inset-1.5 rounded-full border-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                    style={{ borderColor: op.color || T.primary }} />
-                  {/* Punto verde "disponibile" */}
-                  <div className="absolute bottom-1 right-1 w-5 h-5 bg-emerald-400 rounded-full border-2 border-white shadow-sm flex items-center justify-center">
-                    <div className="w-2 h-2 bg-white rounded-full" />
+                  {/* Badge "Disponibile" */}
+                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-emerald-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow whitespace-nowrap flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                    Disponibile
                   </div>
                 </div>
 
@@ -714,7 +764,7 @@ export function TeamSection({ operators, T }) {
                 <p className="text-sm font-semibold mt-1" style={{ color: op.color || T.primary }}>{roles[i % roles.length]}</p>
                 <div className="flex items-center justify-center gap-0.5 mt-2">
                   {[1,2,3,4,5].map(s => (
-                    <Star key={s} className="w-3 h-3 fill-amber-400 text-amber-400" />
+                    <Star key={s} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                   ))}
                 </div>
               </div>

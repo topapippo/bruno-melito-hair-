@@ -13,8 +13,6 @@ import ClientsPage from "./pages/ClientsPage";
 import ServicesPage from "./pages/ServicesPage";
 import HistoryPage from "./pages/HistoryPage";
 import SettingsPage from "./pages/SettingsPage";
-import MonthlyView from "./pages/MonthlyView"; // mantenuto per route redirect
-import WeeklyView from "./pages/WeeklyView"; // mantenuto per route redirect
 import AppointmentsPage from "./pages/AppointmentsPage";
 import OperatorsPage from "./pages/OperatorsPage";
 import PlanningPage from "./pages/PlanningPage";

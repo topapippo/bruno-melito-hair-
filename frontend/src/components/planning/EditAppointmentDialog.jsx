@@ -1017,21 +1017,26 @@ export default function EditAppointmentDialog({
                   )}
                   {/* Prepaid / Card button - sempre visibile come collapsible */}
                   <Button type="button" variant={paymentMethod === 'prepaid' ? 'default' : 'outline'}
-                    className={`w-full mt-1 ${paymentMethod === 'prepaid' ? 'bg-purple-600 text-white' : 'border-2'}`}
+                    className={`w-full mt-1 font-bold ${paymentMethod === 'prepaid' ? 'bg-purple-600 text-white shadow-md' : clientCards.length > 0 ? 'border-2 border-purple-400 text-purple-700 bg-purple-50 hover:bg-purple-100' : 'border-2'}`}
                     onClick={() => setPaymentMethod(paymentMethod === 'prepaid' ? 'cash' : 'prepaid')}
                     data-testid="payment-method-prepaid">
                     <Ticket className="w-4 h-4 mr-2" /> Abb. / Prepagata
-                    {clientCards.length > 0 && <span className="ml-1 text-xs opacity-75">({clientCards.length})</span>}
+                    {clientCards.length > 0 && <span className={`ml-2 text-xs font-black px-2 py-0.5 rounded-full ${paymentMethod === 'prepaid' ? 'bg-white/30 text-white' : 'bg-purple-500 text-white'}`}>{clientCards.length}</span>}
                   </Button>
                   {paymentMethod === 'prepaid' && (
                     <div className="space-y-2 mt-2">
                       {clientCards.length > 0 ? clientCards.map(card => (
                         <button key={card.id} type="button" onClick={() => setSelectedCardId(card.id)}
-                          className={`w-full p-3 rounded-xl border-2 text-left transition-all ${selectedCardId === card.id ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-400'}`}
+                          className={`w-full p-3.5 rounded-xl border-2 text-left transition-all ${selectedCardId === card.id ? 'border-purple-500 bg-purple-50 shadow-md' : 'border-gray-200 hover:border-purple-300 hover:bg-purple-50/50'}`}
                           data-testid={`select-card-${card.id}`}>
                           <div className="flex justify-between items-center">
-                            <div><p className="font-bold text-sm">{card.name}</p><p className="text-xs text-gray-500">{card.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}</p></div>
-                            <div className="text-right"><p className="font-black text-green-600">{'\u20AC'}{card.remaining_value?.toFixed(2)}</p>{card.total_services && <p className="text-xs text-gray-500">{card.used_services}/{card.total_services}</p>}</div>
+                            <div className="flex items-center gap-2">
+                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${selectedCardId === card.id ? 'border-purple-500 bg-purple-500' : 'border-gray-300'}`}>
+                                {selectedCardId === card.id && <Check className="w-3 h-3 text-white" />}
+                              </div>
+                              <div><p className="font-bold text-sm">{card.name}</p><p className="text-xs text-gray-500">{card.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}</p></div>
+                            </div>
+                            <div className="text-right"><p className={`font-black text-base ${selectedCardId === card.id ? 'text-purple-600' : 'text-green-600'}`}>{'\u20AC'}{card.remaining_value?.toFixed(2)}</p>{card.total_services && <p className="text-xs text-gray-500">{card.used_services}/{card.total_services}</p>}</div>
                           </div>
                         </button>
                       )) : (
@@ -1195,8 +1200,17 @@ export default function EditAppointmentDialog({
             )}
           </div>
 
-          {/* FOOTER FISSO */}
-          {!checkoutMode && (
+          {/* FOOTER FISSO — visibile sempre */}
+          {checkoutMode ? (
+            <div className="shrink-0 px-5 py-2.5 bg-white border-t-2 border-[#F0E6DC] flex items-center gap-2">
+              <Button type="button" variant="destructive" onClick={handleDelete} disabled={deleting} size="sm" data-testid="delete-appointment-btn-checkout">
+                {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Trash2 className="w-3.5 h-3.5 mr-1" /> Elimina</>}
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={resetCheckout} className="ml-auto border-[#C8617A] text-[#C8617A]">
+                ← Modifica appuntamento
+              </Button>
+            </div>
+          ) : (
             <div className="shrink-0 px-5 py-3 bg-white border-t-2 border-[#F0E6DC] shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
               {formData.service_ids.length > 0 && (() => {
                 const selCard = clientCards.find(c => c.id === preSelectedCardId);

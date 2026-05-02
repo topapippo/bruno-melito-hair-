@@ -369,6 +369,7 @@ export default function WebsitePage() {
         @keyframes heroFadeIn { from { opacity: 0; transform: translateY(25px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
         @keyframes pulseGlow { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.6; } }
+        @keyframes heroShimmer { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
         .hero-animate { animation: heroFadeIn 1s ease forwards; opacity: 0; }
         .hero-d1 { animation-delay: 0.15s; }
         .hero-d2 { animation-delay: 0.3s; }
@@ -378,6 +379,13 @@ export default function WebsitePage() {
         .float-slow { animation: float 6s ease-in-out infinite; }
         .float-med { animation: float 4s ease-in-out infinite 1s; }
         .pulse-glow { animation: pulseGlow 3s ease-in-out infinite; }
+        .hero-cta-primary {
+          background: linear-gradient(270deg, var(--theme-primary), color-mix(in srgb, var(--theme-primary) 80%, white), #C084FC, color-mix(in srgb, var(--theme-primary) 80%, white), var(--theme-primary)) !important;
+          background-size: 300% 300% !important;
+          animation: heroShimmer 4s ease infinite;
+          transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .hero-cta-primary:hover { transform: scale(1.06) translateY(-3px) !important; box-shadow: 0 16px 40px rgba(0,0,0,0.3) !important; }
       `}</style>
 
       {/* NAVBAR */}
@@ -509,9 +517,9 @@ export default function WebsitePage() {
               {config.hero_description || ''}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center mb-10 hero-animate hero-d5">
-              <Button onClick={() => setShowBooking(true)} style={{ backgroundColor: T.primary }} className="text-white hover:opacity-90 font-black text-base px-10 py-7 rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300" data-testid="website-hero-book-btn">
-                <Scissors className="w-5 h-5 mr-2" /> PRENOTA ORA
-              </Button>
+              <button onClick={() => setShowBooking(true)} className="hero-cta-primary text-white font-black text-base px-10 py-7 rounded-2xl shadow-lg" data-testid="website-hero-book-btn">
+                <Scissors className="w-5 h-5 mr-2 inline" /> PRENOTA ORA
+              </button>
               <Button onClick={openWhatsApp} className="bg-[#25D366] hover:bg-[#20BD5A] text-white font-black text-base px-10 py-7 rounded-2xl shadow-lg shadow-green-400/20 hover:shadow-xl hover:scale-105 transition-all duration-300" data-testid="website-hero-whatsapp-btn">
                 <MessageCircle className="w-5 h-5 mr-2" /> WHATSAPP
               </Button>
