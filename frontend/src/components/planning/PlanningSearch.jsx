@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import api, { API } from '../../lib/api';
 import { fmtDate } from '../../lib/dateUtils';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,18 @@ export default function PlanningSearch({ onHighlightClient, highlightedClientId,
   const [searchResults, setSearchResults] = useState({ clients: [], appointments: [] });
   const [searchOpen, setSearchOpen] = useState(false);
   const [searching, setSearching] = useState(false);
+  const containerRef = useRef(null);
+
+  // Chiude il dropdown cliccando fuori
+  useEffect(() => {
+    const handle = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setSearchOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handle);
+    return () => document.removeEventListener('mousedown', handle);
+  }, []);
 
   const handleSearch = async (query) => {
     setSearchQuery(query);
@@ -38,7 +50,7 @@ export default function PlanningSearch({ onHighlightClient, highlightedClientId,
 
   return (
     <>
-      <div className="relative">
+      <div className="relative z-[60]" ref={containerRef}>
         <div className="flex items-center">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#C8617A]" />

@@ -75,7 +75,7 @@ export default function BookingForm({
 
   useEffect(() => {
     if (!config.hours && !blockedSlots.length) return;
-    const available = getAvailableSlotsForDate(formData.date, config.hours, blockedSlots);
+    const available = getAvailableSlotsForDate(formData.date, config.hours, []);
     if (available.length > 0) {
       if (!available.includes(formData.time)) setFormData(prev => ({ ...prev, time: available[0] }));
     } else {
@@ -129,32 +129,50 @@ export default function BookingForm({
   const P = T.primary;
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(160deg, #FFF0F5 0%, #FEFEFE 55%, #F3EEFF 100%)' }}>
+    <div className="min-h-screen relative overflow-hidden" style={{ background: 'linear-gradient(160deg, #FFF0F5 0%, #FEFEFE 50%, #F0EEFF 100%)' }}>
+
+      {/* Decorative background blobs */}
+      <div className="fixed top-[-80px] right-[-80px] w-72 h-72 rounded-full pointer-events-none" style={{ background: `radial-gradient(circle, ${P}18 0%, transparent 70%)` }} />
+      <div className="fixed bottom-[-60px] left-[-60px] w-56 h-56 rounded-full pointer-events-none" style={{ background: `radial-gradient(circle, ${P}14 0%, transparent 70%)` }} />
+
       <style>{`
-        @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes popIn  { 0% { transform: scale(0.7); opacity: 0; } 65% { transform: scale(1.12); } 100% { transform: scale(1); opacity: 1; } }
-        @keyframes pulseRing { 0%,100%{box-shadow:0 0 0 0 ${P}40} 50%{box-shadow:0 0 0 6px ${P}00} }
-        .slide-up { animation: slideUp 0.28s cubic-bezier(.16,1,.3,1) forwards; }
-        .pop-in   { animation: popIn  0.22s ease forwards; }
+        @keyframes slideUp  { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes popIn    { 0% { transform: scale(0.7); opacity: 0; } 65% { transform: scale(1.12); } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes pulseRing{ 0%,100%{box-shadow:0 0 0 0 ${P}40} 50%{box-shadow:0 0 0 8px ${P}00} }
+        @keyframes shimmerBtn { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+        @keyframes floatScissors { 0%,100%{transform:translateY(0) rotate(-12deg)} 50%{transform:translateY(-9px) rotate(-3deg)} }
+        @keyframes gradientShift { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+        @keyframes heartbeat { 0%,100%{transform:scale(1)} 14%{transform:scale(1.08)} 28%{transform:scale(1)} }
+
+        .slide-up   { animation: slideUp 0.30s cubic-bezier(.16,1,.3,1) forwards; }
+        .pop-in     { animation: popIn 0.22s ease forwards; }
+        .float-scissors { animation: floatScissors 3s ease-in-out infinite; }
+
+        /* ── CTA principale shimmer ── */
+        .bk-cta {
+          background: linear-gradient(270deg, ${P}, ${P}CC, #C084FC, ${P}CC, ${P});
+          background-size: 300% 300%;
+          animation: gradientShift 4s ease infinite;
+          transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .bk-cta:hover:not(:disabled) {
+          transform: scale(1.025) translateY(-2px) !important;
+          box-shadow: 0 10px 30px ${P}50 !important;
+        }
+        .bk-cta:disabled { opacity: 0.45; animation: none; background: #D1D5DB; }
 
         /* ── Giorni calendario ── */
-        .bk-day { transition: all 0.14s cubic-bezier(.34,1.56,.64,1); }
+        .bk-day { transition: all 0.15s cubic-bezier(.34,1.56,.64,1); }
         .bk-day-avail:hover {
-          background: linear-gradient(135deg, ${P}22, ${P}14) !important;
+          background: linear-gradient(135deg, ${P}28, ${P}16) !important;
           color: ${P} !important;
-          transform: scale(1.18) !important;
-          box-shadow: 0 3px 10px ${P}28 !important;
+          transform: scale(1.2) !important;
+          box-shadow: 0 4px 12px ${P}30 !important;
         }
-        .bk-day-today:hover {
-          background: #FEF3C7 !important;
-          transform: scale(1.12) !important;
-        }
-        .bk-day-sel {
-          animation: pulseRing 2s ease-in-out infinite;
-        }
+        .bk-day-sel { animation: pulseRing 2.5s ease-in-out infinite; }
 
         /* ── Slot orari ── */
-        .bk-ts { transition: all 0.14s cubic-bezier(.34,1.56,.64,1); }
+        .bk-ts { transition: all 0.15s cubic-bezier(.34,1.56,.64,1); }
         .bk-ts-avail {
           background: white;
           color: ${P};
@@ -165,15 +183,16 @@ export default function BookingForm({
           background: ${P} !important;
           color: white !important;
           border-color: ${P} !important;
-          transform: scale(1.07) translateY(-2px) !important;
-          box-shadow: 0 5px 16px ${P}45 !important;
+          transform: scale(1.09) translateY(-2px) !important;
+          box-shadow: 0 6px 18px ${P}45 !important;
         }
         .bk-ts-sel {
-          background: linear-gradient(135deg, ${P}, ${P}CC) !important;
+          background: linear-gradient(135deg, ${P}, ${P}BB) !important;
           color: white !important;
           border: 2px solid ${P} !important;
-          box-shadow: 0 5px 16px ${P}45 !important;
-          transform: scale(1.05) !important;
+          box-shadow: 0 6px 18px ${P}50 !important;
+          transform: scale(1.06) !important;
+          animation: heartbeat 2s ease-in-out infinite;
         }
         .bk-ts-occ {
           background: #F1F5F9 !important;
@@ -186,28 +205,33 @@ export default function BookingForm({
         .bk-svc { transition: all 0.18s cubic-bezier(.34,1.56,.64,1); }
         .bk-svc:hover {
           transform: translateY(-2px) !important;
-          box-shadow: 0 6px 22px rgba(0,0,0,0.09) !important;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.10) !important;
         }
 
         /* ── Operatori ── */
         .bk-op { transition: all 0.15s ease; }
-        .bk-op:hover { transform: scale(1.04); }
+        .bk-op:hover { transform: scale(1.05); }
 
-        /* ── Pulsante prossimo giorno ── */
-        .bk-nextday { transition: all 0.18s cubic-bezier(.34,1.56,.64,1); }
-        .bk-nextday:hover { transform: scale(1.025) translateY(-1px) !important; box-shadow: 0 6px 20px ${P}35 !important; }
+        /* ── Prossimo giorno ── */
+        .bk-nextday { transition: all 0.2s cubic-bezier(.34,1.56,.64,1); }
+        .bk-nextday:hover { transform: scale(1.025) translateY(-2px) !important; box-shadow: 0 8px 24px ${P}40 !important; }
       `}</style>
 
       {/* ── HEADER ── */}
-      <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm py-3 px-4">
+      <div className="sticky top-0 z-50 bg-white/90 backdrop-blur-lg border-b border-gray-100 shadow-sm py-3 px-4">
         <div className="max-w-lg mx-auto flex items-center gap-3">
           <button onClick={onBack} className="p-2 rounded-xl hover:bg-gray-100 transition-colors text-gray-600" data-testid="website-booking-back-btn">
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <img src="/logo.png?v=4" alt={config.salon_name} className="w-9 h-9 rounded-xl border border-gray-200" />
+          <div className="w-9 h-9 rounded-xl border-2 overflow-hidden shrink-0" style={{ borderColor: P + '40' }}>
+            <img src="/logo.png?v=4" alt={config.salon_name} className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
+          </div>
           <div>
             <p className="font-black text-gray-950 text-sm leading-tight">{config.salon_name || 'BRUNO MELITO HAIR'}</p>
-            <p className="text-xs font-semibold" style={{ color: P }}>✨ Prenota il tuo appuntamento</p>
+            <p className="text-xs font-bold" style={{ color: P }}>✨ Prenota il tuo appuntamento</p>
+          </div>
+          <div className="ml-auto text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: P + '18', color: P }}>
+            Step {step}/3
           </div>
         </div>
       </div>
@@ -220,15 +244,15 @@ export default function BookingForm({
             <div key={s.n} className={`flex items-start ${idx < STEPS.length - 1 ? 'flex-1' : ''}`}>
               <div className="flex flex-col items-center">
                 <div
-                  className={`w-12 h-12 rounded-2xl flex items-center justify-center text-base font-black shadow-sm transition-all duration-300
-                    ${step > s.n ? 'bg-emerald-500 text-white' : step === s.n ? 'text-white shadow-lg scale-110' : 'bg-gray-100 text-gray-500'}`}
-                  style={step === s.n ? { background: `linear-gradient(135deg, ${P}, ${P}BB)` } : {}}>
+                  className={`w-12 h-12 rounded-2xl flex items-center justify-center text-base font-black shadow-md transition-all duration-300
+                    ${step > s.n ? 'bg-emerald-500 text-white scale-95' : step === s.n ? 'text-white shadow-xl scale-110' : 'bg-gray-100 text-gray-400'}`}
+                  style={step === s.n ? { background: `linear-gradient(135deg, ${P}, ${P}BB)`, boxShadow: `0 8px 24px ${P}45` } : {}}>
                   {step > s.n ? '✓' : s.emoji}
                 </div>
-                <span className={`text-[10px] font-bold mt-1.5 ${step >= s.n ? 'text-gray-800' : 'text-gray-400'}`}>{s.label}</span>
+                <span className={`text-[10px] font-black mt-1.5 transition-colors ${step >= s.n ? 'text-gray-800' : 'text-gray-400'}`}>{s.label}</span>
               </div>
               {idx < STEPS.length - 1 && (
-                <div className="flex-1 h-1.5 mt-5 mx-2 rounded-full bg-gray-200 overflow-hidden">
+                <div className="flex-1 h-2 mt-5 mx-2 rounded-full bg-gray-100 overflow-hidden shadow-inner">
                   <div className="h-full rounded-full transition-all duration-500"
                     style={{ width: step > s.n ? '100%' : '0%', background: `linear-gradient(90deg, ${P}, ${P}BB)` }} />
                 </div>
@@ -242,9 +266,29 @@ export default function BookingForm({
         ══════════════════════════════════════════════════ */}
         {step === 1 && (
           <div className="slide-up flex flex-col" style={{ maxHeight: '72vh' }}>
-            <div className="mb-4">
-              <h2 className="text-2xl font-black text-gray-950">✂️ Cosa facciamo oggi?</h2>
-              <p className="text-sm text-gray-600 mt-0.5">Tocca per selezionare uno o più servizi</p>
+
+            {/* ── Hero welcome card ── */}
+            <div className="relative rounded-3xl overflow-hidden mb-5 shadow-xl" style={{ background: `linear-gradient(135deg, ${P} 0%, ${P}BB 50%, #9333EA 100%)` }}>
+              <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'repeating-linear-gradient(45deg, white 0, white 1px, transparent 0, transparent 50%)', backgroundSize: '12px 12px' }} />
+              <div className="relative z-10 p-5 flex items-center gap-4">
+                <div className="float-scissors text-5xl drop-shadow-lg select-none">✂️</div>
+                <div>
+                  <p className="text-white font-black text-xl leading-tight drop-shadow">Benvenuto/a!</p>
+                  <p className="text-white/85 text-sm font-semibold mt-0.5">Scegli i servizi e prenota in 3 passi</p>
+                  <div className="flex items-center gap-3 mt-2.5">
+                    <span className="text-[10px] font-black text-white/70 bg-white/20 px-2.5 py-1 rounded-full">⚡ Veloce</span>
+                    <span className="text-[10px] font-black text-white/70 bg-white/20 px-2.5 py-1 rounded-full">🔒 Sicuro</span>
+                    <span className="text-[10px] font-black text-white/70 bg-white/20 px-2.5 py-1 rounded-full">✅ Confermato</span>
+                  </div>
+                </div>
+              </div>
+              <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full opacity-15 bg-white" />
+              <div className="absolute -right-2 bottom-0 w-16 h-16 rounded-full opacity-10 bg-white" />
+            </div>
+
+            <div className="mb-3">
+              <h2 className="text-xl font-black text-gray-950">✂️ Cosa facciamo oggi?</h2>
+              <p className="text-sm text-gray-500 mt-0.5">Tocca una categoria per aprirla e seleziona i servizi</p>
             </div>
 
             <div className="flex-1 overflow-y-auto space-y-2.5 pr-0.5 pb-2">
@@ -259,39 +303,42 @@ export default function BookingForm({
                       return (
                         <div key={cat} data-testid={`booking-cat-${cat}`}>
                           <button type="button" onClick={() => toggleCat(`b_${cat}`)}
-                            className="w-full flex items-center justify-between px-4 py-4 rounded-2xl font-black text-white text-left transition-all hover:brightness-110 active:scale-[0.98] shadow"
-                            style={{ backgroundColor: catInfo.color }}>
+                            className="w-full flex items-center justify-between px-4 py-4 rounded-2xl font-black text-white text-left transition-all hover:brightness-110 active:scale-[0.98] shadow-lg"
+                            style={{
+                              background: `linear-gradient(135deg, ${catInfo.color}, ${catInfo.color}BB)`,
+                              boxShadow: `0 4px 16px ${catInfo.color}30`,
+                            }}>
                             <span className="flex items-center gap-2.5">
                               <span className="text-base">{catInfo.label}</span>
                               {selectedInCat > 0 && (
-                                <span className="bg-white/30 text-white text-xs font-bold px-2 py-0.5 rounded-full">{selectedInCat} ✓</span>
+                                <span className="bg-white/30 text-white text-xs font-black px-2.5 py-0.5 rounded-full animate-pulse">{selectedInCat} ✓</span>
                               )}
                             </span>
-                            <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                            <ChevronDown className={`w-5 h-5 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
                           </button>
                           {isOpen && (
-                            <div className="mt-2 space-y-2 animate-in fade-in duration-200">
+                            <div className="mt-2 space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
                               {byCat[cat].map(service => {
                                 const isSel = formData.service_ids.includes(service.id);
                                 return (
                                   <div key={service.id} onClick={() => toggleService(service.id)}
                                     className="bk-svc px-4 py-4 rounded-2xl border-2 cursor-pointer bg-white active:scale-[0.98]"
                                     style={isSel
-                                      ? { borderColor: P, backgroundColor: P + '12', boxShadow: `0 2px 12px ${P}20` }
-                                      : { borderColor: '#D1D5DB' }}
+                                      ? { borderColor: P, background: `linear-gradient(135deg, white, ${P}0A)`, boxShadow: `0 4px 16px ${P}25` }
+                                      : { borderColor: '#E5E7EB' }}
                                     data-testid={`website-service-${service.id}`}>
                                     <div className="flex items-center justify-between gap-3">
                                       <div className="flex items-center gap-3 min-w-0">
-                                        <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
-                                          style={isSel ? { backgroundColor: P, borderColor: P } : { borderColor: '#9CA3AF' }}>
-                                          {isSel && <span className="text-white text-[10px] font-black pop-in">✓</span>}
+                                        <div className="w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all duration-200"
+                                          style={isSel ? { background: P, borderColor: P } : { borderColor: '#9CA3AF' }}>
+                                          {isSel && <span className="text-white text-[11px] font-black pop-in">✓</span>}
                                         </div>
                                         <div className="min-w-0">
                                           <p className="font-bold text-gray-950 truncate">{service.name}</p>
                                           <p className="text-xs text-gray-500 mt-0.5">⏱ {service.duration} min</p>
                                         </div>
                                       </div>
-                                      <p className="font-black text-lg flex-shrink-0" style={{ color: isSel ? P : '#111827' }}>€{service.price}</p>
+                                      <p className="font-black text-xl flex-shrink-0" style={{ color: isSel ? P : '#111827' }}>€{service.price}</p>
                                     </div>
                                   </div>
                                 );
@@ -307,13 +354,13 @@ export default function BookingForm({
                       return (
                         <div data-testid="booking-cat-cards">
                           <button type="button" onClick={() => toggleCat('b_cards')}
-                            className="w-full flex items-center justify-between px-4 py-4 rounded-2xl font-black text-white text-left transition-all hover:brightness-110 active:scale-[0.98] shadow"
-                            style={{ backgroundColor: '#6366F1' }}>
+                            className="w-full flex items-center justify-between px-4 py-4 rounded-2xl font-black text-white text-left transition-all hover:brightness-110 active:scale-[0.98] shadow-lg"
+                            style={{ background: 'linear-gradient(135deg, #6366F1, #4F46E5)', boxShadow: '0 4px 16px rgba(99,102,241,0.3)' }}>
                             <span className="flex items-center gap-2.5"><CreditCard className="w-4 h-4" /><span>Card & Abbonamenti</span></span>
-                            <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                            <ChevronDown className={`w-5 h-5 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
                           </button>
                           {isOpen && (
-                            <div className="mt-2 space-y-2 animate-in fade-in duration-200">
+                            <div className="mt-2 space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
                               {cardTemplates.map((tmpl, i) => {
                                 const isSel = formData.notes?.includes(`[CARD: ${tmpl.name}]`);
                                 return (
@@ -328,7 +375,7 @@ export default function BookingForm({
                                       }
                                     }}
                                     className="bk-svc px-4 py-4 rounded-2xl border-2 cursor-pointer bg-white active:scale-[0.98]"
-                                    style={isSel ? { borderColor: '#6366F1', backgroundColor: '#EEF2FF' } : { borderColor: '#D1D5DB' }}
+                                    style={isSel ? { borderColor: '#6366F1', background: 'linear-gradient(135deg, white, #EEF2FF)' } : { borderColor: '#E5E7EB' }}
                                     data-testid={`website-card-template-${i}`}>
                                     <div className="flex items-center justify-between">
                                       <div>
@@ -336,7 +383,7 @@ export default function BookingForm({
                                         <p className="text-xs text-indigo-500 mt-0.5">{tmpl.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}{tmpl.total_services ? ` · ${tmpl.total_services} servizi` : ''}</p>
                                       </div>
                                       <div className="text-right">
-                                        <p className="font-black text-gray-950 text-lg">€{tmpl.total_value}</p>
+                                        <p className="font-black text-gray-950 text-xl">€{tmpl.total_value}</p>
                                         {isSel && <span className="text-[10px] font-bold text-indigo-600">✓ Selezionato</span>}
                                       </div>
                                     </div>
@@ -355,16 +402,16 @@ export default function BookingForm({
                       return (
                         <div data-testid="booking-cat-promos">
                           <button type="button" onClick={() => toggleCat('b_promos')}
-                            className="w-full flex items-center justify-between px-4 py-4 rounded-2xl font-black text-white text-left transition-all hover:brightness-110 active:scale-[0.98] shadow"
-                            style={{ backgroundColor: '#F59E0B' }}>
+                            className="w-full flex items-center justify-between px-4 py-4 rounded-2xl font-black text-white text-left transition-all hover:brightness-110 active:scale-[0.98] shadow-lg"
+                            style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 4px 16px rgba(245,158,11,0.3)' }}>
                             <span className="flex items-center gap-2.5">
                               <Gift className="w-4 h-4" /><span>🎁 Promozioni Attive</span>
-                              {selectedPromos > 0 && <span className="bg-white/30 text-white text-xs font-bold px-2 py-0.5 rounded-full">{selectedPromos}</span>}
+                              {selectedPromos > 0 && <span className="bg-white/30 text-white text-xs font-black px-2.5 py-0.5 rounded-full">{selectedPromos}</span>}
                             </span>
-                            <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                            <ChevronDown className={`w-5 h-5 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
                           </button>
                           {isOpen && (
-                            <div className="mt-2 space-y-2 animate-in fade-in duration-200">
+                            <div className="mt-2 space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
                               {publicPromos.map(promo => {
                                 const isSel = (formData.notes || '').includes(`[PROMO: ${promo.name}]`);
                                 return (
@@ -383,7 +430,7 @@ export default function BookingForm({
                                       }
                                     }}
                                     className="bk-svc px-4 py-4 rounded-2xl border-2 cursor-pointer bg-white active:scale-[0.98]"
-                                    style={isSel ? { borderColor: '#F59E0B', backgroundColor: '#FFFBEB' } : { borderColor: '#D1D5DB' }}
+                                    style={isSel ? { borderColor: '#F59E0B', background: 'linear-gradient(135deg, white, #FFFBEB)' } : { borderColor: '#E5E7EB' }}
                                     data-testid={`website-promo-${promo.id}`}>
                                     <div className="flex items-center justify-between">
                                       <div>
@@ -392,7 +439,7 @@ export default function BookingForm({
                                       </div>
                                       {isSel
                                         ? <span className="text-xs font-bold text-amber-800 bg-amber-100 px-2.5 py-1 rounded-full">✓ Aggiunta</span>
-                                        : <span className="text-xs font-bold text-amber-800 bg-amber-100 px-2.5 py-1 rounded-full">PROMO</span>}
+                                        : <span className="text-xs font-bold text-amber-800 bg-amber-100 px-2.5 py-1 rounded-full">🎁 PROMO</span>}
                                     </div>
                                   </div>
                                 );
@@ -408,24 +455,23 @@ export default function BookingForm({
             </div>
 
             {/* Sticky bottom */}
-            <div className="sticky bottom-0 bg-white/95 backdrop-blur-sm pt-3 border-t border-gray-200 mt-2 space-y-2">
+            <div className="sticky bottom-0 bg-white/95 backdrop-blur-md pt-3 border-t border-gray-100 mt-3 space-y-2.5 shadow-[0_-8px_24px_rgba(0,0,0,0.06)]">
               {formData.service_ids.length > 0 && (
                 <div className="flex items-center justify-between px-4 py-3 rounded-2xl border-2"
-                  style={{ backgroundColor: P + '12', borderColor: P + '40' }}>
+                  style={{ background: `linear-gradient(135deg, ${P}14, ${P}08)`, borderColor: P + '35' }}>
                   <span className="text-sm font-bold text-gray-800">
                     {selectedServices.length} servizio{selectedServices.length > 1 ? 'i' : ''} · {totalDuration} min
                   </span>
-                  <span className="font-black text-lg" style={{ color: P }}>€{totalPrice}</span>
+                  <span className="font-black text-xl" style={{ color: P }}>€{totalPrice}</span>
                 </div>
               )}
-              <Button
+              <button type="button"
                 onClick={() => setStep(2)}
                 disabled={formData.service_ids.length === 0}
-                className="w-full text-white font-black py-6 rounded-2xl shadow-md hover:shadow-xl hover:scale-[1.02] transition-all duration-200 disabled:opacity-40"
-                style={{ background: formData.service_ids.length > 0 ? `linear-gradient(135deg, ${P}, ${P}CC)` : undefined }}
+                className="bk-cta w-full text-white font-black py-5 rounded-2xl text-base"
                 data-testid="website-step1-next">
-                Scegli il giorno <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
+                Scegli il giorno &nbsp; →
+              </button>
             </div>
           </div>
         )}
@@ -434,15 +480,15 @@ export default function BookingForm({
             STEP 2 — DATA E ORA
         ══════════════════════════════════════════════════ */}
         {step === 2 && (
-          <div className="space-y-4 slide-up">
+          <div className="space-y-5 slide-up">
             <div>
               <h2 className="text-2xl font-black text-gray-950">📅 Quando ci vediamo?</h2>
-              <p className="text-sm text-gray-600 mt-0.5">Scegli il giorno e l'orario preferito</p>
+              <p className="text-sm text-gray-500 mt-0.5">Scegli il giorno e l'orario preferito</p>
             </div>
 
             {/* CALENDARIO */}
-            <div className="bg-white rounded-3xl shadow-md border border-gray-200 overflow-hidden" data-testid="booking-date-input">
-              <div className="flex items-center justify-between px-4 py-3.5 border-b border-gray-200">
+            <div className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden" data-testid="booking-date-input">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100" style={{ background: `linear-gradient(135deg, ${P}0A, white)` }}>
                 <button type="button"
                   onClick={() => setCalMonth(prev => subMonths(prev, 1))}
                   disabled={startOfMonth(calMonth) <= startOfMonth(new Date())}
@@ -457,9 +503,9 @@ export default function BookingForm({
                 </button>
               </div>
               {/* Intestazioni giorni */}
-              <div className="grid grid-cols-7 px-3 pt-2.5">
+              <div className="grid grid-cols-7 px-3 pt-3">
                 {['Lun','Mar','Mer','Gio','Ven','Sab','Dom'].map((d, i) => (
-                  <div key={i} className="text-center text-[11px] font-black text-gray-500 py-1 tracking-wide">{d}</div>
+                  <div key={i} className={`text-center text-[11px] font-black py-1 tracking-wide ${i >= 5 ? 'text-rose-400' : 'text-gray-400'}`}>{d}</div>
                 ))}
               </div>
               {/* Griglia giorni */}
@@ -484,17 +530,20 @@ export default function BookingForm({
                     const dayItName = dayNamesIt[getDay(day)];
                     const isAllDay = allDayBlocked.dates.has(dateStr) || allDayBlocked.recurring_days.has(dayItName);
                     const isDisabled = isPast || isClosed || isAllDay;
+                    const isWeekend = getDay(day) === 0 || getDay(day) === 6;
 
                     let cls = 'bk-day aspect-square rounded-xl flex flex-col items-center justify-center text-sm font-bold leading-none ';
                     let st = {};
                     if (isSelected) {
                       cls += 'bk-day-sel text-white shadow-lg ';
-                      st = { background: `linear-gradient(135deg, ${P}, ${P}BB)`, transform: 'scale(1.1)' };
+                      st = { background: `linear-gradient(135deg, ${P}, ${P}BB)`, transform: 'scale(1.12)', boxShadow: `0 6px 16px ${P}45` };
                     } else if (isDisabled) {
-                      cls += 'text-gray-300 cursor-not-allowed ';
+                      cls += 'text-gray-200 cursor-not-allowed ';
                     } else if (isToday) {
-                      cls += 'bk-day-today text-amber-700 font-black ';
+                      cls += 'text-amber-700 font-black cursor-pointer ';
                       st = { background: '#FEF3C7', boxShadow: `inset 0 0 0 2px #FCD34D` };
+                    } else if (isWeekend) {
+                      cls += 'bk-day-avail text-rose-500 cursor-pointer ';
                     } else {
                       cls += 'bk-day-avail text-gray-900 cursor-pointer ';
                     }
@@ -532,16 +581,15 @@ export default function BookingForm({
                 const nextDate = getNextAvailableDate(formData.date, config.hours);
                 return (
                   <div className="space-y-3" data-testid="day-closed-msg">
-                    <div className="p-5 bg-white rounded-2xl shadow-md border border-gray-200 text-center">
-                      <div className="text-4xl mb-2">{icon}</div>
-                      <p className="font-black text-gray-900 text-base">{title}</p>
-                      <p className="text-sm text-gray-600 mt-1 leading-relaxed">{desc}</p>
+                    <div className="p-6 bg-white rounded-3xl shadow-md border border-gray-100 text-center">
+                      <div className="text-5xl mb-3">{icon}</div>
+                      <p className="font-black text-gray-900 text-lg">{title}</p>
+                      <p className="text-sm text-gray-500 mt-1.5 leading-relaxed">{desc}</p>
                     </div>
                     {nextDate && (
                       <button type="button"
                         onClick={() => { setFormData(prev => ({ ...prev, date: nextDate })); setCalMonth(new Date(nextDate + 'T12:00:00')); }}
-                        className="bk-nextday w-full p-4 rounded-2xl font-bold text-white text-sm shadow-md"
-                        style={{ background: `linear-gradient(135deg, ${P}, ${P}CC)` }}
+                        className="bk-cta bk-nextday w-full p-4 rounded-2xl font-bold text-white text-sm"
                         data-testid="go-next-date-btn">
                         🗓 Prossimo giorno disponibile — {format(new Date(nextDate + 'T12:00:00'), 'EEEE dd MMMM', { locale: it })}
                       </button>
@@ -555,21 +603,25 @@ export default function BookingForm({
               const hasOccupied = blockedSlots.length > 0;
 
               return (
-                <div className="bg-white rounded-3xl shadow-md border border-gray-200 p-5 space-y-4" data-testid="time-slots-grid">
+                <div className="bg-white rounded-3xl shadow-lg border border-gray-100 p-5 space-y-5" data-testid="time-slots-grid">
                   <div className="flex items-center justify-between">
-                    <p className="font-black text-gray-900 capitalize">
+                    <p className="font-black text-gray-900 capitalize text-base">
                       {format(new Date(formData.date + 'T12:00:00'), 'EEEE dd MMMM', { locale: it })}
                     </p>
                     {hasOccupied && (
                       <span className="flex items-center gap-1 text-[10px] text-gray-500 font-bold bg-gray-100 px-2.5 py-1 rounded-full border border-gray-200">
-                        <Lock className="w-2.5 h-2.5" /> = già prenotato
+                        <Lock className="w-2.5 h-2.5" /> = già occupato
                       </span>
                     )}
                   </div>
 
                   {morningAll.length > 0 && (
                     <div>
-                      <p className="text-xs font-black text-gray-600 uppercase tracking-widest mb-2.5">🌅 Mattina</p>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-lg">🌅</span>
+                        <p className="text-xs font-black text-gray-500 uppercase tracking-widest">Mattina</p>
+                        <div className="flex-1 h-px bg-gray-100" />
+                      </div>
                       <div className="grid grid-cols-4 gap-2">
                         {morningAll.map(t => {
                           const isAvail = !blockedSet.has(t);
@@ -577,7 +629,7 @@ export default function BookingForm({
                           return (
                             <button key={t} type="button" disabled={!isAvail}
                               onClick={() => isAvail && setFormData(prev => ({ ...prev, time: t }))}
-                              className={`bk-ts py-3 rounded-xl text-sm active:scale-95 ${isSel ? 'bk-ts-sel' : isAvail ? 'bk-ts-avail' : 'bk-ts-occ'}`}
+                              className={`bk-ts py-3.5 rounded-xl text-sm active:scale-95 ${isSel ? 'bk-ts-sel' : isAvail ? 'bk-ts-avail' : 'bk-ts-occ'}`}
                               data-testid="time-select">
                               {isAvail ? t : (
                                 <span className="flex flex-col items-center gap-0.5 leading-none">
@@ -594,7 +646,11 @@ export default function BookingForm({
 
                   {afternoonAll.length > 0 && (
                     <div>
-                      <p className="text-xs font-black text-gray-600 uppercase tracking-widest mb-2.5">🌆 Pomeriggio</p>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-lg">🌆</span>
+                        <p className="text-xs font-black text-gray-500 uppercase tracking-widest">Pomeriggio</p>
+                        <div className="flex-1 h-px bg-gray-100" />
+                      </div>
                       <div className="grid grid-cols-4 gap-2">
                         {afternoonAll.map(t => {
                           const isAvail = !blockedSet.has(t);
@@ -602,7 +658,7 @@ export default function BookingForm({
                           return (
                             <button key={t} type="button" disabled={!isAvail}
                               onClick={() => isAvail && setFormData(prev => ({ ...prev, time: t }))}
-                              className={`bk-ts py-3 rounded-xl text-sm active:scale-95 ${isSel ? 'bk-ts-sel' : isAvail ? 'bk-ts-avail' : 'bk-ts-occ'}`}
+                              className={`bk-ts py-3.5 rounded-xl text-sm active:scale-95 ${isSel ? 'bk-ts-sel' : isAvail ? 'bk-ts-avail' : 'bk-ts-occ'}`}
                               data-testid="time-select">
                               {isAvail ? t : (
                                 <span className="flex flex-col items-center gap-0.5 leading-none">
@@ -618,8 +674,8 @@ export default function BookingForm({
                   )}
 
                   {hasOccupied && (
-                    <p className="text-xs text-gray-500 text-center font-semibold">
-                      Gli orari con 🔒 sono già prenotati — scegli uno degli orari colorati
+                    <p className="text-xs text-gray-400 text-center font-semibold bg-gray-50 rounded-xl py-2">
+                      Gli orari con 🔒 sono già prenotati — scegli uno degli orari disponibili
                     </p>
                   )}
                 </div>
@@ -629,8 +685,8 @@ export default function BookingForm({
             {/* OPERATORE */}
             {operators.filter(o => o.active !== false).length > 0 && (
               <div data-testid="booking-operator-select">
-                <p className="text-sm font-bold text-gray-800 mb-2">
-                  Con chi vorresti venire? <span className="font-normal text-gray-500">(opzionale)</span>
+                <p className="text-sm font-bold text-gray-700 mb-3">
+                  Con chi vorresti venire? <span className="font-normal text-gray-400">(opzionale)</span>
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <button type="button"
@@ -638,7 +694,7 @@ export default function BookingForm({
                     className="bk-op px-4 py-2.5 rounded-xl text-sm font-bold border-2 transition-all"
                     style={!formData.operator_id
                       ? { borderColor: P, backgroundColor: P + '15', color: P }
-                      : { borderColor: '#D1D5DB', backgroundColor: 'white', color: '#374151' }}>
+                      : { borderColor: '#E5E7EB', backgroundColor: 'white', color: '#374151' }}>
                     🙂 Nessuna preferenza
                   </button>
                   {operators.filter(o => o.active !== false).map(op => (
@@ -647,7 +703,7 @@ export default function BookingForm({
                       className="bk-op px-4 py-2.5 rounded-xl text-sm font-bold border-2"
                       style={formData.operator_id === op.id
                         ? { borderColor: P, backgroundColor: P + '15', color: P }
-                        : { borderColor: '#D1D5DB', backgroundColor: 'white', color: '#374151' }}>
+                        : { borderColor: '#E5E7EB', backgroundColor: 'white', color: '#374151' }}>
                       💇 {op.name}
                     </button>
                   ))}
@@ -656,17 +712,17 @@ export default function BookingForm({
             )}
 
             <div className="flex gap-3 pt-1">
-              <Button onClick={() => setStep(1)} variant="outline" className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-100 font-bold rounded-2xl py-5">
+              <button type="button" onClick={() => setStep(1)}
+                className="flex-1 border-2 border-gray-200 text-gray-600 hover:bg-gray-50 font-bold rounded-2xl py-4 transition-all active:scale-95">
                 ← Indietro
-              </Button>
-              <Button
+              </button>
+              <button type="button"
                 onClick={() => setStep(3)}
                 disabled={availableSlots.length === 0}
-                className="flex-[2] text-white font-black py-5 rounded-2xl shadow-md hover:shadow-xl hover:scale-[1.02] transition-all duration-200 disabled:opacity-40"
-                style={{ background: availableSlots.length > 0 ? `linear-gradient(135deg, ${P}, ${P}CC)` : undefined }}
+                className="bk-cta flex-[2] text-white font-black py-4 rounded-2xl text-base"
                 data-testid="website-step2-next">
-                Inserisci i tuoi dati <ArrowRight className="w-4 h-4 ml-1.5" />
-              </Button>
+                I tuoi dati &nbsp; →
+              </button>
             </div>
           </div>
         )}
@@ -675,55 +731,67 @@ export default function BookingForm({
             STEP 3 — DATI PERSONALI
         ══════════════════════════════════════════════════ */}
         {step === 3 && (
-          <div className="space-y-4 slide-up">
+          <div className="space-y-5 slide-up">
             <div>
               <h2 className="text-2xl font-black text-gray-950">🎉 Quasi fatto!</h2>
-              <p className="text-sm text-gray-600 mt-0.5">Inserisci i tuoi dati per confermare</p>
+              <p className="text-sm text-gray-500 mt-0.5">Inserisci i tuoi dati per confermare</p>
             </div>
 
-            {/* Riepilogo */}
-            <div className="p-5 rounded-3xl border-2" style={{ borderColor: P + '45', background: `linear-gradient(135deg, ${P}10, ${P}05)` }}>
-              <p className="text-xs font-black uppercase tracking-wider mb-2" style={{ color: P }}>Il tuo appuntamento</p>
-              <p className="font-black text-gray-950">
-                📆 {format(new Date(formData.date + 'T12:00:00'), 'EEEE dd MMMM', { locale: it })} · ⏰ {formData.time}
-              </p>
-              <div className="mt-3 space-y-1.5">
-                {selectedServices.map(s => (
-                  <div key={s.id} className="flex items-center justify-between text-sm">
-                    <span className="text-gray-700 font-medium">✂️ {s.name}</span>
-                    <span className="font-bold text-gray-900">€{s.price}</span>
+            {/* Riepilogo luxury */}
+            <div className="relative rounded-3xl overflow-hidden shadow-xl" style={{ background: `linear-gradient(135deg, ${P}, ${P}CC, #7C3AED)` }}>
+              <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'repeating-linear-gradient(-45deg, white 0, white 1px, transparent 0, transparent 50%)', backgroundSize: '10px 10px' }} />
+              <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-white opacity-10" />
+              <div className="relative z-10 p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs">✓</span>
                   </div>
-                ))}
-              </div>
-              <div className="mt-3 pt-2.5 border-t-2 flex items-center justify-between" style={{ borderColor: P + '30' }}>
-                <span className="font-bold text-gray-700">Totale stimato</span>
-                <span className="font-black text-xl" style={{ color: P }}>€{totalPrice}</span>
+                  <p className="text-white/80 text-xs font-black uppercase tracking-widest">Il tuo appuntamento</p>
+                </div>
+                <p className="font-black text-white text-lg leading-snug mb-3">
+                  📆 {format(new Date(formData.date + 'T12:00:00'), 'EEEE dd MMMM', { locale: it })}
+                  <span className="mx-2 opacity-50">·</span>
+                  ⏰ {formData.time}
+                </p>
+                <div className="space-y-2 mb-4">
+                  {selectedServices.map(s => (
+                    <div key={s.id} className="flex items-center justify-between">
+                      <span className="text-white/85 text-sm font-medium">✂️ {s.name}</span>
+                      <span className="font-bold text-white">€{s.price}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="pt-3 border-t border-white/20 flex items-center justify-between">
+                  <span className="text-white/70 font-bold text-sm">Totale stimato</span>
+                  <span className="font-black text-2xl text-white drop-shadow">€{totalPrice}</span>
+                </div>
               </div>
             </div>
 
             {/* Form */}
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div>
-                <label className="text-sm font-bold text-gray-800 mb-1.5 block">Il tuo nome *</label>
+                <label className="text-sm font-black text-gray-700 mb-2 block">Il tuo nome *</label>
                 <Input
                   value={formData.client_name}
                   onChange={e => setFormData({ ...formData, client_name: e.target.value })}
                   placeholder="Es. Maria Rossi"
-                  className="bg-white border-2 border-gray-300 rounded-xl py-3 text-gray-950 placeholder:text-gray-400 focus:border-pink-400"
+                  className="bg-white border-2 border-gray-200 rounded-xl py-3 h-12 text-gray-950 placeholder:text-gray-400 focus:border-pink-400 transition-colors text-base"
                   data-testid="website-booking-name" />
               </div>
               <div>
-                <label className="text-sm font-bold text-gray-800 mb-1.5 block">Numero di telefono *</label>
+                <label className="text-sm font-black text-gray-700 mb-2 block">Numero di telefono *</label>
                 <Input
                   value={formData.client_phone}
                   onChange={e => { setFormData({ ...formData, client_phone: e.target.value }); setShowHistory(false); setClientHistory(null); }}
                   placeholder="Es. 339 123 4567"
-                  className="bg-white border-2 border-gray-300 rounded-xl py-3 text-gray-950 placeholder:text-gray-400 focus:border-pink-400"
+                  type="tel"
+                  className="bg-white border-2 border-gray-200 rounded-xl py-3 h-12 text-gray-950 placeholder:text-gray-400 focus:border-pink-400 transition-colors text-base"
                   data-testid="website-booking-phone" />
                 <button type="button"
                   onClick={showHistory ? () => setShowHistory(false) : loadMyHistory}
                   disabled={loadingHistory || !formData.client_phone || formData.client_phone.length < 6}
-                  className="mt-2 flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border-2 border-gray-200 text-gray-600 hover:bg-gray-50 transition-all disabled:opacity-30"
+                  className="mt-2 flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border-2 border-gray-200 text-gray-500 hover:bg-gray-50 transition-all disabled:opacity-30"
                   data-testid="booking-history-btn">
                   {loadingHistory ? <Loader2 className="w-3 h-3 animate-spin" /> : <History className="w-3 h-3" />}
                   {showHistory ? 'Chiudi storico' : 'Vedi i miei appuntamenti passati'}
@@ -732,42 +800,42 @@ export default function BookingForm({
                   <div className="mt-2 rounded-2xl border-2 border-gray-200 bg-white p-3 space-y-2 max-h-44 overflow-y-auto shadow-sm" data-testid="booking-history-panel">
                     {clientHistory.length > 0 ? clientHistory.map((apt, idx) => (
                       <div key={idx} className="flex items-center gap-2 text-xs bg-gray-50 rounded-xl px-3 py-2">
-                        <Clock className="w-3 h-3 text-gray-500 shrink-0" />
-                        <span className="font-bold text-gray-800 w-16 shrink-0">{fmtDate(apt.date)}</span>
-                        <span className="text-gray-600 w-10 shrink-0">{apt.time}</span>
-                        <span className="text-gray-700 flex-1 truncate">{(apt.services || []).map(s => s.name || s).join(', ')}</span>
+                        <Clock className="w-3 h-3 text-gray-400 shrink-0" />
+                        <span className="font-bold text-gray-700 w-16 shrink-0">{fmtDate(apt.date)}</span>
+                        <span className="text-gray-500 w-10 shrink-0">{apt.time}</span>
+                        <span className="text-gray-600 flex-1 truncate">{(apt.services || []).map(s => s.name || s).join(', ')}</span>
                       </div>
                     )) : (
-                      <p className="text-xs text-gray-500 text-center py-2">Nessun appuntamento negli ultimi 3 mesi</p>
+                      <p className="text-xs text-gray-400 text-center py-2">Nessun appuntamento negli ultimi 3 mesi</p>
                     )}
                   </div>
                 )}
               </div>
               <div>
-                <label className="text-sm font-bold text-gray-800 mb-1.5 block">
-                  Note <span className="font-normal text-gray-500">(opzionale)</span>
+                <label className="text-sm font-black text-gray-700 mb-2 block">
+                  Note <span className="font-normal text-gray-400">(opzionale)</span>
                 </label>
                 <Textarea
                   value={formData.notes}
                   onChange={e => setFormData({ ...formData, notes: e.target.value })}
                   placeholder="Richieste particolari, allergie, preferenze di colore..."
-                  className="bg-white border-2 border-gray-300 rounded-xl text-gray-950 placeholder:text-gray-400 focus:border-pink-400"
+                  className="bg-white border-2 border-gray-200 rounded-xl text-gray-950 placeholder:text-gray-400 focus:border-pink-400 transition-colors"
                   rows={2} />
               </div>
             </div>
 
             <div className="flex gap-3">
-              <Button onClick={() => setStep(2)} variant="outline" className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-100 font-bold rounded-2xl py-5">
+              <button type="button" onClick={() => setStep(2)}
+                className="flex-1 border-2 border-gray-200 text-gray-600 hover:bg-gray-50 font-bold rounded-2xl py-4 transition-all active:scale-95">
                 ← Indietro
-              </Button>
-              <Button
+              </button>
+              <button type="button"
                 onClick={handleSubmit}
                 disabled={submitting || !formData.client_name || !formData.client_phone}
-                className="flex-[2] text-white font-black py-5 rounded-2xl shadow-md hover:shadow-xl hover:scale-[1.01] transition-all duration-200 disabled:opacity-40"
-                style={{ background: `linear-gradient(135deg, ${P}, ${P}CC)` }}
+                className="bk-cta flex-[2] text-white font-black py-4 rounded-2xl text-base"
                 data-testid="website-submit-btn">
-                {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : '🎉 Conferma Prenotazione'}
-              </Button>
+                {submitting ? <Loader2 className="w-5 h-5 animate-spin inline" /> : '🎉 Conferma Prenotazione'}
+              </button>
             </div>
 
             {/* Pannello conflitto */}
@@ -810,6 +878,19 @@ export default function BookingForm({
                 )}
               </div>
             )}
+
+            {/* Trust badges */}
+            <div className="flex items-center justify-center gap-6 pt-2 pb-4">
+              <div className="flex items-center gap-1.5 text-xs text-gray-400 font-medium">
+                <span>🔒</span> Dati sicuri
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-gray-400 font-medium">
+                <span>✅</span> Conferma immediata
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-gray-400 font-medium">
+                <span>💌</span> Promemoria gratuito
+              </div>
+            </div>
           </div>
         )}
       </div>
