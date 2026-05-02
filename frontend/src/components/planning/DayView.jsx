@@ -1,5 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { Clock, Repeat, MessageCircle } from 'lucide-react';
+import { Clock, Repeat, MessageCircle, Euro } from 'lucide-react';
 import { addDays, subDays } from 'date-fns';
 import { getAppointmentColor, getServiceColors, buildServiceLookups } from '../../lib/categories';
 import ClientAvatar from '../ClientAvatar';
@@ -23,6 +23,7 @@ export default function DayView({
   openEditDialog,
   openRecurringDialog,
   onSendWhatsApp,
+  onQuickCheckout,
   dragOverSlot,
   onDragStart,
   onDragEnd,
@@ -219,6 +220,16 @@ export default function DayView({
                             {apt.confirmation_status === 'confirmed' && <span title="Confermato" className="text-green-400 text-[10px]">✓</span>}
                             {apt.confirmation_status === 'cancelled_by_client' && <span title="Disdetto" className="text-red-400 text-[10px]">✕</span>}
                             {apt.confirmation_status === 'pending' && <span title="In attesa" className="text-yellow-300 text-[10px]">⏳</span>}
+                            {apt.status !== 'completed' && apt.status !== 'cancelled' && onQuickCheckout && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); onQuickCheckout(apt); }}
+                                className="p-0.5 rounded hover:bg-emerald-500/60"
+                                title="Vai in cassa"
+                                data-testid={`quick-checkout-btn-${apt.id}`}
+                              >
+                                <Euro className="w-3 h-3 text-emerald-300" />
+                              </button>
+                            )}
                             {apt.client_phone && onSendWhatsApp && (
                               <button
                                 onClick={(e) => { e.stopPropagation(); onSendWhatsApp(apt); }}

@@ -57,6 +57,9 @@ export default function PlanningPage() {
   const [upcomingExpenses, setUpcomingExpenses] = useState([]);
   const [newOnlineBookings, setNewOnlineBookings] = useState([]);
   const [sendingConfirmId, setSendingConfirmId] = useState(null);
+  const [pendingReminderApts, setPendingReminderApts] = useState([]);
+  const [sendingReminders, setSendingReminders] = useState(false);
+  const [editInCheckout, setEditInCheckout] = useState(false);
 
   // Dialogs
   const [newDialogOpen, setNewDialogOpen] = useState(false);
@@ -215,7 +218,9 @@ export default function PlanningPage() {
       ]);
       setPendingRemindersCount(remRes.data.filter(r => !r.reminded).length);
       setInactiveClientsCount(inactRes.data.filter(c => !c.already_recalled).length);
-      setAutoReminderPending(autoRes.data.pending?.length || 0);
+      const pending = autoRes.data.pending || [];
+      setAutoReminderPending(pending.length);
+      setPendingReminderApts(pending);
     } catch { /* silent */ }
   };
 
@@ -446,6 +451,13 @@ export default function PlanningPage() {
   // --- Appointment interactions ---
   const openEditDialog = (apt) => {
     setEditingAppointment(apt);
+    setEditInCheckout(shouldAutoCheckout(apt));
+    setEditDialogOpen(true);
+  };
+
+  const openEditDialogForCheckout = (apt) => {
+    setEditingAppointment(apt);
+    setEditInCheckout(true);
     setEditDialogOpen(true);
   };
 
@@ -461,6 +473,39 @@ export default function PlanningPage() {
     const dateStr = format(selectedDate, 'dd/MM/yy');
     const msg = `Ciao ${apt.client_name}! 👋 Ricordiamo il tuo appuntamento del ${dateStr} alle ${apt.time}${services ? ` per ${services}` : ''}. A presto! ✂️`;
     await sendWA(phone, msg, { successMsg: '✅ Promemoria inviato!' });
+  };
+
+  const handleBatchSendReminders = async () => {
+    if (pendingReminderApts.length === 0) return;
+    setSendingReminders(true);
+    const tomorrow = format(addDays(new Date(), 1), 'dd/MM/yy');
+    const withPhone = pendingReminderApts.filter(apt => apt.client_phone);
+    const results = await Promise.allSettled(
+      withPhone.map(apt => {
+        const services = (apt.services || []).map(s => s.name).join(', ');
+        const msg = `Ciao ${apt.client_name}! 👋 Ricordiamo il tuo appuntamento domani ${tomorrow} alle ${apt.time}${services ? ` per ${services}` : ''}. A presto! ✂️`;
+        return api.post(`${API}/whatsapp/send-direct`, { phone: apt.client_phone, message: msg }).then(() => apt.id);
+      })
+    );
+    const sentIds = results.filter(r => r.status === 'fulfilled').map(r => r.value);
+    if (sentIds.length > 0) {
+      await api.post(`${API}/reminders/batch-mark-sent`, { appointment_ids: sentIds }).catch(() => {});
+    }
+    toast.success(`✅ ${sentIds.length}/${withPhone.length} promemoria inviati!`);
+    setSendingReminders(false);
+    fetchReminderCounts();
+  };
+
+  const shouldAutoCheckout = (apt) => {
+    if (!apt || apt.status === 'completed' || apt.status === 'cancelled') return false;
+    const today = format(new Date(), 'yyyy-MM-dd');
+    if (apt.date < today) return true;
+    if (apt.date === today) {
+      const now = new Date();
+      const [h, m] = (apt.time || '00:00').split(':').map(Number);
+      return (h * 60 + m) <= (now.getHours() * 60 + now.getMinutes());
+    }
+    return false;
   };
 
   // --- Drag & Drop ---
@@ -576,6 +621,8 @@ export default function PlanningPage() {
           pendingRemindersCount={pendingRemindersCount}
           inactiveClientsCount={inactiveClientsCount}
           autoReminderPending={autoReminderPending}
+          onBatchSendAll={handleBatchSendReminders}
+          sendingAll={sendingReminders}
         />
         <ExpensesBanner upcomingExpenses={upcomingExpenses} selectedDate={selectedDate} />
         <LastServiceBanner
@@ -783,6 +830,7 @@ export default function PlanningPage() {
             openEditDialog={openEditDialog}
             openRecurringDialog={openRecurringDialog}
             onSendWhatsApp={handleSendWhatsApp}
+            onQuickCheckout={openEditDialogForCheckout}
             dragOverSlot={dragOverSlot}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
@@ -844,8 +892,9 @@ export default function PlanningPage() {
         <ErrorBoundary>
           <EditAppointmentDialog
             open={editDialogOpen}
-            onClose={() => { setEditDialogOpen(false); setEditingAppointment(null); }}
+            onClose={() => { setEditDialogOpen(false); setEditingAppointment(null); setEditInCheckout(false); }}
             appointment={editingAppointment}
+            autoCheckout={editInCheckout}
             operators={operators}
             clients={clients}
             services={services}

@@ -57,7 +57,7 @@ const getFilteredSlots = (dateStr, hoursConfig, blockedSlots = []) => {
 };
 
 export default function EditAppointmentDialog({
-  open, onClose, appointment, operators, clients, services, onSuccess, onLoyaltyAlert, onLastServiceAlert, onThankYou,
+  open, onClose, appointment, operators, clients, services, onSuccess, onLoyaltyAlert, onLastServiceAlert, onThankYou, autoCheckout = false,
 }) {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -185,10 +185,12 @@ export default function EditAppointmentDialog({
           setClientSospesi(sospData.sospesi || []);
           setSospesiTotal(sospData.total || 0);
           if ((sospData.sospesi || []).length > 0) setShowSospesiPopup(true);
+          if (autoCheckout && appointment.status !== 'completed') openCheckoutMode(appointment, activeCards);
         });
       } else {
         setClientCards([]);
         setClientLoyalty({ points: 0 });
+        if (autoCheckout && appointment.status !== 'completed') openCheckoutMode(appointment, []);
       }
     }
   }, [open, appointment, clients]);
@@ -340,14 +342,14 @@ export default function EditAppointmentDialog({
     setSellCardPaymentMethod('cash');
   };
 
-  const openCheckoutMode = (apt = null) => {
+  const openCheckoutMode = (apt = null, cardsOverride = null) => {
     const activeAppointment = apt || localAppointment || appointment || { client_id: '', promo_id: '' };
+    const cards = cardsOverride !== null ? cardsOverride : clientCards;
     setCheckoutMode(true);
     if (activeAppointment?.client_id) {
       api.get(`${API}/promotions/check/${activeAppointment.client_id}`)
         .then(res => {
           setEligiblePromos(res.data || []);
-          // Auto-select promo if pre-selected or saved on appointment
           const targetPromoId = preSelectedPromoId || activeAppointment.promo_id;
           if (targetPromoId) {
             const savedPromo = (res.data || []).find(p => p.id === targetPromoId);
@@ -359,16 +361,15 @@ export default function EditAppointmentDialog({
     } else {
       setEligiblePromos([]);
     }
-    // Auto-select card if pre-selected or saved on appointment
     const targetCardId = preSelectedCardId || activeAppointment?.card_id;
     if (targetCardId) {
-      const savedCard = (clientCards || []).find(c => c.id === targetCardId && c.remaining_value > 0);
+      const savedCard = (cards || []).find(c => c.id === targetCardId && c.remaining_value > 0);
       if (savedCard) {
         setPaymentMethod('prepaid');
         setSelectedCardId(savedCard.id);
       }
-    } else if ((clientCards || []).length > 0) {
-      const activeCard = clientCards.find(c => c.remaining_value > 0);
+    } else if ((cards || []).length > 0) {
+      const activeCard = cards.find(c => c.remaining_value > 0);
       if (activeCard) {
         setPaymentMethod('prepaid');
         setSelectedCardId(activeCard.id);
@@ -376,10 +377,11 @@ export default function EditAppointmentDialog({
     }
   };
 
-  const handleCheckout = async () => {
+  const handleCheckout = async (overridePaymentMethod = null) => {
     const activeAppointment = localAppointment || appointment;
     if (!activeAppointment) return;
-    if (paymentMethod === 'prepaid' && !selectedCardId) {
+    const method = overridePaymentMethod || paymentMethod;
+    if (method === 'prepaid' && !selectedCardId) {
       toast.error('Seleziona una card o abbonamento per il pagamento prepagato');
       return;
     }
@@ -389,15 +391,15 @@ export default function EditAppointmentDialog({
     setProcessing(true);
     try {
       const res = await api.post(`${API}/appointments/${activeAppointment.id}/checkout`, {
-        payment_method: paymentMethod,
+        payment_method: method,
         discount_type: discountType,
         discount_value: discountValueNumber,
         total_paid: finalAmount,
-        card_id: paymentMethod === 'prepaid' ? selectedCardId : null,
+        card_id: method === 'prepaid' ? selectedCardId : null,
         loyalty_points_used: loyaltyPointsUsed,
         promo_id: selectedPromo?.id || null,
         promo_free_service: selectedPromo?.free_service_name || null,
-        sell_card_on_checkout: paymentMethod === 'prepaid' && sellCardOnCheckout,
+        sell_card_on_checkout: method === 'prepaid' && sellCardOnCheckout,
         sell_card_payment_method: sellCardPaymentMethod,
       });
       const pointsEarned = res.data.loyalty_points_earned || 0;
@@ -437,7 +439,7 @@ export default function EditAppointmentDialog({
       } catch {}
 
       // Mostra il dialog di ringraziamento (nel parent)
-      const cardSaleCard = (paymentMethod === 'prepaid' && sellCardOnCheckout)
+      const cardSaleCard = (method === 'prepaid' && sellCardOnCheckout)
         ? clientCards.find(c => c.id === selectedCardId) : null;
       const displayAmount = cardSaleCard ? (cardSaleCard.total_value || 0) : finalAmount;
       if (onThankYou) {
@@ -902,6 +904,37 @@ export default function EditAppointmentDialog({
                 <h3 className="text-lg font-black text-green-800 mb-4 flex items-center gap-2">
                   <Euro className="w-5 h-5" /> INCASSO
                 </h3>
+
+                {/* Bottoni cassa rapida — visibili solo senza sconti/promozioni/prepagato */}
+                {discountType === 'none' && !useLoyaltyPoints && !selectedPromo && paymentMethod !== 'prepaid' && (
+                  <div className="mb-5">
+                    <div className="grid grid-cols-2 gap-3 mb-3">
+                      <button type="button"
+                        onClick={() => handleCheckout('cash')}
+                        disabled={processing}
+                        className="flex flex-col items-center justify-center gap-1 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-black rounded-2xl py-4 shadow-lg transition-all"
+                        data-testid="quick-checkout-cash-btn">
+                        <Banknote className="w-7 h-7" />
+                        <span className="text-base">Contanti</span>
+                        <span className="text-xl">€{calculateTotal().toFixed(2)}</span>
+                      </button>
+                      <button type="button"
+                        onClick={() => handleCheckout('pos')}
+                        disabled={processing}
+                        className="flex flex-col items-center justify-center gap-1 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-black rounded-2xl py-4 shadow-lg transition-all"
+                        data-testid="quick-checkout-pos-btn">
+                        <Smartphone className="w-7 h-7" />
+                        <span className="text-base">POS</span>
+                        <span className="text-xl">€{calculateTotal().toFixed(2)}</span>
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-gray-400 mb-4">
+                      <div className="flex-1 h-px bg-gray-200" />
+                      o scegli opzioni avanzate
+                      <div className="flex-1 h-px bg-gray-200" />
+                    </div>
+                  </div>
+                )}
 
                 {/* Prezzi servizi — modifica manuale per singolo servizio */}
                 <div className="space-y-2 mb-4">

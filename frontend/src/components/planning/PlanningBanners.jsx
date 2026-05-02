@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { fmtDate } from '../../lib/dateUtils';
-import { CalendarDays, Bell, Euro, X, AlertTriangle } from 'lucide-react';
+import { CalendarDays, Bell, Euro, X, AlertTriangle, Loader2 } from 'lucide-react';
 
 export function OnlineBookingBanner({ newOnlineBookings, dismissOnlineBooking, dismissAllOnlineBookings, goToBookingDate, onSendConfirmation, sendingConfirmId }) {
   if (newOnlineBookings.length === 0) return null;
@@ -64,16 +64,15 @@ export function OnlineBookingBanner({ newOnlineBookings, dismissOnlineBooking, d
   );
 }
 
-export function ReminderBanner({ pendingRemindersCount, inactiveClientsCount, autoReminderPending }) {
+export function ReminderBanner({ pendingRemindersCount, inactiveClientsCount, autoReminderPending, onBatchSendAll, sendingAll }) {
   if (pendingRemindersCount === 0 && inactiveClientsCount === 0 && autoReminderPending === 0) return null;
   return (
-    <a
-      href="/reminders"
+    <div
       className="flex items-center gap-3 p-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl hover:shadow-md transition-shadow"
       data-testid="reminder-banner"
     >
       <Bell className={`w-5 h-5 shrink-0 ${autoReminderPending > 0 ? 'text-green-500 animate-bounce' : 'text-amber-500'}`} />
-      <div className="flex-1 text-sm">
+      <a href="/reminders" className="flex-1 text-sm min-w-0">
         {autoReminderPending > 0 && (
           <span className="font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full mr-2">
             {autoReminderPending} promemoria da inviare ora!
@@ -88,11 +87,24 @@ export function ReminderBanner({ pendingRemindersCount, inactiveClientsCount, au
             <span className="font-bold text-orange-600">{inactiveClientsCount} clienti inattivi</span>
           </>
         )}
-      </div>
-      <span className={`text-xs font-bold shrink-0 ${autoReminderPending > 0 ? 'text-green-600' : 'text-[#C8617A]'}`}>
-        {autoReminderPending > 0 ? 'Invia ora →' : 'Gestisci →'}
-      </span>
-    </a>
+      </a>
+      {autoReminderPending > 0 && onBatchSendAll ? (
+        <Button
+          size="sm"
+          onClick={onBatchSendAll}
+          disabled={sendingAll}
+          className="shrink-0 bg-green-600 hover:bg-green-700 text-white font-bold h-8 px-3 text-xs"
+          data-testid="batch-send-all-btn"
+        >
+          {sendingAll ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+          Invia tutti
+        </Button>
+      ) : (
+        <a href="/reminders" className={`text-xs font-bold shrink-0 ${autoReminderPending > 0 ? 'text-green-600' : 'text-[#C8617A]'}`}>
+          {autoReminderPending > 0 ? 'Invia ora →' : 'Gestisci →'}
+        </a>
+      )}
+    </div>
   );
 }
 
