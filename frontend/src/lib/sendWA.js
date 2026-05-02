@@ -19,12 +19,14 @@ export async function sendWA(phone, message, { successMsg = '✅ WhatsApp inviat
       toast.warning('Green API non configurata — vai su Impostazioni → WhatsApp per abilitare l\'invio automatico.');
     } else if (err.startsWith('sessione_scaduta')) {
       toast.error('⚠️ Sessione WhatsApp scaduta. Vai su Impostazioni → WhatsApp, clicca "Testa connessione" e riscannerizza il QR code dal tuo telefono.');
-    } else if (err.includes('401') || err.includes('403') || err.includes('unauthorized') || err.toLowerCase().includes('auth')) {
+    } else if (err.includes('QUOTE_ALLOWED') || err.includes('quota has been exceeded') || err.includes('Monthly quota')) {
+      toast.warning('⚠️ Limite di 1.500 messaggi/mese Green API raggiunto. I messaggi ripartono automaticamente il mese prossimo. Per inviare subito, aggiorna il piano su app.greenapi.com → Impostazioni → WhatsApp.', { duration: 10000 });
+    } else if (err.includes('notAuthorized') || err.includes('not authorized') || (err.includes('401') && !err.includes('4010'))) {
+      toast.error('❌ Sessione Green API non autorizzata. Vai su Impostazioni → WhatsApp e riscannerizza il QR code.');
+    } else if (err.includes('403') || err.toLowerCase().includes('forbidden')) {
       toast.error('❌ Credenziali Green API non valide. Controlla Instance ID e Token in Impostazioni → WhatsApp.');
     } else if (err.includes('404') || err.includes('notFound') || err.toLowerCase().includes('not found')) {
       toast.error('❌ Numero non trovato su WhatsApp. Verifica che il numero sia attivo su WhatsApp.');
-    } else if (err.includes('QUOTE_ALLOWED') || err.includes('quota has been exceeded') || err.includes('Monthly quota')) {
-      toast.warning('⚠️ Quota mensile WhatsApp esaurita. Puoi inviare/ricevere messaggi solo dai numeri autorizzati. Aggiorna il piano Green API in Impostazioni → WhatsApp.', { duration: 8000 });
     } else {
       toast.error(`❌ Messaggio non inviato: ${err || 'errore sconosciuto'}. Controlla Green API in Impostazioni.`);
     }
