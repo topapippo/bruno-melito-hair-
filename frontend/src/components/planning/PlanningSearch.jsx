@@ -41,8 +41,8 @@ export default function PlanningSearch({ onHighlightClient, highlightedClientId,
     }
   };
 
-  const highlightClient = (clientId) => {
-    onHighlightClient(clientId);
+  const highlightClient = (clientId, date) => {
+    onHighlightClient(clientId, date);
     setSearchOpen(false);
     setSearchQuery('');
     setSearchResults({ clients: [], appointments: [] });
@@ -94,7 +94,7 @@ export default function PlanningSearch({ onHighlightClient, highlightedClientId,
                     <div key={client.id} className="border-b border-[#F0E6DC]/30 last:border-0">
                       <button
                         className="w-full px-4 py-2 text-left hover:bg-[#FAF7F2] flex items-center justify-between"
-                        onClick={() => highlightClient(client.id)}
+                        onClick={() => highlightClient(client.id, clientApts[0]?.date)}
                         data-testid={`search-result-${client.id}`}
                       >
                         <div>
@@ -106,12 +106,14 @@ export default function PlanningSearch({ onHighlightClient, highlightedClientId,
                         </span>
                       </button>
                       {clientApts.slice(0, 3).map((apt) => (
-                        <div
+                        <button
                           key={apt.id}
-                          className="px-4 py-1 pl-8 text-xs text-[#7C5C4A] bg-[#FAF7F2]/50"
+                          className="w-full px-4 py-1.5 pl-8 text-xs text-left text-[#C8617A] bg-[#FAF7F2]/50 hover:bg-[#FAF7F2] flex items-center justify-between"
+                          onClick={() => highlightClient(client.id, apt.date)}
                         >
-                          {fmtDate(apt.date)} {apt.time} - {apt.services?.map(s => s.name).join(', ')}
-                        </div>
+                          <span>{fmtDate(apt.date)} {apt.time} - {apt.services?.map(s => s.name).join(', ')}</span>
+                          <span className="text-[10px] text-[#C8617A]/60 ml-2">→ vai</span>
+                        </button>
                       ))}
                     </div>
                   );

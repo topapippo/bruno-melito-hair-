@@ -671,6 +671,15 @@ export default function PlanningPage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
+              <PlanningSearch
+                onHighlightClient={(clientId, date) => {
+                  setHighlightedClientId(clientId);
+                  if (date) setSelectedDate(new Date(date + 'T12:00:00'));
+                  setTimeout(() => setHighlightedClientId(null), 8000);
+                }}
+                highlightedClientId={highlightedClientId}
+                onClearHighlight={() => setHighlightedClientId(null)}
+              />
               <Button
                 variant="outline" size="icon"
                 onClick={() => {
@@ -771,14 +780,6 @@ export default function PlanningPage() {
                 ))}
               </select>
             </div>
-            <PlanningSearch
-              onHighlightClient={(clientId) => {
-                setHighlightedClientId(clientId);
-                setTimeout(() => setHighlightedClientId(null), 5000);
-              }}
-              highlightedClientId={highlightedClientId}
-              onClearHighlight={() => setHighlightedClientId(null)}
-            />
           </div>
         </div>
 
