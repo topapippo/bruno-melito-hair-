@@ -68,8 +68,21 @@ function OfflineIndicator() {
 
 // Homepage: gestionale for logged-in users, login for visitors
 function HomePage() {
-  const { user, loading } = useAuth();
-  if (loading) return <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center"><div className="w-10 h-10 border-4 border-[#C8617A] border-t-transparent rounded-full animate-spin" /></div>;
+  const { user, loading, serverWaking } = useAuth();
+  if (loading) return (
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center gap-5">
+      <div className="w-10 h-10 border-4 border-[#C8617A] border-t-transparent rounded-full animate-spin" />
+      {serverWaking ? (
+        <div className="text-center px-6">
+          <p className="text-[#2D1B14] font-bold text-lg">Server in avvio...</p>
+          <p className="text-[#7C5C4A] text-sm mt-1">Il server si sta svegliando, attendi qualche secondo.</p>
+          <p className="text-[#7C5C4A] text-sm">Non ricaricare la pagina.</p>
+        </div>
+      ) : (
+        <p className="text-[#7C5C4A] text-sm font-medium">Caricamento...</p>
+      )}
+    </div>
+  );
   if (user) return <PlanningPage />;
   // Non-authenticated users see the public website
   return <Navigate to="/sito" replace />;

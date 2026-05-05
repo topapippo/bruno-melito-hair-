@@ -7,6 +7,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
+  const [serverWaking, setServerWaking] = useState(false);
 
   useEffect(() => {
     if (token) {
@@ -18,18 +19,30 @@ export function AuthProvider({ children }) {
   }, [token]);
 
   const fetchUser = async () => {
-    try {
-      const res = await api.get('/auth/me');
-      setUser(res.data);
-    } catch (err) {
-      // 401 è già gestito dall'interceptor in api.js
-      if (err.response?.status !== 401) {
-        console.error('Auth error:', err);
+    const MAX_ATTEMPTS = 4;
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      try {
+        const res = await api.get('/auth/me');
+        setUser(res.data);
+        setServerWaking(false);
+        setLoading(false);
+        return;
+      } catch (err) {
+        if (err.response?.status === 401) {
+          logout();
+          setLoading(false);
+          return;
+        }
+        // Errore di rete / backend in cold start: mostra messaggio e riprova
+        setServerWaking(true);
+        if (attempt < MAX_ATTEMPTS - 1) {
+          await new Promise(r => setTimeout(r, 12000));
+        }
       }
-      logout();
-    } finally {
-      setLoading(false);
     }
+    // Dopo 4 tentativi falliti: logout (sessione irrecuperabile)
+    logout();
+    setLoading(false);
   };
 
   const login = async (email, password) => {
@@ -74,7 +87,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, token, loading, serverWaking, login, register, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
