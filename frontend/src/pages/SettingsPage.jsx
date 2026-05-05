@@ -197,6 +197,10 @@ export default function SettingsPage() {
   const [waTest, setWaTest] = useState(null);
   const [testingWa, setTestingWa] = useState(false);
   const [waSendTest, setWaSendTest] = useState({ phone: '', result: null, loading: false });
+  const [tgForm, setTgForm] = useState({ telegram_instance_id: '', telegram_api_token: '' });
+  const [savingTg, setSavingTg] = useState(false);
+  const [tgTest, setTgTest] = useState(null);
+  const [testingTg, setTestingTg] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -209,6 +213,7 @@ export default function SettingsPage() {
       setSettings(res.data);
       if (res.data.admin_theme) setAdminTheme(res.data.admin_theme);
       if (res.data.green_api_instance_id) setWaForm(f => ({ ...f, green_api_instance_id: res.data.green_api_instance_id }));
+      if (res.data.telegram_instance_id) setTgForm(f => ({ ...f, telegram_instance_id: res.data.telegram_instance_id }));
     } catch (err) {
       console.error('Error fetching settings:', err);
       toast.error('Errore nel caricamento delle impostazioni');
@@ -254,6 +259,30 @@ export default function SettingsPage() {
     } catch (e) {
       setWaSendTest(p => ({ ...p, result: { ok: false, message: 'Errore server: ' + (e?.response?.data?.detail || e.message) }, loading: false }));
     }
+  };
+
+  const saveTgSettings = async () => {
+    if (!tgForm.telegram_instance_id || !tgForm.telegram_api_token) {
+      toast.error('Inserisci sia Instance ID che API Token Telegram');
+      return;
+    }
+    setSavingTg(true);
+    try {
+      await api.put(`${API}/settings/telegram-api`, tgForm);
+      toast.success('Impostazioni Telegram salvate! Clicca "Testa connessione" per verificare.');
+      setTgTest(null);
+    } catch { toast.error('Errore nel salvataggio'); }
+    finally { setSavingTg(false); }
+  };
+
+  const testTgConnection = async () => {
+    setTestingTg(true);
+    setTgTest(null);
+    try {
+      const res = await api.get(`${API}/settings/telegram-test`);
+      setTgTest(res.data);
+    } catch { setTgTest({ ok: false, message: 'Errore di connessione al server' }); }
+    finally { setTestingTg(false); }
   };
 
   const saveAdminTheme = async () => {
@@ -1096,6 +1125,64 @@ export default function SettingsPage() {
                 </div>
               )}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Telegram — Green API Fallback */}
+        <Card className="border-2 border-sky-100">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-[#2D1B14]">
+              <Share2 className="w-5 h-5 text-sky-500" />
+              Telegram — Fallback automatico quando WhatsApp esaurisce la quota
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="p-4 bg-sky-50 border border-sky-200 rounded-xl text-sm text-sky-800 space-y-2">
+              <p className="font-bold">📲 Fallback automatico su Telegram</p>
+              <p>Quando la quota mensile WhatsApp (Green API) è esaurita, i messaggi vengono inviati automaticamente su Telegram. Il cliente deve avere Telegram con lo stesso numero di telefono.</p>
+              <ol className="list-decimal list-inside space-y-1 text-sky-700">
+                <li>Vai su <strong>app.green-api.com</strong> → crea una nuova istanza <strong>Telegram</strong></li>
+                <li>Copia <strong>Instance ID</strong> e <strong>API Token</strong> dell'istanza Telegram</li>
+                <li>Incollali qui sotto e salva</li>
+              </ol>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label className="font-semibold text-sm">Instance ID Telegram</Label>
+                <Input
+                  value={tgForm.telegram_instance_id}
+                  onChange={e => setTgForm(f => ({ ...f, telegram_instance_id: e.target.value }))}
+                  placeholder="es. 4100610381"
+                  className="border-2"
+                />
+                <p className="text-xs text-gray-400">Trovalo nella dashboard di Green API</p>
+              </div>
+              <div className="space-y-1">
+                <Label className="font-semibold text-sm">API Token Telegram</Label>
+                <Input
+                  value={tgForm.telegram_api_token}
+                  onChange={e => setTgForm(f => ({ ...f, telegram_api_token: e.target.value }))}
+                  placeholder="Token dalla dashboard Green API"
+                  type="password"
+                  className="border-2"
+                />
+                <p className="text-xs text-gray-400">Visibile nella pagina della tua istanza Telegram</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button onClick={saveTgSettings} disabled={savingTg} className="bg-sky-600 hover:bg-sky-700 text-white">
+                {savingTg ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-2" /> Salva</>}
+              </Button>
+              <Button onClick={testTgConnection} disabled={testingTg} variant="outline" className="border-2 border-sky-200 text-sky-700 hover:bg-sky-50">
+                {testingTg ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Testa connessione
+              </Button>
+            </div>
+            {tgTest && (
+              <div className={`p-3 rounded-xl text-sm font-medium ${tgTest.ok ? 'bg-sky-50 text-sky-800 border border-sky-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                {tgTest.message}
+              </div>
+            )}
           </CardContent>
         </Card>
 

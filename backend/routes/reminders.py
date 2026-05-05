@@ -559,6 +559,28 @@ async def send_whatsapp_direct(data: dict, current_user: dict = Depends(get_curr
                           invoke.get("description") or resp.text[:200])
             if invoke.get("status") == "QUOTE_ALLOWED":
                 err_detail = "quota_esaurita"
+                # Fallback automatico su Telegram quando quota WhatsApp esaurita
+                tg_instance_id = current_user.get("telegram_instance_id", "")
+                tg_api_token = current_user.get("telegram_api_token", "")
+                if tg_instance_id and tg_api_token:
+                    try:
+                        tg_base = f"https://{tg_instance_id[:4]}.api.green-api.com"
+                        tg_url = f"{tg_base}/waInstance{tg_instance_id}/sendMessage/{tg_api_token}"
+                        tg_resp = await asyncio.to_thread(
+                            _req.post, tg_url,
+                            json={"chatId": phone_clean + "@telegram", "message": message},
+                            timeout=15
+                        )
+                        tg_json = {}
+                        try:
+                            tg_json = tg_resp.json()
+                        except Exception:
+                            pass
+                        if tg_resp.status_code == 200 and tg_json.get("idMessage"):
+                            return {"sent": True, "method": "telegram"}
+                        logger.warning(f"Telegram fallback failed {tg_resp.status_code}: {tg_resp.text[:200]}")
+                    except Exception as tg_e:
+                        logger.warning(f"Telegram fallback exception: {tg_e}")
             logger.warning(f"Green API send failed {resp.status_code} chatId={wa_number}: {resp.text[:300]}")
             wa_url = f"https://wa.me/{phone_clean}?text={urllib.parse.quote(message)}"
             # Prova a verificare se il numero è registrato su WhatsApp (non consuma crediti)

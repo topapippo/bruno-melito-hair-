@@ -413,6 +413,8 @@ async def get_settings(current_user: dict = Depends(get_current_user)):
         "google_review_link": current_user.get("google_review_link", ""),
         "green_api_instance_id": current_user.get("green_api_instance_id", ""),
         "wa_configured": bool(current_user.get("green_api_instance_id") and current_user.get("green_api_token")),
+        "telegram_instance_id": current_user.get("telegram_instance_id", ""),
+        "tg_configured": bool(current_user.get("telegram_instance_id") and current_user.get("telegram_api_token")),
     }
 
 
@@ -490,6 +492,43 @@ async def update_whatsapp_api(data: dict, current_user: dict = Depends(get_curre
         }}
     )
     return {"success": True}
+
+
+@router.put("/settings/telegram-api")
+async def update_telegram_api(data: dict, current_user: dict = Depends(get_current_user)):
+    await db.users.update_one(
+        {"id": current_user["id"]},
+        {"$set": {
+            "telegram_instance_id": data.get("telegram_instance_id", ""),
+            "telegram_api_token": data.get("telegram_api_token", ""),
+        }}
+    )
+    return {"success": True}
+
+
+@router.get("/settings/telegram-test")
+async def test_telegram_api(current_user: dict = Depends(get_current_user)):
+    """Verifica che l'istanza Green API Telegram sia attiva."""
+    import asyncio
+    import requests as _req
+    instance_id = current_user.get("telegram_instance_id", "")
+    api_token = current_user.get("telegram_api_token", "")
+    if not instance_id or not api_token:
+        return {"ok": False, "status": "not_configured", "message": "Instance ID o Token Telegram non impostati"}
+    try:
+        tg_base = f"https://{instance_id[:4]}.api.green-api.com"
+        url = f"{tg_base}/waInstance{instance_id}/getStateInstance/{api_token}"
+        resp = await asyncio.to_thread(_req.get, url, timeout=10)
+        data = resp.json()
+        state = data.get("stateInstance", "unknown")
+        if state == "authorized":
+            return {"ok": True, "status": state, "message": "✅ Connesso — Telegram attivo e funzionante"}
+        elif state == "notAuthorized":
+            return {"ok": False, "status": state, "message": "⚠️ Non autorizzato — configura l'istanza su app.green-api.com"}
+        else:
+            return {"ok": False, "status": state, "message": f"Stato istanza: {state}"}
+    except Exception as e:
+        return {"ok": False, "status": "error", "message": f"Errore connessione: {str(e)}"}
 
 
 # ============== RICERCA GLOBALE ==============
