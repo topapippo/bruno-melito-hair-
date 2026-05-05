@@ -15,21 +15,25 @@ export async function sendWA(phone, message, { successMsg = '✅ WhatsApp inviat
       return true;
     }
     const err = res.data?.error || '';
+    const chatId = res.data?.chatId || '';
     const errLow = err.toLowerCase();
+    if (chatId) console.warn('[WA] invio fallito — chatId tentato:', chatId, '— errore:', err);
     if (err === 'Green API non configurata') {
       toast.warning('Green API non configurata — vai su Impostazioni → WhatsApp per abilitare l\'invio automatico.');
+    } else if (err === 'numero_non_su_whatsapp') {
+      toast.error(`❌ ${phone} non ha WhatsApp attivo — messaggio non inviato.`, { duration: 8000 });
     } else if (err.startsWith('sessione_scaduta')) {
-      toast.error('⚠️ Sessione WhatsApp scaduta. Vai su Impostazioni → WhatsApp, clicca "Testa connessione" e riscannerizza il QR code dal tuo telefono.');
+      toast.error('⚠️ Sessione WhatsApp scaduta. Vai su Impostazioni → WhatsApp e riscannerizza il QR code.', { duration: 8000 });
     } else if (errLow.includes('quote_allowed') || errLow.includes('quota has been exceeded') || errLow.includes('monthly quota') || errLow.includes('credito') || errLow.includes('limit')) {
-      toast.warning('⚠️ Limite messaggi Green API raggiunto. Verifica il piano su app.greenapi.com. I messaggi ripartono automaticamente il mese prossimo.', { duration: 10000 });
+      toast.warning('⚠️ Limite messaggi Green API raggiunto. Verifica il piano su app.greenapi.com.', { duration: 10000 });
     } else if (errLow.includes('notauthorized') || errLow.includes('not authorized') || (err.includes('401') && !err.includes('4010'))) {
-      toast.error('❌ Sessione Green API non autorizzata. Vai su Impostazioni → WhatsApp e riscannerizza il QR code.');
+      toast.error('❌ Sessione Green API non autorizzata. Vai su Impostazioni → WhatsApp e riscannerizza il QR code.', { duration: 8000 });
     } else if (err.includes('403') || errLow.includes('forbidden')) {
-      toast.error('❌ Credenziali Green API non valide. Controlla Instance ID e Token in Impostazioni → WhatsApp.');
+      toast.error('❌ Credenziali Green API non valide. Controlla Instance ID e Token in Impostazioni → WhatsApp.', { duration: 8000 });
     } else if (errLow.includes('absent') || errLow.includes('not registered') || errLow.includes('not in whatsapp') || errLow.includes('notfound') || err.includes('404')) {
-      toast.error('❌ Numero non registrato su WhatsApp. Il cliente potrebbe non avere WhatsApp attivo.');
+      toast.error(`❌ ${phone} non risulta registrato su WhatsApp.`, { duration: 8000 });
     } else {
-      toast.error(`❌ WhatsApp non inviato (${err || 'errore sconosciuto'}). Controlla Green API in Impostazioni.`);
+      toast.error(`❌ WhatsApp non inviato a ${phone}: ${err || 'errore sconosciuto'}`, { duration: 8000 });
     }
     return false;
   } catch {

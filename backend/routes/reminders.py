@@ -553,12 +553,23 @@ async def send_whatsapp_direct(data: dict, current_user: dict = Depends(get_curr
                 pass
             if resp.status_code == 200 and rjson.get("idMessage"):
                 return {"sent": True, "method": "greenapi"}
-            # Risposta Green API non valida — restituiamo il dettaglio al frontend
+            # Invio fallito — diagnosica: controlla se il numero è su WhatsApp
             err_detail = rjson.get("message") or rjson.get("error") or resp.text[:200]
-            logger.warning(f"Green API send failed {resp.status_code}: {resp.text[:300]}")
+            logger.warning(f"Green API send failed {resp.status_code} chatId={wa_number}: {resp.text[:300]}")
             wa_url = f"https://wa.me/{phone_clean}?text={urllib.parse.quote(message)}"
+            # Prova a verificare se il numero è registrato su WhatsApp (non consuma crediti)
+            try:
+                check_url = f"https://api.greenapi.com/waInstance{instance_id}/checkWhatsapp/{api_token}"
+                check_resp = await asyncio.to_thread(_req.post, check_url, json={"phoneNumber": phone_clean}, timeout=8)
+                if check_resp.status_code == 200:
+                    check_data = check_resp.json()
+                    if not check_data.get("existsWhatsapp", True):
+                        return {"sent": False, "method": "link", "url": wa_url,
+                                "error": "numero_non_su_whatsapp", "chatId": wa_number}
+            except Exception:
+                pass
             return {"sent": False, "method": "link", "url": wa_url,
-                    "error": f"Green API {resp.status_code}: {err_detail}"}
+                    "error": f"Green API {resp.status_code}: {err_detail}", "chatId": wa_number}
         except Exception as e:
             logger.warning(f"Green API exception: {e}")
             wa_url = f"https://wa.me/{phone_clean}?text={urllib.parse.quote(message)}"
