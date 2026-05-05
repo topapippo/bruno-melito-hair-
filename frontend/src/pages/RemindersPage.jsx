@@ -139,13 +139,14 @@ export default function RemindersPage() {
       .replace('{servizi}', apt.services?.map(s => s.name).join(', ') || '')
       .replace('{operatore}', apt.operator_name || '')
       .replace('{data}', fmtDate(apt.date || ''));
-    await sendWhatsAppDirect(apt.client_phone, msg);
-    try {
-      await api.post(`${API}/reminders/appointment/${apt.id}/mark-sent`);
-      setTomorrowReminders(prev => prev.map(r => r.id === apt.id ? { ...r, reminded: true } : r));
-      toast.success(`Promemoria inviato a ${apt.client_name}`);
-      checkAutoReminder();
-    } catch (err) { console.error(err); }
+    const sent = await sendWhatsAppDirect(apt.client_phone, msg);
+    if (sent) {
+      try {
+        await api.post(`${API}/reminders/appointment/${apt.id}/mark-sent`);
+        setTomorrowReminders(prev => prev.map(r => r.id === apt.id ? { ...r, reminded: true } : r));
+        checkAutoReminder();
+      } catch (err) { console.error(err); }
+    }
     setSendingId(null);
   };
 
@@ -227,27 +228,26 @@ export default function RemindersPage() {
       return;
     }
 
-    await sendWhatsAppDirect(phone, msgText);
+    const sent = await sendWhatsAppDirect(phone, msgText);
 
-    // Mark as sent
     const id = type === 'appointment' ? data.id : data.client_id;
     setSendingId(id);
-    try {
-      if (type === 'appointment') {
-        await api.post(`${API}/reminders/appointment/${data.id}/mark-sent`);
-        setTomorrowReminders(prev =>
-          prev.map(r => r.id === data.id ? { ...r, reminded: true } : r)
-        );
-        toast.success(`Promemoria inviato a ${data.client_name}`);
-      } else {
-        await api.post(`${API}/reminders/inactive/${data.client_id}/mark-sent`);
-        setInactiveClients(prev =>
-          prev.map(c => c.client_id === data.client_id ? { ...c, already_recalled: true } : c)
-        );
-        toast.success(`Richiamo inviato a ${data.client_name}`);
+    if (sent) {
+      try {
+        if (type === 'appointment') {
+          await api.post(`${API}/reminders/appointment/${data.id}/mark-sent`);
+          setTomorrowReminders(prev =>
+            prev.map(r => r.id === data.id ? { ...r, reminded: true } : r)
+          );
+        } else {
+          await api.post(`${API}/reminders/inactive/${data.client_id}/mark-sent`);
+          setInactiveClients(prev =>
+            prev.map(c => c.client_id === data.client_id ? { ...c, already_recalled: true } : c)
+          );
+        }
+      } catch (err) {
+        console.error(err);
       }
-    } catch (err) {
-      console.error(err);
     }
     setSendingId(null);
     setMsgDialog(false);
@@ -355,12 +355,13 @@ export default function RemindersPage() {
     let msg = colorTemplate
       ? colorTemplate.text.replace('{nome}', next.client_name || '').replace('{giorni}', String(next.days_ago || ''))
       : `Ciao ${next.client_name}! Sono passati ${next.days_ago} giorni dal tuo ultimo colore. E' il momento di rinfrescare il look! Prenota da Bruno Melito Hair.`;
-    await sendWhatsAppDirect(next.phone, msg);
-    try {
-      await api.post(`${API}/reminders/color-expiry/${next.client_id}/mark-sent`);
-      setColorReminders(prev => prev.map(c => c.client_id === next.client_id ? { ...c, already_sent: true } : c));
-      toast.success(`Promemoria colore inviato a ${next.client_name}`);
-    } catch {}
+    const sentColor = await sendWhatsAppDirect(next.phone, msg);
+    if (sentColor) {
+      try {
+        await api.post(`${API}/reminders/color-expiry/${next.client_id}/mark-sent`);
+        setColorReminders(prev => prev.map(c => c.client_id === next.client_id ? { ...c, already_sent: true } : c));
+      } catch {}
+    }
     setBatchSending(false);
   };
 
@@ -372,12 +373,13 @@ export default function RemindersPage() {
     let msg = recallTemplate
       ? recallTemplate.text.replace('{nome}', next.client_name || '').replace('{giorni}', String(next.days_ago || '')).replace('{servizi}', next.last_services?.join(', ') || '')
       : `Ciao ${next.client_name}! Sono passati ${next.days_ago} giorni dalla tua ultima visita presso Bruno Melito Hair. Torna a trovarci, ti aspettiamo!`;
-    await sendWhatsAppDirect(next.client_phone, msg);
-    try {
-      await api.post(`${API}/reminders/inactive/${next.client_id}/mark-sent`);
-      setInactiveClients(prev => prev.map(c => c.client_id === next.client_id ? { ...c, already_recalled: true } : c));
-      toast.success(`Richiamo inviato a ${next.client_name}`);
-    } catch {}
+    const sentInactive = await sendWhatsAppDirect(next.client_phone, msg);
+    if (sentInactive) {
+      try {
+        await api.post(`${API}/reminders/inactive/${next.client_id}/mark-sent`);
+        setInactiveClients(prev => prev.map(c => c.client_id === next.client_id ? { ...c, already_recalled: true } : c));
+      } catch {}
+    }
     setBatchSending(false);
   };
 
