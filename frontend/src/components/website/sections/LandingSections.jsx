@@ -21,7 +21,10 @@ function AnimatedSection({ children, className = '', delay = 0 }) {
 export { AnimatedSection };
 
 export function ServicesSection({ servicesRef, showServices, setShowServices, landingServiceGroups, cardTemplates, setShowBooking, bookService, bookCard, T }) {
-  const [openLandingCats, setOpenLandingCats] = useState({});
+  const [openLandingCats, setOpenLandingCats] = useState(() => {
+    const firstKey = landingServiceGroups?.orderedKeys?.[0];
+    return firstKey ? { [firstKey]: true } : {};
+  });
   const toggleLCat = (key) => setOpenLandingCats(prev => ({ ...prev, [key]: !prev[key] }));
   const P = T.primary;
 
@@ -63,27 +66,39 @@ export function ServicesSection({ servicesRef, showServices, setShowServices, la
                     </div>
                   </button>
                   {isOpen && (
-                    <div className="bg-white rounded-2xl mt-1 border border-gray-100 shadow-sm animate-in fade-in duration-200 overflow-hidden">
-                      {catServices.map((service) => (
-                        <div key={service.id} className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 last:border-0 hover:bg-gray-50/70 transition-colors group">
-                          <div className="min-w-0">
-                            <p className="font-bold text-sm" style={{ color: T.text }}>{service.name}</p>
-                            {service.duration > 0 && <p className="text-xs text-gray-400 mt-0.5">⏱ {service.duration} min</p>}
+                    <div className="mt-1 rounded-2xl overflow-hidden animate-in fade-in duration-200 border"
+                      style={{ borderColor: `${catInfo.color}20`, background: `${catInfo.color}04` }}>
+                      <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {catServices.map((service) => (
+                          <div key={service.id}
+                            className="flex items-center justify-between p-3.5 rounded-xl bg-white hover:shadow-md transition-all duration-200 border group"
+                            style={{ borderColor: `${catInfo.color}15` }}>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-bold text-sm truncate" style={{ color: T.text }}>{service.name}</p>
+                              {service.duration > 0 && <p className="text-xs text-gray-400 mt-0.5">⏱ {service.duration} min</p>}
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0 ml-3">
+                              {service.price > 0 && (
+                                <span className="font-black text-sm" style={{ color: catInfo.color }}>€{service.price}</span>
+                              )}
+                              {bookService && (
+                                <button onClick={(e) => { e.stopPropagation(); bookService(service.id); }}
+                                  className="svc-book-btn text-xs font-black px-3 py-1.5 rounded-xl text-white shadow-sm hover:brightness-110"
+                                  style={{ backgroundColor: catInfo.color }}>
+                                  Prenota
+                                </button>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex items-center gap-3 shrink-0 ml-4">
-                            {service.price > 0 && (
-                              <span className="font-black text-base" style={{ color: catInfo.color }}>€{service.price}</span>
-                            )}
-                            {bookService && (
-                              <button onClick={(e) => { e.stopPropagation(); bookService(service.id); }}
-                                className="svc-book-btn text-xs font-black px-3 py-1.5 rounded-xl text-white shadow-sm"
-                                style={{ backgroundColor: catInfo.color }}>
-                                Prenota →
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
+                      <div className="px-3 pb-3">
+                        <button onClick={() => setShowBooking(true)}
+                          className="w-full py-3 rounded-xl text-white font-black text-sm hover:brightness-110 hover:scale-[1.01] active:scale-[0.99] transition-all"
+                          style={{ background: `linear-gradient(135deg, ${catInfo.color}, ${catInfo.color}BB)` }}>
+                          ✂️ Prenota {catInfo.label}
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>

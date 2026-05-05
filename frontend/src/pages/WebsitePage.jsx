@@ -106,21 +106,15 @@ export default function WebsitePage() {
   const [showMyAppts, setShowMyAppts] = useState(false);
   const [bookingInitialStep, setBookingInitialStep] = useState(1);
 
-  // #4 — Scroll inactivity CTA bar + navbar scroll state
-  const [showScrollCta, setShowScrollCta] = useState(false);
-  const [hasScrolled, setHasScrolled] = useState(false);
   const [navScrolled, setNavScrolled] = useState(false);
+  const [heroVisible, setHeroVisible] = useState(true);
   useEffect(() => {
-    let timer;
     const onScroll = () => {
-      setHasScrolled(true);
-      setShowScrollCta(false);
       setNavScrolled(window.scrollY > 80);
-      clearTimeout(timer);
-      timer = setTimeout(() => setShowScrollCta(true), 3500);
+      setHeroVisible(window.scrollY < 500);
     };
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => { window.removeEventListener('scroll', onScroll); clearTimeout(timer); };
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   useEffect(() => {
@@ -580,6 +574,67 @@ export default function WebsitePage() {
         </div>
       </section>
 
+      {/* ─── COME FUNZIONA — 3 tocchi per prenotare ─── */}
+      <section className="py-20 sm:py-24 bg-white relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-1" style={{ background: `linear-gradient(90deg, transparent, ${T.primary}, ${T.accent}, transparent)` }} />
+        <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${T.primary}30, transparent)` }} />
+        <div className="max-w-5xl mx-auto px-4">
+          <AnimatedSection>
+            <div className="text-center mb-14">
+              <span className="inline-block text-xs font-black tracking-widest uppercase px-5 py-2 rounded-full mb-5"
+                style={{ background: `${T.primary}12`, color: T.primary }}>✦ SEMPLICISSIMO</span>
+              <h2 className="text-4xl sm:text-5xl font-black leading-tight" style={{ color: T.text, fontFamily: T.fontDisplay }}>
+                Prenota in{' '}
+                <span style={{ background: `linear-gradient(135deg, ${T.primary}, ${T.accent})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+                  3 Tocchi
+                </span>
+              </h2>
+              <p className="text-sm mt-4 max-w-sm mx-auto" style={{ color: `${T.text}55` }}>
+                Nessuna telefonata, nessuna attesa. Solo tu e il tuo appuntamento.
+              </p>
+            </div>
+          </AnimatedSection>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 relative">
+            <div className="hidden sm:block absolute top-12 left-[18%] right-[18%] h-px"
+              style={{ background: `linear-gradient(90deg, ${T.primary}30, ${T.accent}30)` }} />
+            {[
+              { num: '1', icon: '✂️', title: 'Scegli il Servizio', desc: 'Taglio, colore, trattamenti — sfoglia il listino e clicca quello che vuoi', color: T.primary },
+              { num: '2', icon: '📅', title: 'Giorno e Ora', desc: 'Vedi gli slot disponibili in tempo reale e scegli il momento che preferisci', color: T.accent },
+              { num: '3', icon: '✅', title: 'Confermato Subito', desc: 'Conferma automatica immediata. Nessuna chiamata, nessuna risposta da aspettare', color: '#22C55E' },
+            ].map((step, i) => (
+              <AnimatedSection key={i} delay={i * 0.15}>
+                <div className="relative text-center px-6 py-8 rounded-3xl hover:shadow-xl transition-all duration-500 hover:-translate-y-2 border group cursor-default"
+                  style={{ borderColor: `${step.color}18`, background: `linear-gradient(145deg, #fff, ${step.color}06)` }}>
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full flex items-center justify-center text-white font-black text-sm shadow-lg"
+                    style={{ background: `linear-gradient(135deg, ${step.color}, ${step.color}CC)` }}>
+                    {step.num}
+                  </div>
+                  <div className="w-16 h-16 rounded-2xl mx-auto mb-5 mt-2 flex items-center justify-center text-3xl"
+                    style={{ background: `linear-gradient(135deg, ${step.color}22, ${step.color}0A)`, border: `1px solid ${step.color}22` }}>
+                    {step.icon}
+                  </div>
+                  <h3 className="font-black text-lg mb-3" style={{ color: T.text }}>{step.title}</h3>
+                  <p className="text-sm leading-relaxed" style={{ color: `${T.text}60` }}>{step.desc}</p>
+                </div>
+              </AnimatedSection>
+            ))}
+          </div>
+          <AnimatedSection delay={0.5}>
+            <div className="text-center mt-12">
+              <button onClick={() => setShowBooking(true)}
+                className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl text-white font-black text-lg hover:scale-105 transition-all duration-300 shadow-xl hover:shadow-2xl"
+                style={{ background: `linear-gradient(135deg, ${T.primary}, ${T.accent})`, boxShadow: `0 12px 40px ${T.primary}40` }}>
+                <Scissors className="w-5 h-5" />
+                Prenota Ora — Conferma Immediata
+              </button>
+              <p className="text-xs mt-3" style={{ color: `${T.text}35` }}>
+                Nessuna registrazione · Gratuito · Sempre disponibile
+              </p>
+            </div>
+          </AnimatedSection>
+        </div>
+      </section>
+
       {/* Sezioni dinamiche con strip foto galleria tra di esse */}
       {sectionOrder.map((id, i) => {
         const section = renderSection(id);
@@ -733,24 +788,19 @@ export default function WebsitePage() {
         <span className="max-w-0 overflow-hidden group-hover:max-w-[120px] transition-all duration-300 whitespace-nowrap">Scrivici ora</span>
       </a>
 
-      {/* #4 — Scroll inactivity CTA bar */}
-      {showScrollCta && hasScrolled && (
-        <div className="fixed bottom-0 left-0 right-0 z-[60] hidden sm:flex items-center justify-between gap-4 px-6 py-3 bg-[#1C1008]/95 backdrop-blur-xl border-t shadow-2xl"
-          style={{ borderColor: `${T.primary}40` }}
-          data-testid="scroll-cta-bar"
-        >
-          <p className="text-white/80 text-sm font-semibold">
-            <span className="animate-pulse mr-1">✨</span>
-            Hai trovato quello che cercavi?
-          </p>
-          <div className="flex items-center gap-3">
-            <Button onClick={() => setShowBooking(true)} style={{ backgroundColor: T.primary }} className="text-white font-black text-sm px-6 py-2 rounded-xl hover:opacity-90 hover:scale-105 transition-all">
-              <Scissors className="w-4 h-4 mr-1.5" /> Prenota Ora
-            </Button>
-            <button onClick={() => setShowScrollCta(false)} className="text-white/40 hover:text-white/80 transition-colors p-1 rounded-lg hover:bg-white/10">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
+      {/* Floating PRENOTA pill — appare dopo hero, desktop */}
+      {!heroVisible && (
+        <div className="hidden sm:block fixed bottom-8 left-1/2 -translate-x-1/2 z-40">
+          <button
+            onClick={() => setShowBooking(true)}
+            className="relative flex items-center gap-2.5 px-7 py-3.5 rounded-full text-white font-black text-sm hover:scale-110 transition-all duration-300"
+            style={{ background: `linear-gradient(135deg, ${T.primary}, ${T.accent})`, boxShadow: `0 8px 32px ${T.primary}55` }}
+            data-testid="floating-book-btn"
+          >
+            <Scissors className="w-4 h-4" />
+            PRENOTA ORA
+            <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-white animate-pulse" />
+          </button>
         </div>
       )}
 
