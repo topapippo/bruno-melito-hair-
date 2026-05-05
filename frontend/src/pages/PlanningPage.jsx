@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api, { API } from '../lib/api';
 import { sendWA } from '../lib/sendWA';
 import Layout from '../components/Layout';
@@ -29,6 +30,8 @@ import ErrorBoundary from '../components/ErrorBoundary';
 const TIME_SLOTS = generateTimeSlots();
 
 export default function PlanningPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+
   // Core data
   const [appointments, setAppointments] = useState([]);
   const [operators, setOperators] = useState([]);
@@ -49,6 +52,18 @@ export default function PlanningPage() {
 
   // Search
   const [highlightedClientId, setHighlightedClientId] = useState(null);
+
+  // Legge parametri URL da GlobalSearch (?date=YYYY-MM-DD&clientId=...)
+  useEffect(() => {
+    const date = searchParams.get('date');
+    const clientId = searchParams.get('clientId');
+    if (date) setSelectedDate(new Date(date + 'T12:00:00'));
+    if (clientId) {
+      setHighlightedClientId(clientId);
+      setTimeout(() => setHighlightedClientId(null), 8000);
+    }
+    if (date || clientId) setSearchParams({}, { replace: true });
+  }, []);
 
   // Banners
   const [pendingRemindersCount, setPendingRemindersCount] = useState(0);
