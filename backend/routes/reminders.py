@@ -554,7 +554,11 @@ async def send_whatsapp_direct(data: dict, current_user: dict = Depends(get_curr
             if resp.status_code == 200 and rjson.get("idMessage"):
                 return {"sent": True, "method": "greenapi"}
             # Invio fallito — diagnosica: controlla se il numero è su WhatsApp
-            err_detail = rjson.get("message") or rjson.get("error") or resp.text[:200]
+            invoke = rjson.get("invokeStatus") or {}
+            err_detail = (rjson.get("message") or rjson.get("error") or
+                          invoke.get("description") or resp.text[:200])
+            if invoke.get("status") == "QUOTE_ALLOWED":
+                err_detail = "quota_esaurita"
             logger.warning(f"Green API send failed {resp.status_code} chatId={wa_number}: {resp.text[:300]}")
             wa_url = f"https://wa.me/{phone_clean}?text={urllib.parse.quote(message)}"
             # Prova a verificare se il numero è registrato su WhatsApp (non consuma crediti)
