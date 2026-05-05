@@ -201,6 +201,10 @@ export default function SettingsPage() {
   const [savingTg, setSavingTg] = useState(false);
   const [tgTest, setTgTest] = useState(null);
   const [testingTg, setTestingTg] = useState(false);
+  const [umForm, setUmForm] = useState({ ultramsg_instance_id: '', ultramsg_token: '' });
+  const [savingUm, setSavingUm] = useState(false);
+  const [umTest, setUmTest] = useState(null);
+  const [testingUm, setTestingUm] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -214,6 +218,7 @@ export default function SettingsPage() {
       if (res.data.admin_theme) setAdminTheme(res.data.admin_theme);
       if (res.data.green_api_instance_id) setWaForm(f => ({ ...f, green_api_instance_id: res.data.green_api_instance_id }));
       if (res.data.telegram_instance_id) setTgForm(f => ({ ...f, telegram_instance_id: res.data.telegram_instance_id }));
+      if (res.data.ultramsg_instance_id) setUmForm(f => ({ ...f, ultramsg_instance_id: res.data.ultramsg_instance_id }));
     } catch (err) {
       console.error('Error fetching settings:', err);
       toast.error('Errore nel caricamento delle impostazioni');
@@ -259,6 +264,30 @@ export default function SettingsPage() {
     } catch (e) {
       setWaSendTest(p => ({ ...p, result: { ok: false, message: 'Errore server: ' + (e?.response?.data?.detail || e.message) }, loading: false }));
     }
+  };
+
+  const saveUmSettings = async () => {
+    if (!umForm.ultramsg_instance_id || !umForm.ultramsg_token) {
+      toast.error('Inserisci sia Instance ID che Token UltraMsg');
+      return;
+    }
+    setSavingUm(true);
+    try {
+      await api.put(`${API}/settings/ultramsg-api`, umForm);
+      toast.success('Impostazioni UltraMsg salvate! Clicca "Testa connessione" per verificare.');
+      setUmTest(null);
+    } catch { toast.error('Errore nel salvataggio'); }
+    finally { setSavingUm(false); }
+  };
+
+  const testUmConnection = async () => {
+    setTestingUm(true);
+    setUmTest(null);
+    try {
+      const res = await api.get(`${API}/settings/ultramsg-test`);
+      setUmTest(res.data);
+    } catch { setUmTest({ ok: false, message: 'Errore di connessione al server' }); }
+    finally { setTestingUm(false); }
   };
 
   const saveTgSettings = async () => {
@@ -1125,6 +1154,64 @@ export default function SettingsPage() {
                 </div>
               )}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* UltraMsg — WhatsApp alternativo */}
+        <Card className="border-2 border-emerald-100">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-[#2D1B14]">
+              <Share2 className="w-5 h-5 text-emerald-600" />
+              UltraMsg — WhatsApp alternativo (fallback se Green API esaurita)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-800 space-y-2">
+              <p className="font-bold">📱 Secondo provider WhatsApp</p>
+              <p>Usato automaticamente quando Green API è esaurita o non configurata. Stesso numero WhatsApp, provider diverso.</p>
+              <ol className="list-decimal list-inside space-y-1 text-emerald-700">
+                <li>Vai su <strong>app.ultramsg.com</strong> e crea un account</li>
+                <li>Crea una nuova istanza e scansiona il QR code con WhatsApp</li>
+                <li>Copia <strong>Instance ID</strong> e <strong>Token</strong> qui sotto e salva</li>
+              </ol>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label className="font-semibold text-sm">Instance ID</Label>
+                <Input
+                  value={umForm.ultramsg_instance_id}
+                  onChange={e => setUmForm(f => ({ ...f, ultramsg_instance_id: e.target.value }))}
+                  placeholder="es. instance123456"
+                  className="border-2"
+                />
+                <p className="text-xs text-gray-400">Trovalo nella dashboard di UltraMsg</p>
+              </div>
+              <div className="space-y-1">
+                <Label className="font-semibold text-sm">Token</Label>
+                <Input
+                  value={umForm.ultramsg_token}
+                  onChange={e => setUmForm(f => ({ ...f, ultramsg_token: e.target.value }))}
+                  placeholder="Token dalla dashboard UltraMsg"
+                  type="password"
+                  className="border-2"
+                />
+                <p className="text-xs text-gray-400">Visibile nella pagina della tua istanza</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button onClick={saveUmSettings} disabled={savingUm} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                {savingUm ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-2" /> Salva</>}
+              </Button>
+              <Button onClick={testUmConnection} disabled={testingUm} variant="outline" className="border-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50">
+                {testingUm ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Testa connessione
+              </Button>
+            </div>
+            {umTest && (
+              <div className={`p-3 rounded-xl text-sm font-medium ${umTest.ok ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                {umTest.message}
+              </div>
+            )}
           </CardContent>
         </Card>
 

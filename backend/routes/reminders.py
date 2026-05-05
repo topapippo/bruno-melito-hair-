@@ -513,7 +513,7 @@ async def send_confirmation_link(appointment_id: str, current_user: dict = Depen
 
 @router.post("/whatsapp/send-direct")
 async def send_whatsapp_direct(data: dict, current_user: dict = Depends(get_current_user)):
-    """Invia WhatsApp via Green API (gratuito) se configurata, altrimenti restituisce link wa.me."""
+    """Invia WhatsApp via Green API → UltraMsg → Telegram (catena di fallback automatica)."""
     import re as _re
     import urllib.parse
     import asyncio
@@ -530,14 +530,16 @@ async def send_whatsapp_direct(data: dict, current_user: dict = Depends(get_curr
         phone_clean = phone_clean[4:]
     elif phone_clean.startswith('39') and len(phone_clean) > 10:
         phone_clean = phone_clean[2:]
-    # Aggiunge prefisso 39 se mancante O se il numero è 10 cifre (anche se inizia con 39x)
     if not phone_clean.startswith('39') or len(phone_clean) == 10:
         phone_clean = '39' + phone_clean
     wa_number = phone_clean + "@c.us"
+    wa_url = f"https://wa.me/{phone_clean}?text={urllib.parse.quote(message)}"
 
+    quota_esaurita = False
+
+    # --- 1. Green API ---
     instance_id = current_user.get("green_api_instance_id", "")
     api_token = current_user.get("green_api_token", "")
-
     if instance_id and api_token:
         try:
             url = f"https://api.greenapi.com/waInstance{instance_id}/sendMessage/{api_token}"
@@ -553,57 +555,83 @@ async def send_whatsapp_direct(data: dict, current_user: dict = Depends(get_curr
                 pass
             if resp.status_code == 200 and rjson.get("idMessage"):
                 return {"sent": True, "method": "greenapi"}
-            # Invio fallito — diagnosica: controlla se il numero è su WhatsApp
             invoke = rjson.get("invokeStatus") or {}
             err_detail = (rjson.get("message") or rjson.get("error") or
                           invoke.get("description") or resp.text[:200])
             if invoke.get("status") == "QUOTE_ALLOWED":
-                err_detail = "quota_esaurita"
-                # Fallback automatico su Telegram quando quota WhatsApp esaurita
-                tg_instance_id = current_user.get("telegram_instance_id", "")
-                tg_api_token = current_user.get("telegram_api_token", "")
-                if tg_instance_id and tg_api_token:
-                    try:
-                        tg_base = f"https://{tg_instance_id[:4]}.api.green-api.com"
-                        tg_url = f"{tg_base}/waInstance{tg_instance_id}/sendMessage/{tg_api_token}"
-                        tg_resp = await asyncio.to_thread(
-                            _req.post, tg_url,
-                            json={"chatId": phone_clean + "@telegram", "message": message},
-                            timeout=15
-                        )
-                        tg_json = {}
-                        try:
-                            tg_json = tg_resp.json()
-                        except Exception:
-                            pass
-                        if tg_resp.status_code == 200 and tg_json.get("idMessage"):
-                            return {"sent": True, "method": "telegram"}
-                        logger.warning(f"Telegram fallback failed {tg_resp.status_code}: {tg_resp.text[:200]}")
-                    except Exception as tg_e:
-                        logger.warning(f"Telegram fallback exception: {tg_e}")
-            logger.warning(f"Green API send failed {resp.status_code} chatId={wa_number}: {resp.text[:300]}")
-            wa_url = f"https://wa.me/{phone_clean}?text={urllib.parse.quote(message)}"
-            # Prova a verificare se il numero è registrato su WhatsApp (non consuma crediti)
-            try:
-                check_url = f"https://api.greenapi.com/waInstance{instance_id}/checkWhatsapp/{api_token}"
-                check_resp = await asyncio.to_thread(_req.post, check_url, json={"phoneNumber": phone_clean}, timeout=8)
-                if check_resp.status_code == 200:
-                    check_data = check_resp.json()
-                    if not check_data.get("existsWhatsapp", True):
+                quota_esaurita = True
+                logger.warning(f"Green API quota esaurita — provo UltraMsg/Telegram")
+            else:
+                # Errore non-quota: verifica se numero è su WhatsApp, poi ritorna
+                logger.warning(f"Green API send failed {resp.status_code} chatId={wa_number}: {resp.text[:300]}")
+                try:
+                    check_url = f"https://api.greenapi.com/waInstance{instance_id}/checkWhatsapp/{api_token}"
+                    check_resp = await asyncio.to_thread(_req.post, check_url, json={"phoneNumber": phone_clean}, timeout=8)
+                    if check_resp.status_code == 200 and not check_resp.json().get("existsWhatsapp", True):
                         return {"sent": False, "method": "link", "url": wa_url,
                                 "error": "numero_non_su_whatsapp", "chatId": wa_number}
-            except Exception:
-                pass
-            return {"sent": False, "method": "link", "url": wa_url,
-                    "error": f"Green API {resp.status_code}: {err_detail}", "chatId": wa_number}
+                except Exception:
+                    pass
+                return {"sent": False, "method": "link", "url": wa_url,
+                        "error": f"Green API {resp.status_code}: {err_detail}", "chatId": wa_number}
         except Exception as e:
             logger.warning(f"Green API exception: {e}")
-            wa_url = f"https://wa.me/{phone_clean}?text={urllib.parse.quote(message)}"
-            return {"sent": False, "method": "link", "url": wa_url, "error": str(e)}
 
-    # Green API non configurata
-    wa_url = f"https://wa.me/{phone_clean}?text={urllib.parse.quote(message)}"
-    return {"sent": False, "method": "link", "url": wa_url, "error": "Green API non configurata"}
+    # --- 2. UltraMsg (se configurato e Green API non disponibile o quota esaurita) ---
+    um_instance = current_user.get("ultramsg_instance_id", "")
+    um_token = current_user.get("ultramsg_token", "")
+    if um_instance and um_token and (not instance_id or quota_esaurita):
+        try:
+            url = f"https://api.ultramsg.com/{um_instance}/messages/chat"
+            resp = await asyncio.to_thread(
+                _req.post, url,
+                data={"token": um_token, "to": phone_clean, "body": message},
+                timeout=15
+            )
+            rjson = {}
+            try:
+                rjson = resp.json()
+            except Exception:
+                pass
+            if resp.status_code == 200 and str(rjson.get("sent", "")).lower() == "true":
+                return {"sent": True, "method": "ultramsg"}
+            err = rjson.get("error") or rjson.get("message") or resp.text[:200]
+            err_low = str(err).lower()
+            if "limit" in err_low or "quota" in err_low or "exceeded" in err_low:
+                quota_esaurita = True
+                logger.warning(f"UltraMsg quota esaurita — provo Telegram")
+            else:
+                logger.warning(f"UltraMsg failed {resp.status_code}: {err}")
+                return {"sent": False, "method": "link", "url": wa_url, "error": f"UltraMsg: {err}"}
+        except Exception as e:
+            logger.warning(f"UltraMsg exception: {e}")
+
+    # --- 3. Telegram (fallback quando quota WA esaurita su tutti i provider) ---
+    if quota_esaurita:
+        tg_instance_id = current_user.get("telegram_instance_id", "")
+        tg_api_token = current_user.get("telegram_api_token", "")
+        if tg_instance_id and tg_api_token:
+            try:
+                tg_base = f"https://{tg_instance_id[:4]}.api.green-api.com"
+                tg_url = f"{tg_base}/waInstance{tg_instance_id}/sendMessage/{tg_api_token}"
+                tg_resp = await asyncio.to_thread(
+                    _req.post, tg_url,
+                    json={"chatId": phone_clean + "@telegram", "message": message},
+                    timeout=15
+                )
+                tg_json = {}
+                try:
+                    tg_json = tg_resp.json()
+                except Exception:
+                    pass
+                if tg_resp.status_code == 200 and tg_json.get("idMessage"):
+                    return {"sent": True, "method": "telegram"}
+                logger.warning(f"Telegram fallback failed {tg_resp.status_code}: {tg_resp.text[:200]}")
+            except Exception as tg_e:
+                logger.warning(f"Telegram fallback exception: {tg_e}")
+        return {"sent": False, "method": "link", "url": wa_url, "error": "quota_esaurita"}
+
+    return {"sent": False, "method": "link", "url": wa_url, "error": "Nessun servizio WhatsApp configurato"}
 
 
 @router.get("/reminders/thank-you-template")

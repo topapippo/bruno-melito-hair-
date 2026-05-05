@@ -12,9 +12,12 @@ export async function sendWA(phone, message, { successMsg = '✅ WhatsApp inviat
     const res = await api.post(`${API}/whatsapp/send-direct`, { phone, message });
     if (res.data?.sent) {
       const method = res.data?.method;
-      toast.success(method === 'telegram'
+      const msg = method === 'telegram'
         ? '📲 Inviato via Telegram (quota WhatsApp esaurita)'
-        : successMsg);
+        : method === 'ultramsg'
+          ? '✅ WhatsApp inviato via UltraMsg'
+          : successMsg;
+      toast.success(msg);
       return true;
     }
     const err = res.data?.error || '';

@@ -415,6 +415,8 @@ async def get_settings(current_user: dict = Depends(get_current_user)):
         "wa_configured": bool(current_user.get("green_api_instance_id") and current_user.get("green_api_token")),
         "telegram_instance_id": current_user.get("telegram_instance_id", ""),
         "tg_configured": bool(current_user.get("telegram_instance_id") and current_user.get("telegram_api_token")),
+        "ultramsg_instance_id": current_user.get("ultramsg_instance_id", ""),
+        "um_configured": bool(current_user.get("ultramsg_instance_id") and current_user.get("ultramsg_token")),
     }
 
 
@@ -492,6 +494,44 @@ async def update_whatsapp_api(data: dict, current_user: dict = Depends(get_curre
         }}
     )
     return {"success": True}
+
+
+@router.put("/settings/ultramsg-api")
+async def update_ultramsg_api(data: dict, current_user: dict = Depends(get_current_user)):
+    await db.users.update_one(
+        {"id": current_user["id"]},
+        {"$set": {
+            "ultramsg_instance_id": data.get("ultramsg_instance_id", ""),
+            "ultramsg_token": data.get("ultramsg_token", ""),
+        }}
+    )
+    return {"success": True}
+
+
+@router.get("/settings/ultramsg-test")
+async def test_ultramsg_api(current_user: dict = Depends(get_current_user)):
+    """Verifica che l'istanza UltraMsg sia attiva."""
+    import asyncio
+    import requests as _req
+    instance_id = current_user.get("ultramsg_instance_id", "")
+    token = current_user.get("ultramsg_token", "")
+    if not instance_id or not token:
+        return {"ok": False, "status": "not_configured", "message": "Instance ID o Token UltraMsg non impostati"}
+    try:
+        url = f"https://api.ultramsg.com/{instance_id}/instance/status?token={token}"
+        resp = await asyncio.to_thread(_req.get, url, timeout=10)
+        data = resp.json()
+        status = (data.get("status") or {})
+        account = (status.get("accountStatus") or {})
+        substatus = account.get("substatus", "unknown")
+        if substatus == "normal":
+            return {"ok": True, "status": substatus, "message": "✅ Connesso — UltraMsg attivo e funzionante"}
+        elif substatus in ("qrCode", "init"):
+            return {"ok": False, "status": substatus, "message": "⚠️ Scansiona il QR code su app.ultramsg.com per collegare WhatsApp"}
+        else:
+            return {"ok": False, "status": substatus, "message": f"Stato: {substatus}"}
+    except Exception as e:
+        return {"ok": False, "status": "error", "message": f"Errore connessione: {str(e)}"}
 
 
 @router.put("/settings/telegram-api")
