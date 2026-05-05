@@ -10,7 +10,6 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import GlobalSearch from './GlobalSearch';
 
 
 const navGroups = [
@@ -61,7 +60,6 @@ export default function Layout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
 
   const toggleSidebar = () => setCollapsed(prev => {
@@ -69,16 +67,6 @@ export default function Layout({ children }) {
     return !prev;
   });
 
-  useEffect(() => {
-    const onKey = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
-        setSearchOpen(prev => !prev);
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
   // Tema di default: Viola Fest — allegro, vivace, professionale
   const NEW_DEFAULTS = { primary: '#A855F7', sidebar_bg: '#12053A', sidebar_text: '#FAF5FF', accent: '#FBBF24', content_bg: '#FAF5FF', content_text: '#12053A' };
   const [adminTheme, setAdminTheme] = useState(() => {
@@ -251,18 +239,6 @@ export default function Layout({ children }) {
         <SidebarContent />
       </aside>
 
-      {/* Desktop search bar fisso in alto a destra */}
-      <div className="hidden md:block fixed top-4 right-5 z-40">
-        <button
-          onClick={() => setSearchOpen(true)}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm text-gray-400 border border-gray-200 bg-white/90 shadow-sm hover:shadow-md hover:border-gray-300 transition-all"
-        >
-          <Search className="w-4 h-4" />
-          <span>Cerca...</span>
-          <kbd className="ml-2 bg-gray-100 text-gray-400 text-[10px] px-1.5 py-0.5 rounded">Ctrl K</kbd>
-        </button>
-      </div>
-
       {/* Mobile Header */}
       <header className="md:hidden fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b px-4 py-3 flex items-center justify-between shadow-sm"
         style={{ backgroundColor: t.sidebar_bg + 'E6', borderColor: t.sidebar_text + '15' }}>
@@ -271,9 +247,6 @@ export default function Layout({ children }) {
           <h1 className="text-lg font-semibold" style={{ fontFamily: `${t.font_display || 'Cormorant Garamond'}, serif`, color: t.sidebar_text }}>{user?.salon_name || 'Salone'}</h1>
         </div>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" onClick={() => setSearchOpen(true)} style={{ color: t.primary }}>
-            <Search className="w-5 h-5" />
-          </Button>
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" data-testid="mobile-menu-btn" style={{ color: t.primary }}>
@@ -286,8 +259,6 @@ export default function Layout({ children }) {
           </Sheet>
         </div>
       </header>
-
-      <GlobalSearch isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
 
       {/* Main Content */}
       <main className={`min-h-screen pt-16 md:pt-0 transition-all duration-300 ${collapsed ? 'md:ml-14' : 'md:ml-60'}`}>
