@@ -205,6 +205,7 @@ export default function SettingsPage() {
   const [savingUm, setSavingUm] = useState(false);
   const [umTest, setUmTest] = useState(null);
   const [testingUm, setTestingUm] = useState(false);
+  const [umSendTest, setUmSendTest] = useState({ phone: '', result: null, loading: false });
 
   useEffect(() => {
     fetchSettings();
@@ -288,6 +289,17 @@ export default function SettingsPage() {
       setUmTest(res.data);
     } catch { setUmTest({ ok: false, message: 'Errore di connessione al server' }); }
     finally { setTestingUm(false); }
+  };
+
+  const sendUmTestMessage = async () => {
+    if (!umSendTest.phone) return;
+    setUmSendTest(p => ({ ...p, loading: true, result: null }));
+    try {
+      const res = await api.post(`${API}/settings/ultramsg-send-test`, { phone: umSendTest.phone });
+      setUmSendTest(p => ({ ...p, result: res.data, loading: false }));
+    } catch (e) {
+      setUmSendTest(p => ({ ...p, result: { ok: false, message: 'Errore server: ' + (e?.response?.data?.detail || e.message) }, loading: false }));
+    }
   };
 
   const saveTgSettings = async () => {
@@ -1212,6 +1224,32 @@ export default function SettingsPage() {
                 {umTest.message}
               </div>
             )}
+
+            {/* Test invio reale */}
+            <div className="border-t border-emerald-100 pt-4 space-y-2">
+              <Label className="text-[#2D1B14] font-semibold text-sm">Prova invio reale</Label>
+              <p className="text-xs text-gray-500">Inserisci il tuo numero per verificare che il messaggio arrivi davvero su WhatsApp.</p>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Es. 339 783 3526"
+                  value={umSendTest.phone}
+                  onChange={e => setUmSendTest(p => ({ ...p, phone: e.target.value, result: null }))}
+                  className="border-emerald-200 focus:border-emerald-400"
+                />
+                <Button
+                  onClick={sendUmTestMessage}
+                  disabled={umSendTest.loading || !umSendTest.phone}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
+                >
+                  {umSendTest.loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Invia prova'}
+                </Button>
+              </div>
+              {umSendTest.result && (
+                <div className={`p-3 rounded-xl text-sm font-medium ${umSendTest.result.ok ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                  {umSendTest.result.message}
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 

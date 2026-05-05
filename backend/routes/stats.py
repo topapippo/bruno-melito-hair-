@@ -534,6 +534,46 @@ async def test_ultramsg_api(current_user: dict = Depends(get_current_user)):
         return {"ok": False, "status": "error", "message": f"Errore connessione: {str(e)}"}
 
 
+@router.post("/settings/ultramsg-send-test")
+async def test_ultramsg_send(data: dict, current_user: dict = Depends(get_current_user)):
+    """Invia un messaggio di prova via UltraMsg."""
+    import asyncio
+    import requests as _req
+    import re as _re
+    instance_id = current_user.get("ultramsg_instance_id", "")
+    token = current_user.get("ultramsg_token", "")
+    if not instance_id or not token:
+        return {"ok": False, "message": "UltraMsg non configurato"}
+    phone = data.get("phone", "")
+    if not phone:
+        return {"ok": False, "message": "Numero di telefono mancante"}
+    phone_clean = _re.sub(r'\D', '', phone)
+    if phone_clean.startswith('0039'):
+        phone_clean = phone_clean[4:]
+    elif phone_clean.startswith('39') and len(phone_clean) > 10:
+        phone_clean = phone_clean[2:]
+    if not phone_clean.startswith('39') or len(phone_clean) == 10:
+        phone_clean = '39' + phone_clean
+    try:
+        url = f"https://api.ultramsg.com/{instance_id}/messages/chat"
+        resp = await asyncio.to_thread(
+            _req.post, url,
+            data={"token": token, "to": phone_clean, "body": "✅ Test invio WhatsApp via UltraMsg — Bruno Melito Hair funziona!"},
+            timeout=15
+        )
+        rjson = {}
+        try:
+            rjson = resp.json()
+        except Exception:
+            pass
+        if resp.status_code == 200 and str(rjson.get("sent", "")).lower() == "true":
+            return {"ok": True, "message": f"✅ Messaggio inviato! ID: {rjson.get('id', 'ok')}"}
+        err = rjson.get("error") or rjson.get("message") or resp.text[:300]
+        return {"ok": False, "message": f"Errore UltraMsg ({resp.status_code}): {err}"}
+    except Exception as e:
+        return {"ok": False, "message": f"Errore: {str(e)}"}
+
+
 @router.put("/settings/telegram-api")
 async def update_telegram_api(data: dict, current_user: dict = Depends(get_current_user)):
     await db.users.update_one(
