@@ -94,6 +94,7 @@ export default function WebsitePage() {
   const [success, setSuccess] = useState(false);
   const [appointmentId, setAppointmentId] = useState(null);
   const [upsellingSuggestions, setUpsellingSuggestions] = useState([]);
+  const [bookingWaSent, setBookingWaSent] = useState(false);
 
   // Booking form data
   const [formData, setFormData] = useState({
@@ -251,9 +252,10 @@ export default function WebsitePage() {
     window.open(`https://wa.me/${num}?text=Ciao, vorrei prenotare un appuntamento!`, '_blank');
   };
 
-  const handleBookingSuccess = (aptId, upsells) => {
+  const handleBookingSuccess = (aptId, upsells, waSent = false) => {
     setAppointmentId(aptId);
     setUpsellingSuggestions(upsells);
+    setBookingWaSent(waSent);
     setSuccess(true);
   };
 
@@ -292,6 +294,7 @@ export default function WebsitePage() {
         upsellingSuggestions={upsellingSuggestions}
         setUpsellingSuggestions={setUpsellingSuggestions}
         onReset={resetBooking}
+        waSent={bookingWaSent}
       />
     );
   }

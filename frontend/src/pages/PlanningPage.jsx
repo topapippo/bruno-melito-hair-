@@ -340,9 +340,9 @@ export default function PlanningPage() {
         b.id === booking.id ? { ...b, confirmation_status: 'pending' } : b
       ));
       if (res.data.sent) {
-        toast.success(`✅ Conferma inviata a ${booking.client_name}!`);
+        toast.success(`✅ Conferma WA inviata a ${booking.client_name}!`);
       } else {
-        toast.success(`Conferma preparata per ${booking.client_name}`);
+        toast.warning(`⚠️ WA non inviato a ${booking.client_name} — verifica Green API in Impostazioni`, { duration: 8000 });
       }
     } catch (e) {
       toast.error(e.response?.data?.detail || 'Errore invio messaggio');

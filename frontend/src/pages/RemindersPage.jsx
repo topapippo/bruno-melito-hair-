@@ -117,14 +117,14 @@ export default function RemindersPage() {
       .replace('{operatore}', '')
       .replace('{data}', fmtDate(autoCheck.tomorrow_date || ''));
 
-    await sendWhatsAppDirect(nextApt.client_phone, msg);
-
-    try {
-      await api.post(`${API}/reminders/appointment/${nextApt.id}/mark-sent`);
-      setTomorrowReminders(prev => prev.map(r => r.id === nextApt.id ? { ...r, reminded: true } : r));
-      toast.success(`Promemoria inviato a ${nextApt.client_name}`);
-      checkAutoReminder();
-    } catch (err) { console.error(err); }
+    const sentBatch = await sendWhatsAppDirect(nextApt.client_phone, msg);
+    if (sentBatch) {
+      try {
+        await api.post(`${API}/reminders/appointment/${nextApt.id}/mark-sent`);
+        setTomorrowReminders(prev => prev.map(r => r.id === nextApt.id ? { ...r, reminded: true } : r));
+        checkAutoReminder();
+      } catch (err) { console.error(err); }
+    }
     setBatchSending(false);
   };
 
@@ -333,9 +333,9 @@ export default function RemindersPage() {
         r.id === apt.id ? { ...r, confirmation_status: 'pending', confirmation_sent_at: new Date().toISOString() } : r
       ));
       if (res.data.sent) {
-        toast.success(`✅ Conferma inviata a ${apt.client_name}!`);
+        toast.success(`✅ Conferma WA inviata a ${apt.client_name}!`);
       } else {
-        toast.success(`Conferma preparata per ${apt.client_name}`);
+        toast.warning(`⚠️ WA non inviato a ${apt.client_name} — verifica Green API in Impostazioni`, { duration: 8000 });
       }
     } catch (e) {
       toast.error(e.response?.data?.detail || 'Errore invio conferma');

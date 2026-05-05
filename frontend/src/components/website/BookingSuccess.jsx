@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 export default function BookingSuccess({
   config, formData, selectedServices,
   appointmentId, upsellingSuggestions, setUpsellingSuggestions,
-  onReset
+  onReset, waSent = false
 }) {
   const [addingUpsell, setAddingUpsell] = useState(null);
   const [addedUpsells, setAddedUpsells] = useState([]);
@@ -111,7 +111,10 @@ export default function BookingSuccess({
           <p className="text-[#D4B89A] text-base">
             Ti aspettiamo il <span className="text-white font-black">{dateFormatted}</span> alle <span className="text-white font-black">{formData.time}</span>
           </p>
-          <p className="text-sm text-[#8A6A4A] mt-1">Riceverai un promemoria prima dell'appuntamento 💌</p>
+          {waSent
+            ? <p className="text-sm mt-1 font-semibold" style={{ color: '#34D399' }}>✅ Messaggio WhatsApp di conferma inviato!</p>
+            : <p className="text-sm text-[#8A6A4A] mt-1">Riceverai un promemoria prima dell'appuntamento 💌</p>
+          }
         </div>
 
         {/* Riepilogo appuntamento */}

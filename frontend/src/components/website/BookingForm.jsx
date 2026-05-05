@@ -97,12 +97,13 @@ export default function BookingForm({
     try {
       const res = await api.post(`${API}/public/booking`, bookingData);
       const aptId = res.data.appointment_id;
+      const waSent = res.data.wa_sent === true;
       let upsells = [];
       try {
         const upsellRes = await api.get(`${API}/public/upselling?service_ids=${formData.service_ids.join(',')}`);
         upsells = upsellRes.data || [];
       } catch {}
-      onSuccess(aptId, upsells);
+      onSuccess(aptId, upsells, waSent);
     } catch (err) {
       if (err.response?.status === 409 && err.response?.data?.detail?.conflict) {
         setConflictData(err.response.data.detail);

@@ -239,7 +239,8 @@ async def get_public_operators():
     return await db.operators.find({"user_id": user["id"]}, {"_id": 0, "user_id": 0}).to_list(50)
 
 
-async def _send_booking_notifications(client_name, client_phone, date_it, time, services_names, appointment_id, instance_id, api_token, salon_name):
+async def _send_booking_push(client_name, date_it, time, services_names):
+    """Invia push notification al salone (background)."""
     try:
         from routes.push import send_push_to_all
         await send_push_to_all(
@@ -250,8 +251,11 @@ async def _send_booking_notifications(client_name, client_phone, date_it, time, 
     except Exception as e:
         logger.warning(f"Push notifica prenotazione fallita: {e}")
 
+
+async def _send_booking_wa(client_phone, client_name, date_it, time, services_names, appointment_id, instance_id, api_token, salon_name) -> bool:
+    """Invia WA di conferma al cliente. Ritorna True se inviato con successo."""
     if not instance_id or not api_token or not client_phone:
-        return
+        return False
     try:
         import re as _re, requests as _req, asyncio as _asyncio
         phone_clean = _re.sub(r'\D', '', client_phone)
@@ -267,16 +271,18 @@ async def _send_booking_notifications(client_name, client_phone, date_it, time, 
             f"Per disdire o modificare rispondi a questo messaggio. A presto! 💇"
         )
         wa_url = f"https://api.greenapi.com/waInstance{instance_id}/sendMessage/{api_token}"
-        resp = await _asyncio.to_thread(_req.post, wa_url, json={"chatId": phone_clean + "@c.us", "message": msg}, timeout=10)
+        resp = await _asyncio.to_thread(_req.post, wa_url, json={"chatId": phone_clean + "@c.us", "message": msg}, timeout=8)
         rjson = {}
         try: rjson = resp.json()
         except Exception: pass
         if resp.status_code == 200 and rjson.get("idMessage"):
-            logger.info(f"WA conferma inviata a {client_phone}")
-        else:
-            logger.warning(f"WA conferma FALLITA {client_phone}: HTTP {resp.status_code} — {resp.text[:200]}")
+            logger.info(f"WA conferma prenotazione inviata a {phone_clean}")
+            return True
+        logger.warning(f"WA conferma FALLITA {phone_clean}: HTTP {resp.status_code} — {resp.text[:200]}")
+        return False
     except Exception as e:
         logger.warning(f"WA conferma eccezione: {e}")
+        return False
 
 
 @router.post("/public/booking")
@@ -425,18 +431,24 @@ async def create_public_booking(request: Request, data: PublicBookingRequest, ba
 
     d = data.date.split("-")
     date_it = f"{d[2]}/{d[1]}/{d[0][2:]}" if len(d) == 3 else data.date
-    background_tasks.add_task(
-        _send_booking_notifications,
-        client_name=data.client_name, client_phone=data.client_phone or "",
+    services_names = ", ".join(s.get("name", "") for s in services)
+
+    # Push al salone in background (non blocca la risposta)
+    background_tasks.add_task(_send_booking_push, client_name=data.client_name, date_it=date_it, time=data.time, services_names=services_names)
+
+    # WA al cliente in modo sincrono — così il frontend sa se il messaggio è partito
+    wa_sent = await _send_booking_wa(
+        client_phone=data.client_phone or "",
+        client_name=data.client_name,
         date_it=date_it, time=data.time,
-        services_names=", ".join(s.get("name", "") for s in services),
+        services_names=services_names,
         appointment_id=appointment_id,
         instance_id=user.get("green_api_instance_id", ""),
         api_token=user.get("green_api_token", ""),
         salon_name=user.get("salon_name", "Bruno Melito Hair"),
     )
 
-    return {"success": True, "appointment_id": appointment_id, "booking_code": appointment_id[:8].upper(), "booking_token": booking_token}
+    return {"success": True, "appointment_id": appointment_id, "booking_code": appointment_id[:8].upper(), "booking_token": booking_token, "wa_sent": wa_sent}
 
 
 
