@@ -474,10 +474,14 @@ export default function WebsitePage() {
             <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80" />
           </>
         ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-[#1a0e08] via-[#1C1008] to-[#0a0604]" />
+          <>
+            <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, color-mix(in srgb, ${T.primary} 40%, #000) 0%, #08000F 45%, color-mix(in srgb, ${T.accent} 30%, #000010) 100%)` }} />
+            <div className="absolute inset-0 opacity-40" style={{ background: 'radial-gradient(ellipse at 20% 50%, rgba(168,85,247,0.35) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(6,182,212,0.25) 0%, transparent 55%)' }} />
+          </>
         )}
-        <div className="absolute top-32 left-[10%] w-64 h-64 rounded-full opacity-10 blur-3xl float-slow" style={{ backgroundColor: T.primary }} />
-        <div className="absolute bottom-20 right-[15%] w-48 h-48 rounded-full opacity-10 blur-3xl float-med" style={{ backgroundColor: T.accent }} />
+        <div className="absolute top-24 left-[8%] w-96 h-96 rounded-full opacity-25 blur-3xl float-slow" style={{ backgroundColor: T.primary }} />
+        <div className="absolute bottom-16 right-[12%] w-72 h-72 rounded-full opacity-20 blur-3xl float-med" style={{ backgroundColor: T.accent }} />
+        <div className="absolute top-[35%] left-[38%] w-56 h-56 rounded-full opacity-15 blur-3xl" style={{ backgroundColor: '#8B5CF6', animation: 'float 9s ease-in-out infinite 3s' }} />
         <div className="relative max-w-6xl mx-auto px-4 py-20 sm:py-32 w-full">
           <div className="text-center max-w-3xl mx-auto">
             {/* Logo pill */}
@@ -541,16 +545,18 @@ export default function WebsitePage() {
             </div>
 
             {/* ── Contatori animati ── */}
-            <div className="mt-14 pt-10 border-t border-white/10 grid grid-cols-2 sm:grid-cols-4 gap-8 hero-animate hero-d5">
+            <div className="mt-14 pt-10 border-t border-white/10 grid grid-cols-2 sm:grid-cols-4 gap-5 hero-animate hero-d5">
               {[
-                { value: 500, suffix: '+', label: 'Clienti Soddisfatti', icon: '👥' },
-                { value: config.years_experience || 10, suffix: '+', label: 'Anni di Esperienza', icon: '🏆' },
-                { value: bookingServices.length || 20, suffix: '', label: 'Servizi Disponibili', icon: '✂️' },
-                { value: 5.0, suffix: '', label: 'Stelle su Google', icon: '⭐', decimals: 1 },
+                { value: 500, suffix: '+', label: 'Clienti Soddisfatti', icon: '👥', color: T.primary },
+                { value: config.years_experience || 10, suffix: '+', label: 'Anni di Esperienza', icon: '🏆', color: '#F59E0B' },
+                { value: bookingServices.length || 20, suffix: '', label: 'Servizi Disponibili', icon: '✂️', color: T.accent },
+                { value: 5.0, suffix: '', label: 'Stelle su Google', icon: '⭐', color: '#22D3EE', decimals: 1 },
               ].map((c, i) => (
                 <div key={i} className="text-center group">
-                  <div className="text-3xl mb-2">{c.icon}</div>
-                  <p className="text-4xl sm:text-5xl font-black text-white leading-none" style={{ fontFamily: T.fontDisplay }}>
+                  <div className="mx-auto mb-3 w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-lg" style={{ background: `linear-gradient(135deg, ${c.color}35, ${c.color}15)`, border: `1px solid ${c.color}50` }}>
+                    {c.icon}
+                  </div>
+                  <p className="text-4xl sm:text-5xl font-black leading-none" style={{ fontFamily: T.fontDisplay, color: c.color }}>
                     <CountUp to={c.value} decimals={c.decimals || 0} />{c.suffix}
                   </p>
                   <p className="text-xs text-white/45 mt-2 font-semibold uppercase tracking-widest">{c.label}</p>

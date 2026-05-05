@@ -26,7 +26,7 @@ export function ServicesSection({ servicesRef, showServices, setShowServices, la
   const P = T.primary;
 
   return (
-    <section ref={servicesRef} className="py-20 sm:py-28 relative" style={{ background: `linear-gradient(180deg, ${P}08, ${T.accent}05)` }}>
+    <section ref={servicesRef} className="py-20 sm:py-28 relative" style={{ background: `linear-gradient(135deg, ${P}20 0%, ${T.accent}12 50%, ${P}10 100%)` }}>
       <style>{`
         @keyframes svcShimmer { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
         .svc-cta {
@@ -42,7 +42,7 @@ export function ServicesSection({ servicesRef, showServices, setShowServices, la
         <AnimatedSection>
           <div className="w-full text-center mb-4">
             <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>✂️ I Nostri Servizi</p>
-            <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>Scopri Cosa Offriamo</h2>
+            <h2 className="text-3xl sm:text-4xl font-black" style={{ fontFamily: T.fontDisplay, background: `linear-gradient(135deg, ${P}, ${T.accent})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Scopri Cosa Offriamo</h2>
             <p className="text-sm mt-2 max-w-md mx-auto" style={{ color: `${T.text}80` }}>Sfoglia il listino completo e prenota direttamente il tuo trattamento</p>
           </div>
         </AnimatedSection>
@@ -139,12 +139,12 @@ export function ServicesSection({ servicesRef, showServices, setShowServices, la
 
 export function SalonSection({ salonPhotos, T }) {
   return (
-    <section className="py-20 sm:py-28" style={{ backgroundColor: `${T.text}F0`, color: '#fff' }}>
+    <section className="py-20 sm:py-28" style={{ background: `linear-gradient(135deg, color-mix(in srgb, ${T.primary} 35%, #000) 0%, #0a0010 50%, color-mix(in srgb, ${T.accent} 25%, #000) 100%)`, color: '#fff' }}>
       <div className="max-w-6xl mx-auto px-4">
         <AnimatedSection>
           <div className="text-center mb-12">
             <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Il Nostro Salone</p>
-            <h2 className="text-3xl sm:text-4xl font-black text-white" style={{ fontFamily: T.fontDisplay }}>Dove Nasce la Bellezza</h2>
+            <h2 className="text-3xl sm:text-4xl font-black" style={{ fontFamily: T.fontDisplay, background: `linear-gradient(135deg, #fff, ${T.accent})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Dove Nasce la Bellezza</h2>
           </div>
         </AnimatedSection>
         <div className={`grid gap-4 ${salonPhotos.length === 1 ? 'grid-cols-1 max-w-lg mx-auto' : salonPhotos.length === 2 ? 'grid-cols-2' : salonPhotos.length === 3 ? 'grid-cols-3' : 'grid-cols-2 lg:grid-cols-4'}`}>
@@ -170,7 +170,7 @@ export function SalonSection({ salonPhotos, T }) {
 
 export function AboutSection({ config, salonPhotos, T }) {
   return (
-    <section className="py-20 sm:py-28" style={{ background: `linear-gradient(135deg, ${T.accent}10, ${T.primary}08)` }}>
+    <section className="py-20 sm:py-28" style={{ background: `linear-gradient(135deg, ${T.accent}22 0%, ${T.primary}15 50%, ${T.accent}12 100%)` }}>
       <div className="max-w-6xl mx-auto px-4">
         <div className={`grid grid-cols-1 ${salonPhotos.length > 1 ? 'lg:grid-cols-2' : ''} gap-12 items-center`}>
           {salonPhotos.length > 1 && (
@@ -183,7 +183,7 @@ export function AboutSection({ config, salonPhotos, T }) {
           <AnimatedSection delay={0.2}>
             <div>
               <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Chi Siamo</p>
-              <h2 className="text-3xl sm:text-4xl font-black mb-6" style={{ color: T.text, fontFamily: T.fontDisplay }}>{config.about_title}</h2>
+              <h2 className="text-3xl sm:text-4xl font-black mb-6" style={{ fontFamily: T.fontDisplay, background: `linear-gradient(135deg, ${T.primary}, ${T.accent})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>{config.about_title}</h2>
               {config.about_text && <p className="leading-relaxed mb-6" style={{ color: `${T.text}99` }}>{config.about_text}</p>}
               {config.about_text_2 && <p className="leading-relaxed mb-8" style={{ color: `${T.text}70` }}>{config.about_text_2}</p>}
               {config.about_features && config.about_features.length > 0 && (
@@ -206,12 +206,12 @@ export function AboutSection({ config, salonPhotos, T }) {
 
 export function PromotionsSection({ publicPromos, setShowBooking, bookPromo, T }) {
   return (
-    <section className="py-20 sm:py-28" style={{ background: `linear-gradient(135deg, ${T.primary}12, ${T.accent}08)` }}>
+    <section className="py-20 sm:py-28" style={{ background: `linear-gradient(135deg, ${T.primary}22 0%, ${T.accent}15 50%, ${T.primary}12 100%)` }}>
       <div className="max-w-6xl mx-auto px-4">
         <AnimatedSection>
           <div className="text-center mb-12">
             <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.primary }}>Offerte Speciali</p>
-            <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>Le Nostre Promo</h2>
+            <h2 className="text-3xl sm:text-4xl font-black" style={{ fontFamily: T.fontDisplay, background: `linear-gradient(135deg, ${T.primary}, ${T.accent})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Le Nostre Promo</h2>
             <p className="mt-3 text-sm font-semibold" style={{ color: `${T.primary}` }}>⚠️ Valide esclusivamente per prenotazioni online</p>
           </div>
         </AnimatedSection>
@@ -270,7 +270,7 @@ export function ReviewsSection({ reviews, T, config }) {
   const scrollDuration = Math.max(reviews.length * 6, 24);
 
   return (
-    <section className="py-20 sm:py-28 overflow-hidden" style={{ backgroundColor: `${T.text}F0`, color: '#fff' }}>
+    <section className="py-20 sm:py-28 overflow-hidden" style={{ background: `linear-gradient(135deg, color-mix(in srgb, ${T.primary} 30%, #000) 0%, #08000F 40%, color-mix(in srgb, ${T.accent} 25%, #000010) 100%)`, color: '#fff' }}>
       <style>{`
         @keyframes scrollReviews { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
         .reviews-track { animation: scrollReviews ${scrollDuration}s linear infinite; display: flex; }
@@ -282,7 +282,7 @@ export function ReviewsSection({ reviews, T, config }) {
         <AnimatedSection>
           <div className="text-center">
             <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Recensioni</p>
-            <h2 className="text-3xl sm:text-4xl font-black text-white mb-5" style={{ fontFamily: T.fontDisplay }}>Cosa Dicono di Noi</h2>
+            <h2 className="text-3xl sm:text-4xl font-black mb-5" style={{ fontFamily: T.fontDisplay, background: `linear-gradient(135deg, #fff 40%, ${T.accent})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Cosa Dicono di Noi</h2>
             <div className="inline-flex items-center gap-4 bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl px-6 py-3">
               <span className="text-5xl font-black text-white leading-none">{avgRating}</span>
               <div className="text-left">
@@ -367,12 +367,12 @@ export function GallerySection({ config, hairstylePhotos, setShowBooking, T }) {
   const imagePhotos = hairstylePhotos.filter(p => p.file_type !== 'video');
   return (
     <>
-      <section className="py-20 sm:py-28" style={{ background: `linear-gradient(180deg, ${T.primary}08, ${T.accent}05)` }}>
+      <section className="py-20 sm:py-28" style={{ background: `linear-gradient(135deg, ${T.primary}20 0%, ${T.accent}12 50%, ${T.primary}08 100%)` }}>
         <div className="max-w-6xl mx-auto px-4">
           <AnimatedSection>
             <div className="text-center mb-12">
               <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Gallery</p>
-              <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>{config.gallery_title || 'I Nostri Lavori'}</h2>
+              <h2 className="text-3xl sm:text-4xl font-black" style={{ fontFamily: T.fontDisplay, background: `linear-gradient(135deg, ${T.primary}, ${T.accent})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>{config.gallery_title || 'I Nostri Lavori'}</h2>
               {config.gallery_subtitle && <p className="text-[#64748B] mt-3 max-w-xl mx-auto">{config.gallery_subtitle}</p>}
             </div>
           </AnimatedSection>
@@ -462,12 +462,12 @@ export function LoyaltySection({ setShowBooking, T, loyalty }) {
   const colsClass = rewards.length <= 3 ? 'sm:grid-cols-3' : rewards.length === 4 ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-3 lg:grid-cols-5';
 
   return (
-    <section className="py-20 sm:py-28" style={{ background: `linear-gradient(135deg, ${T.accent}15, ${T.primary}0A)` }}>
+    <section className="py-20 sm:py-28" style={{ background: `linear-gradient(135deg, ${T.accent}25 0%, ${T.primary}18 50%, ${T.accent}12 100%)` }}>
       <div className="max-w-6xl mx-auto px-4">
         <AnimatedSection>
           <div className="text-center mb-12">
             <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Programma Fedeltà</p>
-            <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>Ogni Visita Vale di Più</h2>
+            <h2 className="text-3xl sm:text-4xl font-black" style={{ fontFamily: T.fontDisplay, background: 'linear-gradient(135deg, #F59E0B, #EC4899)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Ogni Visita Vale di Più</h2>
             <p className="text-[#94A3B8] mt-3 max-w-xl mx-auto">Accumula punti ad ogni appuntamento e sblocca premi esclusivi. <strong>1 punto ogni {'\u20AC'}{pointsPerEuro} spesi</strong>.</p>
           </div>
         </AnimatedSection>
@@ -537,18 +537,18 @@ export function GalleryStrip({ photos, T }) {
 
 export function ContactSection({ contactRef, config, hours, phones, setShowBooking, openWhatsApp, T }) {
   return (
-    <section ref={contactRef} className="py-20 sm:py-28" style={{ backgroundColor: `${T.text}F0`, color: '#fff' }}>
+    <section ref={contactRef} className="py-20 sm:py-28" style={{ background: `linear-gradient(135deg, color-mix(in srgb, ${T.primary} 35%, #000) 0%, #08000F 45%, color-mix(in srgb, ${T.accent} 28%, #000010) 100%)`, color: '#fff' }}>
       <div className="max-w-6xl mx-auto px-4">
         <AnimatedSection>
           <div className="text-center mb-12">
             <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Contattaci</p>
-            <h2 className="text-3xl sm:text-4xl font-black text-white" style={{ fontFamily: T.fontDisplay }}>Prenota il Tuo Appuntamento</h2>
+            <h2 className="text-3xl sm:text-4xl font-black" style={{ fontFamily: T.fontDisplay, background: `linear-gradient(135deg, #fff 40%, ${T.accent})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Prenota il Tuo Appuntamento</h2>
           </div>
         </AnimatedSection>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
           {config.address && (
             <AnimatedSection delay={0.1}>
-              <a href={config.maps_url} target="_blank" rel="noopener noreferrer" className="block bg-white/10 backdrop-blur-sm border border-white/15 rounded-3xl p-5 hover:bg-white/15 hover:shadow-xl transition-all duration-500 text-center group hover:-translate-y-1" data-testid="website-contact-address">
+              <a href={config.maps_url} target="_blank" rel="noopener noreferrer" className="block backdrop-blur-sm rounded-3xl p-5 hover:shadow-xl transition-all duration-500 text-center group hover:-translate-y-1" style={{ background: 'linear-gradient(135deg, rgba(251,191,36,0.22), rgba(245,158,11,0.10))', border: '1px solid rgba(251,191,36,0.35)' }} data-testid="website-contact-address">
                 <MapPin className="w-7 h-7 text-amber-400 mx-auto mb-3 group-hover:scale-125 transition-transform duration-300" />
                 <h3 className="font-bold text-white text-sm mb-1">Indirizzo</h3>
                 <p className="text-white/60 text-xs leading-relaxed">{config.address}</p>
@@ -557,7 +557,7 @@ export function ContactSection({ contactRef, config, hours, phones, setShowBooki
           )}
           {phones.length > 0 && (
             <AnimatedSection delay={0.2}>
-              <div className="bg-white/10 backdrop-blur-sm border border-white/15 rounded-3xl p-5 text-center hover:bg-white/15 hover:shadow-xl transition-all duration-500 group hover:-translate-y-1">
+              <div className="backdrop-blur-sm rounded-3xl p-5 text-center hover:shadow-xl transition-all duration-500 group hover:-translate-y-1" style={{ background: 'linear-gradient(135deg, rgba(251,113,133,0.22), rgba(244,63,94,0.10))', border: '1px solid rgba(251,113,133,0.35)' }}>
                 <Phone className="w-7 h-7 text-rose-400 mx-auto mb-3 group-hover:scale-125 transition-transform duration-300" />
                 <h3 className="font-bold text-white text-sm mb-1">Telefono</h3>
                 {phones.map((p, i) => (
@@ -568,7 +568,7 @@ export function ContactSection({ contactRef, config, hours, phones, setShowBooki
           )}
           {config.email && (
             <AnimatedSection delay={0.3}>
-              <a href={`mailto:${config.email}`} className="block bg-white/10 backdrop-blur-sm border border-white/15 rounded-3xl p-5 hover:bg-white/15 hover:shadow-xl transition-all duration-500 text-center group hover:-translate-y-1">
+              <a href={`mailto:${config.email}`} className="block backdrop-blur-sm rounded-3xl p-5 hover:shadow-xl transition-all duration-500 text-center group hover:-translate-y-1" style={{ background: 'linear-gradient(135deg, rgba(20,184,166,0.22), rgba(13,148,136,0.10))', border: '1px solid rgba(20,184,166,0.35)' }}>
                 <Mail className="w-7 h-7 text-teal-400 mx-auto mb-3 group-hover:scale-125 transition-transform duration-300" />
                 <h3 className="font-bold text-white text-sm mb-1">Email</h3>
                 <p className="text-white/60 text-xs">{config.email}</p>
@@ -576,7 +576,7 @@ export function ContactSection({ contactRef, config, hours, phones, setShowBooki
             </AnimatedSection>
           )}
           <AnimatedSection delay={0.4}>
-            <div className="bg-white/10 backdrop-blur-sm border border-white/15 rounded-3xl p-5 text-center hover:bg-white/15 hover:shadow-xl transition-all duration-500 group hover:-translate-y-1">
+            <div className="backdrop-blur-sm rounded-3xl p-5 text-center hover:shadow-xl transition-all duration-500 group hover:-translate-y-1" style={{ background: 'linear-gradient(135deg, rgba(167,139,250,0.22), rgba(139,92,246,0.10))', border: '1px solid rgba(167,139,250,0.35)' }}>
               <Clock className="w-7 h-7 text-violet-400 mx-auto mb-3 group-hover:scale-125 transition-transform duration-300" />
               <h3 className="font-bold text-white text-sm mb-1">Orari</h3>
               {Object.entries(hours).length > 0 ? (
@@ -636,12 +636,12 @@ export function TransformationsSection({ hairstylePhotos, setShowBooking, T }) {
   if (photos.length < 2) return null;
 
   return (
-    <section className="py-20 sm:py-28 overflow-hidden" style={{ background: `linear-gradient(180deg, ${T.bg}, ${T.primary}06)` }}>
+    <section className="py-20 sm:py-28 overflow-hidden" style={{ background: `linear-gradient(135deg, ${T.primary}18 0%, ${T.accent}12 50%, ${T.primary}08 100%)` }}>
       <div className="max-w-6xl mx-auto px-4">
         <AnimatedSection>
           <div className="text-center mb-12">
             <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Portfolio</p>
-            <h2 className="text-3xl sm:text-4xl font-black mb-3" style={{ color: T.text, fontFamily: T.fontDisplay }}>Le Nostre Trasformazioni</h2>
+            <h2 className="text-3xl sm:text-4xl font-black mb-3" style={{ fontFamily: T.fontDisplay, background: `linear-gradient(135deg, ${T.primary}, ${T.accent})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Le Nostre Trasformazioni</h2>
             <p className="text-sm max-w-md mx-auto" style={{ color: `${T.text}70` }}>
               Ogni taglio, ogni colore, ogni trattamento racconta una storia unica.
             </p>
@@ -723,14 +723,14 @@ export function TeamSection({ operators, T, setShowBooking }) {
         .team-card:hover .team-ring { animation-duration: 1.2s; }
       `}</style>
       {/* Sfondo decorativo */}
-      <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${T.primary}08 0%, ${T.accent}06 50%, ${T.primary}04 100%)` }} />
+      <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${T.primary}20 0%, ${T.accent}14 50%, ${T.primary}10 100%)` }} />
       <div className="absolute top-0 left-0 right-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${T.primary}30, transparent)` }} />
 
       <div className="relative max-w-6xl mx-auto px-4">
         <AnimatedSection>
           <div className="text-center mb-14">
             <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>👑 Il Nostro Team</p>
-            <h2 className="text-3xl sm:text-4xl font-black mb-3" style={{ color: T.text, fontFamily: T.fontDisplay }}>Professionisti al Tuo Servizio</h2>
+            <h2 className="text-3xl sm:text-4xl font-black mb-3" style={{ fontFamily: T.fontDisplay, background: `linear-gradient(135deg, ${T.primary}, ${T.accent})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Professionisti al Tuo Servizio</h2>
             <p className="text-sm max-w-md mx-auto" style={{ color: `${T.text}70` }}>
               Un team di esperti appassionati, pronti a valorizzare la tua bellezza.
             </p>
