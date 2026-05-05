@@ -458,7 +458,7 @@ async def test_whatsapp_send(data: dict, current_user: dict = Depends(get_curren
         phone_clean = phone_clean[4:]
     elif phone_clean.startswith('39') and len(phone_clean) > 10:
         phone_clean = phone_clean[2:]
-    if not phone_clean.startswith('39'):
+    if not phone_clean.startswith('39') or len(phone_clean) == 10:
         phone_clean = '39' + phone_clean
     try:
         url = f"https://api.greenapi.com/waInstance{instance_id}/sendMessage/{api_token}"

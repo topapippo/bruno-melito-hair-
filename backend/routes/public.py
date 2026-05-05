@@ -257,7 +257,7 @@ async def _send_booking_notifications(client_name, client_phone, date_it, time, 
         phone_clean = _re.sub(r'\D', '', client_phone)
         if phone_clean.startswith('0039'): phone_clean = phone_clean[4:]
         elif phone_clean.startswith('39') and len(phone_clean) > 10: phone_clean = phone_clean[2:]
-        if not phone_clean.startswith('39'): phone_clean = '39' + phone_clean
+        if not phone_clean.startswith('39') or len(phone_clean) == 10: phone_clean = '39' + phone_clean
         msg = (
             f"✅ Prenotazione confermata!\n\n"
             f"Ciao {client_name}! La tua prenotazione da *{salon_name}* è confermata:\n\n"

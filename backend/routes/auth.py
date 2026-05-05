@@ -74,7 +74,7 @@ async def _notify_login_whatsapp(user: dict, ip: str):
             phone_clean = phone_clean[4:]
         elif phone_clean.startswith('39') and len(phone_clean) > 10:
             phone_clean = phone_clean[2:]
-        if not phone_clean.startswith('39'):
+        if not phone_clean.startswith('39') or len(phone_clean) == 10:
             phone_clean = '39' + phone_clean
         now_str = datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')
         email_masked = user['email'][:3] + '***@' + user['email'].split('@')[-1]

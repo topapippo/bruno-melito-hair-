@@ -530,7 +530,8 @@ async def send_whatsapp_direct(data: dict, current_user: dict = Depends(get_curr
         phone_clean = phone_clean[4:]
     elif phone_clean.startswith('39') and len(phone_clean) > 10:
         phone_clean = phone_clean[2:]
-    if not phone_clean.startswith('39'):
+    # Aggiunge prefisso 39 se mancante O se il numero è 10 cifre (anche se inizia con 39x)
+    if not phone_clean.startswith('39') or len(phone_clean) == 10:
         phone_clean = '39' + phone_clean
     wa_number = phone_clean + "@c.us"
 
