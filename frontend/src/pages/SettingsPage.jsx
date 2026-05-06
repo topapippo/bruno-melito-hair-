@@ -890,39 +890,6 @@ export default function SettingsPage() {
                 )}
               </div>
 
-              {/* Existing blocks */}
-              {blockedSlots.length === 0 ? (
-                <p className="text-center text-sm text-gray-400 py-4">Nessun orario bloccato</p>
-              ) : (
-                <div className="space-y-2" data-testid="blocked-slots-list">
-                  {blockedSlots.map(slot => (
-                    <div key={slot.id} className="flex items-center justify-between p-3 rounded-xl border bg-white hover:bg-red-50/50 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-2 h-2 rounded-full ${slot.type === 'recurring' ? 'bg-orange-400' : 'bg-red-400'}`} />
-                        <div>
-                          <p className="text-sm font-bold text-[#2D1B14]">
-                            {slot.type === 'recurring'
-                              ? <span className="capitalize">{slot.day_of_week}</span>
-                              : slot.date}
-                            {' '}
-                            <span className="text-[#C8617A]">{slot.start_time} - {slot.end_time}</span>
-                          </p>
-                          <div className="flex items-center gap-2">
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${slot.type === 'recurring' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'}`}>
-                              {slot.type === 'recurring' ? 'Ogni settimana' : 'Una tantum'}
-                            </span>
-                            {slot.reason && <span className="text-xs text-[#7C5C4A]">{slot.reason}</span>}
-                          </div>
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="sm" onClick={() => deleteBlockedSlot(slot.id)}
-                        className="text-red-500 hover:bg-red-100 h-8 w-8 p-0" data-testid={`delete-block-${slot.id}`}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
             </CardContent>
           </Card>
 

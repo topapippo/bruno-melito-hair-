@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/select';
 import { History, Search, Clock, Euro, Calendar as CalendarIcon, Filter } from 'lucide-react';
 import ClientAvatar from '../components/ClientAvatar';
-import { format, subDays, subMonths } from 'date-fns';
+import { format, subDays, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { it } from 'date-fns/locale';
 
 
@@ -125,7 +125,31 @@ export default function HistoryPage() {
               </Select>
 
               {/* Date Range Presets */}
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setDateRange({ start: startOfMonth(new Date()), end: new Date() })}
+                  className="border-[#F0E6DC]"
+                >
+                  Mese in corso
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setDateRange({ start: startOfMonth(subMonths(new Date(), 1)), end: endOfMonth(subMonths(new Date(), 1)) })}
+                  className="border-[#F0E6DC]"
+                >
+                  Mese precedente
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setDateRange({ start: new Date(new Date().getFullYear(), 0, 1), end: new Date() })}
+                  className="border-[#F0E6DC]"
+                >
+                  Anno in corso
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"
@@ -133,14 +157,6 @@ export default function HistoryPage() {
                   className="border-[#F0E6DC]"
                 >
                   7 giorni
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setDateRange({ start: subMonths(new Date(), 1), end: new Date() })}
-                  className="border-[#F0E6DC]"
-                >
-                  1 mese
                 </Button>
                 <Button
                   variant="outline"
