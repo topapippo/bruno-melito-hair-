@@ -1079,25 +1079,81 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* WhatsApp Diretto — Green API (gratuito) */}
+        {/* UltraMsg — Provider principale */}
+        <Card className="border-2 border-emerald-100">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-[#2D1B14]">
+              <Share2 className="w-5 h-5 text-emerald-600" />
+              UltraMsg — WhatsApp (provider principale)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label className="font-semibold text-sm">Instance ID</Label>
+                <Input
+                  value={umForm.ultramsg_instance_id}
+                  onChange={e => setUmForm(f => ({ ...f, ultramsg_instance_id: e.target.value }))}
+                  placeholder="es. instance123456"
+                  className="border-2"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="font-semibold text-sm">Token</Label>
+                <Input
+                  value={umForm.ultramsg_token}
+                  onChange={e => setUmForm(f => ({ ...f, ultramsg_token: e.target.value }))}
+                  placeholder="Token dalla dashboard UltraMsg"
+                  type="password"
+                  className="border-2"
+                />
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button onClick={saveUmSettings} disabled={savingUm} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                {savingUm ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-2" /> Salva</>}
+              </Button>
+              <Button onClick={testUmConnection} disabled={testingUm} variant="outline" className="border-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50">
+                {testingUm ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Testa connessione
+              </Button>
+            </div>
+            {umTest && (
+              <div className={`p-3 rounded-xl text-sm font-medium ${umTest.ok ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                {umTest.message}
+              </div>
+            )}
+            <div className="border-t border-emerald-100 pt-4 space-y-2">
+              <Label className="text-[#2D1B14] font-semibold text-sm">Prova invio reale</Label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Es. 339 783 3526"
+                  value={umSendTest.phone}
+                  onChange={e => setUmSendTest(p => ({ ...p, phone: e.target.value, result: null }))}
+                  className="border-emerald-200 focus:border-emerald-400"
+                />
+                <Button onClick={sendUmTestMessage} disabled={umSendTest.loading || !umSendTest.phone} className="bg-emerald-600 hover:bg-emerald-700 text-white shrink-0">
+                  {umSendTest.loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Invia prova'}
+                </Button>
+              </div>
+              {umSendTest.result && (
+                <div className={`p-3 rounded-xl text-sm font-medium ${umSendTest.result.ok ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                  {umSendTest.result.message}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Green API — Secondo provider */}
         <Card className="border-2 border-green-100">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-[#2D1B14]">
               <Share2 className="w-5 h-5 text-green-600" />
-              WhatsApp Diretto — Invio senza aprire l'app
+              Green API — WhatsApp (secondo provider, fallback se UltraMsg non disponibile)
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="p-4 bg-green-50 border border-green-200 rounded-xl text-sm text-green-800 space-y-2">
-              <p className="font-bold">✅ Gratuito — fino a 1500 messaggi/mese</p>
-              <p>Usa il tuo numero WhatsApp normale (non serve un account Business). Setup in 2 minuti:</p>
-              <ol className="list-decimal list-inside space-y-1 text-green-700">
-                <li>Vai su <strong>greenapi.com</strong> e crea un account gratuito</li>
-                <li>Crea una nuova istanza e scansiona il QR code con WhatsApp (come WhatsApp Web)</li>
-                <li>Copia <strong>Instance ID</strong> e <strong>API Token</strong> qui sotto e salva</li>
-              </ol>
-              <p className="text-xs text-green-600">Se non configurato, i messaggi aprono WhatsApp Web con il testo precompilato (comportamento attuale).</p>
-            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label className="font-semibold text-sm">Instance ID</Label>
@@ -1107,7 +1163,6 @@ export default function SettingsPage() {
                   placeholder="es. 1101234567"
                   className="border-2"
                 />
-                <p className="text-xs text-gray-400">Trovalo nella dashboard di Green API</p>
               </div>
               <div className="space-y-1">
                 <Label className="font-semibold text-sm">API Token</Label>
@@ -1118,7 +1173,6 @@ export default function SettingsPage() {
                   type="password"
                   className="border-2"
                 />
-                <p className="text-xs text-gray-400">Visibile nella pagina della tua istanza</p>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
@@ -1140,11 +1194,8 @@ export default function SettingsPage() {
                 )}
               </div>
             )}
-
-            {/* Test invio reale */}
             <div className="border-t border-green-100 pt-4 space-y-2">
               <Label className="text-[#2D1B14] font-semibold text-sm">Prova invio reale</Label>
-              <p className="text-xs text-gray-500">Inserisci il tuo numero per verificare che il messaggio arrivi davvero su WhatsApp (non solo che la connessione sia attiva).</p>
               <div className="flex gap-2">
                 <Input
                   placeholder="Es. 339 783 3526"
@@ -1152,11 +1203,7 @@ export default function SettingsPage() {
                   onChange={e => setWaSendTest(p => ({ ...p, phone: e.target.value, result: null }))}
                   className="border-green-200 focus:border-green-400"
                 />
-                <Button
-                  onClick={sendWaTestMessage}
-                  disabled={waSendTest.loading || !waSendTest.phone}
-                  className="bg-green-600 hover:bg-green-700 text-white shrink-0"
-                >
+                <Button onClick={sendWaTestMessage} disabled={waSendTest.loading || !waSendTest.phone} className="bg-green-600 hover:bg-green-700 text-white shrink-0">
                   {waSendTest.loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Invia prova'}
                 </Button>
               </div>
@@ -1169,108 +1216,15 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* UltraMsg — WhatsApp alternativo */}
-        <Card className="border-2 border-emerald-100">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-[#2D1B14]">
-              <Share2 className="w-5 h-5 text-emerald-600" />
-              UltraMsg — WhatsApp alternativo (fallback se Green API esaurita)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-800 space-y-2">
-              <p className="font-bold">📱 Secondo provider WhatsApp</p>
-              <p>Usato automaticamente quando Green API è esaurita o non configurata. Stesso numero WhatsApp, provider diverso.</p>
-              <ol className="list-decimal list-inside space-y-1 text-emerald-700">
-                <li>Vai su <strong>app.ultramsg.com</strong> e crea un account</li>
-                <li>Crea una nuova istanza e scansiona il QR code con WhatsApp</li>
-                <li>Copia <strong>Instance ID</strong> e <strong>Token</strong> qui sotto e salva</li>
-              </ol>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <Label className="font-semibold text-sm">Instance ID</Label>
-                <Input
-                  value={umForm.ultramsg_instance_id}
-                  onChange={e => setUmForm(f => ({ ...f, ultramsg_instance_id: e.target.value }))}
-                  placeholder="es. instance123456"
-                  className="border-2"
-                />
-                <p className="text-xs text-gray-400">Trovalo nella dashboard di UltraMsg</p>
-              </div>
-              <div className="space-y-1">
-                <Label className="font-semibold text-sm">Token</Label>
-                <Input
-                  value={umForm.ultramsg_token}
-                  onChange={e => setUmForm(f => ({ ...f, ultramsg_token: e.target.value }))}
-                  placeholder="Token dalla dashboard UltraMsg"
-                  type="password"
-                  className="border-2"
-                />
-                <p className="text-xs text-gray-400">Visibile nella pagina della tua istanza</p>
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <Button onClick={saveUmSettings} disabled={savingUm} className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                {savingUm ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-2" /> Salva</>}
-              </Button>
-              <Button onClick={testUmConnection} disabled={testingUm} variant="outline" className="border-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50">
-                {testingUm ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                Testa connessione
-              </Button>
-            </div>
-            {umTest && (
-              <div className={`p-3 rounded-xl text-sm font-medium ${umTest.ok ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
-                {umTest.message}
-              </div>
-            )}
-
-            {/* Test invio reale */}
-            <div className="border-t border-emerald-100 pt-4 space-y-2">
-              <Label className="text-[#2D1B14] font-semibold text-sm">Prova invio reale</Label>
-              <p className="text-xs text-gray-500">Inserisci il tuo numero per verificare che il messaggio arrivi davvero su WhatsApp.</p>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Es. 339 783 3526"
-                  value={umSendTest.phone}
-                  onChange={e => setUmSendTest(p => ({ ...p, phone: e.target.value, result: null }))}
-                  className="border-emerald-200 focus:border-emerald-400"
-                />
-                <Button
-                  onClick={sendUmTestMessage}
-                  disabled={umSendTest.loading || !umSendTest.phone}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
-                >
-                  {umSendTest.loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Invia prova'}
-                </Button>
-              </div>
-              {umSendTest.result && (
-                <div className={`p-3 rounded-xl text-sm font-medium ${umSendTest.result.ok ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
-                  {umSendTest.result.message}
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Telegram — Green API Fallback */}
+        {/* Telegram — Fallback finale */}
         <Card className="border-2 border-sky-100">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-[#2D1B14]">
               <Share2 className="w-5 h-5 text-sky-500" />
-              Telegram — Fallback automatico quando WhatsApp esaurisce la quota
+              Telegram — Fallback automatico quando WhatsApp è esaurito
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="p-4 bg-sky-50 border border-sky-200 rounded-xl text-sm text-sky-800 space-y-2">
-              <p className="font-bold">📲 Fallback automatico su Telegram</p>
-              <p>Quando la quota mensile WhatsApp (Green API) è esaurita, i messaggi vengono inviati automaticamente su Telegram. Il cliente deve avere Telegram con lo stesso numero di telefono.</p>
-              <ol className="list-decimal list-inside space-y-1 text-sky-700">
-                <li>Vai su <strong>app.green-api.com</strong> → crea una nuova istanza <strong>Telegram</strong></li>
-                <li>Copia <strong>Instance ID</strong> e <strong>API Token</strong> dell'istanza Telegram</li>
-                <li>Incollali qui sotto e salva</li>
-              </ol>
-            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label className="font-semibold text-sm">Instance ID Telegram</Label>
@@ -1280,7 +1234,6 @@ export default function SettingsPage() {
                   placeholder="es. 4100610381"
                   className="border-2"
                 />
-                <p className="text-xs text-gray-400">Trovalo nella dashboard di Green API</p>
               </div>
               <div className="space-y-1">
                 <Label className="font-semibold text-sm">API Token Telegram</Label>
@@ -1291,7 +1244,6 @@ export default function SettingsPage() {
                   type="password"
                   className="border-2"
                 />
-                <p className="text-xs text-gray-400">Visibile nella pagina della tua istanza Telegram</p>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">

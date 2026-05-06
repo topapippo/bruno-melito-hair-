@@ -537,10 +537,39 @@ async def send_whatsapp_direct(data: dict, current_user: dict = Depends(get_curr
 
     quota_esaurita = False
 
-    # --- 1. Green API ---
+    # --- 1. UltraMsg (provider principale) ---
+    um_instance = current_user.get("ultramsg_instance_id", "")
+    um_token = current_user.get("ultramsg_token", "")
+    if um_instance and um_token:
+        try:
+            url = f"https://api.ultramsg.com/{um_instance}/messages/chat"
+            resp = await asyncio.to_thread(
+                _req.post, url,
+                data={"token": um_token, "to": phone_clean, "body": message},
+                timeout=15
+            )
+            rjson = {}
+            try:
+                rjson = resp.json()
+            except Exception:
+                pass
+            if resp.status_code == 200 and str(rjson.get("sent", "")).lower() == "true":
+                return {"sent": True, "method": "ultramsg"}
+            err = rjson.get("error") or rjson.get("message") or resp.text[:200]
+            err_low = str(err).lower()
+            if "limit" in err_low or "quota" in err_low or "exceeded" in err_low:
+                quota_esaurita = True
+                logger.warning(f"UltraMsg quota esaurita — provo Green API")
+            else:
+                logger.warning(f"UltraMsg failed {resp.status_code}: {err}")
+                return {"sent": False, "method": "link", "url": wa_url, "error": f"UltraMsg: {err}"}
+        except Exception as e:
+            logger.warning(f"UltraMsg exception: {e}")
+
+    # --- 2. Green API (secondo provider, se UltraMsg non configurato o quota esaurita) ---
     instance_id = current_user.get("green_api_instance_id", "")
     api_token = current_user.get("green_api_token", "")
-    if instance_id and api_token:
+    if instance_id and api_token and (not um_instance or quota_esaurita):
         try:
             url = f"https://api.greenapi.com/waInstance{instance_id}/sendMessage/{api_token}"
             resp = await asyncio.to_thread(
@@ -560,9 +589,8 @@ async def send_whatsapp_direct(data: dict, current_user: dict = Depends(get_curr
                           invoke.get("description") or resp.text[:200])
             if invoke.get("status") == "QUOTE_ALLOWED":
                 quota_esaurita = True
-                logger.warning(f"Green API quota esaurita — provo UltraMsg/Telegram")
+                logger.warning(f"Green API quota esaurita — provo Telegram")
             else:
-                # Errore non-quota: verifica se numero è su WhatsApp, poi ritorna
                 logger.warning(f"Green API send failed {resp.status_code} chatId={wa_number}: {resp.text[:300]}")
                 try:
                     check_url = f"https://api.greenapi.com/waInstance{instance_id}/checkWhatsapp/{api_token}"
@@ -576,35 +604,6 @@ async def send_whatsapp_direct(data: dict, current_user: dict = Depends(get_curr
                         "error": f"Green API {resp.status_code}: {err_detail}", "chatId": wa_number}
         except Exception as e:
             logger.warning(f"Green API exception: {e}")
-
-    # --- 2. UltraMsg (se configurato e Green API non disponibile o quota esaurita) ---
-    um_instance = current_user.get("ultramsg_instance_id", "")
-    um_token = current_user.get("ultramsg_token", "")
-    if um_instance and um_token and (not instance_id or quota_esaurita):
-        try:
-            url = f"https://api.ultramsg.com/{um_instance}/messages/chat"
-            resp = await asyncio.to_thread(
-                _req.post, url,
-                data={"token": um_token, "to": phone_clean, "body": message},
-                timeout=15
-            )
-            rjson = {}
-            try:
-                rjson = resp.json()
-            except Exception:
-                pass
-            if resp.status_code == 200 and str(rjson.get("sent", "")).lower() == "true":
-                return {"sent": True, "method": "ultramsg"}
-            err = rjson.get("error") or rjson.get("message") or resp.text[:200]
-            err_low = str(err).lower()
-            if "limit" in err_low or "quota" in err_low or "exceeded" in err_low:
-                quota_esaurita = True
-                logger.warning(f"UltraMsg quota esaurita — provo Telegram")
-            else:
-                logger.warning(f"UltraMsg failed {resp.status_code}: {err}")
-                return {"sent": False, "method": "link", "url": wa_url, "error": f"UltraMsg: {err}"}
-        except Exception as e:
-            logger.warning(f"UltraMsg exception: {e}")
 
     # --- 3. Telegram (fallback quando quota WA esaurita su tutti i provider) ---
     if quota_esaurita:
