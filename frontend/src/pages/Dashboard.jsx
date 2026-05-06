@@ -12,7 +12,7 @@ import {
   Scissors, UserCheck, BarChart3,
   CreditCard, Gift, Bell, Download, Globe, Settings, AlertTriangle,
   MessageCircle, X, Sparkles, Heart, Star, ArrowDownCircle, FileBarChart, Cake,
-  ClockArrowUp, CheckCircle2, AlertCircle, Zap, History,
+  ClockArrowUp, CheckCircle2, AlertCircle, Zap, History, ArrowUpRight,
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -135,12 +135,15 @@ export default function Dashboard() {
   if (loading) return (
     <Layout>
       <div className="space-y-5">
-        <Skeleton className="h-36 w-full rounded-2xl" />
+        <Skeleton className="h-44 w-full rounded-3xl" />
+        <div className="grid grid-cols-3 gap-3">
+          {[1,2,3].map(i => <Skeleton key={i} className="h-24 rounded-2xl" />)}
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[1,2,3,4].map(i => <Skeleton key={i} className="h-28 rounded-2xl" />)}
         </div>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-28 rounded-2xl" />)}
+          {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-32 rounded-2xl" />)}
         </div>
       </div>
     </Layout>
@@ -151,81 +154,115 @@ export default function Dashboard() {
   const greetingEmoji = hour < 6 ? '🌙' : hour < 12 ? '☀️' : hour < 18 ? '🌤️' : '🌙';
   const firstName = user?.name?.split(' ')[0] || 'Bruno';
 
+  const todayTotal = stats?.today_appointments?.reduce((s, a) => s + (Number(a.total_price) || 0), 0) || 0;
+  const completedToday = stats?.today_appointments?.filter(a => a.status === 'completed').length || 0;
+  const totalToday = stats?.today_appointments_count || 0;
+  const progressPct = totalToday > 0 ? Math.round((completedToday / totalToday) * 100) : 0;
+
   return (
     <Layout>
       <div className="space-y-5" data-testid="dashboard-page">
 
         {/* ══════════════════════════════════════════════════════════════
-            HERO — Saluto animato con CTA
+            HERO
         ══════════════════════════════════════════════════════════════ */}
         <div
-          className="relative rounded-2xl overflow-hidden p-5 md:p-7 greeting-in"
+          className="relative rounded-3xl overflow-hidden px-6 pt-7 pb-6 md:px-9 md:pt-9 md:pb-7 greeting-in"
           style={{
-            background: 'linear-gradient(135deg, color-mix(in srgb, var(--admin-primary) 14%, var(--admin-content-bg)), color-mix(in srgb, var(--admin-accent) 8%, var(--admin-content-bg)))',
-            border: '1px solid color-mix(in srgb, var(--admin-primary) 18%, transparent)',
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--admin-primary) 14%, var(--admin-content-bg)), color-mix(in srgb, var(--admin-accent) 10%, var(--admin-content-bg)))',
+            border: '1px solid color-mix(in srgb, var(--admin-primary) 20%, transparent)',
           }}
         >
           {/* Blob decorativi */}
           <div
-            className="absolute top-0 right-0 w-72 h-72 rounded-full pointer-events-none blob-animate"
-            style={{
-              background: 'radial-gradient(circle, var(--admin-primary) 0%, transparent 70%)',
-              opacity: 0.08,
-              transform: 'translate(30%, -30%)',
-            }}
+            className="absolute top-0 right-0 w-80 h-80 rounded-full pointer-events-none blob-animate"
+            style={{ background: 'radial-gradient(circle, var(--admin-primary) 0%, transparent 70%)', opacity: 0.09, transform: 'translate(35%, -35%)' }}
           />
           <div
-            className="absolute bottom-0 left-10 w-40 h-40 rounded-full pointer-events-none"
-            style={{
-              background: 'radial-gradient(circle, var(--admin-accent) 0%, transparent 70%)',
-              opacity: 0.06,
-              transform: 'translateY(30%)',
-            }}
+            className="absolute bottom-0 left-16 w-48 h-48 rounded-full pointer-events-none"
+            style={{ background: 'radial-gradient(circle, var(--admin-accent) 0%, transparent 70%)', opacity: 0.07, transform: 'translateY(40%)' }}
           />
 
-          <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-1.5">
-                <Sparkles className="w-4 h-4 animate-pulse-slow" style={{ color: 'var(--admin-primary)' }} />
-                <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: 'var(--admin-primary)' }}>
-                  Dashboard
+          <div className="relative flex flex-col md:flex-row md:items-start md:justify-between gap-5">
+            {/* Left: saluto + data */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--admin-primary) 18%, transparent)' }}>
+                  <Sparkles className="w-3 h-3 animate-pulse-slow" style={{ color: 'var(--admin-primary)' }} />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--admin-primary)' }}>
+                  Dashboard Bruno Melito Hair
                 </span>
               </div>
-              <h1 className="font-display text-3xl md:text-4xl font-bold" style={{ color: 'var(--admin-content-text)' }}>
+              <h1 className="font-display text-3xl md:text-4xl font-bold leading-tight" style={{ color: 'var(--admin-content-text)' }}>
                 {greetingEmoji} {greeting}, {firstName}!
               </h1>
-              <p className="text-sm mt-1 capitalize font-medium" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 55%, transparent)' }}>
+              <p className="text-sm mt-1 capitalize font-medium" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 50%, transparent)' }}>
                 {format(new Date(), "EEEE, d MMMM yyyy", { locale: it })}
               </p>
 
-              {/* Mini strip oggi */}
-              {stats?.today_appointments_count > 0 && (
-                <div className="flex items-center gap-3 mt-3">
+              {/* Stat pills */}
+              <div className="flex flex-wrap items-center gap-2 mt-4">
+                {totalToday > 0 && (
                   <div
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
-                    style={{ background: 'color-mix(in srgb, var(--admin-primary) 16%, transparent)', color: 'var(--admin-primary)' }}
+                    style={{ background: 'color-mix(in srgb, var(--admin-primary) 14%, transparent)', color: 'var(--admin-primary)' }}
                   >
                     <Calendar className="w-3.5 h-3.5" />
-                    {stats.today_appointments_count} appuntamenti oggi
+                    {totalToday} appuntamenti oggi
                   </div>
-                  {(stats?.monthly_revenue || 0) > 0 && (
+                )}
+                {todayTotal > 0 && (
+                  <div
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold hidden sm:flex"
+                    style={{ background: 'color-mix(in srgb, #10B981 12%, transparent)', color: '#059669' }}
+                  >
+                    <Euro className="w-3.5 h-3.5" />
+                    €{todayTotal.toFixed(0)} incassati oggi
+                  </div>
+                )}
+                {(stats?.monthly_revenue || 0) > 0 && (
+                  <div
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold hidden sm:flex"
+                    style={{ background: 'color-mix(in srgb, var(--admin-accent) 14%, transparent)', color: 'color-mix(in srgb, var(--admin-accent) 80%, #7a5000)' }}
+                  >
+                    <TrendingUp className="w-3.5 h-3.5" />
+                    €{(stats.monthly_revenue || 0).toFixed(0)} questo mese
+                  </div>
+                )}
+              </div>
+
+              {/* Progress bar appuntamenti oggi */}
+              {totalToday > 0 && (
+                <div className="mt-4 max-w-xs">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 45%, transparent)' }}>
+                      Progresso giornata
+                    </span>
+                    <span className="text-[10px] font-bold" style={{ color: 'var(--admin-primary)' }}>
+                      {completedToday}/{totalToday} completati
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full overflow-hidden" style={{ background: 'color-mix(in srgb, var(--admin-content-text) 10%, transparent)' }}>
                     <div
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold hidden sm:flex"
-                      style={{ background: 'color-mix(in srgb, var(--admin-accent) 16%, transparent)', color: 'color-mix(in srgb, var(--admin-accent) 80%, #7a5000)' }}
-                    >
-                      <Euro className="w-3.5 h-3.5" />
-                      €{(stats.monthly_revenue || 0).toFixed(0)} questo mese
-                    </div>
-                  )}
+                      className="h-full rounded-full transition-all duration-700"
+                      style={{
+                        width: `${progressPct}%`,
+                        background: 'linear-gradient(90deg, var(--admin-primary), var(--admin-accent))',
+                        minWidth: progressPct > 0 ? '8px' : '0',
+                      }}
+                    />
+                  </div>
                 </div>
               )}
             </div>
 
-            <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Right: CTA button */}
+            <div className="flex items-start gap-2 shrink-0 mt-1">
               <Link to="/appointments">
                 <Button
                   data-testid="new-appointment-btn"
-                  className="glow-btn text-white font-bold rounded-xl px-5 shadow-lg"
+                  className="glow-btn text-white font-bold rounded-2xl px-5 py-2.5 shadow-lg text-sm"
                   style={{ background: 'linear-gradient(135deg, var(--admin-primary), color-mix(in srgb, var(--admin-primary) 70%, var(--admin-accent)))' }}
                 >
                   <Plus className="w-4 h-4 mr-2" />
@@ -241,25 +278,27 @@ export default function Dashboard() {
         ══════════════════════════════════════════════════════════════ */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 stagger-fast">
           {[
-            { label: 'Prenota un appuntamento', desc: 'Aggiungi velocemente una nuova prenotazione', icon: Plus, color: '#E8477C', path: '/appointments' },
-            { label: 'Nuovo cliente',            desc: 'Aggiungi un cliente alla rubrica',           icon: Users, color: '#2EC4B6', path: '/clients' },
-            { label: "Registra un'uscita",       desc: 'Tieni traccia delle spese del salone',      icon: CreditCard, color: '#F59E0B', path: '/uscite' },
-          ].map(({ label, desc, icon: Icon, color, path }) => (
+            { label: 'Prenota appuntamento', desc: 'Aggiungi una nuova prenotazione', icon: Plus,        color: '#E8477C', bg: '#FFF0F5', path: '/appointments' },
+            { label: 'Nuovo cliente',         desc: 'Aggiungi un cliente alla rubrica', icon: Users,      color: '#2EC4B6', bg: '#F0FDFB', path: '/clients' },
+            { label: "Registra un'uscita",    desc: 'Tieni traccia delle spese',        icon: CreditCard, color: '#F59E0B', bg: '#FFFBEB', path: '/uscite' },
+          ].map(({ label, desc, icon: Icon, color, bg, path }) => (
             <button
               key={path}
               onClick={() => navigate(path)}
-              className="gradient-border flex items-start gap-3 p-4 rounded-2xl text-left shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 bg-white/80"
+              className="gradient-border group flex items-center gap-4 p-5 rounded-2xl text-left transition-all hover:shadow-lg hover:-translate-y-0.5"
+              style={{ background: 'var(--admin-content-bg)' }}
             >
               <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
-                style={{ background: `${color}18`, color }}
+                className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3"
+                style={{ background: bg, color }}
               >
-                <Icon className="w-4 h-4" />
+                <Icon className="w-5 h-5" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-sm font-bold" style={{ color: 'var(--admin-content-text)' }}>{label}</p>
-                <p className="text-xs mt-0.5" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 50%, transparent)' }}>{desc}</p>
+                <p className="text-xs mt-0.5 truncate" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 45%, transparent)' }}>{desc}</p>
               </div>
+              <ArrowUpRight className="w-4 h-4 ml-auto flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color }} />
             </button>
           ))}
         </div>
@@ -341,7 +380,7 @@ export default function Dashboard() {
                 </div>
               </div>
               <Button size="sm" className="bg-green-500 hover:bg-green-600 text-white text-xs h-8 rounded-xl shrink-0 font-bold">
-                Vai ai Promemoria <ChevronRight className="w-3 h-3 ml-1" />
+                Vai <ChevronRight className="w-3 h-3 ml-0.5" />
               </Button>
             </div>
           </div>
@@ -378,103 +417,113 @@ export default function Dashboard() {
         )}
 
         {/* ══════════════════════════════════════════════════════════════
-            METRICHE SMART (4 mini card)
+            METRICHE SMART (4 card con barra colore top)
         ══════════════════════════════════════════════════════════════ */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 stagger-fast">
           {/* Sospesi */}
           <button
             onClick={() => navigate('/incassi', { state: { tab: 'sospesi' } })}
-            className="rounded-2xl p-4 text-left transition-all hover:shadow-lg hover:-translate-y-1"
+            className="rounded-2xl overflow-hidden text-left transition-all hover:shadow-lg hover:-translate-y-1 flex flex-col"
             style={{
-              background: (stats?.sospeso_count > 0)
-                ? 'linear-gradient(135deg, #FEF2F2, #FFF5F5)'
-                : 'var(--admin-content-bg)',
+              background: (stats?.sospeso_count > 0) ? 'linear-gradient(135deg, #FEF2F2, #FFF5F5)' : 'var(--admin-content-bg)',
               border: (stats?.sospeso_count > 0) ? '1px solid #FECACA' : '1px solid color-mix(in srgb, var(--admin-content-text) 10%, transparent)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
             }}
           >
-            <div className="flex items-center gap-2 mb-2">
-              <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${stats?.sospeso_count > 0 ? 'bg-red-100' : 'bg-gray-100'}`}>
-                <AlertCircle className={`w-3.5 h-3.5 ${stats?.sospeso_count > 0 ? 'text-red-500 heartbeat' : 'text-gray-300'}`} />
+            <div className="h-1 w-full" style={{ background: stats?.sospeso_count > 0 ? 'linear-gradient(90deg, #EF4444, #FCA5A5)' : 'color-mix(in srgb, var(--admin-content-text) 8%, transparent)' }} />
+            <div className="p-4">
+              <div className="flex items-center gap-2 mb-2.5">
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${stats?.sospeso_count > 0 ? 'bg-red-100' : 'bg-gray-100'}`}>
+                  <AlertCircle className={`w-3.5 h-3.5 ${stats?.sospeso_count > 0 ? 'text-red-500 heartbeat' : 'text-gray-300'}`} />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 40%, transparent)' }}>Sospesi</span>
               </div>
-              <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 45%, transparent)' }}>Sospesi</span>
+              <p className={`text-2xl font-black count-up ${stats?.sospeso_count > 0 ? 'text-red-600' : ''}`} style={!stats?.sospeso_count ? { color: 'color-mix(in srgb, var(--admin-content-text) 18%, transparent)' } : {}}>
+                {stats?.sospeso_count > 0 ? `€${(stats.sospeso_total || 0).toFixed(0)}` : '—'}
+              </p>
+              <p className="text-[11px] mt-0.5" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 40%, transparent)' }}>
+                {stats?.sospeso_count > 0 ? `${stats.sospeso_count} da incassare` : 'Tutto incassato ✓'}
+              </p>
             </div>
-            <p className={`text-2xl font-black count-up ${stats?.sospeso_count > 0 ? 'text-red-600' : ''}`} style={!stats?.sospeso_count ? { color: 'color-mix(in srgb, var(--admin-content-text) 20%, transparent)' } : {}}>
-              {stats?.sospeso_count > 0 ? `€${(stats.sospeso_total || 0).toFixed(0)}` : '—'}
-            </p>
-            <p className="text-[11px] mt-0.5" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 40%, transparent)' }}>
-              {stats?.sospeso_count > 0 ? `${stats.sospeso_count} da incassare` : 'Tutto incassato ✓'}
-            </p>
           </button>
 
           {/* Slot liberi */}
           <button
             onClick={() => navigate('/')}
-            className="rounded-2xl p-4 text-left transition-all hover:shadow-lg hover:-translate-y-1"
+            className="rounded-2xl overflow-hidden text-left transition-all hover:shadow-lg hover:-translate-y-1 flex flex-col"
             style={{
               background: (stats?.free_slots || 0) > 0 ? 'linear-gradient(135deg, #F0FDF4, #FAFFFE)' : 'var(--admin-content-bg)',
               border: (stats?.free_slots || 0) > 0 ? '1px solid #BBF7D0' : '1px solid color-mix(in srgb, var(--admin-content-text) 10%, transparent)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
             }}
           >
-            <div className="flex items-center gap-2 mb-2">
-              <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${(stats?.free_slots || 0) > 0 ? 'bg-green-100' : 'bg-gray-100'}`}>
-                <CheckCircle2 className={`w-3.5 h-3.5 ${(stats?.free_slots || 0) > 0 ? 'text-green-500' : 'text-gray-300'}`} />
+            <div className="h-1 w-full" style={{ background: (stats?.free_slots || 0) > 0 ? 'linear-gradient(90deg, #10B981, #6EE7B7)' : 'color-mix(in srgb, var(--admin-content-text) 8%, transparent)' }} />
+            <div className="p-4">
+              <div className="flex items-center gap-2 mb-2.5">
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${(stats?.free_slots || 0) > 0 ? 'bg-green-100' : 'bg-gray-100'}`}>
+                  <CheckCircle2 className={`w-3.5 h-3.5 ${(stats?.free_slots || 0) > 0 ? 'text-green-500' : 'text-gray-300'}`} />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 40%, transparent)' }}>Slot Liberi</span>
               </div>
-              <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 45%, transparent)' }}>Slot Liberi</span>
+              <p className={`text-2xl font-black count-up ${(stats?.free_slots || 0) > 0 ? 'text-green-600' : ''}`} style={!(stats?.free_slots || 0) ? { color: 'color-mix(in srgb, var(--admin-content-text) 18%, transparent)' } : {}}>
+                {stats?.free_slots ?? '—'}
+              </p>
+              <p className="text-[11px] mt-0.5" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 40%, transparent)' }}>slot da 15 min</p>
             </div>
-            <p className={`text-2xl font-black count-up ${(stats?.free_slots || 0) > 0 ? 'text-green-600' : ''}`} style={!(stats?.free_slots || 0) ? { color: 'color-mix(in srgb, var(--admin-content-text) 20%, transparent)' } : {}}>
-              {stats?.free_slots ?? '—'}
-            </p>
-            <p className="text-[11px] mt-0.5" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 40%, transparent)' }}>slot da 15 min</p>
           </button>
 
           {/* Prossime 2h */}
           <button
             onClick={() => navigate('/')}
-            className="rounded-2xl p-4 text-left transition-all hover:shadow-lg hover:-translate-y-1"
+            className="rounded-2xl overflow-hidden text-left transition-all hover:shadow-lg hover:-translate-y-1 flex flex-col"
             style={{
               background: stats?.next_2h?.length > 0 ? 'linear-gradient(135deg, #EFF6FF, #F0F9FF)' : 'var(--admin-content-bg)',
               border: stats?.next_2h?.length > 0 ? '1px solid #BFDBFE' : '1px solid color-mix(in srgb, var(--admin-content-text) 10%, transparent)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
             }}
           >
-            <div className="flex items-center gap-2 mb-2">
-              <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${stats?.next_2h?.length > 0 ? 'bg-blue-100' : 'bg-gray-100'}`}>
-                <Clock className={`w-3.5 h-3.5 ${stats?.next_2h?.length > 0 ? 'text-blue-500' : 'text-gray-300'}`} />
+            <div className="h-1 w-full" style={{ background: stats?.next_2h?.length > 0 ? 'linear-gradient(90deg, #3B82F6, #93C5FD)' : 'color-mix(in srgb, var(--admin-content-text) 8%, transparent)' }} />
+            <div className="p-4">
+              <div className="flex items-center gap-2 mb-2.5">
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${stats?.next_2h?.length > 0 ? 'bg-blue-100' : 'bg-gray-100'}`}>
+                  <Clock className={`w-3.5 h-3.5 ${stats?.next_2h?.length > 0 ? 'text-blue-500' : 'text-gray-300'}`} />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 40%, transparent)' }}>Prossime 2h</span>
               </div>
-              <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 45%, transparent)' }}>Prossime 2h</span>
+              <p className={`text-2xl font-black count-up ${stats?.next_2h?.length > 0 ? 'text-blue-600' : ''}`} style={!stats?.next_2h?.length ? { color: 'color-mix(in srgb, var(--admin-content-text) 18%, transparent)' } : {}}>
+                {stats?.next_2h?.length > 0 ? stats.next_2h.length : '—'}
+              </p>
+              <p className="text-[11px] mt-0.5 truncate" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 40%, transparent)' }}>
+                {stats?.next_2h?.length > 0 ? stats.next_2h.map(a => a.time).join(' · ') : 'nessuno'}
+              </p>
             </div>
-            <p className={`text-2xl font-black count-up ${stats?.next_2h?.length > 0 ? 'text-blue-600' : ''}`} style={!stats?.next_2h?.length ? { color: 'color-mix(in srgb, var(--admin-content-text) 20%, transparent)' } : {}}>
-              {stats?.next_2h?.length > 0 ? stats.next_2h.length : '—'}
-            </p>
-            <p className="text-[11px] mt-0.5 truncate" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 40%, transparent)' }}>
-              {stats?.next_2h?.length > 0 ? stats.next_2h.map(a => a.time).join(' · ') : 'nessun appuntamento'}
-            </p>
           </button>
 
           {/* Lista d'attesa */}
           <button
             onClick={() => navigate('/waitlist')}
-            className="rounded-2xl p-4 text-left transition-all hover:shadow-lg hover:-translate-y-1"
+            className="rounded-2xl overflow-hidden text-left transition-all hover:shadow-lg hover:-translate-y-1 flex flex-col"
             style={{
               background: stats?.waitlist_count > 0 ? 'linear-gradient(135deg, #FFFBEB, #FFFBF0)' : 'var(--admin-content-bg)',
               border: stats?.waitlist_count > 0 ? '1px solid #FCD34D88' : '1px solid color-mix(in srgb, var(--admin-content-text) 10%, transparent)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
             }}
           >
-            <div className="flex items-center gap-2 mb-2">
-              <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${stats?.waitlist_count > 0 ? 'bg-amber-100' : 'bg-gray-100'}`}>
-                <ClockArrowUp className={`w-3.5 h-3.5 ${stats?.waitlist_count > 0 ? 'text-amber-500' : 'text-gray-300'}`} />
+            <div className="h-1 w-full" style={{ background: stats?.waitlist_count > 0 ? 'linear-gradient(90deg, #F59E0B, #FCD34D)' : 'color-mix(in srgb, var(--admin-content-text) 8%, transparent)' }} />
+            <div className="p-4">
+              <div className="flex items-center gap-2 mb-2.5">
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${stats?.waitlist_count > 0 ? 'bg-amber-100' : 'bg-gray-100'}`}>
+                  <ClockArrowUp className={`w-3.5 h-3.5 ${stats?.waitlist_count > 0 ? 'text-amber-500' : 'text-gray-300'}`} />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 40%, transparent)' }}>In Attesa</span>
               </div>
-              <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 45%, transparent)' }}>In Attesa</span>
+              <p className={`text-2xl font-black count-up ${stats?.waitlist_count > 0 ? 'text-amber-600' : ''}`} style={!stats?.waitlist_count ? { color: 'color-mix(in srgb, var(--admin-content-text) 18%, transparent)' } : {}}>
+                {stats?.waitlist_count > 0 ? stats.waitlist_count : '—'}
+              </p>
+              <p className="text-[11px] mt-0.5" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 40%, transparent)' }}>
+                {stats?.waitlist_count > 0 ? 'da contattare' : 'lista vuota'}
+              </p>
             </div>
-            <p className={`text-2xl font-black count-up ${stats?.waitlist_count > 0 ? 'text-amber-600' : ''}`} style={!stats?.waitlist_count ? { color: 'color-mix(in srgb, var(--admin-content-text) 20%, transparent)' } : {}}>
-              {stats?.waitlist_count > 0 ? stats.waitlist_count : '—'}
-            </p>
-            <p className="text-[11px] mt-0.5" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 40%, transparent)' }}>
-              {stats?.waitlist_count > 0 ? 'da contattare' : 'lista vuota'}
-            </p>
           </button>
         </div>
 
@@ -483,63 +532,73 @@ export default function Dashboard() {
         ══════════════════════════════════════════════════════════════ */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 stagger-in">
           {[
-            { title: "Appuntamenti Oggi", value: stats?.today_appointments_count || 0,   icon: Calendar,   from: '#E8477C', to: '#F49AB3', suffix: '',  path: '/appointments' },
-            { title: "Clienti Totali",    value: stats?.total_clients || 0,               icon: Users,      from: '#2EC4B6', to: '#5EDECF', suffix: '',  path: '/clients' },
-            { title: "Incasso Mensile",   value: (stats?.monthly_revenue || 0).toFixed(0),icon: Euro,       from: '#F59E0B', to: '#FCD34D', prefix: '€', sub: `${stats?.monthly_appointments||0} appuntamenti`, path: '/incassi' },
-            { title: "Incasso Annuale",   value: (stats?.yearly_revenue || 0).toFixed(0), icon: TrendingUp, from: '#3B82F6', to: '#93C5FD', prefix: '€', sub: `${stats?.yearly_appointments||0} appuntamenti`,  path: '/incassi' },
-            { title: "Prossimi 7 Giorni", value: stats?.upcoming_appointments?.length || 0, icon: Zap,     from: '#8B5CF6', to: '#C4B5FD', suffix: '',  path: '/week' },
+            { title: "Appuntamenti Oggi", value: stats?.today_appointments_count || 0,    icon: Calendar,   from: '#E8477C', to: '#F49AB3', suffix: '',  path: '/appointments' },
+            { title: "Clienti Totali",    value: stats?.total_clients || 0,                icon: Users,      from: '#2EC4B6', to: '#5EDECF', suffix: '',  path: '/clients' },
+            { title: "Incasso Mensile",   value: (stats?.monthly_revenue || 0).toFixed(0), icon: Euro,       from: '#F59E0B', to: '#FCD34D', prefix: '€', sub: `${stats?.monthly_appointments||0} appuntamenti`, path: '/incassi' },
+            { title: "Incasso Annuale",   value: (stats?.yearly_revenue || 0).toFixed(0),  icon: TrendingUp, from: '#3B82F6', to: '#93C5FD', prefix: '€', sub: `${stats?.yearly_appointments||0} appuntamenti`,  path: '/incassi' },
+            { title: "Prossimi 7 Giorni", value: stats?.upcoming_appointments?.length || 0, icon: Zap,       from: '#8B5CF6', to: '#C4B5FD', suffix: '',  path: '/week' },
           ].map((s, i) => (
             <button
               key={i}
               onClick={() => navigate(s.path)}
-              className="stat-hero-card rounded-2xl p-5 shadow-lg relative overflow-hidden text-left transition-all focus:outline-none"
+              className="stat-hero-card rounded-2xl p-5 shadow-lg relative overflow-hidden text-left transition-all focus:outline-none group"
               style={{ background: `linear-gradient(135deg, ${s.from}, ${s.to})` }}
             >
-              {/* Decorazioni */}
-              <div className="absolute -bottom-5 -right-5 w-28 h-28 rounded-full bg-white/10" />
+              {/* Blob decorativi */}
+              <div className="absolute -bottom-6 -right-6 w-32 h-32 rounded-full bg-white/10 transition-all duration-500 group-hover:scale-125" />
               <div className="absolute -top-8 -left-8 w-24 h-24 rounded-full bg-white/5" />
-              <div className="absolute top-3 right-3 w-14 h-14 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center">
-                <s.icon className="w-7 h-7 text-white" strokeWidth={1.5} />
+              <div className="absolute top-3 right-3 w-12 h-12 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center">
+                <s.icon className="w-6 h-6 text-white" strokeWidth={1.5} />
               </div>
 
               <div className="relative z-10">
-                <p className="text-[10px] text-white/75 font-black uppercase tracking-wider leading-tight pr-16">{s.title}</p>
-                <p className="text-3xl font-bold text-white mt-2 font-display">
+                <p className="text-[10px] text-white/70 font-black uppercase tracking-wider leading-tight pr-14">{s.title}</p>
+                <p className="text-3xl font-bold text-white mt-2.5 font-display">
                   {s.prefix || ''}{s.value}
                 </p>
-                {s.sub && <p className="text-[11px] text-white/55 mt-1">{s.sub}</p>}
+                {s.sub && <p className="text-[11px] text-white/50 mt-1">{s.sub}</p>}
+              </div>
+
+              {/* Arrow on hover */}
+              <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-1 group-hover:translate-y-0">
+                <ChevronRight className="w-4 h-4 text-white/60" />
               </div>
             </button>
           ))}
         </div>
 
         {/* ══════════════════════════════════════════════════════════════
-            MODULI — griglia colorata
+            MODULI — griglia colorata con tooltip desc
         ══════════════════════════════════════════════════════════════ */}
         <div>
           <div className="flex items-center gap-2.5 mb-3">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--admin-primary) 15%, transparent)' }}>
+            <div className="w-7 h-7 rounded-xl flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--admin-primary) 15%, transparent)' }}>
               <Heart className="w-4 h-4" style={{ color: 'var(--admin-primary)' }} />
             </div>
             <h2 className="font-display text-xl font-bold" style={{ color: 'var(--admin-content-text)' }}>Accesso Rapido</h2>
+            <span className="text-xs font-semibold ml-auto hidden sm:block" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 35%, transparent)' }}>
+              {MODULES.length} moduli
+            </span>
           </div>
 
-          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-9 gap-2.5 stagger-fast">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-9 gap-2.5 stagger-fast">
             {MODULES.map((mod) => (
               <button
                 key={mod.path}
                 data-testid={`module-${mod.path.slice(1)}`}
                 onClick={() => navigate(mod.path)}
-                className="module-card-3d rounded-2xl p-3 text-center cursor-pointer group relative overflow-hidden shadow"
+                className="module-card-3d rounded-2xl p-3 text-center cursor-pointer group relative overflow-hidden shadow-sm"
                 style={{ background: `linear-gradient(135deg, ${mod.from}, ${mod.to})` }}
+                title={mod.desc}
               >
-                <div className="absolute -bottom-3 -right-3 w-14 h-14 rounded-full bg-white/10" />
+                <div className="absolute -bottom-3 -right-3 w-14 h-14 rounded-full bg-white/10 transition-transform duration-300 group-hover:scale-150" />
                 <div className="absolute -top-4 -left-4 w-12 h-12 rounded-full bg-white/5" />
-                <div className="relative z-10">
-                  <div className="text-2xl mb-1 transition-transform duration-300 group-hover:scale-125 group-hover:-rotate-6 leading-none">
+                <div className="relative z-10 flex flex-col items-center">
+                  <div className="text-2xl mb-1.5 transition-all duration-300 group-hover:scale-125 group-hover:-rotate-6 leading-none">
                     {mod.emoji}
                   </div>
                   <p className="font-bold text-white text-[10px] leading-tight">{mod.label}</p>
+                  <p className="text-white/55 text-[9px] leading-tight mt-0.5 hidden md:block truncate w-full">{mod.desc}</p>
                 </div>
               </button>
             ))}
@@ -555,7 +614,7 @@ export default function Dashboard() {
               <div className="flex items-center gap-2.5">
                 <div className="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse" />
                 <h2 className="font-display text-lg font-bold text-white">Appuntamenti Domani</h2>
-                <span className="text-xs bg-green-500/25 text-green-300 px-2 py-0.5 rounded-full font-bold">{tomorrowApts.length}</span>
+                <span className="text-xs bg-green-500/25 text-green-300 px-2.5 py-0.5 rounded-full font-bold">{tomorrowApts.length}</span>
               </div>
               <p className="text-xs text-white/35 hidden sm:block">Tasto verde → promemoria WhatsApp</p>
             </div>
@@ -597,12 +656,27 @@ export default function Dashboard() {
               <div className="flex items-center gap-2.5">
                 <div className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ backgroundColor: 'var(--admin-primary)' }} />
                 <h2 className="font-display text-lg font-bold text-white">Appuntamenti di Oggi</h2>
+                {totalToday > 0 && (
+                  <span
+                    className="text-xs px-2 py-0.5 rounded-full font-bold"
+                    style={{ background: 'color-mix(in srgb, var(--admin-primary) 25%, transparent)', color: 'color-mix(in srgb, var(--admin-primary) 90%, white)' }}
+                  >
+                    {totalToday}
+                  </span>
+                )}
               </div>
-              <Link to="/planning">
-                <button className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all hover:bg-white/10" style={{ color: 'color-mix(in srgb, var(--admin-primary) 80%, white)' }}>
-                  Vedi tutti <ChevronRight className="inline w-3 h-3" />
-                </button>
-              </Link>
+              <div className="flex items-center gap-3">
+                {todayTotal > 0 && (
+                  <span className="text-xs font-bold text-green-300 hidden sm:block">
+                    €{todayTotal.toFixed(0)} totale
+                  </span>
+                )}
+                <Link to="/planning">
+                  <button className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all hover:bg-white/10" style={{ color: 'color-mix(in srgb, var(--admin-primary) 80%, white)' }}>
+                    Vedi tutti <ChevronRight className="inline w-3 h-3" />
+                  </button>
+                </Link>
+              </div>
             </div>
 
             <div className="p-4">
@@ -633,13 +707,13 @@ export default function Dashboard() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-10">
-                  <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center mx-auto mb-3 float">
-                    <Calendar className="w-7 h-7 text-white/40" strokeWidth={1} />
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 rounded-2xl bg-white/8 flex items-center justify-center mx-auto mb-3 float">
+                    <Calendar className="w-8 h-8 text-white/30" strokeWidth={1} />
                   </div>
-                  <p className="text-white/40 text-sm">Nessun appuntamento per oggi</p>
+                  <p className="text-white/35 text-sm">Nessun appuntamento per oggi</p>
                   <Link to="/appointments">
-                    <button className="mt-3 text-xs px-4 py-2 rounded-xl border font-semibold transition-all hover:bg-white/10" style={{ borderColor: 'color-mix(in srgb, var(--admin-primary) 60%, transparent)', color: 'var(--admin-primary)' }}>
+                    <button className="mt-4 text-xs px-5 py-2 rounded-xl border font-semibold transition-all hover:bg-white/10" style={{ borderColor: 'color-mix(in srgb, var(--admin-primary) 50%, transparent)', color: 'var(--admin-primary)' }}>
                       Prenota ora
                     </button>
                   </Link>
@@ -653,6 +727,11 @@ export default function Dashboard() {
             <div className="px-5 py-4 flex items-center gap-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
               <div className="w-2.5 h-2.5 rounded-full bg-teal-400 animate-pulse" />
               <h2 className="font-display text-lg font-bold text-white">Prossimi</h2>
+              {stats?.upcoming_appointments?.length > 0 && (
+                <span className="text-xs bg-teal-500/25 text-teal-300 px-2 py-0.5 rounded-full font-bold ml-auto">
+                  {stats.upcoming_appointments.length}
+                </span>
+              )}
             </div>
             <div className="p-4">
               {stats?.upcoming_appointments?.length > 0 ? (
@@ -662,19 +741,20 @@ export default function Dashboard() {
                       key={apt.id}
                       type="button"
                       onClick={() => navigate('/planning')}
-                      className="flex items-center gap-3 py-2.5 px-2 w-full text-left rounded-xl transition-all hover:bg-white/10"
+                      className="flex items-center gap-3 py-2.5 px-2 w-full text-left rounded-xl transition-all hover:bg-white/10 group"
                     >
                       <ClientAvatar name={apt.client_name} size="xs" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-white truncate">{apt.client_name}</p>
                         <p className="text-xs text-white/45">{format(new Date(apt.date), "dd/MM/yy")} · {apt.time}</p>
                       </div>
+                      <ChevronRight className="w-3.5 h-3.5 text-white/20 group-hover:text-white/50 transition-colors flex-shrink-0" />
                     </button>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <p className="text-sm text-white/35">Nessun appuntamento in programma</p>
+                <div className="text-center py-10">
+                  <p className="text-sm text-white/30">Nessun appuntamento in programma</p>
                 </div>
               )}
             </div>
@@ -684,134 +764,136 @@ export default function Dashboard() {
         {/* ══════════════════════════════════════════════════════════════
             VIP + SCADENZE COLORE
         ══════════════════════════════════════════════════════════════ */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {(topClients.length > 0 || colorExpiry.length > 0) && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-          {/* Top Clienti VIP */}
-          {topClients.length > 0 && (
-            <div
-              className="rounded-2xl overflow-hidden shadow-md"
-              style={{
-                background: 'var(--admin-content-bg)',
-                border: '1px solid color-mix(in srgb, var(--admin-content-text) 10%, transparent)',
-              }}
-            >
-              <div className="flex items-center gap-2.5 px-5 py-4" style={{ borderBottom: '1px solid color-mix(in srgb, var(--admin-content-text) 8%, transparent)' }}>
-                <div className="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center">
-                  <Star className="w-3.5 h-3.5 text-amber-500" />
-                </div>
-                <h2 className="font-display text-lg font-bold" style={{ color: 'var(--admin-content-text)' }}>Clienti VIP</h2>
-                <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold ml-auto">Top {topClients.length}</span>
-              </div>
-              <div className="p-4 space-y-3">
-                {topClients.map((c, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <span
-                      className="text-xs font-black w-5 shrink-0 text-center"
-                      style={{ color: i === 0 ? '#F59E0B' : i === 1 ? '#94A3B8' : i === 2 ? '#CD7C2F' : 'color-mix(in srgb, var(--admin-content-text) 35%, transparent)' }}
-                    >
-                      {i + 1}
-                    </span>
-                    <ClientAvatar name={c.name} size="sm" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="text-sm font-bold truncate" style={{ color: 'var(--admin-content-text)' }}>{c.name}</p>
-                        <span className="text-sm font-black text-emerald-600 shrink-0 ml-2">€{c.total.toFixed(0)}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'color-mix(in srgb, var(--admin-content-text) 10%, transparent)' }}>
-                          <div
-                            className="h-full rounded-full transition-all"
-                            style={{ width: `${c.percent}%`, background: 'linear-gradient(90deg, #F59E0B, #FBBF24)' }}
-                          />
-                        </div>
-                        <span className="text-[10px] shrink-0" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 45%, transparent)' }}>{c.visits} visite</span>
-                      </div>
-                    </div>
+            {/* Top Clienti VIP */}
+            {topClients.length > 0 && (
+              <div
+                className="rounded-2xl overflow-hidden shadow-md"
+                style={{
+                  background: 'var(--admin-content-bg)',
+                  border: '1px solid color-mix(in srgb, var(--admin-content-text) 10%, transparent)',
+                }}
+              >
+                <div className="flex items-center gap-2.5 px-5 py-4" style={{ borderBottom: '1px solid color-mix(in srgb, var(--admin-content-text) 8%, transparent)' }}>
+                  <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center">
+                    <Star className="w-4 h-4 text-amber-500" />
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Scadenze Colore */}
-          {colorExpiry.length > 0 && (
-            <div
-              className="rounded-2xl overflow-hidden shadow-md"
-              style={{
-                background: 'var(--admin-content-bg)',
-                border: '1px solid color-mix(in srgb, #A855F7 18%, transparent)',
-              }}
-            >
-              <div className="flex items-center gap-2.5 px-5 py-4" style={{ borderBottom: '1px solid color-mix(in srgb, #A855F7 12%, transparent)' }}>
-                <div className="w-7 h-7 rounded-lg bg-purple-100 flex items-center justify-center">
-                  <Sparkles className="w-3.5 h-3.5 text-purple-500" />
+                  <h2 className="font-display text-lg font-bold" style={{ color: 'var(--admin-content-text)' }}>Clienti VIP</h2>
+                  <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold ml-auto">Top {topClients.length}</span>
                 </div>
-                <h2 className="font-display text-lg font-bold" style={{ color: 'var(--admin-content-text)' }}>Scadenze Colore</h2>
-                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-bold ml-auto">
-                  {colorExpiry.filter(c => !c.already_sent).length} da contattare
-                </span>
-              </div>
-              <div className="p-4">
-                {(() => {
-                  const today = new Date(); today.setHours(0,0,0,0);
-                  const weekEnd = addDays(today, 7);
-                  const nextWeekEnd = addDays(today, 14);
-                  const thisWeek = colorExpiry.filter(c => { const d = new Date(c.due_date); return d >= today && d < weekEnd; });
-                  const nextWeek = colorExpiry.filter(c => { const d = new Date(c.due_date); return d >= weekEnd && d < nextWeekEnd; });
-                  const later = colorExpiry.filter(c => new Date(c.due_date) >= nextWeekEnd);
-                  return (
-                    <div className="space-y-3">
-                      {thisWeek.length > 0 && (
-                        <div>
-                          <p className="text-[10px] font-black text-purple-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-purple-500 inline-block" />
-                            Questa settimana ({thisWeek.length})
-                          </p>
-                          <div className="space-y-1.5">
-                            {thisWeek.slice(0,4).map((c,i) => (
-                              <div key={i} className={`flex items-center gap-2 px-3 py-2 rounded-xl ${c.already_sent ? 'bg-gray-50 opacity-60' : 'bg-purple-50 border border-purple-200'}`}>
-                                <ClientAvatar name={c.client_name} size="xs" />
-                                <span className="text-sm font-semibold flex-1 truncate" style={{ color: 'var(--admin-content-text)' }}>{c.client_name}</span>
-                                {c.already_sent && <span className="text-[10px] text-gray-400">inviato ✓</span>}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {nextWeek.length > 0 && (
-                        <div>
-                          <p className="text-[10px] font-black text-indigo-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-indigo-400 inline-block" />
-                            Settimana prossima ({nextWeek.length})
-                          </p>
-                          <div className="space-y-1.5">
-                            {nextWeek.slice(0,3).map((c,i) => (
-                              <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-50 border border-indigo-100">
-                                <ClientAvatar name={c.client_name} size="xs" />
-                                <span className="text-sm flex-1 truncate" style={{ color: 'var(--admin-content-text)' }}>{c.client_name}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {later.length > 0 && (
-                        <p className="text-xs text-center" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 40%, transparent)' }}>
-                          + {later.length} altri nei prossimi giorni
-                        </p>
-                      )}
-                      <button
-                        onClick={() => navigate('/reminders')}
-                        className="w-full text-xs font-bold text-purple-600 hover:text-purple-800 text-center transition-colors hover:underline pt-1"
+                <div className="p-4 space-y-3">
+                  {topClients.map((c, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <span
+                        className="text-xs font-black w-5 shrink-0 text-center"
+                        style={{ color: i === 0 ? '#F59E0B' : i === 1 ? '#94A3B8' : i === 2 ? '#CD7C2F' : 'color-mix(in srgb, var(--admin-content-text) 30%, transparent)' }}
                       >
-                        Gestisci tutti i promemoria colore →
-                      </button>
+                        {i + 1}
+                      </span>
+                      <ClientAvatar name={c.name} size="sm" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-sm font-bold truncate" style={{ color: 'var(--admin-content-text)' }}>{c.name}</p>
+                          <span className="text-sm font-black text-emerald-600 shrink-0 ml-2">€{c.total.toFixed(0)}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'color-mix(in srgb, var(--admin-content-text) 10%, transparent)' }}>
+                            <div
+                              className="h-full rounded-full"
+                              style={{ width: `${c.percent}%`, background: i === 0 ? 'linear-gradient(90deg, #F59E0B, #FBBF24)' : i === 1 ? 'linear-gradient(90deg, #94A3B8, #CBD5E1)' : 'linear-gradient(90deg, var(--admin-primary), color-mix(in srgb, var(--admin-primary) 60%, white))' }}
+                            />
+                          </div>
+                          <span className="text-[10px] shrink-0" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 40%, transparent)' }}>{c.visits} visite</span>
+                        </div>
+                      </div>
                     </div>
-                  );
-                })()}
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+
+            {/* Scadenze Colore */}
+            {colorExpiry.length > 0 && (
+              <div
+                className="rounded-2xl overflow-hidden shadow-md"
+                style={{
+                  background: 'var(--admin-content-bg)',
+                  border: '1px solid color-mix(in srgb, #A855F7 18%, transparent)',
+                }}
+              >
+                <div className="flex items-center gap-2.5 px-5 py-4" style={{ borderBottom: '1px solid color-mix(in srgb, #A855F7 12%, transparent)' }}>
+                  <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center">
+                    <Sparkles className="w-4 h-4 text-purple-500" />
+                  </div>
+                  <h2 className="font-display text-lg font-bold" style={{ color: 'var(--admin-content-text)' }}>Scadenze Colore</h2>
+                  <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-bold ml-auto">
+                    {colorExpiry.filter(c => !c.already_sent).length} da contattare
+                  </span>
+                </div>
+                <div className="p-4">
+                  {(() => {
+                    const today = new Date(); today.setHours(0,0,0,0);
+                    const weekEnd = addDays(today, 7);
+                    const nextWeekEnd = addDays(today, 14);
+                    const thisWeek = colorExpiry.filter(c => { const d = new Date(c.due_date); return d >= today && d < weekEnd; });
+                    const nextWeek = colorExpiry.filter(c => { const d = new Date(c.due_date); return d >= weekEnd && d < nextWeekEnd; });
+                    const later = colorExpiry.filter(c => new Date(c.due_date) >= nextWeekEnd);
+                    return (
+                      <div className="space-y-3">
+                        {thisWeek.length > 0 && (
+                          <div>
+                            <p className="text-[10px] font-black text-purple-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-purple-500 inline-block" />
+                              Questa settimana ({thisWeek.length})
+                            </p>
+                            <div className="space-y-1.5">
+                              {thisWeek.slice(0,4).map((c,i) => (
+                                <div key={i} className={`flex items-center gap-2 px-3 py-2 rounded-xl ${c.already_sent ? 'bg-gray-50 opacity-60' : 'bg-purple-50 border border-purple-100'}`}>
+                                  <ClientAvatar name={c.client_name} size="xs" />
+                                  <span className="text-sm font-semibold flex-1 truncate" style={{ color: 'var(--admin-content-text)' }}>{c.client_name}</span>
+                                  {c.already_sent && <span className="text-[10px] text-gray-400">inviato ✓</span>}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {nextWeek.length > 0 && (
+                          <div>
+                            <p className="text-[10px] font-black text-indigo-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-indigo-400 inline-block" />
+                              Settimana prossima ({nextWeek.length})
+                            </p>
+                            <div className="space-y-1.5">
+                              {nextWeek.slice(0,3).map((c,i) => (
+                                <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-50 border border-indigo-100">
+                                  <ClientAvatar name={c.client_name} size="xs" />
+                                  <span className="text-sm flex-1 truncate" style={{ color: 'var(--admin-content-text)' }}>{c.client_name}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {later.length > 0 && (
+                          <p className="text-xs text-center" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 40%, transparent)' }}>
+                            + {later.length} altri nei prossimi giorni
+                          </p>
+                        )}
+                        <button
+                          onClick={() => navigate('/reminders')}
+                          className="w-full text-xs font-bold text-purple-600 hover:text-purple-800 text-center transition-colors hover:underline pt-1"
+                        >
+                          Gestisci tutti i promemoria colore →
+                        </button>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
       </div>
     </Layout>
