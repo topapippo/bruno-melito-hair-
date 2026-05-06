@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import api, { API } from '../lib/api';
 import { fmtDate } from '../lib/dateUtils';
 import Layout from '../components/Layout';
-import PageHeader from '../components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +11,7 @@ import {
   BarChart3, ArrowLeft, ArrowRight, Scissors, CreditCard,
   ArrowDownCircle, AlertTriangle, CheckCircle2, Wallet
 } from 'lucide-react';
-import { format, subDays, addDays } from 'date-fns';
+import { format, subDays, addDays, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { it } from 'date-fns/locale';
 
 const SparkLine = ({ data }) => {
@@ -38,12 +37,21 @@ export default function DailySummaryPage() {
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [error, setError] = useState('');
   const [weeklyEarnings, setWeeklyEarnings] = useState([]);
-
-  useEffect(() => { fetchSummary(); }, [selectedDate]);
+  const [viewMode, setViewMode] = useState('day');
+  const [aggData, setAggData] = useState(null);
 
   useEffect(() => {
     api.get(`${API}/stats/weekly-earnings`).then(res => setWeeklyEarnings(res.data || [])).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (viewMode === 'day') fetchSummary();
+    else fetchAggData();
+  }, [viewMode]); // eslint-disable-line
+
+  useEffect(() => {
+    if (viewMode === 'day') fetchSummary();
+  }, [selectedDate]); // eslint-disable-line
 
   const isValidDateString = (value) => {
     return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(new Date(`${value}T00:00:00`).getTime());
@@ -72,6 +80,69 @@ export default function DailySummaryPage() {
     }
   };
 
+  const getAggDateRange = () => {
+    const now = new Date();
+    switch (viewMode) {
+      case 'month': return { start: startOfMonth(now), end: now };
+      case 'prev_month': {
+        const prev = subMonths(now, 1);
+        return { start: startOfMonth(prev), end: endOfMonth(prev) };
+      }
+      case 'year': return { start: new Date(now.getFullYear(), 0, 1), end: now };
+      default: return { start: startOfMonth(now), end: now };
+    }
+  };
+
+  const fetchAggData = async () => {
+    setLoading(true);
+    try {
+      const { start, end } = getAggDateRange();
+      const startStr = format(start, 'yyyy-MM-dd');
+      const endStr = format(end, 'yyyy-MM-dd');
+      const [paymentsRes, appointmentsRes] = await Promise.all([
+        api.get(`${API}/payments?start=${startStr}&end=${endStr}`),
+        api.get(`${API}/appointments?start_date=${startStr}&end_date=${endStr}`),
+      ]);
+      const payments = paymentsRes.data;
+      const apts = appointmentsRes.data;
+
+      const total_earnings = payments.reduce((sum, p) => sum + p.total_paid, 0);
+      const unique_clients = new Set(apts.map(a => a.client_name)).size;
+      const total_appointments = apts.length;
+      const completed_appointments = apts.filter(a => a.status === 'completed').length;
+      const avg_per_appointment = total_appointments > 0 ? total_earnings / total_appointments : 0;
+
+      const serviceCount = {};
+      apts.forEach(apt => apt.services?.forEach(s => {
+        serviceCount[s.name] = (serviceCount[s.name] || 0) + 1;
+      }));
+      const top_services = Object.entries(serviceCount)
+        .sort((a, b) => b[1] - a[1]).slice(0, 5)
+        .map(([name, count]) => ({ name, count }));
+
+      const payment_methods = {};
+      payments.forEach(p => {
+        if (p.payment_method) payment_methods[p.payment_method] = (payment_methods[p.payment_method] || 0) + 1;
+      });
+
+      setAggData({ total_earnings, unique_clients, total_appointments, completed_appointments, avg_per_appointment, top_services, payment_methods });
+    } catch (err) {
+      console.error('Aggregate data fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getViewLabel = () => {
+    const now = new Date();
+    switch (viewMode) {
+      case 'month': return `Mese in corso — ${format(now, 'MMMM yyyy', { locale: it })}`;
+      case 'prev_month': return `Mese precedente — ${format(subMonths(now, 1), 'MMMM yyyy', { locale: it })}`;
+      case 'year': return `Anno in corso — ${now.getFullYear()}`;
+      default: return '';
+    }
+  };
+
   const prevDay = () => setSelectedDate(format(subDays(new Date(selectedDate), 1), 'yyyy-MM-dd'));
   const nextDay = () => setSelectedDate(format(addDays(new Date(selectedDate), 1), 'yyyy-MM-dd'));
   const goToday = () => setSelectedDate(format(new Date(), 'yyyy-MM-dd'));
@@ -95,31 +166,63 @@ export default function DailySummaryPage() {
     );
   }
 
+  const VIEW_MODES = [
+    { key: 'day', label: 'Giornaliero' },
+    { key: 'month', label: 'Mese in corso' },
+    { key: 'prev_month', label: 'Mese precedente' },
+    { key: 'year', label: 'Anno in corso' },
+  ];
+
   return (
     <Layout>
       <div className="space-y-6" data-testid="daily-summary-page">
-        {/* Header with date nav */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="font-display text-3xl font-medium text-[#2D1B14]">Riepilogo Giornaliero</h1>
-            <p className="text-[#7C5C4A] mt-1  capitalize">
-              {format(validSelectedDate, "EEEE dd/MM/yy", { locale: it })}
-            </p>
-            {data?.date && data.date !== selectedDate && (
-              <p className="text-sm text-red-500 mt-1">Dati caricati per: {fmtDate(data.date)}</p>
-            )}
+        {/* Header */}
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h1 className="font-display text-3xl font-medium text-[#2D1B14]">
+                {viewMode === 'day' ? 'Riepilogo Giornaliero' : 'Riepilogo Periodo'}
+              </h1>
+              <p className="text-[#7C5C4A] mt-1 capitalize">
+                {viewMode === 'day'
+                  ? format(validSelectedDate, "EEEE dd/MM/yy", { locale: it })
+                  : getViewLabel()
+                }
+              </p>
+              {viewMode === 'day' && data?.date && data.date !== selectedDate && (
+                <p className="text-sm text-red-500 mt-1">Dati caricati per: {fmtDate(data.date)}</p>
+              )}
+            </div>
+            {/* View mode selector */}
+            <div className="flex flex-wrap gap-2">
+              {VIEW_MODES.map(m => (
+                <Button
+                  key={m.key}
+                  variant={viewMode === m.key ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode(m.key)}
+                  className={viewMode === m.key ? 'bg-[#C8617A] text-white hover:bg-[#A0404F]' : 'border-[#F0E6DC]'}
+                >
+                  {m.label}
+                </Button>
+              ))}
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={prevDay} className="border-[#F0E6DC]" data-testid="prev-day-btn">
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-            <Button variant="outline" onClick={goToday} className="border-[#F0E6DC] text-[#2D1B14] text-sm">Oggi</Button>
-            <Input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}
-              className="w-40 border-[#F0E6DC]" />
-            <Button variant="outline" size="icon" onClick={nextDay} className="border-[#F0E6DC]" data-testid="next-day-btn">
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-          </div>
+
+          {/* Date navigation - day mode only */}
+          {viewMode === 'day' && (
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="icon" onClick={prevDay} className="border-[#F0E6DC]" data-testid="prev-day-btn">
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+              <Button variant="outline" onClick={goToday} className="border-[#F0E6DC] text-[#2D1B14] text-sm">Oggi</Button>
+              <Input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}
+                className="w-40 border-[#F0E6DC]" />
+              <Button variant="outline" size="icon" onClick={nextDay} className="border-[#F0E6DC]" data-testid="next-day-btn">
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
         </div>
 
         {error && (
@@ -128,287 +231,428 @@ export default function DailySummaryPage() {
           </div>
         )}
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-fast">
-          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-[#7C5C4A] ">Incasso Totale</p>
-                  <p className="text-3xl font-display font-medium text-[#2D1B14] mt-2" data-testid="total-earnings">
-                    {'\u20AC'}{(data?.total_earnings || 0).toFixed(2)}
-                  </p>
-                  <div className="flex items-center gap-1 mt-1">
-                    {data?.earnings_diff > 0 ? (
-                      <><TrendingUp className="w-3 h-3 text-emerald-500" /><span className="text-xs text-emerald-500 font-bold">+{'\u20AC'}{data.earnings_diff.toFixed(0)} vs ieri</span></>
-                    ) : data?.earnings_diff < 0 ? (
-                      <><TrendingDown className="w-3 h-3 text-red-400" /><span className="text-xs text-red-400 font-bold">{'\u20AC'}{data.earnings_diff.toFixed(0)} vs ieri</span></>
-                    ) : (
-                      <><Minus className="w-3 h-3 text-gray-400" /><span className="text-xs text-gray-400">Uguale a ieri</span></>
-                    )}
+        {viewMode === 'day' ? (
+          /* ── Daily view ── */
+          <>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-fast">
+              <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-sm text-[#7C5C4A]">Incasso Totale</p>
+                      <p className="text-3xl font-display font-medium text-[#2D1B14] mt-2" data-testid="total-earnings">
+                        {'€'}{(data?.total_earnings || 0).toFixed(2)}
+                      </p>
+                      <div className="flex items-center gap-1 mt-1">
+                        {data?.earnings_diff > 0 ? (
+                          <><TrendingUp className="w-3 h-3 text-emerald-500" /><span className="text-xs text-emerald-500 font-bold">+{'€'}{data.earnings_diff.toFixed(0)} vs ieri</span></>
+                        ) : data?.earnings_diff < 0 ? (
+                          <><TrendingDown className="w-3 h-3 text-red-400" /><span className="text-xs text-red-400 font-bold">{'€'}{data.earnings_diff.toFixed(0)} vs ieri</span></>
+                        ) : (
+                          <><Minus className="w-3 h-3 text-gray-400" /><span className="text-xs text-gray-400">Uguale a ieri</span></>
+                        )}
+                      </div>
+                      {weeklyEarnings.length > 0 && (
+                        <div className="mt-2">
+                          <SparkLine data={weeklyEarnings} />
+                          <p className="text-[10px] text-gray-400 mt-0.5">Ultimi 7 giorni</p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center">
+                      <Euro className="w-6 h-6 text-emerald-500" strokeWidth={1.5} />
+                    </div>
                   </div>
-                  {weeklyEarnings.length > 0 && (
-                    <div className="mt-2">
-                      <SparkLine data={weeklyEarnings} />
-                      <p className="text-[10px] text-gray-400 mt-0.5">Ultimi 7 giorni</p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-sm text-[#7C5C4A]">Clienti Serviti</p>
+                      <p className="text-3xl font-display font-medium text-[#2D1B14] mt-2" data-testid="unique-clients">
+                        {data?.unique_clients || 0}
+                      </p>
+                      <p className="text-xs text-[#7C5C4A] mt-1">Media: {'€'}{(data?.avg_per_client || 0).toFixed(0)} / cliente</p>
+                    </div>
+                    <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center">
+                      <Users className="w-6 h-6 text-[#C8617A]" strokeWidth={1.5} />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-sm text-[#7C5C4A]">Appuntamenti</p>
+                      <p className="text-3xl font-display font-medium text-[#2D1B14] mt-2" data-testid="total-appointments">
+                        {data?.total_appointments || 0}
+                      </p>
+                      <p className="text-xs text-[#7C5C4A] mt-1">{data?.completed_appointments || 0} completati</p>
+                    </div>
+                    <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center">
+                      <Clock className="w-6 h-6 text-amber-500" strokeWidth={1.5} />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-sm text-[#7C5C4A]">Ora di Punta</p>
+                      <p className="text-3xl font-display font-medium text-[#2D1B14] mt-2" data-testid="busiest-hour">
+                        {data?.busiest_hour || '--'}
+                      </p>
+                      <p className="text-xs text-[#7C5C4A] mt-1">{data?.busiest_hour_count || 0} appuntamenti</p>
+                    </div>
+                    <div className="w-12 h-12 rounded-xl bg-rose-50 flex items-center justify-center">
+                      <BarChart3 className="w-6 h-6 text-rose-500" strokeWidth={1.5} />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {(data?.sospeso_amount > 0) && (
+              <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-300">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span className="text-sm font-semibold text-amber-800">
+                    {data.sospeso_count} appuntament{data.sospeso_count === 1 ? 'o' : 'i'} sospeso{data.sospeso_count !== 1 ? 'i' : ''} oggi
+                  </span>
+                </div>
+                <span className="text-sm font-bold text-amber-700">€{data.sospeso_amount.toFixed(2)} da riscuotere</span>
+              </div>
+            )}
+
+            <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="font-display text-xl text-[#2D1B14]">Distribuzione Oraria</CardTitle>
+                <p className="text-sm text-[#7C5C4A]">Numero appuntamenti per fascia oraria</p>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-end gap-1.5 h-48 pt-4" data-testid="hourly-chart">
+                  {Object.entries(hourlyDistribution).map(([hour, count]) => {
+                    const height = maxHourly > 0 ? (count / maxHourly) * 100 : 0;
+                    const isBusiest = hour === data?.busiest_hour && count > 0;
+                    return (
+                      <div key={hour} className="flex-1 flex flex-col items-center justify-end h-full group relative">
+                        {count > 0 && (
+                          <span className="text-xs font-bold text-[#2D1B14] mb-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {count}
+                          </span>
+                        )}
+                        <div
+                          className={`w-full rounded-t-lg transition-all duration-500 ${
+                            isBusiest ? 'bg-[#C8617A] shadow-lg shadow-[rgba(200,97,122,0.3)]' :
+                            count > 0 ? 'bg-[#C8617A]/40 group-hover:bg-[#C8617A]/70' : 'bg-[#F5EDE0]'
+                          }`}
+                          style={{ height: `${Math.max(height, count > 0 ? 8 : 4)}%` }}
+                        />
+                        <span className="text-[10px] text-[#7C5C4A] mt-2">{hour.replace(':00', '')}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            {((data?.expenses_due_today?.length > 0) || (data?.expenses_overdue?.length > 0)) && (
+              <Card className="bg-white border-red-200 shadow-sm">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
+                      <ArrowDownCircle className="w-5 h-5 text-red-500" /> Uscite
+                    </CardTitle>
+                    <a href="/uscite" className="text-xs text-red-500 font-bold hover:underline">Gestisci →</a>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {data.expenses_overdue?.length > 0 && (
+                    <div>
+                      <p className="text-xs font-bold text-red-600 uppercase tracking-wider mb-2 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" /> Scadute ({data.expenses_overdue.length})
+                      </p>
+                      <div className="space-y-1.5">
+                        {data.expenses_overdue.map(e => (
+                          <div key={e.id} className="flex items-center justify-between px-3 py-2 rounded-lg bg-red-50 border border-red-200">
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-red-900 truncate">{e.description}</p>
+                              <p className="text-xs text-red-500">Scad. {fmtDate(e.due_date)} · {e.category}</p>
+                            </div>
+                            <span className="text-sm font-bold text-red-600 shrink-0 ml-3">−€{e.amount.toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center">
-                  <Euro className="w-6 h-6 text-emerald-500" strokeWidth={1.5} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-[#7C5C4A] ">Clienti Serviti</p>
-                  <p className="text-3xl font-display font-medium text-[#2D1B14] mt-2" data-testid="unique-clients">
-                    {data?.unique_clients || 0}
-                  </p>
-                  <p className="text-xs text-[#7C5C4A] mt-1">Media: {'\u20AC'}{(data?.avg_per_client || 0).toFixed(0)} / cliente</p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center">
-                  <Users className="w-6 h-6 text-[#C8617A]" strokeWidth={1.5} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-[#7C5C4A] ">Appuntamenti</p>
-                  <p className="text-3xl font-display font-medium text-[#2D1B14] mt-2" data-testid="total-appointments">
-                    {data?.total_appointments || 0}
-                  </p>
-                  <p className="text-xs text-[#7C5C4A] mt-1">{data?.completed_appointments || 0} completati</p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-amber-500" strokeWidth={1.5} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-[#7C5C4A] ">Ora di Punta</p>
-                  <p className="text-3xl font-display font-medium text-[#2D1B14] mt-2" data-testid="busiest-hour">
-                    {data?.busiest_hour || '--'}
-                  </p>
-                  <p className="text-xs text-[#7C5C4A] mt-1">{data?.busiest_hour_count || 0} appuntamenti</p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-rose-50 flex items-center justify-center">
-                  <BarChart3 className="w-6 h-6 text-rose-500" strokeWidth={1.5} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Banner sospesi del giorno */}
-        {(data?.sospeso_amount > 0) && (
-          <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-300">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-              <span className="text-sm font-semibold text-amber-800">
-                {data.sospeso_count} appuntament{data.sospeso_count === 1 ? 'o' : 'i'} sospeso{data.sospeso_count !== 1 ? 'i' : ''} oggi
-              </span>
-            </div>
-            <span className="text-sm font-bold text-amber-700">€{data.sospeso_amount.toFixed(2)} da riscuotere</span>
-          </div>
-        )}
-
-        {/* Hourly Distribution Chart */}
-        <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="font-display text-xl text-[#2D1B14]">Distribuzione Oraria</CardTitle>
-            <p className="text-sm text-[#7C5C4A]">Numero appuntamenti per fascia oraria</p>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-end gap-1.5 h-48 pt-4" data-testid="hourly-chart">
-              {Object.entries(hourlyDistribution).map(([hour, count]) => {
-                const height = maxHourly > 0 ? (count / maxHourly) * 100 : 0;
-                const isBusiest = hour === data.busiest_hour && count > 0;
-                return (
-                  <div key={hour} className="flex-1 flex flex-col items-center justify-end h-full group relative">
-                    {count > 0 && (
-                      <span className="text-xs font-bold text-[#2D1B14] mb-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {count}
-                      </span>
-                    )}
-                    <div
-                      className={`w-full rounded-t-lg transition-all duration-500 ${
-                        isBusiest ? 'bg-[#C8617A] shadow-lg shadow-[rgba(200,97,122,0.3)]' :
-                        count > 0 ? 'bg-[#C8617A]/40 group-hover:bg-[#C8617A]/70' : 'bg-[#F5EDE0]'
-                      }`}
-                      style={{ height: `${Math.max(height, count > 0 ? 8 : 4)}%` }}
-                    />
-                    <span className="text-[10px] text-[#7C5C4A] mt-2 ">{hour.replace(':00', '')}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Uscite del giorno */}
-        {((data?.expenses_due_today?.length > 0) || (data?.expenses_overdue?.length > 0)) && (
-          <Card className="bg-white border-red-200 shadow-sm">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
-                  <ArrowDownCircle className="w-5 h-5 text-red-500" /> Uscite
-                </CardTitle>
-                <a href="/uscite" className="text-xs text-red-500 font-bold hover:underline">Gestisci →</a>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {/* Scadute in giorni precedenti */}
-              {data.expenses_overdue?.length > 0 && (
-                <div>
-                  <p className="text-xs font-bold text-red-600 uppercase tracking-wider mb-2 flex items-center gap-1">
-                    <AlertTriangle className="w-3 h-3" /> Scadute ({data.expenses_overdue.length})
-                  </p>
-                  <div className="space-y-1.5">
-                    {data.expenses_overdue.map(e => (
-                      <div key={e.id} className="flex items-center justify-between px-3 py-2 rounded-lg bg-red-50 border border-red-200">
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-red-900 truncate">{e.description}</p>
-                          <p className="text-xs text-red-500">Scad. {fmtDate(e.due_date)} · {e.category}</p>
-                        </div>
-                        <span className="text-sm font-bold text-red-600 shrink-0 ml-3">−€{e.amount.toFixed(2)}</span>
+                  {data.expenses_due_today?.length > 0 && (
+                    <div>
+                      <p className="text-xs font-bold text-orange-600 uppercase tracking-wider mb-2 flex items-center gap-1">
+                        <Clock className="w-3 h-3" /> Scadenti oggi ({data.expenses_due_today.length})
+                      </p>
+                      <div className="space-y-1.5">
+                        {data.expenses_due_today.map(e => (
+                          <div key={e.id} className="flex items-center justify-between px-3 py-2 rounded-lg bg-orange-50 border border-orange-200">
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-orange-900 truncate">{e.description}</p>
+                              <p className="text-xs text-orange-500">{e.category}{e.is_recurring ? ' · ricorrente' : ''}</p>
+                            </div>
+                            <span className="text-sm font-bold text-orange-600 shrink-0 ml-3">−€{e.amount.toFixed(2)}</span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    </div>
+                  )}
+                  <div className="border-t border-gray-100 pt-3 mt-1 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Wallet className="w-4 h-4 text-[#7C5C4A]" />
+                      <span className="text-sm font-semibold text-[#2D1B14]">Saldo netto stimato</span>
+                      <span className="text-xs text-[#7C5C4A]">(incassi − uscite odierne)</span>
+                    </div>
+                    <span className={`text-lg font-bold ${(data?.net_earnings ?? 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                      {(data?.net_earnings ?? 0) >= 0 ? '+' : ''}€{(data?.net_earnings ?? 0).toFixed(2)}
+                    </span>
                   </div>
-                </div>
-              )}
-              {/* Scadenti oggi */}
-              {data.expenses_due_today?.length > 0 && (
-                <div>
-                  <p className="text-xs font-bold text-orange-600 uppercase tracking-wider mb-2 flex items-center gap-1">
-                    <Clock className="w-3 h-3" /> Scadenti oggi ({data.expenses_due_today.length})
-                  </p>
-                  <div className="space-y-1.5">
-                    {data.expenses_due_today.map(e => (
-                      <div key={e.id} className="flex items-center justify-between px-3 py-2 rounded-lg bg-orange-50 border border-orange-200">
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-orange-900 truncate">{e.description}</p>
-                          <p className="text-xs text-orange-500">{e.category}{e.is_recurring ? ' · ricorrente' : ''}</p>
-                        </div>
-                        <span className="text-sm font-bold text-orange-600 shrink-0 ml-3">−€{e.amount.toFixed(2)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {/* Saldo netto */}
-              <div className="border-t border-gray-100 pt-3 mt-1 flex items-center justify-between">
+                </CardContent>
+              </Card>
+            )}
+
+            {(data?.expenses_due_today?.length === 0 && data?.expenses_overdue?.length === 0 && (data?.total_earnings ?? 0) > 0) && (
+              <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200">
                 <div className="flex items-center gap-2">
-                  <Wallet className="w-4 h-4 text-[#7C5C4A]" />
-                  <span className="text-sm font-semibold text-[#2D1B14]">Saldo netto stimato</span>
-                  <span className="text-xs text-[#7C5C4A]">(incassi − uscite odierne)</span>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                  <span className="text-sm font-semibold text-emerald-800">Nessuna uscita prevista oggi</span>
                 </div>
-                <span className={`text-lg font-bold ${(data?.net_earnings ?? 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                  {(data?.net_earnings ?? 0) >= 0 ? '+' : ''}€{(data?.net_earnings ?? 0).toFixed(2)}
-                </span>
+                <span className="text-sm font-bold text-emerald-700">Incasso netto: €{(data?.total_earnings ?? 0).toFixed(2)}</span>
               </div>
-            </CardContent>
-          </Card>
-        )}
+            )}
 
-        {/* Saldo netto anche quando non ci sono uscite */}
-        {(data?.expenses_due_today?.length === 0 && data?.expenses_overdue?.length === 0 && (data?.total_earnings ?? 0) > 0) && (
-          <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-              <span className="text-sm font-semibold text-emerald-800">Nessuna uscita prevista oggi</span>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
+                    <Scissors className="w-5 h-5 text-[#C8617A]" /> Servizi Richiesti
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {data?.top_services?.length > 0 ? (
+                    <div className="space-y-3">
+                      {data.top_services.map((svc, idx) => {
+                        const colors = ['bg-[#C8617A]', 'bg-[#789F8A]', 'bg-[#E9C46A]', 'bg-[#C084FC]', 'bg-[#334155]'];
+                        return (
+                          <div key={idx} className="flex items-center gap-3">
+                            <span className="text-sm font-bold text-[#7C5C4A] w-5 shrink-0">{idx + 1}.</span>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-sm font-medium text-[#2D1B14] truncate">{svc.name}</span>
+                                <span className="text-sm font-bold text-[#7C5C4A] shrink-0 ml-2">{svc.count}x</span>
+                              </div>
+                              <div className="h-2 bg-[#F5EDE0] rounded-full overflow-hidden">
+                                <div className={`h-full ${colors[idx % 5]} rounded-full transition-all duration-700`}
+                                  style={{ width: `${(svc.count / (data.top_services[0]?.count || 1)) * 100}%` }} />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-[#7C5C4A] text-center py-8">Nessun servizio registrato per questa giornata</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
+                    <CreditCard className="w-5 h-5 text-[#C8617A]" /> Metodi di Pagamento
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {data?.payment_methods && Object.keys(data.payment_methods).length > 0 ? (
+                    <div className="space-y-4">
+                      {Object.entries(data.payment_methods).map(([method, count]) => {
+                        const labels = { contanti: 'Contanti', cash: 'Contanti', pos: 'POS', sospeso: 'Sospeso', carta: 'Carta', prepagata: 'Prepagata', prepaid: 'Abb./Prepagata', 'non specificato': 'Non specificato' };
+                        const colors = { contanti: 'bg-emerald-400', cash: 'bg-emerald-400', pos: 'bg-blue-400', sospeso: 'bg-amber-400', carta: 'bg-blue-400', prepagata: 'bg-violet-400', prepaid: 'bg-violet-400', 'non specificato': 'bg-gray-300' };
+                        const totalPayments = Object.values(data.payment_methods).reduce((a, b) => a + b, 0);
+                        return (
+                          <div key={method} className="flex items-center gap-3">
+                            <div className={`w-3 h-3 rounded-full ${colors[method] || 'bg-gray-300'} shrink-0`} />
+                            <div className="flex-1">
+                              <div className="flex justify-between mb-1">
+                                <span className="text-sm text-[#2D1B14]">{labels[method] || method}</span>
+                                <span className="text-sm font-bold text-[#7C5C4A]">{count}</span>
+                              </div>
+                              <div className="h-2 bg-[#F5EDE0] rounded-full overflow-hidden">
+                                <div className={`h-full ${colors[method] || 'bg-gray-300'} rounded-full`}
+                                  style={{ width: `${(count / totalPayments) * 100}%` }} />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-[#7C5C4A] text-center py-8">Nessun pagamento registrato per questa giornata</p>
+                  )}
+                </CardContent>
+              </Card>
             </div>
-            <span className="text-sm font-bold text-emerald-700">Incasso netto: €{(data?.total_earnings ?? 0).toFixed(2)}</span>
-          </div>
+          </>
+        ) : (
+          /* ── Aggregate view ── */
+          aggData && (
+            <>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-fast">
+                <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-sm text-[#7C5C4A]">Incasso Totale</p>
+                        <p className="text-3xl font-display font-medium text-[#2D1B14] mt-2">
+                          €{aggData.total_earnings.toFixed(2)}
+                        </p>
+                        <p className="text-xs text-[#7C5C4A] mt-1">{aggData.total_appointments} appuntamenti</p>
+                      </div>
+                      <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center">
+                        <Euro className="w-6 h-6 text-emerald-500" strokeWidth={1.5} />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-sm text-[#7C5C4A]">Clienti Serviti</p>
+                        <p className="text-3xl font-display font-medium text-[#2D1B14] mt-2">
+                          {aggData.unique_clients}
+                        </p>
+                        <p className="text-xs text-[#7C5C4A] mt-1">clienti unici</p>
+                      </div>
+                      <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center">
+                        <Users className="w-6 h-6 text-[#C8617A]" strokeWidth={1.5} />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-sm text-[#7C5C4A]">Appuntamenti</p>
+                        <p className="text-3xl font-display font-medium text-[#2D1B14] mt-2">
+                          {aggData.total_appointments}
+                        </p>
+                        <p className="text-xs text-[#7C5C4A] mt-1">{aggData.completed_appointments} completati</p>
+                      </div>
+                      <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center">
+                        <Clock className="w-6 h-6 text-amber-500" strokeWidth={1.5} />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-sm text-[#7C5C4A]">Media / Appuntamento</p>
+                        <p className="text-3xl font-display font-medium text-[#2D1B14] mt-2">
+                          €{aggData.avg_per_appointment.toFixed(0)}
+                        </p>
+                        <p className="text-xs text-[#7C5C4A] mt-1">media incasso</p>
+                      </div>
+                      <div className="w-12 h-12 rounded-xl bg-rose-50 flex items-center justify-center">
+                        <BarChart3 className="w-6 h-6 text-rose-500" strokeWidth={1.5} />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
+                      <Scissors className="w-5 h-5 text-[#C8617A]" /> Servizi Richiesti
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {aggData.top_services.length > 0 ? (
+                      <div className="space-y-3">
+                        {aggData.top_services.map((svc, idx) => {
+                          const colors = ['bg-[#C8617A]', 'bg-[#789F8A]', 'bg-[#E9C46A]', 'bg-[#C084FC]', 'bg-[#334155]'];
+                          return (
+                            <div key={idx} className="flex items-center gap-3">
+                              <span className="text-sm font-bold text-[#7C5C4A] w-5 shrink-0">{idx + 1}.</span>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-sm font-medium text-[#2D1B14] truncate">{svc.name}</span>
+                                  <span className="text-sm font-bold text-[#7C5C4A] shrink-0 ml-2">{svc.count}x</span>
+                                </div>
+                                <div className="h-2 bg-[#F5EDE0] rounded-full overflow-hidden">
+                                  <div className={`h-full ${colors[idx % 5]} rounded-full transition-all duration-700`}
+                                    style={{ width: `${(svc.count / (aggData.top_services[0]?.count || 1)) * 100}%` }} />
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-[#7C5C4A] text-center py-8">Nessun servizio registrato in questo periodo</p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
+                      <CreditCard className="w-5 h-5 text-[#C8617A]" /> Metodi di Pagamento
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {Object.keys(aggData.payment_methods).length > 0 ? (
+                      <div className="space-y-4">
+                        {Object.entries(aggData.payment_methods).map(([method, count]) => {
+                          const labels = { contanti: 'Contanti', cash: 'Contanti', pos: 'POS', sospeso: 'Sospeso', carta: 'Carta', prepagata: 'Prepagata', prepaid: 'Abb./Prepagata', 'non specificato': 'Non specificato' };
+                          const colors = { contanti: 'bg-emerald-400', cash: 'bg-emerald-400', pos: 'bg-blue-400', sospeso: 'bg-amber-400', carta: 'bg-blue-400', prepagata: 'bg-violet-400', prepaid: 'bg-violet-400', 'non specificato': 'bg-gray-300' };
+                          const totalPayments = Object.values(aggData.payment_methods).reduce((a, b) => a + b, 0);
+                          return (
+                            <div key={method} className="flex items-center gap-3">
+                              <div className={`w-3 h-3 rounded-full ${colors[method] || 'bg-gray-300'} shrink-0`} />
+                              <div className="flex-1">
+                                <div className="flex justify-between mb-1">
+                                  <span className="text-sm text-[#2D1B14]">{labels[method] || method}</span>
+                                  <span className="text-sm font-bold text-[#7C5C4A]">{count}</span>
+                                </div>
+                                <div className="h-2 bg-[#F5EDE0] rounded-full overflow-hidden">
+                                  <div className={`h-full ${colors[method] || 'bg-gray-300'} rounded-full`}
+                                    style={{ width: `${(count / totalPayments) * 100}%` }} />
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-[#7C5C4A] text-center py-8">Nessun pagamento registrato in questo periodo</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </>
+          )
         )}
-
-        {/* Bottom Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Top Services */}
-          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
-                <Scissors className="w-5 h-5 text-[#C8617A]" /> Servizi Richiesti
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {data?.top_services?.length > 0 ? (
-                <div className="space-y-3">
-                  {data.top_services.map((svc, idx) => {
-                    const colors = ['bg-[#C8617A]', 'bg-[#789F8A]', 'bg-[#E9C46A]', 'bg-[#C084FC]', 'bg-[#334155]'];
-                    return (
-                      <div key={idx} className="flex items-center gap-3">
-                        <span className="text-sm font-bold text-[#7C5C4A] w-5 shrink-0">{idx + 1}.</span>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm font-medium text-[#2D1B14] truncate">{svc.name}</span>
-                            <span className="text-sm font-bold text-[#7C5C4A] shrink-0 ml-2">{svc.count}x</span>
-                          </div>
-                          <div className="h-2 bg-[#F5EDE0] rounded-full overflow-hidden">
-                            <div className={`h-full ${colors[idx % 5]} rounded-full transition-all duration-700`}
-                              style={{ width: `${(svc.count / (data.top_services[0]?.count || 1)) * 100}%` }} />
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-sm text-[#7C5C4A] text-center py-8">Nessun servizio registrato per questa giornata</p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Payment Methods */}
-          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-[#C8617A]" /> Metodi di Pagamento
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {data?.payment_methods && Object.keys(data.payment_methods).length > 0 ? (
-                <div className="space-y-4">
-                  {Object.entries(data.payment_methods).map(([method, count]) => {
-                    const labels = { contanti: 'Contanti', cash: 'Contanti', pos: 'POS', sospeso: 'Sospeso', carta: 'Carta', prepagata: 'Prepagata', prepaid: 'Abb./Prepagata', 'non specificato': 'Non specificato' };
-                    const colors = { contanti: 'bg-emerald-400', cash: 'bg-emerald-400', pos: 'bg-blue-400', sospeso: 'bg-amber-400', carta: 'bg-blue-400', prepagata: 'bg-violet-400', prepaid: 'bg-violet-400', 'non specificato': 'bg-gray-300' };
-                    const totalPayments = Object.values(data.payment_methods).reduce((a, b) => a + b, 0);
-                    return (
-                      <div key={method} className="flex items-center gap-3">
-                        <div className={`w-3 h-3 rounded-full ${colors[method] || 'bg-gray-300'} shrink-0`} />
-                        <div className="flex-1">
-                          <div className="flex justify-between mb-1">
-                            <span className="text-sm text-[#2D1B14]">{labels[method] || method}</span>
-                            <span className="text-sm font-bold text-[#7C5C4A]">{count}</span>
-                          </div>
-                          <div className="h-2 bg-[#F5EDE0] rounded-full overflow-hidden">
-                            <div className={`h-full ${colors[method] || 'bg-gray-300'} rounded-full`}
-                              style={{ width: `${(count / totalPayments) * 100}%` }} />
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-sm text-[#7C5C4A] text-center py-8">Nessun pagamento registrato per questa giornata</p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
       </div>
     </Layout>
   );

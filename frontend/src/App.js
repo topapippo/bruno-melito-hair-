@@ -11,7 +11,6 @@ import Dashboard from "./pages/Dashboard";
 import StatsPage from "./pages/StatsPage";
 import ClientsPage from "./pages/ClientsPage";
 import ServicesPage from "./pages/ServicesPage";
-import HistoryPage from "./pages/HistoryPage";
 import SettingsPage from "./pages/SettingsPage";
 import AppointmentsPage from "./pages/AppointmentsPage";
 import OperatorsPage from "./pages/OperatorsPage";
@@ -234,16 +233,6 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <RemindersPage />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* STORICO */}
-          <Route
-            path="/history"
-            element={
-              <ProtectedRoute>
-                <HistoryPage />
               </ProtectedRoute>
             }
           />

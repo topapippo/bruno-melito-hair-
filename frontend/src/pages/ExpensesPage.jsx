@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { format } from 'date-fns';
+import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import api, { API } from '../lib/api';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
@@ -56,6 +56,7 @@ export default function ExpensesPage() {
   const [saving, setSaving] = useState(false);
   const [filter, setFilter] = useState('unpaid'); // 'all', 'unpaid', 'paid'
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [datePeriod, setDatePeriod] = useState('all'); // 'all', 'month', 'prev_month', 'year'
 
   const [formData, setFormData] = useState({
     description: '',
@@ -70,14 +71,32 @@ export default function ExpensesPage() {
 
   useEffect(() => {
     fetchExpenses();
-  }, [filter]);
+  }, [filter, datePeriod]);
+
+  const getDateRange = () => {
+    const now = new Date();
+    switch (datePeriod) {
+      case 'month': return { start: format(startOfMonth(now), 'yyyy-MM-dd'), end: format(now, 'yyyy-MM-dd') };
+      case 'prev_month': {
+        const prev = subMonths(now, 1);
+        return { start: format(startOfMonth(prev), 'yyyy-MM-dd'), end: format(endOfMonth(prev), 'yyyy-MM-dd') };
+      }
+      case 'year': return { start: `${now.getFullYear()}-01-01`, end: format(now, 'yyyy-MM-dd') };
+      default: return null;
+    }
+  };
 
   const fetchExpenses = async () => {
     setLoading(true);
     try {
-      let url = `${API}/expenses`;
-      if (filter === 'unpaid') url += '?paid=false';
-      else if (filter === 'paid') url += '?paid=true';
+      const params = [];
+      if (filter === 'unpaid') params.push('paid=false');
+      else if (filter === 'paid') params.push('paid=true');
+      const dateRange = getDateRange();
+      if (dateRange) {
+        params.push(`start=${dateRange.start}`, `end=${dateRange.end}`);
+      }
+      const url = `${API}/expenses${params.length ? '?' + params.join('&') : ''}`;
       const res = await api.get(url);
       setExpenses(res.data);
     } catch (err) {
@@ -239,37 +258,58 @@ export default function ExpensesPage() {
         {/* Filters */}
         <Card className="bg-white border-[#F0E6DC]/30">
           <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-              <div className="flex gap-2">
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                <div className="flex gap-2 flex-wrap">
+                  {[
+                    { key: 'unpaid', label: 'Da Pagare', icon: AlertTriangle },
+                    { key: 'paid', label: 'Pagate', icon: Check },
+                    { key: 'all', label: 'Tutte', icon: Receipt },
+                  ].map(f => (
+                    <Button
+                      key={f.key}
+                      variant={filter === f.key ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setFilter(f.key)}
+                      className={filter === f.key ? 'bg-[#C8617A] text-white' : 'border-[#F0E6DC]'}
+                      data-testid={`filter-${f.key}`}
+                    >
+                      <f.icon className="w-3.5 h-3.5 mr-1" /> {f.label}
+                    </Button>
+                  ))}
+                </div>
+                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="w-44" data-testid="category-filter">
+                    <Filter className="w-3.5 h-3.5 mr-1" />
+                    <SelectValue placeholder="Categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutte le categorie</SelectItem>
+                    {CATEGORIES.map(c => (
+                      <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {/* Date period filter */}
+              <div className="flex gap-2 flex-wrap">
                 {[
-                  { key: 'unpaid', label: 'Da Pagare', icon: AlertTriangle },
-                  { key: 'paid', label: 'Pagate', icon: Check },
-                  { key: 'all', label: 'Tutte', icon: Receipt },
-                ].map(f => (
+                  { key: 'all', label: 'Tutte le date' },
+                  { key: 'month', label: 'Mese in corso' },
+                  { key: 'prev_month', label: 'Mese precedente' },
+                  { key: 'year', label: 'Anno in corso' },
+                ].map(p => (
                   <Button
-                    key={f.key}
-                    variant={filter === f.key ? 'default' : 'outline'}
+                    key={p.key}
+                    variant={datePeriod === p.key ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => setFilter(f.key)}
-                    className={filter === f.key ? 'bg-[#C8617A] text-white' : 'border-[#F0E6DC]'}
-                    data-testid={`filter-${f.key}`}
+                    onClick={() => setDatePeriod(p.key)}
+                    className={datePeriod === p.key ? 'bg-[#7C5C4A] text-white' : 'border-[#F0E6DC]'}
                   >
-                    <f.icon className="w-3.5 h-3.5 mr-1" /> {f.label}
+                    {p.label}
                   </Button>
                 ))}
               </div>
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-44" data-testid="category-filter">
-                  <Filter className="w-3.5 h-3.5 mr-1" />
-                  <SelectValue placeholder="Categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tutte le categorie</SelectItem>
-                  {CATEGORIES.map(c => (
-                    <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
           </CardContent>
         </Card>

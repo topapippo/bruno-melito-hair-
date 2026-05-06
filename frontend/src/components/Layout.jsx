@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import api, { API } from '../lib/api';
 import {
   LayoutDashboard, Calendar, CalendarDays, Users, Scissors,
-  UserCircle, BarChart3, History, Settings, LogOut, Menu, CreditCard,
+  UserCircle, BarChart3, Settings, LogOut, Menu, CreditCard,
   Euro, Database, Star, Bell, FileBarChart, Globe, ArrowDownCircle, Gift,
   AlertTriangle, Sparkles, ClockArrowUp, ChevronLeft, ChevronRight, ChevronDown
 } from 'lucide-react';
@@ -18,7 +18,6 @@ const navGroups = [
       { path: '/dashboard', label: 'Dashboard',      icon: LayoutDashboard },
       { path: '/',          label: 'Planning',        icon: Calendar },
       { path: '/appointments', label: 'Appuntamenti', icon: CalendarDays },
-      { path: '/history',   label: 'Storico',         icon: History },
     ],
   },
   {

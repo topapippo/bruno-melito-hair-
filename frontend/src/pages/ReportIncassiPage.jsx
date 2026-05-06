@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Euro, CreditCard, Banknote, FileSpreadsheet, TrendingDown, TrendingUp, AlertTriangle, Loader2 } from 'lucide-react';
-import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays } from 'date-fns';
+import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays, subMonths } from 'date-fns';
 import { toast } from 'sonner';
 
 
@@ -89,6 +89,12 @@ export default function ReportIncassiPage() {
         return { start: startOfMonth(now), end: endOfMonth(now) };
       case 'last30':
         return { start: subDays(now, 30), end: now };
+      case 'prev_month': {
+        const prev = subMonths(now, 1);
+        return { start: startOfMonth(prev), end: endOfMonth(prev) };
+      }
+      case 'year':
+        return { start: new Date(now.getFullYear(), 0, 1), end: now };
       default:
         return { start: startOfDay(now), end: endOfDay(now) };
     }
@@ -162,7 +168,9 @@ export default function ReportIncassiPage() {
       case 'today': return 'Oggi';
       case 'yesterday': return 'Ieri';
       case 'week': return 'Questa settimana';
-      case 'month': return 'Questo mese';
+      case 'month': return 'Mese in corso';
+      case 'prev_month': return 'Mese precedente';
+      case 'year': return 'Anno in corso';
       case 'last30': return 'Ultimi 30 giorni';
       default: return '';
     }
@@ -197,7 +205,9 @@ export default function ReportIncassiPage() {
                 <SelectItem value="today">Oggi</SelectItem>
                 <SelectItem value="yesterday">Ieri</SelectItem>
                 <SelectItem value="week">Questa settimana</SelectItem>
-                <SelectItem value="month">Questo mese</SelectItem>
+                <SelectItem value="month">Mese in corso</SelectItem>
+                <SelectItem value="prev_month">Mese precedente</SelectItem>
+                <SelectItem value="year">Anno in corso</SelectItem>
                 <SelectItem value="last30">Ultimi 30 giorni</SelectItem>
               </SelectContent>
             </Select>

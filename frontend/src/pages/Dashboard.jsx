@@ -12,7 +12,7 @@ import {
   Scissors, UserCheck, BarChart3,
   CreditCard, Gift, Bell, Download, Globe, Settings, AlertTriangle,
   MessageCircle, X, Sparkles, Heart, Star, ArrowDownCircle, FileBarChart, Cake,
-  ClockArrowUp, CheckCircle2, AlertCircle, Zap, History, ArrowUpRight,
+  ClockArrowUp, CheckCircle2, AlertCircle, Zap, ArrowUpRight,
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -37,7 +37,6 @@ const MODULES = [
   { path: '/backup',    label: 'Backup',        desc: 'Esporta dati',       icon: Download,       emoji: '💾', from: '#6B7280', to: '#D1D5DB' },
   { path: '/sito',      label: 'Sito Web',      desc: 'Pagina pubblica',    icon: Globe,          emoji: '🌐', from: '#14B8A6', to: '#5EEAD4' },
   { path: '/settings',  label: 'Impostazioni',  desc: 'Configurazione',     icon: Settings,       emoji: '⚙️', from: '#6B7280', to: '#D1D5DB' },
-  { path: '/history',   label: 'Storico',       desc: 'Archivio appunt.',   icon: History,        emoji: '🗂️', from: '#64748B', to: '#94A3B8' },
 ];
 
 export default function Dashboard() {
