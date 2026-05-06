@@ -326,7 +326,7 @@ export default function WebsitePage() {
   const landingServiceGroups = groupServicesByCategory(bookingServices);
 
   // Dynamic section ordering from CMS config
-  const defaultSectionOrder = ['services', 'transformations', 'team', 'salon', 'about', 'promotions', 'reviews', 'gallery', 'loyalty', 'contact'];
+  const defaultSectionOrder = ['services', 'team', 'salon', 'about', 'promotions', 'reviews', 'gallery', 'loyalty', 'contact'];
   const rawSectionOrder = config.section_order || defaultSectionOrder;
   const normalizedSectionOrder = [...new Set(rawSectionOrder.filter(id => defaultSectionOrder.includes(id)))];
   const sectionOrder = [...normalizedSectionOrder, ...defaultSectionOrder.filter(id => !normalizedSectionOrder.includes(id))];
@@ -345,8 +345,6 @@ export default function WebsitePage() {
         return publicPromos.length > 0 ? <PromotionsSection key="promotions" publicPromos={publicPromos} setShowBooking={setShowBooking} bookPromo={bookPromo} T={T} /> : null;
       case 'reviews':
         return reviews.length > 0 ? <ReviewsSection key="reviews" reviews={reviews} T={T} config={config} /> : null;
-      case 'transformations':
-        return hairstylePhotos.length >= 2 ? <TransformationsSection key="transformations" hairstylePhotos={hairstylePhotos} setShowBooking={setShowBooking} T={T} /> : null;
       case 'team':
         return operators.filter(o => o.active !== false).length > 0 ? <TeamSection key="team" operators={operators} T={T} setShowBooking={setShowBooking} /> : null;
       case 'gallery':

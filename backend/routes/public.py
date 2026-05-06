@@ -204,7 +204,7 @@ DEFAULT_WEBSITE_CONFIG = {
     ],
     "gallery_title": "Tendenze P/E 2026",
     "gallery_subtitle": "Lasciati ispirare dalle ultime tendenze Primavera Estate 2026.",
-    "section_order": ["services", "salon", "about", "promotions", "reviews", "gallery", "loyalty", "contact"],
+    "section_order": ["services", "team", "salon", "about", "promotions", "reviews", "gallery", "loyalty", "contact"],
     "hidden_sections": [],
     "upselling_rules": [],
     "upselling_discount": 15,
@@ -788,6 +788,7 @@ async def update_website_config(data: WebsiteConfigUpdate, current_user: dict = 
     update_data["user_id"] = current_user["id"]
     update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
     await db.website_config.update_one({"user_id": current_user["id"]}, {"$set": update_data}, upsert=True)
+    _invalidate_website_cache()
     return await db.website_config.find_one({"user_id": current_user["id"]}, {"_id": 0})
 
 
@@ -804,6 +805,7 @@ async def create_website_review(data: dict, current_user: dict = Depends(get_cur
         "rating": data.get("rating", 5), "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.website_reviews.insert_one(review)
+    _invalidate_website_cache()
     return {k: v for k, v in review.items() if k != "_id"}
 
 
@@ -813,12 +815,14 @@ async def update_website_review(review_id: str, data: dict, current_user: dict =
         {"id": review_id, "user_id": current_user["id"]},
         {"$set": {"name": data.get("name"), "text": data.get("text"), "rating": data.get("rating", 5)}}
     )
+    _invalidate_website_cache()
     return await db.website_reviews.find_one({"id": review_id}, {"_id": 0})
 
 
 @router.delete("/website/reviews/{review_id}")
 async def delete_website_review(review_id: str, current_user: dict = Depends(get_current_user)):
     await db.website_reviews.delete_one({"id": review_id, "user_id": current_user["id"]})
+    _invalidate_website_cache()
     return {"success": True}
 
 
@@ -841,6 +845,7 @@ async def create_website_gallery_item(data: dict, current_user: dict = Depends(g
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.website_gallery.insert_one(item)
+    _invalidate_website_cache()
     return {k: v for k, v in item.items() if k != "_id"}
 
 
@@ -852,17 +857,24 @@ async def update_website_gallery_item(item_id: str, data: dict, current_user: di
             update_data[key] = data[key]
     if update_data:
         await db.website_gallery.update_one({"id": item_id, "user_id": current_user["id"]}, {"$set": update_data})
+    _invalidate_website_cache()
     return await db.website_gallery.find_one({"id": item_id}, {"_id": 0})
 
 
 @router.delete("/website/gallery/{item_id}")
 async def delete_website_gallery_item(item_id: str, current_user: dict = Depends(get_current_user)):
     await db.website_gallery.update_one({"id": item_id, "user_id": current_user["id"]}, {"$set": {"is_deleted": True}})
+    _invalidate_website_cache()
     return {"success": True}
 
 
 _website_cache: dict = {"data": None, "ts": 0}
 _WEBSITE_CACHE_TTL = 600  # 10 minuti
+
+
+def _invalidate_website_cache():
+    _website_cache["data"] = None
+    _website_cache["ts"] = 0
 
 @router.get("/public/website")
 async def public_get_website():

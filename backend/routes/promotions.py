@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 from database import db
 from auth import get_current_user
+from routes.public import _invalidate_website_cache
 
 router = APIRouter()
 
@@ -75,6 +76,7 @@ async def create_promotion(data: PromoCreate, current_user: dict = Depends(get_c
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.promotions.insert_one(promo)
+    _invalidate_website_cache()
     return {k: v for k, v in promo.items() if k not in ("_id", "user_id")}
 
 
@@ -88,6 +90,7 @@ async def update_promotion(promo_id: str, data: PromoUpdate, current_user: dict 
         raise HTTPException(status_code=404, detail="Promozione non trovata")
     promo = await db.promotions.find_one({"id": promo_id}, {"_id": 0, "user_id": 0})
     promo["usage_count"] = await db.promo_usage.count_documents({"promo_id": promo_id})
+    _invalidate_website_cache()
     return promo
 
 
@@ -96,6 +99,7 @@ async def delete_promotion(promo_id: str, current_user: dict = Depends(get_curre
     result = await db.promotions.delete_one({"id": promo_id, "user_id": current_user["id"]})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Promozione non trovata")
+    _invalidate_website_cache()
     return {"success": True}
 
 

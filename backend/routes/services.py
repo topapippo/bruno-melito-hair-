@@ -6,6 +6,7 @@ import uuid
 from database import db
 from auth import get_current_user
 from models import ServiceCreate, ServiceResponse, ServiceUpdate
+from routes.public import _invalidate_website_cache
 
 router = APIRouter()
 
@@ -20,6 +21,7 @@ async def create_service(data: ServiceCreate, current_user: dict = Depends(get_c
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.services.insert_one(service_doc)
+    _invalidate_website_cache()
     return ServiceResponse(**{k: v for k, v in service_doc.items() if k != "user_id"})
 
 
@@ -38,6 +40,7 @@ async def update_service(service_id: str, data: ServiceUpdate, current_user: dic
     result = await db.services.update_one({"id": service_id, "user_id": current_user["id"]}, {"$set": update_data})
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Servizio non trovato")
+    _invalidate_website_cache()
     return await db.services.find_one({"id": service_id}, {"_id": 0, "user_id": 0})
 
 
@@ -46,4 +49,5 @@ async def delete_service(service_id: str, current_user: dict = Depends(get_curre
     result = await db.services.delete_one({"id": service_id, "user_id": current_user["id"]})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Servizio non trovato")
+    _invalidate_website_cache()
     return {"message": "Servizio eliminato"}
