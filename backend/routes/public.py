@@ -205,8 +205,16 @@ DEFAULT_WEBSITE_CONFIG = {
     "gallery_title": "Tendenze P/E 2026",
     "gallery_subtitle": "Lasciati ispirare dalle ultime tendenze Primavera Estate 2026.",
     "section_order": ["services", "salon", "about", "promotions", "reviews", "gallery", "loyalty", "contact"],
+    "hidden_sections": [],
     "upselling_rules": [],
-    "upselling_discount": 15
+    "upselling_discount": 15,
+    "hero_slogan": "",
+    "primary_color": "#E8477C",
+    "accent_color": "#2EC4B6",
+    "bg_color": "#FAFBFD",
+    "text_color": "#1A1A2E",
+    "font_display": "Cormorant Garamond",
+    "font_body": "Nunito"
 }
 
 
@@ -755,8 +763,16 @@ class WebsiteConfigUpdate(BaseModel):
     gallery_title: Optional[str] = None
     gallery_subtitle: Optional[str] = None
     section_order: Optional[List[str]] = None
+    hidden_sections: Optional[List[str]] = None
     upselling_rules: Optional[List[Any]] = None
     upselling_discount: Optional[float] = None
+    hero_slogan: Optional[str] = None
+    primary_color: Optional[str] = None
+    accent_color: Optional[str] = None
+    bg_color: Optional[str] = None
+    text_color: Optional[str] = None
+    font_display: Optional[str] = None
+    font_body: Optional[str] = None
 
     @field_validator("upselling_discount")
     @classmethod

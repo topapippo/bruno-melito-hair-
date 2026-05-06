@@ -92,6 +92,21 @@ export default function WebsiteAdminPage() {
   };
 
   // ── Loyalty helpers ──
+  const toggleLoyaltyOnSite = async () => {
+    const hidden = config?.hidden_sections || [];
+    const isHidden = hidden.includes('loyalty');
+    const newHidden = isHidden ? hidden.filter(s => s !== 'loyalty') : [...hidden, 'loyalty'];
+    const newConfig = { ...config, hidden_sections: newHidden };
+    setSaving(true);
+    try {
+      const res = await api.put('/website/config', newConfig);
+      setConfig(res.data);
+      setIsDirty(false);
+      toast.success(isHidden ? '✅ Sezione Fedeltà ora visibile sul sito' : '✅ Sezione Fedeltà nascosta dal sito');
+    } catch (err) { toast.error('Errore nel salvataggio'); }
+    finally { setSaving(false); }
+  };
+
   const saveLoyaltyConfig = async (updatedRewards) => {
     try {
       const res = await api.put('/loyalty/config', { rewards: updatedRewards });
@@ -1094,13 +1109,28 @@ export default function WebsiteAdminPage() {
                     <Button size="sm" onClick={() => saveLoyaltyConfig(loyaltyConfig?.rewards || {})} className="bg-[#C8617A] text-white"><Save className="w-4 h-4 mr-1" /> Salva</Button>
                   </div>
                 </div>
-                <div className="flex items-start gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg mt-2">
-                  <TrendingUp className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-bold text-emerald-800">Sincronizzato con il sito</p>
-                    <p className="text-xs text-emerald-700 mt-0.5">I premi configurati qui appaiono automaticamente nella sezione Fedeltà del sito pubblico. Punti per euro: <strong>{loyaltyConfig?.points_per_euro || 20}</strong>.</p>
-                  </div>
-                </div>
+                {(() => {
+                  const loyaltyHidden = (config?.hidden_sections || []).includes('loyalty');
+                  return (
+                    <div className={`flex items-center justify-between gap-3 p-3 rounded-lg mt-2 border ${loyaltyHidden ? 'bg-gray-50 border-gray-200' : 'bg-emerald-50 border-emerald-200'}`}>
+                      <div className="flex items-center gap-3">
+                        <TrendingUp className={`w-5 h-5 shrink-0 ${loyaltyHidden ? 'text-gray-400' : 'text-emerald-600'}`} />
+                        <div>
+                          <p className={`text-sm font-bold ${loyaltyHidden ? 'text-gray-500' : 'text-emerald-800'}`}>
+                            {loyaltyHidden ? 'Sezione nascosta dal sito pubblico' : 'Visibile sul sito pubblico'}
+                          </p>
+                          <p className={`text-xs mt-0.5 ${loyaltyHidden ? 'text-gray-400' : 'text-emerald-700'}`}>
+                            {loyaltyHidden ? 'Attiva il toggle per mostrarla.' : `I premi appaiono automaticamente sul sito. Punti per euro: ${loyaltyConfig?.points_per_euro || 20}.`}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-xs font-semibold text-gray-500">{loyaltyHidden ? 'Off' : 'On'}</span>
+                        <Switch checked={!loyaltyHidden} onCheckedChange={toggleLoyaltyOnSite} disabled={saving} />
+                      </div>
+                    </div>
+                  );
+                })()}
               </CardHeader>
               <CardContent>
                 {loyaltyConfig?.rewards && Object.keys(loyaltyConfig.rewards).length > 0 ? (
