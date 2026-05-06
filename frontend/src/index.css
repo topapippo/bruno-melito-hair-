@@ -530,3 +530,203 @@ a, button { transition: all 0.2s ease; }
   filter: brightness(1.08);
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   2026 Design Refresh — Nuove Utility
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Shimmer sweep su bottoni (shimmer da sinistra a destra) */
+.glow-btn { position: relative; overflow: hidden; }
+.glow-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.25) 50%, transparent 100%);
+  transform: translateX(-100%);
+  transition: transform 0.55s ease;
+}
+.glow-btn:hover::before { transform: translateX(100%); }
+
+/* Testo con gradiente tema */
+.hero-title {
+  background: linear-gradient(135deg, var(--admin-primary, #A855F7) 0%, var(--admin-accent, #FBBF24) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Card con bordo gradiente */
+.gradient-border {
+  position: relative;
+  border-radius: 1rem;
+  background: var(--admin-content-bg, #FAF5FF);
+}
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: linear-gradient(135deg, var(--admin-primary, #A855F7), var(--admin-accent, #FBBF24));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Glassmorphism scuro (su card dark) */
+.glass-card {
+  background: rgba(255,255,255,0.07);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+/* Glassmorphism chiaro (su sfondi chiari) */
+.glass-soft {
+  background: rgba(255,255,255,0.60);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.85);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.05);
+}
+
+/* Hero blob animato */
+@keyframes blobFloat {
+  0%, 100% { transform: translate(0px, 0px) scale(1); }
+  33%       { transform: translate(20px, -15px) scale(1.05); }
+  66%       { transform: translate(-10px, 10px) scale(0.96); }
+}
+.blob-animate { animation: blobFloat 10s ease-in-out infinite; }
+
+/* Entrata da sinistra */
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.slide-in-left { animation: slideInLeft 0.45s cubic-bezier(.16,1,.3,1) forwards; }
+
+/* Entrata da destra */
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.slide-in-right { animation: slideInRight 0.45s cubic-bezier(.16,1,.3,1) forwards; }
+
+/* Heartbeat per alert importanti */
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  30%       { transform: scale(1.2); }
+  60%       { transform: scale(1.05); }
+}
+.heartbeat { animation: heartbeat 1.6s ease-in-out infinite; }
+
+/* Rotazione lenta (decorazioni) */
+@keyframes spinSlow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.spin-slow { animation: spinSlow 12s linear infinite; }
+
+/* Dot notifica pulsante */
+.notif-dot {
+  position: relative;
+}
+.notif-dot::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: inherit;
+  opacity: 0.5;
+  animation: pulse-slow 2s ease-in-out infinite;
+}
+
+/* Hover 3D su module cards */
+.module-card-3d {
+  transition: all 0.28s cubic-bezier(.16,1,.3,1);
+  transform-origin: center bottom;
+}
+.module-card-3d:hover {
+  transform: translateY(-7px) scale(1.03);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.18);
+}
+
+/* Timeline connector */
+.timeline-connector {
+  position: relative;
+}
+.timeline-connector::before {
+  content: '';
+  position: absolute;
+  left: 1.15rem;
+  top: 2.5rem;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--admin-primary, #A855F7) 0%, transparent 100%);
+  border-radius: 2px;
+}
+
+/* Sidebar group toggle animato */
+.group-items-enter {
+  animation: staggerFadeIn 0.3s cubic-bezier(.16,1,.3,1) forwards;
+}
+
+/* Orologio nella sidebar */
+.sidebar-clock {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
+}
+
+/* Stat value count-up feel */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.count-up { animation: countUp 0.5s cubic-bezier(.16,1,.3,1) forwards; }
+
+/* Ring colorato dinamico su avatar */
+.avatar-ring {
+  outline: 2.5px solid var(--admin-primary, #A855F7);
+  outline-offset: 2px;
+}
+
+/* Badge con glow */
+.badge-glow {
+  box-shadow: 0 0 8px color-mix(in srgb, var(--admin-primary, #A855F7) 50%, transparent);
+}
+
+/* Sidebar nav icon container */
+.nav-icon {
+  transition: all 0.2s cubic-bezier(.16,1,.3,1);
+}
+.sidebar-nav-link:hover .nav-icon {
+  transform: scale(1.15) rotate(-5deg);
+  background: color-mix(in srgb, var(--admin-primary, #A855F7) 20%, transparent) !important;
+  color: var(--admin-primary, #A855F7) !important;
+}
+.sidebar-nav-link.nav-active .nav-icon {
+  background: color-mix(in srgb, var(--admin-primary, #A855F7) 20%, transparent) !important;
+  color: var(--admin-primary, #A855F7) !important;
+}
+
+/* Card stat hero glow on hover */
+[data-admin-theme="true"] .stat-hero-card:hover {
+  box-shadow: 0 20px 50px color-mix(in srgb, var(--admin-primary, #A855F7) 25%, rgba(0,0,0,0.15)) !important;
+  transform: translateY(-6px) scale(1.02) !important;
+}
+
+/* Ripple sui moduli */
+@keyframes rippleOut {
+  from { transform: scale(0); opacity: 0.4; }
+  to   { transform: scale(3); opacity: 0; }
+}
+.module-card-3d:active::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(255,255,255,0.3);
+  animation: rippleOut 0.5s ease forwards;
+}
+
