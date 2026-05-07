@@ -25,6 +25,17 @@ def calculate_end_time(start_time: str, duration_minutes: int) -> str:
     return f"{end_hours:02d}:{end_minutes:02d}"
 
 
+def normalize_phone_wa(phone: str) -> str:
+    """Restituisce il numero in formato 393XXXXXXXXX per UltraMsg / Green API."""
+    import re
+    d = re.sub(r'\D', '', phone)
+    if d.startswith('0039'):
+        d = d[4:]
+    elif d.startswith('39') and len(d) > 10:
+        d = d[2:]
+    return '39' + d
+
+
 def format_phone_e164(phone: str) -> str:
     phone = ''.join(filter(str.isdigit, phone))
     if phone.startswith('39'):

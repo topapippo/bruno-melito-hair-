@@ -16,6 +16,7 @@ from slowapi.util import get_remote_address
 from database import db
 from auth import get_current_user
 from models import PublicBookingRequest
+from utils import normalize_phone_wa
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -265,11 +266,8 @@ async def _send_booking_wa(client_phone, client_name, date_it, time, services_na
     if not instance_id or not api_token or not client_phone:
         return False
     try:
-        import re as _re, requests as _req, asyncio as _asyncio
-        phone_clean = _re.sub(r'\D', '', client_phone)
-        if phone_clean.startswith('0039'): phone_clean = phone_clean[4:]
-        elif phone_clean.startswith('39') and len(phone_clean) > 10: phone_clean = phone_clean[2:]
-        if not phone_clean.startswith('39') or len(phone_clean) == 10: phone_clean = '39' + phone_clean
+        import requests as _req, asyncio as _asyncio
+        phone_clean = normalize_phone_wa(client_phone)
         msg = (
             f"✅ Prenotazione confermata!\n\n"
             f"Ciao {client_name}! La tua prenotazione da *{salon_name}* è confermata:\n\n"

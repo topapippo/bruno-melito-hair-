@@ -20,7 +20,7 @@ import logging
 from database import db
 from auth import get_current_user
 from models import SMSRequest
-from utils import send_sms_reminder, twilio_client, TWILIO_PHONE_NUMBER
+from utils import send_sms_reminder, twilio_client, TWILIO_PHONE_NUMBER, normalize_phone_wa
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -491,10 +491,7 @@ async def send_confirmation_link(appointment_id: str, current_user: dict = Depen
     api_token = current_user.get("green_api_token", "")
     if instance_id and api_token:
         try:
-            phone_clean = _re.sub(r'\D', '', client_phone)
-            if phone_clean.startswith('0039'): phone_clean = phone_clean[4:]
-            elif phone_clean.startswith('39') and len(phone_clean) > 10: phone_clean = phone_clean[2:]
-            if not phone_clean.startswith('39'): phone_clean = '39' + phone_clean
+            phone_clean = normalize_phone_wa(client_phone)
             wa_number = phone_clean + "@c.us"
             url = f"https://api.greenapi.com/waInstance{instance_id}/sendMessage/{api_token}"
             resp = await asyncio.to_thread(_req.post, url, json={"chatId": wa_number, "message": message}, timeout=15)
@@ -514,7 +511,6 @@ async def send_confirmation_link(appointment_id: str, current_user: dict = Depen
 @router.post("/whatsapp/send-direct")
 async def send_whatsapp_direct(data: dict, current_user: dict = Depends(get_current_user)):
     """Invia WhatsApp via Green API → UltraMsg → Telegram (catena di fallback automatica)."""
-    import re as _re
     import urllib.parse
     import asyncio
     import requests as _req
@@ -525,13 +521,7 @@ async def send_whatsapp_direct(data: dict, current_user: dict = Depends(get_curr
         raise HTTPException(status_code=400, detail="Phone e message obbligatori")
 
     # Normalizza numero in formato internazionale (es. 393401234567)
-    phone_clean = _re.sub(r'\D', '', phone)
-    if phone_clean.startswith('0039'):
-        phone_clean = phone_clean[4:]
-    elif phone_clean.startswith('39') and len(phone_clean) > 10:
-        phone_clean = phone_clean[2:]
-    if not phone_clean.startswith('39') or len(phone_clean) == 10:
-        phone_clean = '39' + phone_clean
+    phone_clean = normalize_phone_wa(phone)
     wa_number = phone_clean + "@c.us"
     wa_url = f"https://wa.me/{phone_clean}?text={urllib.parse.quote(message)}"
 
@@ -545,7 +535,7 @@ async def send_whatsapp_direct(data: dict, current_user: dict = Depends(get_curr
             url = f"https://api.ultramsg.com/{um_instance}/messages/chat"
             resp = await asyncio.to_thread(
                 _req.post, url,
-                data={"token": um_token, "to": phone_clean, "body": message},
+                data={"token": um_token, "to": wa_number, "body": message},
                 timeout=15
             )
             rjson = {}
