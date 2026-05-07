@@ -119,6 +119,10 @@ export default function PlanningPage() {
   const scrollRef = useRef(null);
   const touchStartRef = useRef(null);
   const hasScrolledRef = useRef(false);
+  const selectedDateRef = useRef(selectedDate);
+
+  // Mantieni il ref aggiornato alla data selezionata (evita stale closure nel listener SW)
+  useEffect(() => { selectedDateRef.current = selectedDate; }, [selectedDate]);
 
   // --- Data fetching ---
   // Static data (operators, clients, services) fetched once on mount
@@ -144,12 +148,40 @@ export default function PlanningPage() {
       try {
         const res = await api.get(`${API}/notifications/new-bookings`);
         const unseen = res.data.filter(b => !b.seen_at);
-        setNewOnlineBookings(unseen);
+        setNewOnlineBookings(prev => {
+          // Se arrivano nuove prenotazioni non viste, ricarica il calendario
+          if (unseen.length > prev.length) {
+            const dateStr = format(selectedDateRef.current, 'yyyy-MM-dd');
+            api.get(`${API}/appointments?date=${dateStr}`)
+              .then(r => setAppointments(r.data))
+              .catch(() => {});
+          }
+          return unseen;
+        });
       } catch { /* silent */ }
     };
     checkNewBookings();
     const interval = setInterval(checkNewBookings, 30000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Aggiornamento istantaneo via messaggio dal Service Worker (push ricevuta)
+  useEffect(() => {
+    if (!navigator.serviceWorker) return;
+    const handleSwMessage = async (event) => {
+      if (event.data?.type !== 'NEW_BOOKING') return;
+      const dateStr = format(selectedDateRef.current, 'yyyy-MM-dd');
+      try {
+        const [aptsRes, notifRes] = await Promise.all([
+          api.get(`${API}/appointments?date=${dateStr}`),
+          api.get(`${API}/notifications/new-bookings`),
+        ]);
+        setAppointments(aptsRes.data);
+        setNewOnlineBookings(notifRes.data.filter(b => !b.seen_at));
+      } catch { /* silent */ }
+    };
+    navigator.serviceWorker.addEventListener('message', handleSwMessage);
+    return () => navigator.serviceWorker.removeEventListener('message', handleSwMessage);
   }, []);
 
   // Scroll all'ora corrente solo al primo caricamento, non ad ogni cambio data

@@ -248,14 +248,15 @@ async def get_public_operators():
     return await db.operators.find({"user_id": user["id"]}, {"_id": 0, "user_id": 0}).to_list(50)
 
 
-async def _send_booking_push(client_name, date_it, time, services_names):
+async def _send_booking_push(client_name, date_it, time, services_names, date_iso=""):
     """Invia push notification al salone (background)."""
     try:
         from routes.push import send_push_to_all
+        url = f"/planning?date={date_iso}" if date_iso else "/planning"
         await send_push_to_all(
             title="🔔 Nuova Prenotazione Online!",
             body=f"{client_name} • {date_it} alle {time} • {services_names}",
-            url="/planning",
+            url=url,
         )
     except Exception as e:
         logger.warning(f"Push notifica prenotazione fallita: {e}")
@@ -440,7 +441,7 @@ async def create_public_booking(request: Request, data: PublicBookingRequest, ba
     services_names = ", ".join(s.get("name", "") for s in services)
 
     # Push al salone in background (non blocca la risposta)
-    background_tasks.add_task(_send_booking_push, client_name=data.client_name, date_it=date_it, time=data.time, services_names=services_names)
+    background_tasks.add_task(_send_booking_push, client_name=data.client_name, date_it=date_it, time=data.time, services_names=services_names, date_iso=data.date)
 
     # WA al cliente in modo sincrono — così il frontend sa se il messaggio è partito
     wa_sent = await _send_booking_wa(

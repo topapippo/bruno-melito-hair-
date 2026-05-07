@@ -20,11 +20,37 @@ self.addEventListener('push', (event) => {
     ],
   };
 
-  event.waitUntil(self.registration.showNotification(data.title, options));
+  // Notifica la pagina aperta di ricaricare gli appuntamenti
+  const notifyClients = self.clients.matchAll({ type: 'window' }).then((windowClients) => {
+    windowClients.forEach((client) => {
+      client.postMessage({ type: 'NEW_BOOKING', url: data.url });
+    });
+  });
+
+  event.waitUntil(
+    Promise.all([
+      self.registration.showNotification(data.title, options),
+      notifyClients,
+    ])
+  );
 });
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const url = event.notification.data?.url || '/';
-  event.waitUntil(clients.openWindow(url));
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      // Se c'è già una finestra aperta, la porta in primo piano e naviga
+      for (const client of windowClients) {
+        if ('focus' in client) {
+          client.focus();
+          if ('navigate' in client) client.navigate(url);
+          return;
+        }
+      }
+      // Nessuna finestra aperta: ne apre una nuova
+      return self.clients.openWindow(url);
+    })
+  );
 });
