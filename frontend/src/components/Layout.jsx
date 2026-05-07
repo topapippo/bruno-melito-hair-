@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { toast } from 'sonner';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api, { API } from '../lib/api';
@@ -86,6 +87,7 @@ export default function Layout({ children }) {
     } catch { return NEW_DEFAULTS; }
   });
   const themeRef = useRef(adminTheme);
+  const lastApptCountRef = useRef(null);
 
   const toggleSidebar = () => setCollapsed(prev => {
     localStorage.setItem('sidebarCollapsed', String(!prev));
@@ -109,6 +111,35 @@ export default function Layout({ children }) {
     const tick = setInterval(() => setCurrentTime(new Date()), 30000);
     return () => clearInterval(tick);
   }, []);
+
+  // Notifiche browser per nuove prenotazioni online
+  useEffect(() => {
+    if (!user) return;
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+    const checkBookings = async () => {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const res = await api.get(`${API}/appointments?start_date=${today}&end_date=${today}`);
+        const count = res.data.length;
+        if (lastApptCountRef.current !== null && count > lastApptCountRef.current) {
+          const diff = count - lastApptCountRef.current;
+          toast.success(`🔔 ${diff} nuova prenotazione ricevuta!`, { duration: 6000 });
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('Bruno Melito Hair', {
+              body: `${diff} nuova prenotazione oggi!`,
+              icon: '/logo.png',
+            });
+          }
+        }
+        lastApptCountRef.current = count;
+      } catch {}
+    };
+    checkBookings();
+    const interval = setInterval(checkBookings, 120000);
+    return () => clearInterval(interval);
+  }, [user]); // eslint-disable-line
 
   useEffect(() => {
     api.get(`${API}/settings`).then(res => {

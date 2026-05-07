@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useLocation } from 'react-router-dom';
 import api, { API } from '../lib/api';
 import { fmtDate } from '../lib/dateUtils';
@@ -176,6 +177,38 @@ export default function ReportIncassiPage() {
     }
   };
 
+  // Dati per il grafico trend (non mostrare per periodi a singolo giorno)
+  const trendData = useMemo(() => {
+    if (period === 'today' || period === 'yesterday') return [];
+    const useMonthly = period === 'year';
+    const byDate = {};
+    payments.forEach(p => {
+      const key = useMonthly ? p.date.substring(0, 7) : p.date;
+      if (!byDate[key]) byDate[key] = { entrate: 0, uscite: 0 };
+      byDate[key].entrate += p.total_paid;
+    });
+    expenses.forEach(e => {
+      const d = e.paid_date || e.due_date;
+      if (!d) return;
+      const key = useMonthly ? d.substring(0, 7) : d;
+      if (!byDate[key]) byDate[key] = { entrate: 0, uscite: 0 };
+      byDate[key].uscite += e.amount;
+    });
+    const MONTHS = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+    return Object.entries(byDate)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([key, vals]) => {
+        let label;
+        if (useMonthly) {
+          label = MONTHS[parseInt(key.split('-')[1]) - 1];
+        } else {
+          const [, m, d2] = key.split('-');
+          label = `${d2}/${m}`;
+        }
+        return { label, entrate: parseFloat(vals.entrate.toFixed(2)), uscite: parseFloat(vals.uscite.toFixed(2)) };
+      });
+  }, [payments, expenses, period]);
+
   // Lista unificata pagamenti + uscite ordinata per data
   const allEntries = [
     ...payments.map(p => ({ ...p, _type: 'payment' })),
@@ -307,6 +340,44 @@ export default function ReportIncassiPage() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Grafico Trend */}
+            {trendData.length > 1 && (
+              <Card className="bg-white border-2 border-[#F0E6DC]">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-black text-[#2D1B14]">Andamento — {getPeriodLabel()}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <AreaChart data={trendData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="gradEntrate" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10B981" stopOpacity={0.25} />
+                          <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="gradUscite" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#EF4444" stopOpacity={0.2} />
+                          <stop offset="95%" stopColor="#EF4444" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#F0E6DC" />
+                      <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#7C5C4A' }} tickLine={false} axisLine={false} />
+                      <YAxis tick={{ fontSize: 11, fill: '#7C5C4A' }} tickLine={false} axisLine={false} tickFormatter={v => `€${v}`} width={55} />
+                      <Tooltip
+                        contentStyle={{ borderRadius: 12, border: '1px solid #F0E6DC', fontSize: 12 }}
+                        formatter={(val, name) => [`€${val.toFixed(2)}`, name === 'entrate' ? 'Entrate' : 'Uscite']}
+                      />
+                      <Area type="monotone" dataKey="entrate" stroke="#10B981" strokeWidth={2} fill="url(#gradEntrate)" dot={false} />
+                      <Area type="monotone" dataKey="uscite" stroke="#EF4444" strokeWidth={2} fill="url(#gradUscite)" dot={false} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                  <div className="flex items-center gap-4 mt-2 justify-center">
+                    <span className="flex items-center gap-1.5 text-xs text-[#7C5C4A]"><span className="w-3 h-0.5 bg-emerald-500 inline-block rounded" />Entrate</span>
+                    <span className="flex items-center gap-1.5 text-xs text-[#7C5C4A]"><span className="w-3 h-0.5 bg-red-500 inline-block rounded" />Uscite</span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Sezione Sospesi */}
             <div ref={sospesiRef}>

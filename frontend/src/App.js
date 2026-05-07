@@ -1,37 +1,46 @@
+import { lazy, Suspense, useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster, toast } from "sonner";
-import { useEffect, useState } from "react";
 
 // CONTEXT LOGIN
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
-
-// PAGINE
-import Dashboard from "./pages/Dashboard";
-import StatsPage from "./pages/StatsPage";
-import ClientsPage from "./pages/ClientsPage";
-import ServicesPage from "./pages/ServicesPage";
-import SettingsPage from "./pages/SettingsPage";
-import AppointmentsPage from "./pages/AppointmentsPage";
-import OperatorsPage from "./pages/OperatorsPage";
-import PlanningPage from "./pages/PlanningPage";
-import PrepaidCardsPage from "./pages/PrepaidCardsPage";
-import CardAlertsPage from "./pages/CardAlertsPage";
-import ReportIncassiPage from "./pages/ReportIncassiPage";
-import BackupPage from "./pages/BackupPage";
-// BookingPage rimosso - usa WebsitePage (/sito)
-import LoyaltyPage from "./pages/LoyaltyPage";
-import RemindersPage from "./pages/RemindersPage";
-import DailySummaryPage from "./pages/DailySummaryPage";
-import WebsitePage from "./pages/WebsitePage";
-import WebsiteAdminPage from "./pages/WebsiteAdminPage";
-import ExpensesPage from "./pages/ExpensesPage";
-import PromotionsPage from "./pages/PromotionsPage";
-import WaitlistPage from "./pages/WaitlistPage";
-import LoginPage from "./pages/LoginPage";
-import ConfirmAppointmentPage from "./pages/ConfirmAppointmentPage";
-import PWAInstallBanner from "./components/PWAInstallBanner";
 import { useAuth } from "./context/AuthContext";
+
+// Pagine pubbliche — caricate subito (nessun login richiesto)
+import LoginPage from "./pages/LoginPage";
+import WebsitePage from "./pages/WebsitePage";
+import ConfirmAppointmentPage from "./pages/ConfirmAppointmentPage";
+import PlanningPage from "./pages/PlanningPage";
+import PWAInstallBanner from "./components/PWAInstallBanner";
+
+// Pagine admin — lazy load: non vengono scaricate finché non servono
+const Dashboard        = lazy(() => import("./pages/Dashboard"));
+const StatsPage        = lazy(() => import("./pages/StatsPage"));
+const ClientsPage      = lazy(() => import("./pages/ClientsPage"));
+const ServicesPage     = lazy(() => import("./pages/ServicesPage"));
+const SettingsPage     = lazy(() => import("./pages/SettingsPage"));
+const AppointmentsPage = lazy(() => import("./pages/AppointmentsPage"));
+const OperatorsPage    = lazy(() => import("./pages/OperatorsPage"));
+const PrepaidCardsPage = lazy(() => import("./pages/PrepaidCardsPage"));
+const CardAlertsPage   = lazy(() => import("./pages/CardAlertsPage"));
+const ReportIncassiPage= lazy(() => import("./pages/ReportIncassiPage"));
+const BackupPage       = lazy(() => import("./pages/BackupPage"));
+const LoyaltyPage      = lazy(() => import("./pages/LoyaltyPage"));
+const RemindersPage    = lazy(() => import("./pages/RemindersPage"));
+const DailySummaryPage = lazy(() => import("./pages/DailySummaryPage"));
+const WebsiteAdminPage = lazy(() => import("./pages/WebsiteAdminPage"));
+const ExpensesPage     = lazy(() => import("./pages/ExpensesPage"));
+const PromotionsPage   = lazy(() => import("./pages/PromotionsPage"));
+const WaitlistPage     = lazy(() => import("./pages/WaitlistPage"));
+
+function PageLoader() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
+      <div className="w-9 h-9 border-4 border-[#C8617A] border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
 
 // Offline indicator component
 function OfflineIndicator() {
@@ -93,6 +102,7 @@ export default function App() {
       <OfflineIndicator />
       <PWAInstallBanner />
       <BrowserRouter basename="/">
+        <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* LOGIN (non protetto) */}
           <Route path="/login" element={<LoginPage />} />
@@ -301,6 +311,7 @@ export default function App() {
             }
           />
         </Routes>
+        </Suspense>
       </BrowserRouter>
       <Toaster 
         position="top-right" 
