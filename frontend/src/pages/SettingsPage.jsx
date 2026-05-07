@@ -769,7 +769,7 @@ export default function SettingsPage() {
                         else if (isBlocked && !isRecurringBlocked) { bg = 'bg-red-400 hover:bg-red-500'; text = 'text-white'; border = 'border border-red-500'; }
                         else if (isRecurringBlocked) { bg = 'bg-orange-400 hover:bg-orange-500'; text = 'text-white'; border = 'border border-orange-500'; }
                         else if (isHoliday) { bg = 'bg-amber-100 hover:bg-amber-200'; text = 'text-amber-900'; border = 'border border-amber-300'; }
-                        else if (isSunday || isSaturday) { bg = 'bg-slate-50 hover:bg-slate-100'; text = 'text-slate-500'; }
+                        else if (isSunday) { bg = 'bg-slate-50 hover:bg-slate-100'; text = 'text-slate-500'; }
 
                         cells.push(
                           <button

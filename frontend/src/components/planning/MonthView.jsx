@@ -34,7 +34,7 @@ export default function MonthView({
                 onClick={() => onDayClick(day)}
                 data-testid={`month-day-${dateStr}`}>
                 <div className="flex items-center gap-1">
-                  <p className={`text-sm font-bold ${holiday && inMonth ? 'text-red-500' : isT ? 'text-[#C8617A]' : inMonth ? 'text-[#2D1B14]' : 'text-[#CBD5E1]'}`}>
+                  <p className={`text-sm font-bold leading-none flex items-center justify-center ${isT ? 'bg-[#C8617A] text-white w-6 h-6 rounded-full shrink-0' : holiday && inMonth ? 'text-red-500' : inMonth ? 'text-[#2D1B14]' : 'text-[#CBD5E1]'}`}>
                     {format(day, 'd')}
                   </p>
                   {holiday && inMonth && (

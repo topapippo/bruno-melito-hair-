@@ -6,7 +6,7 @@ import Layout from '../components/Layout';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ChevronLeft, ChevronRight, Plus, CalendarDays, CheckCircle, RefreshCcw, MessageCircle, Lock, Unlock } from 'lucide-react';
-import { format, addDays, subDays, startOfWeek, endOfWeek, addWeeks, subWeeks, startOfMonth, endOfMonth, addMonths, subMonths, eachDayOfInterval } from 'date-fns';
+import { format, addDays, subDays, startOfWeek, endOfWeek, addWeeks, subWeeks, startOfMonth, endOfMonth, addMonths, subMonths, eachDayOfInterval, isToday } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { CATEGORIES } from '../lib/categories';
@@ -710,6 +710,11 @@ export default function PlanningPage() {
               <h1 className="text-4xl font-black text-black">Planning</h1>
               <p className="text-[#C8617A] mt-1 font-bold text-lg">
                 {format(selectedDate, "EEEE dd/MM/yy", { locale: it })}
+                {isToday(selectedDate) && (
+                  <span className="ml-2 inline-flex items-center bg-[#C8617A] text-white text-xs font-black px-2.5 py-1 rounded-full align-middle">
+                    OGGI
+                  </span>
+                )}
                 {isHoliday(selectedDate) && (
                   <span className="ml-2 inline-flex items-center gap-1 bg-red-100 text-red-600 text-xs font-black px-2.5 py-1 rounded-full align-middle" data-testid="holiday-badge">
                     {isHoliday(selectedDate).name}
@@ -742,7 +747,9 @@ export default function PlanningPage() {
               <Button
                 variant="outline"
                 onClick={() => setSelectedDate(new Date())}
-                className="border-[#F0E6DC] text-[#2D1B14] px-4"
+                className={isToday(selectedDate)
+                  ? "bg-[#C8617A] text-white border-[#C8617A] hover:bg-[#A0404F] hover:text-white px-4"
+                  : "border-[#F0E6DC] text-[#2D1B14] px-4"}
               >
                 Oggi
               </Button>

@@ -134,7 +134,7 @@ export default function WeekView({
                     <p className={`text-[10px] font-bold uppercase ${holiday ? 'text-red-500' : isT ? 'text-[#C8617A]' : 'text-[#64748B]'}`}>
                       {format(day, 'EEE', { locale: it })}
                     </p>
-                    <p className={`text-xl font-black leading-tight ${holiday ? 'text-red-500' : isT ? 'text-[#C8617A]' : 'text-[#2D1B14]'}`}>
+                    <p className={`text-xl font-black leading-none flex items-center justify-center w-9 h-9 rounded-full ${isT ? 'bg-[#C8617A] text-white' : holiday ? 'text-red-500' : 'text-[#2D1B14]'}`}>
                       {format(day, 'd')}
                     </p>
                     {holiday && <p className="text-[7px] font-bold text-red-400 leading-tight">{holiday.name}</p>}
