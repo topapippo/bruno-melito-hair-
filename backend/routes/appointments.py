@@ -361,6 +361,16 @@ async def delete_appointment(appointment_id: str, current_user: dict = Depends(g
 
 @router.post("/appointments/{appointment_id}/checkout")
 async def checkout_appointment(appointment_id: str, data: CheckoutData, current_user: dict = Depends(get_current_user)):
+    try:
+        return await _checkout_appointment_inner(appointment_id, data, current_user)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Errore imprevisto nel checkout {appointment_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore interno: {str(e)}")
+
+
+async def _checkout_appointment_inner(appointment_id: str, data: CheckoutData, current_user: dict):
     appointment = await db.appointments.find_one(
         {"id": appointment_id, "user_id": current_user["id"]}, {"_id": 0}
     )
@@ -376,21 +386,22 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, current_
     if data.payment_method == "prepaid" and not data.card_id:
         raise HTTPException(status_code=400, detail="Carta prepagata obbligatoria per il pagamento prepagato")
     if data.payment_method == "prepaid" and data.card_id:
-        card = await db.cards.find_one({"id": data.card_id, "user_id": current_user["id"], "active": True})
+        card = await db.cards.find_one(
+            {"id": data.card_id, "user_id": current_user["id"], "active": True},
+            {"_id": 0}
+        )
         if not card:
             raise HTTPException(status_code=400, detail="Carta prepagata non trovata o non attiva")
         is_subscription = card.get("card_type") == "subscription"
         num_services_used = len(services_list) or 1
-        new_used = card.get("used_services", 0) + num_services_used
         total_svc = card.get("total_services")
 
         if is_subscription:
             prepaid_deduction = 0
-            # Controlla abbonamento esaurito
             if total_svc and card.get("used_services", 0) >= total_svc:
                 raise HTTPException(status_code=400, detail="Abbonamento esaurito: tutte le sedute sono state utilizzate")
         else:
-            prepaid_deduction = appointment.get("total_price", 0)
+            prepaid_deduction = float(appointment.get("total_price") or 0)
             if data.discount_type == "percent" and data.discount_value:
                 prepaid_deduction = round(prepaid_deduction * (1 - data.discount_value / 100), 2)
             elif data.discount_type == "fixed" and data.discount_value:
@@ -401,46 +412,56 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, current_
             "description": f"Servizi: {', '.join([s.get('name', '') for s in services_list]) or 'Servizio'}",
             "amount": prepaid_deduction, "appointment_id": appointment_id
         }
+
         if is_subscription:
-            card_update_result = await db.cards.update_one(
-                {"id": card["id"], "active": True},
-                {"$inc": {"used_services": num_services_used}, "$push": {"transactions": transaction}}
+            updated_card = await db.cards.find_one_and_update(
+                {"id": data.card_id, "user_id": current_user["id"], "active": True},
+                {"$inc": {"used_services": num_services_used}, "$push": {"transactions": transaction}},
+                return_document=True
             )
         else:
-            card_update_result = await db.cards.update_one(
-                {"id": card["id"], "remaining_value": {"$gte": prepaid_deduction}},
+            updated_card = await db.cards.find_one_and_update(
+                {"id": data.card_id, "user_id": current_user["id"], "active": True,
+                 "remaining_value": {"$gte": prepaid_deduction}},
                 {"$inc": {"remaining_value": -prepaid_deduction, "used_services": num_services_used},
-                 "$push": {"transactions": transaction}}
+                 "$push": {"transactions": transaction}},
+                return_document=True
             )
-        if card_update_result.modified_count == 0:
+
+        if not updated_card:
             raise HTTPException(status_code=400, detail="Credito insufficiente o abbonamento esaurito")
 
-        new_remaining = round(card["remaining_value"] - (0 if is_subscription else prepaid_deduction), 2)
+        card = updated_card
+        new_remaining = float(card.get("remaining_value") or 0)
+        new_used = card.get("used_services", 0)
+
         if is_subscription:
             if total_svc and new_used >= total_svc:
-                await db.cards.update_one({"id": card["id"]}, {"$set": {"active": False}})
+                await db.cards.update_one({"id": data.card_id}, {"$set": {"active": False}})
             if total_svc:
                 services_left = total_svc - new_used
                 last_service_warning = services_left == 1
         else:
             if new_remaining <= 0 or (total_svc and new_used >= total_svc):
-                await db.cards.update_one({"id": card["id"]}, {"$set": {"active": False}})
+                await db.cards.update_one({"id": data.card_id}, {"$set": {"active": False}})
 
     # ---- STEP 2: Inserisci pagamento (card già aggiornata) ----
     payment_id = str(uuid.uuid4())
     payment_doc = {
         "id": payment_id, "user_id": current_user["id"],
-        "appointment_id": appointment_id, "client_id": appointment["client_id"],
-        "client_name": appointment["client_name"], "services": services_list,
-        "original_amount": appointment.get("total_price", 0),
+        "appointment_id": appointment_id,
+        "client_id": appointment.get("client_id", ""),
+        "client_name": appointment.get("client_name", ""),
+        "services": services_list,
+        "original_amount": float(appointment.get("total_price") or 0),
         "discount_type": data.discount_type, "discount_value": data.discount_value,
         "total_paid": data.total_paid, "payment_method": data.payment_method,
         "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     if card:
-        payment_doc["card_id"] = card["id"]
-        payment_doc["card_name"] = card["name"]
+        payment_doc["card_id"] = card.get("id", data.card_id)
+        payment_doc["card_name"] = card.get("name", "")
 
     await db.payments.insert_one(payment_doc)
 
@@ -539,18 +560,16 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, current_
         if client_doc:
             client_phone = client_doc.get("phone", "")
 
-    # Calcola il residuo della card dopo la deduzione
+    # Riepilogo card post-checkout (usa i valori aggiornati già calcolati in STEP 1)
     card_info = None
     if card and prepaid_deduction is not None:
-        new_remaining = round(card["remaining_value"] - (0 if card.get("card_type") == "subscription" else prepaid_deduction), 2)
-        new_used_services = card.get("used_services", 0) + (len(services_list) or 1)
         total_svc = card.get("total_services")
-        services_left = (total_svc - new_used_services) if total_svc else None
+        services_left = (total_svc - new_used) if total_svc else None
         card_info = {
-            "card_name": card["name"],
+            "card_name": card.get("name", ""),
             "card_type": card.get("card_type", "prepaid"),
             "card_remaining_value": max(0, new_remaining),
-            "card_used_services": new_used_services,
+            "card_used_services": new_used,
             "card_total_services": total_svc,
             "last_service_warning": last_service_warning,
             "services_left": services_left,

@@ -185,7 +185,13 @@ export default function EditAppointmentDialog({
         ]).then(([cardsRes, loyaltyRes, sospesiRes, clientRes, templatesRes]) => {
           if (clientRes.data) setSelectedClientInfo(clientRes.data);
           const activeCards = (cardsRes.data || []).filter(c =>
-            c.active && (c.remaining_value > 0 || (c.card_type === 'subscription' && c.total_services > 0 && c.used_services < c.total_services))
+            c.active && (
+              c.remaining_value > 0 ||
+              (c.card_type === 'subscription' && (
+                !c.total_services ||
+                (c.total_services > 0 && c.used_services < c.total_services)
+              ))
+            )
           );
           setClientCards(activeCards);
           setCardTemplates(templatesRes.data || []);
@@ -413,7 +419,10 @@ export default function EditAppointmentDialog({
     } else {
       setEligiblePromos([]);
     }
-    const isCardUsable = (c) => c.active && (c.remaining_value > 0 || (c.card_type === 'subscription' && c.total_services > 0 && c.used_services < c.total_services));
+    const isCardUsable = (c) => c.active && (
+      c.remaining_value > 0 ||
+      (c.card_type === 'subscription' && (!c.total_services || c.used_services < c.total_services))
+    );
     const targetCardId = preSelectedCardId || activeAppointment?.card_id;
     if (targetCardId) {
       const savedCard = (cards || []).find(c => c.id === targetCardId && isCardUsable(c));
