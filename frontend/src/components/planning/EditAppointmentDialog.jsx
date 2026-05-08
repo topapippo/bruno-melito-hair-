@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import {
   Loader2, User, CreditCard, Banknote, Euro, CheckCircle, Check,
-  Star, Gift, Ticket, Plus, Trash2, Edit3, X, Smartphone, AlertTriangle, Clock, History,
+  Star, Gift, Ticket, Plus, Trash2, Edit3, X, Smartphone, AlertTriangle, Clock, History, ChevronDown,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getCategoryInfo, groupServicesByCategory } from '../../lib/categories';
@@ -103,6 +103,7 @@ export default function EditAppointmentDialog({
   const [sellTemplateAmount, setSellTemplateAmount] = useState('');
   const [sellTemplatePM, setSellTemplatePM] = useState('cash');
   const [sellingTemplate, setSellingTemplate] = useState(false);
+  const [showCardsPanel, setShowCardsPanel] = useState(false);
 
   const sortedServices = groupServicesByCategory(services);
 
@@ -353,6 +354,7 @@ export default function EditAppointmentDialog({
     setSellTemplateAmount('');
     setSellTemplatePM('cash');
     setSellingTemplate(false);
+    setShowCardsPanel(false);
   };
 
   const handleSellTemplate = async () => {
@@ -417,12 +419,7 @@ export default function EditAppointmentDialog({
       if (savedCard) {
         setPaymentMethod('prepaid');
         setSelectedCardId(savedCard.id);
-      }
-    } else if ((cards || []).length > 0) {
-      const activeCard = cards.find(c => isCardUsable(c));
-      if (activeCard) {
-        setPaymentMethod('prepaid');
-        setSelectedCardId(activeCard.id);
+        setShowCardsPanel(true);
       }
     }
   };
@@ -1042,19 +1039,19 @@ export default function EditAppointmentDialog({
                   <div className="grid grid-cols-3 gap-2">
                     <Button type="button" variant={paymentMethod === 'cash' ? 'default' : 'outline'}
                       className={paymentMethod === 'cash' ? 'bg-green-600 text-white' : 'border-2'}
-                      onClick={() => { setPaymentMethod('cash'); setSelectedCardId(''); setSellTemplateId(null); }}
+                      onClick={() => { setPaymentMethod('cash'); setSelectedCardId(''); setSellTemplateId(null); setShowCardsPanel(false); }}
                       data-testid="payment-method-cash">
                       <Banknote className="w-4 h-4 mr-1" /> Contanti
                     </Button>
                     <Button type="button" variant={paymentMethod === 'pos' ? 'default' : 'outline'}
                       className={paymentMethod === 'pos' ? 'bg-blue-600 text-white' : 'border-2'}
-                      onClick={() => { setPaymentMethod('pos'); setSelectedCardId(''); setSellTemplateId(null); }}
+                      onClick={() => { setPaymentMethod('pos'); setSelectedCardId(''); setSellTemplateId(null); setShowCardsPanel(false); }}
                       data-testid="payment-method-pos">
                       <Smartphone className="w-4 h-4 mr-1" /> POS
                     </Button>
                     <Button type="button" variant={paymentMethod === 'sospeso' ? 'default' : 'outline'}
                       className={paymentMethod === 'sospeso' ? 'bg-amber-600 text-white' : 'border-2'}
-                      onClick={() => { setPaymentMethod('sospeso'); setSelectedCardId(''); setSellTemplateId(null); }}
+                      onClick={() => { setPaymentMethod('sospeso'); setSelectedCardId(''); setSellTemplateId(null); setShowCardsPanel(false); }}
                       data-testid="payment-method-sospeso">
                       <AlertTriangle className="w-4 h-4 mr-1" /> Sospeso
                     </Button>
@@ -1065,105 +1062,135 @@ export default function EditAppointmentDialog({
                       <p className="text-xs mt-1">Il pagamento verra registrato come "sospeso". Apparira un avviso al prossimo appuntamento del cliente.</p>
                     </div>
                   )}
-                  {/* Abbonamenti e Card attive — sempre visibili come bottoni diretti */}
-                  {clientCards.length > 0 && (
-                    <div className="space-y-1.5">
-                      <p className="text-xs font-bold text-purple-700 flex items-center gap-1">
-                        <Ticket className="w-3 h-3" /> Abbonamenti e Card attive:
-                      </p>
-                      {clientCards.map(card => (
-                        <button key={card.id} type="button"
-                          onClick={() => { setPaymentMethod('prepaid'); setSelectedCardId(card.id); setSellTemplateId(null); }}
-                          className={`w-full p-3 rounded-xl border-2 text-left transition-all ${selectedCardId === card.id && paymentMethod === 'prepaid' ? 'border-purple-500 bg-purple-50 shadow-md' : 'border-gray-200 hover:border-purple-300 hover:bg-purple-50/50'}`}
-                          data-testid={`select-card-${card.id}`}>
-                          <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-2">
-                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${selectedCardId === card.id && paymentMethod === 'prepaid' ? 'border-purple-500 bg-purple-500' : 'border-gray-300'}`}>
-                                {selectedCardId === card.id && paymentMethod === 'prepaid' && <Check className="w-3 h-3 text-white" />}
-                              </div>
-                              <div>
-                                <p className="font-bold text-sm">{card.name}</p>
-                                <p className="text-xs text-gray-500">{card.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}</p>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              {card.card_type === 'subscription' && card.total_services ? (
-                                <>
-                                  <p className={`font-black text-base ${selectedCardId === card.id && paymentMethod === 'prepaid' ? 'text-purple-600' : 'text-purple-600'}`}>
-                                    {card.total_services - card.used_services} rimasti
-                                  </p>
-                                  <p className="text-xs text-gray-500">{card.used_services}/{card.total_services} usati</p>
-                                </>
-                              ) : (
-                                <p className={`font-black text-base ${selectedCardId === card.id && paymentMethod === 'prepaid' ? 'text-purple-600' : 'text-green-600'}`}>
-                                  {'€'}{card.remaining_value?.toFixed(2)}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {/* Vendi abbonamento / card da template */}
-                  {cardTemplates.length > 0 && (() => { const appt = localAppointment || appointment; return appt?.client_id && appt.client_id !== 'generic'; })() && (
-                    <div className="space-y-1.5">
-                      <p className="text-xs font-bold text-blue-700 flex items-center gap-1">
-                        <Plus className="w-3 h-3" /> Vendi abbonamento / card:
-                      </p>
-                      {cardTemplates.map(tmpl => (
-                        <div key={tmpl.id}>
-                          {sellTemplateId === tmpl.id ? (
-                            <div className="p-3 rounded-xl border-2 border-blue-400 bg-blue-50 space-y-2">
-                              <p className="text-sm font-bold text-blue-800">{tmpl.name}</p>
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs text-blue-700 whitespace-nowrap">Importo {'€'}:</span>
-                                <input type="number" step="0.01" min="0"
-                                  value={sellTemplateAmount}
-                                  onChange={e => setSellTemplateAmount(e.target.value)}
-                                  placeholder={tmpl.total_value?.toFixed(2)}
-                                  className="flex-1 border border-blue-300 rounded-lg px-2 py-1 text-sm focus:outline-none focus:border-blue-500" />
-                              </div>
-                              <div className="flex gap-2">
-                                <Button type="button" size="sm"
-                                  variant={sellTemplatePM === 'cash' ? 'default' : 'outline'}
-                                  className={sellTemplatePM === 'cash' ? 'bg-green-600 text-white' : 'border-2'}
-                                  onClick={() => setSellTemplatePM('cash')}>
-                                  <Banknote className="w-3 h-3 mr-1" /> Contanti
-                                </Button>
-                                <Button type="button" size="sm"
-                                  variant={sellTemplatePM === 'pos' ? 'default' : 'outline'}
-                                  className={sellTemplatePM === 'pos' ? 'bg-blue-600 text-white' : 'border-2'}
-                                  onClick={() => setSellTemplatePM('pos')}>
-                                  <Smartphone className="w-3 h-3 mr-1" /> POS
-                                </Button>
-                                <Button type="button" size="sm"
-                                  className="bg-purple-600 text-white ml-auto"
-                                  disabled={sellingTemplate}
-                                  onClick={handleSellTemplate}>
-                                  {sellingTemplate ? '...' : 'Vendi + Usa'}
-                                </Button>
-                                <Button type="button" size="sm" variant="ghost"
-                                  onClick={() => setSellTemplateId(null)}>
-                                  Annulla
-                                </Button>
-                              </div>
-                            </div>
-                          ) : (
-                            <button type="button"
-                              onClick={() => { setSellTemplateId(tmpl.id); setSellTemplateAmount(tmpl.total_value?.toFixed(2) || ''); }}
-                              className="w-full p-2.5 rounded-xl border-2 border-dashed border-blue-300 text-left hover:border-blue-500 hover:bg-blue-50 transition-all">
+                  {/* Abbonamenti e Card — sezione collassabile come categoria servizi */}
+                  {(clientCards.length > 0 || (cardTemplates.length > 0 && (() => { const appt = localAppointment || appointment; return appt?.client_id && appt.client_id !== 'generic'; })())) && (
+                    <div>
+                      <button type="button"
+                        onClick={() => {
+                          const next = !showCardsPanel;
+                          setShowCardsPanel(next);
+                          if (!next) { setPaymentMethod(pm => pm === 'prepaid' ? 'cash' : pm); setSelectedCardId(''); setSellTemplateId(null); }
+                        }}
+                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 font-bold text-sm transition-all ${
+                          paymentMethod === 'prepaid' ? 'border-purple-500 bg-purple-50 text-purple-800' : 'border-gray-200 hover:border-purple-300 text-[#2D1B14]'
+                        }`}
+                        data-testid="toggle-cards-panel">
+                        <div className="flex items-center gap-2">
+                          <Ticket className="w-5 h-5 text-purple-500" />
+                          <span>Abbonamenti e Card</span>
+                          {clientCards.length > 0 && (
+                            <span className={`text-xs font-black px-2 py-0.5 rounded-full ${paymentMethod === 'prepaid' ? 'bg-purple-500 text-white' : 'bg-purple-100 text-purple-700'}`}>
+                              {clientCards.length}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {paymentMethod === 'prepaid' && selectedCardId && (
+                            <span className="text-xs font-bold text-purple-600">
+                              {(() => { const c = clientCards.find(x => x.id === selectedCardId); return c ? (c.card_type === 'subscription' && c.total_services ? `${c.total_services - c.used_services} rimasti` : `€${c.remaining_value?.toFixed(2)}`) : ''; })()}
+                            </span>
+                          )}
+                          <ChevronDown className={`w-4 h-4 text-purple-400 transition-transform ${showCardsPanel ? 'rotate-180' : ''}`} />
+                        </div>
+                      </button>
+
+                      {showCardsPanel && (
+                        <div className="mt-2 space-y-2 animate-in fade-in duration-200">
+                          {/* Card attive */}
+                          {clientCards.map(card => (
+                            <button key={card.id} type="button"
+                              onClick={() => { setPaymentMethod('prepaid'); setSelectedCardId(card.id); setSellTemplateId(null); }}
+                              className={`w-full p-3 rounded-xl border-2 text-left transition-all ${selectedCardId === card.id && paymentMethod === 'prepaid' ? 'border-purple-500 bg-purple-50 shadow-md' : 'border-gray-200 hover:border-purple-300 hover:bg-purple-50/50'}`}
+                              data-testid={`select-card-${card.id}`}>
                               <div className="flex justify-between items-center">
-                                <span className="text-sm font-semibold text-blue-800">{tmpl.name}</span>
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${selectedCardId === card.id && paymentMethod === 'prepaid' ? 'border-purple-500 bg-purple-500' : 'border-gray-300'}`}>
+                                    {selectedCardId === card.id && paymentMethod === 'prepaid' && <Check className="w-3 h-3 text-white" />}
+                                  </div>
+                                  <div>
+                                    <p className="font-bold text-sm">{card.name}</p>
+                                    <p className="text-xs text-gray-500">{card.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}</p>
+                                  </div>
+                                </div>
                                 <div className="text-right">
-                                  {tmpl.total_services && <span className="text-xs text-blue-600 mr-2">{tmpl.total_services} sed.</span>}
-                                  <span className="text-sm font-black text-blue-700">{'€'}{tmpl.total_value?.toFixed(2)}</span>
+                                  {card.card_type === 'subscription' && card.total_services ? (
+                                    <>
+                                      <p className="font-black text-base text-purple-600">{card.total_services - card.used_services} rimasti</p>
+                                      <p className="text-xs text-gray-500">{card.used_services}/{card.total_services} usati</p>
+                                    </>
+                                  ) : (
+                                    <p className={`font-black text-base ${selectedCardId === card.id && paymentMethod === 'prepaid' ? 'text-purple-600' : 'text-green-600'}`}>
+                                      {'€'}{card.remaining_value?.toFixed(2)}
+                                    </p>
+                                  )}
                                 </div>
                               </div>
                             </button>
+                          ))}
+
+                          {/* Vendi nuovo abbonamento da template */}
+                          {cardTemplates.length > 0 && (() => { const appt = localAppointment || appointment; return appt?.client_id && appt.client_id !== 'generic'; })() && (
+                            <div className={`${clientCards.length > 0 ? 'pt-2 border-t border-purple-100' : ''} space-y-1.5`}>
+                              <p className="text-xs font-bold text-blue-700 flex items-center gap-1">
+                                <Plus className="w-3 h-3" /> Vendi abbonamento / card:
+                              </p>
+                              {cardTemplates.map(tmpl => (
+                                <div key={tmpl.id}>
+                                  {sellTemplateId === tmpl.id ? (
+                                    <div className="p-3 rounded-xl border-2 border-blue-400 bg-blue-50 space-y-2">
+                                      <p className="text-sm font-bold text-blue-800">{tmpl.name}</p>
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-xs text-blue-700 whitespace-nowrap">Importo {'€'}:</span>
+                                        <input type="number" step="0.01" min="0"
+                                          value={sellTemplateAmount}
+                                          onChange={e => setSellTemplateAmount(e.target.value)}
+                                          placeholder={tmpl.total_value?.toFixed(2)}
+                                          className="flex-1 border border-blue-300 rounded-lg px-2 py-1 text-sm focus:outline-none focus:border-blue-500" />
+                                      </div>
+                                      <div className="flex gap-2">
+                                        <Button type="button" size="sm"
+                                          variant={sellTemplatePM === 'cash' ? 'default' : 'outline'}
+                                          className={sellTemplatePM === 'cash' ? 'bg-green-600 text-white' : 'border-2'}
+                                          onClick={() => setSellTemplatePM('cash')}>
+                                          <Banknote className="w-3 h-3 mr-1" /> Contanti
+                                        </Button>
+                                        <Button type="button" size="sm"
+                                          variant={sellTemplatePM === 'pos' ? 'default' : 'outline'}
+                                          className={sellTemplatePM === 'pos' ? 'bg-blue-600 text-white' : 'border-2'}
+                                          onClick={() => setSellTemplatePM('pos')}>
+                                          <Smartphone className="w-3 h-3 mr-1" /> POS
+                                        </Button>
+                                        <Button type="button" size="sm"
+                                          className="bg-purple-600 text-white ml-auto"
+                                          disabled={sellingTemplate}
+                                          onClick={handleSellTemplate}>
+                                          {sellingTemplate ? '...' : 'Vendi + Usa'}
+                                        </Button>
+                                        <Button type="button" size="sm" variant="ghost"
+                                          onClick={() => setSellTemplateId(null)}>
+                                          Annulla
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <button type="button"
+                                      onClick={() => { setSellTemplateId(tmpl.id); setSellTemplateAmount(tmpl.total_value?.toFixed(2) || ''); }}
+                                      className="w-full p-2.5 rounded-xl border-2 border-dashed border-blue-300 text-left hover:border-blue-500 hover:bg-blue-50 transition-all">
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-sm font-semibold text-blue-800">{tmpl.name}</span>
+                                        <div className="text-right">
+                                          {tmpl.total_services && <span className="text-xs text-blue-600 mr-2">{tmpl.total_services} sed.</span>}
+                                          <span className="text-sm font-black text-blue-700">{'€'}{tmpl.total_value?.toFixed(2)}</span>
+                                        </div>
+                                      </div>
+                                    </button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
                           )}
                         </div>
-                      ))}
+                      )}
                     </div>
                   )}
                 </div>
