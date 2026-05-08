@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import api, { API } from '../../lib/api';
-import { sendWA } from '../../lib/sendWA';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -279,15 +278,7 @@ export default function NewAppointmentDialog({
       toast.success('Appuntamento creato!' + (preSelectedCardId || preSelectedPromoId ? ' Card/Promo salvate.' : ''));
       onClose();
       onSuccess?.();
-      // Invia conferma WhatsApp in background (non blocca il dialog)
-      const clientPhone = selectedClientInfo?.phone || newClientPhone;
-      if (clientPhone) {
-        const clientDisplayName = selectedClientInfo?.name || newClientName || 'Cliente';
-        const serviceNames = selectedServicesInfo.map(s => s.name).join(', ');
-        const dateStr = format(new Date(formData.date + 'T00:00:00'), 'dd/MM/yy');
-        const waMsg = `Ciao ${clientDisplayName}! ✂️ Appuntamento confermato per ${dateStr} alle ${formData.time} per ${serviceNames}. A presto da Bruno Melito Hair! 💛`;
-        sendWA(clientPhone, waMsg, { successMsg: '✅ Conferma WhatsApp inviata!' });
-      }
+      // WA conferma solo per prenotazioni online (gestionale: invio manuale)
     } catch (err) {
       console.error('[NewAppointment] Error:', err.response?.status, err.response?.data, err.message);
       const status = err.response?.status;
