@@ -165,6 +165,7 @@ async def lifespan(app: FastAPI):
                     tomorrow = (datetime.now(timezone.utc) + timedelta(days=1)).strftime("%Y-%m-%d")
                     appointments = await db.appointments.find(
                         {"date": tomorrow, "status": {"$nin": ["cancelled"]},
+                         "source": "online",
                          "confirmation_sent_at": {"$exists": False}},
                         {"_id": 0}
                     ).to_list(500)
