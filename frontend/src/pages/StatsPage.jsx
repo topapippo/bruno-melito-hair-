@@ -1,14 +1,19 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import api, { API } from '../lib/api';
+import { sendWA } from '../lib/sendWA';
 import Layout from '../components/Layout';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import {
   BarChart3, Euro, TrendingUp, TrendingDown, Calendar as CalendarIcon,
   Download, Users, Clock, Star, ShoppingBag, CreditCard, Receipt,
-  ArrowUpRight, ArrowDownRight, Wallet
+  ArrowUpRight, ArrowDownRight, Wallet, UserX, MessageCircle, Send,
+  Sparkles, RefreshCw, Search,
 } from 'lucide-react';
 import {
   format, subDays, startOfMonth, endOfMonth, subMonths, startOfYear
@@ -21,6 +26,40 @@ import {
 import { toast } from 'sonner';
 
 const COLORS = ['#C8617A', '#789F8A', '#E9C46A', '#0EA5E9', '#A855F7', '#F97316', '#10B981', '#6366F1'];
+
+const DAY_OPTIONS = [
+  { label: '1 mese', days: 30 },
+  { label: '2 mesi', days: 60 },
+  { label: '3 mesi', days: 90 },
+  { label: '6 mesi', days: 180 },
+  { label: '1 anno', days: 365 },
+];
+
+const DEFAULT_TEMPLATE = (name) =>
+  `Ciao ${name}! 👋\nÈ un po' che non ti vediamo al salone — ci manchi!\nQuando vuoi tornare a prenderti cura di te, siamo qui ad aspettarti 💇‍♀️\nScrivici per fissare il tuo prossimo appuntamento!`;
+
+function DayBadge({ days }) {
+  if (days == null)
+    return <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">Mai venuta</span>;
+  const color =
+    days >= 180 ? 'bg-red-100 text-red-700' :
+    days >= 90  ? 'bg-orange-100 text-orange-700' :
+                  'bg-amber-100 text-amber-700';
+  return (
+    <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${color}`}>
+      {days >= 365 ? `${Math.floor(days / 30)} mesi fa` : `${days} giorni fa`}
+    </span>
+  );
+}
+
+function ServiceChip({ label, variant = 'done' }) {
+  const styles = variant === 'done'
+    ? 'bg-[#789F8A]/10 text-[#3d6e59] border border-[#789F8A]/30'
+    : 'bg-amber-50 text-amber-700 border border-amber-200';
+  return (
+    <span className={`inline-block text-xs px-2 py-0.5 rounded-full ${styles}`}>{label}</span>
+  );
+}
 
 const PAYMENT_LABELS = {
   cash: 'Contanti', pos: 'POS / Carta', prepaid: 'Abbonamento',
@@ -87,6 +126,16 @@ export default function StatsPage() {
   const [loadingExp, setLoadingExp] = useState(false);
   const [exporting, setExporting] = useState(false);
 
+  const [dormantClients, setDormantClients] = useState([]);
+  const [loadingDormant, setLoadingDormant] = useState(false);
+  const [dormantDays, setDormantDays] = useState(30);
+  const [dormantSearch, setDormantSearch] = useState('');
+  const [dormantDialogClient, setDormantDialogClient] = useState(null);
+  const [dormantMsgText, setDormantMsgText] = useState('');
+  const [dormantSending, setDormantSending] = useState(false);
+  const [dormantBulkSending, setDormantBulkSending] = useState(false);
+  const [dormantSentIds, setDormantSentIds] = useState(new Set());
+
   const startStr = format(dateRange.start, 'yyyy-MM-dd');
   const endStr = format(dateRange.end, 'yyyy-MM-dd');
 
@@ -126,11 +175,69 @@ export default function StatsPage() {
     }
   }, []);
 
+  const fetchDormant = useCallback(async (d) => {
+    setLoadingDormant(true);
+    try {
+      const res = await api.get(`${API}/clients/dormant`, { params: { days: d } });
+      setDormantClients(res.data);
+    } catch {
+      toast.error('Errore caricamento clienti assenti');
+    } finally {
+      setLoadingDormant(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchRevenue(startStr, endStr);
     fetchClients(startStr, endStr);
     fetchExpenses(startStr, endStr);
   }, [startStr, endStr, fetchRevenue, fetchClients, fetchExpenses]);
+
+  useEffect(() => {
+    if (activeTab === 'assenti') fetchDormant(dormantDays);
+  }, [activeTab, dormantDays, fetchDormant]);
+
+  const dormantFiltered = useMemo(() => {
+    if (!dormantSearch.trim()) return dormantClients;
+    const q = dormantSearch.toLowerCase();
+    return dormantClients.filter(c => c.name.toLowerCase().includes(q) || c.phone?.includes(q));
+  }, [dormantClients, dormantSearch]);
+
+  const dormantWithPhone = dormantFiltered.filter(c => c.phone);
+
+  const openDormantDialog = (client) => {
+    setDormantDialogClient(client);
+    setDormantMsgText(DEFAULT_TEMPLATE(client.name));
+  };
+
+  const handleDormantSend = async () => {
+    if (!dormantDialogClient?.phone || !dormantMsgText.trim()) return;
+    setDormantSending(true);
+    const ok = await sendWA(dormantDialogClient.phone, dormantMsgText, { successMsg: `✅ Invito inviato a ${dormantDialogClient.name}!` });
+    if (ok) setDormantSentIds(prev => new Set([...prev, dormantDialogClient.id]));
+    setDormantSending(false);
+    if (ok) setDormantDialogClient(null);
+  };
+
+  const handleDormantBulkSend = async () => {
+    const targets = dormantWithPhone.filter(c => !dormantSentIds.has(c.id));
+    if (!targets.length) return;
+    if (!window.confirm(`Inviare il messaggio a ${targets.length} clienti con telefono?`)) return;
+    setDormantBulkSending(true);
+    let sent = 0;
+    for (const c of targets) {
+      const ok = await sendWA(c.phone, DEFAULT_TEMPLATE(c.name));
+      if (ok) { sent++; setDormantSentIds(prev => new Set([...prev, c.id])); }
+      await new Promise(r => setTimeout(r, 600));
+    }
+    toast.success(`Inviti inviati: ${sent} / ${targets.length}`);
+    setDormantBulkSending(false);
+  };
+
+  const fmtVisit = (d) => {
+    if (!d) return '—';
+    try { return format(new Date(d), 'dd MMM yyyy', { locale: it }); } catch { return d; }
+  };
 
   const setPreset = (preset) => {
     const today = new Date();
@@ -214,6 +321,9 @@ export default function StatsPage() {
             <TabsTrigger value="servizi" className="text-sm">Servizi</TabsTrigger>
             <TabsTrigger value="incassi" className="text-sm">Incassi</TabsTrigger>
             <TabsTrigger value="uscite" className="text-sm">Uscite</TabsTrigger>
+            <TabsTrigger value="assenti" className="text-sm flex items-center gap-1">
+              <UserX className="w-3.5 h-3.5" /> Assenti
+            </TabsTrigger>
           </TabsList>
 
           {/* ─── PANORAMICA ─── */}
@@ -825,7 +935,205 @@ export default function StatsPage() {
               </>
             )}
           </TabsContent>
+          {/* ─── ASSENTI ─── */}
+          <TabsContent value="assenti" className="space-y-5 mt-5">
+            {/* Sub-header azioni */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <p className="text-sm text-[#7C5C4A]">
+                Clienti che non vengono da almeno <strong>{dormantDays}</strong> giorni
+              </p>
+              <div className="flex items-center gap-2">
+                {dormantWithPhone.filter(c => !dormantSentIds.has(c.id)).length > 0 && (
+                  <Button
+                    onClick={handleDormantBulkSend}
+                    disabled={dormantBulkSending || loadingDormant}
+                    size="sm"
+                    className="bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white shadow-sm"
+                  >
+                    <Send className="w-3.5 h-3.5 mr-1" />
+                    {dormantBulkSending
+                      ? 'Invio...'
+                      : `Invia a tutte (${dormantWithPhone.filter(c => !dormantSentIds.has(c.id)).length})`}
+                  </Button>
+                )}
+                <Button variant="outline" size="sm" onClick={() => fetchDormant(dormantDays)} className="border-[#F0E6DC]">
+                  <RefreshCw className="w-3.5 h-3.5 mr-1" /> Aggiorna
+                </Button>
+              </div>
+            </div>
+
+            {/* Filtro periodo + cerca */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex gap-2 flex-wrap">
+                {DAY_OPTIONS.map(opt => (
+                  <button
+                    key={opt.days}
+                    onClick={() => setDormantDays(opt.days)}
+                    className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
+                      dormantDays === opt.days
+                        ? 'bg-[#C8617A] text-white border-[#C8617A] font-semibold'
+                        : 'border-[#F0E6DC] text-[#2D1B14] hover:bg-[#FAF7F2]'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <div className="relative flex-1 max-w-xs">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7C5C4A]" />
+                <Input
+                  value={dormantSearch}
+                  onChange={e => setDormantSearch(e.target.value)}
+                  placeholder="Cerca cliente..."
+                  className="pl-9 border-[#F0E6DC]"
+                />
+              </div>
+            </div>
+
+            {/* Contatori */}
+            {!loadingDormant && (
+              <div className="flex flex-wrap gap-4 text-sm text-[#7C5C4A]">
+                <span><span className="font-semibold text-[#2D1B14]">{dormantFiltered.length}</span> clienti assenti</span>
+                <span>·</span>
+                <span><span className="font-semibold text-[#2D1B14]">{dormantWithPhone.length}</span> con telefono</span>
+                {dormantSentIds.size > 0 && (
+                  <>
+                    <span>·</span>
+                    <span className="text-emerald-600 font-semibold">{dormantSentIds.size} inviti inviati</span>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Lista clienti */}
+            {loadingDormant ? (
+              <div className="space-y-3">
+                {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-28 rounded-2xl" />)}
+              </div>
+            ) : dormantFiltered.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 text-[#7C5C4A]">
+                <UserX className="w-12 h-12 mb-3 opacity-30" />
+                <p className="text-lg font-medium">Nessun cliente assente trovato</p>
+                <p className="text-sm mt-1">Tutte le clienti sono venute negli ultimi {dormantDays} giorni</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {dormantFiltered.map(client => (
+                  <Card
+                    key={client.id}
+                    className={`bg-white border-[#F0E6DC]/40 shadow-sm transition-all ${
+                      dormantSentIds.has(client.id) ? 'opacity-60 border-emerald-200' : ''
+                    }`}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#C8617A] to-[#A0404F] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                            {client.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h3 className="font-semibold text-[#2D1B14]">{client.name}</h3>
+                              <DayBadge days={client.days_absent} />
+                              {dormantSentIds.has(client.id) && (
+                                <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">Invitata</span>
+                              )}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-[#7C5C4A]">
+                              {client.phone && <span>{client.phone}</span>}
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                Ultima visita: {fmtVisit(client.last_visit)}
+                              </span>
+                              {client.total_visits > 0 && (
+                                <span>{client.total_visits} {client.total_visits === 1 ? 'visita' : 'visite'} totali</span>
+                              )}
+                            </div>
+                            {client.top_services?.length > 0 && (
+                              <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                                <span className="text-xs text-[#7C5C4A] font-medium">Fa spesso:</span>
+                                {client.top_services.map(s => (
+                                  <ServiceChip key={s.name} label={`${s.name} ×${s.count}`} variant="done" />
+                                ))}
+                              </div>
+                            )}
+                            {client.never_done?.length > 0 && (
+                              <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                                <span className="text-xs text-[#7C5C4A] font-medium flex items-center gap-1">
+                                  <Sparkles className="w-3 h-3 text-amber-500" />
+                                  Non ha mai provato:
+                                </span>
+                                {client.never_done.map(s => (
+                                  <ServiceChip key={s} label={s} variant="never" />
+                                ))}
+                              </div>
+                            )}
+                            {client.hair_notes && (
+                              <p className="text-xs text-[#7C5C4A] mt-1.5 italic truncate">Note: {client.hair_notes}</p>
+                            )}
+                          </div>
+                        </div>
+                        {client.phone ? (
+                          <Button
+                            onClick={() => openDormantDialog(client)}
+                            size="sm"
+                            disabled={dormantSentIds.has(client.id)}
+                            className={`flex-shrink-0 ${
+                              dormantSentIds.has(client.id)
+                                ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                                : 'bg-[#25D366] hover:bg-[#128C7E] text-white'
+                            }`}
+                          >
+                            <MessageCircle className="w-3.5 h-3.5 mr-1" />
+                            {dormantSentIds.has(client.id) ? 'Inviato' : 'Invita'}
+                          </Button>
+                        ) : (
+                          <span className="text-xs text-[#7C5C4A] flex-shrink-0 pt-1">Senza telefono</span>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
         </Tabs>
+
+        {/* Dialog WA clienti assenti */}
+        <Dialog open={!!dormantDialogClient} onOpenChange={(o) => !o && setDormantDialogClient(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="font-display text-xl text-[#2D1B14]">
+                Invito per {dormantDialogClient?.name}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <p className="text-sm text-[#7C5C4A]">
+                Messaggio WhatsApp a <strong>{dormantDialogClient?.phone}</strong>
+              </p>
+              <Textarea
+                value={dormantMsgText}
+                onChange={e => setDormantMsgText(e.target.value)}
+                rows={6}
+                className="border-[#F0E6DC] resize-none text-sm"
+              />
+              <p className="text-xs text-[#7C5C4A]">Puoi personalizzare il messaggio prima di inviarlo.</p>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setDormantDialogClient(null)} className="border-[#F0E6DC]">
+                Annulla
+              </Button>
+              <Button
+                onClick={handleDormantSend}
+                disabled={dormantSending || !dormantMsgText.trim()}
+                className="bg-[#25D366] hover:bg-[#128C7E] text-white"
+              >
+                <Send className="w-4 h-4 mr-2" />
+                {dormantSending ? 'Invio...' : 'Invia WhatsApp'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
