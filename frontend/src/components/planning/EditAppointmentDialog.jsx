@@ -98,6 +98,11 @@ export default function EditAppointmentDialog({
   const [saveAndCheckout, setSaveAndCheckout] = useState(false);
   const [sellCardOnCheckout, setSellCardOnCheckout] = useState(false);
   const [sellCardPaymentMethod, setSellCardPaymentMethod] = useState('cash');
+  const [cardTemplates, setCardTemplates] = useState([]);
+  const [sellTemplateId, setSellTemplateId] = useState(null);
+  const [sellTemplateAmount, setSellTemplateAmount] = useState('');
+  const [sellTemplatePM, setSellTemplatePM] = useState('cash');
+  const [sellingTemplate, setSellingTemplate] = useState(false);
 
   const sortedServices = groupServicesByCategory(services);
 
@@ -175,10 +180,14 @@ export default function EditAppointmentDialog({
           api.get(`${API}/clients/${appointment.client_id}/loyalty`).catch(() => ({ data: { points: 0 } })),
           api.get(`${API}/sospesi/client/${appointment.client_id}`).catch(() => ({ data: { sospesi: [], total: 0 } })),
           api.get(`${API}/clients/${appointment.client_id}`).catch(() => ({ data: null })),
-        ]).then(([cardsRes, loyaltyRes, sospesiRes, clientRes]) => {
+          api.get(`${API}/card-templates`).catch(() => ({ data: [] })),
+        ]).then(([cardsRes, loyaltyRes, sospesiRes, clientRes, templatesRes]) => {
           if (clientRes.data) setSelectedClientInfo(clientRes.data);
-          const activeCards = (cardsRes.data || []).filter(c => c.active && c.remaining_value > 0);
+          const activeCards = (cardsRes.data || []).filter(c =>
+            c.active && (c.remaining_value > 0 || (c.card_type === 'subscription' && c.total_services > 0 && c.used_services < c.total_services))
+          );
           setClientCards(activeCards);
+          setCardTemplates(templatesRes.data || []);
           setClientLoyalty(loyaltyRes.data);
           if (activeCards.length > 0) setOpenCats(prev => ({ ...prev, _editCards: true }));
           const sospData = sospesiRes.data || { sospesi: [], total: 0 };
@@ -340,6 +349,46 @@ export default function EditAppointmentDialog({
     setEligiblePromos([]);
     setSellCardOnCheckout(false);
     setSellCardPaymentMethod('cash');
+    setSellTemplateId(null);
+    setSellTemplateAmount('');
+    setSellTemplatePM('cash');
+    setSellingTemplate(false);
+  };
+
+  const handleSellTemplate = async () => {
+    const tmpl = cardTemplates.find(t => t.id === sellTemplateId);
+    const activeAppointment = localAppointment || appointment;
+    if (!tmpl || !activeAppointment?.client_id) return;
+    setSellingTemplate(true);
+    try {
+      const res = await api.post(`${API}/cards/sell`, {
+        template_id: sellTemplateId,
+        client_id: activeAppointment.client_id,
+        amount_paid: parseFloat(sellTemplateAmount) || tmpl.total_value,
+        payment_method: sellTemplatePM,
+      });
+      const newCard = {
+        id: res.data.card_id,
+        name: res.data.card_name,
+        card_type: tmpl.card_type,
+        total_value: res.data.total_value,
+        remaining_value: res.data.total_value,
+        total_services: tmpl.total_services || null,
+        used_services: 0,
+        active: true,
+        valid_until: res.data.valid_until || null,
+      };
+      setClientCards(prev => [newCard, ...prev]);
+      setPaymentMethod('prepaid');
+      setSelectedCardId(res.data.card_id);
+      setSellTemplateId(null);
+      setSellTemplateAmount('');
+      toast.success(`"${res.data.card_name}" venduto — selezionato per il pagamento`);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Errore nella vendita abbonamento');
+    } finally {
+      setSellingTemplate(false);
+    }
   };
 
   const openCheckoutMode = (apt = null, cardsOverride = null) => {
@@ -361,15 +410,16 @@ export default function EditAppointmentDialog({
     } else {
       setEligiblePromos([]);
     }
+    const isCardUsable = (c) => c.active && (c.remaining_value > 0 || (c.card_type === 'subscription' && c.total_services > 0 && c.used_services < c.total_services));
     const targetCardId = preSelectedCardId || activeAppointment?.card_id;
     if (targetCardId) {
-      const savedCard = (cards || []).find(c => c.id === targetCardId && c.remaining_value > 0);
+      const savedCard = (cards || []).find(c => c.id === targetCardId && isCardUsable(c));
       if (savedCard) {
         setPaymentMethod('prepaid');
         setSelectedCardId(savedCard.id);
       }
     } else if ((cards || []).length > 0) {
-      const activeCard = cards.find(c => c.remaining_value > 0);
+      const activeCard = cards.find(c => isCardUsable(c));
       if (activeCard) {
         setPaymentMethod('prepaid');
         setSelectedCardId(activeCard.id);
@@ -987,24 +1037,24 @@ export default function EditAppointmentDialog({
                 </div>
 
                 {/* Payment Method */}
-                <div className="space-y-2 mb-4">
+                <div className="space-y-3 mb-4">
                   <Label className="text-[#2D1B14] font-bold text-sm">Metodo di pagamento</Label>
                   <div className="grid grid-cols-3 gap-2">
                     <Button type="button" variant={paymentMethod === 'cash' ? 'default' : 'outline'}
                       className={paymentMethod === 'cash' ? 'bg-green-600 text-white' : 'border-2'}
-                      onClick={() => { setPaymentMethod('cash'); setSelectedCardId(''); }}
+                      onClick={() => { setPaymentMethod('cash'); setSelectedCardId(''); setSellTemplateId(null); }}
                       data-testid="payment-method-cash">
                       <Banknote className="w-4 h-4 mr-1" /> Contanti
                     </Button>
                     <Button type="button" variant={paymentMethod === 'pos' ? 'default' : 'outline'}
                       className={paymentMethod === 'pos' ? 'bg-blue-600 text-white' : 'border-2'}
-                      onClick={() => { setPaymentMethod('pos'); setSelectedCardId(''); }}
+                      onClick={() => { setPaymentMethod('pos'); setSelectedCardId(''); setSellTemplateId(null); }}
                       data-testid="payment-method-pos">
                       <Smartphone className="w-4 h-4 mr-1" /> POS
                     </Button>
                     <Button type="button" variant={paymentMethod === 'sospeso' ? 'default' : 'outline'}
                       className={paymentMethod === 'sospeso' ? 'bg-amber-600 text-white' : 'border-2'}
-                      onClick={() => { setPaymentMethod('sospeso'); setSelectedCardId(''); }}
+                      onClick={() => { setPaymentMethod('sospeso'); setSelectedCardId(''); setSellTemplateId(null); }}
                       data-testid="payment-method-sospeso">
                       <AlertTriangle className="w-4 h-4 mr-1" /> Sospeso
                     </Button>
@@ -1015,71 +1065,107 @@ export default function EditAppointmentDialog({
                       <p className="text-xs mt-1">Il pagamento verra registrato come "sospeso". Apparira un avviso al prossimo appuntamento del cliente.</p>
                     </div>
                   )}
-                  {/* Prepaid / Card button - sempre visibile come collapsible */}
-                  <Button type="button" variant={paymentMethod === 'prepaid' ? 'default' : 'outline'}
-                    className={`w-full mt-1 font-bold ${paymentMethod === 'prepaid' ? 'bg-purple-600 text-white shadow-md' : clientCards.length > 0 ? 'border-2 border-purple-400 text-purple-700 bg-purple-50 hover:bg-purple-100' : 'border-2'}`}
-                    onClick={() => setPaymentMethod(paymentMethod === 'prepaid' ? 'cash' : 'prepaid')}
-                    data-testid="payment-method-prepaid">
-                    <Ticket className="w-4 h-4 mr-2" /> Abb. / Prepagata
-                    {clientCards.length > 0 && <span className={`ml-2 text-xs font-black px-2 py-0.5 rounded-full ${paymentMethod === 'prepaid' ? 'bg-white/30 text-white' : 'bg-purple-500 text-white'}`}>{clientCards.length}</span>}
-                  </Button>
-                  {paymentMethod === 'prepaid' && (
-                    <div className="space-y-2 mt-2">
-                      {clientCards.length > 0 ? clientCards.map(card => (
-                        <button key={card.id} type="button" onClick={() => setSelectedCardId(card.id)}
-                          className={`w-full p-3.5 rounded-xl border-2 text-left transition-all ${selectedCardId === card.id ? 'border-purple-500 bg-purple-50 shadow-md' : 'border-gray-200 hover:border-purple-300 hover:bg-purple-50/50'}`}
+                  {/* Abbonamenti e Card attive — sempre visibili come bottoni diretti */}
+                  {clientCards.length > 0 && (
+                    <div className="space-y-1.5">
+                      <p className="text-xs font-bold text-purple-700 flex items-center gap-1">
+                        <Ticket className="w-3 h-3" /> Abbonamenti e Card attive:
+                      </p>
+                      {clientCards.map(card => (
+                        <button key={card.id} type="button"
+                          onClick={() => { setPaymentMethod('prepaid'); setSelectedCardId(card.id); setSellTemplateId(null); }}
+                          className={`w-full p-3 rounded-xl border-2 text-left transition-all ${selectedCardId === card.id && paymentMethod === 'prepaid' ? 'border-purple-500 bg-purple-50 shadow-md' : 'border-gray-200 hover:border-purple-300 hover:bg-purple-50/50'}`}
                           data-testid={`select-card-${card.id}`}>
                           <div className="flex justify-between items-center">
                             <div className="flex items-center gap-2">
-                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${selectedCardId === card.id ? 'border-purple-500 bg-purple-500' : 'border-gray-300'}`}>
-                                {selectedCardId === card.id && <Check className="w-3 h-3 text-white" />}
+                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${selectedCardId === card.id && paymentMethod === 'prepaid' ? 'border-purple-500 bg-purple-500' : 'border-gray-300'}`}>
+                                {selectedCardId === card.id && paymentMethod === 'prepaid' && <Check className="w-3 h-3 text-white" />}
                               </div>
-                              <div><p className="font-bold text-sm">{card.name}</p><p className="text-xs text-gray-500">{card.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}</p></div>
+                              <div>
+                                <p className="font-bold text-sm">{card.name}</p>
+                                <p className="text-xs text-gray-500">{card.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}</p>
+                              </div>
                             </div>
-                            <div className="text-right"><p className={`font-black text-base ${selectedCardId === card.id ? 'text-purple-600' : 'text-green-600'}`}>{'\u20AC'}{card.remaining_value?.toFixed(2)}</p>{card.total_services && <p className="text-xs text-gray-500">{card.used_services}/{card.total_services}</p>}</div>
+                            <div className="text-right">
+                              {card.card_type === 'subscription' && card.total_services ? (
+                                <>
+                                  <p className={`font-black text-base ${selectedCardId === card.id && paymentMethod === 'prepaid' ? 'text-purple-600' : 'text-purple-600'}`}>
+                                    {card.total_services - card.used_services} rimasti
+                                  </p>
+                                  <p className="text-xs text-gray-500">{card.used_services}/{card.total_services} usati</p>
+                                </>
+                              ) : (
+                                <p className={`font-black text-base ${selectedCardId === card.id && paymentMethod === 'prepaid' ? 'text-purple-600' : 'text-green-600'}`}>
+                                  {'€'}{card.remaining_value?.toFixed(2)}
+                                </p>
+                              )}
+                            </div>
                           </div>
                         </button>
-                      )) : (
-                        <p className="text-sm text-amber-600 p-2 bg-amber-50 rounded-xl">Nessun abbonamento/card attiva</p>
-                      )}
+                      ))}
                     </div>
                   )}
-                  {paymentMethod === 'prepaid' && selectedCardId && (() => {
-                    const selCard = clientCards.find(c => c.id === selectedCardId);
-                    if (!selCard) return null;
-                    return (
-                      <div className="mt-3 p-3 rounded-xl border-2 border-blue-200 bg-blue-50">
-                        <button type="button"
-                          onClick={() => setSellCardOnCheckout(prev => !prev)}
-                          className="w-full flex items-center justify-between">
-                          <span className="text-sm font-bold text-blue-800 flex items-center gap-2">
-                            <CreditCard className="w-4 h-4" /> Incassa prezzo card ({'€'}{selCard.total_value?.toFixed(2)})
-                          </span>
-                          <div className={`w-10 h-5 rounded-full transition-colors flex items-center px-0.5 ${sellCardOnCheckout ? 'bg-blue-500' : 'bg-gray-300'}`}>
-                            <div className={`w-4 h-4 rounded-full bg-white shadow transition-transform ${sellCardOnCheckout ? 'translate-x-5' : ''}`} />
-                          </div>
-                        </button>
-                        <p className="text-xs text-blue-600 mt-1">Attiva se il cliente acquista la card in questa seduta</p>
-                        {sellCardOnCheckout && (
-                          <div className="mt-2 space-y-2">
-                            <p className="text-xs font-semibold text-blue-700">Come incassi i {'€'}{selCard.total_value?.toFixed(2)}?</p>
-                            <div className="flex gap-2">
-                              <Button type="button" size="sm" variant={sellCardPaymentMethod === 'cash' ? 'default' : 'outline'}
-                                className={sellCardPaymentMethod === 'cash' ? 'bg-green-600 text-white' : 'border-2'}
-                                onClick={() => setSellCardPaymentMethod('cash')}>
-                                <Banknote className="w-3.5 h-3.5 mr-1" /> Contanti
-                              </Button>
-                              <Button type="button" size="sm" variant={sellCardPaymentMethod === 'pos' ? 'default' : 'outline'}
-                                className={sellCardPaymentMethod === 'pos' ? 'bg-blue-600 text-white' : 'border-2'}
-                                onClick={() => setSellCardPaymentMethod('pos')}>
-                                <Smartphone className="w-3.5 h-3.5 mr-1" /> POS
-                              </Button>
+                  {/* Vendi abbonamento / card da template */}
+                  {cardTemplates.length > 0 && (() => { const appt = localAppointment || appointment; return appt?.client_id && appt.client_id !== 'generic'; })() && (
+                    <div className="space-y-1.5">
+                      <p className="text-xs font-bold text-blue-700 flex items-center gap-1">
+                        <Plus className="w-3 h-3" /> Vendi abbonamento / card:
+                      </p>
+                      {cardTemplates.map(tmpl => (
+                        <div key={tmpl.id}>
+                          {sellTemplateId === tmpl.id ? (
+                            <div className="p-3 rounded-xl border-2 border-blue-400 bg-blue-50 space-y-2">
+                              <p className="text-sm font-bold text-blue-800">{tmpl.name}</p>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-blue-700 whitespace-nowrap">Importo {'€'}:</span>
+                                <input type="number" step="0.01" min="0"
+                                  value={sellTemplateAmount}
+                                  onChange={e => setSellTemplateAmount(e.target.value)}
+                                  placeholder={tmpl.total_value?.toFixed(2)}
+                                  className="flex-1 border border-blue-300 rounded-lg px-2 py-1 text-sm focus:outline-none focus:border-blue-500" />
+                              </div>
+                              <div className="flex gap-2">
+                                <Button type="button" size="sm"
+                                  variant={sellTemplatePM === 'cash' ? 'default' : 'outline'}
+                                  className={sellTemplatePM === 'cash' ? 'bg-green-600 text-white' : 'border-2'}
+                                  onClick={() => setSellTemplatePM('cash')}>
+                                  <Banknote className="w-3 h-3 mr-1" /> Contanti
+                                </Button>
+                                <Button type="button" size="sm"
+                                  variant={sellTemplatePM === 'pos' ? 'default' : 'outline'}
+                                  className={sellTemplatePM === 'pos' ? 'bg-blue-600 text-white' : 'border-2'}
+                                  onClick={() => setSellTemplatePM('pos')}>
+                                  <Smartphone className="w-3 h-3 mr-1" /> POS
+                                </Button>
+                                <Button type="button" size="sm"
+                                  className="bg-purple-600 text-white ml-auto"
+                                  disabled={sellingTemplate}
+                                  onClick={handleSellTemplate}>
+                                  {sellingTemplate ? '...' : 'Vendi + Usa'}
+                                </Button>
+                                <Button type="button" size="sm" variant="ghost"
+                                  onClick={() => setSellTemplateId(null)}>
+                                  Annulla
+                                </Button>
+                              </div>
                             </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
+                          ) : (
+                            <button type="button"
+                              onClick={() => { setSellTemplateId(tmpl.id); setSellTemplateAmount(tmpl.total_value?.toFixed(2) || ''); }}
+                              className="w-full p-2.5 rounded-xl border-2 border-dashed border-blue-300 text-left hover:border-blue-500 hover:bg-blue-50 transition-all">
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm font-semibold text-blue-800">{tmpl.name}</span>
+                                <div className="text-right">
+                                  {tmpl.total_services && <span className="text-xs text-blue-600 mr-2">{tmpl.total_services} sed.</span>}
+                                  <span className="text-sm font-black text-blue-700">{'€'}{tmpl.total_value?.toFixed(2)}</span>
+                                </div>
+                              </div>
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Loyalty Points */}
@@ -1172,14 +1258,20 @@ export default function EditAppointmentDialog({
                   <div className="flex justify-between text-sm"><span className="font-semibold">Subtotale:</span><span>{'€'}{calculateTotal().toFixed(2)}</span></div>
                   {selectedPromo && <div className="flex justify-between text-sm text-pink-600"><span className="font-semibold flex items-center gap-1"><Gift className="w-3.5 h-3.5" /> Omaggio:</span><span>{selectedPromo.free_service_name}</span></div>}
                   {discountType !== 'none' && calculateDiscount() > 0 && <div className="flex justify-between text-sm text-red-600"><span className="font-semibold">Sconto:</span><span>-{'€'}{calculateDiscount().toFixed(2)}</span></div>}
-                  {paymentMethod === 'prepaid' && sellCardOnCheckout && selectedCardId && (() => {
+                  {paymentMethod === 'prepaid' && selectedCardId && (() => {
                     const selCard = clientCards.find(c => c.id === selectedCardId);
-                    return selCard ? (
-                      <div className="flex justify-between text-sm text-blue-700 font-bold pt-1 border-t border-blue-100">
-                        <span className="flex items-center gap-1"><CreditCard className="w-3.5 h-3.5" /> Vendita card ({sellCardPaymentMethod === 'cash' ? 'Contanti' : 'POS'}):</span>
-                        <span>{'€'}{selCard.total_value?.toFixed(2)}</span>
+                    if (!selCard) return null;
+                    return selCard.card_type === 'subscription' && selCard.total_services ? (
+                      <div className="flex justify-between text-sm text-purple-700 font-bold pt-1 border-t border-purple-100">
+                        <span className="flex items-center gap-1"><Ticket className="w-3.5 h-3.5" /> {selCard.name}:</span>
+                        <span>{selCard.total_services - selCard.used_services} sedute rimaste</span>
                       </div>
-                    ) : null;
+                    ) : (
+                      <div className="flex justify-between text-sm text-purple-700 font-bold pt-1 border-t border-purple-100">
+                        <span className="flex items-center gap-1"><Ticket className="w-3.5 h-3.5" /> {selCard.name}:</span>
+                        <span>{'€'}{selCard.remaining_value?.toFixed(2)} residui</span>
+                      </div>
+                    );
                   })()}
                   <div className="flex justify-between text-xl font-black pt-2 border-t border-green-200"><span>TOTALE:</span><span className="text-green-600">{'€'}{calculateFinalAmount().toFixed(2)}</span></div>
                   {calculateFinalAmount() >= 20 && !selectedCardId && !selectedPromo && (

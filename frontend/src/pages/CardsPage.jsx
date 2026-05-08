@@ -68,7 +68,9 @@ export default function CardsPage() {
     total_value: '',
     total_services: '',
     valid_until: '',
-    notes: ''
+    notes: '',
+    amount_paid: '',
+    sale_pm: 'cash'
   });
   
   const [rechargeAmount, setRechargeAmount] = useState('');
@@ -181,16 +183,19 @@ export default function CardsPage() {
 
     setSaving(true);
     try {
-      await api.post(`${API}/cards`, {
+      const amountPaid = formData.amount_paid !== '' ? parseFloat(formData.amount_paid) : parseFloat(formData.total_value);
+      await api.post(`${API}/cards/sell-direct`, {
         client_id: formData.client_id,
         card_type: formData.card_type,
         name: formData.name,
         total_value: parseFloat(formData.total_value),
         total_services: formData.total_services ? parseInt(formData.total_services) : null,
         valid_until: formData.valid_until || null,
-        notes: formData.notes
+        notes: formData.notes,
+        amount_paid: amountPaid,
+        payment_method: formData.sale_pm
       });
-      toast.success('Card creata con successo!');
+      toast.success('Card creata e incasso registrato!');
       setDialogOpen(false);
       setFormData({
         client_id: '',
@@ -199,7 +204,9 @@ export default function CardsPage() {
         total_value: '',
         total_services: '',
         valid_until: '',
-        notes: ''
+        notes: '',
+        amount_paid: '',
+        sale_pm: 'cash'
       });
       fetchData();
     } catch (err) {
@@ -263,7 +270,8 @@ export default function CardsPage() {
       total_services: tmpl.total_services?.toString() || '',
       card_type: tmpl.card_type || 'prepaid',
       valid_until: validUntil,
-      notes: tmpl.notes || ''
+      notes: tmpl.notes || '',
+      amount_paid: tmpl.total_value?.toString() || ''
     });
   };
 
@@ -632,13 +640,41 @@ export default function CardsPage() {
                 />
               </div>
 
+              <div className="space-y-2 p-3 bg-green-50 border border-green-200 rounded-xl">
+                <Label className="font-bold text-green-800">Incasso vendita</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-green-700">Importo pagato (€)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.amount_paid}
+                      onChange={(e) => setFormData({ ...formData, amount_paid: e.target.value })}
+                      placeholder={formData.total_value || '0.00'}
+                      className="bg-white"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-green-700">Metodo</Label>
+                    <Select value={formData.sale_pm} onValueChange={(val) => setFormData({ ...formData, sale_pm: val })}>
+                      <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="cash">Contanti</SelectItem>
+                        <SelectItem value="pos">POS</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
               <DialogFooter>
                 <Button
                   type="submit"
                   disabled={saving}
                   className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-[0_4px_12px_rgba(200,97,122,0.3)]"
                 >
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Crea Card'}
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Crea Card + Incassa'}
                 </Button>
               </DialogFooter>
             </form>

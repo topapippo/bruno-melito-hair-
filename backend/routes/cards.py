@@ -205,6 +205,72 @@ async def sell_card_from_template(data: SellCardRequest, current_user: dict = De
 
 
 
+class SellCardDirectRequest(BaseModel):
+    client_id: str
+    name: str
+    card_type: str = "prepaid"
+    total_value: float
+    total_services: Optional[int] = None
+    valid_until: Optional[str] = None
+    notes: Optional[str] = ""
+    amount_paid: float
+    payment_method: str = "cash"
+
+
+@router.post("/cards/sell-direct")
+async def sell_card_direct(data: SellCardDirectRequest, current_user: dict = Depends(get_current_user)):
+    """Sell a card/subscription directly (without template): create card + record payment."""
+    client = await db.clients.find_one({"id": data.client_id, "user_id": current_user["id"]}, {"_id": 0})
+    if not client:
+        raise HTTPException(status_code=404, detail="Cliente non trovato")
+
+    valid_until = data.valid_until or None
+
+    card_id = str(uuid.uuid4())
+    card_doc = {
+        "id": card_id, "user_id": current_user["id"],
+        "client_id": data.client_id, "client_name": client["name"],
+        "card_type": data.card_type,
+        "name": data.name,
+        "total_value": data.total_value,
+        "remaining_value": data.total_value,
+        "total_services": data.total_services,
+        "used_services": 0,
+        "valid_until": valid_until,
+        "notes": data.notes or "",
+        "active": True, "transactions": [],
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.cards.insert_one(card_doc)
+
+    payment_id = str(uuid.uuid4())
+    payment_doc = {
+        "id": payment_id, "user_id": current_user["id"],
+        "appointment_id": None,
+        "client_id": data.client_id, "client_name": client["name"],
+        "services": [{"name": f"Vendita: {data.name}", "price": data.amount_paid, "duration": 0, "category": "abbonamento"}],
+        "original_amount": data.total_value,
+        "discount_type": None, "discount_value": 0,
+        "total_paid": data.amount_paid,
+        "payment_method": data.payment_method,
+        "card_sale_id": card_id,
+        "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.payments.insert_one(payment_doc)
+
+    return {
+        "success": True,
+        "card_id": card_id,
+        "card_name": data.name,
+        "total_value": data.total_value,
+        "amount_paid": data.amount_paid,
+        "valid_until": valid_until,
+        "payment_id": payment_id,
+        "client_name": client["name"]
+    }
+
+
 # ============== CARD TEMPLATES ==============
 
 from pydantic import BaseModel
