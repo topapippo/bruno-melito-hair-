@@ -387,7 +387,8 @@ export default function EditAppointmentDialog({
       setSellTemplateAmount('');
       toast.success(`"${res.data.card_name}" venduto — selezionato per il pagamento`);
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Errore nella vendita abbonamento');
+      const detail = err.response?.data?.detail;
+      toast.error(typeof detail === 'string' ? detail : 'Errore nella vendita abbonamento');
     } finally {
       setSellingTemplate(false);
     }

@@ -154,8 +154,15 @@ async def sell_card_from_template(data: SellCardRequest, current_user: dict = De
     # Calculate valid_until
     valid_until = None
     if template.get("duration_months"):
-        from dateutil.relativedelta import relativedelta
-        valid_until = (datetime.now(timezone.utc) + relativedelta(months=template["duration_months"])).strftime("%Y-%m-%d")
+        from datetime import timedelta
+        now = datetime.now(timezone.utc)
+        months = int(template["duration_months"])
+        month = now.month + months
+        year = now.year + (month - 1) // 12
+        month = (month - 1) % 12 + 1
+        import calendar
+        day = min(now.day, calendar.monthrange(year, month)[1])
+        valid_until = now.replace(year=year, month=month, day=day).strftime("%Y-%m-%d")
 
     # Create the card
     card_id = str(uuid.uuid4())
