@@ -67,6 +67,8 @@ async def delete_card(card_id: str, current_user: dict = Depends(get_current_use
     result = await db.cards.delete_one({"id": card_id, "user_id": current_user["id"]})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Card non trovata")
+    # Rimuove anche il pagamento di vendita dalle entrate
+    await db.payments.delete_many({"card_sale_id": card_id, "user_id": current_user["id"]})
     return {"message": "Card eliminata"}
 
 

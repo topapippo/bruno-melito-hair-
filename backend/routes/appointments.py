@@ -498,67 +498,75 @@ async def _checkout_appointment_inner(appointment_id: str, data: CheckoutData, c
             {"$inc": {"total_visits": 1}}
         )
 
-    # Legge il saldo PRIMA di qualsiasi modifica per calcoli corretti
-    loyalty_before = await get_or_create_loyalty(appointment["client_id"], current_user["id"])
-    points_before = loyalty_before["points"]
-
-    if data.loyalty_points_used > 0:
-        await db.loyalty.update_one(
-            {"client_id": appointment["client_id"], "user_id": current_user["id"]},
-            {"$inc": {"points": -data.loyalty_points_used}}
-        )
+    # ---- STEP 4: Loyalty points (opzionale — non blocca il checkout se fallisce) ----
     points_earned = 0
-
-    # Punti fedeltà: escludi se usato card, promo, o servizi abbonamento
-    has_card = bool(data.card_id)
-    has_promo = bool(data.promo_id)
-    # Controlla se tutti i servizi sono abbonamenti
-    all_abbonamento = False
-    if appointment.get("service_ids"):
-        svcs = await db.services.find(
-            {"id": {"$in": appointment["service_ids"]}, "user_id": current_user["id"]},
-            {"_id": 0, "category": 1}
-        ).to_list(50)
-        all_abbonamento = all(s.get("category") == "abbonamento" for s in svcs) if svcs else False
-
-    if not has_card and not has_promo and not all_abbonamento and data.total_paid > 0:
-        points_earned = await award_loyalty_points(
-            appointment["client_id"], current_user["id"], data.total_paid, appointment_id
-        )
-    points_after = points_before + points_earned
-
-    if data.promo_id:
-        promo = await db.promotions.find_one({"id": data.promo_id, "user_id": current_user["id"]}, {"_id": 0})
-        if promo:
-            await db.promo_usage.insert_one({
-                "id": str(uuid.uuid4()), "promo_id": data.promo_id, "user_id": current_user["id"],
-                "client_id": appointment.get("client_id", ""), "client_name": appointment.get("client_name", ""),
-                "appointment_id": appointment_id,
-                "free_service": data.promo_free_service or promo.get("free_service_name", ""),
-                "used_at": datetime.now(timezone.utc).isoformat()
-            })
-
+    points_after = 0
     threshold_reached = None
-    if points_before < 50 and points_after >= 50:
-        threshold_reached = 50
-    elif points_before < 30 and points_after >= 30:
-        threshold_reached = 30
-    elif points_before < 20 and points_after >= 20:
-        threshold_reached = 20
-    elif points_before < 10 and points_after >= 10:
-        threshold_reached = 10
-    elif points_before < 5 and points_after >= 5:
-        threshold_reached = 5
+    client_id_str = appointment.get("client_id", "")
 
-    # Recupera il telefono del cliente (non è sempre salvato sull'appuntamento)
+    try:
+        loyalty_before = await get_or_create_loyalty(client_id_str, current_user["id"])
+        points_before = loyalty_before.get("points", 0)
+
+        if data.loyalty_points_used > 0:
+            await db.loyalty.update_one(
+                {"client_id": client_id_str, "user_id": current_user["id"]},
+                {"$inc": {"points": -data.loyalty_points_used}}
+            )
+
+        has_card = bool(data.card_id)
+        has_promo = bool(data.promo_id)
+        all_abbonamento = False
+        if appointment.get("service_ids"):
+            svcs = await db.services.find(
+                {"id": {"$in": appointment.get("service_ids", [])}, "user_id": current_user["id"]},
+                {"_id": 0, "category": 1}
+            ).to_list(50)
+            all_abbonamento = all(s.get("category") == "abbonamento" for s in svcs) if svcs else False
+
+        if not has_card and not has_promo and not all_abbonamento and data.total_paid > 0:
+            points_earned = await award_loyalty_points(
+                client_id_str, current_user["id"], data.total_paid, appointment_id
+            )
+        points_after = points_before + points_earned
+
+        if data.promo_id:
+            promo = await db.promotions.find_one({"id": data.promo_id, "user_id": current_user["id"]}, {"_id": 0})
+            if promo:
+                await db.promo_usage.insert_one({
+                    "id": str(uuid.uuid4()), "promo_id": data.promo_id, "user_id": current_user["id"],
+                    "client_id": client_id_str, "client_name": appointment.get("client_name", ""),
+                    "appointment_id": appointment_id,
+                    "free_service": data.promo_free_service or promo.get("free_service_name", ""),
+                    "used_at": datetime.now(timezone.utc).isoformat()
+                })
+
+        if points_before < 50 and points_after >= 50:
+            threshold_reached = 50
+        elif points_before < 30 and points_after >= 30:
+            threshold_reached = 30
+        elif points_before < 20 and points_after >= 20:
+            threshold_reached = 20
+        elif points_before < 10 and points_after >= 10:
+            threshold_reached = 10
+        elif points_before < 5 and points_after >= 5:
+            threshold_reached = 5
+
+    except Exception as loyalty_err:
+        logger.warning(f"Loyalty update failed (checkout comunque ok): {loyalty_err}")
+
+    # Recupera telefono cliente
     client_phone = appointment.get("client_phone", "")
-    if not client_phone and appointment.get("client_id"):
-        client_doc = await db.clients.find_one(
-            {"id": appointment["client_id"], "user_id": current_user["id"]},
-            {"_id": 0, "phone": 1}
-        )
-        if client_doc:
-            client_phone = client_doc.get("phone", "")
+    if not client_phone and client_id_str:
+        try:
+            client_doc = await db.clients.find_one(
+                {"id": client_id_str, "user_id": current_user["id"]},
+                {"_id": 0, "phone": 1}
+            )
+            if client_doc:
+                client_phone = client_doc.get("phone", "")
+        except Exception:
+            pass
 
     # Riepilogo card post-checkout (usa i valori aggiornati già calcolati in STEP 1)
     card_info = None
