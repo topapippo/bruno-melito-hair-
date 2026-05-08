@@ -68,13 +68,13 @@ export default function DayView({
       <CardContent className="p-0">
         {/* Header with operator names */}
         <div className="flex border-b-2 border-[#C8617A]/40 bg-gradient-to-r from-[#C8617A]/10 to-[#E2E8F0]/20 sticky top-0 z-10">
-          <div className="w-16 flex-shrink-0 p-2 border-r-2 border-[#C8617A]/30">
-            <Clock className="w-5 h-5 text-[#C8617A] mx-auto" />
+          <div className="w-12 sm:w-16 flex-shrink-0 p-1 sm:p-2 border-r-2 border-[#C8617A]/30">
+            <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-[#C8617A] mx-auto" />
           </div>
           {columns.map((col) => (
             <div
               key={col.id || 'unassigned'}
-              className="flex-1 min-w-[150px] p-3 border-r-2 border-[#C8617A]/30 last:border-r-0"
+              className="flex-1 min-w-[100px] sm:min-w-[150px] p-2 sm:p-3 border-r-2 border-[#C8617A]/30 last:border-r-0"
             >
               <div className="flex items-center gap-2">
                 <div
@@ -107,12 +107,12 @@ export default function DayView({
         >
           <div className="flex relative">
             {/* Time column */}
-            <div className="w-16 flex-shrink-0 bg-gradient-to-b from-[#F8FAFC] to-white">
+            <div className="w-12 sm:w-16 flex-shrink-0 bg-gradient-to-b from-[#F8FAFC] to-white">
               {TIME_SLOTS.map((time) => (
                 <div
                   key={time}
                   className={`h-[48px] flex items-start justify-center pt-0.5 border-b border-[#F0E6DC]/30 ${
-                    time.endsWith(':00') ? 'font-bold text-sm text-[#2D1B14] bg-[#E2E8F0]/20' : 'text-xs text-[#7C5C4A]'
+                    time.endsWith(':00') ? 'font-bold text-[10px] sm:text-sm text-[#2D1B14] bg-[#E2E8F0]/20' : 'text-[9px] sm:text-xs text-[#7C5C4A]'
                   }`}
                 >
                   {time}
@@ -127,7 +127,7 @@ export default function DayView({
               return (
                 <div
                   key={col.id || 'unassigned'}
-                  className="flex-1 min-w-[150px] relative border-r border-[#F0E6DC]/20 last:border-r-0"
+                  className="flex-1 min-w-[100px] sm:min-w-[150px] relative border-r border-[#F0E6DC]/20 last:border-r-0"
                 >
                   {/* Time slot backgrounds */}
                   {TIME_SLOTS.map((time) => {

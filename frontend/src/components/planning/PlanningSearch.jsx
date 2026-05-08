@@ -59,7 +59,7 @@ export default function PlanningSearch({ onHighlightClient, highlightedClientId,
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
               onFocus={() => setSearchOpen(true)}
-              className="pl-9 w-48 md:w-56 bg-white border-2 border-[#C8617A]/50 focus:border-[#C8617A] font-medium"
+              className="pl-9 w-36 sm:w-48 md:w-56 bg-white border-2 border-[#C8617A]/50 focus:border-[#C8617A] font-medium"
               data-testid="search-client-input"
             />
             {searchQuery && (

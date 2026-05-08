@@ -704,11 +704,11 @@ export default function PlanningPage() {
         )}
 
         {/* Header */}
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-2 sm:gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
-              <h1 className="text-4xl font-black text-black">Planning</h1>
-              <p className="text-[#C8617A] mt-1 font-bold text-lg">
+              <h1 className="text-2xl sm:text-4xl font-black text-black leading-tight">Planning</h1>
+              <p className="text-[#C8617A] mt-0.5 font-bold text-xs sm:text-lg">
                 {format(selectedDate, "EEEE dd/MM/yy", { locale: it })}
                 {isToday(selectedDate) && (
                   <span className="ml-2 inline-flex items-center bg-[#C8617A] text-white text-xs font-black px-2.5 py-1 rounded-full align-middle">
@@ -722,16 +722,7 @@ export default function PlanningPage() {
                 )}
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <PlanningSearch
-                onHighlightClient={(clientId, date) => {
-                  setHighlightedClientId(clientId);
-                  if (date) setSelectedDate(new Date(date + 'T12:00:00'));
-                  setTimeout(() => setHighlightedClientId(null), 8000);
-                }}
-                highlightedClientId={highlightedClientId}
-                onClearHighlight={() => setHighlightedClientId(null)}
-              />
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <Button
                 variant="outline" size="icon"
                 onClick={() => {
@@ -765,19 +756,33 @@ export default function PlanningPage() {
               >
                 <ChevronRight className="w-5 h-5" />
               </Button>
-              <div className="flex border border-[#F0E6DC] rounded-xl overflow-hidden ml-2">
-                {[{ key: 'day', label: 'Giorno' }, { key: 'week', label: 'Settimana' }, { key: 'month', label: 'Mese' }].map(v => (
+              <div className="flex border border-[#F0E6DC] rounded-xl overflow-hidden">
+                {[
+                  { key: 'day', label: 'Giorno', short: 'G' },
+                  { key: 'week', label: 'Sett.', short: 'S' },
+                  { key: 'month', label: 'Mese', short: 'M' },
+                ].map(v => (
                   <Button key={v.key} variant="ghost" size="sm"
                     onClick={() => setViewMode(v.key)}
-                    className={`rounded-none text-xs px-3 h-10 ${viewMode === v.key ? 'bg-[#C8617A] text-white hover:bg-[#C8617A]' : 'text-[#64748B] hover:bg-gray-100'}`}
+                    className={`rounded-none text-xs px-2 sm:px-3 h-9 sm:h-10 ${viewMode === v.key ? 'bg-[#C8617A] text-white hover:bg-[#C8617A]' : 'text-[#64748B] hover:bg-gray-100'}`}
                     data-testid={`view-${v.key}-btn`}>
-                    {v.label}
+                    <span className="sm:hidden">{v.short}</span>
+                    <span className="hidden sm:inline">{v.label}</span>
                   </Button>
                 ))}
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
+            <PlanningSearch
+              onHighlightClient={(clientId, date) => {
+                setHighlightedClientId(clientId);
+                if (date) setSelectedDate(new Date(date + 'T12:00:00'));
+                setTimeout(() => setHighlightedClientId(null), 8000);
+              }}
+              highlightedClientId={highlightedClientId}
+              onClearHighlight={() => setHighlightedClientId(null)}
+            />
             <Button
               onClick={() => openNewAppointmentForDate(selectedDate)}
               className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-[0_4px_12px_rgba(200,97,122,0.3)] font-bold h-10 px-4"
@@ -1017,6 +1022,16 @@ export default function PlanningPage() {
             </div>
           </div>
         )}
+        {/* Mobile FAB - nuovo appuntamento */}
+        <button
+          className="md:hidden fixed bottom-20 right-4 z-40 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center active:scale-95 transition-transform"
+          style={{ background: 'linear-gradient(135deg, #C8617A, #A0404F)' }}
+          onClick={() => openNewAppointmentForDate(selectedDate)}
+          data-testid="mobile-fab-btn"
+        >
+          <Plus className="w-6 h-6 text-white" />
+        </button>
+
       </div>
     </Layout>
   );

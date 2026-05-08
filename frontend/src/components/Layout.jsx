@@ -462,11 +462,50 @@ export default function Layout({ children }) {
       </header>
 
       {/* Main Content */}
-      <main className={`min-h-screen pt-[60px] md:pt-0 transition-all duration-300 ${collapsed ? 'md:ml-14' : 'md:ml-60'}`}>
-        <div key={location.pathname} className="p-4 md:p-5 lg:p-7 admin-page-in">
+      <main className={`min-h-screen pt-[60px] pb-16 md:pt-0 md:pb-0 transition-all duration-300 ${collapsed ? 'md:ml-14' : 'md:ml-60'}`}>
+        <div key={location.pathname} className="p-3 md:p-5 lg:p-7 admin-page-in">
           {children}
         </div>
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <nav
+        className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur-md"
+        style={{ backgroundColor: t.sidebar_bg + 'F0', borderColor: `${t.sidebar_text}18` }}
+      >
+        <div className="flex items-center justify-around px-1 pt-1 pb-3">
+          {[
+            { path: '/',          label: 'Planning', icon: Calendar },
+            { path: '/clients',   label: 'Clienti',  icon: Users },
+            { path: '/dashboard', label: 'Home',     icon: LayoutDashboard },
+            { path: '/incassi',   label: 'Incassi',  icon: Euro },
+          ].map(({ path, label, icon: Icon }) => {
+            const isActive = location.pathname === path;
+            return (
+              <Link
+                key={path}
+                to={path}
+                className="flex flex-col items-center gap-0.5 px-2 py-2 rounded-xl transition-all min-w-[56px]"
+                style={isActive
+                  ? { color: t.primary }
+                  : { color: t.sidebar_text + '66' }}
+              >
+                <Icon className="w-5 h-5" strokeWidth={isActive ? 2.5 : 1.8} />
+                <span className="text-[10px] font-semibold">{label}</span>
+              </Link>
+            );
+          })}
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="flex flex-col items-center gap-0.5 px-2 py-2 rounded-xl transition-all min-w-[56px]"
+            style={{ color: t.sidebar_text + '66' }}
+            data-no-anim
+          >
+            <Menu className="w-5 h-5" strokeWidth={1.8} />
+            <span className="text-[10px] font-semibold">Menu</span>
+          </button>
+        </div>
+      </nav>
     </div>
   );
 }
