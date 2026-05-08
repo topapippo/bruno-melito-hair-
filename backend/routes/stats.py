@@ -267,6 +267,26 @@ async def get_revenue_stats(start_date: str, end_date: str, current_user: dict =
             client_counts[cid]["revenue"] += apt.get("total_price", 0)
     top_clients = sorted(client_counts.values(), key=lambda x: x["visits"], reverse=True)[:5]
 
+    # Metodi di pagamento
+    payment_methods_map = {}
+    for p in payments:
+        pm = p.get("payment_method", "altro")
+        if pm not in payment_methods_map:
+            payment_methods_map[pm] = {"method": pm, "count": 0, "total": 0}
+        payment_methods_map[pm]["count"] += 1
+        payment_methods_map[pm]["total"] += p.get("total_paid", 0)
+
+    # Breakdown per categoria — mappa nome servizio → categoria dalla collection services
+    all_services_list = await db.services.find({"user_id": current_user["id"]}, {"_id": 0, "name": 1, "category": 1}).to_list(500)
+    name_to_cat = {s["name"]: s.get("category", "altro") for s in all_services_list}
+    category_revenue_map = {}
+    for name, data in service_revenue.items():
+        cat = name_to_cat.get(name, "altro")
+        if cat not in category_revenue_map:
+            category_revenue_map[cat] = {"category": cat, "count": 0, "revenue": 0}
+        category_revenue_map[cat]["count"] += data["count"]
+        category_revenue_map[cat]["revenue"] += data["revenue"]
+
     return {
         "total_revenue": total_revenue, "total_appointments": len(all_cash_appointments),
         "daily_revenue": [{"date": k, "revenue": v} for k, v in sorted(daily_revenue.items())],
@@ -276,6 +296,129 @@ async def get_revenue_stats(start_date: str, end_date: str, current_user: dict =
         "prev_period_revenue": prev_revenue,
         "prev_period_appointments": prev_apts_count,
         "top_clients": top_clients,
+        "payment_methods": sorted(payment_methods_map.values(), key=lambda x: x["total"], reverse=True),
+        "category_breakdown": sorted(category_revenue_map.values(), key=lambda x: x["revenue"], reverse=True),
+    }
+
+
+@router.get("/stats/clients")
+async def get_client_stats(start_date: str, end_date: str, current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
+    total_clients = await db.clients.count_documents({"user_id": uid})
+
+    new_clients = await db.clients.find(
+        {"user_id": uid, "created_at": {"$gte": start_date, "$lte": end_date + "T23:59:59.999Z"}},
+        {"_id": 0, "id": 1, "name": 1, "created_at": 1}
+    ).to_list(10000)
+
+    appointments = await db.appointments.find(
+        {"user_id": uid, "date": {"$gte": start_date, "$lte": end_date}, "status": "completed"},
+        {"_id": 0, "client_id": 1, "client_name": 1, "total_price": 1, "date": 1}
+    ).to_list(50000)
+
+    client_visits = {}
+    for apt in appointments:
+        cid = apt.get("client_id", "")
+        if not cid or cid == "generic":
+            continue
+        if cid not in client_visits:
+            client_visits[cid] = {"name": apt.get("client_name", "Sconosciuto"), "visits": 0, "revenue": 0}
+        client_visits[cid]["visits"] += 1
+        client_visits[cid]["revenue"] += apt.get("total_price", 0)
+
+    active_clients = len(client_visits)
+    returning_clients = sum(1 for cv in client_visits.values() if cv["visits"] > 1)
+    avg_visits = sum(cv["visits"] for cv in client_visits.values()) / len(client_visits) if client_visits else 0
+
+    freq_dist = {}
+    for cv in client_visits.values():
+        v = str(cv["visits"])
+        freq_dist[v] = freq_dist.get(v, 0) + 1
+
+    new_by_month = {}
+    for c in new_clients:
+        month = c["created_at"][:7]
+        new_by_month[month] = new_by_month.get(month, 0) + 1
+
+    top_by_visits = sorted(client_visits.values(), key=lambda x: x["visits"], reverse=True)[:10]
+    top_by_revenue = sorted(
+        [{"name": cv["name"], "revenue": round(cv["revenue"], 2), "visits": cv["visits"]} for cv in client_visits.values()],
+        key=lambda x: x["revenue"], reverse=True
+    )[:10]
+
+    return {
+        "total_clients": total_clients,
+        "new_clients_period": len(new_clients),
+        "active_clients": active_clients,
+        "returning_clients": returning_clients,
+        "avg_visits_per_client": round(avg_visits, 1),
+        "top_by_visits": top_by_visits,
+        "top_by_revenue": top_by_revenue,
+        "visit_frequency": [{"visits": int(k), "clients": v} for k, v in sorted(freq_dist.items(), key=lambda x: int(x[0]))],
+        "new_clients_trend": [{"month": k, "count": v} for k, v in sorted(new_by_month.items())],
+    }
+
+
+@router.get("/stats/expenses-stats")
+async def get_expense_stats(start_date: str, end_date: str, current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
+    from datetime import date as ddate
+
+    paid_expenses = await db.expenses.find(
+        {"user_id": uid, "paid": True, "paid_date": {"$gte": start_date, "$lte": end_date}},
+        {"_id": 0, "user_id": 0}
+    ).to_list(10000)
+
+    unpaid_expenses = await db.expenses.find(
+        {"user_id": uid, "paid": False},
+        {"_id": 0, "user_id": 0}
+    ).to_list(10000)
+
+    today = ddate.today().isoformat()
+    overdue = [e for e in unpaid_expenses if e.get("due_date", "") < today]
+    total_paid = sum(e.get("amount", 0) for e in paid_expenses)
+
+    by_category = {}
+    for e in paid_expenses:
+        cat = e.get("category", "altro")
+        if cat not in by_category:
+            by_category[cat] = {"category": cat, "count": 0, "total": 0}
+        by_category[cat]["count"] += 1
+        by_category[cat]["total"] += e.get("amount", 0)
+
+    by_month = {}
+    for e in paid_expenses:
+        month = (e.get("paid_date") or e.get("due_date", ""))[:7]
+        if month:
+            by_month[month] = by_month.get(month, 0) + e.get("amount", 0)
+
+    try:
+        sd = ddate.fromisoformat(start_date)
+        ed = ddate.fromisoformat(end_date)
+        duration_days = (ed - sd).days + 1
+        prev_end = sd - timedelta(days=1)
+        prev_start = prev_end - timedelta(days=duration_days - 1)
+        prev_expenses = await db.expenses.find(
+            {"user_id": uid, "paid": True, "paid_date": {"$gte": prev_start.isoformat(), "$lte": prev_end.isoformat()}},
+            {"_id": 0, "amount": 1}
+        ).to_list(10000)
+        prev_total = sum(e.get("amount", 0) for e in prev_expenses)
+    except Exception:
+        prev_total = 0
+
+    return {
+        "total_expenses": round(total_paid, 2),
+        "total_expenses_count": len(paid_expenses),
+        "total_unpaid": round(sum(e.get("amount", 0) for e in unpaid_expenses), 2),
+        "total_overdue": round(sum(e.get("amount", 0) for e in overdue), 2),
+        "overdue_count": len(overdue),
+        "by_category": sorted(
+            [{"category": k, "count": v["count"], "total": round(v["total"], 2)} for k, v in by_category.items()],
+            key=lambda x: x["total"], reverse=True
+        ),
+        "monthly_trend": [{"month": k, "total": round(v, 2)} for k, v in sorted(by_month.items())],
+        "prev_period_expenses": round(prev_total, 2),
+        "recent_expenses": paid_expenses[:10],
     }
 
 

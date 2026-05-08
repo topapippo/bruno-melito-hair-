@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api, { API } from '../lib/api';
 import { sendWA } from '../lib/sendWA';
 import { fmtDate } from '../lib/dateUtils';
@@ -29,13 +30,14 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Users, Plus, Search, Phone, Mail, Edit2, Trash2, Loader2, History, MessageSquare, Upload, FileSpreadsheet, Euro, AlertTriangle, Scissors, Cake } from 'lucide-react';
+import { Users, Plus, Search, Phone, Mail, Edit2, Trash2, Loader2, History, MessageSquare, Upload, FileSpreadsheet, Euro, AlertTriangle, Scissors, Cake, UserX } from 'lucide-react';
 import { toast } from 'sonner';
 import PageHeader from '../components/PageHeader';
 import ClientAvatar from '../components/ClientAvatar';
 
 
 export default function ClientsPage() {
+  const navigate = useNavigate();
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -274,8 +276,16 @@ export default function ClientsPage() {
             <h1 className="font-display text-3xl font-medium text-[#2D1B14]">Clienti</h1>
             <p className="text-[#7C5C4A] mt-1 ">{clients.length} clienti totali</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button 
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              onClick={() => navigate('/clienti-assenti')}
+              variant="outline"
+              className="border-[#F0E6DC] text-[#C8617A] hover:bg-[#FFF0F3]"
+            >
+              <UserX className="w-4 h-4 mr-2" />
+              Clienti Assenti
+            </Button>
+            <Button
               onClick={() => fileInputRef.current?.click()}
               variant="outline"
               data-testid="import-excel-btn"
@@ -284,7 +294,7 @@ export default function ClientsPage() {
               <Upload className="w-5 h-5 mr-2" />
               Importa Excel
             </Button>
-            <Button 
+            <Button
               onClick={openNewDialog}
               data-testid="new-client-btn"
               className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-lg shadow-[rgba(200,97,122,0.35)]"

@@ -32,7 +32,8 @@ const DailySummaryPage = lazy(() => import("./pages/DailySummaryPage"));
 const WebsiteAdminPage = lazy(() => import("./pages/WebsiteAdminPage"));
 const ExpensesPage     = lazy(() => import("./pages/ExpensesPage"));
 const PromotionsPage   = lazy(() => import("./pages/PromotionsPage"));
-const WaitlistPage     = lazy(() => import("./pages/WaitlistPage"));
+const WaitlistPage          = lazy(() => import("./pages/WaitlistPage"));
+const ClientiAssentiPage    = lazy(() => import("./pages/ClientiAssentiPage"));
 
 function PageLoader() {
   return (
@@ -307,6 +308,16 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <WaitlistPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* CLIENTI ASSENTI */}
+          <Route
+            path="/clienti-assenti"
+            element={
+              <ProtectedRoute>
+                <ClientiAssentiPage />
               </ProtectedRoute>
             }
           />

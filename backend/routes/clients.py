@@ -1,10 +1,11 @@
 from fastapi import APIRouter, HTTPException, Depends
-from typing import List
-from datetime import datetime, timezone, timedelta
+from typing import List, Optional
+from datetime import datetime, timezone, timedelta, date as ddate
 from urllib.parse import quote
 import uuid
 import re
 import logging
+import asyncio
 
 from database import db
 from auth import get_current_user
@@ -147,6 +148,82 @@ async def search_client_appointments(query: str, current_user: dict = Depends(ge
         "clients": [{"id": c["id"], "name": c["name"], "phone": c.get("phone", "")} for c in clients],
         "appointments": appointments
     }
+
+
+@router.get("/clients/dormant")
+async def get_dormant_clients(days: int = 30, current_user: dict = Depends(get_current_user)):
+    """Clienti che non vengono da almeno `days` giorni, con storico servizi e suggerimenti."""
+    uid = current_user["id"]
+    cutoff = (ddate.today() - timedelta(days=days)).isoformat()
+    today_str = ddate.today().isoformat()
+
+    all_clients, all_appointments, services_catalog = await asyncio.gather(
+        db.clients.find({"user_id": uid}, {"_id": 0, "id": 1, "name": 1, "phone": 1, "hair_notes": 1}).to_list(10000),
+        db.appointments.find(
+            {"user_id": uid, "status": {"$ne": "cancelled"}},
+            {"_id": 0, "client_id": 1, "date": 1, "services": 1, "status": 1}
+        ).to_list(200000),
+        db.services.find({"user_id": uid}, {"_id": 0, "name": 1, "category": 1}).to_list(500),
+    )
+
+    all_service_names = [s["name"] for s in services_catalog]
+
+    # Conteggio popolarità globale dei servizi
+    service_popularity: dict = {}
+    client_data: dict = {}
+    for apt in all_appointments:
+        cid = apt.get("client_id", "")
+        if not cid or cid == "generic":
+            continue
+        d = apt.get("date", "")
+        if cid not in client_data:
+            client_data[cid] = {"last_date": "0000-00-00", "service_counts": {}}
+        if d > client_data[cid]["last_date"]:
+            client_data[cid]["last_date"] = d
+        if apt.get("status") == "completed":
+            for svc in apt.get("services", []):
+                name = svc.get("name", "")
+                if name:
+                    client_data[cid]["service_counts"][name] = client_data[cid]["service_counts"].get(name, 0) + 1
+                    service_popularity[name] = service_popularity.get(name, 0) + 1
+
+    dormant = []
+    for client in all_clients:
+        cid = client["id"]
+        cd = client_data.get(cid, {})
+        last_date = cd.get("last_date", "0000-00-00")
+
+        if last_date == "0000-00-00":
+            days_absent = None
+            last_visit = None
+        elif last_date >= cutoff:
+            continue
+        else:
+            ld = ddate.fromisoformat(last_date)
+            days_absent = (ddate.today() - ld).days
+            last_visit = last_date
+
+        svc_counts = cd.get("service_counts", {})
+        top_services = sorted(svc_counts.items(), key=lambda x: -x[1])[:4]
+        never_done = sorted(
+            [s for s in all_service_names if s not in svc_counts],
+            key=lambda x: -service_popularity.get(x, 0)
+        )[:4]
+
+        dormant.append({
+            "id": cid,
+            "name": client["name"],
+            "phone": client.get("phone") or "",
+            "hair_notes": client.get("hair_notes") or "",
+            "days_absent": days_absent,
+            "last_visit": last_visit,
+            "top_services": [{"name": s[0], "count": s[1]} for s in top_services],
+            "never_done": never_done,
+            "total_visits": sum(svc_counts.values()),
+        })
+
+    dormant.sort(key=lambda x: -(x["days_absent"] or 99999))
+    return dormant
 
 
 @router.get("/clients/{client_id}", response_model=ClientResponse)
