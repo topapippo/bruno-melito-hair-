@@ -38,17 +38,20 @@ async def get_expenses(
     paid: Optional[bool] = None,
     start: Optional[str] = None,
     end: Optional[str] = None,
+    due_start: Optional[str] = None,
+    due_end: Optional[str] = None,
     current_user: dict = Depends(get_current_user)
 ):
     query = {"user_id": current_user["id"]}
     if paid is not None:
         query["paid"] = paid
-    # Se vengono passate start/end, filtra per paid_date (per il report incassi)
+    # start/end: filtra per paid_date (report incassi — solo uscite pagate)
     if start and end:
-        start_date = start[:10]
-        end_date = end[:10]
         query["paid"] = True
-        query["paid_date"] = {"$gte": start_date, "$lte": end_date}
+        query["paid_date"] = {"$gte": start[:10], "$lte": end[:10]}
+    # due_start/due_end: filtra per data scadenza (pagina Uscite)
+    if due_start and due_end:
+        query["due_date"] = {"$gte": due_start[:10], "$lte": due_end[:10]}
     return await db.expenses.find(query, {"_id": 0, "user_id": 0}).sort("due_date", 1).to_list(500)
 
 

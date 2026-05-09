@@ -785,3 +785,26 @@ async def get_payments(start: str = None, end: str = None, current_user: dict = 
     if start and end:
         query["date"] = {"$gte": start[:10], "$lte": end[:10]}
     return await db.payments.find(query, {"_id": 0}).sort("date", -1).to_list(1000)
+
+
+@router.put("/payments/{payment_id}")
+async def update_payment(payment_id: str, data: dict, current_user: dict = Depends(get_current_user)):
+    allowed = {"date", "payment_method", "total_paid", "client_name", "notes"}
+    update_data = {k: v for k, v in data.items() if k in allowed and v is not None}
+    if not update_data:
+        raise HTTPException(status_code=400, detail="Nessun dato valido da aggiornare")
+    result = await db.payments.update_one(
+        {"id": payment_id, "user_id": current_user["id"]}, {"$set": update_data}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Pagamento non trovato")
+    updated = await db.payments.find_one({"id": payment_id}, {"_id": 0, "user_id": 0})
+    return updated
+
+
+@router.delete("/payments/{payment_id}")
+async def delete_payment(payment_id: str, current_user: dict = Depends(get_current_user)):
+    result = await db.payments.delete_one({"id": payment_id, "user_id": current_user["id"]})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Pagamento non trovato")
+    return {"success": True}

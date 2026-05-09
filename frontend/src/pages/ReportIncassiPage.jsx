@@ -7,7 +7,16 @@ import * as XLSX from 'xlsx';
 import Layout from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
@@ -15,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Euro, CreditCard, Banknote, FileSpreadsheet, TrendingDown, TrendingUp, AlertTriangle, Loader2 } from 'lucide-react';
+import { Euro, CreditCard, Banknote, FileSpreadsheet, TrendingDown, TrendingUp, AlertTriangle, Loader2, Pencil, Trash2 } from 'lucide-react';
 import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays, subMonths } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -32,6 +41,10 @@ export default function ReportIncassiPage() {
   const [sospesiTotal, setSospesiTotal] = useState(0);
   const [loadingSospesi, setLoadingSospesi] = useState(false);
   const [settlingId, setSettlingId] = useState(null);
+  const [editPaymentOpen, setEditPaymentOpen] = useState(false);
+  const [editingPayment, setEditingPayment] = useState(null);
+  const [editPaymentForm, setEditPaymentForm] = useState({ date: '', payment_method: 'cash', total_paid: '', client_name: '', notes: '' });
+  const [savingPayment, setSavingPayment] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -72,6 +85,51 @@ export default function ReportIncassiPage() {
       toast.error(err.response?.data?.detail || 'Errore nel saldo');
     } finally {
       setSettlingId(null);
+    }
+  };
+
+  const openEditPayment = (payment) => {
+    setEditingPayment(payment);
+    setEditPaymentForm({
+      date: payment.date || '',
+      payment_method: payment.payment_method || 'cash',
+      total_paid: String(payment.total_paid ?? ''),
+      client_name: payment.client_name || '',
+      notes: payment.notes || '',
+    });
+    setEditPaymentOpen(true);
+  };
+
+  const handleSavePayment = async () => {
+    if (!editingPayment) return;
+    setSavingPayment(true);
+    try {
+      await api.put(`${API}/payments/${editingPayment.id}`, {
+        date: editPaymentForm.date,
+        payment_method: editPaymentForm.payment_method,
+        total_paid: parseFloat(editPaymentForm.total_paid) || 0,
+        client_name: editPaymentForm.client_name,
+        notes: editPaymentForm.notes || null,
+      });
+      toast.success('Incasso modificato');
+      setEditPaymentOpen(false);
+      setEditingPayment(null);
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Errore nella modifica');
+    } finally {
+      setSavingPayment(false);
+    }
+  };
+
+  const handleDeletePayment = async (payment) => {
+    if (!window.confirm(`Eliminare l'incasso di €${payment.total_paid?.toFixed(2)} per ${payment.client_name}?`)) return;
+    try {
+      await api.delete(`${API}/payments/${payment.id}`);
+      toast.success('Incasso eliminato');
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Errore nell\'eliminazione');
     }
   };
 
@@ -443,20 +501,28 @@ export default function ReportIncassiPage() {
                     {allEntries.map((entry) => {
                       if (entry._type === 'payment') {
                         return (
-                          <div key={`p-${entry.id}`} className="flex items-center justify-between p-4 bg-[#FAF7F2] rounded-xl border border-[#F0E6DC]">
+                          <div key={`p-${entry.id}`} className="flex items-center gap-3 p-4 bg-[#FAF7F2] rounded-xl border border-[#F0E6DC]">
                             <div className="flex-1">
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">ENTRATA</span>
                                 <p className="font-bold text-[#2D1B14]">{entry.client_name}</p>
                               </div>
                               <p className="text-sm text-[#7C5C4A]">{entry.services?.map(s => s.name).join(', ')}</p>
                               <p className="text-xs text-[#7C5C4A] mt-1">{fmtDate(entry.date)}</p>
                             </div>
-                            <div className="text-right">
+                            <div className="text-right shrink-0">
                               <p className="text-xl font-black text-green-600">+€{entry.total_paid.toFixed(2)}</p>
                               <p className="text-xs text-[#7C5C4A] capitalize">
                                 {entry.payment_method === 'cash' ? 'Contanti' : entry.payment_method === 'pos' ? 'POS' : entry.payment_method === 'sospeso' ? 'Sospeso' : 'Abbonamento'}
                               </p>
+                            </div>
+                            <div className="flex flex-col gap-1 shrink-0">
+                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-[#7C5C4A] hover:text-blue-600 hover:bg-blue-50" onClick={() => openEditPayment(entry)}>
+                                <Pencil className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-[#7C5C4A] hover:text-red-500 hover:bg-red-50" onClick={() => handleDeletePayment(entry)}>
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
                             </div>
                           </div>
                         );
@@ -486,6 +552,74 @@ export default function ReportIncassiPage() {
           </>
         )}
       </div>
+
+      {/* Dialog modifica incasso */}
+      <Dialog open={editPaymentOpen} onOpenChange={setEditPaymentOpen}>
+        <DialogContent className="sm:max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-[#2D1B14]">Modifica Incasso</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div className="space-y-1.5">
+              <Label>Cliente</Label>
+              <Input
+                value={editPaymentForm.client_name}
+                onChange={e => setEditPaymentForm(f => ({ ...f, client_name: e.target.value }))}
+                placeholder="Nome cliente"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Data</Label>
+                <Input
+                  type="date"
+                  value={editPaymentForm.date}
+                  onChange={e => setEditPaymentForm(f => ({ ...f, date: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Importo (€)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editPaymentForm.total_paid}
+                  onChange={e => setEditPaymentForm(f => ({ ...f, total_paid: e.target.value }))}
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Metodo di pagamento</Label>
+              <Select value={editPaymentForm.payment_method} onValueChange={v => setEditPaymentForm(f => ({ ...f, payment_method: v }))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">Contanti</SelectItem>
+                  <SelectItem value="pos">POS</SelectItem>
+                  <SelectItem value="prepaid">Abbonamento / Prepagata</SelectItem>
+                  <SelectItem value="sospeso">Sospeso</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Note</Label>
+              <Input
+                value={editPaymentForm.notes}
+                onChange={e => setEditPaymentForm(f => ({ ...f, notes: e.target.value }))}
+                placeholder="Note aggiuntive..."
+              />
+            </div>
+          </div>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setEditPaymentOpen(false)}>Annulla</Button>
+            <Button disabled={savingPayment} onClick={handleSavePayment} className="bg-[#C8617A] hover:bg-[#b54d68] text-white">
+              {savingPayment ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salva modifiche'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }

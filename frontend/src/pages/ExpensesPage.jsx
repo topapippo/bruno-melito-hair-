@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, addMonths } from 'date-fns';
 import api, { API } from '../lib/api';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
@@ -56,7 +56,7 @@ export default function ExpensesPage() {
   const [saving, setSaving] = useState(false);
   const [filter, setFilter] = useState('unpaid'); // 'all', 'unpaid', 'paid'
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [datePeriod, setDatePeriod] = useState('all'); // 'all', 'month', 'prev_month', 'year'
+  const [datePeriod, setDatePeriod] = useState('all'); // 'all', 'today', 'month', 'next_month'
 
   const [formData, setFormData] = useState({
     description: '',
@@ -76,12 +76,12 @@ export default function ExpensesPage() {
   const getDateRange = () => {
     const now = new Date();
     switch (datePeriod) {
-      case 'month': return { start: format(startOfMonth(now), 'yyyy-MM-dd'), end: format(now, 'yyyy-MM-dd') };
-      case 'prev_month': {
-        const prev = subMonths(now, 1);
-        return { start: format(startOfMonth(prev), 'yyyy-MM-dd'), end: format(endOfMonth(prev), 'yyyy-MM-dd') };
+      case 'today': return { start: format(now, 'yyyy-MM-dd'), end: format(now, 'yyyy-MM-dd') };
+      case 'month': return { start: format(startOfMonth(now), 'yyyy-MM-dd'), end: format(endOfMonth(now), 'yyyy-MM-dd') };
+      case 'next_month': {
+        const next = addMonths(now, 1);
+        return { start: format(startOfMonth(next), 'yyyy-MM-dd'), end: format(endOfMonth(next), 'yyyy-MM-dd') };
       }
-      case 'year': return { start: `${now.getFullYear()}-01-01`, end: format(now, 'yyyy-MM-dd') };
       default: return null;
     }
   };
@@ -94,7 +94,7 @@ export default function ExpensesPage() {
       else if (filter === 'paid') params.push('paid=true');
       const dateRange = getDateRange();
       if (dateRange) {
-        params.push(`start=${dateRange.start}`, `end=${dateRange.end}`);
+        params.push(`due_start=${dateRange.start}`, `due_end=${dateRange.end}`);
       }
       const url = `${API}/expenses${params.length ? '?' + params.join('&') : ''}`;
       const res = await api.get(url);
@@ -294,10 +294,10 @@ export default function ExpensesPage() {
               {/* Date period filter */}
               <div className="flex gap-2 flex-wrap">
                 {[
-                  { key: 'all', label: 'Tutte le date' },
+                  { key: 'all', label: 'Tutte' },
+                  { key: 'today', label: 'Oggi' },
                   { key: 'month', label: 'Mese in corso' },
-                  { key: 'prev_month', label: 'Mese precedente' },
-                  { key: 'year', label: 'Anno in corso' },
+                  { key: 'next_month', label: 'Mese prossimo' },
                 ].map(p => (
                   <Button
                     key={p.key}
