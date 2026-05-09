@@ -479,7 +479,7 @@ export default function EditAppointmentDialog({
           if (res.data.card_remaining_value <= 0) {
             toast.warning(`Card "${res.data.card_name}" esaurita — credito terminato.`, { duration: 6000 });
           } else {
-            toast.info(`Card "${res.data.card_name}": residuo €${res.data.card_remaining_value.toFixed(2)}`, { duration: 6000 });
+            toast.info(`Card "${res.data.card_name}": residuo €${(res.data.card_remaining_value ?? 0).toFixed(2)}`, { duration: 6000 });
           }
         }
       }
