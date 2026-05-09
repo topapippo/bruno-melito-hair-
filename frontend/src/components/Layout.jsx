@@ -28,7 +28,6 @@ const navGroups = [
       { path: '/clients',     label: 'Clienti',           icon: Users },
       { path: '/cards',       label: 'Card / Abbonamenti', icon: CreditCard },
       { path: '/card-alerts', label: 'Avvisi Card',        icon: AlertTriangle },
-      { path: '/loyalty',     label: 'Fedeltà',            icon: Star },
       { path: '/reminders',   label: 'Promemoria',         icon: Bell },
       { path: '/promozioni',  label: 'Promozioni',         icon: Gift },
       { path: '/waitlist',    label: "Lista d'attesa",     icon: ClockArrowUp },

@@ -678,10 +678,6 @@ export default function ClientsPage() {
                     <p className="text-2xl font-black text-green-600">€{clientHistory.total_spent.toFixed(0)}</p>
                     <p className="text-xs text-[#7C5C4A] font-semibold">Totale Speso</p>
                   </div>
-                  <div className="p-4 bg-amber-100 rounded-xl text-center">
-                    <p className="text-2xl font-black text-amber-600">{clientHistory.loyalty_points ?? 0}</p>
-                    <p className="text-xs text-[#7C5C4A] font-semibold">Punti Fedeltà</p>
-                  </div>
                   <div className="p-4 bg-purple-100 rounded-xl text-center">
                     <p className="text-sm font-black text-purple-600">{clientHistory.last_visit || '-'}</p>
                     <p className="text-xs text-[#7C5C4A] font-semibold">Ultima Visita</p>

@@ -55,7 +55,7 @@ const getFilteredSlots = (dateStr, hoursConfig, blockedSlots = []) => {
 
 export default function EditAppointmentDialog({
   open, onClose, appointment, operators, clients, services, onSuccess,
-  onLoyaltyAlert, onLastServiceAlert, onThankYou, autoCheckout = false,
+  onLastServiceAlert, onThankYou, autoCheckout = false,
 }) {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -77,8 +77,6 @@ export default function EditAppointmentDialog({
   const [selectedCardId, setSelectedCardId] = useState('');
   const [preSelectedCardId, setPreSelectedCardId] = useState('');
   const [preSelectedPromoId, setPreSelectedPromoId] = useState('');
-  const [clientLoyalty, setClientLoyalty] = useState({ points: 0 });
-  const [useLoyaltyPoints, setUseLoyaltyPoints] = useState(false);
   const [eligiblePromos, setEligiblePromos] = useState([]);
   const [selectedPromo, setSelectedPromo] = useState(null);
   const [customPrices, setCustomPrices] = useState({});
@@ -166,22 +164,19 @@ export default function EditAppointmentDialog({
       setSelectedCardId('');
       setPreSelectedCardId(appointment.card_id || '');
       setPreSelectedPromoId(appointment.promo_id || '');
-      setUseLoyaltyPoints(false);
       setSelectedPromo(null);
       setEligiblePromos([]);
       setCustomPrices({});
       setClientCards([]);
-      setClientLoyalty({ points: 0 });
       setOpenCats({});
     }
 
     if (appointment.client_id && appointment.client_id !== 'generic') {
       Promise.all([
         api.get(`${API}/cards?client_id=${appointment.client_id}`).catch(() => ({ data: [] })),
-        api.get(`${API}/clients/${appointment.client_id}/loyalty`).catch(() => ({ data: { points: 0 } })),
         api.get(`${API}/sospesi/client/${appointment.client_id}`).catch(() => ({ data: { sospesi: [], total: 0 } })),
         api.get(`${API}/clients/${appointment.client_id}`).catch(() => ({ data: null })),
-      ]).then(([cardsRes, loyaltyRes, sospesiRes, clientRes]) => {
+      ]).then(([cardsRes, sospesiRes, clientRes]) => {
         if (clientRes.data) setSelectedClientInfo(clientRes.data);
         const cards = (cardsRes.data || []).filter(c =>
           c.active && (
@@ -190,7 +185,6 @@ export default function EditAppointmentDialog({
           )
         );
         setClientCards(cards);
-        setClientLoyalty(loyaltyRes.data || { points: 0 });
         const sospData = sospesiRes.data || { sospesi: [], total: 0 };
         setClientSospesi(sospData.sospesi || []);
         setSospesiTotal(sospData.total || 0);
@@ -201,7 +195,6 @@ export default function EditAppointmentDialog({
       });
     } else if (isNew) {
       setClientCards([]);
-      setClientLoyalty({ points: 0 });
       if (autoCheckout && appointment.status !== 'completed') _enterCheckout(appointment, []);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -310,7 +303,6 @@ export default function EditAppointmentDialog({
     setDiscountType('none');
     setDiscountValue('');
     setSelectedCardId('');
-    setUseLoyaltyPoints(false);
     setSelectedPromo(null);
     setCustomPrices({});
     setEligiblePromos([]);
@@ -334,7 +326,6 @@ export default function EditAppointmentDialog({
     const isSub = card?.card_type === 'subscription';
     const finalAmount = isSub ? 0 : Math.max(0, calculateSubtotal() - calculateDiscount());
 
-    const loyaltyPointsUsed = useLoyaltyPoints ? Math.max(0, clientLoyalty.points || 0) : 0;
     const discountNum = discountType !== 'none' ? Math.max(0, parseFloat(discountValue) || 0) : 0;
 
     setProcessing(true);
@@ -346,7 +337,6 @@ export default function EditAppointmentDialog({
         discount_value: discountNum,
         total_paid: finalAmount,
         card_id: cardId || null,
-        loyalty_points_used: loyaltyPointsUsed,
         promo_id: selectedPromo?.id || null,
         promo_free_service: selectedPromo?.free_service_name || null,
         sell_card_on_checkout: false,
@@ -356,8 +346,7 @@ export default function EditAppointmentDialog({
 
       // Post-success UI (wrapped: JS errors here must not re-show error toast)
       try {
-        const pts = res.data.loyalty_points_earned || 0;
-        toast.success(pts > 0 ? `Pagamento registrato! +${pts} punti fedeltà` : 'Pagamento registrato!');
+        toast.success('Pagamento registrato!');
 
         if (res.data.card_name) {
           const resIsSub = res.data.card_type === 'subscription';
@@ -391,8 +380,7 @@ export default function EditAppointmentDialog({
           reviewLink = sr.data?.google_review_link || '';
         } catch { /* silent */ }
 
-        onThankYou?.({ clientName: name, clientPhone: phone, amount: finalAmount, salonName, reviewLink, pointsEarned: pts, services: (apt.services || []).map(s => s.name).join(', ') });
-        onLoyaltyAlert?.(res.data.loyalty_threshold_reached ? { clientName: res.data.client_name, clientPhone: res.data.client_phone, threshold: res.data.loyalty_threshold_reached, totalPoints: res.data.loyalty_total_points } : null);
+        onThankYou?.({ clientName: name, clientPhone: phone, amount: finalAmount, salonName, reviewLink, services: (apt.services || []).map(s => s.name).join(', ') });
         if (res.data.last_service_warning) onLastServiceAlert?.({ clientName: res.data.client_name, clientPhone: res.data.client_phone, cardName: res.data.card_name });
       } catch (uiErr) {
         console.error('UI post-checkout error (checkout succeeded):', uiErr);
@@ -568,25 +556,6 @@ export default function EditAppointmentDialog({
               <div className="p-3 rounded-xl border-2 border-[#C8617A] bg-[#FAF0F5]">
                 <p className="text-xs font-bold text-[#C8617A] mb-1">🎨 Note Colore — {selectedClientInfo.name}</p>
                 <p className="text-sm text-[#5C3040] whitespace-pre-line">{selectedClientInfo.hair_notes}</p>
-              </div>
-            )}
-
-            {/* Loyalty (edit mode only) */}
-            {appointment.client_id && appointment.client_id !== 'generic' && !checkoutMode && (
-              <div className="p-3 bg-amber-50 border-2 border-amber-200 rounded-xl">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2"><Star className="w-5 h-5 text-amber-500 fill-amber-500"/><span className="font-bold text-sm text-amber-800">Punti: {clientLoyalty.points}</span></div>
-                  <div className="flex gap-1">
-                    <Button type="button" variant="outline" size="sm" className="h-7 text-xs border-green-300 text-green-700"
-                      onClick={async()=>{const p=prompt('Punti da aggiungere?','10');if(p&&!isNaN(p)){try{const r=await api.put(`${API}/loyalty/${appointment.client_id}/adjust-points`,{points:parseInt(p),reason:'Manuale'});setClientLoyalty(l=>({...l,points:r.data.new_points}));toast.success(`+${p} punti`);}catch{toast.error('Errore');}}}}>
-                      <Plus className="w-3 h-3 mr-1"/>Aggiungi
-                    </Button>
-                    <Button type="button" variant="outline" size="sm" className="h-7 text-xs border-red-300 text-red-700"
-                      onClick={async()=>{const p=prompt('Punti da rimuovere?','10');if(p&&!isNaN(p)){try{const r=await api.put(`${API}/loyalty/${appointment.client_id}/adjust-points`,{points:-parseInt(p),reason:'Manuale'});setClientLoyalty(l=>({...l,points:r.data.new_points}));toast.success(`-${p} punti`);}catch{toast.error('Errore');}}}}>
-                      <Trash2 className="w-3 h-3 mr-1"/>Rimuovi
-                    </Button>
-                  </div>
-                </div>
               </div>
             )}
 
@@ -909,7 +878,7 @@ export default function EditAppointmentDialog({
                     className="w-full flex items-center justify-between px-3 py-2.5 bg-gray-50 hover:bg-gray-100">
                     <span className="font-bold text-sm text-gray-600">Sconto / Punti / Sospeso</span>
                     <div className="flex items-center gap-2">
-                      {(discountType!=='none'||useLoyaltyPoints||paymentMethod==='sospeso')&&<span className="w-2 h-2 rounded-full bg-amber-500"/>}
+                      {(discountType!=='none'||paymentMethod==='sospeso')&&<span className="w-2 h-2 rounded-full bg-amber-500"/>}
                       <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${openCats['_opts']?'rotate-180':''}`}/>
                     </div>
                   </button>
@@ -931,16 +900,6 @@ export default function EditAppointmentDialog({
                           )}
                         </div>
                       </div>
-                      {clientLoyalty.points>0 && (
-                        <button type="button" onClick={()=>setUseLoyaltyPoints(!useLoyaltyPoints)}
-                          className={`w-full p-2.5 rounded-xl border-2 flex items-center justify-between transition-all ${useLoyaltyPoints?'border-amber-500 bg-amber-50':'border-gray-200 hover:border-amber-300'}`}>
-                          <div className="flex items-center gap-2">
-                            <Star className={`w-4 h-4 ${useLoyaltyPoints?'text-amber-500 fill-amber-500':'text-gray-400'}`}/>
-                            <span className="text-sm font-bold">Usa punti fedeltà</span>
-                          </div>
-                          <span className="font-black text-amber-600 text-sm">{clientLoyalty.points} punti</span>
-                        </button>
-                      )}
                       <button type="button"
                         onClick={()=>{setPaymentMethod(paymentMethod==='sospeso'?'cash':'sospeso');setSelectedCardId('');}}
                         className={`w-full p-2.5 rounded-xl border-2 flex items-center gap-2 transition-all ${paymentMethod==='sospeso'?'border-amber-500 bg-amber-50':'border-gray-200 hover:border-amber-300'}`}>
@@ -972,9 +931,6 @@ export default function EditAppointmentDialog({
                     <span>TOTALE:</span>
                     <span className="text-green-700">€{displayTotal.toFixed(2)}</span>
                   </div>
-                  {displayTotal>=20 && !selectedCard && !selectedPromo && (
-                    <div className="flex items-center gap-1 text-xs text-amber-600"><Star className="w-3 h-3 text-amber-500"/><span>+{Math.floor(displayTotal/20)} punti fedeltà</span></div>
-                  )}
                 </div>
 
                 {/* ── 6. TRE BOTTONI PAGAMENTO ── */}

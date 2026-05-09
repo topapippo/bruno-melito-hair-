@@ -30,7 +30,6 @@ const MODULES = [
   { path: '/daily-summary', label: 'Riepilogo', desc: 'Giornaliero',        icon: FileBarChart,   emoji: '📋', from: '#A855F7', to: '#D8B4FE' },
   { path: '/cards',     label: 'Card',          desc: 'Abbonamenti',        icon: CreditCard,     emoji: '💳', from: '#0EA5E9', to: '#7DD3FC' },
   { path: '/card-alerts', label: 'Avvisi',      desc: 'Scadenze card',      icon: AlertTriangle,  emoji: '⚠️', from: '#EF4444', to: '#FCA5A5' },
-  { path: '/loyalty',   label: 'Fedeltà',       desc: 'Programma punti',    icon: Star,           emoji: '⭐', from: '#E8477C', to: '#F49AB3' },
   { path: '/reminders', label: 'Promemoria',    desc: 'Notifiche WA',       icon: Bell,           emoji: '🔔', from: '#F97316', to: '#FDBA74' },
   { path: '/uscite',    label: 'Uscite',        desc: 'Registro spese',     icon: ArrowDownCircle,emoji: '📤', from: '#EF4444', to: '#FCA5A5' },
   { path: '/promozioni',label: 'Promozioni',    desc: 'Offerte speciali',   icon: Gift,           emoji: '🎁', from: '#D946EF', to: '#F0ABFC' },

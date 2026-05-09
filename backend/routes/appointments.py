@@ -10,7 +10,7 @@ from database import db
 from auth import get_current_user
 from models import (
     AppointmentCreate, AppointmentResponse, AppointmentUpdate,
-    RecurringAppointmentCreate, CheckoutData, get_loyalty_rewards, LOYALTY_POINTS_PER_EURO
+    RecurringAppointmentCreate, CheckoutData
 )
 from utils import calculate_end_time
 
@@ -36,40 +36,6 @@ def _infer_category_from_name(name: str) -> str:
         return "abbonamento"
     return "altro"
 
-
-
-# ============== Loyalty helpers (used by checkout) ==============
-
-async def get_or_create_loyalty(client_id: str, user_id: str):
-    loyalty = await db.loyalty.find_one({"client_id": client_id, "user_id": user_id}, {"_id": 0})
-    if not loyalty:
-        loyalty = {
-            "id": str(uuid.uuid4()), "client_id": client_id, "user_id": user_id,
-            "points": 0, "total_points_earned": 0, "total_points_redeemed": 0,
-            "history": [], "active_rewards": [],
-            "created_at": datetime.now(timezone.utc).isoformat()
-        }
-        await db.loyalty.insert_one(loyalty)
-        loyalty.pop("_id", None)
-    return loyalty
-
-
-async def award_loyalty_points(client_id: str, user_id: str, amount_paid: float, appointment_id: str):
-    points_earned = int(amount_paid // LOYALTY_POINTS_PER_EURO)
-    if points_earned <= 0:
-        return 0
-    loyalty = await get_or_create_loyalty(client_id, user_id)
-    history_entry = {
-        "id": str(uuid.uuid4()), "type": "earned", "points": points_earned,
-        "description": f"+{points_earned} punti per pagamento di €{amount_paid:.2f}",
-        "appointment_id": appointment_id, "date": datetime.now(timezone.utc).isoformat()
-    }
-    await db.loyalty.update_one(
-        {"id": loyalty["id"]},
-        {"$inc": {"points": points_earned, "total_points_earned": points_earned},
-         "$push": {"history": history_entry}}
-    )
-    return points_earned
 
 
 # ============== CRUD ==============
@@ -498,39 +464,10 @@ async def _checkout_appointment_inner(appointment_id: str, data: CheckoutData, c
             {"$inc": {"total_visits": 1}}
         )
 
-    # ---- STEP 4: Loyalty points (opzionale — non blocca il checkout se fallisce) ----
-    points_earned = 0
-    points_after = 0
-    threshold_reached = None
+    # ---- STEP 4: Promo usage tracking ----
     client_id_str = appointment.get("client_id", "")
-
-    try:
-        loyalty_before = await get_or_create_loyalty(client_id_str, current_user["id"])
-        points_before = loyalty_before.get("points", 0)
-
-        if data.loyalty_points_used > 0:
-            await db.loyalty.update_one(
-                {"client_id": client_id_str, "user_id": current_user["id"]},
-                {"$inc": {"points": -data.loyalty_points_used}}
-            )
-
-        has_card = bool(data.card_id)
-        has_promo = bool(data.promo_id)
-        all_abbonamento = False
-        if appointment.get("service_ids"):
-            svcs = await db.services.find(
-                {"id": {"$in": appointment.get("service_ids", [])}, "user_id": current_user["id"]},
-                {"_id": 0, "category": 1}
-            ).to_list(50)
-            all_abbonamento = all(s.get("category") == "abbonamento" for s in svcs) if svcs else False
-
-        if not has_card and not has_promo and not all_abbonamento and data.total_paid > 0:
-            points_earned = await award_loyalty_points(
-                client_id_str, current_user["id"], data.total_paid, appointment_id
-            )
-        points_after = points_before + points_earned
-
-        if data.promo_id:
+    if data.promo_id:
+        try:
             promo = await db.promotions.find_one({"id": data.promo_id, "user_id": current_user["id"]}, {"_id": 0})
             if promo:
                 await db.promo_usage.insert_one({
@@ -540,20 +477,8 @@ async def _checkout_appointment_inner(appointment_id: str, data: CheckoutData, c
                     "free_service": data.promo_free_service or promo.get("free_service_name", ""),
                     "used_at": datetime.now(timezone.utc).isoformat()
                 })
-
-        if points_before < 50 and points_after >= 50:
-            threshold_reached = 50
-        elif points_before < 30 and points_after >= 30:
-            threshold_reached = 30
-        elif points_before < 20 and points_after >= 20:
-            threshold_reached = 20
-        elif points_before < 10 and points_after >= 10:
-            threshold_reached = 10
-        elif points_before < 5 and points_after >= 5:
-            threshold_reached = 5
-
-    except Exception as loyalty_err:
-        logger.warning(f"Loyalty update failed (checkout comunque ok): {loyalty_err}")
+        except Exception as promo_err:
+            logger.warning(f"Promo usage tracking failed: {promo_err}")
 
     # Recupera telefono cliente
     client_phone = appointment.get("client_phone", "")
@@ -585,8 +510,6 @@ async def _checkout_appointment_inner(appointment_id: str, data: CheckoutData, c
 
     return {
         "success": True, "payment_id": payment_id, "message": "Pagamento registrato con successo",
-        "loyalty_points_earned": points_earned, "loyalty_total_points": points_after,
-        "loyalty_threshold_reached": threshold_reached,
         "client_phone": client_phone,
         "client_name": appointment.get("client_name", ""),
         **(card_info or {})

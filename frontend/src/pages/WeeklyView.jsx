@@ -12,7 +12,6 @@ import { toast } from 'sonner';
 
 import NewAppointmentDialog from '../components/planning/NewAppointmentDialog';
 import EditAppointmentDialog from '../components/planning/EditAppointmentDialog';
-import LoyaltyAlertDialog from '../components/planning/LoyaltyAlertDialog';
 import { getCategoryInfo, CATEGORIES } from '../lib/categories';
 
 
@@ -44,8 +43,6 @@ export default function WeeklyView() {
   const [newDialogInitial, setNewDialogInitial] = useState({ date: '', time: '', operatorId: '' });
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState(null);
-  const [loyaltyAlertOpen, setLoyaltyAlertOpen] = useState(false);
-  const [loyaltyAlertData, setLoyaltyAlertData] = useState(null);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -378,14 +375,8 @@ export default function WeeklyView() {
           clients={clients}
           services={services}
           onSuccess={refreshAll}
-          onLoyaltyAlert={(data) => { setLoyaltyAlertData(data); setLoyaltyAlertOpen(true); }}
         />
 
-        <LoyaltyAlertDialog
-          open={loyaltyAlertOpen}
-          onClose={() => setLoyaltyAlertOpen(false)}
-          alertData={loyaltyAlertData}
-        />
       </div>
     </Layout>
   );

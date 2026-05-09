@@ -20,7 +20,6 @@ import MonthView from '../components/planning/MonthView';
 import NewAppointmentDialog from '../components/planning/NewAppointmentDialog';
 import EditAppointmentDialog from '../components/planning/EditAppointmentDialog';
 import RecurringDialog from '../components/planning/RecurringDialog';
-import LoyaltyAlertDialog from '../components/planning/LoyaltyAlertDialog';
 import BlockSlotDialog from '../components/planning/BlockSlotDialog';
 import { OnlineBookingBanner, ReminderBanner, ExpensesBanner, LastServiceBanner } from '../components/planning/PlanningBanners';
 import PlanningSearch from '../components/planning/PlanningSearch';
@@ -83,8 +82,6 @@ export default function PlanningPage() {
   const [editingAppointment, setEditingAppointment] = useState(null);
   const [recurringDialogOpen, setRecurringDialogOpen] = useState(false);
   const [recurringAppointment, setRecurringAppointment] = useState(null);
-  const [loyaltyAlertOpen, setLoyaltyAlertOpen] = useState(false);
-  const [loyaltyAlertData, setLoyaltyAlertData] = useState(null);
   const [lastServiceAlerts, setLastServiceAlerts] = useState([]);
   const [blockDialogOpen, setBlockDialogOpen] = useState(false);
   const [blockInitialTime, setBlockInitialTime] = useState('');
@@ -959,7 +956,6 @@ export default function PlanningPage() {
             clients={clients}
             services={services}
             onSuccess={refreshAll}
-            onLoyaltyAlert={(data) => { setLoyaltyAlertData(data); setLoyaltyAlertOpen(true); }}
             onLastServiceAlert={(data) => setLastServiceAlerts(prev => [...prev, data])}
             onThankYou={setThankYouData}
           />
@@ -971,12 +967,6 @@ export default function PlanningPage() {
           appointment={recurringAppointment}
           operators={operators}
           onSuccess={refreshAll}
-        />
-
-        <LoyaltyAlertDialog
-          open={loyaltyAlertOpen}
-          onClose={() => setLoyaltyAlertOpen(false)}
-          alertData={loyaltyAlertData}
         />
 
         <BlockSlotDialog
@@ -995,9 +985,6 @@ export default function PlanningPage() {
                 <CheckCircle className="w-16 h-16 mx-auto mb-3 drop-shadow-lg" />
                 <h2 className="text-2xl font-black">Pagamento Completato!</h2>
                 <p className="text-emerald-100 mt-1 text-lg font-bold">{'\u20AC'}{thankYouData.amount?.toFixed(2)}</p>
-                {thankYouData.pointsEarned > 0 && (
-                  <p className="text-emerald-200 text-sm mt-1">+{thankYouData.pointsEarned} punti fedeltà</p>
-                )}
               </div>
               <div className="p-6 space-y-4">
                 <p className="text-center text-gray-600 text-sm">

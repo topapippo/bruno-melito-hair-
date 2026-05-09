@@ -26,7 +26,6 @@ const PrepaidCardsPage = lazy(() => import("./pages/PrepaidCardsPage"));
 const CardAlertsPage   = lazy(() => import("./pages/CardAlertsPage"));
 const ReportIncassiPage= lazy(() => import("./pages/ReportIncassiPage"));
 const BackupPage       = lazy(() => import("./pages/BackupPage"));
-const LoyaltyPage      = lazy(() => import("./pages/LoyaltyPage"));
 const RemindersPage    = lazy(() => import("./pages/RemindersPage"));
 const DailySummaryPage = lazy(() => import("./pages/DailySummaryPage"));
 const WebsiteAdminPage = lazy(() => import("./pages/WebsiteAdminPage"));
@@ -227,16 +226,6 @@ export default function App() {
 
           {/* /prenota reindirizza a /sito */}
           <Route path="/prenota" element={<Navigate to="/sito" replace />} />
-
-          {/* PROGRAMMA FEDELTÀ */}
-          <Route
-            path="/loyalty"
-            element={
-              <ProtectedRoute>
-                <LoyaltyPage />
-              </ProtectedRoute>
-            }
-          />
 
           {/* PROMEMORIA & RICHIAMI */}
           <Route
