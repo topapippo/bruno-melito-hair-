@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
-import { Share2, Wand2, Image, Send, Settings, History, ChevronDown, ChevronUp, CheckCircle, XCircle, Loader2, Upload, X, Eye, Facebook, Instagram } from 'lucide-react';
+import { Share2, Wand2, Image, Settings, History, ChevronDown, ChevronUp, CheckCircle, XCircle, Loader2, Upload, X, Eye, Copy, ExternalLink } from 'lucide-react';
 import Layout from '../components/Layout';
 import api from '../lib/api';
 
@@ -43,17 +43,14 @@ function PostPreview({ message, imagePreview }) {
 }
 
 // ── Tab: Crea Post ─────────────────────────────────────────────────────────────
-function CreateTab({ config }) {
+function CreateTab() {
   const [topic, setTopic] = useState('promozione');
   const [text, setText] = useState('');
   const [generating, setGenerating] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const [imageUrl, setImageUrl] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [publishing, setPublishing] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [lastResult, setLastResult] = useState(null);
   const fileRef = useRef();
 
   const handleGenerate = async () => {
@@ -68,56 +65,24 @@ function CreateTab({ config }) {
     }
   };
 
-  const handleImageSelect = async (e) => {
+  const handleImageSelect = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
-    setImageUrl(null);
-
-    setUploading(true);
-    try {
-      const form = new FormData();
-      form.append('file', file);
-      const { data } = await api.post('/social/upload-image', form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      setImageUrl(data.url);
-      toast.success('Immagine caricata');
-    } catch {
-      toast.error('Errore caricamento immagine');
-    } finally {
-      setUploading(false);
-    }
+    setUploading(false);
   };
 
   const removeImage = () => {
     setImageFile(null);
     setImagePreview(null);
-    setImageUrl(null);
     if (fileRef.current) fileRef.current.value = '';
   };
 
-  const handlePublish = async () => {
-    if (!text.trim()) { toast.error('Scrivi il testo del post'); return; }
-    if (!config?.configured) { toast.error('Configura prima le credenziali Meta nella tab Impostazioni'); return; }
-    if (imageFile && !imageUrl) { toast.error('Attendi il caricamento immagine'); return; }
-
-    setPublishing(true);
-    setLastResult(null);
-    try {
-      const { data } = await api.post('/social/publish', { message: text, image_url: imageUrl });
-      setLastResult(data);
-      const fbOk = data.facebook?.success;
-      const igOk = data.instagram?.success;
-      if (fbOk) toast.success('Pubblicato su Facebook!');
-      if (igOk) toast.success('Pubblicato su Instagram!');
-      if (!fbOk) toast.error(`Facebook: ${data.facebook?.error}`);
-    } catch (e) {
-      toast.error(e.response?.data?.detail || 'Errore durante la pubblicazione');
-    } finally {
-      setPublishing(false);
-    }
+  const handleCopy = () => {
+    if (!text.trim()) { toast.error('Nessun testo da copiare'); return; }
+    navigator.clipboard.writeText(text);
+    toast.success('Testo copiato negli appunti!');
   };
 
   return (
@@ -209,23 +174,28 @@ function CreateTab({ config }) {
         )}
       </div>
 
-      {/* Last result */}
-      {lastResult && (
-        <div className="flex flex-wrap gap-2">
-          <StatusBadge result={lastResult.facebook} label="Facebook" />
-          {lastResult.instagram && <StatusBadge result={lastResult.instagram} label="Instagram" />}
-        </div>
-      )}
+      {/* Azioni */}
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          onClick={handleCopy}
+          disabled={!text.trim()}
+          className="flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-900 disabled:opacity-40 text-white font-bold py-4 rounded-2xl shadow transition-all"
+        >
+          <Copy className="w-5 h-5" /> Copia testo
+        </button>
+        <a
+          href="https://app.metricool.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold py-4 rounded-2xl shadow-lg transition-all"
+        >
+          <ExternalLink className="w-5 h-5" /> Apri Metricool
+        </a>
+      </div>
 
-      {/* Publish */}
-      <button
-        onClick={handlePublish}
-        disabled={publishing || !text.trim()}
-        className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 text-white font-bold py-4 rounded-2xl shadow-lg transition-all text-base"
-      >
-        {publishing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-        {publishing ? 'Pubblicazione in corso...' : 'Pubblica su Facebook + Instagram'}
-      </button>
+      <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-xs text-blue-700">
+        💡 <strong>Flusso:</strong> Genera testo → Copia → Apri Metricool → Incolla → Pubblica su tutti i canali
+      </div>
     </div>
   );
 }
@@ -416,12 +386,10 @@ export default function SocialPage() {
             <h1 className="text-xl font-bold text-gray-800">Social Media</h1>
             <p className="text-sm text-gray-400">Crea e pubblica su Facebook e Instagram</p>
           </div>
-          {config && (
-            <div className={`ml-auto flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${config.configured ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
-              <div className={`w-1.5 h-1.5 rounded-full ${config.configured ? 'bg-green-500' : 'bg-red-400'}`} />
-              {config.configured ? 'Connesso' : 'Non configurato'}
-            </div>
-          )}
+          <div className="ml-auto flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+            <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+            Metricool
+          </div>
         </div>
 
         {/* Tabs */}
@@ -442,7 +410,7 @@ export default function SocialPage() {
         </div>
 
         {/* Content */}
-        {activeTab === 'create'   && <CreateTab config={config} />}
+        {activeTab === 'create'   && <CreateTab />}
         {activeTab === 'history'  && <HistoryTab />}
         {activeTab === 'settings' && <SettingsTab config={config} onSaved={loadConfig} />}
       </div>
