@@ -369,7 +369,7 @@ export default function SocialPage() {
   useEffect(() => { loadConfig(); }, []);
 
   const tabs = [
-    { id: 'create',   label: 'Crea Post',   icon: Send },
+    { id: 'create',   label: 'Crea Post',   icon: FileText },
     { id: 'history',  label: 'Storico',      icon: History },
     { id: 'settings', label: 'Impostazioni', icon: Settings },
   ];
