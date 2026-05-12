@@ -35,7 +35,6 @@ export default function WebsiteAdminPage() {
   const [reviewForm, setReviewForm] = useState({ name: '', text: '', rating: 5 });
   const [uploadSection, setUploadSection] = useState('gallery');
   const [allServices, setAllServices] = useState([]);
-  const [loyaltyConfig, setLoyaltyConfig] = useState(null);
   const [promotions, setPromotions] = useState([]);
   const [promoDialog, setPromoDialog] = useState(false);
   const [editPromo, setEditPromo] = useState(null);
@@ -62,19 +61,17 @@ export default function WebsiteAdminPage() {
 
   const fetchAll = async () => {
     try {
-      const [configRes, reviewsRes, galleryRes, servicesRes, loyaltyRes, promosRes] = await Promise.all([
+      const [configRes, reviewsRes, galleryRes, servicesRes, promosRes] = await Promise.all([
         api.get('/website/config'),
         api.get('/website/reviews'),
         api.get('/website/gallery'),
         api.get('/services'),
-        api.get('/loyalty/config'),
         api.get('/promotions'),
       ]);
       setConfig(configRes.data);
       setReviews(reviewsRes.data);
       setGallery(galleryRes.data);
       setAllServices(servicesRes.data || []);
-      setLoyaltyConfig(loyaltyRes.data);
       setPromotions(promosRes.data || []);
     } catch (err) { console.error(err); toast.error('Errore caricamento dati'); }
     finally { setLoading(false); }
@@ -89,53 +86,6 @@ export default function WebsiteAdminPage() {
       toast.success('Configurazione salvata!');
     } catch (err) { toast.error('Errore nel salvataggio'); }
     finally { setSaving(false); }
-  };
-
-  // ── Loyalty helpers ──
-  const toggleLoyaltyOnSite = async () => {
-    const hidden = config?.hidden_sections || [];
-    const isHidden = hidden.includes('loyalty');
-    const newHidden = isHidden ? hidden.filter(s => s !== 'loyalty') : [...hidden, 'loyalty'];
-    const newConfig = { ...config, hidden_sections: newHidden };
-    setSaving(true);
-    try {
-      const res = await api.put('/website/config', newConfig);
-      setConfig(res.data);
-      setIsDirty(false);
-      toast.success(isHidden ? '✅ Sezione Fedeltà ora visibile sul sito' : '✅ Sezione Fedeltà nascosta dal sito');
-    } catch (err) { toast.error('Errore nel salvataggio'); }
-    finally { setSaving(false); }
-  };
-
-  const saveLoyaltyConfig = async (updatedRewards) => {
-    try {
-      const res = await api.put('/loyalty/config', { rewards: updatedRewards });
-      setLoyaltyConfig(res.data);
-      toast.success('Programma fedeltà aggiornato!');
-    } catch (err) { toast.error('Errore salvataggio fedeltà'); }
-  };
-
-  const updateReward = (key, field, value) => {
-    setLoyaltyConfig(prev => ({
-      ...prev,
-      rewards: { ...prev.rewards, [key]: { ...prev.rewards[key], [field]: value } }
-    }));
-  };
-
-  const addReward = () => {
-    const newKey = `reward_${Date.now()}`;
-    setLoyaltyConfig(prev => ({
-      ...prev,
-      rewards: { ...prev.rewards, [newKey]: { name: 'Nuovo Premio', points_required: 10, description: '' } }
-    }));
-  };
-
-  const removeReward = (key) => {
-    setLoyaltyConfig(prev => {
-      const newRewards = { ...prev.rewards };
-      delete newRewards[key];
-      return { ...prev, rewards: newRewards };
-    });
   };
 
   // ── Promotions helpers ──
@@ -351,7 +301,6 @@ export default function WebsiteAdminPage() {
     { id: 'promotions', label: 'Promozioni', desc: 'Offerte speciali attive' },
     { id: 'reviews', label: 'Recensioni', desc: 'Testimonianze dei clienti' },
     { id: 'gallery', label: 'Gallery Lavori', desc: 'Portfolio acconciature' },
-    { id: 'loyalty', label: 'Programma Fedeltà', desc: 'Raccolta punti e premi' },
     { id: 'contact', label: 'Contatti', desc: 'Orari, indirizzo, telefono' },
   ];
 
@@ -445,7 +394,6 @@ export default function WebsiteAdminPage() {
             <TabsTrigger value="gallery" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Gallery Lavori</TabsTrigger>
             <TabsTrigger value="reviews" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Recensioni</TabsTrigger>
             <TabsTrigger value="upselling" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Upselling</TabsTrigger>
-            <TabsTrigger value="loyalty" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Fedeltà</TabsTrigger>
             <TabsTrigger value="promotions" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Promozioni</TabsTrigger>
             <TabsTrigger value="hours" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Orari & Contatti</TabsTrigger>
           </TabsList>
@@ -736,16 +684,6 @@ export default function WebsiteAdminPage() {
                             {[1,2,3,4,5].map(i => <span key={i} className="text-amber-400 text-xs">&#9733;</span>)}
                           </div>
                           <p className="text-[10px] text-white/50 mt-1">- Maria R.</p>
-                        </div>
-                      </div>
-                      {/* Loyalty preview */}
-                      <div className="mt-4 rounded-xl p-4 text-center" style={{ backgroundColor: `${config.accent_color || '#33CC99'}15` }}>
-                        <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: config.accent_color || '#33CC99' }}>Programma Fedeltà</p>
-                        <h3 className="text-base font-black" style={{ color: config.text_color || '#2D3047', fontFamily: config.font_display }}>Ogni Visita Vale di Più</h3>
-                        <div className="flex justify-center gap-3 mt-3">
-                          {['5%', '10%', 'Omaggio'].map((r, i) => (
-                            <span key={i} className="text-xs font-bold px-3 py-1 rounded-full text-white" style={{ backgroundColor: [config.accent_color, config.primary_color, '#059669'][i] || '#33CC99' }}>{r}</span>
-                          ))}
                         </div>
                       </div>
                       {/* Contact preview */}
@@ -1092,78 +1030,6 @@ export default function WebsiteAdminPage() {
                     <TrendingUp className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                     <p className="text-sm">Nessuna regola di upselling configurata.</p>
                     <p className="text-xs mt-1">Aggiungi regole per suggerire servizi complementari dopo le prenotazioni.</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* LOYALTY */}
-          <TabsContent value="loyalty">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Programma Fedeltà</CardTitle>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={addReward}><Plus className="w-4 h-4 mr-1" /> Premio</Button>
-                    <Button size="sm" onClick={() => saveLoyaltyConfig(loyaltyConfig?.rewards || {})} className="bg-[#C8617A] text-white"><Save className="w-4 h-4 mr-1" /> Salva</Button>
-                  </div>
-                </div>
-                {(() => {
-                  const loyaltyHidden = (config?.hidden_sections || []).includes('loyalty');
-                  return (
-                    <div className={`flex items-center justify-between gap-3 p-3 rounded-lg mt-2 border ${loyaltyHidden ? 'bg-gray-50 border-gray-200' : 'bg-emerald-50 border-emerald-200'}`}>
-                      <div className="flex items-center gap-3">
-                        <TrendingUp className={`w-5 h-5 shrink-0 ${loyaltyHidden ? 'text-gray-400' : 'text-emerald-600'}`} />
-                        <div>
-                          <p className={`text-sm font-bold ${loyaltyHidden ? 'text-gray-500' : 'text-emerald-800'}`}>
-                            {loyaltyHidden ? 'Sezione nascosta dal sito pubblico' : 'Visibile sul sito pubblico'}
-                          </p>
-                          <p className={`text-xs mt-0.5 ${loyaltyHidden ? 'text-gray-400' : 'text-emerald-700'}`}>
-                            {loyaltyHidden ? 'Attiva il toggle per mostrarla.' : `I premi appaiono automaticamente sul sito. Punti per euro: ${loyaltyConfig?.points_per_euro || 20}.`}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-xs font-semibold text-gray-500">{loyaltyHidden ? 'Off' : 'On'}</span>
-                        <Switch checked={!loyaltyHidden} onCheckedChange={toggleLoyaltyOnSite} disabled={saving} />
-                      </div>
-                    </div>
-                  );
-                })()}
-              </CardHeader>
-              <CardContent>
-                {loyaltyConfig?.rewards && Object.keys(loyaltyConfig.rewards).length > 0 ? (
-                  <div className="space-y-3">
-                    {Object.entries(loyaltyConfig.rewards).sort(([,a],[,b]) => (a.points_required||0) - (b.points_required||0)).map(([key, reward]) => (
-                      <div key={key} className="border rounded-xl p-4 hover:border-[#C8617A]/30 transition-colors" data-testid={`loyalty-reward-edit-${key}`}>
-                        <div className="flex items-start gap-3">
-                          <div className="flex-1 space-y-2">
-                            <div className="flex gap-3">
-                              <div className="flex-1">
-                                <Label className="text-xs text-gray-500">Nome Premio</Label>
-                                <Input value={reward.name || ''} onChange={e => updateReward(key, 'name', e.target.value)} className="font-bold" />
-                              </div>
-                              <div className="w-32">
-                                <Label className="text-xs text-gray-500">Punti Richiesti</Label>
-                                <Input type="number" value={reward.points_required || 0} onChange={e => updateReward(key, 'points_required', parseInt(e.target.value) || 0)} />
-                              </div>
-                            </div>
-                            <div>
-                              <Label className="text-xs text-gray-500">Descrizione</Label>
-                              <Input value={reward.description || ''} onChange={e => updateReward(key, 'description', e.target.value)} placeholder="Descrizione del premio..." />
-                            </div>
-                          </div>
-                          <Button variant="ghost" size="icon" onClick={() => removeReward(key)} className="text-red-500 shrink-0 mt-5"><Trash2 className="w-4 h-4" /></Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-gray-400">
-                    <Gift className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                    <p className="text-sm">Nessun premio configurato.</p>
-                    <p className="text-xs mt-1">Aggiungi premi per incentivare i clienti a tornare.</p>
                   </div>
                 )}
               </CardContent>

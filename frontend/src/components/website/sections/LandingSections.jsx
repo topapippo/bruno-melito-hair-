@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+﻿import { useState, useRef, useEffect } from 'react';
 import { getMediaUrl } from '../../../lib/mediaUrl';
 import { Button } from '@/components/ui/button';
 import { Scissors, CheckCircle, ChevronDown, ChevronUp, Star, MessageSquare, MapPin, Phone, Mail, Clock, Gift, CreditCard, Search, ArrowLeft, ArrowRight, X, ExternalLink, ThumbsUp } from 'lucide-react';
@@ -454,66 +454,6 @@ export function GallerySection({ config, hairstylePhotos, setShowBooking, T }) {
         </div>
       )}
     </>
-  );
-}
-
-export function LoyaltySection({ setShowBooking, T, loyalty }) {
-  const GRADIENT_BG = [
-    'from-amber-400 to-orange-500', 'from-rose-400 to-pink-500',
-    'from-teal-400 to-emerald-500', 'from-violet-400 to-purple-500',
-    'from-sky-400 to-blue-500', 'from-indigo-400 to-blue-600',
-    'from-fuchsia-400 to-pink-600', 'from-orange-400 to-red-500',
-  ];
-  const ICONS = [Gift, Star, Scissors, Star, Gift, Scissors, Gift, Star];
-  const pointsPerEuro = loyalty?.points_per_euro || 20;
-
-  // Ordina per punti richiesti crescenti
-  const rewards = loyalty?.rewards
-    ? Object.values(loyalty.rewards).sort((a, b) => (a.points_required || 0) - (b.points_required || 0))
-    : [];
-
-  if (rewards.length === 0) return null;
-
-  const colsClass = rewards.length <= 3 ? 'sm:grid-cols-3' : rewards.length === 4 ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-3 lg:grid-cols-5';
-
-  return (
-    <section className="py-20 sm:py-28" style={{ background: `linear-gradient(135deg, ${T.accent}25 0%, ${T.primary}18 50%, ${T.accent}12 100%)` }}>
-      <div className="max-w-6xl mx-auto px-4">
-        <AnimatedSection>
-          <div className="text-center mb-12">
-            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Programma Fedeltà</p>
-            <h2 className="text-3xl sm:text-4xl font-black" style={{ fontFamily: T.fontDisplay, background: 'linear-gradient(135deg, #F59E0B, #EC4899)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Ogni Visita Vale di Più</h2>
-            <p className="text-[#94A3B8] mt-3 max-w-xl mx-auto">Accumula punti ad ogni appuntamento e sblocca premi esclusivi. <strong>1 punto ogni {'\u20AC'}{pointsPerEuro} spesi</strong>.</p>
-          </div>
-        </AnimatedSection>
-        <div className="relative max-w-5xl mx-auto">
-          <div className="hidden lg:block absolute top-[4.2rem] left-[10%] right-[10%] h-1 rounded-full opacity-25" style={{ background: `linear-gradient(90deg, #F59E0B, #EC4899, #14B8A6, #8B5CF6, #0EA5E9)` }} />
-          <div className={`grid grid-cols-1 ${colsClass} gap-5`}>
-            {rewards.map((reward, idx) => {
-              const Icon = ICONS[idx % ICONS.length];
-              return (
-                <AnimatedSection key={reward.key || idx} delay={idx * 0.1}>
-                  <div className={`bg-gradient-to-br ${GRADIENT_BG[idx % GRADIENT_BG.length]} rounded-3xl p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.05] hover:-translate-y-1 text-center relative overflow-hidden`} data-testid={`loyalty-reward-${idx}`}>
-                    <div className="absolute -bottom-3 -right-3 w-16 h-16 rounded-full bg-white/10" />
-                    <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-3 ring-4 ring-white/20 shadow-md"><Icon className="w-7 h-7 text-white" /></div>
-                    <h3 className="font-bold text-base text-white mb-2">{reward.name}</h3>
-                    <div className="inline-block bg-white/20 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3 shadow-md backdrop-blur-sm">{reward.points_required} punti</div>
-                    <p className="text-white/80 text-xs">{reward.description || ''}</p>
-                  </div>
-                </AnimatedSection>
-              );
-            })}
-          </div>
-        </div>
-        <AnimatedSection delay={0.5}>
-          <div className="text-center mt-10">
-            <Button onClick={() => setShowBooking(true)} className="bg-gradient-to-r from-amber-400 to-orange-400 text-white hover:from-amber-500 hover:to-orange-500 font-bold px-8 py-6 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300">
-              <Gift className="w-4 h-4 mr-2" /> INIZIA A RACCOGLIERE PUNTI
-            </Button>
-          </div>
-        </AnimatedSection>
-      </div>
-    </section>
   );
 }
 

@@ -15,7 +15,7 @@ import MyAppointmentsModal from '../components/website/MyAppointmentsModal';
 import {
   AnimatedSection,
   ServicesSection, SalonSection, AboutSection, PromotionsSection,
-  ReviewsSection, GallerySection, LoyaltySection, ContactSection, GalleryStrip,
+  ReviewsSection, GallerySection, ContactSection, GalleryStrip,
   TransformationsSection, TeamSection,
 } from '../components/website/sections/LandingSections';
 
@@ -326,7 +326,7 @@ export default function WebsitePage() {
   const landingServiceGroups = groupServicesByCategory(bookingServices);
 
   // Dynamic section ordering from CMS config
-  const defaultSectionOrder = ['services', 'team', 'salon', 'about', 'promotions', 'reviews', 'gallery', 'loyalty', 'contact'];
+  const defaultSectionOrder = ['services', 'team', 'salon', 'about', 'promotions', 'reviews', 'gallery', 'contact'];
   const rawSectionOrder = config.section_order || defaultSectionOrder;
   const normalizedSectionOrder = [...new Set(rawSectionOrder.filter(id => defaultSectionOrder.includes(id)))];
   const sectionOrder = [...normalizedSectionOrder, ...defaultSectionOrder.filter(id => !normalizedSectionOrder.includes(id))];
@@ -349,8 +349,6 @@ export default function WebsitePage() {
         return operators.filter(o => o.active !== false).length > 0 ? <TeamSection key="team" operators={operators} T={T} setShowBooking={setShowBooking} /> : null;
       case 'gallery':
         return hairstylePhotos.length > 0 ? <GallerySection key="gallery" config={config} hairstylePhotos={hairstylePhotos} setShowBooking={setShowBooking} T={T} /> : null;
-      case 'loyalty':
-        return <LoyaltySection key="loyalty" setShowBooking={setShowBooking} T={T} loyalty={siteData?.loyalty} />;
       case 'contact':
         return <ContactSection key="contact" {...{ contactRef, config, hours, phones, setShowBooking, openWhatsApp, T }} />;
       default:

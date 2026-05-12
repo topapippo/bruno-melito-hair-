@@ -33,7 +33,6 @@ const ExpensesPage     = lazy(() => import("./pages/ExpensesPage"));
 const PromotionsPage   = lazy(() => import("./pages/PromotionsPage"));
 const WaitlistPage          = lazy(() => import("./pages/WaitlistPage"));
 const ClientiAssentiPage    = lazy(() => import("./pages/ClientiAssentiPage"));
-const LoyaltyPage           = lazy(() => import("./pages/LoyaltyPage"));
 
 function PageLoader() {
   return (
@@ -312,15 +311,6 @@ export default function App() {
             }
           />
 
-          {/* FIDELIZZAZIONE */}
-          <Route
-            path="/loyalty"
-            element={
-              <ProtectedRoute>
-                <LoyaltyPage />
-              </ProtectedRoute>
-            }
-          />
         </Routes>
         </Suspense>
       </BrowserRouter>
