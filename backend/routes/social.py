@@ -112,7 +112,7 @@ async def serve_social_media(filename: str):
     return FileResponse(path)
 
 
-def _publish_to_facebook(page_id: str, token: str, message: str, image_url: str | None) -> dict:
+def _publish_to_facebook(page_id: str, token: str, message: str, image_url) -> dict:
     try:
         if image_url:
             resp = requests.post(
