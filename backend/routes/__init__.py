@@ -15,6 +15,7 @@ from routes.push import router as push_router
 from routes.blocked_slots import router as blocked_slots_router
 from routes.backup import router as backup_router
 from routes.waitlist import router as waitlist_router
+from routes.social import router as social_router
 
 all_routers = [
     auth_router,
@@ -34,4 +35,5 @@ all_routers = [
     blocked_slots_router,
     backup_router,
     waitlist_router,
+    social_router,
 ]

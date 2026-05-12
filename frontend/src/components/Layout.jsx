@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Calendar, CalendarDays, Users, Scissors,
   UserCircle, BarChart3, Settings, LogOut, Menu, CreditCard,
   Euro, Database, Star, Bell, FileBarChart, Globe, ArrowDownCircle, Gift,
-  AlertTriangle, Sparkles, ClockArrowUp, ChevronLeft, ChevronRight, ChevronDown
+  AlertTriangle, Sparkles, ClockArrowUp, ChevronLeft, ChevronRight, ChevronDown, Share2
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
@@ -50,6 +50,7 @@ const navGroups = [
       { path: '/services',      label: 'Servizi',       icon: Scissors },
       { path: '/operators',     label: 'Operatori',     icon: UserCircle },
       { path: '/gestione-sito', label: 'Sito Web',      icon: Globe },
+      { path: '/social',        label: 'Social Media',  icon: Share2 },
       { path: '/backup',        label: 'Backup',        icon: Database },
       { path: '/settings',      label: 'Impostazioni',  icon: Settings },
     ],

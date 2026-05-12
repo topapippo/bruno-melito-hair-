@@ -33,6 +33,7 @@ const ExpensesPage     = lazy(() => import("./pages/ExpensesPage"));
 const PromotionsPage   = lazy(() => import("./pages/PromotionsPage"));
 const WaitlistPage          = lazy(() => import("./pages/WaitlistPage"));
 const ClientiAssentiPage    = lazy(() => import("./pages/ClientiAssentiPage"));
+const SocialPage            = lazy(() => import("./pages/SocialPage"));
 
 function PageLoader() {
   return (
@@ -307,6 +308,16 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <ClientiAssentiPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* SOCIAL MEDIA */}
+          <Route
+            path="/social"
+            element={
+              <ProtectedRoute>
+                <SocialPage />
               </ProtectedRoute>
             }
           />
