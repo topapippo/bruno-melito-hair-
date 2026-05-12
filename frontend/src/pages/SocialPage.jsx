@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
-import { Share2, Wand2, Image, Settings, History, ChevronDown, ChevronUp, CheckCircle, XCircle, Loader2, Upload, X, Eye, Copy, ExternalLink } from 'lucide-react';
+import { Share2, Wand2, Image, Settings, History, ChevronDown, ChevronUp, CheckCircle, XCircle, Loader2, Upload, X, Eye, Copy, ExternalLink, FileText } from 'lucide-react';
 import Layout from '../components/Layout';
 import api from '../lib/api';
 
@@ -116,7 +116,7 @@ function CreateTab() {
       {/* Text editor */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
         <h3 className="font-semibold text-gray-700 flex items-center gap-2 mb-3">
-          <Send className="w-4 h-4 text-blue-500" /> Testo del Post
+          <FileText className="w-4 h-4 text-blue-500" /> Testo del Post
         </h3>
         <textarea
           value={text}
