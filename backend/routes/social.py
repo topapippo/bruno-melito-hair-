@@ -52,11 +52,10 @@ def _generate_text(topic: str, salon_name: str) -> str:
 
 @router.get("/social/config")
 async def get_social_config(current_user: dict = Depends(get_current_user)):
+    make_url = current_user.get("make_webhook_url", "")
     return {
-        "fb_page_id": current_user.get("fb_page_id", ""),
-        "fb_page_token": current_user.get("fb_page_token", ""),
-        "ig_user_id": current_user.get("ig_user_id", ""),
-        "configured": bool(current_user.get("fb_page_id") and current_user.get("fb_page_token")),
+        "make_webhook_url": make_url,
+        "configured": bool(make_url),
     }
 
 
@@ -65,12 +64,48 @@ async def save_social_config(data: dict, current_user: dict = Depends(get_curren
     await db.users.update_one(
         {"id": current_user["id"]},
         {"$set": {
-            "fb_page_id": data.get("fb_page_id", ""),
-            "fb_page_token": data.get("fb_page_token", ""),
-            "ig_user_id": data.get("ig_user_id", ""),
+            "make_webhook_url": data.get("make_webhook_url", ""),
         }}
     )
     return {"ok": True}
+
+
+@router.post("/social/publish-via-make")
+async def publish_via_make(data: dict, current_user: dict = Depends(get_current_user)):
+    webhook_url = current_user.get("make_webhook_url", "")
+    if not webhook_url:
+        raise HTTPException(status_code=400, detail="Configura prima il webhook Make.com nelle Impostazioni")
+
+    message = data.get("message", "").strip()
+    image_url = data.get("image_url") or None
+    platforms = data.get("platforms", ["facebook", "instagram"])
+
+    if not message:
+        raise HTTPException(status_code=400, detail="Il testo del post non può essere vuoto")
+
+    payload = {"text": message, "image_url": image_url, "platforms": platforms}
+
+    import asyncio
+    def _call_make():
+        return requests.post(webhook_url, json=payload, timeout=30)
+
+    loop = asyncio.get_event_loop()
+    resp = await loop.run_in_executor(None, _call_make)
+
+    if resp.status_code not in (200, 201, 204):
+        raise HTTPException(status_code=502, detail=f"Make.com ha risposto con errore: {resp.status_code}")
+
+    await db.social_posts.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": current_user["id"],
+        "message": message,
+        "image_url": image_url,
+        "platforms": platforms,
+        "results": {"make": {"success": True}},
+        "published_at": datetime.now(timezone.utc).isoformat(),
+    })
+
+    return {"success": True}
 
 
 @router.post("/social/generate-text")
