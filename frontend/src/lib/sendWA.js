@@ -1,4 +1,4 @@
-import api, { API } from './api';
+import api from './api';
 import { toast } from 'sonner';
 
 /**
@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 export async function sendWA(phone, message, { successMsg = '✅ WhatsApp inviato!' } = {}) {
   if (!phone || !message) return false;
   try {
-    const res = await api.post(`${API}/whatsapp/send-direct`, { phone, message });
+    const res = await api.post('/whatsapp/send-direct', { phone, message });
     if (res.data?.sent) {
       const method = res.data?.method;
       const msg = method === 'telegram'
@@ -21,9 +21,7 @@ export async function sendWA(phone, message, { successMsg = '✅ WhatsApp inviat
       return true;
     }
     const err = res.data?.error || '';
-    const chatId = res.data?.chatId || '';
     const errLow = err.toLowerCase();
-    if (chatId) console.warn('[WA] invio fallito — chatId tentato:', chatId, '— errore:', err);
     if (err === 'Green API non configurata') {
       toast.warning('Green API non configurata — vai su Impostazioni → WhatsApp per abilitare l\'invio automatico.');
     } else if (err === 'numero_non_su_whatsapp') {

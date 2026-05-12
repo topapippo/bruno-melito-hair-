@@ -44,8 +44,8 @@ class ChangePasswordRequest(BaseModel):
     @field_validator('new_password')
     @classmethod
     def new_password_min_length(cls, v):
-        if len(v) < 6:
-            raise ValueError('La nuova password deve avere almeno 6 caratteri')
+        if len(v) < 8:
+            raise ValueError('La nuova password deve avere almeno 8 caratteri')
         return v
 
 
@@ -371,5 +371,3 @@ class CheckoutData(BaseModel):
     loyalty_points_used: Optional[int] = 0
     promo_id: Optional[str] = None
     promo_free_service: Optional[str] = None
-    sell_card_on_checkout: bool = False
-    sell_card_payment_method: str = 'cash'

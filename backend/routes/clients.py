@@ -10,6 +10,7 @@ import asyncio
 from database import db
 from auth import get_current_user
 from models import ClientCreate, ClientResponse, ClientUpdate, ClientBulkImport
+from utils import normalize_phone_wa
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -107,26 +108,6 @@ async def get_clients(current_user: dict = Depends(get_current_user)):
     ).sort("name", 1).to_list(1000)
     return [ClientResponse(**_normalize_client(d)) for d in docs]
 
-
-@router.post("/clients/migrate-notes")
-async def migrate_notes_to_hair_notes(current_user: dict = Depends(get_current_user)):
-    """Migrazione una-tantum: copia notes e allergies in hair_notes per tutti i clienti."""
-    docs = await db.clients.find({"user_id": current_user["id"]}, {"_id": 0}).to_list(100_000)
-    migrated = 0
-    for doc in docs:
-        old_notes = (doc.get("notes") or "").strip()
-        old_allergies = (doc.get("allergies") or "").strip()
-        current_hair = (doc.get("hair_notes") or "").strip()
-        parts = [p for p in [current_hair, old_notes, old_allergies] if p]
-        merged = "\n".join(parts)
-        if merged != current_hair:
-            await db.clients.update_one(
-                {"id": doc["id"]},
-                {"$set": {"hair_notes": merged}, "$unset": {"notes": "", "allergies": "", "tags": ""}}
-            )
-            migrated += 1
-    logger.info(f"Migrazione note: {migrated} clienti aggiornati per user {current_user['id']}")
-    return {"migrated": migrated, "total": len(docs)}
 
 
 @router.get("/clients/search/appointments")
@@ -236,7 +217,7 @@ async def get_client(client_id: str, current_user: dict = Depends(get_current_us
 
 @router.put("/clients/{client_id}", response_model=ClientResponse)
 async def update_client(client_id: str, data: ClientUpdate, current_user: dict = Depends(get_current_user)):
-    update_data = {k: v for k, v in data.model_dump().items() if v is not None or k in ("birthday", "tags")}
+    update_data = {k: v for k, v in data.model_dump().items() if v is not None or k == "birthday"}
     if not update_data:
         raise HTTPException(status_code=400, detail="Nessun dato da aggiornare")
     try:
@@ -255,53 +236,61 @@ async def update_client(client_id: str, data: ClientUpdate, current_user: dict =
 
 @router.get("/clients/{client_id}/history")
 async def get_client_history(client_id: str, current_user: dict = Depends(get_current_user)):
-    """Restituisce lo storico completo di un cliente: appuntamenti, pagamenti, fedeltà."""
+    """Restituisce lo storico completo di un cliente: appuntamenti sincronizzati con i pagamenti."""
     client = await db.clients.find_one({"id": client_id, "user_id": current_user["id"]}, {"_id": 0})
     if not client:
         raise HTTPException(status_code=404, detail="Cliente non trovato")
 
-    # Appuntamenti (ultimi 3 mesi, ordinati per data decrescente)
-    three_months_ago = (datetime.now(timezone.utc) - timedelta(days=365)).strftime("%Y-%m-%d")
+    # Pagamenti (source of truth per importi e metodi)
+    payments_raw = await db.payments.find(
+        {"client_id": client_id, "user_id": current_user["id"]},
+        {"_id": 0, "user_id": 0}
+    ).sort("date", -1).to_list(100)
+
+    # Mappa appointment_id → payment per cross-reference
+    payment_by_apt: dict = {}
+    for pay in payments_raw:
+        apt_id = pay.get("appointment_id")
+        if apt_id:
+            payment_by_apt[apt_id] = pay
+
+    payments = [
+        {
+            "id": pay.get("id", ""),
+            "date": pay.get("date", ""),
+            "total_paid": pay.get("total_paid", 0),
+            "payment_method": pay.get("payment_method", ""),
+            "services": pay.get("services", []),
+        }
+        for pay in payments_raw
+    ]
+
+    total_spent = sum(p.get("total_paid", 0) for p in payments_raw)
+
+    # Appuntamenti (ultimo anno, ordinati per data decrescente)
+    one_year_ago = (datetime.now(timezone.utc) - timedelta(days=365)).strftime("%Y-%m-%d")
     appointments_raw = await db.appointments.find(
-        {"client_id": client_id, "user_id": current_user["id"], "date": {"$gte": three_months_ago}},
+        {"client_id": client_id, "user_id": current_user["id"], "date": {"$gte": one_year_ago}},
         {"_id": 0, "user_id": 0}
     ).sort("date", -1).to_list(50)
+
     appointments = []
     for apt in appointments_raw:
+        apt_id = apt.get("id", "")
+        linked_pay = payment_by_apt.get(apt_id)
         appointments.append({
-            "id": apt.get("id", ""),
+            "id": apt_id,
             "date": apt.get("date", ""),
             "time": apt.get("time", ""),
             "services": apt.get("services", []),
             "operator_name": apt.get("operator_name", ""),
             "status": apt.get("status", ""),
             "paid": apt.get("paid", False),
-            "amount_paid": apt.get("amount_paid", 0),
+            # Usa i dati reali del pagamento se disponibili
+            "amount_paid": linked_pay.get("total_paid", apt.get("amount_paid", 0)) if linked_pay else apt.get("amount_paid", 0),
+            "payment_method": linked_pay.get("payment_method", apt.get("payment_method", "")) if linked_pay else apt.get("payment_method", ""),
+            "payment_id": linked_pay.get("id", "") if linked_pay else "",
         })
-
-    # Pagamenti
-    payments_raw = await db.payments.find(
-        {"client_id": client_id, "user_id": current_user["id"]},
-        {"_id": 0, "user_id": 0}
-    ).sort("date", -1).to_list(50)
-    payments = []
-    for pay in payments_raw:
-        payments.append({
-            "id": pay.get("id", ""),
-            "date": pay.get("date", ""),
-            "total_paid": pay.get("total_paid", 0),
-            "payment_method": pay.get("payment_method", ""),
-            "services": pay.get("services", []),
-        })
-
-    total_spent = sum(p.get("total_paid", 0) for p in payments_raw)
-
-    # Fedeltà
-    loyalty = await db.loyalty.find_one(
-        {"client_id": client_id, "user_id": current_user["id"]}, {"_id": 0}
-    )
-    loyalty_points = loyalty.get("points", 0) if loyalty else 0
-    active_rewards = loyalty.get("active_rewards", []) if loyalty else []
 
     # Ultima visita
     last_completed = await db.appointments.find_one(
@@ -310,11 +299,23 @@ async def get_client_history(client_id: str, current_user: dict = Depends(get_cu
     )
     last_visit = last_completed.get("date", "") if last_completed else ""
 
+    # Premi promo attivi
+    active_rewards_raw = await db.promotions.find(
+        {"user_id": current_user["id"]}, {"_id": 0, "id": 1, "name": 1, "free_service_name": 1}
+    ).to_list(20)
+    promo_usage = await db.promo_usage.find(
+        {"client_id": client_id, "user_id": current_user["id"]}, {"_id": 0, "promo_id": 1, "free_service": 1}
+    ).to_list(20)
+    used_promo_ids = {u["promo_id"] for u in promo_usage}
+    active_rewards = [
+        {"reward_name": p.get("free_service_name") or p.get("name")}
+        for p in active_rewards_raw if p["id"] in used_promo_ids
+    ]
+
     return {
         "client": {"id": client.get("id"), "name": client.get("name"), "phone": client.get("phone", ""), "hair_notes": client.get("hair_notes", "")},
         "total_visits": client.get("total_visits", 0),
         "total_spent": total_spent,
-        "loyalty_points": loyalty_points,
         "active_rewards": active_rewards,
         "last_visit": last_visit,
         "appointments": appointments,
@@ -331,12 +332,7 @@ async def get_client_whatsapp(client_id: str, current_user: dict = Depends(get_c
     phone = client.get("phone", "")
     if not phone:
         raise HTTPException(status_code=400, detail="Il cliente non ha un numero di telefono")
-    # Normalizza il numero
-    clean = phone.replace(" ", "").replace("-", "").replace("+", "").replace("(", "").replace(")", "")
-    if clean.startswith("0039"):
-        clean = clean[2:]
-    if not clean.startswith("39"):
-        clean = "39" + clean
+    clean = normalize_phone_wa(phone)
     greeting = quote(f"Ciao {client.get('name', '')}!")
     return {"url": f"https://wa.me/{clean}?text={greeting}"}
 

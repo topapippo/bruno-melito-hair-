@@ -129,7 +129,49 @@ async def recharge_card(card_id: str, amount: float, current_user: dict = Depend
     return {"success": True, "new_remaining": result["remaining_value"], "new_total": result["total_value"]}
 
 
-# ============== SELL CARD (from template) ==============
+# ============== SELL CARD ==============
+
+async def _create_card_and_payment(
+    user_id: str, client_id: str, client_name: str,
+    card_type: str, name: str, total_value: float,
+    total_services: Optional[int], valid_until: Optional[str],
+    notes: str, amount_paid: float, payment_method: str
+) -> dict:
+    """Crea una card e registra il relativo pagamento (incasso). Logica comune a sell e sell-direct."""
+    card_id = str(uuid.uuid4())
+    card_doc = {
+        "id": card_id, "user_id": user_id,
+        "client_id": client_id, "client_name": client_name,
+        "card_type": card_type, "name": name,
+        "total_value": total_value, "remaining_value": total_value,
+        "total_services": total_services, "used_services": 0,
+        "valid_until": valid_until, "notes": notes,
+        "active": True, "transactions": [],
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.cards.insert_one(card_doc)
+
+    payment_id = str(uuid.uuid4())
+    await db.payments.insert_one({
+        "id": payment_id, "user_id": user_id,
+        "appointment_id": None,
+        "client_id": client_id, "client_name": client_name,
+        "services": [{"name": f"Vendita: {name}", "price": amount_paid, "duration": 0, "category": "abbonamento"}],
+        "original_amount": total_value,
+        "discount_type": None, "discount_value": 0,
+        "total_paid": amount_paid, "payment_method": payment_method,
+        "card_sale_id": card_id,
+        "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+
+    return {
+        "success": True, "card_id": card_id, "card_name": name,
+        "total_value": total_value, "amount_paid": amount_paid,
+        "valid_until": valid_until, "payment_id": payment_id,
+        "client_name": client_name
+    }
+
 
 class SellCardRequest(BaseModel):
     template_id: str
@@ -140,78 +182,35 @@ class SellCardRequest(BaseModel):
 
 @router.post("/cards/sell")
 async def sell_card_from_template(data: SellCardRequest, current_user: dict = Depends(get_current_user)):
-    """Sell a card/subscription to a client: create card + record payment (incasso)."""
-    # Find template
+    """Vende una card/abbonamento da template: crea card + registra incasso."""
     template = await db.card_templates.find_one({"id": data.template_id, "user_id": current_user["id"]}, {"_id": 0})
     if not template:
         template = await db.card_templates.find_one({"id": data.template_id}, {"_id": 0})
     if not template:
         raise HTTPException(status_code=404, detail="Template non trovato")
 
-    # Find client
     client = await db.clients.find_one({"id": data.client_id, "user_id": current_user["id"]}, {"_id": 0})
     if not client:
         raise HTTPException(status_code=404, detail="Cliente non trovato")
 
-    # Calculate valid_until
     valid_until = None
     if template.get("duration_months"):
-        from datetime import timedelta
+        import calendar
         now = datetime.now(timezone.utc)
         months = int(template["duration_months"])
         month = now.month + months
         year = now.year + (month - 1) // 12
         month = (month - 1) % 12 + 1
-        import calendar
         day = min(now.day, calendar.monthrange(year, month)[1])
         valid_until = now.replace(year=year, month=month, day=day).strftime("%Y-%m-%d")
 
-    # Create the card
-    card_id = str(uuid.uuid4())
-    card_doc = {
-        "id": card_id, "user_id": current_user["id"],
-        "client_id": data.client_id, "client_name": client["name"],
-        "card_type": template.get("card_type", "prepaid"),
-        "name": template["name"],
-        "total_value": template["total_value"],
-        "remaining_value": template["total_value"],
-        "total_services": template.get("total_services"),
-        "used_services": 0,
-        "valid_until": valid_until,
-        "notes": template.get("notes", ""),
-        "active": True, "transactions": [],
-        "created_at": datetime.now(timezone.utc).isoformat()
-    }
-    await db.cards.insert_one(card_doc)
-
-    # Record payment (incasso)
-    payment_id = str(uuid.uuid4())
-    payment_doc = {
-        "id": payment_id, "user_id": current_user["id"],
-        "appointment_id": None,
-        "client_id": data.client_id, "client_name": client["name"],
-        "services": [{"name": f"Vendita: {template['name']}", "price": data.amount_paid, "duration": 0, "category": "abbonamento"}],
-        "original_amount": template["total_value"],
-        "discount_type": None, "discount_value": 0,
-        "total_paid": data.amount_paid,
-        "payment_method": data.payment_method,
-        "card_sale_id": card_id,
-        "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
-        "created_at": datetime.now(timezone.utc).isoformat()
-    }
-    await db.payments.insert_one(payment_doc)
-
-    return {
-        "success": True,
-        "card_id": card_id,
-        "card_name": template["name"],
-        "total_value": template["total_value"],
-        "amount_paid": data.amount_paid,
-        "valid_until": valid_until,
-        "payment_id": payment_id,
-        "client_name": client["name"]
-    }
-
+    return await _create_card_and_payment(
+        user_id=current_user["id"], client_id=data.client_id, client_name=client["name"],
+        card_type=template.get("card_type", "prepaid"), name=template["name"],
+        total_value=template["total_value"], total_services=template.get("total_services"),
+        valid_until=valid_until, notes=template.get("notes", ""),
+        amount_paid=data.amount_paid, payment_method=data.payment_method
+    )
 
 
 class SellCardDirectRequest(BaseModel):
@@ -228,61 +227,20 @@ class SellCardDirectRequest(BaseModel):
 
 @router.post("/cards/sell-direct")
 async def sell_card_direct(data: SellCardDirectRequest, current_user: dict = Depends(get_current_user)):
-    """Sell a card/subscription directly (without template): create card + record payment."""
+    """Vende una card/abbonamento senza template: crea card + registra incasso."""
     client = await db.clients.find_one({"id": data.client_id, "user_id": current_user["id"]}, {"_id": 0})
     if not client:
         raise HTTPException(status_code=404, detail="Cliente non trovato")
 
-    valid_until = data.valid_until or None
-
-    card_id = str(uuid.uuid4())
-    card_doc = {
-        "id": card_id, "user_id": current_user["id"],
-        "client_id": data.client_id, "client_name": client["name"],
-        "card_type": data.card_type,
-        "name": data.name,
-        "total_value": data.total_value,
-        "remaining_value": data.total_value,
-        "total_services": data.total_services,
-        "used_services": 0,
-        "valid_until": valid_until,
-        "notes": data.notes or "",
-        "active": True, "transactions": [],
-        "created_at": datetime.now(timezone.utc).isoformat()
-    }
-    await db.cards.insert_one(card_doc)
-
-    payment_id = str(uuid.uuid4())
-    payment_doc = {
-        "id": payment_id, "user_id": current_user["id"],
-        "appointment_id": None,
-        "client_id": data.client_id, "client_name": client["name"],
-        "services": [{"name": f"Vendita: {data.name}", "price": data.amount_paid, "duration": 0, "category": "abbonamento"}],
-        "original_amount": data.total_value,
-        "discount_type": None, "discount_value": 0,
-        "total_paid": data.amount_paid,
-        "payment_method": data.payment_method,
-        "card_sale_id": card_id,
-        "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
-        "created_at": datetime.now(timezone.utc).isoformat()
-    }
-    await db.payments.insert_one(payment_doc)
-
-    return {
-        "success": True,
-        "card_id": card_id,
-        "card_name": data.name,
-        "total_value": data.total_value,
-        "amount_paid": data.amount_paid,
-        "valid_until": valid_until,
-        "payment_id": payment_id,
-        "client_name": client["name"]
-    }
+    return await _create_card_and_payment(
+        user_id=current_user["id"], client_id=data.client_id, client_name=client["name"],
+        card_type=data.card_type, name=data.name, total_value=data.total_value,
+        total_services=data.total_services, valid_until=data.valid_until or None,
+        notes=data.notes or "", amount_paid=data.amount_paid, payment_method=data.payment_method
+    )
 
 
 # ============== CARD TEMPLATES ==============
-
-from pydantic import BaseModel
 
 class CardTemplateCreate(BaseModel):
     name: str

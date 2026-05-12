@@ -8,7 +8,7 @@ import io
 from database import db
 from auth import get_current_user
 from models import SettingsUpdate, UserResponse
-from utils import twilio_client, TWILIO_PHONE_NUMBER
+from utils import twilio_client, TWILIO_PHONE_NUMBER, normalize_phone_wa
 
 router = APIRouter()
 
@@ -592,7 +592,6 @@ async def test_whatsapp_send(data: dict, current_user: dict = Depends(get_curren
     """Invia un messaggio di prova al numero configurato per verificare che l'invio funzioni."""
     import asyncio
     import requests as _req
-    import re as _re
     instance_id = current_user.get("green_api_instance_id", "")
     api_token = current_user.get("green_api_token", "")
     if not instance_id or not api_token:
@@ -600,13 +599,7 @@ async def test_whatsapp_send(data: dict, current_user: dict = Depends(get_curren
     phone = data.get("phone", "")
     if not phone:
         return {"ok": False, "message": "Numero di telefono mancante"}
-    phone_clean = _re.sub(r'\D', '', phone)
-    if phone_clean.startswith('0039'):
-        phone_clean = phone_clean[4:]
-    elif phone_clean.startswith('39') and len(phone_clean) > 10:
-        phone_clean = phone_clean[2:]
-    if not phone_clean.startswith('39') or len(phone_clean) == 10:
-        phone_clean = '39' + phone_clean
+    phone_clean = normalize_phone_wa(phone)
     try:
         url = f"https://api.greenapi.com/waInstance{instance_id}/sendMessage/{api_token}"
         resp = await asyncio.to_thread(
@@ -682,7 +675,6 @@ async def test_ultramsg_send(data: dict, current_user: dict = Depends(get_curren
     """Invia un messaggio di prova via UltraMsg."""
     import asyncio
     import requests as _req
-    import re as _re
     instance_id = current_user.get("ultramsg_instance_id", "")
     token = current_user.get("ultramsg_token", "")
     if not instance_id or not token:
@@ -690,13 +682,7 @@ async def test_ultramsg_send(data: dict, current_user: dict = Depends(get_curren
     phone = data.get("phone", "")
     if not phone:
         return {"ok": False, "message": "Numero di telefono mancante"}
-    phone_clean = _re.sub(r'\D', '', phone)
-    if phone_clean.startswith('0039'):
-        phone_clean = phone_clean[4:]
-    elif phone_clean.startswith('39') and len(phone_clean) > 10:
-        phone_clean = phone_clean[2:]
-    if not phone_clean.startswith('39') or len(phone_clean) == 10:
-        phone_clean = '39' + phone_clean
+    phone_clean = normalize_phone_wa(phone)
     try:
         url = f"https://api.ultramsg.com/{instance_id}/messages/chat"
         resp = await asyncio.to_thread(

@@ -62,7 +62,7 @@ async def create_appointment(data: AppointmentCreate, current_user: dict = Depen
                 new_client_id = str(uuid.uuid4())
                 new_client = {
                     "id": new_client_id, "user_id": current_user["id"],
-                    "name": client_name, "phone": client_phone, "notes": "",
+                    "name": client_name, "phone": client_phone, "hair_notes": "",
                     "send_sms_reminders": False, "created_at": datetime.now(timezone.utc).isoformat()
                 }
                 await db.clients.insert_one(new_client)
@@ -627,44 +627,3 @@ async def _settle_sospeso_impl(sospeso_id: str, method: str, current_user: dict)
     return {"success": True, "message": "Sospeso saldato con successo"}
 
 
-# ── Repair: patch category on old appointments ────────────────────────────────
-logger_repair = logging.getLogger("repair")
-
-
-@router.post("/appointments/repair-categories")
-async def repair_appointment_categories(current_user: dict = Depends(get_current_user)):
-    """Fill empty categories on master services AND embedded appointment services."""
-    # Step 1: Repair master services (only empty categories)
-    master_services = await db.services.find(
-        {"user_id": current_user["id"]}, {"_id": 0}
-    ).to_list(1000)
-    svc_repaired = 0
-    for svc in master_services:
-        if not svc.get("category"):
-            inferred = _infer_category_from_name(svc.get("name", ""))
-            await db.services.update_one({"id": svc["id"]}, {"$set": {"category": inferred}})
-            svc["category"] = inferred
-            svc_repaired += 1
-
-    by_id = {s["id"]: s.get("category", "") for s in master_services}
-
-    # Step 2: Fill empty categories on appointment embedded services
-    appointments = await db.appointments.find(
-        {"user_id": current_user["id"]}, {"_id": 0, "id": 1, "services": 1}
-    ).to_list(10000)
-
-    patched = 0
-    for apt in appointments:
-        needs_update = False
-        for svc in (apt.get("services") or []):
-            if not svc.get("category"):
-                svc["category"] = by_id.get(svc.get("id", ""), "") or _infer_category_from_name(svc.get("name", ""))
-                needs_update = True
-        if needs_update:
-            await db.appointments.update_one(
-                {"id": apt["id"]},
-                {"$set": {"services": apt["services"]}}
-            )
-            patched += 1
-
-    return {"success": True, "services_repaired": svc_repaired, "appointments_patched": patched, "total_appointments": len(appointments)}

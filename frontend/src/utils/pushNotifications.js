@@ -13,25 +13,13 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 export async function initPushNotifications() {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-    console.log('Push notifications not supported');
-    return false;
-  }
-
-  if (!VAPID_PUBLIC_KEY) {
-    console.log('VAPID key not configured');
-    return false;
-  }
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return false;
+  if (!VAPID_PUBLIC_KEY) return false;
 
   try {
     const registration = await navigator.serviceWorker.register('/sw-push.js');
-    console.log('Service Worker registered');
-
     const permission = await Notification.requestPermission();
-    if (permission !== 'granted') {
-      console.log('Notification permission denied');
-      return false;
-    }
+    if (permission !== 'granted') return false;
 
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
@@ -46,13 +34,9 @@ export async function initPushNotifications() {
         'Content-Type': 'application/json',
         ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify({
-        endpoint: subJson.endpoint,
-        keys: subJson.keys,
-      }),
+      body: JSON.stringify({ endpoint: subJson.endpoint, keys: subJson.keys }),
     });
 
-    console.log('Push subscription sent to server');
     return true;
   } catch (err) {
     console.error('Push notification setup failed:', err);
