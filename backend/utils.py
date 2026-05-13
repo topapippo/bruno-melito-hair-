@@ -47,6 +47,57 @@ def format_phone_e164(phone: str) -> str:
     return phone
 
 
+async def send_whatsapp(phone: str, message: str, user: dict) -> dict:
+    """Invia WhatsApp via UltraMsg → Green API (stessa logica dei promemoria)."""
+    import asyncio
+    import requests as _req
+
+    phone_clean = normalize_phone_wa(phone)
+    wa_number = phone_clean + "@c.us"
+
+    um_instance = user.get("ultramsg_instance_id", "")
+    um_token = user.get("ultramsg_token", "")
+    if um_instance and um_token:
+        try:
+            url = f"https://api.ultramsg.com/{um_instance}/messages/chat"
+            resp = await asyncio.to_thread(
+                _req.post, url,
+                data={"token": um_token, "to": wa_number, "body": message},
+                timeout=15
+            )
+            rjson = {}
+            try:
+                rjson = resp.json()
+            except Exception:
+                pass
+            if resp.status_code == 200 and str(rjson.get("sent", "")).lower() == "true":
+                return {"sent": True, "method": "ultramsg"}
+        except Exception:
+            pass
+
+    instance_id = user.get("green_api_instance_id", "")
+    api_token = user.get("green_api_token", "")
+    if instance_id and api_token:
+        try:
+            url = f"https://api.greenapi.com/waInstance{instance_id}/sendMessage/{api_token}"
+            resp = await asyncio.to_thread(
+                _req.post, url,
+                json={"chatId": wa_number, "message": message},
+                timeout=15
+            )
+            rjson = {}
+            try:
+                rjson = resp.json()
+            except Exception:
+                pass
+            if resp.status_code == 200 and rjson.get("idMessage"):
+                return {"sent": True, "method": "greenapi"}
+        except Exception:
+            pass
+
+    return {"sent": False, "method": "none"}
+
+
 async def send_sms_reminder(phone: str, message: str, salon_name: str) -> dict:
     if not twilio_client or not TWILIO_PHONE_NUMBER:
         return {"success": False, "error": "Twilio non configurato"}
