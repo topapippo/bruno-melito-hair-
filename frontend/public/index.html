@@ -41,16 +41,32 @@
             },
             "geo": {
                 "@type": "GeoCoordinates",
-                "latitude": 41.0847,
-                "longitude": 14.2508
+                "latitude": 41.0774076,
+                "longitude": 14.265057
             },
+            "hasMap": "https://maps.google.com/?cid=14990155446111754116",
             "openingHoursSpecification": [
                 {"@type": "OpeningHoursSpecification", "dayOfWeek": ["Tuesday","Wednesday","Thursday","Friday","Saturday"], "opens": "08:00", "closes": "19:00"}
             ],
             "priceRange": "$$",
             "description": "Salone di parrucchiere dal 1983 a Santa Maria Capua Vetere. Colorazioni senza ammoniaca, con cheratina e olio di argan. Solo per appuntamento.",
             "founder": {"@type": "Person", "name": "Bruno Melito"},
-            "foundingDate": "1983"
+            "foundingDate": "1983",
+            "sameAs": [
+                "https://www.instagram.com/brunomelitohair",
+                "https://www.facebook.com/brunomelitohair",
+                "https://www.facebook.com/brunomelitoparrucchierimettilatestaaposto1983",
+                "https://maps.google.com/?cid=14990155446111754116"
+            ],
+            "potentialAction": {
+                "@type": "ReserveAction",
+                "target": {
+                    "@type": "EntryPoint",
+                    "urlTemplate": "https://brunomelitohair.it/prenota",
+                    "actionPlatform": ["http://schema.org/DesktopWebPlatform","http://schema.org/MobileWebPlatform"]
+                },
+                "result": {"@type": "Reservation", "name": "Prenota appuntamento"}
+            }
         }
         </script>
         <meta name="apple-mobile-web-app-capable" content="yes" />
