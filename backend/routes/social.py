@@ -18,7 +18,7 @@ _IMGBB_KEY = os.environ.get("IMGBB_API_KEY", "")
 
 
 def _crop_to_square(content: bytes) -> bytes:
-    """Ritaglia l'immagine al centro in formato 1:1 (richiesto da Instagram)."""
+    """Ritaglia 1:1 e ridimensiona a 800x800 (min 250x250 per Google, compatibile Instagram)."""
     from PIL import Image
     import io
     img = Image.open(io.BytesIO(content))
@@ -27,6 +27,7 @@ def _crop_to_square(content: bytes) -> bytes:
     left = (w - side) // 2
     top = (h - side) // 2
     img = img.crop((left, top, left + side, top + side))
+    img = img.resize((800, 800), Image.LANCZOS)
     if img.mode in ("RGBA", "P"):
         img = img.convert("RGB")
     buf = io.BytesIO()
