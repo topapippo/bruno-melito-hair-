@@ -92,7 +92,7 @@ function CreateTab({ configured }) {
       await api.post('/social/publish-via-make', {
         message: text,
         image_url: imageUrl,
-        platforms: imageUrl ? ['facebook', 'instagram'] : ['facebook'],
+        platforms: imageUrl ? ['facebook', 'instagram', 'google'] : ['facebook', 'google'],
       });
       toast.success('Post inviato a Make.com — pubblicazione in corso!');
       setText('');
@@ -138,7 +138,7 @@ function CreateTab({ configured }) {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
         <h3 className="font-semibold text-gray-700 flex items-center gap-2 mb-3">
           <Image className="w-4 h-4 text-green-500" /> Immagine
-          <span className="text-xs text-gray-400 font-normal">(se presente pubblica anche su Instagram)</span>
+          <span className="text-xs text-gray-400 font-normal">(pubblica su Instagram e Google Business)</span>
         </h3>
         {imagePreview ? (
           <div className="relative">
@@ -180,7 +180,7 @@ function CreateTab({ configured }) {
       <button onClick={handlePublish} disabled={publishing || !text.trim() || (imageFile && !imageUrl)}
         className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 text-white font-bold py-4 rounded-2xl shadow-lg transition-all text-base">
         {publishing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-        {publishing ? 'Pubblicazione in corso...' : imageUrl ? 'Pubblica su Facebook + Instagram' : 'Pubblica su Facebook'}
+        {publishing ? 'Pubblicazione in corso...' : imageUrl ? 'Pubblica su Facebook + Instagram + Google' : 'Pubblica su Facebook + Google'}
       </button>
 
       {!configured && (
