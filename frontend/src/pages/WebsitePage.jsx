@@ -485,9 +485,7 @@ export default function WebsitePage() {
           <div className="text-center max-w-3xl mx-auto">
             {/* Logo pill */}
             <div className="flex justify-center mb-6 hero-animate hero-d1">
-              <div className="bg-white rounded-2xl px-5 py-2 shadow-xl shadow-black/30">
-                <img src="/logo-metti.png" alt="Metti la testa a posto" className="h-11 w-auto object-contain" />
-              </div>
+              <img src="/logo-metti.png" alt="Metti la testa a posto" className="h-24 w-auto object-contain" style={{ filter: 'invert(1)', mixBlendMode: 'screen' }} />
             </div>
             <h1 className="text-5xl sm:text-6xl lg:text-8xl font-black text-white mb-4 tracking-tight hero-animate hero-d2 leading-none" style={{ fontFamily: `var(--theme-font-display)` }}>{config.salon_name || 'BRUNO MELITO HAIR'}</h1>
             <div className="hero-animate hero-d3">
