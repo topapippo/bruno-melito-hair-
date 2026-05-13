@@ -751,3 +751,85 @@ export function TeamSection({ operators, T, setShowBooking }) {
     </section>
   );
 }
+
+// ── BANNER BENVENUTO (prima visita) ─────────────────────────────────────────
+export function WelcomeBanner({ T, setShowBooking }) {
+  const [visible, setVisible] = useState(() => {
+    try { return !localStorage.getItem('bmh_welcome_dismissed'); } catch { return true; }
+  });
+
+  const dismiss = () => {
+    setVisible(false);
+    try { localStorage.setItem('bmh_welcome_dismissed', '1'); } catch {}
+  };
+
+  if (!visible) return null;
+
+  return (
+    <div className="fixed top-0 left-0 right-0 z-[90] flex items-center justify-between gap-3 px-4 py-2.5 text-white text-sm font-semibold shadow-lg"
+      style={{ background: `linear-gradient(90deg, ${T.primary}, ${T.accent})` }}>
+      <span className="flex-1 text-center">
+        🎁 <strong>Prima visita?</strong> Mostra questo messaggio e ricevi il <strong>10% di sconto</strong> sul tuo primo appuntamento!
+        <button onClick={() => setShowBooking(true)}
+          className="ml-3 bg-white/25 hover:bg-white/40 px-3 py-0.5 rounded-full text-xs font-black transition-all">
+          Prenota ora →
+        </button>
+      </span>
+      <button onClick={dismiss} className="shrink-0 w-6 h-6 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors">
+        <X className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
+
+// ── SEZIONE GIFT CARD ────────────────────────────────────────────────────────
+export function GiftCardSection({ T, config }) {
+  const waNumber = config?.whatsapp || '393397833526';
+  const waMsg = encodeURIComponent('Ciao! Vorrei acquistare un buono regalo da Bruno Melito Hair. Potete aiutarmi?');
+  const waUrl = `https://wa.me/${waNumber}?text=${waMsg}`;
+
+  return (
+    <section className="py-20 sm:py-28" style={{ background: `linear-gradient(135deg, ${T.primary}12, ${T.accent}18)` }}>
+      <div className="max-w-5xl mx-auto px-4">
+        <AnimatedSection>
+          <div className="rounded-3xl overflow-hidden shadow-2xl" style={{ background: `linear-gradient(135deg, ${T.primary}, ${T.accent})` }}>
+            <div className="flex flex-col md:flex-row items-center gap-8 p-8 sm:p-12">
+              <div className="shrink-0 flex items-center justify-center w-28 h-28 rounded-3xl bg-white/20 backdrop-blur-sm shadow-xl">
+                <Gift className="w-16 h-16 text-white drop-shadow-lg" />
+              </div>
+              <div className="flex-1 text-white text-center md:text-left">
+                <p className="text-sm font-bold tracking-widest uppercase opacity-80 mb-2">Idea regalo</p>
+                <h2 className="text-3xl sm:text-4xl font-black mb-3" style={{ fontFamily: 'Georgia, serif' }}>
+                  Regala Bellezza 🎀
+                </h2>
+                <p className="text-white/80 text-base leading-relaxed max-w-md">
+                  Sorprendi chi ami con un buono regalo da Bruno Melito Hair. Scegli l'importo, noi pensiamo al resto.
+                  Il regalo perfetto per ogni occasione.
+                </p>
+                <div className="flex flex-wrap gap-3 mt-6 justify-center md:justify-start">
+                  <a href={waUrl} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white font-black px-6 py-3 rounded-2xl shadow-lg hover:scale-105 transition-all duration-300">
+                    <MessageSquare className="w-5 h-5" /> Acquista su WhatsApp
+                  </a>
+                  <a href={`tel:${config?.phone || '082318781'}`}
+                    className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-black px-6 py-3 rounded-2xl hover:scale-105 transition-all duration-300">
+                    <Phone className="w-5 h-5" /> Chiama ora
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div className="bg-black/20 px-8 sm:px-12 py-5 flex flex-wrap gap-3 justify-center">
+              {['20€', '30€', '50€', '100€'].map(amount => (
+                <a key={amount} href={`https://wa.me/${waNumber}?text=${encodeURIComponent(`Ciao! Vorrei acquistare un buono regalo da ${amount} da Bruno Melito Hair!`)}`}
+                  target="_blank" rel="noopener noreferrer"
+                  className="bg-white/15 hover:bg-white/30 text-white font-black px-5 py-2 rounded-xl transition-all hover:scale-105 text-sm">
+                  Buono {amount}
+                </a>
+              ))}
+            </div>
+          </div>
+        </AnimatedSection>
+      </div>
+    </section>
+  );
+}

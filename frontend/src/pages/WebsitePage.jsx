@@ -16,7 +16,7 @@ import {
   AnimatedSection,
   ServicesSection, SalonSection, AboutSection, PromotionsSection,
   ReviewsSection, GallerySection, ContactSection, GalleryStrip,
-  TransformationsSection, TeamSection,
+  TransformationsSection, TeamSection, WelcomeBanner, GiftCardSection,
 } from '../components/website/sections/LandingSections';
 
 
@@ -350,7 +350,12 @@ export default function WebsitePage() {
       case 'gallery':
         return hairstylePhotos.length > 0 ? <GallerySection key="gallery" config={config} hairstylePhotos={hairstylePhotos} setShowBooking={setShowBooking} T={T} /> : null;
       case 'contact':
-        return <ContactSection key="contact" {...{ contactRef, config, hours, phones, setShowBooking, openWhatsApp, T }} />;
+        return (
+          <div key="contact">
+            <GiftCardSection T={T} config={config} />
+            <ContactSection {...{ contactRef, config, hours, phones, setShowBooking, openWhatsApp, T }} />
+          </div>
+        );
       default:
         return null;
     }
@@ -358,6 +363,7 @@ export default function WebsitePage() {
 
   return (
     <div className="min-h-screen text-[#1e293b]" style={{ ...themeStyle, backgroundColor: config.bg_color || '#FAFBFD', fontFamily: `var(--theme-font-body)` }} data-testid="website-landing">
+      <WelcomeBanner T={T} setShowBooking={setShowBooking} />
       <style>{`
         @keyframes heroFadeIn { from { opacity: 0; transform: translateY(25px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
