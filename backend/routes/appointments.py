@@ -510,15 +510,25 @@ async def _checkout_appointment_inner(appointment_id: str, data: CheckoutData, c
             "services_left": services_left,
         }
 
-    # WhatsApp recensione Google (asincrono, non blocca il checkout)
+    # WhatsApp post-checkout (recensione + referral) — asincrono, non blocca
     if client_phone and appointment.get("client_name"):
         client_first_name = appointment["client_name"].split()[0]
+
+        # 1) Recensione Google
         review_msg = (
             f"Ciao {client_first_name}! Grazie per la tua visita da Bruno Melito Hair 💇\n"
             f"Se sei soddisfatto/a, lasciaci una recensione su Google — ci aiuta tantissimo!\n"
             f"👉 {GOOGLE_REVIEW_URL}"
         )
         asyncio.ensure_future(send_whatsapp(client_phone, review_msg, current_user))
+
+        # 2) Referral — porta un'amica
+        referral_msg = (
+            f"Hai un'amica che vuole cambiare look? 💇✨\n"
+            f"Portala da Bruno Melito Hair e ricevi *10€ di sconto* sulla tua prossima visita!\n"
+            f"Prenota qui: https://brunomelitohair.it/prenota"
+        )
+        asyncio.ensure_future(send_whatsapp(client_phone, referral_msg, current_user))
 
     return {
         "success": True, "payment_id": payment_id, "message": "Pagamento registrato con successo",

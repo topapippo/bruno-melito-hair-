@@ -239,6 +239,88 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Backup scheduler non avviato: {e}")
 
+    # Scheduler riprenotazione 30 giorni (ogni giorno alle 11:00 UTC = 13:00 Italia)
+    try:
+        from utils import send_whatsapp as _send_whatsapp
+
+        async def rebooking_loop():
+            while True:
+                now = datetime.now(timezone.utc)
+                next_run = now.replace(hour=11, minute=0, second=0, microsecond=0)
+                if now >= next_run:
+                    next_run += timedelta(days=1)
+                await asyncio.sleep((next_run - now).total_seconds())
+                try:
+                    booking_url = "https://brunomelitohair.it/prenota"
+                    window_start = (datetime.now(timezone.utc) - timedelta(days=32)).strftime("%Y-%m-%d")
+                    window_end = (datetime.now(timezone.utc) - timedelta(days=28)).strftime("%Y-%m-%d")
+                    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+                    async for user in db.users.find({}, {"_id": 0}):
+                        if not (user.get("ultramsg_instance_id") or user.get("green_api_instance_id")):
+                            continue
+                        salon = user.get("salon_name", "Bruno Melito Hair")
+
+                        # Appuntamenti completati nella finestra 28-32 giorni fa
+                        apts = await db.appointments.find(
+                            {"user_id": user["id"], "status": "completed",
+                             "date": {"$gte": window_start, "$lte": window_end}},
+                            {"_id": 0, "client_id": 1, "client_name": 1, "client_phone": 1}
+                        ).to_list(500)
+
+                        seen = set()
+                        for apt in apts:
+                            cid = apt.get("client_id", "")
+                            if not cid or cid in seen:
+                                continue
+                            seen.add(cid)
+
+                            # Nessun appuntamento futuro
+                            future = await db.appointments.find_one(
+                                {"user_id": user["id"], "client_id": cid,
+                                 "date": {"$gte": today}, "status": {"$nin": ["cancelled"]}}
+                            )
+                            if future:
+                                continue
+
+                            # Non già contattato per riprenotazione negli ultimi 25 giorni
+                            cutoff25 = (datetime.now(timezone.utc) - timedelta(days=25)).strftime("%Y-%m-%d")
+                            already = await db.reminders_sent.find_one({
+                                "type": "rebooking", "client_id": cid,
+                                "user_id": user["id"], "date": {"$gte": cutoff25}
+                            })
+                            if already:
+                                continue
+
+                            phone = apt.get("client_phone", "")
+                            if not phone and cid:
+                                cl = await db.clients.find_one({"id": cid}, {"_id": 0, "phone": 1})
+                                if cl:
+                                    phone = cl.get("phone", "")
+                            if not phone:
+                                continue
+
+                            name = (apt.get("client_name") or "").split()[0] or "caro cliente"
+                            msg = (
+                                f"Ciao {name}! 👋 È passato circa un mese dalla tua ultima visita da {salon}.\n"
+                                f"Vuoi prenotare il prossimo appuntamento? 💇\n"
+                                f"👉 {booking_url}"
+                            )
+                            result = await _send_whatsapp(phone, msg, user)
+                            if result.get("sent"):
+                                await db.reminders_sent.insert_one({
+                                    "id": str(uuid.uuid4()), "type": "rebooking",
+                                    "client_id": cid, "user_id": user["id"],
+                                    "date": today, "sent_at": datetime.now(timezone.utc).isoformat()
+                                })
+                except Exception as e:
+                    logger.error(f"Errore scheduler riprenotazione: {e}")
+
+        asyncio.ensure_future(rebooking_loop())
+        logger.info("Scheduler riprenotazione 30gg avviato (ogni giorno alle 11:00 UTC)")
+    except Exception as e:
+        logger.warning(f"Scheduler riprenotazione non avviato: {e}")
+
     # Scheduler clienti inattivi (ogni lunedì alle 10:00 UTC = 12:00 Italia)
     try:
         from routes.reminders import _send_inactive_reminders_core
