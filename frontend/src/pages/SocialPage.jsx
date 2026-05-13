@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { Share2, Wand2, Image, Settings, History, ChevronDown, ChevronUp, CheckCircle, Loader2, Upload, X, Eye, FileText, Send, Zap } from 'lucide-react';
 import Layout from '../components/Layout';
-import api from '../lib/api';
+import api, { API_BASE } from '../lib/api';
 
 const TOPICS = [
   { value: 'promozione', label: '🎁 Promozione' },
@@ -202,7 +202,7 @@ function AutoPostTab() {
   const fileRef = useRef();
 
   const autoUrl = apiKey
-    ? `https://brunomelitoapi.onrender.com/api/social/auto-generate?api_key=${apiKey}`
+    ? `${API_BASE}/social/auto-generate?api_key=${apiKey}`
     : '';
 
   const loadData = async () => {
