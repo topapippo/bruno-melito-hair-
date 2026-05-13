@@ -239,6 +239,31 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Backup scheduler non avviato: {e}")
 
+    # Scheduler clienti inattivi (ogni lunedì alle 10:00 UTC = 12:00 Italia)
+    try:
+        from routes.reminders import _send_inactive_reminders_core
+
+        async def inactive_loop():
+            while True:
+                now = datetime.now(timezone.utc)
+                # Prossimo lunedì alle 10:00 UTC
+                days_until_monday = (7 - now.weekday()) % 7 or 7
+                next_run = (now + timedelta(days=days_until_monday)).replace(
+                    hour=10, minute=0, second=0, microsecond=0
+                )
+                await asyncio.sleep((next_run - now).total_seconds())
+                try:
+                    async for user in db.users.find({}, {"_id": 0}):
+                        if user.get("ultramsg_instance_id") or user.get("green_api_instance_id"):
+                            await _send_inactive_reminders_core(user)
+                except Exception as e:
+                    logger.error(f"Errore scheduler inattivi: {e}")
+
+        asyncio.ensure_future(inactive_loop())
+        logger.info("Scheduler clienti inattivi avviato (ogni lunedì alle 10:00 UTC)")
+    except Exception as e:
+        logger.warning(f"Scheduler inattivi non avviato: {e}")
+
     # Check env vars critiche e logga warning se mancanti
     missing_vars = []
     for var in ["FRONTEND_URL", "PUBLIC_ADMIN_EMAIL", "VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY"]:

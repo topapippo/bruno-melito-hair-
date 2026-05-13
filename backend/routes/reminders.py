@@ -20,7 +20,7 @@ import logging
 from database import db
 from auth import get_current_user
 from models import SMSRequest
-from utils import send_sms_reminder, twilio_client, TWILIO_PHONE_NUMBER, normalize_phone_wa
+from utils import send_sms_reminder, twilio_client, TWILIO_PHONE_NUMBER, normalize_phone_wa, send_whatsapp
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -632,3 +632,93 @@ async def get_thank_you_template(current_user: dict = Depends(get_current_user))
     if not tmpl:
         return {"text": "Ciao {nome}! Grazie per essere venuto da Bruno Melito Hair.\n\nTi aspettiamo presto per il tuo prossimo appuntamento!\n\nA presto!"}
     return {"text": tmpl.get("text", "")}
+
+
+# ── Clienti inattivi ───────────────────────────────────────────────────────────
+
+async def _send_inactive_reminders_core(user: dict) -> dict:
+    """Trova clienti inattivi da >60 giorni e manda WhatsApp. Ritorna stats."""
+    user_id = user["id"]
+    salon_name = user.get("salon_name", "Bruno Melito Hair")
+    booking_url = "https://brunomelitohair.it/prenota"
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=60)).strftime("%Y-%m-%d")
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    # Clienti con phone
+    clients = await db.clients.find(
+        {"user_id": user_id, "phone": {"$exists": True, "$ne": ""}},
+        {"_id": 0, "id": 1, "name": 1, "phone": 1}
+    ).to_list(1000)
+
+    sent = 0
+    skipped = 0
+
+    for client in clients:
+        cid = client["id"]
+        phone = client.get("phone", "")
+        name = client.get("name", "")
+        if not phone:
+            continue
+
+        # Ultimo appuntamento completato
+        last_apt = await db.appointments.find_one(
+            {"user_id": user_id, "client_id": cid, "status": "completed"},
+            {"_id": 0, "date": 1},
+            sort=[("date", -1)]
+        )
+        last_date = last_apt["date"] if last_apt else None
+
+        # Salta se ha visitato di recente (< 60 giorni fa)
+        if last_date and last_date >= cutoff:
+            skipped += 1
+            continue
+
+        # Salta se non ha mai visitato (cliente nuovo non ancora venuto)
+        if not last_date:
+            skipped += 1
+            continue
+
+        # Salta se ha appuntamenti futuri
+        future_apt = await db.appointments.find_one(
+            {"user_id": user_id, "client_id": cid, "date": {"$gte": today},
+             "status": {"$nin": ["cancelled"]}}
+        )
+        if future_apt:
+            skipped += 1
+            continue
+
+        # Salta se già contattato negli ultimi 60 giorni
+        already = await db.reminders_sent.find_one({
+            "type": "inattivo", "client_id": cid, "user_id": user_id,
+            "date": {"$gte": cutoff}
+        })
+        if already:
+            skipped += 1
+            continue
+
+        first_name = name.split()[0] if name else "caro cliente"
+        message = (
+            f"Ciao {first_name}! 👋 Sono passati un po' di giorni dall'ultima volta da {salon_name}.\n"
+            f"Ti aspettiamo per coccolarti di nuovo! 💇\n"
+            f"Prenota il tuo appuntamento qui: {booking_url}"
+        )
+
+        result = await send_whatsapp(phone, message, user)
+        if result.get("sent"):
+            await db.reminders_sent.insert_one({
+                "id": str(uuid.uuid4()), "type": "inattivo",
+                "client_id": cid, "user_id": user_id,
+                "date": today, "sent_at": datetime.now(timezone.utc).isoformat()
+            })
+            sent += 1
+        else:
+            skipped += 1
+
+    return {"sent": sent, "skipped": skipped, "total": len(clients)}
+
+
+@router.post("/reminders/inactive")
+async def send_inactive_reminders(current_user: dict = Depends(get_current_user)):
+    """Invia WhatsApp ai clienti che non vengono da più di 60 giorni."""
+    result = await _send_inactive_reminders_core(current_user)
+    return result

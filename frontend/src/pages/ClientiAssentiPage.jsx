@@ -26,7 +26,7 @@ const DAY_OPTIONS = [
 ];
 
 const DEFAULT_TEMPLATE = (name) =>
-  `Ciao ${name}! 👋\nÈ un po' che non ti vediamo al salone — ci manchi!\nQuando vuoi tornare a prenderti cura di te, siamo qui ad aspettarti 💇‍♀️\nScrivici per fissare il tuo prossimo appuntamento!`;
+  `Ciao ${name}! 👋\nSono passati un po' di giorni dall'ultima volta da Bruno Melito Hair — ci manchi!\nQuando vuoi tornare a prenderti cura di te, siamo qui ad aspettarti 💇\nPrenota il tuo appuntamento qui: https://brunomelitohair.it/prenota`;
 
 function DayBadge({ days }) {
   if (days == null)
