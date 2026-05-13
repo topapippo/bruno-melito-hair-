@@ -62,10 +62,13 @@ _TEMPLATES = {
 }
 
 
+BOOKING_URL = "https://brunomelitohair.it/prenota"
+
 def _generate_text(topic: str, salon_name: str) -> str:
     templates = _TEMPLATES.get(topic, _TEMPLATES["promozione"])
     text = random.choice(templates)
-    return text.replace("{salon}", salon_name)
+    text = text.replace("{salon}", salon_name)
+    return f"{text}\n\n📅 Prenota online: {BOOKING_URL}"
 
 
 # ── Config (webhook manuale) ───────────────────────────────────────────────────
