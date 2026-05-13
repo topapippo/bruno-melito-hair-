@@ -12,7 +12,9 @@ from models import (
     AppointmentCreate, AppointmentResponse, AppointmentUpdate,
     RecurringAppointmentCreate, CheckoutData
 )
-from utils import calculate_end_time
+from utils import calculate_end_time, send_sms_reminder
+
+GOOGLE_REVIEW_URL = "https://maps.google.com/?cid=14990155446111754116"
 
 router = APIRouter()
 logger = logging.getLogger("routes.appointments")
@@ -507,6 +509,16 @@ async def _checkout_appointment_inner(appointment_id: str, data: CheckoutData, c
             "last_service_warning": last_service_warning,
             "services_left": services_left,
         }
+
+    # SMS recensione Google (asincrono, non blocca il checkout)
+    if client_phone and appointment.get("client_name"):
+        client_first_name = appointment["client_name"].split()[0]
+        review_msg = (
+            f"Ciao {client_first_name}! Grazie per la tua visita da Bruno Melito Hair 💇 "
+            f"Lasciaci una recensione su Google, ci aiuta tantissimo! "
+            f"{GOOGLE_REVIEW_URL}"
+        )
+        asyncio.ensure_future(send_sms_reminder(client_phone, review_msg, "Bruno Melito Hair"))
 
     return {
         "success": True, "payment_id": payment_id, "message": "Pagamento registrato con successo",
