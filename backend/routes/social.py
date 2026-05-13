@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from fastapi.responses import FileResponse
 from auth import get_current_user
 from database import db
@@ -13,6 +13,21 @@ router = APIRouter()
 
 BACKEND_URL = os.environ.get("BACKEND_URL", "https://brunomelitoapi.onrender.com")
 MEDIA_DIR = "/tmp/social_media"
+
+_CLD_CLOUD = os.environ.get("CLOUDINARY_CLOUD_NAME", "")
+_CLD_KEY   = os.environ.get("CLOUDINARY_API_KEY", "")
+_CLD_SEC   = os.environ.get("CLOUDINARY_API_SECRET", "")
+
+if _CLD_CLOUD:
+    import cloudinary
+    cloudinary.config(cloud_name=_CLD_CLOUD, api_key=_CLD_KEY, api_secret=_CLD_SEC, secure=True)
+
+
+def _upload_to_cloudinary(content: bytes) -> str:
+    import cloudinary.uploader
+    result = cloudinary.uploader.upload(content, folder="bruno-melito-social", resource_type="image")
+    return result["secure_url"]
+
 
 _TEMPLATES = {
     "promozione": [
@@ -44,11 +59,14 @@ _TEMPLATES = {
     ],
 }
 
+
 def _generate_text(topic: str, salon_name: str) -> str:
     templates = _TEMPLATES.get(topic, _TEMPLATES["promozione"])
     text = random.choice(templates)
     return text.replace("{salon}", salon_name)
 
+
+# ── Config (webhook manuale) ───────────────────────────────────────────────────
 
 @router.get("/social/config")
 async def get_social_config(current_user: dict = Depends(get_current_user)):
@@ -63,12 +81,12 @@ async def get_social_config(current_user: dict = Depends(get_current_user)):
 async def save_social_config(data: dict, current_user: dict = Depends(get_current_user)):
     await db.users.update_one(
         {"id": current_user["id"]},
-        {"$set": {
-            "make_webhook_url": data.get("make_webhook_url", ""),
-        }}
+        {"$set": {"make_webhook_url": data.get("make_webhook_url", "")}}
     )
     return {"ok": True}
 
+
+# ── Pubblica manualmente via Make.com ─────────────────────────────────────────
 
 @router.post("/social/publish-via-make")
 async def publish_via_make(data: dict, current_user: dict = Depends(get_current_user)):
@@ -108,12 +126,16 @@ async def publish_via_make(data: dict, current_user: dict = Depends(get_current_
     return {"success": True}
 
 
+# ── Genera testo ───────────────────────────────────────────────────────────────
+
 @router.post("/social/generate-text")
 async def generate_post_text(data: dict, current_user: dict = Depends(get_current_user)):
     topic = data.get("topic", "promozione")
     salon_name = current_user.get("salon_name", "il salone")
     return {"text": _generate_text(topic, salon_name)}
 
+
+# ── Upload immagine (Cloudinary) ───────────────────────────────────────────────
 
 @router.post("/social/upload-image")
 async def upload_social_image(
@@ -122,20 +144,113 @@ async def upload_social_image(
 ):
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="Il file deve essere un'immagine")
-    ext = (file.filename or "").rsplit(".", 1)[-1].lower()
-    if ext not in ("jpg", "jpeg", "png", "gif", "webp"):
-        ext = "jpg"
-    filename = f"{uuid.uuid4()}.{ext}"
-    os.makedirs(MEDIA_DIR, exist_ok=True)
-    path = os.path.join(MEDIA_DIR, filename)
     content = await file.read()
     if len(content) > 10 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="Immagine troppo grande (max 10 MB)")
-    with open(path, "wb") as f:
-        f.write(content)
-    url = f"{BACKEND_URL}/api/social/media/{filename}"
-    return {"url": url, "filename": filename}
 
+    if _CLD_CLOUD:
+        url = _upload_to_cloudinary(content)
+    else:
+        ext = (file.filename or "").rsplit(".", 1)[-1].lower()
+        if ext not in ("jpg", "jpeg", "png", "gif", "webp"):
+            ext = "jpg"
+        filename = f"{uuid.uuid4()}.{ext}"
+        os.makedirs(MEDIA_DIR, exist_ok=True)
+        path = os.path.join(MEDIA_DIR, filename)
+        with open(path, "wb") as f:
+            f.write(content)
+        url = f"{BACKEND_URL}/api/social/media/{filename}"
+
+    return {"url": url}
+
+
+# ── Libreria immagini ──────────────────────────────────────────────────────────
+
+@router.get("/social/library")
+async def get_image_library(current_user: dict = Depends(get_current_user)):
+    images = await db.social_library.find(
+        {"user_id": current_user["id"]},
+        {"_id": 0},
+    ).sort("uploaded_at", -1).to_list(100)
+    return images
+
+
+@router.post("/social/library/upload")
+async def upload_library_image(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user),
+):
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Il file deve essere un'immagine")
+    content = await file.read()
+    if len(content) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Immagine troppo grande (max 10 MB)")
+
+    if not _CLD_CLOUD:
+        raise HTTPException(status_code=500, detail="Cloudinary non configurato sul server")
+
+    url = _upload_to_cloudinary(content)
+    image_id = str(uuid.uuid4())
+
+    await db.social_library.insert_one({
+        "id": image_id,
+        "user_id": current_user["id"],
+        "url": url,
+        "uploaded_at": datetime.now(timezone.utc).isoformat(),
+    })
+
+    return {"id": image_id, "url": url}
+
+
+@router.delete("/social/library/{image_id}")
+async def delete_library_image(image_id: str, current_user: dict = Depends(get_current_user)):
+    result = await db.social_library.delete_one({"id": image_id, "user_id": current_user["id"]})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Immagine non trovata")
+    return {"ok": True}
+
+
+# ── API Key per Make.com (auto-generate) ───────────────────────────────────────
+
+@router.get("/social/api-key")
+async def get_social_api_key(current_user: dict = Depends(get_current_user)):
+    key = current_user.get("social_api_key", "")
+    if not key:
+        key = str(uuid.uuid4()).replace("-", "")
+        await db.users.update_one({"id": current_user["id"]}, {"$set": {"social_api_key": key}})
+    return {"api_key": key}
+
+
+# ── Auto-generate (chiamato da Make.com Schedule) ─────────────────────────────
+
+@router.get("/social/auto-generate")
+async def auto_generate(api_key: str = Query(...)):
+    user = await db.users.find_one({"social_api_key": api_key}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=401, detail="API key non valida")
+
+    salon_name = user.get("salon_name", "il salone")
+    topic = random.choice(list(_TEMPLATES.keys()))
+    text = _generate_text(topic, salon_name)
+
+    images = await db.social_library.find({"user_id": user["id"]}, {"_id": 0}).to_list(100)
+    image_url = random.choice(images)["url"] if images else None
+
+    await db.social_posts.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": user["id"],
+        "message": text,
+        "image_url": image_url,
+        "platforms": ["facebook", "instagram"] if image_url else ["facebook"],
+        "results": {"auto": {"generated": True}},
+        "published_at": datetime.now(timezone.utc).isoformat(),
+        "auto": True,
+    })
+
+    return {"text": text, "image_url": image_url, "topic": topic}
+
+
+# ── Serve media (fallback locale) ─────────────────────────────────────────────
 
 @router.get("/social/media/{filename}")
 async def serve_social_media(filename: str):
@@ -147,95 +262,7 @@ async def serve_social_media(filename: str):
     return FileResponse(path)
 
 
-def _publish_to_facebook(page_id: str, token: str, message: str, image_url) -> dict:
-    try:
-        if image_url:
-            resp = requests.post(
-                f"https://graph.facebook.com/v19.0/{page_id}/photos",
-                data={"url": image_url, "caption": message, "access_token": token},
-                timeout=30,
-            )
-        else:
-            resp = requests.post(
-                f"https://graph.facebook.com/v19.0/{page_id}/feed",
-                data={"message": message, "access_token": token},
-                timeout=30,
-            )
-        data = resp.json()
-        if resp.status_code == 200 and "id" in data:
-            return {"success": True, "post_id": data["id"]}
-        err = data.get("error", {}).get("message", "Errore sconosciuto")
-        return {"success": False, "error": err}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
-
-
-def _publish_to_instagram(ig_user_id: str, token: str, message: str, image_url: str) -> dict:
-    try:
-        create = requests.post(
-            f"https://graph.facebook.com/v19.0/{ig_user_id}/media",
-            data={"image_url": image_url, "caption": message, "access_token": token},
-            timeout=30,
-        )
-        cdata = create.json()
-        if create.status_code != 200 or "id" not in cdata:
-            err = cdata.get("error", {}).get("message", "Errore creazione media")
-            return {"success": False, "error": err}
-        pub = requests.post(
-            f"https://graph.facebook.com/v19.0/{ig_user_id}/media_publish",
-            data={"creation_id": cdata["id"], "access_token": token},
-            timeout=30,
-        )
-        pdata = pub.json()
-        if pub.status_code == 200 and "id" in pdata:
-            return {"success": True, "post_id": pdata["id"]}
-        err = pdata.get("error", {}).get("message", "Errore pubblicazione")
-        return {"success": False, "error": err}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
-
-
-@router.post("/social/publish")
-async def publish_post(data: dict, current_user: dict = Depends(get_current_user)):
-    page_id = current_user.get("fb_page_id", "")
-    token = current_user.get("fb_page_token", "")
-    ig_user_id = current_user.get("ig_user_id", "")
-
-    if not page_id or not token:
-        raise HTTPException(status_code=400, detail="Configura prima le credenziali Facebook nelle Impostazioni")
-
-    message = data.get("message", "").strip()
-    image_url = data.get("image_url") or None
-
-    if not message:
-        raise HTTPException(status_code=400, detail="Il testo del post non può essere vuoto")
-
-    import asyncio
-    loop = asyncio.get_event_loop()
-
-    fb_result = await loop.run_in_executor(None, _publish_to_facebook, page_id, token, message, image_url)
-
-    ig_result = None
-    if ig_user_id and image_url:
-        ig_result = await loop.run_in_executor(None, _publish_to_instagram, ig_user_id, token, message, image_url)
-    elif ig_user_id and not image_url:
-        ig_result = {"success": False, "error": "Instagram richiede un'immagine per pubblicare"}
-
-    results = {"facebook": fb_result}
-    if ig_result is not None:
-        results["instagram"] = ig_result
-
-    await db.social_posts.insert_one({
-        "id": str(uuid.uuid4()),
-        "user_id": current_user["id"],
-        "message": message,
-        "image_url": image_url,
-        "results": results,
-        "published_at": datetime.now(timezone.utc).isoformat(),
-    })
-
-    return results
-
+# ── Storico post ───────────────────────────────────────────────────────────────
 
 @router.get("/social/posts")
 async def get_social_posts(current_user: dict = Depends(get_current_user)):
