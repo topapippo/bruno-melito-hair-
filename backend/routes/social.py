@@ -14,16 +14,11 @@ router = APIRouter()
 BACKEND_URL = os.environ.get("BACKEND_URL", "https://brunomelitoapi.onrender.com")
 MEDIA_DIR = "/tmp/social_media"
 
-_CLD_URL = os.environ.get("CLOUDINARY_URL", "")
-
-if _CLD_URL:
-    import cloudinary
-    cloudinary.config(url=_CLD_URL)
-
-_CLD_CLOUD = bool(_CLD_URL)
+_CLD_CLOUD = bool(os.environ.get("CLOUDINARY_URL", ""))
 
 
 def _upload_to_cloudinary(content: bytes) -> str:
+    import cloudinary
     import cloudinary.uploader
     import base64
     b64 = base64.b64encode(content).decode("utf-8")
