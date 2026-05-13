@@ -70,6 +70,11 @@ def _generate_text(topic: str, salon_name: str) -> str:
 
 # ── Config (webhook manuale) ───────────────────────────────────────────────────
 
+@router.get("/social/ping")
+async def social_ping():
+    return {"ok": True}
+
+
 @router.get("/social/config")
 async def get_social_config(current_user: dict = Depends(get_current_user)):
     make_url = current_user.get("make_webhook_url", "")
