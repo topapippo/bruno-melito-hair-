@@ -25,7 +25,10 @@ if _CLD_CLOUD:
 
 def _upload_to_cloudinary(content: bytes) -> str:
     import cloudinary.uploader
-    result = cloudinary.uploader.upload(content, folder="bruno-melito-social", resource_type="image")
+    import base64
+    b64 = base64.b64encode(content).decode("utf-8")
+    data_uri = f"data:image/jpeg;base64,{b64}"
+    result = cloudinary.uploader.upload(data_uri, folder="bruno-melito-social", resource_type="image")
     return result["secure_url"]
 
 
@@ -149,7 +152,10 @@ async def upload_social_image(
         raise HTTPException(status_code=400, detail="Immagine troppo grande (max 10 MB)")
 
     if _CLD_CLOUD:
-        url = _upload_to_cloudinary(content)
+        try:
+            url = _upload_to_cloudinary(content)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Errore Cloudinary: {str(e)}")
     else:
         ext = (file.filename or "").rsplit(".", 1)[-1].lower()
         if ext not in ("jpg", "jpeg", "png", "gif", "webp"):
@@ -189,7 +195,11 @@ async def upload_library_image(
     if not _CLD_CLOUD:
         raise HTTPException(status_code=500, detail="Cloudinary non configurato sul server")
 
-    url = _upload_to_cloudinary(content)
+    try:
+        url = _upload_to_cloudinary(content)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Errore Cloudinary: {str(e)}")
+
     image_id = str(uuid.uuid4())
 
     await db.social_library.insert_one({

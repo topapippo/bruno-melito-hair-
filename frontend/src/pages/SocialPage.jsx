@@ -69,8 +69,8 @@ function CreateTab({ configured }) {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setImageUrl(data.url);
-    } catch {
-      toast.error('Errore caricamento immagine');
+    } catch (e) {
+      toast.error(e.response?.data?.detail || 'Errore caricamento immagine');
     } finally {
       setUploading(false);
     }
