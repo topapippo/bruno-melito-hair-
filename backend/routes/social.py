@@ -14,24 +14,21 @@ router = APIRouter()
 BACKEND_URL = os.environ.get("BACKEND_URL", "https://brunomelitoapi.onrender.com")
 MEDIA_DIR = "/tmp/social_media"
 
-_CLD_CLOUD = False
-_cld_url = os.environ.get("CLOUDINARY_URL", "")
-if _cld_url:
-    try:
-        import cloudinary
-        cloudinary.config(url=_cld_url, secure=True)
-        _CLD_CLOUD = True
-    except Exception:
-        pass
+_IMGBB_KEY = os.environ.get("IMGBB_API_KEY", "")
 
 
-def _upload_to_cloudinary(content: bytes) -> str:
-    import cloudinary.uploader
+def _upload_to_imgbb(content: bytes) -> str:
     import base64
     b64 = base64.b64encode(content).decode("utf-8")
-    data_uri = f"data:image/jpeg;base64,{b64}"
-    result = cloudinary.uploader.upload(data_uri, folder="bruno-melito-social", resource_type="image")
-    return result["secure_url"]
+    resp = requests.post(
+        "https://api.imgbb.com/1/upload",
+        data={"key": _IMGBB_KEY, "image": b64},
+        timeout=30,
+    )
+    data = resp.json()
+    if not data.get("success"):
+        raise Exception(data.get("error", {}).get("message", "Upload fallito"))
+    return data["data"]["url"]
 
 
 _TEMPLATES = {
@@ -153,11 +150,11 @@ async def upload_social_image(
     if len(content) > 10 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="Immagine troppo grande (max 10 MB)")
 
-    if _CLD_CLOUD:
+    if _IMGBB_KEY:
         try:
-            url = _upload_to_cloudinary(content)
+            url = _upload_to_imgbb(content)
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Errore Cloudinary: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Errore upload immagine: {str(e)}")
     else:
         ext = (file.filename or "").rsplit(".", 1)[-1].lower()
         if ext not in ("jpg", "jpeg", "png", "gif", "webp"):
@@ -194,13 +191,13 @@ async def upload_library_image(
     if len(content) > 10 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="Immagine troppo grande (max 10 MB)")
 
-    if not _CLD_CLOUD:
-        raise HTTPException(status_code=500, detail="Cloudinary non configurato sul server")
+    if not _IMGBB_KEY:
+        raise HTTPException(status_code=500, detail="IMGBB_API_KEY non configurata sul server")
 
     try:
-        url = _upload_to_cloudinary(content)
+        url = _upload_to_imgbb(content)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Errore Cloudinary: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Errore upload immagine: {str(e)}")
 
     image_id = str(uuid.uuid4())
 
