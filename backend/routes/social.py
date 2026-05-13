@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 
 router = APIRouter()
 
-BACKEND_URL = os.environ.get("BACKEND_URL", "https://brunomelitoapi.onrender.com")
+BACKEND_URL = os.environ.get("BACKEND_URL", "https://bruno-melito-hair-2497.onrender.com")
 MEDIA_DIR = "/tmp/social_media"
 
 _IMGBB_KEY = os.environ.get("IMGBB_API_KEY", "")
