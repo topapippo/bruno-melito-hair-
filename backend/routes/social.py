@@ -17,8 +17,26 @@ MEDIA_DIR = "/tmp/social_media"
 _IMGBB_KEY = os.environ.get("IMGBB_API_KEY", "")
 
 
+def _crop_to_square(content: bytes) -> bytes:
+    """Ritaglia l'immagine al centro in formato 1:1 (richiesto da Instagram)."""
+    from PIL import Image
+    import io
+    img = Image.open(io.BytesIO(content))
+    w, h = img.size
+    side = min(w, h)
+    left = (w - side) // 2
+    top = (h - side) // 2
+    img = img.crop((left, top, left + side, top + side))
+    if img.mode in ("RGBA", "P"):
+        img = img.convert("RGB")
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=90)
+    return buf.getvalue()
+
+
 def _upload_to_imgbb(content: bytes) -> str:
     import base64
+    content = _crop_to_square(content)
     b64 = base64.b64encode(content).decode("utf-8")
     resp = requests.post(
         "https://api.imgbb.com/1/upload",
