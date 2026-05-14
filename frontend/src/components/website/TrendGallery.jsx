@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Scissors } from 'lucide-react';
+import { Scissors } from 'lucide-react';
 import api from '../../lib/api';
 
 const FALLBACK = [
@@ -9,7 +9,28 @@ const FALLBACK = [
   { id: '3', title: 'Biondo Burro', desc: 'Luce pura e cremosa per risplendere sotto il sole del 2026.', img: 'https://i.ibb.co/vvP7jZFb/b28028e3900d.jpg', badge: '☀️ Estate' },
 ];
 
-const COLORS = ['#FFD93D', '#FF6B9D', '#C3F0CA', '#A8DAFF', '#FFB347'];
+const EASE = [0.22, 1, 0.36, 1];
+
+const GlassTag = ({ children }) => (
+  <span
+    className="px-3 py-1 rounded-full text-white text-xs font-semibold"
+    style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.2)' }}
+  >
+    {children}
+  </span>
+);
+
+const GlassBtn = ({ onClick, children }) => (
+  <motion.button
+    onClick={onClick}
+    whileHover={{ scale: 1.04 }}
+    whileTap={{ scale: 0.97 }}
+    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white font-semibold text-sm"
+    style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.22)' }}
+  >
+    {children}
+  </motion.button>
+);
 
 export default function TrendGallery({ setShowBooking }) {
   const [trends, setTrends] = useState([]);
@@ -21,122 +42,151 @@ export default function TrendGallery({ setShowBooking }) {
   }, []);
 
   const items = trends.length ? trends : FALLBACK;
+  const [featured, ...rest] = items;
 
   return (
-    <section className="py-20 px-4 overflow-hidden website-dots-bg">
+    <section className="py-24 px-4 sm:px-8 overflow-hidden" style={{ background: '#0a0a0f' }}>
       <div className="max-w-6xl mx-auto">
 
-        {/* Header — wow typography */}
+        {/* Header editoriale */}
         <motion.div
-          initial={{ opacity: 0, y: -40, scale: 0.85 }}
-          whileInView={{ opacity: 1, y: 0, scale: 1 }}
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ type: 'spring', stiffness: 300, damping: 14 }}
-          className="text-center mb-16"
+          transition={{ duration: 0.85, ease: EASE }}
+          className="mb-14"
         >
-          <div className="inline-block relative">
-            <h2
-              className="text-5xl sm:text-6xl font-black px-6 py-3 inline-block relative z-10 website-wow-h2"
-              style={{ color: '#FF2E63' }}
-            >
-              <Sparkles className="inline w-10 h-10 text-yellow-400 mr-2 align-middle" />
-              I Look dell&apos;Estate 2026
-            </h2>
-            {/* Underline neo-brutalist */}
-            <div
-              className="absolute bottom-1 left-0 right-0 h-5 -z-0 -rotate-1"
-              style={{ backgroundColor: '#FFD93D', border: '2px solid #111' }}
-            />
-          </div>
-          <p className="text-gray-600 mt-6 max-w-xl mx-auto text-base font-semibold">
-            Tendenze selezionate da Bruno Melito — prenotale subito!
+          <p className="text-xs font-bold tracking-[0.4em] uppercase mb-5" style={{ color: 'rgba(255,255,255,0.3)' }}>
+            LOOK STAGIONE 2026
           </p>
-          {/* Small decorative scissors */}
-          <div className="flex justify-center gap-3 mt-4">
-            {[...Array(3)].map((_, i) => (
-              <motion.div
-                key={i}
-                animate={{ rotate: [0, 15, -15, 0] }}
-                transition={{ duration: 2 + i * 0.5, repeat: Infinity, delay: i * 0.3 }}
-                style={{ color: COLORS[i] }}
-              >
-                <Scissors size={20} />
-              </motion.div>
-            ))}
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
+            <h2
+              className="font-black"
+              style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 'clamp(3rem, 8vw, 6.5rem)', lineHeight: 0.88, color: 'white' }}
+            >
+              I Look
+              <br />
+              <span style={{ WebkitTextStroke: '2px rgba(255,255,255,0.55)', color: 'transparent' }}>
+                dell&apos;Estate
+              </span>
+            </h2>
+            <p style={{ color: 'rgba(255,255,255,0.35)', maxWidth: '22rem', fontSize: '0.875rem', lineHeight: 1.75 }}>
+              Tendenze selezionate da Bruno Melito — prenotale subito per portarle con te.
+            </p>
           </div>
         </motion.div>
 
-        {/* Cards grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-          {items.map((t, i) => {
-            const shadowColor = t.color_code || COLORS[i % COLORS.length];
-            const tilt = i % 2 === 0 ? 2 : -2;
-
-            return (
-              <motion.div
-                key={t.id}
-                initial={{ opacity: 0, scale: 0.75, y: 70, rotate: tilt * 4 }}
-                whileInView={{ opacity: 1, scale: 1, y: 0, rotate: tilt }}
-                viewport={{ once: true, margin: '-60px' }}
-                transition={{ type: 'spring', stiffness: 260, damping: 11, delay: i * 0.13 }}
-                whileHover={{ y: -14, rotate: 0, scale: 1.04 }}
-                className="bg-white rounded-2xl overflow-hidden cursor-pointer"
-                style={{
-                  border: '4px solid #111',
-                  boxShadow: `14px 14px 0px ${shadowColor}, 14px 14px 0px 4px #111`,
-                }}
-              >
-                {/* Image */}
-                <div className="relative overflow-hidden h-64">
-                  <motion.img
-                    src={t.img}
-                    alt={t.title}
-                    className="w-full h-full object-cover"
-                    whileHover={{ scale: 1.1 }}
-                    transition={{ duration: 0.4 }}
-                  />
-                  {/* Color stripe at top */}
-                  <div className="absolute top-0 left-0 right-0 h-2" style={{ backgroundColor: shadowColor }} />
-                  {t.badge && (
-                    <div
-                      className="absolute top-4 left-3 text-sm font-black px-3 py-1 rounded-full"
-                      style={{ background: shadowColor, border: '2px solid #111', fontFamily: "'Fredoka', sans-serif" }}
-                    >
-                      {t.badge}
-                    </div>
-                  )}
+        {/* Bentō Grid asimmetrico */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gridTemplateRows: 'auto auto',
+            gap: '14px',
+          }}
+        >
+          {/* Card featured — grande (2 righe) */}
+          {featured && (
+            <motion.div
+              className="group relative overflow-hidden rounded-3xl cursor-pointer"
+              style={{
+                gridRow: 'span 2',
+                minHeight: '560px',
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.07)',
+              }}
+              initial={{ opacity: 0, y: 60 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.95, ease: EASE }}
+            >
+              <img
+                src={featured.img}
+                alt={featured.title}
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+              />
+              <div
+                className="absolute inset-0"
+                style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.18) 50%, transparent 100%)' }}
+              />
+              {featured.badge && (
+                <div className="absolute top-5 left-5">
+                  <GlassTag>{featured.badge}</GlassTag>
                 </div>
+              )}
+              <div className="absolute bottom-0 left-0 right-0 p-7">
+                <h3
+                  className="font-bold"
+                  style={{ fontFamily: "'Fredoka', sans-serif", fontSize: '2.4rem', color: 'white', lineHeight: 1.1 }}
+                >
+                  {featured.title}
+                </h3>
+                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem', marginTop: '0.5rem', marginBottom: '1.4rem', lineHeight: 1.65 }}>
+                  {featured.desc}
+                </p>
+                {setShowBooking && (
+                  <GlassBtn onClick={() => setShowBooking(true)}>
+                    <Scissors className="w-4 h-4" /> Prenota questo look
+                  </GlassBtn>
+                )}
+              </div>
+            </motion.div>
+          )}
 
-                {/* Content */}
-                <div className="p-5" style={{ borderTop: '3px solid #111' }}>
-                  <h3
-                    className="text-2xl font-black text-gray-900 mb-2"
-                    style={{ fontFamily: "'Fredoka', sans-serif", textShadow: '1px 1px 0px rgba(0,0,0,0.15)' }}
+          {/* Card piccole */}
+          {rest.map((t, i) => (
+            <motion.div
+              key={t.id}
+              className="group relative overflow-hidden rounded-3xl cursor-pointer"
+              style={{
+                minHeight: '264px',
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.07)',
+              }}
+              initial={{ opacity: 0, y: 60 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.95, ease: EASE, delay: 0.12 * (i + 1) }}
+            >
+              <img
+                src={t.img}
+                alt={t.title}
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+              />
+              <div
+                className="absolute inset-0"
+                style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.08) 60%, transparent 100%)' }}
+              />
+              {t.badge && (
+                <div className="absolute top-4 left-4">
+                  <GlassTag>{t.badge}</GlassTag>
+                </div>
+              )}
+              <div className="absolute bottom-0 left-0 right-0 p-5">
+                <h3
+                  className="font-bold"
+                  style={{ fontFamily: "'Fredoka', sans-serif", fontSize: '1.55rem', color: 'white', lineHeight: 1.1 }}
+                >
+                  {t.title}
+                </h3>
+                <p
+                  className="text-xs leading-relaxed mt-1 transition-all duration-500 opacity-0 group-hover:opacity-100"
+                  style={{ color: 'rgba(255,255,255,0.55)', maxHeight: '3rem', overflow: 'hidden' }}
+                >
+                  {t.desc}
+                </p>
+                {setShowBooking && (
+                  <button
+                    onClick={() => setShowBooking(true)}
+                    className="mt-3 flex items-center gap-2 px-4 py-1.5 rounded-xl text-white font-semibold text-xs transition-all duration-500 opacity-0 group-hover:opacity-100"
+                    style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.2)' }}
                   >
-                    {t.title}
-                  </h3>
-                  <p className="text-sm text-gray-600 leading-relaxed mb-4">{t.desc}</p>
-                  {setShowBooking && (
-                    <motion.button
-                      onClick={() => setShowBooking(true)}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="w-full py-3 font-black text-sm rounded-xl text-white"
-                      style={{
-                        background: '#111',
-                        border: '2px solid #111',
-                        boxShadow: `4px 4px 0px ${shadowColor}`,
-                        fontFamily: "'Fredoka', sans-serif",
-                        fontSize: '1rem',
-                      }}
-                    >
-                      Prenota questo look →
-                    </motion.button>
-                  )}
-                </div>
-              </motion.div>
-            );
-          })}
+                    <Scissors className="w-3 h-3" /> Prenota →
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          ))}
         </div>
       </div>
     </section>

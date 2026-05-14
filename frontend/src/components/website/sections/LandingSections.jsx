@@ -6,14 +6,16 @@ import { Scissors, CheckCircle, ChevronDown, ChevronUp, Star, MessageSquare, Map
 import { getCategoryInfo } from '../../../lib/categories';
 import { SOCIAL_LINKS, BORDER_COLORS, GLOW_COLORS, AVATAR_BGS, AVATAR_TEXTS } from '../../../lib/websiteConstants';
 
+const _SITE_EASE = [0.22, 1, 0.36, 1];
+
 function AnimatedSection({ children, className = '', delay = 0 }) {
   return (
     <motion.div
       className={className}
-      initial={{ opacity: 0, scale: 0.82, y: 32 }}
-      whileInView={{ opacity: 1, scale: 1, y: 0 }}
-      viewport={{ once: true, margin: '50px' }}
-      transition={{ type: 'spring', stiffness: 260, damping: 14, delay }}
+      initial={{ opacity: 0, y: 36 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-20px' }}
+      transition={{ duration: 0.75, ease: _SITE_EASE, delay }}
     >
       {children}
     </motion.div>
@@ -31,7 +33,7 @@ export function ServicesSection({ servicesRef, showServices, setShowServices, la
   const P = T.primary;
 
   return (
-    <section ref={servicesRef} className="py-20 sm:py-28 relative" style={{ background: `linear-gradient(135deg, ${P}20 0%, ${T.accent}12 50%, ${P}10 100%)` }}>
+    <section ref={servicesRef} className="py-20 sm:py-28 relative" style={{ background: '#0a0a0f' }}>
       <style>{`
         @keyframes svcShimmer { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
         .svc-cta {
@@ -46,9 +48,9 @@ export function ServicesSection({ servicesRef, showServices, setShowServices, la
       <div className="max-w-6xl mx-auto px-4">
         <AnimatedSection>
           <div className="w-full text-center mb-4">
-            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>✂️ I Nostri Servizi</p>
-            <h2 className="text-3xl sm:text-4xl font-black" style={{ fontFamily: T.fontDisplay, background: `linear-gradient(135deg, ${P}, ${T.accent})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Scopri Cosa Offriamo</h2>
-            <p className="text-sm mt-2 max-w-md mx-auto" style={{ color: `${T.text}80` }}>Sfoglia il listino completo e prenota direttamente il tuo trattamento</p>
+            <p className="font-bold text-xs tracking-[0.35em] uppercase mb-3" style={{ color: 'rgba(255,255,255,0.35)' }}>✂️ I Nostri Servizi</p>
+            <h2 className="text-3xl sm:text-4xl font-black text-white" style={{ fontFamily: "'Fredoka', sans-serif" }}>Scopri Cosa Offriamo</h2>
+            <p className="text-sm mt-2 max-w-md mx-auto text-white/35">Sfoglia il listino completo e prenota direttamente il tuo trattamento</p>
           </div>
         </AnimatedSection>
         <div className="space-y-3 mt-8 max-w-2xl mx-auto">
@@ -73,11 +75,11 @@ export function ServicesSection({ servicesRef, showServices, setShowServices, la
                       <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {catServices.map((service) => (
                           <div key={service.id}
-                            className="flex items-center justify-between p-3.5 rounded-xl bg-white hover:shadow-md transition-all duration-200 border group"
-                            style={{ borderColor: `${catInfo.color}15` }}>
+                            className="flex items-center justify-between p-3.5 rounded-xl transition-all duration-200 group"
+                            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)', backdropFilter: 'blur(8px)' }}>
                             <div className="min-w-0 flex-1">
-                              <p className="font-bold text-sm truncate" style={{ color: T.text }}>{service.name}</p>
-                              {service.duration > 0 && <p className="text-xs text-gray-400 mt-0.5">⏱ {service.duration} min</p>}
+                              <p className="font-bold text-sm truncate text-white">{service.name}</p>
+                              {service.duration > 0 && <p className="text-xs text-white/35 mt-0.5">⏱ {service.duration} min</p>}
                             </div>
                             <div className="flex items-center gap-2 shrink-0 ml-3">
                               {service.price > 0 && (
@@ -120,15 +122,15 @@ export function ServicesSection({ servicesRef, showServices, setShowServices, la
                     </div>
                   </button>
                   {isOpen && (
-                    <div className="bg-white rounded-2xl mt-1 border border-[#6366F1]/20 shadow-sm animate-in fade-in duration-200 overflow-hidden">
+                    <div className="rounded-2xl mt-1 animate-in fade-in duration-200 overflow-hidden" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)' }}>
                       {cardTemplates.map((tmpl, i) => (
-                        <div key={tmpl.id || i} className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 last:border-0 hover:bg-indigo-50/40 transition-colors">
+                        <div key={tmpl.id || i} className="flex items-center justify-between px-5 py-3.5 border-b last:border-0 transition-colors hover:bg-white/5" style={{ borderColor: 'rgba(99,102,241,0.12)' }}>
                           <div>
-                            <p className="font-bold text-sm" style={{ color: T.text }}>{tmpl.name}</p>
-                            <p className="text-xs text-[#6366F1] mt-0.5">{tmpl.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}{tmpl.total_services ? ` · ${tmpl.total_services} servizi` : ''}</p>
+                            <p className="font-bold text-sm text-white">{tmpl.name}</p>
+                            <p className="text-xs text-indigo-400 mt-0.5">{tmpl.card_type === 'subscription' ? 'Abbonamento' : 'Prepagata'}{tmpl.total_services ? ` · ${tmpl.total_services} servizi` : ''}</p>
                           </div>
                           <div className="flex items-center gap-3 shrink-0 ml-4">
-                            {tmpl.total_value > 0 && <span className="font-black text-base text-indigo-600">€{tmpl.total_value}</span>}
+                            {tmpl.total_value > 0 && <span className="font-black text-base text-indigo-400">€{tmpl.total_value}</span>}
                             {bookCard && (
                               <button onClick={() => bookCard(tmpl)} className="svc-book-btn text-xs font-black px-3 py-1.5 rounded-xl text-white bg-indigo-500 hover:bg-indigo-600 shadow-sm">
                                 Prenota →
@@ -187,28 +189,28 @@ export function SalonSection({ salonPhotos, T }) {
 
 export function AboutSection({ config, salonPhotos, T }) {
   return (
-    <section className="py-20 sm:py-28" style={{ background: `linear-gradient(135deg, ${T.accent}22 0%, ${T.primary}15 50%, ${T.accent}12 100%)` }}>
+    <section className="py-20 sm:py-28" style={{ background: '#0d0d16' }}>
       <div className="max-w-6xl mx-auto px-4">
         <div className={`grid grid-cols-1 ${salonPhotos.length > 1 ? 'lg:grid-cols-2' : ''} gap-12 items-center`}>
           {salonPhotos.length > 1 && (
             <AnimatedSection>
-              <div className="rounded-3xl overflow-hidden h-80 lg:h-96 border-2 border-rose-400/20 hover:shadow-2xl hover:shadow-rose-400/20 transition-all duration-500 group">
-                <img src={getMediaUrl(salonPhotos[1]?.image_url || salonPhotos[0]?.image_url)} alt="Il nostro salone" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+              <div className="rounded-3xl overflow-hidden h-80 lg:h-96 group" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+                <img src={getMediaUrl(salonPhotos[1]?.image_url || salonPhotos[0]?.image_url)} alt="Il nostro salone" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />
               </div>
             </AnimatedSection>
           )}
           <AnimatedSection delay={0.2}>
             <div>
-              <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Chi Siamo</p>
-              <h2 className="text-3xl sm:text-4xl font-black mb-6" style={{ fontFamily: T.fontDisplay, background: `linear-gradient(135deg, ${T.primary}, ${T.accent})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>{config.about_title}</h2>
-              {config.about_text && <p className="leading-relaxed mb-6" style={{ color: `${T.text}99` }}>{config.about_text}</p>}
-              {config.about_text_2 && <p className="leading-relaxed mb-8" style={{ color: `${T.text}70` }}>{config.about_text_2}</p>}
+              <p className="font-bold text-xs tracking-[0.35em] uppercase mb-3" style={{ color: 'rgba(255,255,255,0.35)' }}>Chi Siamo</p>
+              <h2 className="text-3xl sm:text-4xl font-black mb-6 text-white" style={{ fontFamily: "'Fredoka', sans-serif" }}>{config.about_title}</h2>
+              {config.about_text && <p className="leading-relaxed mb-6 text-white/55">{config.about_text}</p>}
+              {config.about_text_2 && <p className="leading-relaxed mb-8 text-white/40">{config.about_text_2}</p>}
               {config.about_features && config.about_features.length > 0 && (
                 <div className="grid grid-cols-2 gap-3">
                   {config.about_features.map((item, idx) => (
                     <div key={idx} className="flex items-center gap-2">
                       <CheckCircle className="w-4 h-4 text-teal-400 shrink-0" />
-                      <span className="text-sm" style={{ color: `${T.text}80` }}>{item}</span>
+                      <span className="text-sm text-white/50">{item}</span>
                     </div>
                   ))}
                 </div>
@@ -223,13 +225,13 @@ export function AboutSection({ config, salonPhotos, T }) {
 
 export function PromotionsSection({ publicPromos, setShowBooking, bookPromo, T }) {
   return (
-    <section className="py-20 sm:py-28" style={{ background: `linear-gradient(135deg, ${T.primary}22 0%, ${T.accent}15 50%, ${T.primary}12 100%)` }}>
+    <section className="py-20 sm:py-28" style={{ background: '#0a0a0f' }}>
       <div className="max-w-6xl mx-auto px-4">
         <AnimatedSection>
           <div className="text-center mb-12">
-            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.primary }}>Offerte Speciali</p>
-            <h2 className="text-3xl sm:text-4xl font-black" style={{ fontFamily: T.fontDisplay, background: `linear-gradient(135deg, ${T.primary}, ${T.accent})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Le Nostre Promo</h2>
-            <p className="mt-3 text-sm font-semibold" style={{ color: `${T.primary}` }}>⚠️ Valide esclusivamente per prenotazioni online</p>
+            <p className="font-bold text-xs tracking-[0.35em] uppercase mb-3" style={{ color: 'rgba(255,255,255,0.35)' }}>Offerte Speciali</p>
+            <h2 className="text-3xl sm:text-4xl font-black text-white" style={{ fontFamily: "'Fredoka', sans-serif" }}>Le Nostre Promo</h2>
+            <p className="mt-3 text-sm font-semibold text-white/40">⚠️ Valide esclusivamente per prenotazioni online</p>
           </div>
         </AnimatedSection>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -387,111 +389,92 @@ export function GallerySection({ config, hairstylePhotos, setShowBooking, T }) {
 
   return (
     <>
-      <section className="py-20 px-4 overflow-hidden website-dots-bg">
+      <section className="py-20 px-4 sm:px-8 overflow-hidden" style={{ background: '#0a0a0f' }}>
         <div className="max-w-6xl mx-auto">
           <motion.div
-            initial={{ opacity: 0, y: -40, scale: 0.85 }}
-            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ type: 'spring', stiffness: 300, damping: 14 }}
-            className="text-center mb-14"
+            transition={{ duration: 0.8, ease: _SITE_EASE }}
+            className="mb-14"
           >
-            <div className="inline-block relative">
+            <p className="text-xs font-bold tracking-[0.4em] uppercase mb-5" style={{ color: 'rgba(255,255,255,0.3)' }}>GALLERY</p>
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
               <h2
-                className="text-5xl sm:text-6xl font-black px-6 py-3 inline-block relative z-10 website-wow-h2"
-                style={{ color: '#2EC4B6' }}
+                className="font-black text-white"
+                style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 'clamp(2.5rem, 6vw, 5rem)', lineHeight: 0.9 }}
               >
-                {config.gallery_title || 'I Nostri Lavori'}
+                {config.gallery_title || 'I Nostri'}<br />
+                <span style={{ WebkitTextStroke: '2px rgba(255,255,255,0.55)', color: 'transparent' }}>Lavori</span>
               </h2>
-              <div
-                className="absolute bottom-1 left-0 right-0 h-5 -z-0 rotate-1"
-                style={{ backgroundColor: '#FFD93D', border: '2px solid #111' }}
-              />
+              {config.gallery_subtitle && (
+                <p className="text-white/35 text-sm max-w-xs leading-relaxed">{config.gallery_subtitle}</p>
+              )}
             </div>
-            {config.gallery_subtitle && (
-              <p className="text-gray-600 mt-6 max-w-xl mx-auto text-base font-semibold">{config.gallery_subtitle}</p>
-            )}
           </motion.div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-8">
-            {hairstylePhotos.map((item, idx) => {
-              const tilt = idx % 2 === 0 ? 1.5 : -1.5;
-              const shadowColor = _GALLERY_COLORS[idx % _GALLERY_COLORS.length];
-              return (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, scale: 0.75, y: 60, rotate: tilt * 4 }}
-                  whileInView={{ opacity: 1, scale: 1, y: 0, rotate: tilt }}
-                  viewport={{ once: true, margin: '-60px' }}
-                  transition={{ type: 'spring', stiffness: 260, damping: 11, delay: idx * 0.08 }}
-                  whileHover={{ y: -12, rotate: 0, scale: 1.04 }}
-                  onClick={() => item.file_type !== 'video' && setLightboxIdx(imagePhotos.indexOf(item))}
-                  className={`bg-white rounded-2xl overflow-hidden ${item.file_type !== 'video' ? 'cursor-pointer' : ''}`}
-                  style={{
-                    border: '4px solid #111',
-                    boxShadow: `8px 8px 0px ${shadowColor}, 8px 8px 0px 4px #111`,
-                  }}
-                >
-                  <div className="relative overflow-hidden" style={{ aspectRatio: '3/4' }}>
-                    <div className="absolute top-0 left-0 right-0 h-2 z-10" style={{ backgroundColor: shadowColor }} />
-                    {item.file_type === 'video' ? (
-                      <video src={getMediaUrl(item?.image_url)} className="w-full h-full object-cover" autoPlay muted loop playsInline preload="metadata" />
-                    ) : (
-                      <motion.img
-                        src={getMediaUrl(item?.image_url)}
-                        alt={item.label || ''}
-                        className="w-full h-full object-cover"
-                        whileHover={{ scale: 1.08 }}
-                        transition={{ duration: 0.4 }}
-                      />
-                    )}
-                    {item.file_type !== 'video' && (
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300 bg-black/30">
-                        <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                          <Search className="w-5 h-5 text-white" />
-                        </div>
-                      </div>
-                    )}
-                    {item.tag && (
-                      <div
-                        className="absolute top-4 left-3 text-sm font-black px-3 py-1 rounded-full z-10"
-                        style={{ background: shadowColor, border: '2px solid #111', fontFamily: "'Fredoka', sans-serif" }}
-                      >
-                        {item.tag}
-                      </div>
-                    )}
-                  </div>
-                  {item.label && !item.label.toLowerCase().includes('whatsapp') && (
-                    <div className="px-4 py-3" style={{ borderTop: '3px solid #111' }}>
-                      <p className="font-black text-gray-900 text-sm" style={{ fontFamily: "'Fredoka', sans-serif" }}>{item.label}</p>
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+            {hairstylePhotos.map((item, idx) => (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-40px' }}
+                transition={{ duration: 0.75, ease: _SITE_EASE, delay: idx * 0.07 }}
+                onClick={() => item.file_type !== 'video' && setLightboxIdx(imagePhotos.indexOf(item))}
+                className={`group relative overflow-hidden rounded-2xl ${item.file_type !== 'video' ? 'cursor-pointer' : ''}`}
+                style={{
+                  aspectRatio: '3/4',
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                }}
+              >
+                {item.file_type === 'video' ? (
+                  <video src={getMediaUrl(item?.image_url)} className="absolute inset-0 w-full h-full object-cover" autoPlay muted loop playsInline preload="metadata" />
+                ) : (
+                  <img
+                    src={getMediaUrl(item?.image_url)}
+                    alt={item.label || ''}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                  />
+                )}
+                <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 55%)' }} />
+                {item.file_type !== 'video' && (
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-400">
+                    <div className="w-11 h-11 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.25)' }}>
+                      <Search className="w-4 h-4 text-white" />
                     </div>
-                  )}
-                </motion.div>
-              );
-            })}
+                  </div>
+                )}
+                {item.tag && (
+                  <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-white text-xs font-semibold" style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.2)' }}>
+                    {item.tag}
+                  </div>
+                )}
+                {item.label && !item.label.toLowerCase().includes('whatsapp') && (
+                  <p className="absolute bottom-3 left-4 right-4 text-white text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-500 leading-tight">
+                    {item.label}
+                  </p>
+                )}
+              </motion.div>
+            ))}
           </div>
 
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ type: 'spring', stiffness: 260, damping: 14, delay: 0.3 }}
+            transition={{ duration: 0.7, ease: _SITE_EASE, delay: 0.3 }}
             className="text-center mt-10"
           >
             <motion.button
               onClick={() => setShowBooking(true)}
-              whileHover={{ scale: 1.06 }}
-              whileTap={{ scale: 0.95 }}
-              className="inline-flex items-center gap-2 px-8 py-4 font-black text-white rounded-xl"
-              style={{
-                background: '#111',
-                border: '3px solid #111',
-                boxShadow: '6px 6px 0px #FFD93D, 6px 6px 0px 3px #111',
-                fontFamily: "'Fredoka', sans-serif",
-                fontSize: '1.1rem',
-              }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.97 }}
+              className="inline-flex items-center gap-2 px-8 py-4 font-semibold text-white rounded-2xl text-sm"
+              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(12px)' }}
             >
-              <Scissors className="w-5 h-5" /> PRENOTA ORA
+              <Scissors className="w-4 h-4" /> PRENOTA ORA
             </motion.button>
           </motion.div>
         </div>

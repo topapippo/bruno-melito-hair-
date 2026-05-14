@@ -363,7 +363,7 @@ export default function WebsitePage() {
   };
 
   return (
-    <div className="min-h-screen text-[#1e293b]" style={{ ...themeStyle, backgroundColor: config.bg_color || '#FAFBFD', fontFamily: `var(--theme-font-body)` }} data-testid="website-landing">
+    <div className="min-h-screen text-white" style={{ ...themeStyle, backgroundColor: config.bg_color || '#0a0a0f', fontFamily: `var(--theme-font-body)` }} data-testid="website-landing">
       <WelcomeBanner T={T} setShowBooking={setShowBooking} />
       <style>{`
         @keyframes heroFadeIn { from { opacity: 0; transform: translateY(25px); } to { opacity: 1; transform: translateY(0); } }
@@ -526,13 +526,16 @@ export default function WebsitePage() {
             <Icon size={size} strokeWidth={1.5} />
           </motion.div>
         ))}
-        <div className="relative max-w-6xl mx-auto px-4 py-20 sm:py-32 w-full">
-          <div className="text-center max-w-3xl mx-auto">
-            {/* Logo pill */}
-            <div className="flex justify-center mb-6 hero-animate hero-d1">
-              <img src="/logo-metti.png" alt="Metti la testa a posto" className="h-48 w-auto object-contain" />
-            </div>
-            <h1 className="text-5xl sm:text-6xl lg:text-8xl font-black text-white mb-4 tracking-tight hero-animate hero-d2 leading-none" style={{ fontFamily: `var(--theme-font-display)` }}>{config.salon_name || 'BRUNO MELITO HAIR'}</h1>
+        <div className="relative w-full px-6 sm:px-14 py-20 sm:py-24">
+          {/* Titolo editoriale gigante */}
+          <div className="hero-animate hero-d1 mb-10">
+            <h1 className="font-black" style={{ fontFamily: "'Fredoka', sans-serif", lineHeight: 0.82 }}>
+              <span className="block text-white" style={{ fontSize: 'clamp(3.5rem, 14vw, 11rem)', letterSpacing: '-0.03em' }}>BRUNO</span>
+              <span className="block" style={{ fontSize: 'clamp(3.5rem, 14vw, 11rem)', letterSpacing: '-0.03em', WebkitTextStroke: '2px rgba(255,255,255,0.6)', color: 'transparent' }}>MELITO</span>
+              <span className="block text-white" style={{ fontSize: 'clamp(1rem, 3.5vw, 3rem)', letterSpacing: '0.25em', opacity: 0.28, fontWeight: 500, marginTop: '0.35em' }}>HAIR STUDIO</span>
+            </h1>
+          </div>
+          <div className="text-center max-w-xl mx-auto">
             <div className="hero-animate hero-d3">
               <div className="inline-block backdrop-blur-sm text-xs font-bold px-5 py-2.5 rounded-full border mb-6" style={{ backgroundColor: `${T.primary}20`, color: T.primary, borderColor: `${T.primary}40` }}>
                 {config.subtitle || 'SOLO PER APPUNTAMENTO'}
@@ -622,46 +625,47 @@ export default function WebsitePage() {
       </section>
 
       {/* ─── COME FUNZIONA — 3 tocchi per prenotare ─── */}
-      <section className="py-20 sm:py-24 bg-white relative overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-1" style={{ background: `linear-gradient(90deg, transparent, ${T.primary}, ${T.accent}, transparent)` }} />
-        <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${T.primary}30, transparent)` }} />
+      <section className="py-20 sm:py-24 relative overflow-hidden" style={{ background: '#0d0d16' }}>
+        <div className="absolute top-0 left-0 right-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${T.primary}60, ${T.accent}60, transparent)` }} />
         <div className="max-w-5xl mx-auto px-4">
           <AnimatedSection>
             <div className="text-center mb-14">
-              <span className="inline-block text-xs font-black tracking-widest uppercase px-5 py-2 rounded-full mb-5"
-                style={{ background: `${T.primary}12`, color: T.primary }}>✦ SEMPLICISSIMO</span>
-              <h2 className="text-4xl sm:text-5xl font-black leading-tight" style={{ color: T.text, fontFamily: T.fontDisplay }}>
+              <span className="inline-block text-xs font-bold tracking-[0.3em] uppercase px-5 py-2 rounded-full mb-5"
+                style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.1)' }}>✦ SEMPLICISSIMO</span>
+              <h2 className="text-4xl sm:text-5xl font-black leading-tight text-white" style={{ fontFamily: T.fontDisplay }}>
                 Prenota in{' '}
                 <span style={{ background: `linear-gradient(135deg, ${T.primary}, ${T.accent})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
                   3 Tocchi
                 </span>
               </h2>
-              <p className="text-sm mt-4 max-w-sm mx-auto" style={{ color: `${T.text}55` }}>
+              <p className="text-sm mt-4 max-w-sm mx-auto text-white/35">
                 Nessuna telefonata, nessuna attesa. Solo tu e il tuo appuntamento.
               </p>
             </div>
           </AnimatedSection>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 relative">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6 relative">
             <div className="hidden sm:block absolute top-12 left-[18%] right-[18%] h-px"
-              style={{ background: `linear-gradient(90deg, ${T.primary}30, ${T.accent}30)` }} />
+              style={{ background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.12), rgba(255,255,255,0.06))' }} />
             {[
-              { num: '1', icon: '✂️', title: 'Scegli il Servizio', desc: 'Taglio, colore, trattamenti — sfoglia il listino e clicca quello che vuoi', color: T.primary },
-              { num: '2', icon: '📅', title: 'Giorno e Ora', desc: 'Vedi gli slot disponibili in tempo reale e scegli il momento che preferisci', color: T.accent },
-              { num: '3', icon: '✅', title: 'Confermato Subito', desc: 'Conferma automatica immediata. Nessuna chiamata, nessuna risposta da aspettare', color: '#22C55E' },
+              { num: '1', icon: '✂️', title: 'Scegli il Servizio', desc: 'Sfoglia il listino e clicca quello che vuoi', color: T.primary },
+              { num: '2', icon: '📅', title: 'Giorno e Ora', desc: 'Slot disponibili in tempo reale, scegli il momento', color: T.accent },
+              { num: '3', icon: '✅', title: 'Confermato Subito', desc: 'Conferma automatica immediata. Nessuna attesa', color: '#22C55E' },
             ].map((step, i) => (
               <AnimatedSection key={i} delay={i * 0.15}>
-                <div className="relative text-center px-6 py-8 rounded-3xl hover:shadow-xl transition-all duration-500 hover:-translate-y-2 border group cursor-default"
-                  style={{ borderColor: `${step.color}18`, background: `linear-gradient(145deg, #fff, ${step.color}06)` }}>
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full flex items-center justify-center text-white font-black text-sm shadow-lg"
-                    style={{ background: `linear-gradient(135deg, ${step.color}, ${step.color}CC)` }}>
+                <div
+                  className="relative text-center px-6 py-8 rounded-3xl hover:-translate-y-2 transition-all duration-500 cursor-default"
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', backdropFilter: 'blur(12px)' }}
+                >
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full flex items-center justify-center text-white font-black text-sm"
+                    style={{ background: `linear-gradient(135deg, ${step.color}, ${step.color}BB)` }}>
                     {step.num}
                   </div>
-                  <div className="w-16 h-16 rounded-2xl mx-auto mb-5 mt-2 flex items-center justify-center text-3xl"
-                    style={{ background: `linear-gradient(135deg, ${step.color}22, ${step.color}0A)`, border: `1px solid ${step.color}22` }}>
+                  <div className="w-14 h-14 rounded-2xl mx-auto mb-5 mt-2 flex items-center justify-center text-2xl"
+                    style={{ background: `${step.color}18`, border: `1px solid ${step.color}30` }}>
                     {step.icon}
                   </div>
-                  <h3 className="font-black text-lg mb-3" style={{ color: T.text }}>{step.title}</h3>
-                  <p className="text-sm leading-relaxed" style={{ color: `${T.text}60` }}>{step.desc}</p>
+                  <h3 className="font-black text-base mb-2 text-white">{step.title}</h3>
+                  <p className="text-sm leading-relaxed text-white/40">{step.desc}</p>
                 </div>
               </AnimatedSection>
             ))}
@@ -669,12 +673,12 @@ export default function WebsitePage() {
           <AnimatedSection delay={0.5}>
             <div className="text-center mt-12">
               <button onClick={() => setShowBooking(true)}
-                className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl text-white font-black text-lg hover:scale-105 transition-all duration-300 shadow-xl hover:shadow-2xl"
-                style={{ background: `linear-gradient(135deg, ${T.primary}, ${T.accent})`, boxShadow: `0 12px 40px ${T.primary}40` }}>
+                className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl text-white font-black text-lg hover:scale-105 transition-all duration-300"
+                style={{ background: `linear-gradient(135deg, ${T.primary}, ${T.accent})`, boxShadow: `0 14px 40px ${T.primary}40` }}>
                 <Scissors className="w-5 h-5" />
                 Prenota Ora — Conferma Immediata
               </button>
-              <p className="text-xs mt-3" style={{ color: `${T.text}35` }}>
+              <p className="text-xs mt-3 text-white/25">
                 Nessuna registrazione · Gratuito · Sempre disponibile
               </p>
             </div>

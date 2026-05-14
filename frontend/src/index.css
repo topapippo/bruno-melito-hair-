@@ -49,7 +49,7 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-html { font-size: 17px; }
+html { font-size: 17px; scroll-behavior: smooth; }
 
 body {
   font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -138,20 +138,33 @@ a, button { transition: all 0.2s ease; }
   font-family: 'Fredoka', sans-serif;
 }
 
-/* Pattern puntini sito pubblico */
+/* Sfondo scuro sito pubblico */
 .website-dots-bg {
-  background-color: #FFFCF0;
-  background-image: radial-gradient(#11111128 2px, transparent 2px);
-  background-size: 20px 20px;
+  background-color: #0a0a0f;
+  background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size: 28px 28px;
 }
 
-/* Titoli wow website */
+/* Titoli website high-end */
 .website-wow-h2 {
   font-family: 'Fredoka', sans-serif;
-  font-weight: 900;
-  letter-spacing: -1.5px;
-  text-shadow: 4px 4px 0px #111;
-  -webkit-text-stroke: 0.5px #111;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: white;
+}
+
+/* Glassmorphism website (sfondo scuro) */
+.glass-website {
+  background: rgba(255,255,255,0.07);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.11);
+}
+
+/* Testo outline bianco */
+.text-outline-white {
+  -webkit-text-stroke: 2px rgba(255,255,255,0.65);
+  color: transparent;
 }
 
 @keyframes float-slow {
