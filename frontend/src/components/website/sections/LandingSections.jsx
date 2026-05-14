@@ -379,59 +379,124 @@ export function ReviewsSection({ reviews, T, config }) {
   );
 }
 
+const _GALLERY_COLORS = ['#FFD93D', '#FF6B9D', '#C3F0CA', '#A8DAFF', '#FFB347'];
+
 export function GallerySection({ config, hairstylePhotos, setShowBooking, T }) {
   const [lightboxIdx, setLightboxIdx] = useState(null);
   const imagePhotos = hairstylePhotos.filter(p => p.file_type !== 'video');
+
   return (
     <>
-      <section className="py-20 sm:py-28" style={{ background: `linear-gradient(135deg, ${T.primary}20 0%, ${T.accent}12 50%, ${T.primary}08 100%)` }}>
-        <div className="max-w-6xl mx-auto px-4">
-          <AnimatedSection>
-            <div className="text-center mb-12">
-              <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Gallery</p>
-              <h2 className="text-3xl sm:text-4xl font-black" style={{ fontFamily: T.fontDisplay, background: `linear-gradient(135deg, ${T.primary}, ${T.accent})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>{config.gallery_title || 'I Nostri Lavori'}</h2>
-              {config.gallery_subtitle && <p className="text-[#64748B] mt-3 max-w-xl mx-auto">{config.gallery_subtitle}</p>}
+      <section className="py-20 px-4 overflow-hidden website-dots-bg">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: -40, scale: 0.85 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ type: 'spring', stiffness: 300, damping: 14 }}
+            className="text-center mb-14"
+          >
+            <div className="inline-block relative">
+              <h2
+                className="text-5xl sm:text-6xl font-black px-6 py-3 inline-block relative z-10 website-wow-h2"
+                style={{ color: '#2EC4B6' }}
+              >
+                {config.gallery_title || 'I Nostri Lavori'}
+              </h2>
+              <div
+                className="absolute bottom-1 left-0 right-0 h-5 -z-0 rotate-1"
+                style={{ backgroundColor: '#FFD93D', border: '2px solid #111' }}
+              />
             </div>
-          </AnimatedSection>
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-            {hairstylePhotos.map((item, idx) => (
-              <AnimatedSection key={item.id} delay={0.05 * idx}>
-                <div onClick={() => item.file_type !== 'video' && setLightboxIdx(imagePhotos.indexOf(item))}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = `${T.primary}50`; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#e5e7eb'; }}
-                  className={`relative rounded-3xl overflow-hidden aspect-[3/4] group ${item.file_type !== 'video' ? 'cursor-pointer' : ''} border-2 border-gray-200 transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]`}>
-                  {item.file_type === 'video' ? (
-                    <video src={getMediaUrl(item?.image_url)} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" autoPlay muted loop playsInline preload="metadata" />
-                  ) : (
-                    <img src={getMediaUrl(item?.image_url)} alt={item.label} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  {item.file_type !== 'video' && (
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                        <Search className="w-5 h-5 text-white" />
+            {config.gallery_subtitle && (
+              <p className="text-gray-600 mt-6 max-w-xl mx-auto text-base font-semibold">{config.gallery_subtitle}</p>
+            )}
+          </motion.div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-8">
+            {hairstylePhotos.map((item, idx) => {
+              const tilt = idx % 2 === 0 ? 1.5 : -1.5;
+              const shadowColor = _GALLERY_COLORS[idx % _GALLERY_COLORS.length];
+              return (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, scale: 0.75, y: 60, rotate: tilt * 4 }}
+                  whileInView={{ opacity: 1, scale: 1, y: 0, rotate: tilt }}
+                  viewport={{ once: true, margin: '-60px' }}
+                  transition={{ type: 'spring', stiffness: 260, damping: 11, delay: idx * 0.08 }}
+                  whileHover={{ y: -12, rotate: 0, scale: 1.04 }}
+                  onClick={() => item.file_type !== 'video' && setLightboxIdx(imagePhotos.indexOf(item))}
+                  className={`bg-white rounded-2xl overflow-hidden ${item.file_type !== 'video' ? 'cursor-pointer' : ''}`}
+                  style={{
+                    border: '4px solid #111',
+                    boxShadow: `8px 8px 0px ${shadowColor}, 8px 8px 0px 4px #111`,
+                  }}
+                >
+                  <div className="relative overflow-hidden" style={{ aspectRatio: '3/4' }}>
+                    <div className="absolute top-0 left-0 right-0 h-2 z-10" style={{ backgroundColor: shadowColor }} />
+                    {item.file_type === 'video' ? (
+                      <video src={getMediaUrl(item?.image_url)} className="w-full h-full object-cover" autoPlay muted loop playsInline preload="metadata" />
+                    ) : (
+                      <motion.img
+                        src={getMediaUrl(item?.image_url)}
+                        alt={item.label || ''}
+                        className="w-full h-full object-cover"
+                        whileHover={{ scale: 1.08 }}
+                        transition={{ duration: 0.4 }}
+                      />
+                    )}
+                    {item.file_type !== 'video' && (
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300 bg-black/30">
+                        <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                          <Search className="w-5 h-5 text-white" />
+                        </div>
                       </div>
+                    )}
+                    {item.tag && (
+                      <div
+                        className="absolute top-4 left-3 text-sm font-black px-3 py-1 rounded-full z-10"
+                        style={{ background: shadowColor, border: '2px solid #111', fontFamily: "'Fredoka', sans-serif" }}
+                      >
+                        {item.tag}
+                      </div>
+                    )}
+                  </div>
+                  {item.label && !item.label.toLowerCase().includes('whatsapp') && (
+                    <div className="px-4 py-3" style={{ borderTop: '3px solid #111' }}>
+                      <p className="font-black text-gray-900 text-sm" style={{ fontFamily: "'Fredoka', sans-serif" }}>{item.label}</p>
                     </div>
                   )}
-                  {item.tag && (
-                    <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-md text-[#1e293b] text-xs font-bold px-3 py-1 rounded-full border border-gray-200">{item.tag}</div>
-                  )}
-                  <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                    {item.label && !item.label.toLowerCase().includes('whatsapp') && <p className="text-white font-bold">{item.label}</p>}
-                  </div>
-                </div>
-              </AnimatedSection>
-            ))}
+                </motion.div>
+              );
+            })}
           </div>
-          <AnimatedSection delay={0.3}>
-            <div className="text-center mt-8">
-              <Button onClick={() => setShowBooking(true)} style={{ backgroundColor: T.primary }} className="text-white hover:opacity-90 font-bold px-8 py-6 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300">
-                <Scissors className="w-4 h-4 mr-2" /> PRENOTA ORA
-              </Button>
-            </div>
-          </AnimatedSection>
+
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ type: 'spring', stiffness: 260, damping: 14, delay: 0.3 }}
+            className="text-center mt-10"
+          >
+            <motion.button
+              onClick={() => setShowBooking(true)}
+              whileHover={{ scale: 1.06 }}
+              whileTap={{ scale: 0.95 }}
+              className="inline-flex items-center gap-2 px-8 py-4 font-black text-white rounded-xl"
+              style={{
+                background: '#111',
+                border: '3px solid #111',
+                boxShadow: '6px 6px 0px #FFD93D, 6px 6px 0px 3px #111',
+                fontFamily: "'Fredoka', sans-serif",
+                fontSize: '1.1rem',
+              }}
+            >
+              <Scissors className="w-5 h-5" /> PRENOTA ORA
+            </motion.button>
+          </motion.div>
         </div>
       </section>
+
       {lightboxIdx !== null && lightboxIdx >= 0 && (
         <div className="fixed inset-0 z-[70] bg-black/95 backdrop-blur-sm flex items-center justify-center" onClick={() => setLightboxIdx(null)} data-testid="gallery-lightbox">
           <button onClick={() => setLightboxIdx(null)} className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors z-10" data-testid="lightbox-close">
@@ -459,34 +524,57 @@ export function GallerySection({ config, hairstylePhotos, setShowBooking, T }) {
   );
 }
 
+const _POLAROID_TILTS = [-7, 4, -3, 8, -5, 6, -4, 9, -2];
+const _POLAROID_COLORS = ['#FFD93D', '#FF6B9D', '#C3F0CA', '#A8DAFF', '#FFB347', '#FF6B9D', '#FFD93D', '#C3F0CA', '#A8DAFF'];
+
 export function GalleryStrip({ photos, T }) {
   const imagePhotos = (photos || []).filter(p => p.file_type !== 'video' && p.image_url);
   if (imagePhotos.length === 0) return null;
-  const doubled = [...imagePhotos, ...imagePhotos];
-  const totalWidth = doubled.length * 152; // 140px + 12px gap
+  const displayed = imagePhotos.slice(0, 9);
 
   return (
-    <div className="py-3 overflow-hidden" style={{ background: `${T.primary}12` }}>
-      <style>{`
-        @keyframes galleryScroll {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-${imagePhotos.length * 152}px); }
-        }
-        .gallery-strip-track { animation: galleryScroll ${imagePhotos.length * 3}s linear infinite; }
-        .gallery-strip-track:hover { animation-play-state: paused; }
-      `}</style>
-      <div className="gallery-strip-track flex gap-3" style={{ width: `${totalWidth}px` }}>
-        {doubled.map((photo, i) => (
-          <div key={`${photo.id}-${i}`} className="flex-shrink-0 rounded-2xl overflow-hidden shadow-lg"
-            style={{ width: '140px', height: '140px' }}>
-            <img
-              src={getMediaUrl(photo.image_url)}
-              alt={photo.label || ''}
-              className="w-full h-full object-cover"
-              loading="lazy"
-            />
-          </div>
-        ))}
+    <div className="py-14 px-4 website-dots-bg overflow-hidden">
+      <div className="max-w-5xl mx-auto">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 sm:gap-8">
+          {displayed.map((photo, i) => {
+            const tilt = _POLAROID_TILTS[i % _POLAROID_TILTS.length];
+            const shadowColor = _POLAROID_COLORS[i % _POLAROID_COLORS.length];
+            const imgH = i % 5 === 0 ? 200 : 160;
+            return (
+              <motion.div
+                key={photo.id}
+                initial={{ opacity: 0, scale: 0.2, rotate: tilt * 2, y: 40 }}
+                whileInView={{ opacity: 1, scale: 1, rotate: tilt, y: 0 }}
+                viewport={{ once: true, margin: '-40px' }}
+                transition={{ type: 'spring', stiffness: 280, damping: 10, delay: i * 0.1 }}
+                whileHover={{ rotate: 0, scale: 1.18, zIndex: 20 }}
+                className="bg-white cursor-pointer"
+                style={{
+                  border: '4px solid #111',
+                  boxShadow: `8px 8px 0px ${shadowColor}, 8px 8px 0px 4px #111`,
+                  padding: '8px 8px 32px 8px',
+                  position: 'relative',
+                  zIndex: 1,
+                }}
+              >
+                <div style={{ height: '4px', backgroundColor: shadowColor, marginBottom: '6px', borderRadius: '2px' }} />
+                <div style={{ height: `${imgH}px`, overflow: 'hidden' }}>
+                  <img
+                    src={getMediaUrl(photo.image_url)}
+                    alt={photo.label || ''}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+                {photo.label && !photo.label.toLowerCase().includes('whatsapp') && (
+                  <p className="text-center text-xs font-black mt-3 text-gray-800" style={{ fontFamily: "'Fredoka', sans-serif" }}>
+                    {photo.label}
+                  </p>
+                )}
+              </motion.div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

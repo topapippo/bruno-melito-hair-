@@ -32,11 +32,28 @@ def _upload_image_imgbb(content: bytes) -> str:
     return data["data"]["url"]
 
 
+_TREND_DEFAULTS = [
+    {"title": "Bixie Cut", "desc": "Il mix perfetto tra pixie e bob per un'estate fresca e grintosa.", "img": "https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/a81be5d7abc73969b2cb334a559dc8c2aac917f58f4e2b661015b9ef422f8d76.png", "badge": "🔥 Trend", "color_code": "#FFD93D", "order": 0},
+    {"title": "Butterfly Cut", "desc": "Volume e movimento pazzesco senza rinunciare alle lunghezze.", "img": "https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/0932ee88330ef0ca32df8c7b548f976284064ebc11bc90f86b13a995c8abf80a.png", "badge": "✨ Virale", "color_code": "#FF6B9D", "order": 1},
+    {"title": "Biondo Burro", "desc": "Luce pura e cremosa per risplendere sotto il sole del 2026.", "img": "https://i.ibb.co/vvP7jZFb/b28028e3900d.jpg", "badge": "☀️ Estate", "color_code": "#A8DAFF", "order": 2},
+]
+
+
 @router.get("/website-trends")
 async def get_trends(current_user: dict = Depends(get_current_user)):
     trends = await db.website_trends.find(
         {"user_id": current_user["id"]}, {"_id": 0}
     ).sort("order", 1).to_list(20)
+    if not trends:
+        to_insert = [
+            {**d, "id": str(uuid.uuid4()), "user_id": current_user["id"],
+             "created_at": datetime.now(timezone.utc).isoformat()}
+            for d in _TREND_DEFAULTS
+        ]
+        await db.website_trends.insert_many(to_insert)
+        for doc in to_insert:
+            doc.pop("_id", None)
+        trends = to_insert
     return trends
 
 

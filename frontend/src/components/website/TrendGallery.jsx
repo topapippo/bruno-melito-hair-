@@ -70,20 +70,20 @@ export default function TrendGallery({ setShowBooking }) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           {items.map((t, i) => {
             const shadowColor = t.color_code || COLORS[i % COLORS.length];
-            const tilt = i % 2 === 0 ? 1 : -1;
+            const tilt = i % 2 === 0 ? 2 : -2;
 
             return (
               <motion.div
                 key={t.id}
-                initial={{ opacity: 0, scale: 0.8, y: 60, rotate: tilt * 3 }}
+                initial={{ opacity: 0, scale: 0.75, y: 70, rotate: tilt * 4 }}
                 whileInView={{ opacity: 1, scale: 1, y: 0, rotate: tilt }}
                 viewport={{ once: true, margin: '-60px' }}
-                transition={{ type: 'spring', stiffness: 280, damping: 12, delay: i * 0.12 }}
-                whileHover={{ y: -10, rotate: 0, scale: 1.03 }}
+                transition={{ type: 'spring', stiffness: 260, damping: 11, delay: i * 0.13 }}
+                whileHover={{ y: -14, rotate: 0, scale: 1.04 }}
                 className="bg-white rounded-2xl overflow-hidden cursor-pointer"
                 style={{
                   border: '4px solid #111',
-                  boxShadow: `12px 12px 0px ${shadowColor}, 12px 12px 0px 4px #111`,
+                  boxShadow: `14px 14px 0px ${shadowColor}, 14px 14px 0px 4px #111`,
                 }}
               >
                 {/* Image */}
