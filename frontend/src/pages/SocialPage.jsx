@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
-import { Share2, History, Loader2, Upload, X, Send, Sparkles, Trash2, Edit3, Camera } from 'lucide-react';
+import { Share2, History, Loader2, Upload, X, Send, Sparkles, Trash2, Edit3, Camera, RefreshCw } from 'lucide-react';
 import Layout from '../components/Layout';
 import api from '../lib/api';
 
@@ -46,7 +46,7 @@ function SuggestionCard({ s, onPublish, onDelete }) {
             <span className="text-[10px] uppercase font-bold px-2 py-0.5 bg-purple-100 text-purple-600 rounded-full">{s.type}</span>
             <button onClick={() => onDelete(s.id)} className="text-gray-300 hover:text-red-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
           </div>
-          <input className="w-full font-bold text-gray-800 border-none p-0 focus:ring-0 bg-transparent" value={s.title} readOnly />
+          <h4 className="font-bold text-gray-800">{s.title}</h4>
           <textarea
             className="w-full text-sm text-gray-600 border border-transparent hover:border-gray-100 focus:border-purple-200 focus:ring-0 rounded-lg p-2 resize-none transition-all"
             rows={4}
@@ -93,13 +93,26 @@ function WingmanTab({ configured }) {
 
   return (
     <div className="space-y-4 px-1">
-      <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-100 rounded-2xl p-5">
-        <h3 className="font-bold text-purple-800 flex items-center gap-2"><Sparkles className="w-5 h-5" /> Wingman AI</h3>
-        <p className="text-sm text-purple-600">Modifica testo o foto, poi clicca su pubblica.</p>
+      <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-100 rounded-2xl p-5 flex items-center justify-between">
+        <div>
+          <h3 className="font-bold text-purple-800 flex items-center gap-2"><Sparkles className="w-5 h-5" /> Wingman AI</h3>
+          <p className="text-sm text-purple-600">Idee fresche per i tuoi social.</p>
+        </div>
+        <button onClick={loadSuggestions} className="p-2 text-purple-600 hover:bg-purple-100 rounded-full transition-all" title="Ricarica idee">
+          <RefreshCw className="w-5 h-5" />
+        </button>
       </div>
+
       {suggestions.map(s => (
         <SuggestionCard key={s.id} s={s} onPublish={handlePublish} onDelete={(id) => setSuggestions(prev => prev.filter(x => x.id !== id))} />
       ))}
+
+      {suggestions.length === 0 && (
+        <div className="text-center py-12 text-gray-400">
+          <Sparkles className="w-12 h-12 mx-auto mb-3 opacity-20" />
+          <p>Nessuna idea rimasta. Clicca sul tasto in alto per ricaricare!</p>
+        </div>
+      )}
     </div>
   );
 }
