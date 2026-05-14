@@ -295,13 +295,15 @@ export default function WebsiteAdminPage() {
 
   // Section ordering
   const ALL_SECTIONS = [
-    { id: 'services', label: 'Servizi', desc: 'Listino servizi con categorie' },
-    { id: 'salon', label: 'Foto Salone', desc: 'Galleria foto e video del salone' },
-    { id: 'about', label: 'Chi Siamo', desc: 'Storia e punti di forza' },
-    { id: 'promotions', label: 'Promozioni', desc: 'Offerte speciali attive' },
-    { id: 'reviews', label: 'Recensioni', desc: 'Testimonianze dei clienti' },
-    { id: 'gallery', label: 'Gallery Lavori', desc: 'Portfolio acconciature' },
-    { id: 'contact', label: 'Contatti', desc: 'Orari, indirizzo, telefono' },
+    { id: 'services',     label: 'Servizi',        desc: 'Listino servizi con categorie' },
+    { id: 'salon',        label: 'Foto Salone',     desc: 'Galleria foto e video del salone' },
+    { id: 'about',        label: 'Chi Siamo',       desc: 'Storia e punti di forza' },
+    { id: 'promotions',   label: 'Promozioni',      desc: 'Offerte speciali attive' },
+    { id: 'reviews',      label: 'Recensioni',      desc: 'Testimonianze dei clienti' },
+    { id: 'gallery',      label: 'Gallery Lavori',  desc: 'Portfolio acconciature' },
+    { id: 'trend_gallery', label: 'Trend 2026',     desc: 'Galleria look estate 2026 (Bixie, Butterfly, Biondo Burro)' },
+    { id: 'gift_card',    label: 'Gift Card',       desc: 'Sezione gift card e regali' },
+    { id: 'contact',      label: 'Contatti',        desc: 'Orari, indirizzo, telefono' },
   ];
 
   const rawSectionOrder = config?.section_order || ALL_SECTIONS.map(s => s.id);

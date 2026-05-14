@@ -349,19 +349,13 @@ export default function WebsitePage() {
       case 'team':
         return operators.filter(o => o.active !== false).length > 0 ? <TeamSection key="team" operators={operators} T={T} setShowBooking={setShowBooking} /> : null;
       case 'gallery':
-        return (
-          <div key="gallery">
-            {hairstylePhotos.length > 0 && <GallerySection config={config} hairstylePhotos={hairstylePhotos} setShowBooking={setShowBooking} T={T} />}
-            <TrendGallery setShowBooking={setShowBooking} />
-          </div>
-        );
+        return hairstylePhotos.length > 0 ? <GallerySection key="gallery" config={config} hairstylePhotos={hairstylePhotos} setShowBooking={setShowBooking} T={T} /> : null;
+      case 'trend_gallery':
+        return <TrendGallery key="trend_gallery" setShowBooking={setShowBooking} />;
+      case 'gift_card':
+        return <GiftCardSection key="gift_card" T={T} config={config} />;
       case 'contact':
-        return (
-          <div key="contact">
-            <GiftCardSection T={T} config={config} />
-            <ContactSection {...{ contactRef, config, hours, phones, setShowBooking, openWhatsApp, T }} />
-          </div>
-        );
+        return <ContactSection key="contact" {...{ contactRef, config, hours, phones, setShowBooking, openWhatsApp, T }} />;
       default:
         return null;
     }
