@@ -257,8 +257,6 @@ async def lifespan(app: FastAPI):
                     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
                     async for user in db.users.find({}, {"_id": 0}):
-                        if not (user.get("ultramsg_instance_id") or user.get("green_api_instance_id")):
-                            continue
                         salon = user.get("salon_name", "Bruno Melito Hair")
 
                         # Appuntamenti completati nella finestra 28-32 giorni fa
@@ -336,8 +334,7 @@ async def lifespan(app: FastAPI):
                 await asyncio.sleep((next_run - now).total_seconds())
                 try:
                     async for user in db.users.find({}, {"_id": 0}):
-                        if user.get("ultramsg_instance_id") or user.get("green_api_instance_id"):
-                            await _send_inactive_reminders_core(user)
+                        await _send_inactive_reminders_core(user)
                 except Exception as e:
                     logger.error(f"Errore scheduler inattivi: {e}")
 

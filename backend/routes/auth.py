@@ -63,19 +63,10 @@ async def _check_register_rate_limit(ip: str):
 async def _notify_login_whatsapp(user: dict, ip: str):
     """Invia WA a Bruno quando qualcuno accede al gestionale (background task)."""
     try:
-        instance_id = user.get("green_api_instance_id", "")
-        api_token = user.get("green_api_token", "")
         phone = user.get("whatsapp") or user.get("phone", "")
-        if not instance_id or not api_token or not phone:
+        if not phone:
             return
-        import re as _re
-        phone_clean = _re.sub(r'\D', '', str(phone))
-        if phone_clean.startswith('0039'):
-            phone_clean = phone_clean[4:]
-        elif phone_clean.startswith('39') and len(phone_clean) > 10:
-            phone_clean = phone_clean[2:]
-        if not phone_clean.startswith('39') or len(phone_clean) == 10:
-            phone_clean = '39' + phone_clean
+        from utils import send_whatsapp_cloud
         now_str = datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')
         email_masked = user['email'][:3] + '***@' + user['email'].split('@')[-1]
         msg = (
@@ -85,14 +76,7 @@ async def _notify_login_whatsapp(user: dict, ip: str):
             f"🌐 IP: {ip}\n\n"
             f"Se non sei stato tu, cambia subito la password da Impostazioni!"
         )
-        import requests as _req
-        import asyncio
-        url = f"https://api.greenapi.com/waInstance{instance_id}/sendMessage/{api_token}"
-        loop = asyncio.get_event_loop()
-        await loop.run_in_executor(
-            None,
-            lambda: _req.post(url, json={"chatId": phone_clean + "@c.us", "message": msg}, timeout=10)
-        )
+        await send_whatsapp_cloud(phone, msg)
     except Exception as e:
         logger.warning(f"Notifica login WA fallita: {e}")
 

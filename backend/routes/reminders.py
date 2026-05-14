@@ -479,7 +479,7 @@ async def send_confirmation_link(appointment_id: str, current_user: dict = Depen
         + WA_FOOTER
     )
 
-    import urllib.parse, re as _re, asyncio, requests as _req
+    import urllib.parse
     wa_phone = client_phone.replace(" ", "").replace("-", "")
     if wa_phone.startswith("0"):
         wa_phone = "39" + wa_phone[1:]
@@ -490,24 +490,11 @@ async def send_confirmation_link(appointment_id: str, current_user: dict = Depen
 
     whatsapp_url = f"https://wa.me/{wa_phone}?text={urllib.parse.quote(message)}"
 
-    # Tenta invio diretto via Green API
-    instance_id = current_user.get("green_api_instance_id", "")
-    api_token = current_user.get("green_api_token", "")
-    if instance_id and api_token:
-        try:
-            phone_clean = normalize_phone_wa(client_phone)
-            wa_number = phone_clean + "@c.us"
-            url = f"https://api.greenapi.com/waInstance{instance_id}/sendMessage/{api_token}"
-            resp = await asyncio.to_thread(_req.post, url, json={"chatId": wa_number, "message": message}, timeout=15)
-            rjson = {}
-            try:
-                rjson = resp.json()
-            except Exception:
-                rjson = {}
-            if resp.status_code == 200 and rjson.get("idMessage"):
-                return {"success": True, "sent": True, "message": message, "client_phone": client_phone}
-        except Exception:
-            pass
+    # Tenta invio via Cloud API
+    from utils import send_whatsapp_cloud
+    result = await send_whatsapp_cloud(client_phone, message)
+    if result.get("sent"):
+        return {"success": True, "sent": True, "message": message, "client_phone": client_phone}
 
     return {"success": True, "sent": False, "whatsapp_url": whatsapp_url, "message": message, "client_phone": client_phone}
 

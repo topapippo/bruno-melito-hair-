@@ -262,13 +262,12 @@ async def _send_booking_push(client_name, date_it, time, services_names, date_is
         logger.warning(f"Push notifica prenotazione fallita: {e}")
 
 
-async def _send_booking_wa(client_phone, client_name, date_it, time, services_names, appointment_id, instance_id, api_token, salon_name) -> bool:
-    """Invia WA di conferma al cliente. Ritorna True se inviato con successo."""
-    if not instance_id or not api_token or not client_phone:
+async def _send_booking_wa(client_phone, client_name, date_it, time, services_names, appointment_id, salon_name) -> bool:
+    """Invia WA di conferma al cliente via Cloud API. Ritorna True se inviato con successo."""
+    if not client_phone:
         return False
     try:
-        import requests as _req, asyncio as _asyncio
-        phone_clean = normalize_phone_wa(client_phone)
+        from utils import send_whatsapp_cloud, WA_FOOTER
         msg = (
             f"✅ Prenotazione confermata!\n\n"
             f"Ciao {client_name}! La tua prenotazione da *{salon_name}* è confermata:\n\n"
@@ -276,16 +275,13 @@ async def _send_booking_wa(client_phone, client_name, date_it, time, services_na
             f"✂️ {services_names}\n"
             f"🔖 Codice: {appointment_id[:8].upper()}\n\n"
             f"Per disdire o modificare rispondi a questo messaggio. A presto! 💇"
+            + WA_FOOTER
         )
-        wa_url = f"https://api.greenapi.com/waInstance{instance_id}/sendMessage/{api_token}"
-        resp = await _asyncio.to_thread(_req.post, wa_url, json={"chatId": phone_clean + "@c.us", "message": msg}, timeout=8)
-        rjson = {}
-        try: rjson = resp.json()
-        except Exception: pass
-        if resp.status_code == 200 and rjson.get("idMessage"):
-            logger.info(f"WA conferma prenotazione inviata a {phone_clean}")
+        result = await send_whatsapp_cloud(client_phone, msg)
+        if result.get("sent"):
+            logger.info(f"WA conferma prenotazione inviata a {client_phone}")
             return True
-        logger.warning(f"WA conferma FALLITA {phone_clean}: HTTP {resp.status_code} — {resp.text[:200]}")
+        logger.warning(f"WA conferma FALLITA {client_phone}: {result.get('error')}")
         return False
     except Exception as e:
         logger.warning(f"WA conferma eccezione: {e}")
@@ -450,8 +446,6 @@ async def create_public_booking(request: Request, data: PublicBookingRequest, ba
         date_it=date_it, time=data.time,
         services_names=services_names,
         appointment_id=appointment_id,
-        instance_id=user.get("green_api_instance_id", ""),
-        api_token=user.get("green_api_token", ""),
         salon_name=user.get("salon_name", "Bruno Melito Hair"),
     )
 
