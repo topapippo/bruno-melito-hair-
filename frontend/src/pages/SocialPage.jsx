@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
-import { Share2, Wand2, Image, Settings, History, ChevronDown, ChevronUp, CheckCircle, Loader2, Upload, X, Eye, FileText, Send, Zap } from 'lucide-react';
+import { Share2, Wand2, Image, Settings, History, ChevronDown, ChevronUp, CheckCircle, Loader2, Upload, X, Eye, FileText, Send, Zap, Sparkles, Trash2 } from 'lucide-react';
 import Layout from '../components/Layout';
 import api, { API_BASE } from '../lib/api';
 
@@ -438,9 +438,73 @@ function SettingsTab({ config, onSaved }) {
   );
 }
 
+// ── Tab: Wingman AI ────────────────────────────────────────────────────────────
+function WingmanTab({ configured }) {
+  const [suggestions, setSuggestions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [publishing, setPublishing] = useState(null);
+
+  const loadSuggestions = async () => {
+    setLoading(true);
+    try {
+      const { data } = await api.get('/social/wingman-suggestions');
+      setSuggestions(data);
+    } catch { toast.error('Errore caricamento idee'); } finally { setLoading(false); }
+  };
+
+  useEffect(() => { loadSuggestions(); }, []);
+
+  const handlePublish = async (suggestion) => {
+    if (!configured) { toast.error('Configura il webhook Make.com nelle Impostazioni'); return; }
+    setPublishing(suggestion.id);
+    try {
+      await api.post('/social/publish-via-make', {
+        message: suggestion.text,
+        image_url: suggestion.image_url,
+        platforms: suggestion.image_url ? ['facebook', 'instagram', 'google'] : ['facebook', 'google'],
+      });
+      toast.success('Post inviato a Make.com!');
+      await api.delete(`/social/wingman-suggestions/${suggestion.id}`);
+      setSuggestions(s => s.filter(x => x.id !== suggestion.id));
+    } catch { toast.error('Errore pubblicazione'); } finally { setPublishing(null); }
+  };
+
+  if (loading) return <div className="flex justify-center py-12"><Loader2 className="animate-spin text-purple-500 w-6 h-6" /></div>;
+
+  return (
+    <div className="space-y-5">
+      <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-100 rounded-2xl p-5">
+        <h3 className="font-bold text-purple-800 flex items-center gap-2 mb-1">
+          <Sparkles className="w-5 h-5" /> Wingman AI: Idee per te
+        </h3>
+        <p className="text-sm text-purple-600">Post pronti basati sui trend 2026. Un click e pubblichi.</p>
+      </div>
+      {suggestions.length === 0 && (
+        <div className="text-center py-10 text-gray-400 text-sm">Nessuna idea disponibile al momento.</div>
+      )}
+      {suggestions.map(s => (
+        <div key={s.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col sm:flex-row">
+          {s.image_url && <img src={s.image_url} alt={s.title} className="w-full sm:w-48 h-48 object-cover" />}
+          <div className="p-5 flex-1 flex flex-col justify-between gap-3">
+            <div>
+              <h4 className="font-bold text-gray-800 mb-1">{s.title}</h4>
+              <p className="text-sm text-gray-600 whitespace-pre-wrap">{s.text}</p>
+            </div>
+            <button onClick={() => handlePublish(s)} disabled={publishing === s.id}
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 text-white font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all">
+              {publishing === s.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              Pubblica ora
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ── Main Page ──────────────────────────────────────────────────────────────────
 export default function SocialPage() {
-  const [activeTab, setActiveTab] = useState('create');
+  const [activeTab, setActiveTab] = useState('wingman');
   const [config, setConfig] = useState(null);
 
   const loadConfig = async () => {
@@ -453,6 +517,7 @@ export default function SocialPage() {
   useEffect(() => { loadConfig(); }, []);
 
   const tabs = [
+    { id: 'wingman',  label: 'Wingman AI', icon: Sparkles },
     { id: 'create',   label: 'Crea Post',  icon: FileText },
     { id: 'auto',     label: 'Auto Post',  icon: Zap },
     { id: 'history',  label: 'Storico',    icon: History },
@@ -489,6 +554,7 @@ export default function SocialPage() {
           })}
         </div>
 
+        {activeTab === 'wingman'  && <WingmanTab configured={config?.configured} />}
         {activeTab === 'create'   && <CreateTab configured={config?.configured} />}
         {activeTab === 'auto'     && <AutoPostTab />}
         {activeTab === 'history'  && <HistoryTab />}

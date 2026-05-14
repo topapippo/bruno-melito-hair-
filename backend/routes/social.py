@@ -298,6 +298,45 @@ async def serve_social_media(filename: str):
     return FileResponse(path)
 
 
+# ── Wingman AI ────────────────────────────────────────────────────────────────
+
+@router.get("/social/wingman-suggestions")
+async def get_wingman_suggestions(current_user: dict = Depends(get_current_user)):
+    suggestions = await db.wingman_suggestions.find(
+        {"user_id": current_user["id"]}, {"_id": 0}
+    ).sort("created_at", -1).to_list(10)
+    if not suggestions:
+        default_suggestions = [
+            {
+                "id": str(uuid.uuid4()),
+                "user_id": current_user["id"],
+                "type": "trend",
+                "title": "Bixie Cut (Estate 2026)",
+                "text": "Ancora lì a litigare col phon? 🥵 L'estate 2026 dice basta: è l'anno del Bixie! ✂️✨\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
+                "image_url": "https://i.ibb.co/vvP7jZFb/b28028e3900d.jpg",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "user_id": current_user["id"],
+                "type": "color",
+                "title": "Biondo Burro (Luce Pura)",
+                "text": "Il burro sta bene in frigo... ma sta ancora meglio sui tuoi capelli! 🧈✨ Il Biondo Burro Freddo è il colore dell'estate. 🍦\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
+                "image_url": "https://i.ibb.co/vvP7jZFb/b28028e3900d.jpg",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            },
+        ]
+        await db.wingman_suggestions.insert_many(default_suggestions)
+        suggestions = default_suggestions
+    return suggestions
+
+
+@router.delete("/social/wingman-suggestions/{suggestion_id}")
+async def delete_wingman_suggestion(suggestion_id: str, current_user: dict = Depends(get_current_user)):
+    await db.wingman_suggestions.delete_one({"id": suggestion_id, "user_id": current_user["id"]})
+    return {"ok": True}
+
+
 # ── Storico post ───────────────────────────────────────────────────────────────
 
 @router.get("/social/posts")
