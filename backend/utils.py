@@ -6,10 +6,13 @@ TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN')
 TWILIO_PHONE_NUMBER = os.environ.get('TWILIO_PHONE_NUMBER')
 
 # WhatsApp Cloud API (Meta ufficiale)
-WA_PHONE_NUMBER_ID = os.environ.get('WHATSAPP_PHONE_ID', '964302293437129')
+WA_PHONE_NUMBER_ID = '964302293437129'  # hardcoded — numero italiano reale
 WA_TOKEN = os.environ.get('WHATSAPP_TOKEN', '')
 
 WA_FOOTER = "\n\nQuesto è un messaggio automatico di cortesia di Bruno Melito Hair. Se hai bisogno di scriverci, rispondi al 3397833526. Grazie!"
+
+print(f"[STARTUP] ID WHATSAPP ATTUALE: {WA_PHONE_NUMBER_ID}", flush=True)
+print(f"[STARTUP] WHATSAPP_TOKEN configurato: {'SI' if WA_TOKEN else 'NO'}", flush=True)
 
 twilio_client = None
 if TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN:
@@ -51,6 +54,7 @@ async def send_whatsapp_cloud(phone: str, message: str) -> dict:
         return {"sent": False, "method": "cloud_api", "error": "WHATSAPP_TOKEN non configurato"}
 
     phone_clean = normalize_phone_wa(phone)  # es. 393XXXXXXXXX
+    print(f"[WA SEND] ID WHATSAPP ATTUALE: {WA_PHONE_NUMBER_ID} → {phone_clean}", flush=True)
 
     try:
         url = f"https://graph.facebook.com/v21.0/{WA_PHONE_NUMBER_ID}/messages"
