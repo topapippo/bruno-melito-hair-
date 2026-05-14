@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Scissors } from 'lucide-react';
 import api from '../../lib/api';
 
 const FALLBACK = [
@@ -10,19 +10,6 @@ const FALLBACK = [
 ];
 
 const COLORS = ['#FFD93D', '#FF6B9D', '#C3F0CA', '#A8DAFF', '#FFB347'];
-
-const containerVariants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.15 } },
-};
-
-const cardVariants = {
-  hidden: { opacity: 0, y: 60, scale: 0.85 },
-  visible: {
-    opacity: 1, y: 0, scale: 1,
-    transition: { type: 'spring', stiffness: 260, damping: 18 },
-  },
-};
 
 export default function TrendGallery({ setShowBooking }) {
   const [trends, setTrends] = useState([]);
@@ -36,52 +23,67 @@ export default function TrendGallery({ setShowBooking }) {
   const items = trends.length ? trends : FALLBACK;
 
   return (
-    <section className="py-16 px-4 overflow-hidden" style={{ background: 'linear-gradient(135deg, #fff9f0 0%, #f0f0ff 100%)' }}>
+    <section className="py-20 px-4 overflow-hidden website-dots-bg">
       <div className="max-w-6xl mx-auto">
 
-        {/* Header neo-brutalist */}
+        {/* Header — wow typography */}
         <motion.div
-          initial={{ opacity: 0, y: -30 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: -40, scale: 0.85 }}
+          whileInView={{ opacity: 1, y: 0, scale: 1 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-14"
+          transition={{ type: 'spring', stiffness: 300, damping: 14 }}
+          className="text-center mb-16"
         >
           <div className="inline-block relative">
             <h2
-              className="text-4xl sm:text-5xl font-black text-gray-900 px-6 py-3 inline-block relative z-10"
-              style={{ fontFamily: "'Fredoka', sans-serif", letterSpacing: '-1px' }}
+              className="text-5xl sm:text-6xl font-black px-6 py-3 inline-block relative z-10 website-wow-h2"
+              style={{ color: '#FF2E63' }}
             >
-              <Sparkles className="inline w-8 h-8 text-yellow-400 mr-2 align-middle" />
+              <Sparkles className="inline w-10 h-10 text-yellow-400 mr-2 align-middle" />
               I Look dell&apos;Estate 2026
             </h2>
-            {/* Neo-brutalist underline */}
-            <div className="absolute bottom-0 left-0 right-0 h-4 bg-yellow-300 -z-0 -rotate-1" />
+            {/* Underline neo-brutalist */}
+            <div
+              className="absolute bottom-1 left-0 right-0 h-5 -z-0 -rotate-1"
+              style={{ backgroundColor: '#FFD93D', border: '2px solid #111' }}
+            />
           </div>
-          <p className="text-gray-500 mt-5 max-w-xl mx-auto text-base">
+          <p className="text-gray-600 mt-6 max-w-xl mx-auto text-base font-semibold">
             Tendenze selezionate da Bruno Melito — prenotale subito!
           </p>
+          {/* Small decorative scissors */}
+          <div className="flex justify-center gap-3 mt-4">
+            {[...Array(3)].map((_, i) => (
+              <motion.div
+                key={i}
+                animate={{ rotate: [0, 15, -15, 0] }}
+                transition={{ duration: 2 + i * 0.5, repeat: Infinity, delay: i * 0.3 }}
+                style={{ color: COLORS[i] }}
+              >
+                <Scissors size={20} />
+              </motion.div>
+            ))}
+          </div>
         </motion.div>
 
-        {/* Cards */}
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-3 gap-8"
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: '-80px' }}
-        >
+        {/* Cards grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           {items.map((t, i) => {
             const shadowColor = t.color_code || COLORS[i % COLORS.length];
+            const tilt = i % 2 === 0 ? 1 : -1;
+
             return (
               <motion.div
                 key={t.id}
-                variants={cardVariants}
-                whileHover={{ y: -6, rotate: 0.5 }}
+                initial={{ opacity: 0, scale: 0.8, y: 60, rotate: tilt * 3 }}
+                whileInView={{ opacity: 1, scale: 1, y: 0, rotate: tilt }}
+                viewport={{ once: true, margin: '-60px' }}
+                transition={{ type: 'spring', stiffness: 280, damping: 12, delay: i * 0.12 }}
+                whileHover={{ y: -10, rotate: 0, scale: 1.03 }}
                 className="bg-white rounded-2xl overflow-hidden cursor-pointer"
                 style={{
-                  border: '3px solid #111',
-                  boxShadow: `6px 6px 0px ${shadowColor}, 6px 6px 0px 3px #111`,
+                  border: '4px solid #111',
+                  boxShadow: `12px 12px 0px ${shadowColor}, 12px 12px 0px 4px #111`,
                 }}
               >
                 {/* Image */}
@@ -90,12 +92,14 @@ export default function TrendGallery({ setShowBooking }) {
                     src={t.img}
                     alt={t.title}
                     className="w-full h-full object-cover"
-                    whileHover={{ scale: 1.08 }}
+                    whileHover={{ scale: 1.1 }}
                     transition={{ duration: 0.4 }}
                   />
+                  {/* Color stripe at top */}
+                  <div className="absolute top-0 left-0 right-0 h-2" style={{ backgroundColor: shadowColor }} />
                   {t.badge && (
                     <div
-                      className="absolute top-3 left-3 text-xs font-black px-3 py-1 rounded-full"
+                      className="absolute top-4 left-3 text-sm font-black px-3 py-1 rounded-full"
                       style={{ background: shadowColor, border: '2px solid #111', fontFamily: "'Fredoka', sans-serif" }}
                     >
                       {t.badge}
@@ -104,10 +108,10 @@ export default function TrendGallery({ setShowBooking }) {
                 </div>
 
                 {/* Content */}
-                <div className="p-5">
+                <div className="p-5" style={{ borderTop: '3px solid #111' }}>
                   <h3
-                    className="text-xl font-black text-gray-900 mb-1"
-                    style={{ fontFamily: "'Fredoka', sans-serif" }}
+                    className="text-2xl font-black text-gray-900 mb-2"
+                    style={{ fontFamily: "'Fredoka', sans-serif", textShadow: '1px 1px 0px rgba(0,0,0,0.15)' }}
                   >
                     {t.title}
                   </h3>
@@ -115,14 +119,15 @@ export default function TrendGallery({ setShowBooking }) {
                   {setShowBooking && (
                     <motion.button
                       onClick={() => setShowBooking(true)}
-                      whileHover={{ scale: 1.04 }}
-                      whileTap={{ scale: 0.97 }}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
                       className="w-full py-3 font-black text-sm rounded-xl text-white"
                       style={{
                         background: '#111',
                         border: '2px solid #111',
-                        boxShadow: `3px 3px 0px ${shadowColor}`,
+                        boxShadow: `4px 4px 0px ${shadowColor}`,
                         fontFamily: "'Fredoka', sans-serif",
+                        fontSize: '1rem',
                       }}
                     >
                       Prenota questo look →
@@ -132,7 +137,7 @@ export default function TrendGallery({ setShowBooking }) {
               </motion.div>
             );
           })}
-        </motion.div>
+        </div>
       </div>
     </section>
   );

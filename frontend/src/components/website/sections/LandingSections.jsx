@@ -1,4 +1,5 @@
 ﻿import { useState, useRef, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { getMediaUrl } from '../../../lib/mediaUrl';
 import { Button } from '@/components/ui/button';
 import { Scissors, CheckCircle, ChevronDown, ChevronUp, Star, MessageSquare, MapPin, Phone, Mail, Clock, Gift, CreditCard, Search, ArrowLeft, ArrowRight, X, ExternalLink, ThumbsUp } from 'lucide-react';
@@ -6,16 +7,17 @@ import { getCategoryInfo } from '../../../lib/categories';
 import { SOCIAL_LINKS, BORDER_COLORS, GLOW_COLORS, AVATAR_BGS, AVATAR_TEXTS } from '../../../lib/websiteConstants';
 
 function AnimatedSection({ children, className = '', delay = 0 }) {
-  const ref = useRef(null);
-  const [v, setV] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const o = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setV(true); o.disconnect(); } }, { threshold: 0.1, rootMargin: '50px' });
-    o.observe(el);
-    return () => o.disconnect();
-  }, []);
-  return <div ref={ref} className={className} style={{ opacity: v ? 1 : 0, transform: v ? 'none' : 'translateY(40px)', transition: `opacity 0.8s cubic-bezier(.16,1,.3,1) ${delay}s, transform 0.8s cubic-bezier(.16,1,.3,1) ${delay}s` }}>{children}</div>;
+  return (
+    <motion.div
+      className={className}
+      initial={{ opacity: 0, scale: 0.82, y: 32 }}
+      whileInView={{ opacity: 1, scale: 1, y: 0 }}
+      viewport={{ once: true, margin: '50px' }}
+      transition={{ type: 'spring', stiffness: 260, damping: 14, delay }}
+    >
+      {children}
+    </motion.div>
+  );
 }
 
 export { AnimatedSection };

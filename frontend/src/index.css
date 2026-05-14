@@ -138,6 +138,33 @@ a, button { transition: all 0.2s ease; }
   font-family: 'Fredoka', sans-serif;
 }
 
+/* Pattern puntini leggero — sfondo sito pubblico */
+.website-dots-bg {
+  background-color: #FFFDF5;
+  background-image: radial-gradient(#11111118 1.5px, transparent 1.5px);
+  background-size: 22px 22px;
+}
+
+/* Titoli wow website */
+.website-wow-h2 {
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 900;
+  letter-spacing: -1px;
+  text-shadow: 3px 3px 0px #111;
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33%       { transform: translateY(-12px) rotate(3deg); }
+  66%       { transform: translateY(-6px) rotate(-2deg); }
+}
+@keyframes float-med {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50%       { transform: translateY(-18px) rotate(-4deg); }
+}
+.float-slow { animation: float-slow 7s ease-in-out infinite; }
+.float-med  { animation: float-med  5s ease-in-out infinite; }
+
 
 /* ═══════════════════════════════════════════════════════════════════
    Animazioni Allegre — Admin Panel

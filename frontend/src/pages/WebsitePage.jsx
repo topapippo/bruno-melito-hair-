@@ -482,6 +482,31 @@ export default function WebsitePage() {
         <div className="absolute top-24 left-[8%] w-96 h-96 rounded-full opacity-25 blur-3xl float-slow" style={{ backgroundColor: T.primary }} />
         <div className="absolute bottom-16 right-[12%] w-72 h-72 rounded-full opacity-20 blur-3xl float-med" style={{ backgroundColor: T.accent }} />
         <div className="absolute top-[35%] left-[38%] w-56 h-56 rounded-full opacity-15 blur-3xl" style={{ backgroundColor: '#8B5CF6', animation: 'float 9s ease-in-out infinite 3s' }} />
+        {/* Geometric shapes — slow drift */}
+        {[
+          { shape: 'circle', w: 90,  h: 90,  color: '#FF6B9D', top: '22%', left: '2%',   xA: [0,25,0],   yA: [0,-18,0], dur: 9,  rot: 0   },
+          { shape: 'square', w: 65,  h: 65,  color: '#FFD93D', top: '62%', right: '3%',  xA: [0,-22,0],  yA: [0,14,0],  dur: 11, rot: 20  },
+          { shape: 'circle', w: 50,  h: 50,  color: '#C3F0CA', top: '8%',  right: '22%', xA: [0,12,0],   yA: [0,20,0],  dur: 7,  rot: 0   },
+          { shape: 'square', w: 42,  h: 42,  color: '#A8DAFF', top: '78%', left: '22%',  xA: [0,-14,0],  yA: [0,-16,0], dur: 8,  rot: -15 },
+          { shape: 'circle', w: 30,  h: 30,  color: '#FFB347', top: '32%', left: '14%',  xA: [0,18,0],   yA: [0,8,0],   dur: 13, rot: 0   },
+          { shape: 'square', w: 55,  h: 55,  color: '#FF2E63', top: '50%', right: '12%', xA: [0,-10,0],  yA: [0,22,0],  dur: 10, rot: 35  },
+        ].map((s, i) => (
+          <motion.div
+            key={`geo-${i}`}
+            className="absolute pointer-events-none select-none"
+            style={{
+              top: s.top, left: s.left, right: s.right,
+              width: s.w, height: s.h,
+              backgroundColor: s.color,
+              borderRadius: s.shape === 'circle' ? '50%' : '14px',
+              border: '2px solid rgba(255,255,255,0.25)',
+              opacity: 0.22,
+              rotate: s.rot,
+            }}
+            animate={{ x: s.xA, y: s.yA }}
+            transition={{ duration: s.dur, repeat: Infinity, ease: 'easeInOut' }}
+          />
+        ))}
         {/* Floating icons — framer-motion Lucide */}
         {[
           { Icon: Sparkles, top: '13%', left: '7%',  size: 28, color: '#FFD93D', delay: 0 },
@@ -492,9 +517,9 @@ export default function WebsitePage() {
           { Icon: Scissors, top: '42%', right:'17%', size: 18, color: T.accent,  delay: 1.0 },
         ].map(({ Icon, top, left, right, size, color, delay }, i) => (
           <motion.div
-            key={i}
+            key={`icon-${i}`}
             className="absolute select-none pointer-events-none"
-            style={{ top, left, right, color, opacity: 0.55 }}
+            style={{ top, left, right, color, opacity: 0.60 }}
             animate={{ y: [0, -15, 0] }}
             transition={{ duration: 3.5 + i * 0.3, repeat: Infinity, delay, ease: 'easeInOut' }}
           >
