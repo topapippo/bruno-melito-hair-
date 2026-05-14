@@ -10,6 +10,15 @@ function SuggestionCard({ s, onPublish, onDelete }) {
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef();
 
+  const saveChange = async (newText, newImg) => {
+    try {
+      await api.put(`/social/wingman-suggestions/${s.id}`, {
+        text: newText ?? text,
+        image_url: newImg ?? imageUrl,
+      });
+    } catch {}
+  };
+
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -21,7 +30,8 @@ function SuggestionCard({ s, onPublish, onDelete }) {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setImageUrl(data.url);
-      toast.success('Foto aggiornata!');
+      await saveChange(text, data.url);
+      toast.success('Foto salvata!');
     } catch { toast.error('Errore caricamento foto'); } finally { setUploading(false); }
   };
 
@@ -52,6 +62,7 @@ function SuggestionCard({ s, onPublish, onDelete }) {
             rows={4}
             value={text}
             onChange={(e) => setText(e.target.value)}
+            onBlur={() => saveChange(text, imageUrl)}
           />
         </div>
         <button

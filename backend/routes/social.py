@@ -340,17 +340,31 @@ async def get_wingman_suggestions(current_user: dict = Depends(get_current_user)
         {"user_id": current_user["id"]}, {"_id": 0}
     ).sort("created_at", -1).to_list(10)
 
-    existing_titles = {s["title"] for s in suggestions}
-    missing = [d for d in _WINGMAN_DEFAULTS if d["title"] not in existing_titles]
-    if missing:
+    # Inserisce i default solo se il DB è completamente vuoto per questo utente
+    if not suggestions:
         to_insert = [
             {**d, "id": str(uuid.uuid4()), "user_id": current_user["id"], "created_at": datetime.now(timezone.utc).isoformat()}
-            for d in missing
+            for d in _WINGMAN_DEFAULTS
         ]
         await db.wingman_suggestions.insert_many(to_insert)
-        suggestions = suggestions + [{k: v for k, v in doc.items() if k != "_id"} for doc in to_insert]
+        suggestions = to_insert
 
     return suggestions
+
+
+@router.put("/social/wingman-suggestions/{suggestion_id}")
+async def update_suggestion(suggestion_id: str, data: dict, current_user: dict = Depends(get_current_user)):
+    update_fields = {}
+    if "text" in data:
+        update_fields["text"] = data["text"]
+    if "image_url" in data:
+        update_fields["image_url"] = data["image_url"]
+    if update_fields:
+        await db.wingman_suggestions.update_one(
+            {"id": suggestion_id, "user_id": current_user["id"]},
+            {"$set": update_fields}
+        )
+    return {"ok": True}
 
 
 @router.delete("/social/wingman-suggestions/{suggestion_id}")
