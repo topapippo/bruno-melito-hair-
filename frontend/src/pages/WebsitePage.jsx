@@ -481,6 +481,13 @@ export default function WebsitePage() {
         <div className="absolute top-24 left-[8%] w-96 h-96 rounded-full opacity-25 blur-3xl float-slow" style={{ backgroundColor: T.primary }} />
         <div className="absolute bottom-16 right-[12%] w-72 h-72 rounded-full opacity-20 blur-3xl float-med" style={{ backgroundColor: T.accent }} />
         <div className="absolute top-[35%] left-[38%] w-56 h-56 rounded-full opacity-15 blur-3xl" style={{ backgroundColor: '#8B5CF6', animation: 'float 9s ease-in-out infinite 3s' }} />
+        {/* Floating sparkle stars */}
+        <span className="absolute text-2xl select-none pointer-events-none float-slow" style={{ top: '13%', left: '7%', opacity: 0.45 }}>✨</span>
+        <span className="absolute text-xl select-none pointer-events-none float-med" style={{ top: '72%', left: '5%', opacity: 0.35 }}>⭐</span>
+        <span className="absolute text-3xl select-none pointer-events-none float-med" style={{ top: '16%', right: '9%', opacity: 0.40 }}>✨</span>
+        <span className="absolute text-xl select-none pointer-events-none float-slow" style={{ top: '58%', right: '6%', opacity: 0.30 }}>🌟</span>
+        <span className="absolute text-2xl select-none pointer-events-none float-slow" style={{ top: '85%', left: '18%', opacity: 0.30 }}>✨</span>
+        <span className="absolute text-lg select-none pointer-events-none float-med" style={{ top: '42%', right: '17%', opacity: 0.35 }}>⭐</span>
         <div className="relative max-w-6xl mx-auto px-4 py-20 sm:py-32 w-full">
           <div className="text-center max-w-3xl mx-auto">
             {/* Logo pill */}

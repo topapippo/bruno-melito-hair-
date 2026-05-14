@@ -42,6 +42,9 @@ export default function WebsiteAdminPage() {
   const heroInputRef = useRef(null);
   const [isDirty, setIsDirty] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, type: null, id: null, label: '' });
+  const [trends, setTrends] = useState([]);
+  const [trendUploading, setTrendUploading] = useState(null);
+  const [newTrendForm, setNewTrendForm] = useState(null);
 
   const handleHeroImageUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -61,19 +64,21 @@ export default function WebsiteAdminPage() {
 
   const fetchAll = async () => {
     try {
-      const [configRes, reviewsRes, galleryRes, servicesRes, promosRes] = await Promise.all([
+      const [configRes, reviewsRes, galleryRes, servicesRes, promosRes, trendsRes] = await Promise.all([
         api.get('/website/config'),
         api.get('/website/reviews'),
         api.get('/website/gallery'),
         api.get('/services'),
         api.get('/promotions'),
+        api.get('/website-trends'),
       ]);
       setConfig(configRes.data);
       setReviews(reviewsRes.data);
       setGallery(galleryRes.data);
       setAllServices(servicesRes.data || []);
       setPromotions(promosRes.data || []);
-    } catch (err) { console.error(err); toast.error('Errore caricamento dati'); }
+      setTrends(trendsRes.data || []);
+    } catch (err) { toast.error('Errore caricamento dati'); }
     finally { setLoading(false); }
   };
 
@@ -231,6 +236,45 @@ export default function WebsiteAdminPage() {
 
   const deleteGalleryItem = async (id) => {
     setDeleteConfirm({ open: true, type: 'gallery', id, label: 'questa foto/video' });
+  };
+
+  // ── Trends (Restyling Sito) ──
+  const createTrend = async (data) => {
+    try {
+      const res = await api.post('/website-trends', data);
+      setTrends(prev => [...prev, res.data]);
+      setNewTrendForm(null);
+      toast.success('Look aggiunto!');
+    } catch { toast.error('Errore creazione look'); }
+  };
+
+  const updateTrend = async (id, data) => {
+    try {
+      await api.put(`/website-trends/${id}`, data);
+      setTrends(prev => prev.map(t => t.id === id ? { ...t, ...data } : t));
+    } catch { toast.error('Errore aggiornamento'); }
+  };
+
+  const deleteTrend = async (id) => {
+    try {
+      await api.delete(`/website-trends/${id}`);
+      setTrends(prev => prev.filter(t => t.id !== id));
+      toast.success('Look eliminato');
+    } catch { toast.error('Errore eliminazione'); }
+  };
+
+  const uploadTrendImage = async (trendId, file) => {
+    setTrendUploading(trendId);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const { data } = await api.post('/website-trends/upload-image', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      await updateTrend(trendId, { img: data.url });
+      toast.success('Foto caricata!');
+    } catch { toast.error('Errore upload foto'); }
+    finally { setTrendUploading(null); }
   };
 
   // getMediaUrl importato da ../lib/mediaUrl
@@ -397,6 +441,7 @@ export default function WebsiteAdminPage() {
             <TabsTrigger value="reviews" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Recensioni</TabsTrigger>
             <TabsTrigger value="upselling" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Upselling</TabsTrigger>
             <TabsTrigger value="promotions" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Promozioni</TabsTrigger>
+            <TabsTrigger value="trends" className="data-[state=active]:bg-[#FF6B9D] data-[state=active]:text-white flex items-center gap-1"><TrendingUp className="w-3 h-3" /> Trend 2026</TabsTrigger>
             <TabsTrigger value="hours" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Orari & Contatti</TabsTrigger>
           </TabsList>
 
@@ -1087,6 +1132,155 @@ export default function WebsiteAdminPage() {
                     <p className="text-xs mt-1">Crea promozioni per attrarre nuovi clienti e fidelizzare quelli esistenti.</p>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* TREND 2026 — RESTYLING SITO */}
+          <TabsContent value="trends">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <TrendingUp className="w-5 h-5 text-[#FF6B9D]" /> I Look dell&apos;Estate 2026
+                    </CardTitle>
+                    <p className="text-sm text-[#7C5C4A] mt-1">
+                      Aggiungi i tuoi lavori estivi. Appaiono nella sezione &quot;Trend 2026&quot; del sito pubblico.
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => setNewTrendForm({ title: '', desc: '', badge: '' })}
+                    className="text-white"
+                    style={{ background: 'linear-gradient(135deg, #FF6B9D, #FFB347)' }}
+                  >
+                    <Plus className="w-4 h-4 mr-1" /> Aggiungi Look
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {/* New trend form */}
+                {newTrendForm !== null && (
+                  <div className="mb-5 p-4 border-2 border-dashed border-[#FF6B9D]/40 rounded-2xl bg-pink-50 space-y-3">
+                    <p className="text-sm font-bold text-[#FF6B9D]">✨ Nuovo look</p>
+                    <Input
+                      placeholder="Nome del look (es. Bixie Cut)"
+                      value={newTrendForm.title}
+                      onChange={e => setNewTrendForm(prev => ({ ...prev, title: e.target.value }))}
+                    />
+                    <Input
+                      placeholder="Badge (es. 🔥 Trend)"
+                      value={newTrendForm.badge}
+                      onChange={e => setNewTrendForm(prev => ({ ...prev, badge: e.target.value }))}
+                    />
+                    <Textarea
+                      placeholder="Descrizione breve..."
+                      value={newTrendForm.desc}
+                      rows={2}
+                      onChange={e => setNewTrendForm(prev => ({ ...prev, desc: e.target.value }))}
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        disabled={!newTrendForm.title}
+                        onClick={() => createTrend(newTrendForm)}
+                        className="bg-[#FF6B9D] text-white hover:bg-[#e05588]"
+                      >
+                        Salva
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setNewTrendForm(null)}>Annulla</Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Trend cards grid */}
+                {trends.length === 0 && newTrendForm === null ? (
+                  <div className="text-center py-16 text-gray-400">
+                    <TrendingUp className="w-14 h-14 mx-auto mb-3 text-gray-200" />
+                    <p className="font-semibold">Nessun look aggiunto ancora.</p>
+                    <p className="text-xs mt-1">Clicca &quot;+ Aggiungi Look&quot; per iniziare!</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {trends.map(trend => {
+                      const isUploading = trendUploading === trend.id;
+                      return (
+                        <div
+                          key={trend.id}
+                          className="rounded-2xl overflow-hidden border-2 border-gray-100 bg-white shadow-sm hover:shadow-md transition-all"
+                        >
+                          {/* Image area */}
+                          <div className="relative h-52 bg-gray-50">
+                            {trend.img ? (
+                              <img src={trend.img} alt={trend.title} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-gray-300 flex-col gap-2">
+                                <Image className="w-10 h-10" />
+                                <span className="text-xs">Nessuna foto</span>
+                              </div>
+                            )}
+                            {/* Upload overlay */}
+                            <label className="absolute bottom-2 right-2 cursor-pointer">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={e => { const f = e.target.files?.[0]; if (f) uploadTrendImage(trend.id, f); e.target.value = ''; }}
+                              />
+                              <div className="bg-white/90 hover:bg-white text-[#FF6B9D] p-2 rounded-full shadow-md transition-all">
+                                {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                              </div>
+                            </label>
+                            {/* Badge */}
+                            {trend.badge && (
+                              <div className="absolute top-2 left-2 text-xs font-black px-2.5 py-1 rounded-full bg-yellow-300 border-2 border-black">
+                                {trend.badge}
+                              </div>
+                            )}
+                          </div>
+                          {/* Edit fields */}
+                          <div className="p-4 space-y-2">
+                            <Input
+                              value={trend.title || ''}
+                              onChange={e => setTrends(prev => prev.map(t => t.id === trend.id ? { ...t, title: e.target.value } : t))}
+                              onBlur={e => updateTrend(trend.id, { title: e.target.value })}
+                              placeholder="Nome del look"
+                              className="font-bold text-sm border-gray-200"
+                            />
+                            <Input
+                              value={trend.badge || ''}
+                              onChange={e => setTrends(prev => prev.map(t => t.id === trend.id ? { ...t, badge: e.target.value } : t))}
+                              onBlur={e => updateTrend(trend.id, { badge: e.target.value })}
+                              placeholder="Badge (es. 🔥 Trend)"
+                              className="text-xs border-gray-200"
+                            />
+                            <Textarea
+                              value={trend.desc || ''}
+                              onChange={e => setTrends(prev => prev.map(t => t.id === trend.id ? { ...t, desc: e.target.value } : t))}
+                              onBlur={e => updateTrend(trend.id, { desc: e.target.value })}
+                              placeholder="Descrizione breve..."
+                              rows={2}
+                              className="text-xs border-gray-200 resize-none"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => deleteTrend(trend.id)}
+                              className="w-full text-red-400 hover:text-red-600 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Elimina look
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <p className="text-xs text-gray-400 mt-5">
+                  Le modifiche ai campi vengono salvate automaticamente quando esci dal campo. Le foto vengono ottimizzate (800×800px) prima del caricamento.
+                </p>
               </CardContent>
             </Card>
           </TabsContent>
