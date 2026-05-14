@@ -327,7 +327,7 @@ export default function WebsitePage() {
   const landingServiceGroups = groupServicesByCategory(bookingServices);
 
   // Dynamic section ordering from CMS config
-  const defaultSectionOrder = ['services', 'team', 'salon', 'about', 'promotions', 'reviews', 'gallery', 'contact'];
+  const defaultSectionOrder = ['services', 'team', 'salon', 'about', 'promotions', 'reviews', 'gallery', 'trend_gallery', 'gift_card', 'contact'];
   const rawSectionOrder = config.section_order || defaultSectionOrder;
   const normalizedSectionOrder = [...new Set(rawSectionOrder.filter(id => defaultSectionOrder.includes(id)))];
   const sectionOrder = [...normalizedSectionOrder, ...defaultSectionOrder.filter(id => !normalizedSectionOrder.includes(id))];
