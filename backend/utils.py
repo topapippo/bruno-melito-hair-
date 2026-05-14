@@ -6,7 +6,7 @@ TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN')
 TWILIO_PHONE_NUMBER = os.environ.get('TWILIO_PHONE_NUMBER')
 
 # WhatsApp Cloud API (Meta ufficiale)
-WA_PHONE_NUMBER_ID = os.environ.get('WHATSAPP_PHONE_NUMBER_ID', '1074010595799970')
+WA_PHONE_NUMBER_ID = os.environ.get('WHATSAPP_PHONE_ID', '964302293437129')
 WA_TOKEN = os.environ.get('WHATSAPP_TOKEN', '')
 
 WA_FOOTER = "\n\nQuesto è un messaggio automatico di cortesia di Bruno Melito Hair. Se hai bisogno di scriverci, rispondi al 3397833526. Grazie!"
