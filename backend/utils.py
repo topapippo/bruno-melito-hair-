@@ -9,6 +9,8 @@ TWILIO_PHONE_NUMBER = os.environ.get('TWILIO_PHONE_NUMBER')
 WA_PHONE_NUMBER_ID = os.environ.get('WHATSAPP_PHONE_NUMBER_ID', '1074010595799970')
 WA_TOKEN = os.environ.get('WHATSAPP_TOKEN', '')
 
+WA_FOOTER = "\n\nQuesto è un messaggio automatico di cortesia di Bruno Melito Hair. Se hai bisogno di scriverci, rispondi al 3397833526. Grazie!"
+
 twilio_client = None
 if TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN:
     try:
@@ -98,6 +100,8 @@ async def send_whatsapp(phone: str, message: str, user: dict) -> dict:
     """Invia WhatsApp via Cloud API → UltraMsg → Green API (fallback legacy)."""
     import asyncio
     import requests as _req
+
+    message = message + WA_FOOTER
 
     # --- 1. WhatsApp Cloud API ufficiale Meta (provider principale) ---
     if WA_TOKEN:

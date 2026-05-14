@@ -50,8 +50,9 @@ async def send_appointment_reminder(data: SMSRequest, current_user: dict = Depen
         raise HTTPException(status_code=400, detail="Cliente senza numero di telefono")
     if not client.get("sms_reminder", True):
         raise HTTPException(status_code=400, detail="Cliente ha disabilitato promemoria SMS")
+    from utils import WA_FOOTER
     services_text = ", ".join([s["name"] for s in appointment["services"]])
-    default_message = f"Promemoria: hai un appuntamento il {_fmt_date_it(appointment['date'])} alle {appointment['time']} per {services_text}. Ti aspettiamo!"
+    default_message = f"Promemoria: hai un appuntamento il {_fmt_date_it(appointment['date'])} alle {appointment['time']} per {services_text}. Ti aspettiamo!" + WA_FOOTER
     message = data.message or default_message
     result = await send_sms_reminder(client["phone"], message, current_user["salon_name"])
     if result["success"]:
@@ -470,10 +471,12 @@ async def send_confirmation_link(appointment_id: str, current_user: dict = Depen
     frontend_url = os.environ.get("FRONTEND_URL", "https://brunomelitohair.it")
     confirm_link = f"{frontend_url}/conferma/{token}"
     services_text = ", ".join([s["name"] for s in apt.get("services", [])])
+    from utils import WA_FOOTER
     message = (
         f"Ciao {apt.get('client_name', '')}! Ti ricordiamo il tuo appuntamento il "
         f"{_fmt_date_it(apt['date'])} alle {apt['time']} per {services_text}. "
         f"Conferma o disdici qui: {confirm_link}"
+        + WA_FOOTER
     )
 
     import urllib.parse, re as _re, asyncio, requests as _req

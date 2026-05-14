@@ -381,8 +381,8 @@ async def lifespan(app: FastAPI):
                             continue
                         user = await db.users.find_one({"id": client.get("user_id")}, {"_id": 0})
                         salon_name = user.get("salon_name", "Bruno Melito Hair") if user else "Bruno Melito Hair"
-                        from utils import send_sms_reminder
-                        msg = f"Ciao {client['name']}! Tanti auguri di Buon Compleanno! 🎂 Il team di {salon_name} ti augura una splendida giornata. Ti aspettiamo presto!"
+                        from utils import send_sms_reminder, WA_FOOTER
+                        msg = f"Ciao {client['name']}! Tanti auguri di Buon Compleanno! 🎂 Il team di {salon_name} ti augura una splendida giornata. Ti aspettiamo presto!" + WA_FOOTER
                         result = await send_sms_reminder(client["phone"], msg, salon_name)
                         if result.get("success"):
                             await db.reminders_sent.insert_one({
