@@ -58,6 +58,7 @@ async def create_trend(data: dict, current_user: dict = Depends(get_current_user
         "desc": data.get("desc", ""),
         "img": data.get("img", ""),
         "badge": data.get("badge", ""),
+        "color_code": data.get("color_code", ""),
         "order": count,
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
@@ -68,7 +69,7 @@ async def create_trend(data: dict, current_user: dict = Depends(get_current_user
 
 @router.put("/website-trends/{trend_id}")
 async def update_trend(trend_id: str, data: dict, current_user: dict = Depends(get_current_user)):
-    update = {k: v for k, v in data.items() if k in ("title", "desc", "img", "badge", "order")}
+    update = {k: v for k, v in data.items() if k in ("title", "desc", "img", "badge", "color_code", "order")}
     await db.website_trends.update_one(
         {"id": trend_id, "user_id": current_user["id"]},
         {"$set": update}

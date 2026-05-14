@@ -72,7 +72,7 @@ export default function TrendGallery({ setShowBooking }) {
           viewport={{ once: true, margin: '-80px' }}
         >
           {items.map((t, i) => {
-            const shadowColor = COLORS[i % COLORS.length];
+            const shadowColor = t.color_code || COLORS[i % COLORS.length];
             return (
               <motion.div
                 key={t.id}

@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import api, { API } from '../lib/api';
 import { getMediaUrl } from '../lib/mediaUrl';
 import { Button } from '@/components/ui/button';
-import { Scissors, ChevronDown, MapPin, Phone, CalendarDays, Printer, Download, X, MessageCircle } from 'lucide-react';
+import { Scissors, ChevronDown, MapPin, Phone, CalendarDays, Printer, Download, X, MessageCircle, Sparkles, Star } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { groupServicesByCategory } from '../lib/categories';
@@ -481,13 +482,25 @@ export default function WebsitePage() {
         <div className="absolute top-24 left-[8%] w-96 h-96 rounded-full opacity-25 blur-3xl float-slow" style={{ backgroundColor: T.primary }} />
         <div className="absolute bottom-16 right-[12%] w-72 h-72 rounded-full opacity-20 blur-3xl float-med" style={{ backgroundColor: T.accent }} />
         <div className="absolute top-[35%] left-[38%] w-56 h-56 rounded-full opacity-15 blur-3xl" style={{ backgroundColor: '#8B5CF6', animation: 'float 9s ease-in-out infinite 3s' }} />
-        {/* Floating sparkle stars */}
-        <span className="absolute text-2xl select-none pointer-events-none float-slow" style={{ top: '13%', left: '7%', opacity: 0.45 }}>✨</span>
-        <span className="absolute text-xl select-none pointer-events-none float-med" style={{ top: '72%', left: '5%', opacity: 0.35 }}>⭐</span>
-        <span className="absolute text-3xl select-none pointer-events-none float-med" style={{ top: '16%', right: '9%', opacity: 0.40 }}>✨</span>
-        <span className="absolute text-xl select-none pointer-events-none float-slow" style={{ top: '58%', right: '6%', opacity: 0.30 }}>🌟</span>
-        <span className="absolute text-2xl select-none pointer-events-none float-slow" style={{ top: '85%', left: '18%', opacity: 0.30 }}>✨</span>
-        <span className="absolute text-lg select-none pointer-events-none float-med" style={{ top: '42%', right: '17%', opacity: 0.35 }}>⭐</span>
+        {/* Floating icons — framer-motion Lucide */}
+        {[
+          { Icon: Sparkles, top: '13%', left: '7%',  size: 28, color: '#FFD93D', delay: 0 },
+          { Icon: Scissors, top: '72%', left: '5%',  size: 22, color: T.primary, delay: 0.8 },
+          { Icon: Star,     top: '16%', right: '9%', size: 32, color: '#FF6B9D', delay: 0.4 },
+          { Icon: Sparkles, top: '58%', right: '6%', size: 20, color: '#C3F0CA', delay: 1.2 },
+          { Icon: Star,     top: '85%', left: '18%', size: 24, color: '#A8DAFF', delay: 0.6 },
+          { Icon: Scissors, top: '42%', right:'17%', size: 18, color: T.accent,  delay: 1.0 },
+        ].map(({ Icon, top, left, right, size, color, delay }, i) => (
+          <motion.div
+            key={i}
+            className="absolute select-none pointer-events-none"
+            style={{ top, left, right, color, opacity: 0.55 }}
+            animate={{ y: [0, -15, 0] }}
+            transition={{ duration: 3.5 + i * 0.3, repeat: Infinity, delay, ease: 'easeInOut' }}
+          >
+            <Icon size={size} strokeWidth={1.5} />
+          </motion.div>
+        ))}
         <div className="relative max-w-6xl mx-auto px-4 py-20 sm:py-32 w-full">
           <div className="text-center max-w-3xl mx-auto">
             {/* Logo pill */}
