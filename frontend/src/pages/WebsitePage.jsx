@@ -17,7 +17,7 @@ import TrendGallery from '../components/website/TrendGallery';
 import {
   AnimatedSection,
   ServicesSection, SalonSection, AboutSection, PromotionsSection,
-  ReviewsSection, GallerySection, ContactSection, GalleryStrip,
+  ReviewsSection, GallerySection, ContactSection,
   TransformationsSection, TeamSection, WelcomeBanner, GiftCardSection,
 } from '../components/website/sections/LandingSections';
 
@@ -682,18 +682,8 @@ export default function WebsitePage() {
         </div>
       </section>
 
-      {/* Sezioni dinamiche con strip foto galleria tra di esse */}
-      {sectionOrder.map((id, i) => {
-        const section = renderSection(id);
-        const nextId = sectionOrder[i + 1];
-        const showStrip = section && nextId && nextId !== 'contact' && id !== 'gallery' && hairstylePhotos.length > 0;
-        return (
-          <div key={id}>
-            {section}
-            {showStrip && <GalleryStrip photos={hairstylePhotos} T={T} />}
-          </div>
-        );
-      })}
+      {/* Sezioni dinamiche */}
+      {sectionOrder.map((id) => renderSection(id))}
 
       {/* QR CODE SECTION */}
       <section className="py-16 sm:py-20 bg-gradient-to-b from-white/40 to-white/80" data-testid="qr-code-section">
