@@ -5,6 +5,10 @@ TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID')
 TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN')
 TWILIO_PHONE_NUMBER = os.environ.get('TWILIO_PHONE_NUMBER')
 
+# WhatsApp Cloud API (Meta ufficiale)
+WA_PHONE_NUMBER_ID = os.environ.get('WHATSAPP_PHONE_NUMBER_ID', '1074010595799970')
+WA_TOKEN = os.environ.get('WHATSAPP_TOKEN', '')
+
 twilio_client = None
 if TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN:
     try:
@@ -26,7 +30,7 @@ def calculate_end_time(start_time: str, duration_minutes: int) -> str:
 
 
 def normalize_phone_wa(phone: str) -> str:
-    """Restituisce il numero in formato 393XXXXXXXXX per UltraMsg / Green API."""
+    """Restituisce il numero in formato 393XXXXXXXXX (prefisso 39 italiano)."""
     import re
     d = re.sub(r'\D', '', phone)
     if d.startswith('0039'):
@@ -34,6 +38,49 @@ def normalize_phone_wa(phone: str) -> str:
     elif d.startswith('39') and len(d) > 10:
         d = d[2:]
     return '39' + d
+
+
+async def send_whatsapp_cloud(phone: str, message: str) -> dict:
+    """Invia WhatsApp via Meta Cloud API ufficiale (graph.facebook.com v21.0)."""
+    import asyncio
+    import requests as _req
+
+    if not WA_TOKEN:
+        return {"sent": False, "method": "cloud_api", "error": "WHATSAPP_TOKEN non configurato"}
+
+    phone_clean = normalize_phone_wa(phone)  # es. 393XXXXXXXXX
+
+    try:
+        url = f"https://graph.facebook.com/v21.0/{WA_PHONE_NUMBER_ID}/messages"
+        headers = {
+            "Authorization": f"Bearer {WA_TOKEN}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "messaging_product": "whatsapp",
+            "to": phone_clean,
+            "type": "text",
+            "text": {"body": message},
+        }
+        resp = await asyncio.to_thread(_req.post, url, headers=headers, json=payload, timeout=15)
+        rjson = {}
+        try:
+            rjson = resp.json()
+        except Exception:
+            pass
+
+        if resp.status_code == 200 and rjson.get("messages"):
+            return {"sent": True, "method": "cloud_api",
+                    "message_id": rjson["messages"][0].get("id", "")}
+
+        error = rjson.get("error", {})
+        return {
+            "sent": False, "method": "cloud_api",
+            "error": error.get("message") or resp.text[:200],
+            "code": error.get("code"),
+        }
+    except Exception as e:
+        return {"sent": False, "method": "cloud_api", "error": str(e)}
 
 
 def format_phone_e164(phone: str) -> str:
@@ -48,13 +95,20 @@ def format_phone_e164(phone: str) -> str:
 
 
 async def send_whatsapp(phone: str, message: str, user: dict) -> dict:
-    """Invia WhatsApp via UltraMsg → Green API (stessa logica dei promemoria)."""
+    """Invia WhatsApp via Cloud API → UltraMsg → Green API (fallback legacy)."""
     import asyncio
     import requests as _req
+
+    # --- 1. WhatsApp Cloud API ufficiale Meta (provider principale) ---
+    if WA_TOKEN:
+        result = await send_whatsapp_cloud(phone, message)
+        if result.get("sent"):
+            return result
 
     phone_clean = normalize_phone_wa(phone)
     wa_number = phone_clean + "@c.us"
 
+    # --- 2. UltraMsg (legacy fallback) ---
     um_instance = user.get("ultramsg_instance_id", "")
     um_token = user.get("ultramsg_token", "")
     if um_instance and um_token:
@@ -75,6 +129,7 @@ async def send_whatsapp(phone: str, message: str, user: dict) -> dict:
         except Exception:
             pass
 
+    # --- 3. Green API (legacy fallback) ---
     instance_id = user.get("green_api_instance_id", "")
     api_token = user.get("green_api_token", "")
     if instance_id and api_token:

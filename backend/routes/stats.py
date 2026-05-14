@@ -4,6 +4,7 @@ from typing import Optional
 from datetime import datetime, timezone, timedelta
 import asyncio
 import io
+import os
 
 from database import db
 from auth import get_current_user
@@ -560,6 +561,8 @@ async def get_settings(current_user: dict = Depends(get_current_user)):
         "tg_configured": bool(current_user.get("telegram_instance_id") and current_user.get("telegram_api_token")),
         "ultramsg_instance_id": current_user.get("ultramsg_instance_id", ""),
         "um_configured": bool(current_user.get("ultramsg_instance_id") and current_user.get("ultramsg_token")),
+        "cloud_api_configured": bool(os.environ.get("WHATSAPP_TOKEN")),
+        "cloud_api_phone_number_id": os.environ.get("WHATSAPP_PHONE_NUMBER_ID", "1074010595799970"),
     }
 
 
@@ -701,6 +704,39 @@ async def test_ultramsg_send(data: dict, current_user: dict = Depends(get_curren
         return {"ok": False, "message": f"Errore UltraMsg ({resp.status_code}): {err}"}
     except Exception as e:
         return {"ok": False, "message": f"Errore: {str(e)}"}
+
+
+@router.get("/settings/cloud-api-test")
+async def test_cloud_api(current_user: dict = Depends(get_current_user)):
+    """Verifica che WHATSAPP_TOKEN e PHONE_NUMBER_ID siano configurati."""
+    token = os.environ.get("WHATSAPP_TOKEN", "")
+    phone_id = os.environ.get("WHATSAPP_PHONE_NUMBER_ID", "1074010595799970")
+    if not token:
+        return {"ok": False, "status": "not_configured",
+                "message": "WHATSAPP_TOKEN non impostato nelle variabili d'ambiente"}
+    return {
+        "ok": True,
+        "status": "configured",
+        "phone_number_id": phone_id,
+        "message": f"✅ Cloud API configurata — Phone Number ID: {phone_id}",
+    }
+
+
+@router.post("/settings/cloud-api-send-test")
+async def test_cloud_api_send(data: dict, current_user: dict = Depends(get_current_user)):
+    """Invia un messaggio di prova via WhatsApp Cloud API (Meta ufficiale)."""
+    from utils import send_whatsapp_cloud, WA_TOKEN
+    phone = data.get("phone", "")
+    if not phone:
+        return {"ok": False, "message": "Numero di telefono mancante"}
+    if not WA_TOKEN:
+        return {"ok": False, "message": "WHATSAPP_TOKEN non configurato nelle variabili d'ambiente di Render"}
+    result = await send_whatsapp_cloud(phone, "✅ Test WhatsApp Cloud API — Bruno Melito Hair funziona!")
+    if result.get("sent"):
+        return {"ok": True,
+                "message": f"✅ Messaggio inviato! Message ID: {result.get('message_id', 'ok')}"}
+    return {"ok": False,
+            "message": f"Errore Cloud API: {result.get('error')} (code={result.get('code')})"}
 
 
 @router.put("/settings/telegram-api")
