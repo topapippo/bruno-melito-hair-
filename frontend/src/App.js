@@ -34,6 +34,7 @@ const PromotionsPage   = lazy(() => import("./pages/PromotionsPage"));
 const WaitlistPage          = lazy(() => import("./pages/WaitlistPage"));
 const ClientiAssentiPage    = lazy(() => import("./pages/ClientiAssentiPage"));
 const SocialPage            = lazy(() => import("./pages/SocialPage"));
+const ServiceDetailPage     = lazy(() => import("./pages/ServiceDetailPage"));
 
 function PageLoader() {
   return (
@@ -263,6 +264,9 @@ export default function App() {
 
           {/* SITO WEB PUBBLICO */}
           <Route path="/sito" element={<WebsitePage />} />
+
+          {/* PAGINE SEO SERVIZI (pubbliche) */}
+          <Route path="/servizi/:slug" element={<ServiceDetailPage />} />
 
           {/* GESTIONE SITO WEB (admin) */}
           <Route

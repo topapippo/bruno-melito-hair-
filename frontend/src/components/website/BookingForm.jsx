@@ -496,6 +496,29 @@ export default function BookingForm({
               })()}
             </div>
 
+            {/* Dropdown promo rapida */}
+            <div className="mt-4 bg-purple-50 border border-purple-100 rounded-2xl p-4 space-y-2">
+              <label className="text-sm font-semibold text-gray-700">Hai una Promo?</label>
+              <select
+                className="w-full border border-purple-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-purple-300 bg-white"
+                value={(() => {
+                  const m = (formData.notes || '').match(/\[PROMO-CODE: ([^\]]+)\]/);
+                  return m ? m[1] : '';
+                })()}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const clean = (formData.notes || '').replace(/\[PROMO-CODE: [^\]]+\] ?/g, '').trim();
+                  setFormData(prev => ({ ...prev, notes: val ? `[PROMO-CODE: ${val}] ${clean}`.trim() : clean }));
+                }}
+              >
+                <option value="">Nessuna promozione</option>
+                <option value="amica">Porta un&apos;Amica (Trattamento OMAGGIO)</option>
+                <option value="under30">Speciale Under 30 (Lucidante OMAGGIO)</option>
+                <option value="benvenuta">Prima Visita (Consulenza + Trattamento OMAGGIO)</option>
+              </select>
+              <p className="text-[10px] text-purple-600 italic">* La promo verrà applicata direttamente in salone</p>
+            </div>
+
             {/* CTA bottom sticky */}
             <div className="sticky bottom-0 bg-white/98 backdrop-blur-md pt-3 pb-2 border-t border-gray-100 mt-5 space-y-2.5 shadow-[0_-10px_30px_rgba(0,0,0,0.08)]">
               {formData.service_ids.length > 0 && (

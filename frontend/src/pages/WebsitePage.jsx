@@ -12,6 +12,7 @@ import { SOCIAL_LINKS } from '../lib/websiteConstants';
 import BookingForm from '../components/website/BookingForm';
 import BookingSuccess from '../components/website/BookingSuccess';
 import MyAppointmentsModal from '../components/website/MyAppointmentsModal';
+import TrendGallery from '../components/website/TrendGallery';
 import {
   AnimatedSection,
   ServicesSection, SalonSection, AboutSection, PromotionsSection,
@@ -348,7 +349,12 @@ export default function WebsitePage() {
       case 'team':
         return operators.filter(o => o.active !== false).length > 0 ? <TeamSection key="team" operators={operators} T={T} setShowBooking={setShowBooking} /> : null;
       case 'gallery':
-        return hairstylePhotos.length > 0 ? <GallerySection key="gallery" config={config} hairstylePhotos={hairstylePhotos} setShowBooking={setShowBooking} T={T} /> : null;
+        return (
+          <div key="gallery">
+            {hairstylePhotos.length > 0 && <GallerySection config={config} hairstylePhotos={hairstylePhotos} setShowBooking={setShowBooking} T={T} />}
+            <TrendGallery setShowBooking={setShowBooking} />
+          </div>
+        );
       case 'contact':
         return (
           <div key="contact">
