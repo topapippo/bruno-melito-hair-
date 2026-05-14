@@ -300,34 +300,56 @@ async def serve_social_media(filename: str):
 
 # ── Wingman AI ────────────────────────────────────────────────────────────────
 
+_WINGMAN_DEFAULTS = [
+    {
+        "type": "trend",
+        "title": "Bixie Cut (Estate 2026)",
+        "text": "Ancora lì a litigare col phon? 🥵 L'estate 2026 dice basta: è l'anno del Bixie! ✂️✨\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
+        "image_url": "https://i.ibb.co/vvP7jZFb/b28028e3900d.jpg",
+    },
+    {
+        "type": "color",
+        "title": "Biondo Burro (Luce Pura)",
+        "text": "Il burro sta bene in frigo... ma sta ancora meglio sui tuoi capelli! 🧈✨ Il Biondo Burro Freddo è il colore dell'estate. 🍦\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
+        "image_url": "https://i.ibb.co/vvP7jZFb/b28028e3900d.jpg",
+    },
+    {
+        "type": "divertente",
+        "title": "Il Momento di Gloria",
+        "text": "La vita non è perfetta, ma i tuoi capelli possono esserlo. (Specialmente se passi da noi 😉)\n\n📅 Prenota il tuo momento di gloria: https://brunomelitohair.it/prenota",
+        "image_url": "https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/28527e09a63e933c1a6707ec114afd3802828c9fdd7930a980697e2abe154cba.png",
+    },
+    {
+        "type": "divertente",
+        "title": "Effetto Psicologo",
+        "text": "Cambiare taglio costa meno di una seduta dallo psicologo e l'effetto è molto più immediato. Provare per credere! 💆‍♀️✨\n\n📅 Scopri i nostri servizi: https://brunomelitohair.it/prenota",
+        "image_url": "https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/99d308789e991a555a550483448efdcd7610cd3547dbb1e5041e2caf94ec39b8.png",
+    },
+    {
+        "type": "diva",
+        "title": "La tua Corona",
+        "text": "I capelli sono la corona che non ti togli mai. Assicurati che splenda come merita! ✨👑\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
+        "image_url": "https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/23ccfe5aaadde1f4925524c2bf4de0408eb95858d844b45025838d9959197b1f.png",
+    },
+]
+
+
 @router.get("/social/wingman-suggestions")
 async def get_wingman_suggestions(current_user: dict = Depends(get_current_user)):
     suggestions = await db.wingman_suggestions.find(
         {"user_id": current_user["id"]}, {"_id": 0}
     ).sort("created_at", -1).to_list(10)
-    if not suggestions:
-        default_suggestions = [
-            {
-                "id": str(uuid.uuid4()),
-                "user_id": current_user["id"],
-                "type": "trend",
-                "title": "Bixie Cut (Estate 2026)",
-                "text": "Ancora lì a litigare col phon? 🥵 L'estate 2026 dice basta: è l'anno del Bixie! ✂️✨\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
-                "image_url": "https://i.ibb.co/vvP7jZFb/b28028e3900d.jpg",
-                "created_at": datetime.now(timezone.utc).isoformat(),
-            },
-            {
-                "id": str(uuid.uuid4()),
-                "user_id": current_user["id"],
-                "type": "color",
-                "title": "Biondo Burro (Luce Pura)",
-                "text": "Il burro sta bene in frigo... ma sta ancora meglio sui tuoi capelli! 🧈✨ Il Biondo Burro Freddo è il colore dell'estate. 🍦\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
-                "image_url": "https://i.ibb.co/vvP7jZFb/b28028e3900d.jpg",
-                "created_at": datetime.now(timezone.utc).isoformat(),
-            },
+
+    existing_titles = {s["title"] for s in suggestions}
+    missing = [d for d in _WINGMAN_DEFAULTS if d["title"] not in existing_titles]
+    if missing:
+        to_insert = [
+            {**d, "id": str(uuid.uuid4()), "user_id": current_user["id"], "created_at": datetime.now(timezone.utc).isoformat()}
+            for d in missing
         ]
-        await db.wingman_suggestions.insert_many(default_suggestions)
-        suggestions = default_suggestions
+        await db.wingman_suggestions.insert_many(to_insert)
+        suggestions = suggestions + [{k: v for k, v in doc.items() if k != "_id"} for doc in to_insert]
+
     return suggestions
 
 
