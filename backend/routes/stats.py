@@ -832,38 +832,3 @@ async def delete_payment(payment_id: str, current_user: dict = Depends(get_curre
     return {"success": True}
 
 
-@router.post("/admin/seed-wingman-posts")
-async def seed_wingman_posts(current_user: dict = Depends(get_current_user)):
-    """Endpoint temporaneo — inserisce i 3 post Wingman nel database."""
-    import uuid as _uuid
-    posts = [
-        {
-            "id": str(_uuid.uuid4()),
-            "user_id": current_user["id"],
-            "type": "divertente",
-            "title": "Il Momento di Gloria",
-            "text": "La vita non è perfetta, ma i tuoi capelli possono esserlo. ✨ Gli ultimi posti per sabato stanno volando via! Prenota ora su https://brunomelitohair.it",
-            "image_url": "https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/28527e09a63e933c1a6707ec114afd3802828c9fdd7930a980697e2abe154cba.png",
-            "created_at": datetime.now(timezone.utc).isoformat()
-        },
-        {
-            "id": str(_uuid.uuid4()),
-            "user_id": current_user["id"],
-            "type": "mood",
-            "title": "Vibrazioni in Salone",
-            "text": "Mentre tu dormi, noi scaldiamo i phon! 🔥 Sabato è il giorno della trasformazione. Pronta a splendere? ✂️ Prenota su https://brunomelitohair.it",
-            "image_url": "https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/99d308789e991a555a550483448efdcd7610cd3547dbb1e5041e2caf94ec39b8.png",
-            "created_at": datetime.now(timezone.utc).isoformat()
-        },
-        {
-            "id": str(_uuid.uuid4()),
-            "user_id": current_user["id"],
-            "type": "promo",
-            "title": "Power Hour: Mer/Gio",
-            "text": "⚡️ Novità: Power Hour! Mercoledì e Giovedì mattina il trattamento idratante lo regaliamo noi! 🎁 Scopri come su https://brunomelitohair.it",
-            "image_url": "https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/572ec519daddcad1f4a85c012592ce7cb5567c2466fd73ce966377d55a547053.png",
-            "created_at": datetime.now(timezone.utc).isoformat()
-        }
-    ]
-    await db.wingman_suggestions.insert_many(posts)
-    return {"success": True, "inserted": 3}
