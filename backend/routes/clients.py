@@ -344,3 +344,103 @@ async def delete_client(client_id: str, current_user: dict = Depends(get_current
         raise HTTPException(status_code=404, detail="Cliente non trovato")
     logger.info(f"Cliente {client_id} eliminato da utente {current_user['id']}")
     return {"message": "Cliente eliminato"}
+
+
+@router.get("/clients/integrity-check")
+async def integrity_check(current_user: dict = Depends(get_current_user)):
+    """Trova appuntamenti orfani (client_id senza documento cliente) e clienti duplicate."""
+    uid = current_user["id"]
+
+    # Tutti i client_id usati negli appuntamenti
+    apt_client_ids = await db.appointments.distinct("client_id", {"user_id": uid})
+    apt_client_ids = [cid for cid in apt_client_ids if cid and cid not in ("generic", "")]
+
+    # Client_id che esistono davvero come documenti
+    existing = await db.clients.find(
+        {"user_id": uid, "id": {"$in": apt_client_ids}}, {"_id": 0, "id": 1}
+    ).to_list(2000)
+    existing_ids = {c["id"] for c in existing}
+    orphan_ids = [cid for cid in apt_client_ids if cid not in existing_ids]
+
+    # Per ogni orfano: info sull'appuntamento più recente + eventuale cliente con stesso nome
+    orphans = []
+    for oid in orphan_ids:
+        last_apt = await db.appointments.find_one(
+            {"client_id": oid, "user_id": uid},
+            {"_id": 0, "client_name": 1, "date": 1},
+            sort=[("date", -1)]
+        )
+        if not last_apt:
+            continue
+        apt_count = await db.appointments.count_documents({"client_id": oid, "user_id": uid})
+        candidate = None
+        name = last_apt.get("client_name", "").strip()
+        if name:
+            found = await db.clients.find_one(
+                {"user_id": uid, "name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}},
+                {"_id": 0, "id": 1, "name": 1, "phone": 1}
+            )
+            if found:
+                candidate = found
+        orphans.append({
+            "orphan_client_id": oid,
+            "client_name": name,
+            "appointments_count": apt_count,
+            "last_appointment_date": last_apt.get("date", ""),
+            "suggested_client": candidate,
+        })
+
+    # Clienti duplicate (stesso nome normalizzato, id diversi)
+    all_clients = await db.clients.find(
+        {"user_id": uid}, {"_id": 0, "id": 1, "name": 1, "phone": 1, "created_at": 1}
+    ).to_list(5000)
+    name_map: dict = {}
+    for c in all_clients:
+        key = c["name"].strip().lower()
+        name_map.setdefault(key, []).append(c)
+    duplicates = [
+        {"name": v[0]["name"], "clients": v}
+        for v in name_map.values() if len(v) > 1
+    ]
+
+    return {
+        "orphan_appointments": orphans,
+        "duplicate_clients": duplicates,
+        "total_issues": len(orphans) + len(duplicates),
+    }
+
+
+@router.post("/clients/{source_id}/merge-into/{target_id}")
+async def merge_clients(source_id: str, target_id: str, current_user: dict = Depends(get_current_user)):
+    """Sposta tutti gli appuntamenti e pagamenti da source a target, poi elimina source."""
+    uid = current_user["id"]
+    source = await db.clients.find_one({"id": source_id, "user_id": uid}, {"_id": 0})
+    target = await db.clients.find_one({"id": target_id, "user_id": uid}, {"_id": 0})
+    if not target:
+        raise HTTPException(status_code=404, detail="Cliente destinazione non trovato")
+
+    # Sposta appuntamenti
+    apt_res = await db.appointments.update_many(
+        {"client_id": source_id, "user_id": uid},
+        {"$set": {"client_id": target_id, "client_name": target["name"], "client_phone": target.get("phone", "")}}
+    )
+    # Sposta pagamenti
+    pay_res = await db.payments.update_many(
+        {"client_id": source_id, "user_id": uid},
+        {"$set": {"client_id": target_id}}
+    )
+    # Sposta reminders_sent
+    await db.reminders_sent.update_many(
+        {"client_id": source_id, "user_id": uid},
+        {"$set": {"client_id": target_id}}
+    )
+    # Elimina il documento sorgente (se esiste)
+    if source:
+        await db.clients.delete_one({"id": source_id, "user_id": uid})
+
+    logger.info(f"Merge {source_id} → {target_id}: {apt_res.modified_count} apt, {pay_res.modified_count} pay")
+    return {
+        "success": True,
+        "appointments_moved": apt_res.modified_count,
+        "payments_moved": pay_res.modified_count,
+    }

@@ -30,7 +30,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Users, Plus, Search, Phone, Mail, Edit2, Trash2, Loader2, History, MessageSquare, Upload, FileSpreadsheet, Euro, AlertTriangle, Scissors, Cake, UserX } from 'lucide-react';
+import { Users, Plus, Search, Phone, Mail, Edit2, Trash2, Loader2, History, MessageSquare, Upload, FileSpreadsheet, Euro, AlertTriangle, Scissors, Cake, UserX, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import PageHeader from '../components/PageHeader';
 import ClientAvatar from '../components/ClientAvatar';
@@ -53,6 +53,10 @@ export default function ClientsPage() {
   const [importing, setImporting] = useState(false);
   const [importPreview, setImportPreview] = useState([]);
   const fileInputRef = useRef(null);
+  const [integrityOpen, setIntegrityOpen] = useState(false);
+  const [integrityData, setIntegrityData] = useState(null);
+  const [checkingIntegrity, setCheckingIntegrity] = useState(false);
+  const [mergingId, setMergingId] = useState(null);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -252,6 +256,35 @@ export default function ClientsPage() {
     }
   };
 
+  const runIntegrityCheck = async () => {
+    setCheckingIntegrity(true);
+    setIntegrityData(null);
+    try {
+      const res = await api.get(`${API}/clients/integrity-check`);
+      setIntegrityData(res.data);
+    } catch {
+      toast.error('Errore durante la verifica');
+    } finally {
+      setCheckingIntegrity(false);
+    }
+  };
+
+  const mergeClient = async (sourceId, targetId) => {
+    setMergingId(sourceId);
+    try {
+      await api.post(`${API}/clients/${sourceId}/merge-into/${targetId}`);
+      toast.success('Clienti uniti con successo');
+      fetchClients();
+      // Aggiorna i risultati del check
+      const res = await api.get(`${API}/clients/integrity-check`);
+      setIntegrityData(res.data);
+    } catch {
+      toast.error('Errore durante il merge');
+    } finally {
+      setMergingId(null);
+    }
+  };
+
   const filteredClients = clients.filter(client =>
     client.name.toLowerCase().includes(search.toLowerCase()) ||
     client.phone.includes(search) ||
@@ -277,6 +310,15 @@ export default function ClientsPage() {
             <p className="text-[#7C5C4A] mt-1 ">{clients.length} clienti totali</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              onClick={() => { setIntegrityOpen(true); runIntegrityCheck(); }}
+              variant="outline"
+              className="border-[#F0E6DC] text-[#7C5C4A] hover:bg-[#F5EDE0]"
+              title="Verifica integrità dati clienti"
+            >
+              <ShieldCheck className="w-4 h-4 mr-2" />
+              Verifica dati
+            </Button>
             <Button
               onClick={() => navigate('/clienti-assenti')}
               variant="outline"
@@ -751,6 +793,130 @@ export default function ClientsPage() {
                 )}
               </div>
             ) : null}
+          </DialogContent>
+        </Dialog>
+
+        {/* Integrity Check Dialog */}
+        <Dialog open={integrityOpen} onOpenChange={setIntegrityOpen}>
+          <DialogContent className="sm:max-w-[640px] max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-[#7C5C4A]" />
+                Verifica integrità dati clienti
+              </DialogTitle>
+              <DialogDescription>
+                Controlla appuntamenti orfani e clienti duplicate nel database.
+              </DialogDescription>
+            </DialogHeader>
+
+            {checkingIntegrity && (
+              <div className="flex items-center justify-center py-10 gap-3 text-[#7C5C4A]">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Analisi in corso...
+              </div>
+            )}
+
+            {integrityData && !checkingIntegrity && (
+              <div className="space-y-5 mt-2">
+                {integrityData.total_issues === 0 ? (
+                  <div className="text-center py-8 text-green-700 font-semibold">
+                    ✅ Nessun problema trovato — dati integri!
+                  </div>
+                ) : (
+                  <>
+                    {/* Appuntamenti orfani */}
+                    {integrityData.orphan_appointments.length > 0 && (
+                      <div>
+                        <p className="font-semibold text-[#2D1B14] mb-2">
+                          ⚠️ Appuntamenti orfani ({integrityData.orphan_appointments.length})
+                        </p>
+                        <p className="text-xs text-[#7C5C4A] mb-3">
+                          Questi appuntamenti sono collegati a un record cliente che non esiste più.
+                          Se c'è una cliente suggerita, clicca "Unisci" per collegarli al profilo corretto.
+                        </p>
+                        <div className="space-y-2">
+                          {integrityData.orphan_appointments.map(o => (
+                            <div key={o.orphan_client_id} className="border border-amber-200 bg-amber-50 rounded-xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                              <div>
+                                <p className="font-semibold text-[#2D1B14]">{o.client_name || '(nome sconosciuto)'}</p>
+                                <p className="text-xs text-[#7C5C4A]">
+                                  {o.appointments_count} appuntamento/i · ultimo: {o.last_appointment_date}
+                                </p>
+                                {o.suggested_client && (
+                                  <p className="text-xs text-amber-700 mt-0.5">
+                                    Profilo trovato: {o.suggested_client.name} {o.suggested_client.phone ? `(${o.suggested_client.phone})` : ''}
+                                  </p>
+                                )}
+                              </div>
+                              {o.suggested_client && (
+                                <Button
+                                  size="sm"
+                                  disabled={mergingId === o.orphan_client_id}
+                                  onClick={() => mergeClient(o.orphan_client_id, o.suggested_client.id)}
+                                  className="bg-amber-500 hover:bg-amber-600 text-white shrink-0"
+                                >
+                                  {mergingId === o.orphan_client_id ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                                  Unisci
+                                </Button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Clienti duplicate */}
+                    {integrityData.duplicate_clients.length > 0 && (
+                      <div>
+                        <p className="font-semibold text-[#2D1B14] mb-2">
+                          👥 Clienti duplicate ({integrityData.duplicate_clients.length} gruppi)
+                        </p>
+                        <p className="text-xs text-[#7C5C4A] mb-3">
+                          Stessa cliente registrata più volte. Clicca "Unisci" per tenere il profilo più recente e spostare tutti gli appuntamenti su di esso.
+                        </p>
+                        <div className="space-y-2">
+                          {integrityData.duplicate_clients.map((g, i) => (
+                            <div key={i} className="border border-red-200 bg-red-50 rounded-xl p-3">
+                              <p className="font-semibold text-[#2D1B14] mb-1">{g.name}</p>
+                              <div className="space-y-1">
+                                {g.clients.map((c, ci) => (
+                                  <div key={c.id} className="flex items-center justify-between text-xs text-[#7C5C4A]">
+                                    <span>{c.phone || '(nessun numero)'} · creato: {c.created_at?.slice(0, 10) || '?'}</span>
+                                    {ci < g.clients.length - 1 && (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        disabled={mergingId === c.id}
+                                        onClick={() => mergeClient(c.id, g.clients[g.clients.length - 1].id)}
+                                        className="border-red-300 text-red-700 hover:bg-red-100 text-xs py-0.5 h-6"
+                                      >
+                                        {mergingId === c.id ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                                        Unisci nel più recente
+                                      </Button>
+                                    )}
+                                    {ci === g.clients.length - 1 && (
+                                      <span className="text-green-700 font-semibold">← destinazione</span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            <DialogFooter className="mt-4">
+              <Button variant="outline" onClick={runIntegrityCheck} disabled={checkingIntegrity} className="border-[#F0E6DC]">
+                {checkingIntegrity ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ShieldCheck className="w-4 h-4 mr-2" />}
+                Ri-verifica
+              </Button>
+              <Button onClick={() => setIntegrityOpen(false)} className="bg-[#2D1B14] text-white">Chiudi</Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
