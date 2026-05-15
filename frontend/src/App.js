@@ -11,6 +11,7 @@ import { useAuth } from "./context/AuthContext";
 import LoginPage from "./pages/LoginPage";
 import WebsitePage from "./pages/WebsitePage";
 import ConfirmAppointmentPage from "./pages/ConfirmAppointmentPage";
+import PrivacyPage from "./pages/PrivacyPage";
 import PlanningPage from "./pages/PlanningPage";
 import PWAInstallBanner from "./components/PWAInstallBanner";
 
@@ -225,6 +226,9 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* Privacy Policy — pubblica, per Meta app review */}
+          <Route path="/privacy" element={<PrivacyPage />} />
 
           {/* /prenota reindirizza a /sito */}
           <Route path="/prenota" element={<Navigate to="/sito" replace />} />
