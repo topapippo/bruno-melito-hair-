@@ -104,15 +104,36 @@ async def get_color_expiry_reminders(current_user: dict = Depends(get_current_us
     results = await db.appointments.aggregate(pipeline).to_list(100)
     client_ids = [r["_id"] for r in results]
     clients = {c["id"]: c for c in await db.clients.find({"id": {"$in": client_ids}}, {"_id": 0}).to_list(100)}
+
+    # Se il client_id dell'appuntamento non corrisponde a nessun documento cliente (record orfano/duplicato),
+    # cerca il cliente per nome — questo risolve i casi in cui la stessa persona è stata creata due volte
+    # e gli appuntamenti sono rimasti sul vecchio record
+    for r in results:
+        if r["_id"] not in clients and r.get("client_name"):
+            found = await db.clients.find_one(
+                {"user_id": current_user["id"], "name": {"$regex": f"^{r['client_name'].strip()}$", "$options": "i"}},
+                {"_id": 0}
+            )
+            if found:
+                # Usa il client_id reale (del documento esistente) per il link allo storico
+                clients[r["_id"]] = found
+                r["_real_client_id"] = found["id"]
+
     sent = await db.reminders_sent.find({"user_id": current_user["id"], "type": "color_expiry"}, {"_id": 0}).to_list(500)
     sent_client_ids = {s["client_id"] for s in sent}
-    return [{
-        "client_id": r["_id"], "client_name": r["client_name"], "last_color_date": r["last_date"],
-        "days_ago": (datetime.now(timezone.utc) - datetime.strptime(r["last_date"], "%Y-%m-%d").replace(tzinfo=timezone.utc)).days,
-        # Fallback su client_phone dell'appuntamento se il documento cliente non ha il numero
-        "phone": clients.get(r["_id"], {}).get("phone", "") or r.get("client_phone", ""),
-        "already_sent": r["_id"] in sent_client_ids
-    } for r in results]
+    output = []
+    for r in results:
+        client_doc = clients.get(r["_id"], {})
+        real_client_id = r.get("_real_client_id", r["_id"])
+        output.append({
+            "client_id": real_client_id,
+            "client_name": r["client_name"],
+            "last_color_date": r["last_date"],
+            "days_ago": (datetime.now(timezone.utc) - datetime.strptime(r["last_date"], "%Y-%m-%d").replace(tzinfo=timezone.utc)).days,
+            "phone": client_doc.get("phone", "") or r.get("client_phone", ""),
+            "already_sent": r["_id"] in sent_client_ids or real_client_id in sent_client_ids
+        })
+    return output
 
 
 @router.post("/reminders/color-expiry/{client_id}/mark-sent")
