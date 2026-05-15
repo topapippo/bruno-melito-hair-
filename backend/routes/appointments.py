@@ -510,15 +510,8 @@ async def _checkout_appointment_inner(appointment_id: str, data: CheckoutData, c
             "services_left": services_left,
         }
 
-    # WhatsApp post-checkout — solo ringraziamento con link recensione
-    if client_phone and appointment.get("client_name"):
-        client_first_name = appointment["client_name"].split()[0]
-        review_msg = (
-            f"Ciao {client_first_name}! Grazie per la tua visita da Bruno Melito Hair 💇\n"
-            f"Se sei soddisfatto/a, lasciaci una recensione su Google — ci aiuta tantissimo!\n"
-            f"👉 {GOOGLE_REVIEW_URL}"
-        )
-        asyncio.ensure_future(send_whatsapp(client_phone, review_msg, current_user))
+    # Nessun invio automatico post-checkout — il ringraziamento viene inviato manualmente
+    # tramite il pulsante nel dialog di pagamento (PlanningPage), se Bruno sceglie di farlo.
 
     return {
         "success": True, "payment_id": payment_id, "message": "Pagamento registrato con successo",
