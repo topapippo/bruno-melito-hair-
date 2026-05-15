@@ -262,12 +262,12 @@ async def _send_booking_push(client_name, date_it, time, services_names, date_is
         logger.warning(f"Push notifica prenotazione fallita: {e}")
 
 
-async def _send_booking_wa(client_phone, client_name, date_it, time, services_names, appointment_id, salon_name) -> bool:
-    """Invia WA di conferma al cliente via Cloud API. Ritorna True se inviato con successo."""
+async def _send_booking_wa(client_phone, client_name, date_it, time, services_names, appointment_id, salon_name, user) -> bool:
+    """Invia WA di conferma al cliente. Ritorna True se inviato con successo."""
     if not client_phone:
         return False
     try:
-        from utils import send_whatsapp_cloud, WA_FOOTER
+        from utils import send_whatsapp, WA_FOOTER
         msg = (
             f"✅ Prenotazione confermata!\n\n"
             f"Ciao {client_name}! La tua prenotazione da *{salon_name}* è confermata:\n\n"
@@ -277,7 +277,7 @@ async def _send_booking_wa(client_phone, client_name, date_it, time, services_na
             f"Per disdire o modificare rispondi a questo messaggio. A presto! 💇"
             + WA_FOOTER
         )
-        result = await send_whatsapp_cloud(client_phone, msg)
+        result = await send_whatsapp(client_phone, msg, user)
         if result.get("sent"):
             logger.info(f"WA conferma prenotazione inviata a {client_phone}")
             return True
@@ -447,6 +447,7 @@ async def create_public_booking(request: Request, data: PublicBookingRequest, ba
         services_names=services_names,
         appointment_id=appointment_id,
         salon_name=user.get("salon_name", "Bruno Melito Hair"),
+        user=user,
     )
 
     return {"success": True, "appointment_id": appointment_id, "booking_code": appointment_id[:8].upper(), "booking_token": booking_token, "wa_sent": wa_sent}

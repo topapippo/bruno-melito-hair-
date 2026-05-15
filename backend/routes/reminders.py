@@ -490,9 +490,9 @@ async def send_confirmation_link(appointment_id: str, current_user: dict = Depen
 
     whatsapp_url = f"https://wa.me/{wa_phone}?text={urllib.parse.quote(message)}"
 
-    # Tenta invio via Cloud API
-    from utils import send_whatsapp_cloud
-    result = await send_whatsapp_cloud(client_phone, message)
+    # Tenta invio via send_whatsapp (Cloud API → UltraMsg → Green API)
+    from utils import send_whatsapp
+    result = await send_whatsapp(client_phone, message, current_user)
     if result.get("sent"):
         return {"success": True, "sent": True, "message": message, "client_phone": client_phone}
 

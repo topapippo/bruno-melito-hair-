@@ -66,7 +66,7 @@ async def _notify_login_whatsapp(user: dict, ip: str):
         phone = user.get("whatsapp") or user.get("phone", "")
         if not phone:
             return
-        from utils import send_whatsapp_cloud
+        from utils import send_whatsapp
         now_str = datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')
         email_masked = user['email'][:3] + '***@' + user['email'].split('@')[-1]
         msg = (
@@ -76,7 +76,7 @@ async def _notify_login_whatsapp(user: dict, ip: str):
             f"🌐 IP: {ip}\n\n"
             f"Se non sei stato tu, cambia subito la password da Impostazioni!"
         )
-        await send_whatsapp_cloud(phone, msg)
+        await send_whatsapp(phone, msg, user)
     except Exception as e:
         logger.warning(f"Notifica login WA fallita: {e}")
 
