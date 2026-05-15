@@ -73,15 +73,33 @@ async def get_sms_status(current_user: dict = Depends(get_current_user)):
 async def get_color_expiry_reminders(current_user: dict = Depends(get_current_user)):
     cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).strftime("%Y-%m-%d")
     color_keywords = ["color", "colore", "tinta", "meche", "balayage", "schiaritu", "colpi di sole"]
+    color_regex = "|".join(color_keywords)
     services = await db.services.find({"user_id": current_user["id"]}, {"_id": 0}).to_list(200)
     color_service_ids = [s["id"] for s in services if any(kw in s["name"].lower() for kw in color_keywords)]
-    if not color_service_ids:
-        return []
+
+    # Cerca per service_ids (efficiente) O per nome servizio embedded (fallback per appuntamenti
+    # creati senza service_ids o con servizi rinominati/ricreati)
+    base_match = {"user_id": current_user["id"], "status": {"$ne": "cancelled"}}
+    if color_service_ids:
+        base_match["$or"] = [
+            {"service_ids": {"$in": color_service_ids}},
+            {"services.name": {"$regex": color_regex, "$options": "i"}}
+        ]
+    else:
+        base_match["services.name"] = {"$regex": color_regex, "$options": "i"}
+
     pipeline = [
-        {"$match": {"user_id": current_user["id"], "service_ids": {"$in": color_service_ids}, "status": {"$ne": "cancelled"}}},
+        {"$match": base_match},
         {"$sort": {"date": -1}},
-        {"$group": {"_id": "$client_id", "last_date": {"$first": "$date"}, "last_services": {"$first": "$services"}, "client_name": {"$first": "$client_name"}}},
-        {"$match": {"last_date": {"$lte": cutoff}}}
+        {"$group": {
+            "_id": "$client_id",
+            "last_date": {"$first": "$date"},
+            "last_services": {"$first": "$services"},
+            "client_name": {"$first": "$client_name"},
+            "client_phone": {"$first": "$client_phone"}
+        }},
+        # Escludi clienti generici/anonimi e mostra solo chi ha l'ultimo colore > 30gg fa
+        {"$match": {"last_date": {"$lte": cutoff}, "_id": {"$nin": [None, "", "generic"]}}}
     ]
     results = await db.appointments.aggregate(pipeline).to_list(100)
     client_ids = [r["_id"] for r in results]
@@ -91,7 +109,9 @@ async def get_color_expiry_reminders(current_user: dict = Depends(get_current_us
     return [{
         "client_id": r["_id"], "client_name": r["client_name"], "last_color_date": r["last_date"],
         "days_ago": (datetime.now(timezone.utc) - datetime.strptime(r["last_date"], "%Y-%m-%d").replace(tzinfo=timezone.utc)).days,
-        "phone": clients.get(r["_id"], {}).get("phone", ""), "already_sent": r["_id"] in sent_client_ids
+        # Fallback su client_phone dell'appuntamento se il documento cliente non ha il numero
+        "phone": clients.get(r["_id"], {}).get("phone", "") or r.get("client_phone", ""),
+        "already_sent": r["_id"] in sent_client_ids
     } for r in results]
 
 
