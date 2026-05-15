@@ -124,6 +124,14 @@ export default function BookingForm({
   const blockedSet = new Set(blockedSlots);
   const availableSlots = allSlotsForDay.filter(s => !blockedSet.has(s));
 
+  const isPowerHour = (() => {
+    if (!formData.date || !formData.time) return false;
+    const dow = getDay(new Date(formData.date + 'T12:00:00')); // 3=mer, 4=gio
+    if (dow !== 3 && dow !== 4) return false;
+    const [h] = formData.time.split(':').map(Number);
+    return h >= 9 && h < 12;
+  })();
+
   const STEPS = [
     { n: 1, label: 'Servizi', emoji: '✂️' },
     { n: 2, label: 'Quando', emoji: '📅' },
@@ -691,6 +699,15 @@ export default function BookingForm({
 
               return (
                 <div className="bg-white rounded-3xl shadow-lg border border-gray-100 p-5 space-y-5" data-testid="time-slots-grid">
+                  {isPowerHour && (
+                    <div className="flex items-start gap-3 rounded-2xl px-4 py-3" style={{ background: 'linear-gradient(135deg,#fef3c7,#fde68a)' }}>
+                      <span className="text-xl mt-0.5">⚡️</span>
+                      <div>
+                        <p className="font-black text-amber-800 text-sm">Power Hour attiva!</p>
+                        <p className="text-amber-700 text-xs mt-0.5">Ottimo! Hai scelto un orario <strong>mercoledì o giovedì mattina</strong>. Riceverai il <strong>10% di sconto</strong> sul servizio tecnico direttamente in salone.</p>
+                      </div>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between">
                     <p className="font-black text-gray-900 capitalize">
                       📆 {format(new Date(formData.date + 'T12:00:00'), 'EEEE dd MMMM', { locale: it })}

@@ -234,6 +234,28 @@ export function PromotionsSection({ publicPromos, setShowBooking, bookPromo, T }
             <p className="mt-3 text-sm font-semibold text-white/40">⚠️ Valide esclusivamente per prenotazioni online</p>
           </div>
         </AnimatedSection>
+        {/* Power Hour — card fissa hardcoded */}
+        <AnimatedSection delay={0}>
+          <div className="rounded-3xl p-6 mb-6 relative overflow-hidden border border-yellow-400/30"
+            style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}>
+            <div className="absolute -bottom-4 -right-4 w-24 h-24 rounded-full bg-white/10" />
+            <div className="absolute -top-6 -left-6 w-20 h-20 rounded-full bg-white/5" />
+            <div className="relative z-10">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-2xl">⚡️</span>
+                <h3 className="text-xl font-black text-white">Power Hour</h3>
+                <span className="ml-auto bg-white/20 text-white text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider">-10%</span>
+              </div>
+              <p className="text-white/90 text-sm mb-2 font-semibold">Mercoledì e Giovedì mattina — 9:00 / 12:00</p>
+              <p className="text-white/75 text-sm mb-4">Prenota online un servizio tecnico in questi orari e ricevi il <strong className="text-white">10% di sconto</strong> direttamente in salone!</p>
+              <button onClick={() => setShowBooking(true)}
+                className="w-full py-2.5 rounded-xl bg-white/20 hover:bg-white/30 text-white font-black text-sm transition-all active:scale-95">
+                Prenota e risparmia ⚡️
+              </button>
+            </div>
+          </div>
+        </AnimatedSection>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {publicPromos.map((promo, idx) => {
             const solidBgs = [`${T.primary}`, `${T.accent}`, '#8B5CF6', '#F59E0B', '#0EA5E9'];
