@@ -512,12 +512,10 @@ async def send_confirmation_link(appointment_id: str, current_user: dict = Depen
     frontend_url = os.environ.get("FRONTEND_URL", "https://brunomelitohair.it")
     confirm_link = f"{frontend_url}/conferma/{token}"
     services_text = ", ".join([s["name"] for s in apt.get("services", [])])
-    from utils import WA_FOOTER
     message = (
         f"Ciao {apt.get('client_name', '')}! Ti ricordiamo il tuo appuntamento il "
         f"{_fmt_date_it(apt['date'])} alle {apt['time']} per {services_text}. "
         f"Conferma o disdici qui: {confirm_link}"
-        + WA_FOOTER
     )
 
     import urllib.parse

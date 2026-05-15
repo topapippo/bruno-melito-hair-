@@ -267,7 +267,7 @@ async def _send_booking_wa(client_phone, client_name, date_it, time, services_na
     if not client_phone:
         return False
     try:
-        from utils import send_whatsapp, WA_FOOTER
+        from utils import send_whatsapp
         msg = (
             f"✅ Prenotazione confermata!\n\n"
             f"Ciao {client_name}! La tua prenotazione da *{salon_name}* è confermata:\n\n"
@@ -275,7 +275,6 @@ async def _send_booking_wa(client_phone, client_name, date_it, time, services_na
             f"✂️ {services_names}\n"
             f"🔖 Codice: {appointment_id[:8].upper()}\n\n"
             f"Per disdire o modificare rispondi a questo messaggio. A presto! 💇"
-            + WA_FOOTER
         )
         result = await send_whatsapp(client_phone, msg, user)
         if result.get("sent"):
