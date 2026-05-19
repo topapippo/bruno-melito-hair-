@@ -92,6 +92,16 @@ export default function EditAppointmentDialog({
   const [blockedSlots, setBlockedSlots] = useState([]);
   const [dayWarning, setDayWarning] = useState('');
 
+  // Abbonamento al volo
+  const [showCreateSubscription, setShowCreateSubscription] = useState(false);
+  const [creatingSubscription, setCreatingSubscription] = useState(false);
+  const [newSubscriptionForm, setNewSubscriptionForm] = useState({
+    name: '',
+    total_services: '',
+    total_value: '',
+  });
+  const [subscriptionPriceBeingPaid, setSubscriptionPriceBeingPaid] = useState(null);
+
   const sortedServices = groupServicesByCategory(services);
 
   // Card helpers
@@ -309,6 +319,46 @@ export default function EditAppointmentDialog({
     setSelectedPromo(null);
     setCustomPrices({});
     setEligiblePromos([]);
+    setShowCreateSubscription(false);
+    setNewSubscriptionForm({ name: '', total_services: '', total_value: '' });
+    setSubscriptionPriceBeingPaid(null);
+  };
+
+  const handleCreateAndCheckoutSubscription = async () => {
+    if (!newSubscriptionForm.total_services || !newSubscriptionForm.total_value) {
+      toast.error('Inserisci numero sedute e prezzo');
+      return;
+    }
+    const apt = localAppointment || appointment;
+    if (!apt?.client_id || apt.client_id === 'generic') {
+      toast.error('Seleziona prima una cliente');
+      return;
+    }
+    setCreatingSubscription(true);
+    try {
+      const cardRes = await api.post(`${API}/cards`, {
+        client_id: apt.client_id,
+        card_type: 'subscription',
+        name: newSubscriptionForm.name || `Abbonamento ${newSubscriptionForm.total_services} sedute`,
+        total_value: parseFloat(newSubscriptionForm.total_value),
+        total_services: parseInt(newSubscriptionForm.total_services),
+        valid_until: null,
+        notes: ''
+      });
+      const newCardId = cardRes.data.id;
+      const subscriptionPrice = parseFloat(newSubscriptionForm.total_value);
+      setSelectedCardId(newCardId);
+      setPaymentMethod('prepaid');
+      setSubscriptionPriceBeingPaid(subscriptionPrice);
+      setShowCreateSubscription(false);
+      setNewSubscriptionForm({ name: '', total_services: '', total_value: '' });
+      toast.success(`Abbonamento "${cardRes.data.name}" creato! Incassa €${subscriptionPrice.toFixed(2)}`);
+      await handleCheckout('prepaid', newCardId);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Errore creazione abbonamento');
+    } finally {
+      setCreatingSubscription(false);
+    }
   };
 
   const handleCheckout = async (overrideMethod = null, overrideCardId) => {
@@ -327,7 +377,10 @@ export default function EditAppointmentDialog({
     // Determine amount_paid: subscription = €0, prepaid card = service total, cash/POS = service total
     const card = cardId ? clientCards.find(c => c.id === cardId) : null;
     const isSub = card?.card_type === 'subscription';
-    const finalAmount = isSub ? 0 : Math.max(0, calculateSubtotal() - calculateDiscount());
+    // Se è un abbonamento appena creato, usa il prezzo dell'abbonamento; altrimenti usa la logica standard
+    const finalAmount = subscriptionPriceBeingPaid !== null
+      ? subscriptionPriceBeingPaid
+      : (isSub ? 0 : Math.max(0, calculateSubtotal() - calculateDiscount()));
 
     const discountNum = discountType !== 'none' ? Math.max(0, parseFloat(discountValue) || 0) : 0;
 
@@ -769,6 +822,30 @@ export default function EditAppointmentDialog({
                           </div>
                         );
                       })}
+                    </div>
+                  )}
+                </div>
+
+                {/* ── 1b. CREA NUOVO ABBONAMENTO ── */}
+                <div className="rounded-xl border-2 border-blue-200 overflow-hidden">
+                  <button type="button" onClick={()=>setShowCreateSubscription(!showCreateSubscription)}
+                    className="w-full flex items-center justify-between px-3 py-3 bg-blue-50 hover:bg-blue-100">
+                    <div className="flex items-center gap-2">
+                      <Plus className="w-4 h-4 text-blue-600"/>
+                      <span className="font-bold text-sm uppercase tracking-wide text-blue-700">Vendi abbonamento</span>
+                    </div>
+                    <ChevronDown className={`w-4 h-4 text-blue-400 transition-transform ${showCreateSubscription?'rotate-180':''}`}/>
+                  </button>
+                  {showCreateSubscription && (
+                    <div className="border-t border-blue-100 px-3 py-3 bg-white space-y-2.5">
+                      <div><Label className="text-xs font-semibold text-gray-600">Nome abbonamento</Label><Input placeholder={`Abbonamento ${newSubscriptionForm.total_services || 'N'} sedute`} value={newSubscriptionForm.name} onChange={e=>setNewSubscriptionForm(p=>({...p,name:e.target.value}))} className="h-8 text-sm"/></div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div><Label className="text-xs font-semibold text-gray-600">N. sedute</Label><Input type="number" min="1" value={newSubscriptionForm.total_services} onChange={e=>setNewSubscriptionForm(p=>({...p,total_services:e.target.value}))} className="h-8 text-sm"/></div>
+                        <div><Label className="text-xs font-semibold text-gray-600">Prezzo €</Label><Input type="number" min="0" step="0.50" value={newSubscriptionForm.total_value} onChange={e=>setNewSubscriptionForm(p=>({...p,total_value:e.target.value}))} className="h-8 text-sm"/></div>
+                      </div>
+                      <Button type="button" onClick={handleCreateAndCheckoutSubscription} disabled={creatingSubscription} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold h-9 text-sm">
+                        {creatingSubscription?<><Loader2 className="w-3 h-3 animate-spin mr-1"/>Creando...</>:<><Plus className="w-4 h-4 mr-1"/>Crea e incassa</>}
+                      </Button>
                     </div>
                   )}
                 </div>
