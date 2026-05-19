@@ -157,6 +157,9 @@ export default function EditAppointmentDialog({
     setSelectedClientInfo(client || null);
 
     if (isNew) {
+      setEditingClient(false);
+      setClientFormData({});
+      setShowHistory(false);
       setCheckoutMode(false);
       setPaymentMethod('cash');
       setDiscountType('none');
