@@ -601,7 +601,7 @@ export default function BookingForm({
               {/* Intestazioni giorni */}
               <div className="grid grid-cols-7 px-3 pt-3">
                 {['Lun','Mar','Mer','Gio','Ven','Sab','Dom'].map((d, i) => (
-                  <div key={i} className={`text-center text-[11px] font-black py-1 tracking-widest uppercase ${i >= 5 ? 'text-rose-400' : 'text-gray-400'}`}>{d}</div>
+                  <div key={i} className={`text-center text-[11px] font-black py-1 tracking-widest uppercase ${i === 6 ? 'text-rose-400' : 'text-gray-400'}`}>{d}</div>
                 ))}
               </div>
               {/* Griglia giorni */}
@@ -626,7 +626,7 @@ export default function BookingForm({
                     const dayItName = dayNamesIt[getDay(day)];
                     const isAllDay = allDayBlocked.dates.has(dateStr) || allDayBlocked.recurring_days.has(dayItName);
                     const isDisabled = isPast || isClosed || isAllDay;
-                    const isWeekend = getDay(day) === 0 || getDay(day) === 6;
+                    const isWeekend = getDay(day) === 0;
 
                     let cls = 'bk-day aspect-square rounded-xl flex flex-col items-center justify-center text-sm font-bold leading-none ';
                     let st = {};
