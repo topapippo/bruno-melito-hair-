@@ -955,6 +955,7 @@ export default function PlanningPage() {
             operators={operators}
             clients={clients}
             services={services}
+            cardTemplates={cardTemplates}
             onSuccess={refreshAll}
             onLastServiceAlert={(data) => setLastServiceAlerts(prev => [...prev, data])}
             onThankYou={setThankYouData}

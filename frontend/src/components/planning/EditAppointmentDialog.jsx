@@ -54,7 +54,7 @@ const getFilteredSlots = (dateStr, hoursConfig, blockedSlots = []) => {
 };
 
 export default function EditAppointmentDialog({
-  open, onClose, appointment, operators, clients, services, onSuccess,
+  open, onClose, appointment, operators, clients, services, cardTemplates = [], onSuccess,
   onLastServiceAlert, onThankYou, autoCheckout = false,
 }) {
   const [saving, setSaving] = useState(false);
@@ -838,6 +838,37 @@ export default function EditAppointmentDialog({
                   </button>
                   {showCreateSubscription && (
                     <div className="border-t border-blue-100 px-3 py-3 bg-white space-y-2.5">
+                      {/* Lista abbonamenti template */}
+                      {cardTemplates.filter(t => t.card_type === 'subscription').length > 0 && (
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-semibold text-gray-600">Abbonamenti disponibili</Label>
+                          <div className="grid grid-cols-1 gap-1.5 max-h-[150px] overflow-y-auto">
+                            {cardTemplates.filter(t => t.card_type === 'subscription').map(tmpl => (
+                              <button key={tmpl.id} type="button"
+                                onClick={() => {
+                                  setNewSubscriptionForm({
+                                    name: tmpl.name || '',
+                                    total_services: String(tmpl.total_services || ''),
+                                    total_value: String(tmpl.total_value || ''),
+                                  });
+                                }}
+                                className="flex items-center justify-between p-2 rounded-lg border-2 border-blue-200 hover:border-blue-400 hover:bg-blue-50 text-left transition-all">
+                                <div className="min-w-0">
+                                  <p className="text-sm font-semibold text-gray-800 truncate">{tmpl.name}</p>
+                                  <p className="text-xs text-gray-500">{tmpl.total_services} sedute · €{tmpl.total_value}</p>
+                                </div>
+                                <div className={`w-4 h-4 rounded border-2 shrink-0 ml-2 ${newSubscriptionForm.total_value === String(tmpl.total_value) && newSubscriptionForm.total_services === String(tmpl.total_services) ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`} />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="border-t border-blue-100 pt-2.5">
+                        <Label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">O personalizza</Label>
+                      </div>
+
+                      {/* Form personalizzato */}
                       <div><Label className="text-xs font-semibold text-gray-600">Nome abbonamento</Label><Input placeholder={`Abbonamento ${newSubscriptionForm.total_services || 'N'} sedute`} value={newSubscriptionForm.name} onChange={e=>setNewSubscriptionForm(p=>({...p,name:e.target.value}))} className="h-8 text-sm"/></div>
                       <div className="grid grid-cols-2 gap-2">
                         <div><Label className="text-xs font-semibold text-gray-600">N. sedute</Label><Input type="number" min="1" value={newSubscriptionForm.total_services} onChange={e=>setNewSubscriptionForm(p=>({...p,total_services:e.target.value}))} className="h-8 text-sm"/></div>
