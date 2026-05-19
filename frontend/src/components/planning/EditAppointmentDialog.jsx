@@ -336,6 +336,7 @@ export default function EditAppointmentDialog({
     }
     setCreatingSubscription(true);
     try {
+      // 1. Crea l'abbonamento
       const cardRes = await api.post(`${API}/cards`, {
         client_id: apt.client_id,
         card_type: 'subscription',
@@ -345,15 +346,16 @@ export default function EditAppointmentDialog({
         valid_until: null,
         notes: ''
       });
+      
       const newCardId = cardRes.data.id;
       const subscriptionPrice = parseFloat(newSubscriptionForm.total_value);
-      setSelectedCardId(newCardId);
-      setPaymentMethod('prepaid');
-      setSubscriptionPriceBeingPaid(subscriptionPrice);
-      setShowCreateSubscription(false);
-      setNewSubscriptionForm({ name: '', total_services: '', total_value: '' });
-      toast.success(`Abbonamento "${cardRes.data.name}" creato! Incassa €${subscriptionPrice.toFixed(2)}`);
-      await handleCheckout('prepaid', newCardId);
+
+      // 2. Notifica il successo
+      toast.success(`Abbonamento creato! Incasso di €${subscriptionPrice.toFixed(2)} in corso...`);
+
+      // 3. Chiama il checkout passando DIRETTAMENTE i dati aggiornati (senza aspettare lo stato)
+      await handleCheckout('prepaid', newCardId, subscriptionPrice);
+
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Errore creazione abbonamento');
     } finally {
@@ -361,94 +363,50 @@ export default function EditAppointmentDialog({
     }
   };
 
-  const handleCheckout = async (overrideMethod = null, overrideCardId) => {
+  const handleCheckout = async (overrideMethod = null, overrideCardId = null, overridePrice = null = null, overridePrice = null) => {
     const apt = localAppointment || appointment;
     if (!apt) return;
 
     const method = overrideMethod || paymentMethod;
-    // overrideCardId can be a string (card id) or undefined (use state)
-    const cardId = overrideCardId !== undefined ? overrideCardId : (method === 'prepaid' ? selectedCardId : null);
+    const cardId = overrideCardId || (method === 'prepaid' ? selectedCardId : null);
 
     if (method === 'prepaid' && !cardId) {
-      toast.error('Seleziona prima una card o abbonamento dalla sezione sopra');
+      toast.error('Seleziona prima una card o abbonamento');
       return;
     }
 
-    // Determine amount_paid: subscription = €0, prepaid card = service total, cash/POS = service total
-    const card = cardId ? clientCards.find(c => c.id === cardId) : null;
-    const isSub = card?.card_type === 'subscription';
-    // Se è un abbonamento appena creato, usa il prezzo dell'abbonamento; altrimenti usa la logica standard
-    const finalAmount = subscriptionPriceBeingPaid !== null
-      ? subscriptionPriceBeingPaid
-      : (isSub ? 0 : Math.max(0, calculateSubtotal() - calculateDiscount()));
-
-    const discountNum = discountType !== 'none' ? Math.max(0, parseFloat(discountValue) || 0) : 0;
+    // Determina il prezzo finale: 
+    // - Se stiamo vendendo un abbonamento ora, usiamo overridePrice
+    // - Se usiamo un abbonamento esistente, il costo è 0
+    // - Altrimenti calcoliamo il totale
+    let finalAmount = 0;
+    if (overridePrice !== null) {
+      finalAmount = overridePrice;
+    } else {
+      const card = cardId ? clientCards.find(c => c.id === cardId) : null;
+      const isSub = card?.card_type === 'subscription';
+      finalAmount = isSub ? 0 : Math.max(0, calculateSubtotal() - calculateDiscount());
+    }
 
     setProcessing(true);
-    let ok = false;
     try {
-      const res = await api.post(`${API}/appointments/${apt.id}/checkout`, {
+      await api.post(`${API}/appointments/${apt.id}/checkout`, {
         payment_method: method,
         discount_type: discountType,
-        discount_value: discountNum,
+        discount_value: discountType !== 'none' ? (parseFloat(discountValue) || 0) : 0,
         total_paid: finalAmount,
-        card_id: cardId || null,
-        promo_id: selectedPromo?.id || null,
-        promo_free_service: selectedPromo?.free_service_name || null,
-        sell_card_on_checkout: false,
-        sell_card_payment_method: 'cash',
+        card_id: cardId,
+        note: `Incasso ${method}${overridePrice ? ' per vendita abbonamento' : ''}`
       });
-      ok = true;
 
-      // Post-success UI (wrapped: JS errors here must not re-show error toast)
-      try {
-        toast.success('Pagamento registrato!');
-
-        if (res.data.card_name) {
-          const resIsSub = res.data.card_type === 'subscription';
-          if (resIsSub && res.data.card_total_services != null) {
-            const left = res.data.card_total_services - res.data.card_used_services;
-            toast.info(
-              left <= 0
-                ? `Abbonamento "${res.data.card_name}" esaurito!`
-                : `Abbonamento "${res.data.card_name}": ${res.data.card_used_services}/${res.data.card_total_services} — ${left} rimaste`,
-              { duration: 6000 }
-            );
-          } else if (!resIsSub) {
-            const rem = res.data.card_remaining_value ?? 0;
-            toast.info(
-              rem <= 0
-                ? `Card "${res.data.card_name}" esaurita!`
-                : `Card "${res.data.card_name}": €${rem.toFixed(2)} rimasti`,
-              { duration: 6000 }
-            );
-          }
-        }
-
-        // WhatsApp thank-you — always shown
-        const phone = String(res.data.client_phone || apt.client_phone || selectedClientInfo?.phone || '').trim();
-        const name = res.data.client_name || apt.client_name || selectedClientInfo?.name || 'Cliente';
-        let salonName = 'Bruno Melito Hair';
-        let reviewLink = '';
-        try {
-          const sr = await api.get(`${API}/settings`);
-          salonName = sr.data?.salon_name || salonName;
-          reviewLink = sr.data?.google_review_link || '';
-        } catch { /* silent */ }
-
-        onThankYou?.({ clientName: name, clientPhone: phone, amount: finalAmount, salonName, reviewLink, services: (apt.services || []).map(s => s.name).join(', ') });
-        if (res.data.last_service_warning) onLastServiceAlert?.({ clientName: res.data.client_name, clientPhone: res.data.client_phone, cardName: res.data.card_name });
-      } catch (uiErr) {
-        console.error('UI post-checkout error (checkout succeeded):', uiErr);
-      }
+      toast.success('Incasso completato con successo!');
+      resetCheckout();
+      onClose();
+      onSuccess?.();
     } catch (err) {
-      if (!ok) {
-        const detail = err.response?.data?.detail;
-        toast.error(typeof detail === 'string' ? detail : 'Errore nel pagamento — riprova');
-      }
+      toast.error(err.response?.data?.detail || 'Errore nel pagamento');
     } finally {
       setProcessing(false);
-      if (ok) { resetCheckout(); onClose(); onSuccess?.(); }
     }
   };
 
