@@ -779,15 +779,24 @@ export default function ClientsPage() {
                   <div>
                     <h3 className="font-bold text-[#2D1B14] mb-2">Pagamenti</h3>
                     <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {clientHistory.payments.slice(0, 10).map((pay) => (
-                        <div key={pay.id} className="p-3 bg-green-50 rounded-xl flex justify-between items-center">
-                          <div>
-                            <p className="font-semibold text-[#2D1B14]">{fmtDate(pay.date)}</p>
-                            <p className="text-xs text-[#7C5C4A] capitalize">{pay.payment_method}</p>
+                      {clientHistory.payments.slice(0, 10).map((pay) => {
+                        const svcNames = (pay.services || []).map(s => s.name).filter(Boolean).join(', ');
+                        const methodLabel = pay.payment_method === 'cash' ? 'Contanti'
+                          : pay.payment_method === 'pos' ? 'POS'
+                          : pay.payment_method === 'prepaid' ? 'Abbonamento/Card'
+                          : pay.payment_method === 'sospeso' ? 'Sospeso'
+                          : pay.payment_method;
+                        return (
+                          <div key={pay.id} className="p-3 bg-green-50 rounded-xl flex justify-between items-start gap-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="font-semibold text-[#2D1B14]">{fmtDate(pay.date)}</p>
+                              {svcNames && <p className="text-xs text-[#5C3040] truncate">{svcNames}</p>}
+                              <p className="text-xs text-[#7C5C4A]">{methodLabel}</p>
+                            </div>
+                            <p className="font-black text-green-600 shrink-0">€{pay.total_paid.toFixed(2)}</p>
                           </div>
-                          <p className="font-black text-green-600">€{pay.total_paid.toFixed(2)}</p>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}

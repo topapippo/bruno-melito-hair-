@@ -100,6 +100,7 @@ export default function EditAppointmentDialog({
     total_services: '',
     total_value: '',
   });
+  const [newSubscriptionPayMethod, setNewSubscriptionPayMethod] = useState('cash');
   const [subscriptionPriceBeingPaid, setSubscriptionPriceBeingPaid] = useState(null);
 
   const sortedServices = groupServicesByCategory(services);
@@ -321,12 +322,13 @@ export default function EditAppointmentDialog({
     setEligiblePromos([]);
     setShowCreateSubscription(false);
     setNewSubscriptionForm({ name: '', total_services: '', total_value: '' });
+    setNewSubscriptionPayMethod('cash');
     setSubscriptionPriceBeingPaid(null);
   };
 
   const handleCreateAndCheckoutSubscription = async () => {
     if (!newSubscriptionForm.total_services || !newSubscriptionForm.total_value) {
-      toast.error('Inserisci numero sedute e prezzo');
+      toast.error('Inserisci numero servizi e prezzo');
       return;
     }
     const apt = localAppointment || appointment;
@@ -336,28 +338,43 @@ export default function EditAppointmentDialog({
     }
     setCreatingSubscription(true);
     try {
-      // 1. Crea l'abbonamento
-      const cardRes = await api.post(`${API}/cards`, {
+      const subscriptionPrice = parseFloat(newSubscriptionForm.total_value);
+      const subscriptionName = newSubscriptionForm.name || `Abbonamento ${newSubscriptionForm.total_services} servizi`;
+      const payMethod = newSubscriptionPayMethod === 'pos' ? 'pos' : 'cash';
+
+      // 1. Vendita abbonamento: crea card e registra incasso (cash/pos)
+      const sellRes = await api.post(`${API}/cards/sell-direct`, {
         client_id: apt.client_id,
         card_type: 'subscription',
-        name: newSubscriptionForm.name || `Abbonamento ${newSubscriptionForm.total_services} sedute`,
-        total_value: parseFloat(newSubscriptionForm.total_value),
+        name: subscriptionName,
+        total_value: subscriptionPrice,
         total_services: parseInt(newSubscriptionForm.total_services),
         valid_until: null,
-        notes: ''
+        notes: '',
+        amount_paid: subscriptionPrice,
+        payment_method: payMethod,
       });
-      
-      const newCardId = cardRes.data.id;
-      const subscriptionPrice = parseFloat(newSubscriptionForm.total_value);
 
-      // 2. Notifica il successo
-      toast.success(`Abbonamento creato! Incasso di €${subscriptionPrice.toFixed(2)} in corso...`);
+      const newCardId = sellRes.data.card_id;
 
-      // 3. Chiama il checkout passando DIRETTAMENTE i dati aggiornati (senza aspettare lo stato)
-      await handleCheckout('prepaid', newCardId, subscriptionPrice);
+      // 2. Scala l'appuntamento corrente dal nuovo abbonamento (totale 0, prepaid)
+      await api.post(`${API}/appointments/${apt.id}/checkout`, {
+        payment_method: 'prepaid',
+        discount_type: 'none',
+        discount_value: 0,
+        total_paid: 0,
+        card_id: newCardId,
+      });
 
+      const totalSvc = parseInt(newSubscriptionForm.total_services);
+      const remaining = Math.max(0, totalSvc - 1);
+      toast.success(`Abbonamento venduto (€${subscriptionPrice.toFixed(2)} ${payMethod === 'pos' ? 'POS' : 'contanti'}) e servizio scalato. Restanti: ${remaining}/${totalSvc}.`);
+
+      resetCheckout();
+      onClose();
+      onSuccess?.();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Errore creazione abbonamento');
+      toast.error(err.response?.data?.detail || 'Errore vendita abbonamento');
     } finally {
       setCreatingSubscription(false);
     }
@@ -458,7 +475,7 @@ export default function EditAppointmentDialog({
   const displayTotal = selectedCard?.card_type === 'subscription' ? 0 : totalAfterDiscount;
   const prepaidLabel = selectedCard
     ? selectedCardIsSubscription
-      ? (() => { const left = selectedCard.total_services ? selectedCard.total_services - (selectedCard.used_services || 0) : null; return `${selectedCard.name}${left !== null ? ` — ${left} rimaste` : ''}`; })()
+      ? (() => { const left = selectedCard.total_services ? selectedCard.total_services - (selectedCard.used_services || 0) : null; return `${selectedCard.name}${left !== null ? ` — ${left} servizi rimasti` : ''}`; })()
       : `${selectedCard.name} — €${(selectedCard.remaining_value ?? 0).toFixed(2)}`
     : 'Card / Abbonamento';
 
@@ -688,7 +705,7 @@ export default function EditAppointmentDialog({
                                 </div>
                               </div>
                               <p className="font-black text-emerald-600 text-sm shrink-0 ml-2">
-                                {left!==null?`${left} sed.`:`€${(card.remaining_value||0).toFixed(2)}`}
+                                {left!==null?`${left} servizi`:`€${(card.remaining_value||0).toFixed(2)}`}
                               </p>
                             </button>
                           );
@@ -813,7 +830,7 @@ export default function EditAppointmentDialog({
                                 className="flex items-center justify-between p-2 rounded-lg border-2 border-blue-200 hover:border-blue-400 hover:bg-blue-50 text-left transition-all">
                                 <div className="min-w-0">
                                   <p className="text-sm font-semibold text-gray-800 truncate">{tmpl.name}</p>
-                                  <p className="text-xs text-gray-500">{tmpl.total_services} sedute · €{tmpl.total_value}</p>
+                                  <p className="text-xs text-gray-500">{tmpl.total_services} servizi · €{tmpl.total_value}</p>
                                 </div>
                                 <div className={`w-4 h-4 rounded border-2 shrink-0 ml-2 ${newSubscriptionForm.total_value === String(tmpl.total_value) && newSubscriptionForm.total_services === String(tmpl.total_services) ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`} />
                               </button>
@@ -827,13 +844,26 @@ export default function EditAppointmentDialog({
                       </div>
 
                       {/* Form personalizzato */}
-                      <div><Label className="text-xs font-semibold text-gray-600">Nome abbonamento</Label><Input placeholder={`Abbonamento ${newSubscriptionForm.total_services || 'N'} sedute`} value={newSubscriptionForm.name} onChange={e=>setNewSubscriptionForm(p=>({...p,name:e.target.value}))} className="h-8 text-sm"/></div>
+                      <div><Label className="text-xs font-semibold text-gray-600">Nome abbonamento</Label><Input placeholder={`Abbonamento ${newSubscriptionForm.total_services || 'N'} servizi`} value={newSubscriptionForm.name} onChange={e=>setNewSubscriptionForm(p=>({...p,name:e.target.value}))} className="h-8 text-sm"/></div>
                       <div className="grid grid-cols-2 gap-2">
-                        <div><Label className="text-xs font-semibold text-gray-600">N. sedute</Label><Input type="number" min="1" value={newSubscriptionForm.total_services} onChange={e=>setNewSubscriptionForm(p=>({...p,total_services:e.target.value}))} className="h-8 text-sm"/></div>
+                        <div><Label className="text-xs font-semibold text-gray-600">N. servizi</Label><Input type="number" min="1" value={newSubscriptionForm.total_services} onChange={e=>setNewSubscriptionForm(p=>({...p,total_services:e.target.value}))} className="h-8 text-sm"/></div>
                         <div><Label className="text-xs font-semibold text-gray-600">Prezzo €</Label><Input type="number" min="0" step="0.50" value={newSubscriptionForm.total_value} onChange={e=>setNewSubscriptionForm(p=>({...p,total_value:e.target.value}))} className="h-8 text-sm"/></div>
                       </div>
+                      <div>
+                        <Label className="text-xs font-semibold text-gray-600">Incasso vendita</Label>
+                        <div className="grid grid-cols-2 gap-2 mt-1">
+                          <button type="button" onClick={()=>setNewSubscriptionPayMethod('cash')}
+                            className={`h-9 rounded-lg border-2 text-xs font-bold flex items-center justify-center gap-1 transition-all ${newSubscriptionPayMethod==='cash'?'border-green-500 bg-green-50 text-green-700':'border-gray-200 text-gray-500 hover:border-green-300'}`}>
+                            <Banknote className="w-3.5 h-3.5"/>Contanti
+                          </button>
+                          <button type="button" onClick={()=>setNewSubscriptionPayMethod('pos')}
+                            className={`h-9 rounded-lg border-2 text-xs font-bold flex items-center justify-center gap-1 transition-all ${newSubscriptionPayMethod==='pos'?'border-blue-500 bg-blue-50 text-blue-700':'border-gray-200 text-gray-500 hover:border-blue-300'}`}>
+                            <Smartphone className="w-3.5 h-3.5"/>POS
+                          </button>
+                        </div>
+                      </div>
                       <Button type="button" onClick={handleCreateAndCheckoutSubscription} disabled={creatingSubscription} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold h-9 text-sm">
-                        {creatingSubscription?<><Loader2 className="w-3 h-3 animate-spin mr-1"/>Creando...</>:<><Plus className="w-4 h-4 mr-1"/>Crea e incassa</>}
+                        {creatingSubscription?<><Loader2 className="w-3 h-3 animate-spin mr-1"/>Creando...</>:<><Plus className="w-4 h-4 mr-1"/>Vendi e scala servizio</>}
                       </Button>
                     </div>
                   )}
@@ -882,8 +912,8 @@ export default function EditAppointmentDialog({
                                 <div className="text-right shrink-0 ml-2">
                                   {isSub ? (
                                     <>
-                                      <p className="font-black text-purple-600 text-sm">{left!==null?`${left} rimaste`:'∞'}</p>
-                                      {total && <p className="text-[10px] text-gray-400">{used}/{total} usate</p>}
+                                      <p className="font-black text-purple-600 text-sm">{left!==null?`${left} servizi rimasti`:'∞'}</p>
+                                      {total && <p className="text-[10px] text-gray-400">{used}/{total} usati</p>}
                                     </>
                                   ) : (
                                     <p className="font-black text-purple-600 text-sm">€{(card.remaining_value??0).toFixed(2)}</p>
@@ -990,7 +1020,7 @@ export default function EditAppointmentDialog({
                       <span className="flex items-center gap-1"><Ticket className="w-3.5 h-3.5"/>{selectedCard.name}:</span>
                       <span className="font-semibold">
                         {selectedCardIsSubscription
-                          ? `${selectedCard.total_services?(selectedCard.total_services-(selectedCard.used_services||0)):'-'} rimaste`
+                          ? `${selectedCard.total_services?(selectedCard.total_services-(selectedCard.used_services||0)):'-'} servizi rimasti`
                           : `€${(selectedCard.remaining_value??0).toFixed(2)} disponibili`
                         }
                       </span>
