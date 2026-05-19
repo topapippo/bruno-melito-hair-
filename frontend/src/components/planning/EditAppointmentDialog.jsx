@@ -363,7 +363,7 @@ export default function EditAppointmentDialog({
     }
   };
 
-  const handleCheckout = async (overrideMethod = null, overrideCardId = null, overridePrice = null = null, overridePrice = null) => {
+  const handleCheckout = async (overrideMethod = null, overrideCardId = null, overridePrice = null) => {
     const apt = localAppointment || appointment;
     if (!apt) return;
 
