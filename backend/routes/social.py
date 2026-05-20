@@ -312,70 +312,31 @@ _REFRESH_IMAGES = [
 
 _REFRESH_POOL = {
     "trend": [
-        {
-            "title": "Bixie Cut (Estate 2026)",
-            "text": "Ancora lì a litigare col phon? 🥵 L'estate 2026 dice basta: è l'anno del Bixie! ✂️✨ Mix perfetto tra pixie e bob, fresco e grintoso.\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
-        },
-        {
-            "title": "Butterfly Cut",
-            "text": "Volume da capogiro, movimento da copertina. 🦋 Il Butterfly Cut è LA scelta per chi non vuole rinunciare alle lunghezze ma vuole anche un effetto 'appena svegliata e meravigliosa'.\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
-        },
-        {
-            "title": "Biondo Burro (Luce Pura)",
-            "text": "Il burro sta bene in frigo... ma sta ancora meglio sui tuoi capelli! 🧈✨ Il Biondo Burro Freddo è il colore dell'estate 2026. 🍦\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
-        },
-        {
-            "title": "Dettaglio di Stile",
-            "text": "I particolari fanno la differenza. Guarda questa sfumatura Biondo Burro: luce dove serve, profondità dove conta. Ogni ciocca al posto giusto. ✨\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
-        },
-        {
-            "title": "Effetto Sorpresa",
-            "text": "Chi dice che un taglio corto non sia femminile? Guarda questo Bixie Cut: grinta, eleganza, zero compromessi. 💥\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
-        },
+        {"title": "Bixie Cut (Estate 2026)", "text": "Ancora lì a litigare col phon? 🥵 L'estate 2026 dice basta: è l'anno del Bixie! ✂️✨ Mix perfetto tra pixie e bob, fresco e grintoso. Per chi non ha tempo da perdere ma vuole essere comunque la più bella del bagno.\n\n📅 Prenota online: https://brunomelitohair.it/prenota"},
+        {"title": "Butterfly Cut", "text": "Volume da copertina, movimento da videoclip. 🦋 Il Butterfly Cut è per chi non vuole rinunciare alle lunghezze ma chiede l'effetto 'appena svegliata e meravigliosa'.\n\n📅 Prenota online: https://brunomelitohair.it/prenota"},
+        {"title": "Biondo Burro (Luce Pura)", "text": "Il burro sta bene in frigo... ma sta ancora meglio sui tuoi capelli! 🧈✨ Biondo Burro Freddo: IL colore dell'estate 2026. Cremoso, luminoso, fotogenico. 🍦\n\n📅 Prenota online: https://brunomelitohair.it/prenota"},
+        {"title": "Dettaglio di Stile", "text": "I particolari fanno la differenza. Guarda questa sfumatura: luce dove serve, profondità dove conta. Ogni ciocca al posto giusto. Questo non è un taglio, è un manifesto. ✨\n\n📅 Prenota online: https://brunomelitohair.it/prenota"},
+        {"title": "Effetto Sorpresa", "text": "Chi dice che un taglio corto non sia femminile? Guarda questo Bixie: grinta, eleganza, zero compromessi. La donna del 2026 non chiede permesso. 💥\n\n📅 Prenota online: https://brunomelitohair.it/prenota"},
+        {"title": "Curtain Bangs", "text": "Le frange a tendina sono tornate e questa volta restano. 🎬 Incorniciano il viso senza coprirlo, alzandoti gli zigomi come un buon filtro — ma vero.\n\n📅 Prenota online: https://brunomelitohair.it/prenota"},
+        {"title": "Wolf Cut Sharp", "text": "🐺 Wolf Cut versione 2026: meno disordine, più attitudine. Layer scolpiti, movimento controllato, energia ovunque tu vada.\n\n📅 Prenota online: https://brunomelitohair.it/prenota"},
     ],
     "tecnico": [
-        {
-            "title": "L'Esperto risponde",
-            "text": "Sapevi che il sole schiarisce i capelli ma li secca? ☀️ Ecco come proteggerli: olio leggero prima dell'esposizione, maschera idratante 1 volta a settimana, e niente piastra dopo il mare. 💧\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
-        },
-        {
-            "title": "Tip del giorno",
-            "text": "💡 Tagliare le punte ogni 6-8 settimane non fa crescere i capelli più velocemente, ma li mantiene SANI e forti. Niente doppie punte = niente effetto 'paglia'.\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
-        },
-        {
-            "title": "Mito da sfatare",
-            "text": "🚫 'Lavare i capelli tutti i giorni li rovina'. FALSO. Dipende dal prodotto. Un sulfate-free delicato + acqua tiepida (non bollente!) e puoi lavarli quando vuoi senza paura. 💧\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
-        },
-        {
-            "title": "Capelli sotto il sole",
-            "text": "🌞 In spiaggia bagnali con acqua dolce PRIMA del mare: assorbono meno sale. Trick semplice, effetto enorme.\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
-        },
-        {
-            "title": "Idratazione = vita",
-            "text": "💧 Una maschera nutriente 1 volta a settimana cambia letteralmente la consistenza dei tuoi capelli in 30 giorni. Provare per credere.\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
-        },
+        {"title": "L'Esperto risponde", "text": "Sapevi che il sole schiarisce i capelli ma li secca? ☀️ Routine sopravvivenza estate: olio leggero prima del mare, maschera idratante 1×/settimana, niente piastra dopo la spiaggia. Funziona. Lo facciamo da 20 anni. 💧\n\n📅 Prenota online: https://brunomelitohair.it/prenota"},
+        {"title": "Tip del giorno", "text": "💡 Tagliare le punte ogni 6-8 settimane NON fa crescere i capelli più veloci. Li tiene sani. E sani = forti = lunghi. La matematica è semplice, paglia ≠ chioma.\n\n📅 Prenota online: https://brunomelitohair.it/prenota"},
+        {"title": "Mito da sfatare", "text": "🚫 'Lavare i capelli tutti i giorni li rovina.' FALSO. Dipende dal prodotto. Sulfate-free delicato + acqua tiepida (non bollente!) e puoi lavarli quando vuoi senza paura. La scuola di tua nonna ti ha fregata. 💧\n\n📅 Prenota online: https://brunomelitohair.it/prenota"},
+        {"title": "Capelli sotto il sole", "text": "🌞 Trick da PRO: in spiaggia bagnali con acqua dolce PRIMA del mare. Spugna assorbe meno sale, capelli sopravvivono. Semplice, gratuito, salvifico.\n\n📅 Prenota online: https://brunomelitohair.it/prenota"},
+        {"title": "Idratazione = vita", "text": "💧 Una maschera nutriente 1 volta a settimana cambia letteralmente la consistenza dei tuoi capelli in 30 giorni. Non è marketing. È chimica.\n\n📅 Prenota online: https://brunomelitohair.it/prenota"},
+        {"title": "Temperatura giusta", "text": "🌡️ Phon a 80°C, piastra MAX 180°C, e SEMPRE termoprotettore. Le pubblicità ti dicono 'puoi anche di più'. Possono. Tu non devi.\n\n📅 Prenota online: https://brunomelitohair.it/prenota"},
+        {"title": "Dietro le quinte", "text": "✂️ Il taglio è il 20% del lavoro. La piega è il 30%. Il resto è capire come crescono i tuoi capelli. Per quello esistono i professionisti. (Quelli veri.)\n\n📅 Prenota online: https://brunomelitohair.it/prenota"},
     ],
     "promo": [
-        {
-            "title": "Mood del Giovedì",
-            "text": "Quasi fine settimana! 🎉 Hai già bloccato il tuo appuntamento per sabato? I posti del weekend volano via. Corri a prenotare prima che spariscano!\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
-        },
-        {
-            "title": "Offerta Weekend",
-            "text": "✨ Prenota entro questo weekend e ottieni uno sconto esclusivo sul tuo prossimo trattamento. Non perdere l'occasione di rinnovare il tuo look! 📲\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
-        },
-        {
-            "title": "Lunedì = Nuovo Inizio",
-            "text": "💇‍♀️ Lunedì è il giorno perfetto per iniziare la settimana col look giusto. Disponibilità limitata oggi: prenota subito!\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
-        },
-        {
-            "title": "Effetto Wow",
-            "text": "🌟 Un nuovo taglio = nuova energia. Cambia look, cambia la settimana. Vieni a trovarci, ti aspettiamo!\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
-        },
-        {
-            "title": "Solo per oggi",
-            "text": "⏰ Ultimi posti per questa settimana! Se vuoi presentarti al meglio sabato sera, oggi è il momento giusto per prenotare. 💫\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
-        },
+        {"title": "Mood del Giovedì", "text": "Quasi fine settimana! 🎉 Hai già bloccato il tuo appuntamento per sabato? I posti del weekend volano via. Corri a prenotare prima che spariscano — letteralmente.\n\n📅 Prenota online: https://brunomelitohair.it/prenota"},
+        {"title": "Offerta Weekend", "text": "✨ Prenota entro questo weekend e ottieni uno sconto esclusivo sul tuo prossimo trattamento. Le occasioni passano, i capelli restano. 📲\n\n📅 Prenota online: https://brunomelitohair.it/prenota"},
+        {"title": "Lunedì = Nuovo Inizio", "text": "💇‍♀️ Lunedì è il giorno perfetto per iniziare la settimana col look giusto. Disponibilità limitata oggi: prenota subito o rimani col taglio che già non ti piaceva venerdì.\n\n📅 Prenota online: https://brunomelitohair.it/prenota"},
+        {"title": "Effetto Wow", "text": "🌟 Un nuovo taglio = nuova energia. Cambia look, cambia la settimana. Vieni a trovarci, ti aspettiamo. Non ci facciamo pagare per i complimenti che riceverai.\n\n📅 Prenota online: https://brunomelitohair.it/prenota"},
+        {"title": "Solo per oggi", "text": "⏰ Ultimi posti per questa settimana! Se vuoi presentarti al meglio sabato sera, oggi è il momento. Non domani. 💫\n\n📅 Prenota online: https://brunomelitohair.it/prenota"},
+        {"title": "Porta un'amica", "text": "👯 Le cose belle si dividono. Porta un'amica al tuo prossimo appuntamento e avrete entrambe una sorpresa firmata Bruno Melito Hair.\n\n📅 Prenota online: https://brunomelitohair.it/prenota"},
+        {"title": "Senza Filtri", "text": "📸 La differenza tra 'mi piaccio in foto' e 'mi piaccio dal vivo' si chiama: piega fatta bene. Risparmi sui filtri, investi sul taglio.\n\n📅 Prenota online: https://brunomelitohair.it/prenota"},
     ],
 }
 
@@ -434,30 +395,31 @@ async def get_wingman_suggestions(current_user: dict = Depends(get_current_user)
 
 @router.post("/social/refresh-suggestions")
 async def refresh_wingman_suggestions(current_user: dict = Depends(get_current_user)):
-    """Genera 3 nuovi suggerimenti freschi (Trend, Tecnico, Promo) con immagini diverse ogni volta."""
-    # Rimuove i vecchi suggerimenti per fare spazio ai nuovi
+    """Genera 6 suggerimenti UNICI (2 Trend + 2 Tecnico + 2 Promo) con immagini ruotate."""
     await db.wingman_suggestions.delete_many({"user_id": current_user["id"]})
 
-    # Mescola le immagini per garantirne 3 diverse
     pool_images = _REFRESH_IMAGES.copy()
     random.shuffle(pool_images)
 
     new_suggestions = []
-    for idx, category in enumerate(["trend", "tecnico", "promo"]):
-        item = random.choice(_REFRESH_POOL[category])
-        img = pool_images[idx % len(pool_images)] if pool_images else None
-        new_suggestions.append({
-            "id": str(uuid.uuid4()),
-            "user_id": current_user["id"],
-            "type": category,
-            "title": item["title"],
-            "text": item["text"],
-            "image_url": img,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-        })
+    img_idx = 0
+    for category in ["trend", "tecnico", "promo"]:
+        # 2 idee distinte per categoria, senza ripetizioni
+        picks = random.sample(_REFRESH_POOL[category], k=min(2, len(_REFRESH_POOL[category])))
+        for item in picks:
+            img = pool_images[img_idx % len(pool_images)] if pool_images else None
+            new_suggestions.append({
+                "id": str(uuid.uuid4()),
+                "user_id": current_user["id"],
+                "type": category,
+                "title": item["title"],
+                "text": item["text"],
+                "image_url": img,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            })
+            img_idx += 1
 
     await db.wingman_suggestions.insert_many(new_suggestions)
-    # Rimuovi gli _id MongoDB iniettati da insert_many prima di restituire
     for s in new_suggestions:
         s.pop("_id", None)
     return new_suggestions

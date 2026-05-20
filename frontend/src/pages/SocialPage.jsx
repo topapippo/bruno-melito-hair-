@@ -1,8 +1,74 @@
 import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
-import { Share2, History, Loader2, Upload, X, Send, Sparkles, Trash2, Edit3, Camera, RefreshCw, Star, ImageIcon } from 'lucide-react';
+import { Share2, History, Loader2, Upload, X, Send, Sparkles, Trash2, Edit3, Camera, RefreshCw, Star, ImageIcon, Facebook, Instagram, MessageCircle, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import Layout from '../components/Layout';
 import api from '../lib/api';
+
+function StatusPill({ icon: Icon, label, state, error }) {
+  // state: 'ok' | 'error' | 'loading'
+  const color = state === 'ok' ? '#10b981' : state === 'loading' ? '#94a3b8' : '#ef4444';
+  const bg = state === 'ok' ? 'bg-emerald-50' : state === 'loading' ? 'bg-gray-50' : 'bg-red-50';
+  const border = state === 'ok' ? 'border-emerald-200' : state === 'loading' ? 'border-gray-200' : 'border-red-200';
+  const StateIcon = state === 'ok' ? CheckCircle2 : state === 'loading' ? Loader2 : XCircle;
+
+  return (
+    <div
+      className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${bg} ${border} flex-1 min-w-0`}
+      title={error || ''}
+    >
+      <Icon className="w-4 h-4 shrink-0" style={{ color }} />
+      <span className="text-xs font-bold text-gray-700 truncate">{label}</span>
+      <StateIcon
+        className={`w-3.5 h-3.5 ml-auto shrink-0 ${state === 'loading' ? 'animate-spin' : ''}`}
+        style={{ color }}
+      />
+    </div>
+  );
+}
+
+function SocialStatusBar() {
+  const [status, setStatus] = useState({ facebook: null, instagram: null, whatsapp: null });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.get('/settings/social-status')
+      .then(r => setStatus(r.data))
+      .catch(() => setStatus({
+        facebook: { ok: false, error: 'API non raggiungibile' },
+        instagram: { ok: false, error: 'API non raggiungibile' },
+        whatsapp: { ok: false, error: 'API non raggiungibile' },
+      }))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const getState = (key) => {
+    if (loading) return 'loading';
+    return status?.[key]?.ok ? 'ok' : 'error';
+  };
+
+  return (
+    <div className="grid grid-cols-3 gap-2 mb-5">
+      <StatusPill
+        icon={Facebook}
+        label="Facebook"
+        state={getState('facebook')}
+        error={status?.facebook?.error}
+      />
+      <StatusPill
+        icon={Instagram}
+        label="Instagram"
+        state={getState('instagram')}
+        error={status?.instagram?.error}
+      />
+      <StatusPill
+        icon={MessageCircle}
+        label="WhatsApp"
+        state={getState('whatsapp')}
+        error={status?.whatsapp?.error}
+      />
+    </div>
+  );
+}
 
 function ImageLightbox({ url, title, onClose }) {
   useEffect(() => {
@@ -154,24 +220,43 @@ function WingmanTab({ configured }) {
 
   return (
     <div className="space-y-4 px-1">
-      <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-100 rounded-2xl p-5">
-        <div className="flex items-center justify-between mb-3">
+      <div className="relative bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 border border-purple-100 rounded-3xl p-6 overflow-hidden">
+        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full opacity-30 blur-3xl" style={{ background: 'radial-gradient(circle, #c084fc, transparent)' }} />
+        <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full opacity-30 blur-3xl" style={{ background: 'radial-gradient(circle, #ec4899, transparent)' }} />
+
+        <div className="relative flex items-start justify-between mb-4">
           <div>
-            <h3 className="font-bold text-purple-800 flex items-center gap-2"><Sparkles className="w-5 h-5" /> Wingman AI</h3>
-            <p className="text-sm text-purple-600">Idee fresche per i tuoi social.</p>
+            <h3 className="font-black text-purple-900 flex items-center gap-2 text-lg" style={{ fontFamily: "'Fredoka', sans-serif" }}>
+              <Sparkles className="w-6 h-6 text-pink-500" /> Wingman AI
+            </h3>
+            <p className="text-sm text-purple-700/80 mt-1">Idee fresche per i tuoi social, generate al momento.</p>
           </div>
-          <button onClick={loadSuggestions} className="p-2 text-purple-600 hover:bg-purple-100 rounded-full transition-all" title="Ricarica">
+          <button onClick={loadSuggestions} className="p-2 text-purple-600 hover:bg-white/60 rounded-full transition-all backdrop-blur" title="Ricarica">
             <RefreshCw className="w-5 h-5" />
           </button>
         </div>
+
         <button
           onClick={handleRefresh}
           disabled={refreshing}
-          className="w-full bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white py-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-md active:scale-95 transition-all disabled:opacity-50"
+          className="relative w-full bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 hover:from-purple-700 hover:via-pink-600 hover:to-orange-500 text-white py-5 sm:py-6 rounded-2xl flex items-center justify-center gap-3 font-black text-base sm:text-lg shadow-xl active:scale-95 transition-all disabled:opacity-50 group"
+          style={{ fontFamily: "'Fredoka', sans-serif", letterSpacing: '0.02em' }}
         >
-          {refreshing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-          {refreshing ? 'Generazione in corso…' : '✨ Genera Nuove Idee'}
+          {refreshing ? (
+            <Loader2 className="w-7 h-7 animate-spin" />
+          ) : (
+            <Sparkles className="w-7 h-7 group-hover:rotate-12 group-hover:scale-110 transition-transform duration-300" />
+          )}
+          <span>
+            {refreshing ? 'Generazione in corso…' : 'Genera Nuove Idee'}
+          </span>
+          {!refreshing && (
+            <Sparkles className="w-5 h-5 opacity-60 group-hover:-rotate-12 group-hover:scale-110 transition-transform duration-300" />
+          )}
         </button>
+        <p className="text-[11px] text-center text-purple-600/70 mt-3 font-semibold">
+          ✦ 6 idee uniche · Trend · Consigli Tecnici · Promo ✦
+        </p>
       </div>
 
       {suggestions.map(s => (
@@ -428,7 +513,8 @@ export default function SocialPage() {
   return (
     <Layout>
       <div className="max-w-2xl mx-auto px-4 py-6">
-        <h1 className="text-xl font-bold mb-6 flex items-center gap-2"><Share2 className="text-purple-600" /> Social Media</h1>
+        <h1 className="text-xl font-bold mb-5 flex items-center gap-2"><Share2 className="text-purple-600" /> Social Media</h1>
+        <SocialStatusBar />
         <div className="flex bg-gray-100 rounded-2xl p-1 mb-6">
           <button onClick={() => setActiveTab('wingman')} className={`flex-1 py-2 rounded-xl text-xs flex items-center justify-center gap-1 ${activeTab === 'wingman' ? 'bg-white shadow-sm font-bold' : ''}`}><Sparkles className="w-3 h-3"/> Wingman AI</button>
           <button onClick={() => setActiveTab('history')} className={`flex-1 py-2 rounded-xl text-xs flex items-center justify-center gap-1 ${activeTab === 'history' ? 'bg-white shadow-sm font-bold' : ''}`}><History className="w-3 h-3"/> Storico</button>

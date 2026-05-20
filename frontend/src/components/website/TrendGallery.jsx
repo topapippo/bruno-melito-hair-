@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Scissors, X } from 'lucide-react';
+import { ArrowUpRight, X } from 'lucide-react';
 import api from '../../lib/api';
 
 const FALLBACK = [
@@ -12,18 +12,40 @@ const FALLBACK = [
 const EASE = [0.22, 1, 0.36, 1];
 const GLOW_COLORS = ['#FF6B9D', '#FFD93D', '#A8DAFF', '#C3F0CA', '#FFB347'];
 
+// Pattern Bentō: span configurations per ogni card in base alla posizione.
+// rowSpan/colSpan applicati su grid 4 colonne (desktop). Si ripete ogni 6 card.
+const BENTO_PATTERN = [
+  { col: 2, row: 2 }, // hero featured
+  { col: 1, row: 1 },
+  { col: 1, row: 1 },
+  { col: 1, row: 2 }, // vertical tall
+  { col: 2, row: 1 }, // wide
+  { col: 1, row: 1 },
+];
+
 const GlassTag = ({ children }) => (
   <span
-    className="px-3 py-1 rounded-full text-white text-xs font-semibold"
-    style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.2)' }}
+    className="px-3 py-1 rounded-full text-white text-[11px] font-bold tracking-wide"
+    style={{ background: 'rgba(255,255,255,0.14)', backdropFilter: 'blur(14px)', border: '1px solid rgba(255,255,255,0.22)' }}
   >
     {children}
   </span>
 );
 
+const cardVariants = {
+  hidden: { opacity: 0, scale: 0.94, filter: 'blur(14px)', y: 30 },
+  visible: (i) => ({
+    opacity: 1,
+    scale: 1,
+    filter: 'blur(0px)',
+    y: 0,
+    transition: { duration: 1.0, ease: EASE, delay: 0.08 * (i % 6) },
+  }),
+};
+
 export default function TrendGallery({ setShowBooking }) {
   const [trends, setTrends] = useState([]);
-  const [lightbox, setLightbox] = useState(null); // {img, title}
+  const [lightbox, setLightbox] = useState(null);
 
   useEffect(() => {
     api.get('/website-trends/public')
@@ -31,7 +53,6 @@ export default function TrendGallery({ setShowBooking }) {
       .catch(() => setTrends(FALLBACK));
   }, []);
 
-  // ESC chiude il lightbox
   useEffect(() => {
     if (!lightbox) return;
     const onKey = (e) => { if (e.key === 'Escape') setLightbox(null); };
@@ -43,6 +64,24 @@ export default function TrendGallery({ setShowBooking }) {
 
   return (
     <section className="py-24 px-4 sm:px-8 overflow-hidden" style={{ background: '#0a0a0f' }}>
+      <style>{`
+        .bento-card .bento-img { transition: transform 1.1s cubic-bezier(0.22, 1, 0.36, 1), filter 0.7s ease; will-change: transform; }
+        .bento-card:hover .bento-img { transform: scale(1.08) rotate(-1.2deg); filter: brightness(1.06) saturate(1.12); }
+        .bento-card .bento-desc, .bento-card .bento-cta { opacity: 0; transform: translateY(10px); transition: opacity 0.5s ease, transform 0.5s ease; }
+        .bento-card:hover .bento-desc, .bento-card:hover .bento-cta { opacity: 1; transform: translateY(0); }
+        .bento-cta-line { transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1); transform-origin: left center; }
+        .bento-card:hover .bento-cta-line { transform: scaleX(1.05); }
+        @media (max-width: 639px) {
+          .bento-grid { grid-template-columns: 1fr !important; }
+          .bento-card { grid-column: span 1 !important; grid-row: span 1 !important; min-height: 280px; }
+        }
+        @media (min-width: 640px) and (max-width: 1023px) {
+          .bento-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .bento-card { grid-column: span 1 !important; }
+          .bento-card.span-2 { grid-column: span 2 !important; }
+        }
+      `}</style>
+
       <div className="max-w-6xl mx-auto">
 
         {/* Header editoriale */}
@@ -54,7 +93,7 @@ export default function TrendGallery({ setShowBooking }) {
           className="mb-14"
         >
           <p className="text-xs font-bold tracking-[0.4em] uppercase mb-5" style={{ color: 'rgba(255,255,255,0.3)' }}>
-            LOOK STAGIONE 2026
+            VOGUE 2026 — EDITORIAL LOOK BOOK
           </p>
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
             <h2
@@ -67,136 +106,133 @@ export default function TrendGallery({ setShowBooking }) {
                 dell&apos;Estate
               </span>
             </h2>
-            <p style={{ color: 'rgba(255,255,255,0.35)', maxWidth: '22rem', fontSize: '0.875rem', lineHeight: 1.75 }}>
-              Tendenze selezionate da Bruno Melito — prenotale subito per portarle con te.
+            <p style={{ color: 'rgba(255,255,255,0.4)', maxWidth: '22rem', fontSize: '0.9rem', lineHeight: 1.75 }}>
+              Tendenze selezionate da <strong className="text-white">Bruno Melito</strong> — prenotale subito per portarle con te.
             </p>
           </div>
         </motion.div>
 
-        {/* Masonry-like responsive grid — adattivo, nessun limite di card */}
+        {/* Bentō Grid asimmetrico — 4 colonne desktop */}
         <div
+          className="bento-grid"
           style={{
-            columnGap: '16px',
-            columnCount: 1,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gridAutoRows: '180px',
+            gap: '14px',
           }}
-          className="trend-masonry"
         >
-          <style>{`
-            .trend-masonry { column-count: 1; }
-            @media (min-width: 640px) { .trend-masonry { column-count: 2; } }
-            @media (min-width: 1024px) { .trend-masonry { column-count: 3; } }
-            .trend-card {
-              break-inside: avoid;
-              page-break-inside: avoid;
-              -webkit-column-break-inside: avoid;
-              margin-bottom: 16px;
-              display: block;
-            }
-            .trend-card .trend-img {
-              transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
-              transform-origin: center;
-            }
-            .trend-card:hover .trend-img {
-              transform: scale(1.12) rotate(-2deg);
-            }
-            .trend-card .trend-desc, .trend-card .trend-cta {
-              opacity: 0;
-              transform: translateY(8px);
-              transition: opacity 0.45s ease, transform 0.45s ease;
-            }
-            .trend-card:hover .trend-desc, .trend-card:hover .trend-cta {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          `}</style>
-
           {items.map((t, i) => {
+            const pattern = BENTO_PATTERN[i % BENTO_PATTERN.length];
             const glow = t.color_code || GLOW_COLORS[i % GLOW_COLORS.length];
-            // Altezza variabile per effetto masonry
-            const heights = [320, 420, 360, 480, 380, 440];
-            const h = heights[i % heights.length];
+            const isHero = pattern.col === 2 && pattern.row === 2;
+            const spanClass = pattern.col === 2 ? 'span-2' : '';
+
             return (
-              <motion.div
+              <motion.article
                 key={t.id}
-                onClick={() => setLightbox({ img: t.img, title: t.title })}
-                className="trend-card group relative overflow-hidden rounded-3xl cursor-zoom-in"
+                custom={i}
+                variants={cardVariants}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.15 }}
+                onClick={() => setLightbox({ img: t.img, title: t.title, desc: t.desc })}
+                whileHover={{
+                  boxShadow: `0 0 70px ${glow}55, 0 0 140px ${glow}25, 0 12px 36px rgba(0,0,0,0.65)`,
+                  borderColor: `${glow}80`,
+                  y: -4,
+                }}
+                className={`bento-card group relative overflow-hidden rounded-3xl cursor-zoom-in ${spanClass}`}
                 style={{
+                  gridColumn: `span ${pattern.col}`,
+                  gridRow: `span ${pattern.row}`,
                   background: 'rgba(255,255,255,0.04)',
                   border: '1px solid rgba(255,255,255,0.07)',
-                  height: `${h}px`,
-                  boxShadow: `0 4px 20px rgba(0,0,0,0.4)`,
-                  '--glow': glow,
+                  boxShadow: '0 4px 22px rgba(0,0,0,0.4)',
                 }}
-                whileHover={{
-                  boxShadow: `0 0 60px ${glow}66, 0 0 120px ${glow}33, 0 10px 30px rgba(0,0,0,0.6)`,
-                  borderColor: `${glow}80`,
-                  scale: 1.02,
-                }}
-                initial={{ opacity: 0, y: 60 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.15 }}
-                transition={{ duration: 0.85, ease: EASE, delay: 0.08 * (i % 6) }}
               >
                 <img
                   src={t.img}
                   alt={t.title}
-                  onClick={(e) => { e.stopPropagation(); setLightbox({ img: t.img, title: t.title }); }}
-                  className="trend-img absolute inset-0 w-full h-full object-cover cursor-zoom-in"
+                  className="bento-img absolute inset-0 w-full h-full object-cover"
                 />
                 <div
                   className="absolute inset-0 pointer-events-none"
                   style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.18) 55%, transparent 100%)' }}
                 />
-                {/* Glow overlay sottile sul bordo durante l'hover */}
                 <div
                   className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                  style={{
-                    boxShadow: `inset 0 0 60px ${glow}33`,
-                    borderRadius: 'inherit',
-                  }}
+                  style={{ boxShadow: `inset 0 0 60px ${glow}33`, borderRadius: 'inherit' }}
                 />
+
+                {/* Badge editoriale */}
                 {t.badge && (
                   <div className="absolute top-4 left-4 z-10">
                     <GlassTag>{t.badge}</GlassTag>
                   </div>
                 )}
-                <div className="absolute bottom-0 left-0 right-0 p-5 z-10">
+
+                {/* Numero editoriale tipo magazine (es. N.01) */}
+                <div
+                  className="absolute top-4 right-4 z-10 text-white/40 font-bold tracking-widest text-[10px] uppercase pointer-events-none"
+                  style={{ fontFamily: "'Fredoka', sans-serif" }}
+                >
+                  N.{String(i + 1).padStart(2, '0')}
+                </div>
+
+                {/* Contenuto in basso */}
+                <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6 z-10">
+                  <p className="text-[10px] font-bold tracking-[0.35em] uppercase mb-2" style={{ color: glow }}>
+                    LOOK STAGIONE
+                  </p>
                   <h3
                     className="font-bold"
-                    style={{ fontFamily: "'Fredoka', sans-serif", fontSize: '1.6rem', color: 'white', lineHeight: 1.1 }}
+                    style={{
+                      fontFamily: "'Fredoka', sans-serif",
+                      fontSize: isHero ? 'clamp(1.8rem, 3.5vw, 2.6rem)' : '1.4rem',
+                      color: 'white',
+                      lineHeight: 1.05,
+                    }}
                   >
                     {t.title}
                   </h3>
                   {t.desc && (
                     <p
-                      className="trend-desc text-xs leading-relaxed mt-2"
-                      style={{ color: 'rgba(255,255,255,0.7)' }}
+                      className="bento-desc text-xs leading-relaxed mt-2 max-w-md"
+                      style={{ color: 'rgba(255,255,255,0.72)' }}
                     >
                       {t.desc}
                     </p>
                   )}
+
+                  {/* CTA in stile editoriale Vogue: linea + freccia */}
                   {setShowBooking && (
                     <button
                       onClick={(e) => { e.stopPropagation(); setShowBooking(true); }}
-                      className="trend-cta mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-white font-semibold text-xs"
-                      style={{
-                        background: `${glow}22`,
-                        backdropFilter: 'blur(12px)',
-                        border: `1px solid ${glow}99`,
-                        color: 'white',
-                      }}
+                      className="bento-cta mt-4 inline-flex items-center gap-3 group/cta"
+                      style={{ color: 'white' }}
                     >
-                      <Scissors className="w-3 h-3" /> Prenota →
+                      <span
+                        className="text-[11px] font-black tracking-[0.3em] uppercase pb-1"
+                        style={{ borderBottom: `1.5px solid ${glow}`, fontFamily: "'Fredoka', sans-serif" }}
+                      >
+                        Prenota questo look
+                      </span>
+                      <span
+                        className="bento-cta-line inline-block w-8 h-[1.5px]"
+                        style={{ background: glow }}
+                      />
+                      <ArrowUpRight className="w-4 h-4 transition-transform duration-500 group-hover/cta:translate-x-1 group-hover/cta:-translate-y-1" style={{ color: glow }} />
                     </button>
                   )}
                 </div>
-              </motion.div>
+              </motion.article>
             );
           })}
         </div>
       </div>
 
-      {/* Lightbox a tutto schermo */}
+      {/* Lightbox */}
       <AnimatePresence>
         {lightbox && (
           <motion.div
@@ -206,7 +242,7 @@ export default function TrendGallery({ setShowBooking }) {
             transition={{ duration: 0.25 }}
             onClick={() => setLightbox(null)}
             className="fixed inset-0 z-[9999] flex items-center justify-center p-4 cursor-zoom-out"
-            style={{ background: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(8px)' }}
+            style={{ background: 'rgba(0,0,0,0.94)', backdropFilter: 'blur(8px)' }}
           >
             <button
               onClick={(e) => { e.stopPropagation(); setLightbox(null); }}
@@ -219,17 +255,20 @@ export default function TrendGallery({ setShowBooking }) {
               key={lightbox.img}
               src={lightbox.img}
               alt={lightbox.title || ''}
-              initial={{ scale: 0.92, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
+              initial={{ scale: 0.92, opacity: 0, filter: 'blur(12px)' }}
+              animate={{ scale: 1, opacity: 1, filter: 'blur(0px)' }}
               exit={{ scale: 0.92, opacity: 0 }}
-              transition={{ duration: 0.3, ease: EASE }}
+              transition={{ duration: 0.45, ease: EASE }}
               onClick={(e) => e.stopPropagation()}
               className="max-w-[95vw] max-h-[90vh] object-contain rounded-2xl shadow-2xl"
             />
             {lightbox.title && (
-              <p className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/80 text-sm font-semibold tracking-wide px-4 py-2 rounded-full bg-white/10 backdrop-blur">
-                {lightbox.title}
-              </p>
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-center px-6 py-3 rounded-2xl bg-white/10 backdrop-blur">
+                <p className="text-white font-bold tracking-wide" style={{ fontFamily: "'Fredoka', sans-serif" }}>
+                  {lightbox.title}
+                </p>
+                {lightbox.desc && <p className="text-white/60 text-xs mt-1 max-w-md">{lightbox.desc}</p>}
+              </div>
             )}
           </motion.div>
         )}

@@ -100,18 +100,47 @@ def format_phone_e164(phone: str) -> str:
     return phone
 
 
+async def _log_communication(user_id: str, channel: str, phone: str, message: str, result: dict):
+    """Salva ogni invio (riuscito o fallito) in db.communication_logs. Non-blocking, swallow errors."""
+    try:
+        from database import db
+        from datetime import datetime, timezone
+        import uuid as _uuid
+        await db.communication_logs.insert_one({
+            "id": str(_uuid.uuid4()),
+            "user_id": user_id or "",
+            "channel": channel,
+            "phone": phone,
+            "message": (message or "")[:500],
+            "sent": bool(result.get("sent")),
+            "method": result.get("method", ""),
+            "message_id": result.get("message_id", ""),
+            "error": result.get("error", ""),
+            "code": result.get("code", ""),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        })
+    except Exception:
+        pass  # logging non deve mai bloccare l'invio
+
+
 async def send_whatsapp(phone: str, message: str, user: dict) -> dict:
-    """Invia WhatsApp via Cloud API → UltraMsg → Green API (fallback legacy)."""
+    """Invia WhatsApp via Cloud API (Meta ufficiale, PRIMARIO) → UltraMsg → Green API (fallback legacy).
+    Ogni esito viene loggato in db.communication_logs.
+    """
     import asyncio
     import requests as _req
 
     message = message + WA_FOOTER
+    user_id = (user or {}).get("id", "")
+    final_result = None
 
-    # --- 1. WhatsApp Cloud API ufficiale Meta (provider principale) ---
+    # --- 1. WhatsApp Cloud API ufficiale Meta (PROVIDER PRIMARIO) ---
     if WA_TOKEN:
         result = await send_whatsapp_cloud(phone, message)
         if result.get("sent"):
+            await _log_communication(user_id, "whatsapp", phone, message, result)
             return result
+        final_result = result  # tieni l'ultimo errore se i fallback falliscono
 
     phone_clean = normalize_phone_wa(phone)
     wa_number = phone_clean + "@c.us"
@@ -133,9 +162,12 @@ async def send_whatsapp(phone: str, message: str, user: dict) -> dict:
             except Exception:
                 pass
             if resp.status_code == 200 and str(rjson.get("sent", "")).lower() == "true":
-                return {"sent": True, "method": "ultramsg"}
-        except Exception:
-            pass
+                ok = {"sent": True, "method": "ultramsg"}
+                await _log_communication(user_id, "whatsapp", phone, message, ok)
+                return ok
+            final_result = {"sent": False, "method": "ultramsg", "error": rjson.get("error", resp.text[:200])}
+        except Exception as e:
+            final_result = {"sent": False, "method": "ultramsg", "error": str(e)}
 
     # --- 3. Green API (legacy fallback) ---
     instance_id = user.get("green_api_instance_id", "")
@@ -154,11 +186,16 @@ async def send_whatsapp(phone: str, message: str, user: dict) -> dict:
             except Exception:
                 pass
             if resp.status_code == 200 and rjson.get("idMessage"):
-                return {"sent": True, "method": "greenapi"}
-        except Exception:
-            pass
+                ok = {"sent": True, "method": "greenapi"}
+                await _log_communication(user_id, "whatsapp", phone, message, ok)
+                return ok
+            final_result = {"sent": False, "method": "greenapi", "error": rjson.get("error", resp.text[:200])}
+        except Exception as e:
+            final_result = {"sent": False, "method": "greenapi", "error": str(e)}
 
-    return {"sent": False, "method": "none"}
+    fail = final_result or {"sent": False, "method": "none", "error": "Nessun provider configurato"}
+    await _log_communication(user_id, "whatsapp", phone, message, fail)
+    return fail
 
 
 async def send_sms_reminder(phone: str, message: str, salon_name: str) -> dict:
