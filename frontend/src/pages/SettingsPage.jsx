@@ -257,6 +257,21 @@ export default function SettingsPage() {
     }
   };
 
+  const sendCloudApiTemplateTest = async () => {
+    if (!cloudApiSendTest.phone) return;
+    setCloudApiSendTest(p => ({ ...p, loading: true, result: null }));
+    try {
+      const res = await api.post(`${API}/settings/cloud-api-send-template-test`, {
+        phone: cloudApiSendTest.phone,
+        template_name: 'hello_world',
+        language_code: 'en_US',
+      });
+      setCloudApiSendTest(p => ({ ...p, result: res.data, loading: false }));
+    } catch (e) {
+      setCloudApiSendTest(p => ({ ...p, result: { ok: false, message: 'Errore server: ' + (e?.response?.data?.detail || e.message) }, loading: false }));
+    }
+  };
+
   const saveWaSettings = async () => {
     if (!waForm.green_api_instance_id || !waForm.green_api_token) { toast.error('Inserisci Instance ID e API Token'); return; }
     setSavingWa(true);
@@ -1056,9 +1071,13 @@ export default function SettingsPage() {
                   className="border-green-200 focus:border-green-400"
                 />
                 <Button onClick={sendCloudApiTestMessage} disabled={cloudApiSendTest.loading || !cloudApiSendTest.phone} className="bg-green-600 hover:bg-green-700 text-white shrink-0">
-                  {cloudApiSendTest.loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Invia prova'}
+                  {cloudApiSendTest.loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Invia testo'}
+                </Button>
+                <Button onClick={sendCloudApiTemplateTest} disabled={cloudApiSendTest.loading || !cloudApiSendTest.phone} className="bg-emerald-700 hover:bg-emerald-800 text-white shrink-0" title="Invia il template hello_world (sempre approvato Meta)">
+                  {cloudApiSendTest.loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Invia template'}
                 </Button>
               </div>
+              <p className="text-xs text-[#7A5A4D]">In modalità Live di Meta, i messaggi non-template possono fallire se il destinatario non ha scritto nelle ultime 24h. Usa il template <code>hello_world</code> per testare.</p>
               {cloudApiSendTest.result && (
                 <div className={`p-3 rounded-xl text-sm font-medium ${cloudApiSendTest.result.ok ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
                   {cloudApiSendTest.result.message}

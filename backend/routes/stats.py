@@ -739,6 +739,27 @@ async def test_cloud_api_send(data: dict, current_user: dict = Depends(get_curre
             "message": f"Errore Cloud API: {result.get('error')} (code={result.get('code')})"}
 
 
+@router.post("/settings/cloud-api-send-template-test")
+async def test_cloud_api_send_template(data: dict, current_user: dict = Depends(get_current_user)):
+    """Invia un template WhatsApp di prova via Meta Cloud API.
+    Default: template `hello_world` (en_US) — sempre approvato da Meta."""
+    from utils import send_whatsapp_template, WA_TOKEN
+    phone = data.get("phone", "")
+    template_name = data.get("template_name", "hello_world")
+    language_code = data.get("language_code", "en_US")
+    if not phone:
+        return {"ok": False, "message": "Numero di telefono mancante"}
+    if not WA_TOKEN:
+        return {"ok": False, "message": "WHATSAPP_TOKEN non configurato nelle variabili d'ambiente di Render"}
+    result = await send_whatsapp_template(phone, template_name, language_code)
+    if result.get("sent"):
+        return {"ok": True,
+                "message": f"✅ Template '{template_name}' inviato! Message ID: {result.get('message_id', 'ok')}"}
+    return {"ok": False,
+            "message": f"Errore template: {result.get('error')} (code={result.get('code')})",
+            "details": result.get("details")}
+
+
 @router.put("/settings/telegram-api")
 async def update_telegram_api(data: dict, current_user: dict = Depends(get_current_user)):
     await db.users.update_one(

@@ -89,6 +89,60 @@ async def send_whatsapp_cloud(phone: str, message: str) -> dict:
         return {"sent": False, "method": "cloud_api", "error": str(e)}
 
 
+async def send_whatsapp_template(phone: str, template_name: str, language_code: str = "en_US", components: list = None) -> dict:
+    """Invia un template WhatsApp via Meta Cloud API. Richiede template approvato lato Meta.
+    `hello_world` è disponibile di default in `en_US`.
+    `components` opzionale per template con variabili (es. body parameters).
+    """
+    import asyncio
+    import requests as _req
+
+    if not WA_TOKEN:
+        return {"sent": False, "method": "cloud_api_template", "error": "WHATSAPP_TOKEN non configurato"}
+
+    phone_clean = normalize_phone_wa(phone)
+    print(f"[WA TEMPLATE] {template_name}/{language_code} → {phone_clean}", flush=True)
+
+    try:
+        url = f"https://graph.facebook.com/v21.0/{WA_PHONE_NUMBER_ID}/messages"
+        headers = {
+            "Authorization": f"Bearer {WA_TOKEN}",
+            "Content-Type": "application/json",
+        }
+        template_obj = {
+            "name": template_name,
+            "language": {"code": language_code},
+        }
+        if components:
+            template_obj["components"] = components
+        payload = {
+            "messaging_product": "whatsapp",
+            "to": phone_clean,
+            "type": "template",
+            "template": template_obj,
+        }
+        resp = await asyncio.to_thread(_req.post, url, headers=headers, json=payload, timeout=15)
+        rjson = {}
+        try:
+            rjson = resp.json()
+        except Exception:
+            pass
+
+        if resp.status_code == 200 and rjson.get("messages"):
+            return {"sent": True, "method": "cloud_api_template",
+                    "message_id": rjson["messages"][0].get("id", "")}
+
+        error = rjson.get("error", {})
+        return {
+            "sent": False, "method": "cloud_api_template",
+            "error": error.get("message") or resp.text[:300],
+            "code": error.get("code"),
+            "details": error.get("error_data") or error.get("error_user_msg"),
+        }
+    except Exception as e:
+        return {"sent": False, "method": "cloud_api_template", "error": str(e)}
+
+
 def format_phone_e164(phone: str) -> str:
     phone = ''.join(filter(str.isdigit, phone))
     if phone.startswith('39'):
