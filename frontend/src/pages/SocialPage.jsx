@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
-import { Share2, History, Loader2, Upload, X, Send, Sparkles, Trash2, Edit3, Camera, RefreshCw, Star, ImageIcon, Facebook, Instagram, MessageCircle, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { Share2, History, Loader2, Upload, X, Send, Sparkles, Trash2, Edit3, Camera, RefreshCw, Star, ImageIcon, Facebook, Instagram, MessageCircle, CheckCircle2, XCircle, AlertCircle, Settings, Link as LinkIcon, Eye, EyeOff } from 'lucide-react';
 import Layout from '../components/Layout';
 import api from '../lib/api';
 
@@ -505,22 +505,145 @@ function VetrinaTab() {
   );
 }
 
+function SettingsTab({ config, onSaved }) {
+  const [url, setUrl] = useState(config?.make_webhook_url || '');
+  const [saving, setSaving] = useState(false);
+  const [show, setShow] = useState(false);
+
+  useEffect(() => { setUrl(config?.make_webhook_url || ''); }, [config]);
+
+  const isValidWebhook = (v) => {
+    if (!v) return true;
+    try {
+      const u = new URL(v);
+      return u.protocol === 'https:' && (u.hostname.includes('make.com') || u.hostname.includes('integromat') || u.hostname.endsWith('eu.make.com') || u.hostname.endsWith('us.make.com') || u.hostname.endsWith('hook.eu1.make.com') || u.hostname.endsWith('hook.us1.make.com') || true); // accetta qualsiasi https
+    } catch { return false; }
+  };
+
+  const handleSave = async () => {
+    const trimmed = url.trim();
+    if (trimmed && !isValidWebhook(trimmed)) {
+      toast.error('URL non valido (deve iniziare con https://)');
+      return;
+    }
+    setSaving(true);
+    try {
+      await api.put('/social/config', { make_webhook_url: trimmed });
+      toast.success(trimmed ? 'Webhook salvato!' : 'Webhook rimosso');
+      onSaved?.({ make_webhook_url: trimmed, configured: Boolean(trimmed) });
+    } catch (e) {
+      toast.error('Errore salvataggio');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const configured = Boolean(config?.make_webhook_url);
+
+  return (
+    <div className="space-y-5 px-1">
+      <div className="bg-gradient-to-br from-purple-50 to-blue-50 border border-purple-100 rounded-3xl p-5 sm:p-6">
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h3 className="font-black text-purple-900 flex items-center gap-2 text-lg" style={{ fontFamily: "'Fredoka', sans-serif" }}>
+              <LinkIcon className="w-5 h-5 text-purple-600" /> Webhook Make.com
+            </h3>
+            <p className="text-sm text-purple-700/80 mt-1">
+              Incolla qui l'URL del webhook che Make.com ti fornisce. Verrà usato per pubblicare i post su Facebook e Instagram.
+            </p>
+          </div>
+          {configured ? (
+            <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-bold whitespace-nowrap">
+              <CheckCircle2 className="w-3.5 h-3.5" /> Attivo
+            </span>
+          ) : (
+            <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 text-[11px] font-bold whitespace-nowrap">
+              <AlertCircle className="w-3.5 h-3.5" /> Da configurare
+            </span>
+          )}
+        </div>
+
+        <label className="block text-xs font-bold text-purple-800 mb-1.5 uppercase tracking-wider">
+          URL Webhook Make.com
+        </label>
+        <div className="relative">
+          <input
+            type={show ? 'text' : 'password'}
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="https://hook.eu1.make.com/abc123..."
+            className="w-full bg-white border-2 border-purple-200 focus:border-purple-500 focus:ring-0 rounded-xl px-4 py-3 pr-12 text-sm font-mono outline-none transition-colors"
+            autoComplete="off"
+          />
+          <button
+            type="button"
+            onClick={() => setShow(s => !s)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-purple-500 hover:text-purple-700 rounded-lg transition-colors"
+            title={show ? 'Nascondi' : 'Mostra'}
+          >
+            {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
+        </div>
+        <p className="text-[11px] text-purple-600/70 mt-2">
+          Esempio: <span className="font-mono">https://hook.eu1.make.com/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</span>
+        </p>
+
+        <div className="flex gap-2 mt-5">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex-1 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white py-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-md active:scale-95 transition-all disabled:opacity-50"
+          >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+            {saving ? 'Salvataggio…' : 'Salva Webhook'}
+          </button>
+          {url && (
+            <button
+              onClick={() => { setUrl(''); }}
+              className="px-4 py-3 rounded-xl border-2 border-purple-200 text-purple-700 font-bold text-sm hover:bg-purple-50 active:scale-95 transition-all"
+            >
+              Pulisci
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="bg-white border border-gray-100 rounded-2xl p-5">
+        <h4 className="font-bold text-gray-800 mb-2 flex items-center gap-2">
+          <Settings className="w-4 h-4 text-gray-500" /> Come funziona
+        </h4>
+        <ol className="text-xs text-gray-600 space-y-2 list-decimal pl-4">
+          <li>Crea uno scenario su <strong>Make.com</strong> partendo da un modulo <em>Custom webhook</em>.</li>
+          <li>Copia l'URL generato dal webhook (formato <span className="font-mono text-purple-600">https://hook.eu1.make.com/...</span>).</li>
+          <li>Incollalo qui sopra e clicca <strong>Salva Webhook</strong>.</li>
+          <li>Collega il webhook ai moduli <strong>Facebook Pages</strong> e <strong>Instagram for Business</strong> dentro Make.</li>
+          <li>Torna nella tab <strong>Wingman AI</strong> e clicca <em>Pubblica ora</em>: il post arriverà direttamente sui tuoi canali.</li>
+        </ol>
+      </div>
+    </div>
+  );
+}
+
+
 export default function SocialPage() {
   const [activeTab, setActiveTab] = useState('wingman');
   const [config, setConfig] = useState(null);
-  useEffect(() => { api.get('/social/config').then(r => setConfig(r.data)); }, []);
+  const loadConfig = () => api.get('/social/config').then(r => setConfig(r.data)).catch(() => {});
+  useEffect(() => { loadConfig(); }, []);
 
   return (
     <Layout>
       <div className="max-w-2xl mx-auto px-4 py-6">
         <h1 className="text-xl font-bold mb-5 flex items-center gap-2"><Share2 className="text-purple-600" /> Social Media</h1>
         <SocialStatusBar />
-        <div className="flex bg-gray-100 rounded-2xl p-1 mb-6">
-          <button onClick={() => setActiveTab('wingman')} className={`flex-1 py-2 rounded-xl text-xs flex items-center justify-center gap-1 ${activeTab === 'wingman' ? 'bg-white shadow-sm font-bold' : ''}`}><Sparkles className="w-3 h-3"/> Wingman AI</button>
-          <button onClick={() => setActiveTab('history')} className={`flex-1 py-2 rounded-xl text-xs flex items-center justify-center gap-1 ${activeTab === 'history' ? 'bg-white shadow-sm font-bold' : ''}`}><History className="w-3 h-3"/> Storico</button>
-          <button onClick={() => setActiveTab('vetrina')} className={`flex-1 py-2 rounded-xl text-xs flex items-center justify-center gap-1 ${activeTab === 'vetrina' ? 'bg-white shadow-sm font-bold' : ''}`}><Star className="w-3 h-3"/> Vetrina Sito</button>
+        <div className="grid grid-cols-4 bg-gray-100 rounded-2xl p-1 mb-6 gap-1">
+          <button onClick={() => setActiveTab('wingman')} className={`py-2 rounded-xl text-[11px] flex items-center justify-center gap-1 ${activeTab === 'wingman' ? 'bg-white shadow-sm font-bold' : ''}`}><Sparkles className="w-3 h-3"/> Wingman</button>
+          <button onClick={() => setActiveTab('history')} className={`py-2 rounded-xl text-[11px] flex items-center justify-center gap-1 ${activeTab === 'history' ? 'bg-white shadow-sm font-bold' : ''}`}><History className="w-3 h-3"/> Storico</button>
+          <button onClick={() => setActiveTab('vetrina')} className={`py-2 rounded-xl text-[11px] flex items-center justify-center gap-1 ${activeTab === 'vetrina' ? 'bg-white shadow-sm font-bold' : ''}`}><Star className="w-3 h-3"/> Vetrina</button>
+          <button onClick={() => setActiveTab('settings')} className={`py-2 rounded-xl text-[11px] flex items-center justify-center gap-1 ${activeTab === 'settings' ? 'bg-white shadow-sm font-bold' : ''}`}><Settings className="w-3 h-3"/> Impostazioni</button>
         </div>
         {activeTab === 'wingman' && <WingmanTab configured={config?.configured} />}
+        {activeTab === 'settings' && <SettingsTab config={config} onSaved={(c) => setConfig(prev => ({ ...(prev || {}), ...c }))} />}
         {activeTab === 'history' && <div className="text-center py-12 text-gray-400">Storico post disponibile a breve</div>}
         {activeTab === 'vetrina' && <VetrinaTab />}
       </div>
