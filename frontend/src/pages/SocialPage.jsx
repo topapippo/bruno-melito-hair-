@@ -4,7 +4,42 @@ import { Share2, History, Loader2, Upload, X, Send, Sparkles, Trash2, Edit3, Cam
 import Layout from '../components/Layout';
 import api from '../lib/api';
 
-function SuggestionCard({ s, onPublish, onDelete }) {
+function ImageLightbox({ url, title, onClose }) {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  if (!url) return null;
+  return (
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 cursor-zoom-out"
+      style={{ background: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(8px)' }}
+    >
+      <button
+        onClick={(e) => { e.stopPropagation(); onClose(); }}
+        className="absolute top-4 right-4 z-10 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+        aria-label="Chiudi"
+      >
+        <X className="w-6 h-6" />
+      </button>
+      <img
+        src={url}
+        alt={title || ''}
+        onClick={(e) => e.stopPropagation()}
+        className="max-w-[95vw] max-h-[90vh] object-contain rounded-2xl shadow-2xl"
+      />
+      {title && (
+        <p className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/85 text-sm font-semibold px-4 py-2 rounded-full bg-white/10 backdrop-blur">
+          {title}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function SuggestionCard({ s, onPublish, onDelete, onPreview }) {
   const [text, setText] = useState(s.text);
   const [imageUrl, setImageUrl] = useState(s.image_url);
   const [uploading, setUploading] = useState(false);
@@ -39,7 +74,11 @@ function SuggestionCard({ s, onPublish, onDelete }) {
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col sm:flex-row mb-4">
       <div className="relative w-full sm:w-48 h-48 shrink-0 bg-gray-50">
         {imageUrl ? (
-          <img src={imageUrl} className="w-full h-full object-cover" />
+          <img
+            src={imageUrl}
+            onClick={() => onPreview?.({ url: imageUrl, title: s.title })}
+            className="w-full h-full object-cover cursor-zoom-in"
+          />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-300"><Camera /></div>
         )}
@@ -80,6 +119,7 @@ function WingmanTab({ configured }) {
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [preview, setPreview] = useState(null);
 
   const loadSuggestions = async () => {
     setLoading(true);
@@ -135,8 +175,18 @@ function WingmanTab({ configured }) {
       </div>
 
       {suggestions.map(s => (
-        <SuggestionCard key={s.id} s={s} onPublish={handlePublish} onDelete={(id) => setSuggestions(prev => prev.filter(x => x.id !== id))} />
+        <SuggestionCard
+          key={s.id}
+          s={s}
+          onPublish={handlePublish}
+          onDelete={(id) => setSuggestions(prev => prev.filter(x => x.id !== id))}
+          onPreview={setPreview}
+        />
       ))}
+
+      {preview && (
+        <ImageLightbox url={preview.url} title={preview.title} onClose={() => setPreview(null)} />
+      )}
 
       {suggestions.length === 0 && (
         <div className="text-center py-12 text-gray-400">
@@ -164,6 +214,7 @@ function VetrinaTab() {
   const [form, setForm] = useState({ title: '', desc: '', badge: '', color_code: '#FFD93D' });
   const [imgFile, setImgFile] = useState(null);
   const [imgPreview, setImgPreview] = useState('');
+  const [lightbox, setLightbox] = useState(null);
   const fileRef = useRef();
 
   useEffect(() => {
@@ -230,7 +281,12 @@ function VetrinaTab() {
           onClick={() => fileRef.current?.click()}
         >
           {imgPreview ? (
-            <img src={imgPreview} className="w-full h-full object-cover" alt="preview" />
+            <img
+              src={imgPreview}
+              onClick={(e) => { e.stopPropagation(); setLightbox({ url: imgPreview, title: form.title || 'Anteprima' }); }}
+              className="w-full h-full object-cover cursor-zoom-in"
+              alt="preview"
+            />
           ) : (
             <div className="text-center text-gray-400 pointer-events-none">
               <Upload className="w-8 h-8 mx-auto mb-1" />
@@ -327,7 +383,12 @@ function VetrinaTab() {
                 style={{ border: '2px solid #111', boxShadow: `4px 4px 0px ${shadow}` }}
               >
                 {t.img ? (
-                  <img src={t.img} alt={t.title} className="w-16 h-16 rounded-xl object-cover shrink-0" />
+                  <img
+                    src={t.img}
+                    alt={t.title}
+                    onClick={() => setLightbox({ url: t.img, title: t.title })}
+                    className="w-16 h-16 rounded-xl object-cover shrink-0 cursor-zoom-in"
+                  />
                 ) : (
                   <div className="w-16 h-16 rounded-xl bg-gray-100 shrink-0 flex items-center justify-center">
                     <ImageIcon className="w-5 h-5 text-gray-300" />
@@ -350,6 +411,10 @@ function VetrinaTab() {
             );
           })}
         </div>
+      )}
+
+      {lightbox && (
+        <ImageLightbox url={lightbox.url} title={lightbox.title} onClose={() => setLightbox(null)} />
       )}
     </div>
   );

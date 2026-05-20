@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { Scissors } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Scissors, X } from 'lucide-react';
 import api from '../../lib/api';
 
 const FALLBACK = [
@@ -23,12 +23,21 @@ const GlassTag = ({ children }) => (
 
 export default function TrendGallery({ setShowBooking }) {
   const [trends, setTrends] = useState([]);
+  const [lightbox, setLightbox] = useState(null); // {img, title}
 
   useEffect(() => {
     api.get('/website-trends/public')
       .then(r => setTrends(r.data?.length ? r.data : FALLBACK))
       .catch(() => setTrends(FALLBACK));
   }, []);
+
+  // ESC chiude il lightbox
+  useEffect(() => {
+    if (!lightbox) return;
+    const onKey = (e) => { if (e.key === 'Escape') setLightbox(null); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [lightbox]);
 
   const items = trends.length ? trends : FALLBACK;
 
@@ -130,7 +139,8 @@ export default function TrendGallery({ setShowBooking }) {
                 <img
                   src={t.img}
                   alt={t.title}
-                  className="trend-img absolute inset-0 w-full h-full object-cover"
+                  onClick={(e) => { e.stopPropagation(); setLightbox({ img: t.img, title: t.title }); }}
+                  className="trend-img absolute inset-0 w-full h-full object-cover cursor-zoom-in"
                 />
                 <div
                   className="absolute inset-0"
@@ -184,6 +194,45 @@ export default function TrendGallery({ setShowBooking }) {
           })}
         </div>
       </div>
+
+      {/* Lightbox a tutto schermo */}
+      <AnimatePresence>
+        {lightbox && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            onClick={() => setLightbox(null)}
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 cursor-zoom-out"
+            style={{ background: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(8px)' }}
+          >
+            <button
+              onClick={(e) => { e.stopPropagation(); setLightbox(null); }}
+              className="absolute top-4 right-4 z-10 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+              aria-label="Chiudi"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <motion.img
+              key={lightbox.img}
+              src={lightbox.img}
+              alt={lightbox.title || ''}
+              initial={{ scale: 0.92, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.92, opacity: 0 }}
+              transition={{ duration: 0.3, ease: EASE }}
+              onClick={(e) => e.stopPropagation()}
+              className="max-w-[95vw] max-h-[90vh] object-contain rounded-2xl shadow-2xl"
+            />
+            {lightbox.title && (
+              <p className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/80 text-sm font-semibold tracking-wide px-4 py-2 rounded-full bg-white/10 backdrop-blur">
+                {lightbox.title}
+              </p>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }
