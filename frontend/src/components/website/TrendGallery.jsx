@@ -4,12 +4,13 @@ import { Scissors } from 'lucide-react';
 import api from '../../lib/api';
 
 const FALLBACK = [
-  { id: '1', title: 'Bixie Cut', desc: "Il mix perfetto tra pixie e bob per un'estate fresca e grintosa.", img: 'https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/a81be5d7abc73969b2cb334a559dc8c2aac917f58f4e2b661015b9ef422f8d76.png', badge: '🔥 Trend' },
-  { id: '2', title: 'Butterfly Cut', desc: 'Volume e movimento pazzesco senza rinunciare alle lunghezze.', img: 'https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/0932ee88330ef0ca32df8c7b548f976284064ebc11bc90f86b13a995c8abf80a.png', badge: '✨ Virale' },
-  { id: '3', title: 'Biondo Burro', desc: 'Luce pura e cremosa per risplendere sotto il sole del 2026.', img: 'https://i.ibb.co/vvP7jZFb/b28028e3900d.jpg', badge: '☀️ Estate' },
+  { id: '1', title: 'Bixie Cut', desc: "Il mix perfetto tra pixie e bob per un'estate fresca e grintosa.", img: 'https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/a81be5d7abc73969b2cb334a559dc8c2aac917f58f4e2b661015b9ef422f8d76.png', badge: '🔥 Trend', color_code: '#FFD93D' },
+  { id: '2', title: 'Butterfly Cut', desc: 'Volume e movimento pazzesco senza rinunciare alle lunghezze.', img: 'https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/0932ee88330ef0ca32df8c7b548f976284064ebc11bc90f86b13a995c8abf80a.png', badge: '✨ Virale', color_code: '#FF6B9D' },
+  { id: '3', title: 'Biondo Burro', desc: 'Luce pura e cremosa per risplendere sotto il sole del 2026.', img: 'https://i.ibb.co/vvP7jZFb/b28028e3900d.jpg', badge: '☀️ Estate', color_code: '#A8DAFF' },
 ];
 
 const EASE = [0.22, 1, 0.36, 1];
+const GLOW_COLORS = ['#FF6B9D', '#FFD93D', '#A8DAFF', '#C3F0CA', '#FFB347'];
 
 const GlassTag = ({ children }) => (
   <span
@@ -18,18 +19,6 @@ const GlassTag = ({ children }) => (
   >
     {children}
   </span>
-);
-
-const GlassBtn = ({ onClick, children }) => (
-  <motion.button
-    onClick={onClick}
-    whileHover={{ scale: 1.04 }}
-    whileTap={{ scale: 0.97 }}
-    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white font-semibold text-sm"
-    style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.22)' }}
-  >
-    {children}
-  </motion.button>
 );
 
 export default function TrendGallery({ setShowBooking }) {
@@ -42,7 +31,6 @@ export default function TrendGallery({ setShowBooking }) {
   }, []);
 
   const items = trends.length ? trends : FALLBACK;
-  const [featured, ...rest] = items;
 
   return (
     <section className="py-24 px-4 sm:px-8 overflow-hidden" style={{ background: '#0a0a0f' }}>
@@ -76,117 +64,124 @@ export default function TrendGallery({ setShowBooking }) {
           </div>
         </motion.div>
 
-        {/* Bentō Grid asimmetrico */}
+        {/* Masonry-like responsive grid — adattivo, nessun limite di card */}
         <div
           style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gridTemplateRows: 'auto auto',
-            gap: '14px',
+            columnGap: '16px',
+            columnCount: 1,
           }}
+          className="trend-masonry"
         >
-          {/* Card featured — grande (2 righe) */}
-          {featured && (
-            <motion.div
-              className="group relative overflow-hidden rounded-3xl cursor-pointer"
-              style={{
-                gridRow: 'span 2',
-                minHeight: '560px',
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.07)',
-              }}
-              initial={{ opacity: 0, y: 60 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.95, ease: EASE }}
-            >
-              <img
-                src={featured.img}
-                alt={featured.title}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-              />
-              <div
-                className="absolute inset-0"
-                style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.18) 50%, transparent 100%)' }}
-              />
-              {featured.badge && (
-                <div className="absolute top-5 left-5">
-                  <GlassTag>{featured.badge}</GlassTag>
-                </div>
-              )}
-              <div className="absolute bottom-0 left-0 right-0 p-7">
-                <h3
-                  className="font-bold"
-                  style={{ fontFamily: "'Fredoka', sans-serif", fontSize: '2.4rem', color: 'white', lineHeight: 1.1 }}
-                >
-                  {featured.title}
-                </h3>
-                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem', marginTop: '0.5rem', marginBottom: '1.4rem', lineHeight: 1.65 }}>
-                  {featured.desc}
-                </p>
-                {setShowBooking && (
-                  <GlassBtn onClick={() => setShowBooking(true)}>
-                    <Scissors className="w-4 h-4" /> Prenota questo look
-                  </GlassBtn>
-                )}
-              </div>
-            </motion.div>
-          )}
+          <style>{`
+            .trend-masonry { column-count: 1; }
+            @media (min-width: 640px) { .trend-masonry { column-count: 2; } }
+            @media (min-width: 1024px) { .trend-masonry { column-count: 3; } }
+            .trend-card {
+              break-inside: avoid;
+              page-break-inside: avoid;
+              -webkit-column-break-inside: avoid;
+              margin-bottom: 16px;
+              display: block;
+            }
+            .trend-card .trend-img {
+              transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+              transform-origin: center;
+            }
+            .trend-card:hover .trend-img {
+              transform: scale(1.12) rotate(-2deg);
+            }
+            .trend-card .trend-desc, .trend-card .trend-cta {
+              opacity: 0;
+              transform: translateY(8px);
+              transition: opacity 0.45s ease, transform 0.45s ease;
+            }
+            .trend-card:hover .trend-desc, .trend-card:hover .trend-cta {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          `}</style>
 
-          {/* Card piccole */}
-          {rest.map((t, i) => (
-            <motion.div
-              key={t.id}
-              className="group relative overflow-hidden rounded-3xl cursor-pointer"
-              style={{
-                minHeight: '264px',
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.07)',
-              }}
-              initial={{ opacity: 0, y: 60 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.95, ease: EASE, delay: 0.12 * (i + 1) }}
-            >
-              <img
-                src={t.img}
-                alt={t.title}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-              />
-              <div
-                className="absolute inset-0"
-                style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.08) 60%, transparent 100%)' }}
-              />
-              {t.badge && (
-                <div className="absolute top-4 left-4">
-                  <GlassTag>{t.badge}</GlassTag>
-                </div>
-              )}
-              <div className="absolute bottom-0 left-0 right-0 p-5">
-                <h3
-                  className="font-bold"
-                  style={{ fontFamily: "'Fredoka', sans-serif", fontSize: '1.55rem', color: 'white', lineHeight: 1.1 }}
-                >
-                  {t.title}
-                </h3>
-                <p
-                  className="text-xs leading-relaxed mt-1 transition-all duration-500 opacity-0 group-hover:opacity-100"
-                  style={{ color: 'rgba(255,255,255,0.55)', maxHeight: '3rem', overflow: 'hidden' }}
-                >
-                  {t.desc}
-                </p>
-                {setShowBooking && (
-                  <button
-                    onClick={() => setShowBooking(true)}
-                    className="mt-3 flex items-center gap-2 px-4 py-1.5 rounded-xl text-white font-semibold text-xs transition-all duration-500 opacity-0 group-hover:opacity-100"
-                    style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.2)' }}
-                  >
-                    <Scissors className="w-3 h-3" /> Prenota →
-                  </button>
+          {items.map((t, i) => {
+            const glow = t.color_code || GLOW_COLORS[i % GLOW_COLORS.length];
+            // Altezza variabile per effetto masonry
+            const heights = [320, 420, 360, 480, 380, 440];
+            const h = heights[i % heights.length];
+            return (
+              <motion.div
+                key={t.id}
+                className="trend-card group relative overflow-hidden rounded-3xl cursor-pointer"
+                style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                  height: `${h}px`,
+                  boxShadow: `0 4px 20px rgba(0,0,0,0.4)`,
+                  '--glow': glow,
+                }}
+                whileHover={{
+                  boxShadow: `0 0 60px ${glow}66, 0 0 120px ${glow}33, 0 10px 30px rgba(0,0,0,0.6)`,
+                  borderColor: `${glow}80`,
+                  scale: 1.02,
+                }}
+                initial={{ opacity: 0, y: 60 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.15 }}
+                transition={{ duration: 0.85, ease: EASE, delay: 0.08 * (i % 6) }}
+              >
+                <img
+                  src={t.img}
+                  alt={t.title}
+                  className="trend-img absolute inset-0 w-full h-full object-cover"
+                />
+                <div
+                  className="absolute inset-0"
+                  style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.18) 55%, transparent 100%)' }}
+                />
+                {/* Glow overlay sottile sul bordo durante l'hover */}
+                <div
+                  className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                  style={{
+                    boxShadow: `inset 0 0 60px ${glow}33`,
+                    borderRadius: 'inherit',
+                  }}
+                />
+                {t.badge && (
+                  <div className="absolute top-4 left-4 z-10">
+                    <GlassTag>{t.badge}</GlassTag>
+                  </div>
                 )}
-              </div>
-            </motion.div>
-          ))}
+                <div className="absolute bottom-0 left-0 right-0 p-5 z-10">
+                  <h3
+                    className="font-bold"
+                    style={{ fontFamily: "'Fredoka', sans-serif", fontSize: '1.6rem', color: 'white', lineHeight: 1.1 }}
+                  >
+                    {t.title}
+                  </h3>
+                  {t.desc && (
+                    <p
+                      className="trend-desc text-xs leading-relaxed mt-2"
+                      style={{ color: 'rgba(255,255,255,0.7)' }}
+                    >
+                      {t.desc}
+                    </p>
+                  )}
+                  {setShowBooking && (
+                    <button
+                      onClick={() => setShowBooking(true)}
+                      className="trend-cta mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-white font-semibold text-xs"
+                      style={{
+                        background: `${glow}22`,
+                        backdropFilter: 'blur(12px)',
+                        border: `1px solid ${glow}99`,
+                        color: 'white',
+                      }}
+                    >
+                      <Scissors className="w-3 h-3" /> Prenota →
+                    </button>
+                  )}
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
       </div>
     </section>

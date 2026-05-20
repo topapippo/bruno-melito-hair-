@@ -300,6 +300,86 @@ async def serve_social_media(filename: str):
 
 # ── Wingman AI ────────────────────────────────────────────────────────────────
 
+_REFRESH_IMAGES = [
+    "https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/a81be5d7abc73969b2cb334a559dc8c2aac917f58f4e2b661015b9ef422f8d76.png",
+    "https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/0932ee88330ef0ca32df8c7b548f976284064ebc11bc90f86b13a995c8abf80a.png",
+    "https://i.ibb.co/vvP7jZFb/b28028e3900d.jpg",
+    "https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/28527e09a63e933c1a6707ec114afd3802828c9fdd7930a980697e2abe154cba.png",
+    "https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/99d308789e991a555a550483448efdcd7610cd3547dbb1e5041e2caf94ec39b8.png",
+    "https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/23ccfe5aaadde1f4925524c2bf4de0408eb95858d844b45025838d9959197b1f.png",
+]
+
+
+_REFRESH_POOL = {
+    "trend": [
+        {
+            "title": "Bixie Cut (Estate 2026)",
+            "text": "Ancora lì a litigare col phon? 🥵 L'estate 2026 dice basta: è l'anno del Bixie! ✂️✨ Mix perfetto tra pixie e bob, fresco e grintoso.\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
+        },
+        {
+            "title": "Butterfly Cut",
+            "text": "Volume da capogiro, movimento da copertina. 🦋 Il Butterfly Cut è LA scelta per chi non vuole rinunciare alle lunghezze ma vuole anche un effetto 'appena svegliata e meravigliosa'.\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
+        },
+        {
+            "title": "Biondo Burro (Luce Pura)",
+            "text": "Il burro sta bene in frigo... ma sta ancora meglio sui tuoi capelli! 🧈✨ Il Biondo Burro Freddo è il colore dell'estate 2026. 🍦\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
+        },
+        {
+            "title": "Dettaglio di Stile",
+            "text": "I particolari fanno la differenza. Guarda questa sfumatura Biondo Burro: luce dove serve, profondità dove conta. Ogni ciocca al posto giusto. ✨\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
+        },
+        {
+            "title": "Effetto Sorpresa",
+            "text": "Chi dice che un taglio corto non sia femminile? Guarda questo Bixie Cut: grinta, eleganza, zero compromessi. 💥\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
+        },
+    ],
+    "tecnico": [
+        {
+            "title": "L'Esperto risponde",
+            "text": "Sapevi che il sole schiarisce i capelli ma li secca? ☀️ Ecco come proteggerli: olio leggero prima dell'esposizione, maschera idratante 1 volta a settimana, e niente piastra dopo il mare. 💧\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
+        },
+        {
+            "title": "Tip del giorno",
+            "text": "💡 Tagliare le punte ogni 6-8 settimane non fa crescere i capelli più velocemente, ma li mantiene SANI e forti. Niente doppie punte = niente effetto 'paglia'.\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
+        },
+        {
+            "title": "Mito da sfatare",
+            "text": "🚫 'Lavare i capelli tutti i giorni li rovina'. FALSO. Dipende dal prodotto. Un sulfate-free delicato + acqua tiepida (non bollente!) e puoi lavarli quando vuoi senza paura. 💧\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
+        },
+        {
+            "title": "Capelli sotto il sole",
+            "text": "🌞 In spiaggia bagnali con acqua dolce PRIMA del mare: assorbono meno sale. Trick semplice, effetto enorme.\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
+        },
+        {
+            "title": "Idratazione = vita",
+            "text": "💧 Una maschera nutriente 1 volta a settimana cambia letteralmente la consistenza dei tuoi capelli in 30 giorni. Provare per credere.\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
+        },
+    ],
+    "promo": [
+        {
+            "title": "Mood del Giovedì",
+            "text": "Quasi fine settimana! 🎉 Hai già bloccato il tuo appuntamento per sabato? I posti del weekend volano via. Corri a prenotare prima che spariscano!\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
+        },
+        {
+            "title": "Offerta Weekend",
+            "text": "✨ Prenota entro questo weekend e ottieni uno sconto esclusivo sul tuo prossimo trattamento. Non perdere l'occasione di rinnovare il tuo look! 📲\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
+        },
+        {
+            "title": "Lunedì = Nuovo Inizio",
+            "text": "💇‍♀️ Lunedì è il giorno perfetto per iniziare la settimana col look giusto. Disponibilità limitata oggi: prenota subito!\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
+        },
+        {
+            "title": "Effetto Wow",
+            "text": "🌟 Un nuovo taglio = nuova energia. Cambia look, cambia la settimana. Vieni a trovarci, ti aspettiamo!\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
+        },
+        {
+            "title": "Solo per oggi",
+            "text": "⏰ Ultimi posti per questa settimana! Se vuoi presentarti al meglio sabato sera, oggi è il momento giusto per prenotare. 💫\n\n📅 Prenota online: https://brunomelitohair.it/prenota",
+        },
+    ],
+}
+
+
 _WINGMAN_DEFAULTS = [
     {
         "type": "trend",
@@ -350,6 +430,37 @@ async def get_wingman_suggestions(current_user: dict = Depends(get_current_user)
         suggestions = to_insert
 
     return suggestions
+
+
+@router.post("/social/refresh-suggestions")
+async def refresh_wingman_suggestions(current_user: dict = Depends(get_current_user)):
+    """Genera 3 nuovi suggerimenti freschi (Trend, Tecnico, Promo) con immagini diverse ogni volta."""
+    # Rimuove i vecchi suggerimenti per fare spazio ai nuovi
+    await db.wingman_suggestions.delete_many({"user_id": current_user["id"]})
+
+    # Mescola le immagini per garantirne 3 diverse
+    pool_images = _REFRESH_IMAGES.copy()
+    random.shuffle(pool_images)
+
+    new_suggestions = []
+    for idx, category in enumerate(["trend", "tecnico", "promo"]):
+        item = random.choice(_REFRESH_POOL[category])
+        img = pool_images[idx % len(pool_images)] if pool_images else None
+        new_suggestions.append({
+            "id": str(uuid.uuid4()),
+            "user_id": current_user["id"],
+            "type": category,
+            "title": item["title"],
+            "text": item["text"],
+            "image_url": img,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+
+    await db.wingman_suggestions.insert_many(new_suggestions)
+    # Rimuovi gli _id MongoDB iniettati da insert_many prima di restituire
+    for s in new_suggestions:
+        s.pop("_id", None)
+    return new_suggestions
 
 
 @router.put("/social/wingman-suggestions/{suggestion_id}")

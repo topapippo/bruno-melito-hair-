@@ -79,6 +79,7 @@ function SuggestionCard({ s, onPublish, onDelete }) {
 function WingmanTab({ configured }) {
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const loadSuggestions = async () => {
     setLoading(true);
@@ -86,6 +87,15 @@ function WingmanTab({ configured }) {
       const { data } = await api.get('/social/wingman-suggestions');
       setSuggestions(data);
     } catch { toast.error('Errore caricamento'); } finally { setLoading(false); }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      const { data } = await api.post('/social/refresh-suggestions');
+      setSuggestions(data);
+      toast.success('Nuove idee generate!');
+    } catch { toast.error('Errore generazione idee'); } finally { setRefreshing(false); }
   };
 
   useEffect(() => { loadSuggestions(); }, []);
@@ -104,13 +114,23 @@ function WingmanTab({ configured }) {
 
   return (
     <div className="space-y-4 px-1">
-      <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-100 rounded-2xl p-5 flex items-center justify-between">
-        <div>
-          <h3 className="font-bold text-purple-800 flex items-center gap-2"><Sparkles className="w-5 h-5" /> Wingman AI</h3>
-          <p className="text-sm text-purple-600">Idee fresche per i tuoi social.</p>
+      <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-100 rounded-2xl p-5">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h3 className="font-bold text-purple-800 flex items-center gap-2"><Sparkles className="w-5 h-5" /> Wingman AI</h3>
+            <p className="text-sm text-purple-600">Idee fresche per i tuoi social.</p>
+          </div>
+          <button onClick={loadSuggestions} className="p-2 text-purple-600 hover:bg-purple-100 rounded-full transition-all" title="Ricarica">
+            <RefreshCw className="w-5 h-5" />
+          </button>
         </div>
-        <button onClick={loadSuggestions} className="p-2 text-purple-600 hover:bg-purple-100 rounded-full transition-all" title="Ricarica idee">
-          <RefreshCw className="w-5 h-5" />
+        <button
+          onClick={handleRefresh}
+          disabled={refreshing}
+          className="w-full bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white py-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-md active:scale-95 transition-all disabled:opacity-50"
+        >
+          {refreshing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+          {refreshing ? 'Generazione in corso…' : '✨ Genera Nuove Idee'}
         </button>
       </div>
 
