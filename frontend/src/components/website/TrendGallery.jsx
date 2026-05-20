@@ -118,7 +118,8 @@ export default function TrendGallery({ setShowBooking }) {
             return (
               <motion.div
                 key={t.id}
-                className="trend-card group relative overflow-hidden rounded-3xl cursor-pointer"
+                onClick={() => setLightbox({ img: t.img, title: t.title })}
+                className="trend-card group relative overflow-hidden rounded-3xl cursor-zoom-in"
                 style={{
                   background: 'rgba(255,255,255,0.04)',
                   border: '1px solid rgba(255,255,255,0.07)',
@@ -143,7 +144,7 @@ export default function TrendGallery({ setShowBooking }) {
                   className="trend-img absolute inset-0 w-full h-full object-cover cursor-zoom-in"
                 />
                 <div
-                  className="absolute inset-0"
+                  className="absolute inset-0 pointer-events-none"
                   style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.18) 55%, transparent 100%)' }}
                 />
                 {/* Glow overlay sottile sul bordo durante l'hover */}
@@ -176,7 +177,7 @@ export default function TrendGallery({ setShowBooking }) {
                   )}
                   {setShowBooking && (
                     <button
-                      onClick={() => setShowBooking(true)}
+                      onClick={(e) => { e.stopPropagation(); setShowBooking(true); }}
                       className="trend-cta mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-white font-semibold text-xs"
                       style={{
                         background: `${glow}22`,
