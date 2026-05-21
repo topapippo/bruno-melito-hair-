@@ -63,6 +63,9 @@ def calculate_end_time(s: str, d: int) -> str:
         return f"{min(23, t // 60):02d}:{t % 60:02d}"
     except: return s
 
+# Alias per compatibilità con reminders.py
+send_whatsapp_cloud = send_whatsapp
+
 async def send_sms_reminder(phone: str, message: str, salon_name: str) -> dict:
     if not twilio_client: return {"success": False}
     try:
