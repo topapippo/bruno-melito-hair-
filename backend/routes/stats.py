@@ -739,6 +739,59 @@ async def test_cloud_api_send(data: dict, current_user: dict = Depends(get_curre
             "message": f"Errore Cloud API: {result.get('error')} (code={result.get('code')})"}
 
 
+@router.post("/settings/cloud-api-register-number")
+async def register_cloud_api_number(data: dict, current_user: dict = Depends(get_current_user)):
+    """Registra il numero Cloud API tramite POST /{phone-id}/register con PIN a 6 cifre.
+    Necessario quando il pannello WhatsApp Manager è bloccato e non permette di
+    impostare la verifica in due passaggi via UI.
+    Risposta completa di Meta inclusa per debug.
+    """
+    import asyncio
+    import requests as _req
+    from utils import WA_TOKEN, WA_PHONE_NUMBER_ID
+
+    pin = str(data.get("pin", "")).strip()
+    if not pin or not pin.isdigit() or len(pin) != 6:
+        return {"ok": False, "message": "PIN deve essere esattamente 6 cifre"}
+    if not WA_TOKEN:
+        return {"ok": False, "message": "WHATSAPP_TOKEN non configurato su Render"}
+
+    url = f"https://graph.facebook.com/v21.0/{WA_PHONE_NUMBER_ID}/register"
+    headers = {
+        "Authorization": f"Bearer {WA_TOKEN}",
+        "Content-Type": "application/json",
+    }
+    payload = {"messaging_product": "whatsapp", "pin": pin}
+
+    try:
+        resp = await asyncio.to_thread(_req.post, url, headers=headers, json=payload, timeout=20)
+        rjson = {}
+        try:
+            rjson = resp.json()
+        except Exception:
+            pass
+        print(f"[WA REGISTER] phone_id={WA_PHONE_NUMBER_ID} status={resp.status_code} resp={rjson}", flush=True)
+
+        if resp.status_code == 200 and rjson.get("success"):
+            return {"ok": True,
+                    "message": f"✅ Numero {WA_PHONE_NUMBER_ID} registrato con successo!",
+                    "raw": rjson}
+
+        error = rjson.get("error", {})
+        return {
+            "ok": False,
+            "message": f"Errore registrazione: {error.get('message') or resp.text[:300]}",
+            "code": error.get("code"),
+            "subcode": error.get("error_subcode"),
+            "details": error.get("error_data") or error.get("error_user_msg") or error.get("error_user_title"),
+            "fbtrace_id": error.get("fbtrace_id"),
+            "raw": rjson,
+            "status_code": resp.status_code,
+        }
+    except Exception as e:
+        return {"ok": False, "message": f"Errore di rete: {str(e)}"}
+
+
 @router.post("/settings/cloud-api-send-template-test")
 async def test_cloud_api_send_template(data: dict, current_user: dict = Depends(get_current_user)):
     """Invia un template WhatsApp di prova via Meta Cloud API.

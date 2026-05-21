@@ -257,6 +257,20 @@ export default function SettingsPage() {
     }
   };
 
+  const registerCloudApiNumber = async () => {
+    const pin = window.prompt('Inserisci un PIN a 6 cifre (es. 123456). Verrà associato al numero Cloud API su Meta.');
+    if (!pin) return;
+    if (!/^\d{6}$/.test(pin)) { toast.error('PIN deve essere esattamente 6 cifre'); return; }
+    setCloudApiSendTest(p => ({ ...p, loading: true, result: null }));
+    try {
+      const res = await api.post(`${API}/settings/cloud-api-register-number`, { pin });
+      setCloudApiSendTest(p => ({ ...p, result: res.data, loading: false }));
+      console.log('[Cloud API Register] response:', res.data);
+    } catch (e) {
+      setCloudApiSendTest(p => ({ ...p, result: { ok: false, message: 'Errore server: ' + (e?.response?.data?.detail || e.message) }, loading: false }));
+    }
+  };
+
   const sendCloudApiTemplateTest = async () => {
     if (!cloudApiSendTest.phone) return;
     setCloudApiSendTest(p => ({ ...p, loading: true, result: null }));
@@ -1078,10 +1092,22 @@ export default function SettingsPage() {
                 </Button>
               </div>
               <p className="text-xs text-[#7A5A4D]">In modalità Live di Meta, i messaggi non-template possono fallire se il destinatario non ha scritto nelle ultime 24h. Usa il template <code>hello_world</code> per testare.</p>
+              <div className="border-t border-green-100 pt-2 mt-2">
+                <Button onClick={registerCloudApiNumber} disabled={cloudApiSendTest.loading} variant="outline" className="border-amber-400 text-amber-700 hover:bg-amber-50 w-full" title="Registra il numero Cloud API via POST /{phone-id}/register con PIN a 6 cifre">
+                  {cloudApiSendTest.loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                  🔐 Registra numero con PIN (per errore 133010)
+                </Button>
+                <p className="text-xs text-[#7A5A4D] mt-1">Usa solo se la UI Meta non ti fa impostare il PIN. Annota il PIN scelto — ti servirà se rigeneri il token.</p>
+              </div>
               {cloudApiSendTest.result && (
-                <div className={`p-3 rounded-xl text-sm font-medium ${cloudApiSendTest.result.ok ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
-                  {cloudApiSendTest.result.message}
-                </div>
+                <>
+                  <div className={`p-3 rounded-xl text-sm font-medium ${cloudApiSendTest.result.ok ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                    {cloudApiSendTest.result.message}
+                  </div>
+                  {cloudApiSendTest.result.raw && (
+                    <pre className="p-2 rounded bg-gray-900 text-gray-100 text-[10px] overflow-auto max-h-60 whitespace-pre-wrap">{JSON.stringify(cloudApiSendTest.result.raw, null, 2)}</pre>
+                  )}
+                </>
               )}
             </div>
           </CardContent>
