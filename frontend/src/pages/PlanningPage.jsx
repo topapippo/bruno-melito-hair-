@@ -182,17 +182,15 @@ export default function PlanningPage() {
   }, []);
 
   // Scroll all'ora corrente solo al primo caricamento, non ad ogni cambio data
+  // Scroll all'ora corrente se la data selezionata è oggi
   useEffect(() => {
-    if (!loading && !hasScrolledRef.current && scrollRef.current) {
-      hasScrolledRef.current = true;
+    if (!loading && scrollRef.current && isToday(selectedDate)) {
       const currentHour = new Date().getHours();
       const targetHour = currentHour >= 8 && currentHour <= 20 ? currentHour : 9;
       const slotIndex = (targetHour - 8) * 4;
       scrollRef.current.scrollTop = slotIndex * 48;
     }
-  }, [loading]);
-
-  const fetchStaticData = async () => {
+  }, [loading, selectedDate]);
     try {
       const [operatorsRes, clientsRes, servicesRes, websiteRes] = await Promise.all([
         api.get(`${API}/operators`),
