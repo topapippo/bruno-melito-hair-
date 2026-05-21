@@ -545,6 +545,7 @@ export default function EditAppointmentDialog({
                     <Button type="button" variant="outline" size="sm" className="h-7 text-xs border-[#F59E0B] text-[#92400E]" onClick={() => showHistory ? setShowHistory(false) : loadClientHistory(selectedClientInfo?.id)} disabled={loadingHistory}>
                       {loadingHistory ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <History className="w-3 h-3 mr-1" />}Storico
                     </Button>
+                    <ManualWAButton phone={selectedClientInfo.phone} name={selectedClientInfo.name} date={fmtDate(appointment.date)} time={appointment.time} services={appointment.services} />
                   </div>
                 </div>
                 {editingClient && (
