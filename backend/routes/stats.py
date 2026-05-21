@@ -562,7 +562,7 @@ async def get_settings(current_user: dict = Depends(get_current_user)):
         "ultramsg_instance_id": current_user.get("ultramsg_instance_id", ""),
         "um_configured": bool(current_user.get("ultramsg_instance_id") and current_user.get("ultramsg_token")),
         "cloud_api_configured": bool(os.environ.get("WHATSAPP_TOKEN")),
-        "cloud_api_phone_number_id": os.environ.get("WHATSAPP_PHONE_ID", "964302293437129"),
+        "cloud_api_phone_number_id": os.environ.get("WHATSAPP_PHONE_ID", "1030164126858033"),
     }
 
 
@@ -710,7 +710,7 @@ async def test_ultramsg_send(data: dict, current_user: dict = Depends(get_curren
 async def test_cloud_api(current_user: dict = Depends(get_current_user)):
     """Verifica che WHATSAPP_TOKEN e PHONE_NUMBER_ID siano configurati."""
     token = os.environ.get("WHATSAPP_TOKEN", "")
-    phone_id = os.environ.get("WHATSAPP_PHONE_ID", "964302293437129")
+    phone_id = os.environ.get("WHATSAPP_PHONE_ID", "1030164126858033")
     if not token:
         return {"ok": False, "status": "not_configured",
                 "message": "WHATSAPP_TOKEN non impostato nelle variabili d'ambiente"}
