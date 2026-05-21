@@ -1,13 +1,10 @@
-import os, asyncio, requests as _req, re, uuid as _uuid, logging
+import os, asyncio, requests as _req, re, uuid as _uuid
 from datetime import datetime, timezone
-
-logger = logging.getLogger(__name__)
 
 # --- CONFIGURAZIONI ---
 TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID')
 TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN')
 TWILIO_PHONE_NUMBER = os.environ.get('TWILIO_PHONE_NUMBER')
-
 WA_PHONE_NUMBER_ID = os.environ.get('WHATSAPP_PHONE_ID', '1030164126858033')
 WA_TOKEN = os.environ.get('WHATSAPP_TOKEN', '')
 WA_FOOTER = "\n\nMessaggio automatico di cortesia di Bruno Melito Hair. Se hai bisogno di scriverci, rispondi al 3397833526."
@@ -26,7 +23,6 @@ def normalize_phone_wa(phone: str) -> str:
     return '39' + d
 
 async def send_whatsapp_template(phone: str, template_name: str, variables: list = None, lang: str = "it") -> dict:
-    """Invia un template ufficiale via Meta."""
     if not WA_TOKEN: return {"sent": False, "error": "Token mancante"}
     phone_clean = normalize_phone_wa(phone)
     url = f"https://graph.facebook.com/v21.0/{WA_PHONE_NUMBER_ID}/messages"
@@ -39,41 +35,43 @@ async def send_whatsapp_template(phone: str, template_name: str, variables: list
         }
     }
     resp = await asyncio.to_thread(_req.post, url, headers=headers, json=payload, timeout=15)
-    logger.info(f"[WA template] {template_name} lang={lang} to={phone_clean} status={resp.status_code} body={resp.text[:200]}")
     if resp.status_code == 200: return {"sent": True, "method": "cloud_api_template"}
     if lang == "it" and resp.status_code == 404:
         return await send_whatsapp_template(phone, template_name, variables, lang="it_IT")
     return {"sent": False, "error": resp.text}
 
 async def send_whatsapp_cloud(phone: str, message: str) -> dict:
-    """Invia un messaggio di testo libero via Cloud API."""
-    if not WA_TOKEN:
-        logger.error("[WA] WHATSAPP_TOKEN non configurato su Render!")
-        return {"sent": False, "error": "Token mancante"}
-    phone_normalized = normalize_phone_wa(phone)
+    if not WA_TOKEN: return {"sent": False, "error": "Token mancante"}
     url = f"https://graph.facebook.com/v21.0/{WA_PHONE_NUMBER_ID}/messages"
     headers = {"Authorization": f"Bearer {WA_TOKEN}", "Content-Type": "application/json"}
-    payload = {"messaging_product": "whatsapp", "to": phone_normalized, "type": "text", "text": {"body": message}}
-    logger.info(f"[WA text] Invio a {phone_normalized} phone_id={WA_PHONE_NUMBER_ID} token={'OK' if WA_TOKEN else 'MANCANTE'}")
+    payload = {"messaging_product": "whatsapp", "to": normalize_phone_wa(phone), "type": "text", "text": {"body": message}}
     try:
         r = await asyncio.to_thread(_req.post, url, headers=headers, json=payload, timeout=15)
-        logger.info(f"[WA text] status={r.status_code} body={r.text[:300]}")
-        return {"sent": r.status_code == 200, "method": "cloud_api_text", "status": r.status_code, "response": r.text[:300]}
-    except Exception as e:
-        logger.error(f"[WA text] Eccezione: {e}")
-        return {"sent": False, "error": str(e)}
+        return {"sent": r.status_code == 200, "method": "cloud_api_text"}
+    except: return {"sent": False}
 
 async def send_whatsapp(phone: str, message: str, user: dict = None) -> dict:
-    """Smista tra template e testo libero."""
-    if "Domani alle" in message:
-        nome = message.split('!')[0].replace('Ciao ', '').strip()
-        ora = re.search(r'alle (\d{2}:\d{2})', message)
-        return await send_whatsapp_template(phone, "promemoria_appuntamento", [nome, "domani", ora.group(1) if ora else "da concordare"])
-    if "confermato" in message.lower() and "prenotazione" in message.lower():
-        nome = message.split('!')[0].replace('Ciao ', '').strip()
+    """Funzione intelligente che mappa i messaggi dell'agenda sui template di Meta."""
+    m_lower = message.lower()
+    
+    if "appuntamento" in m_lower or "ti ricordiamo" in m_lower or "domani alle" in m_lower:
+        nome = "Cliente"
+        if "!" in message: nome = message.split('!')[0].replace('Ciao ', '').strip()
+        nome = nome.replace(' !', '')
+        ora = re.search(r'(\d{2}:\d{2})', message)
+        ora_str = ora.group(1) if ora else "da concordare"
+        data_str = "domani"
+        data_match = re.search(r'(\d{2}/\d{2}/\d{4})', message)
+        if data_match: data_str = data_match.group(1)
+        return await send_whatsapp_template(phone, "promemoria_appuntamento", [nome, data_str, ora_str])
+
+    if "confermato" in m_lower and "prenotazione" in m_lower:
+        nome = message.split('!')[0].replace('Ciao ', '').strip() if "!" in message else "Cliente"
+        nome = nome.replace(' !', '')
         data = re.search(r'il (\d{2}/\d{2}/\d{4})', message)
-        ora = re.search(r'alle (\d{2}:\d{2})', message)
+        ora = re.search(r'(\d{2}:\d{2})', message)
         return await send_whatsapp_template(phone, "conferma_prenotazione", [nome, data.group(1) if data else "prossimamente", ora.group(1) if ora else ""])
+
     return await send_whatsapp_cloud(phone, message + WA_FOOTER)
 
 def calculate_end_time(s: str, d: int) -> str:
@@ -89,6 +87,3 @@ async def send_sms_reminder(phone: str, message: str, salon_name: str) -> dict:
         twilio_client.messages.create(body=f"[{salon_name}] {message}", from_=TWILIO_PHONE_NUMBER, to=f"+{normalize_phone_wa(phone)}")
         return {"success": True}
     except: return {"success": False}
-
-async def _log_communication(user_id: str, channel: str, phone: str, message: str, result: dict):
-    pass
