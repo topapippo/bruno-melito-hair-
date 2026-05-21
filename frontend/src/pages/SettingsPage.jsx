@@ -277,8 +277,8 @@ export default function SettingsPage() {
     try {
       const res = await api.post(`${API}/settings/cloud-api-send-template-test`, {
         phone: cloudApiSendTest.phone,
-        template_name: 'hello_world',
-        language_code: 'en_US',
+        template_name: 'promemoria_appuntamento',
+        language_code: 'it',
       });
       setCloudApiSendTest(p => ({ ...p, result: res.data, loading: false }));
     } catch (e) {
@@ -1087,11 +1087,11 @@ export default function SettingsPage() {
                 <Button onClick={sendCloudApiTestMessage} disabled={cloudApiSendTest.loading || !cloudApiSendTest.phone} className="bg-green-600 hover:bg-green-700 text-white shrink-0">
                   {cloudApiSendTest.loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Invia testo'}
                 </Button>
-                <Button onClick={sendCloudApiTemplateTest} disabled={cloudApiSendTest.loading || !cloudApiSendTest.phone} className="bg-emerald-700 hover:bg-emerald-800 text-white shrink-0" title="Invia il template hello_world (sempre approvato Meta)">
+                <Button onClick={sendCloudApiTemplateTest} disabled={cloudApiSendTest.loading || !cloudApiSendTest.phone} className="bg-emerald-700 hover:bg-emerald-800 text-white shrink-0" title="Invia il template promemoria_appuntamento con variabili di esempio">
                   {cloudApiSendTest.loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Invia template'}
                 </Button>
               </div>
-              <p className="text-xs text-[#7A5A4D]">In modalità Live di Meta, i messaggi non-template possono fallire se il destinatario non ha scritto nelle ultime 24h. Usa il template <code>hello_world</code> per testare.</p>
+              <p className="text-xs text-[#7A5A4D]">In modalità Live di Meta, i messaggi non-template possono fallire se il destinatario non ha scritto nelle ultime 24h. Usa il template <code>promemoria_appuntamento</code> per testare l'invio con variabili reali.</p>
               <div className="border-t border-green-100 pt-2 mt-2">
                 <Button onClick={registerCloudApiNumber} disabled={cloudApiSendTest.loading} variant="outline" className="border-amber-400 text-amber-700 hover:bg-amber-50 w-full" title="Registra il numero Cloud API via POST /{phone-id}/register con PIN a 6 cifre">
                   {cloudApiSendTest.loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}

@@ -798,16 +798,15 @@ async def test_cloud_api_send_template(data: dict, current_user: dict = Depends(
     Default: template `hello_world` (en_US) — sempre approvato da Meta."""
     from utils import send_whatsapp_template, WA_TOKEN
     phone = data.get("phone", "")
-    template_name = data.get("template_name", "hello_world")
-    language_code = data.get("language_code", "en_US")
-    # hello_world esiste solo in en_US su Meta — forza sempre en_US per il test
-    if template_name == "hello_world":
-        language_code = "en_US"
+    template_name = data.get("template_name", "promemoria_appuntamento")
+    language_code = data.get("language_code", "it")
+    # Variabili di esempio per promemoria_appuntamento: [nome, giorno, ora]
+    variables = data.get("variables", ["Cliente", "domani", "10:00"])
     if not phone:
         return {"ok": False, "message": "Numero di telefono mancante"}
     if not WA_TOKEN:
         return {"ok": False, "message": "WHATSAPP_TOKEN non configurato nelle variabili d'ambiente di Render"}
-    result = await send_whatsapp_template(phone, template_name, variables=[], lang=language_code)
+    result = await send_whatsapp_template(phone, template_name, variables=variables, lang=language_code)
     if result.get("sent"):
         return {"ok": True,
                 "message": f"✅ Template '{template_name}' inviato! Message ID: {result.get('message_id', 'ok')}"}
