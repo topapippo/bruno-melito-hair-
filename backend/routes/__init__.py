@@ -18,6 +18,7 @@ from routes.waitlist import router as waitlist_router
 from routes.social import router as social_router
 from routes.website_trends import router as website_trends_router
 from routes.settings import router as settings_router
+from routes.fix_stats import router as fix_router
 
 all_routers = [
     auth_router,
@@ -40,4 +41,5 @@ all_routers = [
     social_router,
     website_trends_router,
     settings_router,
+    fix_router,
 ]
