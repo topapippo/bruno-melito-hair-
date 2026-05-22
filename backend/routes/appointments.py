@@ -61,14 +61,25 @@ async def create_appointment(data: AppointmentCreate, current_user: dict = Depen
     }
     await db.appointments.insert_one(appointment_doc)
 
-    # Notifiche
+    # --- INVIO NOTIFICHE AUTOMATICHE ---
     try:
+        # 1. Notifica a Bruno
         service_names = ", ".join([s["name"] for s in services])
         notif_msg = f"🔔 NUOVA PRENOTAZIONE!\n👤 Cliente: {client_name}\n📅 Data: {data.date}\n⏰ Ora: {data.time}\n✂️ Servizi: {service_names}\n\nhttps://brunomelitohair.it/admin"
         await send_whatsapp_cloud(BRUNO_PHONE, notif_msg)
+
+        # 2. Notifica alla Cliente (con formattazione data italiana)
         if client_phone:
-            await send_whatsapp_template(client_phone, "conferma_prenotazione", [client_name, data.date, data.time])
-    except: pass
+            try:
+                # Trasformiamo 2026-05-22 in 22/05/2026
+                d_parts = data.date.split('-')
+                date_it = f"{d_parts[2]}/{d_parts[1]}/{d_parts[0]}" if len(d_parts) == 3 else data.date
+                await send_whatsapp_template(client_phone, "conferma_prenotazione", [client_name, date_it, data.time])
+                logger.info(f"Conferma inviata a {client_name} ({client_phone})")
+            except Exception as inner:
+                logger.error(f"Errore invio template cliente: {inner}")
+    except Exception as e:
+        logger.error(f"Errore generale notifiche: {e}")
 
     return AppointmentResponse(**{k: v for k, v in appointment_doc.items() if k != "user_id"})
 
@@ -89,10 +100,9 @@ async def checkout_appointment(appointment_id: str, data: dict, current_user: di
     await db.payments.insert_one(payment_doc)
     await db.appointments.update_one({"id": appointment_id}, {"$set": {"status": "completed"}})
     
-    # Notifica Ringraziamento a Cliente
+    # Notifica Ringraziamento
     if apt.get("client_phone"):
         try:
-            # Modello ipotetico: ringraziamento_visita [Nome, LinkReview]
             review_link = current_user.get("google_review_link", "https://brunomelitohair.it")
             await send_whatsapp_template(apt["client_phone"], "ringraziamento_visita", [apt["client_name"], review_link])
         except: pass
