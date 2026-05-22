@@ -79,7 +79,7 @@ async def create_appointment(data: AppointmentCreate, current_user: dict = Depen
     try:
         service_names = ", ".join([s["name"] for s in services])
         notif_msg = f"🔔 NUOVA PRENOTAZIONE!\n👤 Cliente: {client_name}\n📅 Data: {data.date}\n⏰ Ora: {data.time}\n✂️ Servizi: {service_names}\n\nGestiscila qui: https://brunomelitohair.it/admin"
-        await send_whatsapp(BRUNO_PHONE, notif_msg, current_user)
+        await send_whatsapp_cloud(BRUNO_PHONE, notif_msg)
     except Exception as e:
         logger.error(f"Errore notifica Bruno: {e}")
 
