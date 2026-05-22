@@ -13,6 +13,11 @@ router = APIRouter()
 BACKEND_URL = os.environ.get("BACKEND_URL", "https://bruno-melito-hair-2497.onrender.com")
 
 _WINGMAN_DEFAULTS = [
+    {'type': 'weekend', 'title': 'Posti Volanti!', 'text': "Chi dorme non piglia... il look perfetto! ✂️✨
+Domani è sabato e abbiamo gli ultimissimi posti disponibili per trasformare i tuoi capelli in un capolavoro. 
+
+Non aspettare lunedì per sentirti bellissima. Prenota ora l'ultimo posto rimasto! 👇
+👉 https://brunomelitohair.it", 'image_url': 'https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/04492e144007b03d47cea802da126e127774cff08c2b44b6919c6640989d519a.png'},
     {
         "type": "divertente",
         "title": "Il Momento di Gloria",
