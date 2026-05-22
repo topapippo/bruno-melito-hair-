@@ -6,18 +6,20 @@ import os
 import uuid
 import re
 import random
+import base64
 from datetime import datetime, timezone
 
 router = APIRouter()
 
-BACKEND_URL = os.environ.get("BACKEND_URL", "https://bruno-melito-hair-2497.onrender.com")
+IMGBB_API_KEY = os.environ.get("IMGBB_API_KEY")
 
 _WINGMAN_DEFAULTS = [
-    {'type': 'weekend', 'title': 'Posti Volanti!', 'text': "Chi dorme non piglia... il look perfetto! ✂️✨
-Domani è sabato e abbiamo gli ultimissimi posti disponibili per trasformare i tuoi capelli in un capolavoro. 
-
-Non aspettare lunedì per sentirti bellissima. Prenota ora l'ultimo posto rimasto! 👇
-👉 https://brunomelitohair.it", 'image_url': 'https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/04492e144007b03d47cea802da126e127774cff08c2b44b6919c6640989d519a.png'},
+    {
+        "type": "weekend",
+        "title": "Posti Volanti!",
+        "text": "Chi dorme non piglia... il look perfetto! ✂️✨\nDomani è sabato e abbiamo gli ultimissimi posti disponibili per trasformare i tuoi capelli in un capolavoro. \n\nNon aspettare lunedì per sentirti bellissima. Prenota ora l'ultimo posto rimasto! 👇\n👉 https://brunomelitohair.it",
+        "image_url": "https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/04492e144007b03d47cea802da126e127774cff08c2b44b6919c6640989d519a.png"
+    },
     {
         "type": "divertente",
         "title": "Il Momento di Gloria",
@@ -110,5 +112,26 @@ async def publish_via_make(data: dict, current_user: dict = Depends(get_current_
 
 @router.post("/social/upload-image")
 async def upload_image(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
-    # Fallback semplice: ritorna un URL finto o usa un servizio se configurato
-    return {"url": "https://via.placeholder.com/800"}
+    if not IMGBB_API_KEY:
+        raise HTTPException(status_code=500, detail="ImgBB API Key non configurata sul server (Render)")
+    
+    try:
+        contents = await file.read()
+        encoded_image = base64.b64encode(contents).decode("utf-8")
+        
+        resp = requests.post(
+            "https://api.imgbb.com/1/upload",
+            data={
+                "key": IMGBB_API_KEY,
+                "image": encoded_image
+            },
+            timeout=30
+        )
+        data = resp.json()
+        
+        if not data.get("success"):
+            raise Exception(data.get("error", {}).get("message", "Upload fallito"))
+            
+        return {"url": data["data"]["url"]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Errore caricamento immagine: {str(e)}")
