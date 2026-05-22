@@ -7,6 +7,8 @@ import uuid
 import re
 import random
 import base64
+import io
+from PIL import Image
 from datetime import datetime, timezone
 
 router = APIRouter()
@@ -117,7 +119,27 @@ async def upload_image(file: UploadFile = File(...), current_user: dict = Depend
     
     try:
         contents = await file.read()
-        encoded_image = base64.b64encode(contents).decode("utf-8")
+        # Elaborazione immagine con Pillow per renderla quadrata (1:1)
+        img = Image.open(io.BytesIO(contents))
+        
+        width, height = img.size
+        new_side = min(width, height)
+        left = (width - new_side) / 2
+        top = (height - new_side) / 2
+        right = (width + new_side) / 2
+        bottom = (height + new_side) / 2
+        
+        img = img.crop((left, top, right, bottom))
+        img = img.resize((1080, 1080), Image.Resampling.LANCZOS)
+        
+        # Converti di nuovo in byte
+        img_byte_arr = io.BytesIO()
+        # Salva in formato originale o JPEG come fallback
+        format_to_save = img.format if img.format else "JPEG"
+        img.save(img_byte_arr, format=format_to_save)
+        final_contents = img_byte_arr.getvalue()
+        
+        encoded_image = base64.b64encode(final_contents).decode("utf-8")
         
         resp = requests.post(
             "https://api.imgbb.com/1/upload",
