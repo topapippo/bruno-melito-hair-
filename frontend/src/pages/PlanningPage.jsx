@@ -191,6 +191,7 @@ export default function PlanningPage() {
       scrollRef.current.scrollTop = slotIndex * 48;
     }
   }, [loading, selectedDate]);
+  const fetchStaticData = async () => {
     try {
       const [operatorsRes, clientsRes, servicesRes, websiteRes] = await Promise.all([
         api.get(`${API}/operators`),
