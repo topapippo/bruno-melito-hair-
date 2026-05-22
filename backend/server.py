@@ -14,6 +14,7 @@ from slowapi.middleware import SlowAPIMiddleware
 
 from database import client as mongo_client, db
 from routes import all_routers
+from routes.fix_stats import router as fix_router
 
 limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
 
