@@ -6,7 +6,10 @@ import uuid
 from database import db
 from auth import get_current_user
 from models import OperatorCreate, OperatorResponse, OperatorUpdate
-from routes.public import _invalidate_website_cache
+def _invalidate_website_cache():
+    import routes.public as _pub
+    _pub._website_cache = None
+    _pub._website_cache_ts = None
 
 router = APIRouter()
 
