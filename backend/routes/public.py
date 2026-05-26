@@ -294,6 +294,7 @@ async def _send_booking_wa(client_phone, client_name, date_it, time, services_na
 
 
 @router.post("/public/booking")
+@limiter.limit("10/minute")
 async def create_public_booking(request: Request, data: PublicBookingRequest, background_tasks: BackgroundTasks):
     import asyncio as _asyncio
     from datetime import datetime as dt
@@ -422,6 +423,20 @@ async def create_public_booking(request: Request, data: PublicBookingRequest, ba
     elif not assigned_operator_id and all_operators:
         first_op = all_operators[0]
         assigned_operator_id, operator_name, operator_color = first_op["id"], first_op["name"], first_op.get("color")
+
+    # Doppio controllo anti-race: ri-verifica lo slot subito prima dell'insert
+    # (chiude la finestra critica tra il check iniziale e il salvataggio)
+    if assigned_operator_id:
+        recent_conflict = await db.appointments.find_one(
+            {"user_id": user_id, "date": data.date, "time": data.time,
+             "operator_id": assigned_operator_id, "status": {"$ne": "cancelled"}},
+            {"_id": 0, "id": 1}
+        )
+        if recent_conflict:
+            raise HTTPException(status_code=409, detail={
+                "message": "Questo orario è stato appena prenotato da qualcun altro. Scegli un altro orario.",
+                "conflict": True, "available_operators": [], "alternative_slots": []
+            })
 
     appointment_id = str(uuid.uuid4())
     booking_token = str(uuid.uuid4())

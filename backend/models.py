@@ -359,6 +359,37 @@ class PublicBookingRequest(BaseModel):
             raise ValueError('Il formato dell\'orario deve essere HH:MM')
         return v
 
+    @field_validator('client_name')
+    @classmethod
+    def validate_client_name(cls, v):
+        v = (v or "").strip()
+        if len(v) < 2:
+            raise ValueError('Nome troppo corto (minimo 2 caratteri)')
+        if len(v) > 80:
+            raise ValueError('Nome troppo lungo (massimo 80 caratteri)')
+        if '<' in v or '>' in v or 'http' in v.lower():
+            raise ValueError('Nome non valido')
+        return v
+
+    @field_validator('client_phone')
+    @classmethod
+    def validate_client_phone(cls, v):
+        v = (v or "").strip()
+        digits = sum(1 for c in v if c.isdigit())
+        if digits < 8 or digits > 15:
+            raise ValueError('Numero di telefono non valido')
+        import re as _re
+        if not _re.match(r'^[\d\s\+\-\(\)]+$', v):
+            raise ValueError('Numero di telefono contiene caratteri non validi')
+        return v
+
+    @field_validator('notes')
+    @classmethod
+    def validate_notes(cls, v):
+        if v and len(v) > 500:
+            return v[:500]
+        return v
+
 
 # ============== CHECKOUT ==============
 

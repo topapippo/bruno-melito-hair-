@@ -5,6 +5,7 @@ from datetime import datetime, timezone, timedelta
 import asyncio
 import io
 import os
+import logging
 
 from database import db
 from auth import get_current_user
@@ -12,6 +13,7 @@ from models import SettingsUpdate, UserResponse
 from utils import twilio_client, TWILIO_PHONE_NUMBER, normalize_phone_wa
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 # ============== DASHBOARD ==============
@@ -770,7 +772,7 @@ async def register_cloud_api_number(data: dict, current_user: dict = Depends(get
             rjson = resp.json()
         except Exception:
             pass
-        print(f"[WA REGISTER] phone_id={WA_PHONE_NUMBER_ID} status={resp.status_code} resp={rjson}", flush=True)
+        logger.info(f"[WA REGISTER] phone_id={WA_PHONE_NUMBER_ID} status={resp.status_code} resp={rjson}")
 
         if resp.status_code == 200 and rjson.get("success"):
             return {"ok": True,

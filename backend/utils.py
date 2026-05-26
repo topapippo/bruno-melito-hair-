@@ -3,7 +3,10 @@ import asyncio
 import requests as _req
 import re
 import uuid as _uuid
+import logging
 from datetime import datetime, timezone
+
+logger = logging.getLogger(__name__)
 
 # --- CONFIGURAZIONI TWILIO ---
 TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID')
@@ -188,7 +191,7 @@ async def send_automatic_message(
         if result.get("sent"):
             return result
         last_error = result.get("error")
-        print(f"[WA AUTO] Template '{template_name}' fallito ({last_error}) → tentativo fallback")
+        logger.warning(f"[WA AUTO] Template '{template_name}' fallito ({last_error}) → tentativo fallback")
 
     # Se non c'è testo di fallback, non possiamo proseguire
     if not fallback_text:
@@ -202,13 +205,13 @@ async def send_automatic_message(
     result = await _send_ultramsg(phone, fallback_text, user)
     if result.get("sent"):
         return result
-    print(f"[WA AUTO] UltraMsg fallito: {result.get('error')}")
+    logger.warning(f"[WA AUTO] UltraMsg fallito: {result.get('error')}")
 
     # 3. Green API
     result = await _send_greenapi(phone, fallback_text, user)
     if result.get("sent"):
         return result
-    print(f"[WA AUTO] Green API fallito: {result.get('error')}")
+    logger.warning(f"[WA AUTO] Green API fallito: {result.get('error')}")
 
     # 4. Ultima ratio: Cloud API testo libero (funziona solo entro 24h da ultimo msg ricevuto)
     result = await send_whatsapp_cloud(phone, fallback_text + WA_FOOTER)

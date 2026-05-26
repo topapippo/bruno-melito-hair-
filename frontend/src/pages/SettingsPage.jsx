@@ -266,7 +266,6 @@ export default function SettingsPage() {
     try {
       const res = await api.post(`${API}/settings/cloud-api-register-number`, { pin });
       setCloudApiSendTest(p => ({ ...p, result: res.data, loading: false }));
-      console.log('[Cloud API Register] response:', res.data);
     } catch (e) {
       setCloudApiSendTest(p => ({ ...p, result: { ok: false, message: 'Errore server: ' + (e?.response?.data?.detail || e.message) }, loading: false }));
     }
