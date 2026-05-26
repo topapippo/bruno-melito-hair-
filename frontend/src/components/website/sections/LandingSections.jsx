@@ -143,33 +143,83 @@ export function SalonSection({ salonPhotos, T }) {
 
 export function AboutSection({ config, salonPhotos, T }) {
   return (
-    <section className="py-20 sm:py-28" style={{ background: '#0d0d16' }}>
-      <div className="max-w-6xl mx-auto px-4">
-        <div className={`grid grid-cols-1 ${salonPhotos.length > 0 ? 'lg:grid-cols-2' : ''} gap-12 items-center`}>
-          {salonPhotos.length > 0 && (
-            <AnimatedSection>
-              <div className="rounded-3xl overflow-hidden h-80 lg:h-96 group" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
-                <img src={getMediaUrl(salonPhotos[0]?.image_url)} alt="Il nostro salone" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />
+    <section className='py-24 sm:py-36 relative overflow-hidden' style={{ background: '#020205' }}>
+      {/* Editorial Watermark */}
+      <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none select-none z-0 opacity-[0.03]'>
+        <h2 style={{ fontFamily: T.fontDisplay, fontSize: '35vw', fontWeight: 900, lineHeight: 1, color: '#fff' }}>1983</h2>
+      </div>
+
+      <div className='max-w-7xl mx-auto px-6 relative z-10'>
+        <div className='grid grid-cols-1 lg:grid-cols-12 gap-16 items-center'>
+          
+          {/* Visual Column */}
+          <div className='lg:col-span-5 relative'>
+            {salonPhotos.length > 0 && (
+              <AnimatedSection>
+                <div className='relative'>
+                  <div className='absolute -inset-4 border border-white/10 rounded-[3rem] z-0' />
+                  <div className='rounded-[3.5rem] overflow-hidden aspect-[4/5] lg:aspect-auto lg:h-[650px] shadow-2xl relative z-10 border border-white/5'>
+                    <img src={getMediaUrl(salonPhotos[0]?.image_url)} alt='Bruno Melito' className='w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105' />
+                    <div className='absolute inset-0 bg-gradient-to-t from-black/60 to-transparent' />
+                    <div className='absolute bottom-8 left-8'>
+                       <p className='text-white font-black text-xs uppercase tracking-[0.4em] opacity-60'>Tradizione & Futuro</p>
+                    </div>
+                  </div>
+                  {/* Floating mirror element */}
+                  <div className='absolute -bottom-6 -right-6 w-32 h-32 rounded-full bg-white/5 backdrop-blur-3xl border border-white/10 flex items-center justify-center z-20 shadow-2xl hidden sm:flex'>
+                     <span className='text-white font-black text-xs uppercase tracking-widest text-center'>Since<br/>1983</span>
+                  </div>
+                </div>
+              </AnimatedSection>
+            )}
+          </div>
+
+          {/* Content Column */}
+          <div className='lg:col-span-7'>
+            <AnimatedSection delay={0.2}>
+              <div className='max-w-2xl'>
+                <p className='text-[10px] font-black tracking-[0.6em] uppercase mb-8 text-purple-400'>La Nostra Storia</p>
+                
+                <h2 className='text-4xl sm:text-7xl font-black mb-10 text-white leading-[0.9] uppercase italic' style={{ fontFamily: T.fontDisplay }}>
+                  {config.about_title || 'Dal 1983 con Passione'}<br />
+                  <span className='text-transparent' style={{ WebkitTextStroke: '1px rgba(255,255,255,0.4)' }}>E Stile</span>
+                </h2>
+
+                <div className='space-y-8'>
+                  <p className='text-xl sm:text-2xl text-white/80 font-medium leading-relaxed italic border-l-4 border-purple-600 pl-8 py-2' style={{ fontFamily: T.fontDisplay }}>
+                    {config.about_text || 'Oltre 40 anni di eccellenza nell'hair styling d'alta moda.'}
+                  </p>
+                  
+                  <p className='text-white/40 text-base leading-relaxed pl-9'>
+                    {config.about_text_2 || 'Abbiamo introdotto una nuova linea di prodotti altamente curativi, di ultima generazione: senza parabeni, solfati e sale. Le nostre colorazioni sono senza ammoniaca, arricchite con cheratina e seta.'}
+                  </p>
+                </div>
+
+                <div className='grid grid-cols-1 sm:grid-cols-2 gap-6 mt-16 pl-9'>
+                   <div className='group flex flex-col gap-4 p-8 rounded-[2.5rem] bg-white/5 border border-white/10 hover:bg-purple-600 transition-all duration-500 cursor-default'>
+                      <div className='w-12 h-12 rounded-2xl bg-purple-500/20 flex items-center justify-center group-hover:bg-white transition-colors'>
+                         <CheckCircle className='text-purple-400 group-hover:text-purple-600' />
+                      </div>
+                      <h3 className='text-white font-black uppercase text-xs tracking-widest'>Artigianato</h3>
+                      <p className='text-white/30 text-xs font-bold leading-tight group-hover:text-white/80'>Tagli sartoriali eseguiti con precisione assoluta.</p>
+                   </div>
+                   <div className='group flex flex-col gap-4 p-8 rounded-[2.5rem] bg-white/5 border border-white/10 hover:bg-blue-600 transition-all duration-500 cursor-default'>
+                      <div className='w-12 h-12 rounded-2xl bg-blue-500/20 flex items-center justify-center group-hover:bg-white transition-colors'>
+                         <Sparkles className='text-blue-400 group-hover:text-blue-600' />
+                      </div>
+                      <h3 className='text-white font-black uppercase text-xs tracking-widest'>Innovazione</h3>
+                      <p className='text-white/30 text-xs font-bold leading-tight group-hover:text-white/80'>Prodotti di lusso e tecnologie di colorazione avanzate.</p>
+                   </div>
+                </div>
               </div>
             </AnimatedSection>
-          )}
-          <AnimatedSection delay={0.2}>
-            <div>
-              <p className="font-bold text-xs tracking-[0.35em] uppercase mb-3" style={{ color: 'rgba(255,255,255,0.35)' }}>Chi Siamo</p>
-              <h2 className="text-3xl sm:text-4xl font-black mb-6 text-white" style={{ fontFamily: "'Fredoka', sans-serif" }}>{config.about_title || 'Passione e Stile dal 1983'}</h2>
-              {config.about_text && <p className="leading-relaxed mb-6 text-white/55">{config.about_text}</p>}
-              <div className="flex items-center gap-3 bg-white/5 p-4 rounded-2xl border border-white/10 inline-flex mt-6">
-                 <CheckCircle className="text-purple-400" />
-                 <span className="text-white font-bold text-sm">Esperienza e Professionalità</span>
-              </div>
-            </div>
-          </AnimatedSection>
+          </div>
+          
         </div>
       </div>
     </section>
   );
 }
-
 export function PromotionsSection({ publicPromos, setShowBooking, bookPromo, T }) {
   return (
     <section className="py-20 sm:py-28" style={{ background: '#0a0a0f' }}>
