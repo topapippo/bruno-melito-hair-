@@ -93,8 +93,8 @@ async def create_appointment(data: AppointmentCreate, current_user: dict = Depen
             )
             wa_result = await send_automatic_message(
                 client_phone,
-                template_name="promemoria_bruno_melito_hair_it",
-                template_vars=[date_it, data.time],
+                template_name="promemoria_appuntamento",
+                template_vars=[client_name, date_it, data.time],
                 fallback_text=client_fallback,
                 user=current_user,
             )

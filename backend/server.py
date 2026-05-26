@@ -192,8 +192,8 @@ async def lifespan(app: FastAPI):
                         )
                         result = await send_automatic_message(
                             client_phone,
-                            template_name="promemoria_bruno_melito_hair_it",
-                            template_vars=[tomorrow_it, apt['time']],
+                            template_name="promemoria_appuntamento",
+                            template_vars=[apt.get('client_name', 'Cliente'), tomorrow_it, apt['time']],
                             fallback_text=fallback_msg,
                             user=user,
                         )

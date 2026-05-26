@@ -228,29 +228,33 @@ async def send_whatsapp(phone: str, message: str, user: dict = None) -> dict:
     usa il template Meta approvato. Altrimenti usa il testo libero (con fallback)."""
     m_lower = message.lower()
 
+    # Estrai nome cliente, data, ora dal messaggio (best effort) per riempire i parametri template
+    nome_cliente = "Cliente"
+    m_nome = re.search(r'Ciao\s+([^!,\n]+)', message)
+    if m_nome:
+        nome_cliente = m_nome.group(1).strip()[:40]
+    ora = re.search(r'(\d{2}:\d{2})', message)
+    ora_str = ora.group(1) if ora else "da concordare"
+    data_str = "prossimamente"
+    data_match = re.search(r'(\d{2}/\d{2}/\d{4})', message)
+    if data_match: data_str = data_match.group(1)
+
     # Riconosce promemoria dell'agenda
     if "appuntamento" in m_lower or "ti ricordiamo" in m_lower or "domani alle" in m_lower:
-        ora = re.search(r'(\d{2}:\d{2})', message)
-        ora_str = ora.group(1) if ora else "da concordare"
-        data_str = "domani"
-        data_match = re.search(r'(\d{2}/\d{2}/\d{4})', message)
-        if data_match: data_str = data_match.group(1)
         return await send_automatic_message(
             phone,
-            template_name="promemoria_bruno_melito_hair_it",
-            template_vars=[data_str, ora_str],
+            template_name="promemoria_appuntamento",
+            template_vars=[nome_cliente, data_str, ora_str],
             fallback_text=message,
             user=user,
         )
 
     # Riconosce conferme prenotazione (sia "confermato" che "confermata")
     if "confermat" in m_lower and "prenotazione" in m_lower:
-        data = re.search(r'(\d{2}/\d{2}/\d{4})', message)
-        ora = re.search(r'(\d{2}:\d{2})', message)
         return await send_automatic_message(
             phone,
-            template_name="promemoria_bruno_melito_hair_it",
-            template_vars=[data.group(1) if data else "prossimamente", ora.group(1) if ora else ""],
+            template_name="promemoria_appuntamento",
+            template_vars=[nome_cliente, data_str, ora_str],
             fallback_text=message,
             user=user,
         )

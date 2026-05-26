@@ -278,8 +278,8 @@ async def _send_booking_wa(client_phone, client_name, date_it, time, services_na
         )
         result = await send_automatic_message(
             client_phone,
-            template_name="promemoria_bruno_melito_hair_it",
-            template_vars=[date_it, time],
+            template_name="promemoria_appuntamento",
+            template_vars=[client_name, date_it, time],
             fallback_text=fallback_msg,
             user=user,
         )
