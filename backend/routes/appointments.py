@@ -127,7 +127,12 @@ async def checkout_appointment(appointment_id: str, data: dict, current_user: di
     # Notifica Ringraziamento (template + fallback UltraMsg/Green API)
     if apt.get("client_phone"):
         try:
-            review_link = current_user.get("google_review_link", "https://brunomelitohair.it")
+            # Fallback robusto: se il campo google_review_link e' vuoto/non impostato,
+            # usa una ricerca Google del salone (l'utente puo' lasciare comunque la recensione da li')
+            review_link = (
+                current_user.get("google_review_link")
+                or "https://www.google.com/search?q=Bruno+Melito+Hair+Stylist+Santa+Maria+Capua+Vetere"
+            )
             ringr_text = (
                 f"Ciao {apt['client_name']}! Grazie per essere venuta da Bruno Melito Hair. 💇\n\n"
                 f"Se ti è piaciuto, ci aiuteresti tantissimo lasciando una recensione qui:\n{review_link}\n\n"
