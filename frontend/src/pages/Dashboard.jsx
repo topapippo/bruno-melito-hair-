@@ -528,12 +528,10 @@ export default function Dashboard() {
         {/* ══════════════════════════════════════════════════════════════
             KPI CARDS — 5 grandi card gradient
         ══════════════════════════════════════════════════════════════ */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 stagger-in">
+        <div className="grid grid-cols-3 gap-3 stagger-in">
           {[
             { title: "Appuntamenti Oggi", value: stats?.today_appointments_count || 0,    icon: Calendar,   from: '#E8477C', to: '#F49AB3', suffix: '',  path: '/appointments' },
             { title: "Clienti Totali",    value: stats?.total_clients || 0,                icon: Users,      from: '#2EC4B6', to: '#5EDECF', suffix: '',  path: '/clients' },
-            { title: "Incasso Mensile",   value: (stats?.monthly_revenue || 0).toFixed(0), icon: Euro,       from: '#F59E0B', to: '#FCD34D', prefix: '€', sub: `${stats?.monthly_appointments||0} appuntamenti`, path: '/incassi' },
-            { title: "Incasso Annuale",   value: (stats?.yearly_revenue || 0).toFixed(0),  icon: TrendingUp, from: '#3B82F6', to: '#93C5FD', prefix: '€', sub: `${stats?.yearly_appointments||0} appuntamenti`,  path: '/incassi' },
             { title: "Prossimi 7 Giorni", value: stats?.upcoming_appointments?.length || 0, icon: Zap,       from: '#8B5CF6', to: '#C4B5FD', suffix: '',  path: '/week' },
           ].map((s, i) => (
             <button
