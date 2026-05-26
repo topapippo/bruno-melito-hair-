@@ -6,7 +6,7 @@ from datetime import datetime, timezone, timedelta
 from auth import get_current_user
 from database import db
 from models import AppointmentCreate, AppointmentResponse
-from utils import calculate_end_time, send_whatsapp, send_whatsapp_cloud, send_whatsapp_template
+from utils import calculate_end_time, send_whatsapp, send_whatsapp_cloud, send_whatsapp_template, send_automatic_message
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -63,21 +63,45 @@ async def create_appointment(data: AppointmentCreate, current_user: dict = Depen
 
     # --- INVIO NOTIFICHE AUTOMATICHE ---
     try:
-        # 1. Notifica a Bruno
         service_names = ", ".join([s["name"] for s in services])
-        notif_msg = f"🔔 NUOVA PRENOTAZIONE!\n👤 Cliente: {client_name}\n📅 Data: {data.date}\n⏰ Ora: {data.time}\n✂️ Servizi: {service_names}\n\nhttps://brunomelitohair.it/admin"
-        await send_whatsapp_cloud(BRUNO_PHONE, notif_msg)
+        d_parts = data.date.split('-')
+        date_it = f"{d_parts[2]}/{d_parts[1]}/{d_parts[0]}" if len(d_parts) == 3 else data.date
 
-        # 2. Notifica alla Cliente (con formattazione data italiana)
+        # 1. Notifica a Bruno (testo libero — fallback chain UltraMsg/Green API)
+        notif_msg = (
+            f"🔔 NUOVA PRENOTAZIONE!\n"
+            f"👤 Cliente: {client_name}\n"
+            f"📅 Data: {date_it}\n"
+            f"⏰ Ora: {data.time}\n"
+            f"✂️ Servizi: {service_names}\n\n"
+            f"https://brunomelitohair.it/admin"
+        )
+        await send_automatic_message(
+            BRUNO_PHONE,
+            template_name=None,
+            fallback_text=notif_msg,
+            user=current_user,
+        )
+
+        # 2. Notifica alla Cliente: template promemoria approvato + fallback UltraMsg/Green API
         if client_phone:
-            try:
-                # Trasformiamo 2026-05-22 in 22/05/2026
-                d_parts = data.date.split('-')
-                date_it = f"{d_parts[2]}/{d_parts[1]}/{d_parts[0]}" if len(d_parts) == 3 else data.date
-                await send_whatsapp_template(client_phone, "conferma_prenotazione", [client_name, date_it, data.time])
-                logger.info(f"Conferma inviata a {client_name} ({client_phone})")
-            except Exception as inner:
-                logger.error(f"Errore invio template cliente: {inner}")
+            client_fallback = (
+                f"Ciao {client_name}! ✅ Prenotazione confermata da Bruno Melito Hair:\n\n"
+                f"📅 {date_it} alle {data.time}\n"
+                f"✂️ {service_names}\n\n"
+                f"Ti aspettiamo! Per modifiche scrivici al 3397833526. 💇"
+            )
+            wa_result = await send_automatic_message(
+                client_phone,
+                template_name="promemoria_bruno_melito_hair_it",
+                template_vars=[date_it, data.time],
+                fallback_text=client_fallback,
+                user=current_user,
+            )
+            if wa_result.get("sent"):
+                logger.info(f"Conferma inviata a {client_name} ({client_phone}) via {wa_result.get('method')}")
+            else:
+                logger.error(f"Conferma FALLITA a {client_phone}: {wa_result.get('error')}")
     except Exception as e:
         logger.error(f"Errore generale notifiche: {e}")
 
@@ -100,12 +124,24 @@ async def checkout_appointment(appointment_id: str, data: dict, current_user: di
     await db.payments.insert_one(payment_doc)
     await db.appointments.update_one({"id": appointment_id}, {"$set": {"status": "completed"}})
     
-    # Notifica Ringraziamento
+    # Notifica Ringraziamento (template + fallback UltraMsg/Green API)
     if apt.get("client_phone"):
         try:
             review_link = current_user.get("google_review_link", "https://brunomelitohair.it")
-            await send_whatsapp_template(apt["client_phone"], "ringraziamento_visita", [apt["client_name"], review_link])
-        except: pass
+            ringr_text = (
+                f"Ciao {apt['client_name']}! Grazie per essere venuta da Bruno Melito Hair. 💇\n\n"
+                f"Se ti è piaciuto, ci aiuteresti tantissimo lasciando una recensione qui:\n{review_link}\n\n"
+                f"A presto!"
+            )
+            await send_automatic_message(
+                apt["client_phone"],
+                template_name="ringraziamento_visita",
+                template_vars=[apt["client_name"], review_link],
+                fallback_text=ringr_text,
+                user=current_user,
+            )
+        except Exception as e:
+            logger.error(f"Errore ringraziamento checkout: {e}")
         
     return {"status": "ok", "payment_id": payment_doc["id"]}
 

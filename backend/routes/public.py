@@ -267,8 +267,8 @@ async def _send_booking_wa(client_phone, client_name, date_it, time, services_na
     if not client_phone:
         return False
     try:
-        from utils import send_whatsapp
-        msg = (
+        from utils import send_automatic_message
+        fallback_msg = (
             f"✅ Prenotazione confermata!\n\n"
             f"Ciao {client_name}! La tua prenotazione da *{salon_name}* è confermata:\n\n"
             f"📅 {date_it} alle {time}\n"
@@ -276,9 +276,15 @@ async def _send_booking_wa(client_phone, client_name, date_it, time, services_na
             f"🔖 Codice: {appointment_id[:8].upper()}\n\n"
             f"Per disdire o modificare rispondi a questo messaggio. A presto! 💇"
         )
-        result = await send_whatsapp(client_phone, msg, user)
+        result = await send_automatic_message(
+            client_phone,
+            template_name="promemoria_bruno_melito_hair_it",
+            template_vars=[date_it, time],
+            fallback_text=fallback_msg,
+            user=user,
+        )
         if result.get("sent"):
-            logger.info(f"WA conferma prenotazione inviata a {client_phone}")
+            logger.info(f"WA conferma prenotazione inviata a {client_phone} via {result.get('method')}")
             return True
         logger.warning(f"WA conferma FALLITA {client_phone}: {result.get('error')}")
         return False

@@ -195,6 +195,7 @@ export default function SettingsPage() {
   const [cloudApiTest, setCloudApiTest] = useState(null);
   const [testingCloudApi, setTestingCloudApi] = useState(false);
   const [cloudApiSendTest, setCloudApiSendTest] = useState({ phone: '', result: null, loading: false });
+  const [templatesList, setTemplatesList] = useState({ loading: false, data: null, error: null });
   const [waForm, setWaForm] = useState({ green_api_instance_id: '', green_api_token: '' });
   const [savingWa, setSavingWa] = useState(false);
   const [waTest, setWaTest] = useState(null);
@@ -268,6 +269,20 @@ export default function SettingsPage() {
       console.log('[Cloud API Register] response:', res.data);
     } catch (e) {
       setCloudApiSendTest(p => ({ ...p, result: { ok: false, message: 'Errore server: ' + (e?.response?.data?.detail || e.message) }, loading: false }));
+    }
+  };
+
+  const fetchCloudApiTemplates = async () => {
+    setTemplatesList({ loading: true, data: null, error: null });
+    try {
+      const res = await api.get(`${API}/settings/cloud-api-templates`);
+      if (res.data?.ok) {
+        setTemplatesList({ loading: false, data: res.data, error: null });
+      } else {
+        setTemplatesList({ loading: false, data: null, error: res.data?.error || 'Errore Meta' });
+      }
+    } catch (e) {
+      setTemplatesList({ loading: false, data: null, error: e?.response?.data?.detail || e.message });
     }
   };
 
@@ -1098,6 +1113,30 @@ export default function SettingsPage() {
                   🔐 Registra numero con PIN (per errore 133010)
                 </Button>
                 <p className="text-xs text-[#7A5A4D] mt-1">Usa solo se la UI Meta non ti fa impostare il PIN. Annota il PIN scelto — ti servirà se rigeneri il token.</p>
+              </div>
+              <div className="border-t border-green-100 pt-2 mt-2">
+                <Button onClick={fetchCloudApiTemplates} disabled={templatesList.loading} variant="outline" className="border-blue-400 text-blue-700 hover:bg-blue-50 w-full" title="Mostra tutti i template registrati su Meta (con stato approvazione)">
+                  {templatesList.loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                  📋 Lista template Meta (verifica approvati)
+                </Button>
+                <p className="text-xs text-[#7A5A4D] mt-1">Richiede env var <code>WHATSAPP_BUSINESS_ACCOUNT_ID</code> su Render. Mostra nome, stato (APPROVED/PENDING/REJECTED), lingua e n° parametri.</p>
+                {templatesList.error && (
+                  <div className="mt-2 p-2 rounded bg-red-50 text-red-700 text-xs border border-red-200">{templatesList.error}</div>
+                )}
+                {templatesList.data && (
+                  <div className="mt-2 space-y-1 max-h-72 overflow-auto">
+                    <p className="text-xs font-semibold text-[#2D1B14]">{templatesList.data.count} template trovati ({templatesList.data.approved?.length || 0} approvati)</p>
+                    {templatesList.data.all?.map((t, i) => (
+                      <div key={i} className={`p-2 rounded border text-xs ${t.status === 'APPROVED' ? 'bg-green-50 border-green-200' : t.status === 'REJECTED' ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'}`}>
+                        <div className="flex justify-between items-center">
+                          <code className="font-bold">{t.name}</code>
+                          <span className="font-medium">{t.status} · {t.language} · {t.param_count} var</span>
+                        </div>
+                        {t.body_text && <div className="text-[10px] text-gray-600 mt-1 line-clamp-2">{t.body_text}</div>}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               {cloudApiSendTest.result && (
                 <>

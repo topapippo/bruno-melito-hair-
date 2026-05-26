@@ -148,7 +148,7 @@ async def lifespan(app: FastAPI):
 
     # Scheduler conferme appuntamenti automatiche (ogni giorno alle 14:00 UTC = 16:00 Italia)
     try:
-        from utils import send_sms_reminder
+        from utils import send_automatic_message
         CONFIRMATION_HOUR_UTC = int(os.environ.get("CONFIRMATION_HOUR_UTC", "14"))
         FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://brunomelitohair.it")
 
@@ -162,10 +162,13 @@ async def lifespan(app: FastAPI):
                 logger.info(f"Prossima conferma automatica in {wait_seconds / 3600:.1f}h")
                 await asyncio.sleep(wait_seconds)
                 try:
-                    tomorrow = (datetime.now(timezone.utc) + timedelta(days=1)).strftime("%Y-%m-%d")
+                    tomorrow_dt = datetime.now(timezone.utc) + timedelta(days=1)
+                    tomorrow = tomorrow_dt.strftime("%Y-%m-%d")
+                    tomorrow_it = tomorrow_dt.strftime("%d/%m/%Y")
+                    # Manda promemoria per TUTTI gli appuntamenti di domani (online + manuali),
+                    # purché non sia già stato inviato
                     appointments = await db.appointments.find(
                         {"date": tomorrow, "status": {"$nin": ["cancelled"]},
-                         "source": "online",
                          "confirmation_sent_at": {"$exists": False}},
                         {"_id": 0}
                     ).to_list(500)
@@ -179,24 +182,29 @@ async def lifespan(app: FastAPI):
                         if not client_phone:
                             continue
                         user = await db.users.find_one({"id": apt["user_id"]}, {"_id": 0})
-                        salon_name = user.get("salon_name", "Salone") if user else "Salone"
                         token = str(uuid.uuid4())
                         confirm_link = f"{FRONTEND_URL}/conferma/{token}"
                         services_text = ", ".join([s["name"] for s in apt.get("services", [])])
-                        message = (
+                        fallback_msg = (
                             f"Ciao {apt.get('client_name', '')}! Ti ricordiamo l'appuntamento di domani "
-                            f"alle {apt['time']} per {services_text}. "
-                            f"Conferma o disdici: {confirm_link}"
+                            f"({tomorrow_it}) alle {apt['time']} per {services_text}.\n\n"
+                            f"Conferma o disdici qui: {confirm_link}"
                         )
-                        result = await send_sms_reminder(client_phone, message, salon_name)
-                        if result.get("success"):
+                        result = await send_automatic_message(
+                            client_phone,
+                            template_name="promemoria_bruno_melito_hair_it",
+                            template_vars=[tomorrow_it, apt['time']],
+                            fallback_text=fallback_msg,
+                            user=user,
+                        )
+                        if result.get("sent"):
                             await db.appointments.update_one(
                                 {"id": apt["id"]},
                                 {"$set": {
                                     "confirmation_token": token,
                                     "confirmation_status": "pending",
                                     "confirmation_sent_at": datetime.now(timezone.utc).isoformat(),
-                                    "sms_sent": True,
+                                    "confirmation_method": result.get("method", "whatsapp"),
                                 }}
                             )
                             sent_count += 1

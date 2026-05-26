@@ -792,6 +792,43 @@ async def register_cloud_api_number(data: dict, current_user: dict = Depends(get
         return {"ok": False, "message": f"Errore di rete: {str(e)}"}
 
 
+@router.get("/settings/cloud-api-templates")
+async def list_cloud_api_templates(current_user: dict = Depends(get_current_user)):
+    """Lista tutti i template WhatsApp registrati su Meta (approvati, in revisione, rifiutati).
+    Richiede env var WHATSAPP_BUSINESS_ACCOUNT_ID (WABA ID) su Render."""
+    import os as _os
+    import asyncio as _asyncio
+    import requests as _req
+    from utils import WA_TOKEN
+    if not WA_TOKEN:
+        return {"ok": False, "error": "WHATSAPP_TOKEN non configurato"}
+    waba_id = _os.environ.get("WHATSAPP_BUSINESS_ACCOUNT_ID", "")
+    if not waba_id:
+        return {"ok": False, "error": "WHATSAPP_BUSINESS_ACCOUNT_ID env var mancante su Render. Recuperalo da Meta Business Manager → WhatsApp → API Setup."}
+    url = f"https://graph.facebook.com/v21.0/{waba_id}/message_templates"
+    headers = {"Authorization": f"Bearer {WA_TOKEN}"}
+    try:
+        resp = await _asyncio.to_thread(_req.get, url, headers=headers, params={"limit": 100}, timeout=15)
+        rjson = resp.json()
+        if resp.status_code != 200:
+            return {"ok": False, "error": rjson.get("error", {}).get("message", "Errore Meta"), "code": resp.status_code, "raw": rjson}
+        templates = []
+        for t in rjson.get("data", []):
+            body_component = next((c for c in t.get("components", []) if c.get("type") == "BODY"), {})
+            templates.append({
+                "name": t.get("name"),
+                "status": t.get("status"),
+                "language": t.get("language"),
+                "category": t.get("category"),
+                "body_text": body_component.get("text", "")[:200],
+                "param_count": body_component.get("text", "").count("{{"),
+            })
+        templates.sort(key=lambda x: (x["status"] != "APPROVED", x["name"]))
+        return {"ok": True, "count": len(templates), "approved": [t for t in templates if t["status"] == "APPROVED"], "all": templates}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
 @router.post("/settings/cloud-api-send-template-test")
 async def test_cloud_api_send_template(data: dict, current_user: dict = Depends(get_current_user)):
     """Invia un template WhatsApp di prova via Meta Cloud API.
