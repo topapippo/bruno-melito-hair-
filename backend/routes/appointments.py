@@ -27,13 +27,27 @@ async def create_appointment(data: AppointmentCreate, current_user: dict = Depen
         else:
             raise HTTPException(status_code=404, detail="Cliente non trovato")
     elif data.client_name:
-        client_name = data.client_name
-        client_phone = data.client_phone or ""
-        client_id = str(uuid.uuid4())
-        await db.clients.insert_one({
-            "id": client_id, "user_id": current_user["id"], "name": client_name, "phone": client_phone,
-            "created_at": datetime.now(timezone.utc).isoformat()
-        })
+        client_name = data.client_name.strip()
+        client_phone = (data.client_phone or "").strip()
+        # Riusa cliente esistente se nome già presente (unique index su user_id+name)
+        existing = await db.clients.find_one(
+            {"user_id": current_user["id"], "name": client_name},
+            {"_id": 0, "id": 1, "phone": 1},
+        )
+        if existing:
+            client_id = existing["id"]
+            # Se il nuovo telefono è valorizzato e il cliente esistente non ne aveva, aggiornalo
+            if client_phone and not existing.get("phone"):
+                await db.clients.update_one(
+                    {"id": client_id, "user_id": current_user["id"]},
+                    {"$set": {"phone": client_phone}},
+                )
+        else:
+            client_id = str(uuid.uuid4())
+            await db.clients.insert_one({
+                "id": client_id, "user_id": current_user["id"], "name": client_name, "phone": client_phone,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
     else:
         raise HTTPException(status_code=400, detail="Specificare un cliente")
 
