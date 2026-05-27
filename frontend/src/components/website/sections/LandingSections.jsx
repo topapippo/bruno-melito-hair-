@@ -25,15 +25,32 @@ function AnimatedSection({ children, className = '', delay = 0 }) {
 export { AnimatedSection };
 
 export function ServicesSection({ servicesRef, landingServiceGroups, cardTemplates, setShowBooking, T }) {
-  const [openLandingCats, setOpenLandingCats] = useState(() => {
-    const firstKey = landingServiceGroups?.orderedKeys?.[0];
-    return firstKey ? { [firstKey]: true } : {};
-  });
+  const [openLandingCats, setOpenLandingCats] = useState({});
   const toggleLCat = (key) => setOpenLandingCats(prev => ({ ...prev, [key]: !prev[key] }));
   const orderedKeys = landingServiceGroups?.orderedKeys || [];
 
   return (
     <section ref={servicesRef} className="py-24 sm:py-32 relative" style={{ background: '#0a0a0f' }}>
+      <style>{`
+        @keyframes catShine {
+          0% { transform: translateX(-150%) skewX(-20deg); opacity: 0; }
+          15% { opacity: 1; }
+          85% { opacity: 1; }
+          100% { transform: translateX(250%) skewX(-20deg); opacity: 0; }
+        }
+        .cat-btn { position: relative; overflow: hidden; transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), filter 0.35s ease, box-shadow 0.35s ease; }
+        .cat-btn::before {
+          content: '';
+          position: absolute; top: 0; left: 0; height: 100%; width: 55%;
+          background: linear-gradient(110deg, transparent 0%, rgba(255,255,255,0.42) 50%, transparent 100%);
+          transform: translateX(-150%) skewX(-20deg);
+          pointer-events: none;
+          mix-blend-mode: screen;
+        }
+        .cat-btn:hover { transform: translateY(-4px); filter: brightness(1.12); box-shadow: 0 18px 44px rgba(0,0,0,0.55); }
+        .cat-btn:hover::before { animation: catShine 0.95s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+        .cat-btn:active { transform: translateY(-1px) scale(0.99); filter: brightness(1.05); }
+      `}</style>
       <div className="max-w-6xl mx-auto px-4">
         <AnimatedSection>
           <div className="w-full text-center mb-16">
@@ -49,8 +66,8 @@ export function ServicesSection({ servicesRef, landingServiceGroups, cardTemplat
               return (
                 <div key={catKey} className="group">
                   <button type="button" onClick={() => toggleLCat(catKey)}
-                    className="w-full flex items-center justify-between px-8 py-6 rounded-3xl font-black text-white text-left transition-all hover:scale-[1.01] active:scale-[0.99] shadow-2xl"
-                    style={{ background: `linear-gradient(135deg, ${catInfo.color}, ${catInfo.color}AA)`, border: '1px solid rgba(255,255,255,0.1)' }}>
+                    className="cat-btn w-full flex items-center justify-between px-8 py-6 rounded-3xl font-black text-white text-left shadow-2xl"
+                    style={{ background: `linear-gradient(135deg, ${catInfo.color}, ${catInfo.color}AA)`, border: '1px solid rgba(255,255,255,0.12)' }}>
                     <span className="text-xl uppercase tracking-tight">{catInfo.label}</span>
                     <div className="flex items-center gap-4">
                       <span className="text-xs font-bold bg-black/20 px-3 py-1 rounded-full uppercase">{catServices.length} voci</span>
