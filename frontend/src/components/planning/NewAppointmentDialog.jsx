@@ -301,7 +301,22 @@ export default function NewAppointmentDialog({
     } catch (err) {
       console.error('[NewAppointment] Error:', err.response?.status, err.response?.data, err.message);
       const detail = err.response?.data?.detail;
-      toast.error(typeof detail === 'string' ? detail : 'Errore nel salvataggio');
+      let msg;
+      if (typeof detail === 'string') {
+        msg = detail;
+      } else if (Array.isArray(detail)) {
+        msg = detail.map(d => {
+          const field = Array.isArray(d.loc) ? d.loc.filter(x => x !== 'body').join('.') : '';
+          return field ? `${field}: ${d.msg}` : d.msg;
+        }).join(' | ');
+      } else if (detail && typeof detail === 'object') {
+        msg = detail.message || JSON.stringify(detail);
+      } else if (!err.response) {
+        msg = `Rete: ${err.message || 'nessuna risposta dal server'}`;
+      } else {
+        msg = `HTTP ${err.response.status}: errore generico`;
+      }
+      toast.error(msg);
     } finally {
       setSaving(false);
       setCheckoutMethod(null);
