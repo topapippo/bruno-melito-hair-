@@ -165,7 +165,46 @@ async def get_appointment(appointment_id: str, current_user: dict = Depends(get_
 
 @router.put("/appointments/{appointment_id}", response_model=AppointmentResponse)
 async def update_appointment(appointment_id: str, data: dict, current_user: dict = Depends(get_current_user)):
-    await db.appointments.update_one({"id": appointment_id, "user_id": current_user["id"]}, {"$set": data})
+    update = dict(data)
+
+    if "service_ids" in update:
+        ids = update.get("service_ids") or []
+        services = await db.services.find(
+            {"id": {"$in": ids}, "user_id": current_user["id"]},
+            {"_id": 0, "user_id": 0},
+        ).to_list(100)
+        services_by_id = {s["id"]: s for s in services}
+        ordered = [services_by_id[i] for i in ids if i in services_by_id]
+        total_duration = sum(s.get("duration", 0) for s in ordered)
+        total_price = sum(s.get("price", 0) for s in ordered)
+        update["services"] = [
+            {"id": s["id"], "name": s["name"], "duration": s.get("duration", 0), "price": s.get("price", 0)}
+            for s in ordered
+        ]
+        update["total_duration"] = total_duration
+        update["total_price"] = total_price
+
+    if "operator_id" in update:
+        op_id = update.get("operator_id")
+        if op_id:
+            op = await db.operators.find_one({"id": op_id, "user_id": current_user["id"]}, {"_id": 0})
+            update["operator_name"] = op["name"] if op else None
+        else:
+            update["operator_name"] = None
+
+    if ("service_ids" in data) or ("time" in data):
+        current = await db.appointments.find_one(
+            {"id": appointment_id, "user_id": current_user["id"]}, {"_id": 0}
+        )
+        if current:
+            time_val = update.get("time", current.get("time"))
+            duration_val = update.get("total_duration", current.get("total_duration", 0))
+            if time_val:
+                update["end_time"] = calculate_end_time(time_val, duration_val)
+
+    await db.appointments.update_one(
+        {"id": appointment_id, "user_id": current_user["id"]}, {"$set": update}
+    )
     res = await db.appointments.find_one({"id": appointment_id}, {"_id": 0})
     return AppointmentResponse(**res)
 
