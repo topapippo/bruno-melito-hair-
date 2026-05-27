@@ -317,6 +317,42 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Exception handler globale: FastAPI di default ritorna 500 SENZA header CORS
+# per eccezioni non gestite, e il browser blocca tutto come "CORS error".
+# Qui catturiamo tutto e attacchiamo manualmente l'header allow-origin
+# in modo che il frontend possa leggere il messaggio di errore reale.
+import traceback as _tb_module
+from fastapi.responses import JSONResponse as _JSONResponse
+
+
+def _cors_origin_for(request: Request) -> str:
+    origin = request.headers.get("origin", "")
+    if not origin:
+        return ""
+    if origin in cors_origins:
+        return origin
+    import re as _re_mod
+    if _re_mod.match(r"https://([a-z0-9-]+\.)?(brunomelitohair\.it|bruno-melito-hair[-a-z0-9]*\.onrender\.com)", origin):
+        return origin
+    return ""
+
+
+@app.exception_handler(Exception)
+async def _global_exception_handler(request: Request, exc: Exception):
+    tb_str = _tb_module.format_exc()
+    logger.error(f"[UNHANDLED] {request.method} {request.url.path} → {type(exc).__name__}: {exc}\n{tb_str}")
+    headers = {}
+    allowed_origin = _cors_origin_for(request)
+    if allowed_origin:
+        headers["Access-Control-Allow-Origin"] = allowed_origin
+        headers["Access-Control-Allow-Credentials"] = "true"
+        headers["Vary"] = "Origin"
+    return _JSONResponse(
+        status_code=500,
+        content={"detail": f"{type(exc).__name__}: {str(exc)[:300]}"},
+        headers=headers,
+    )
+
 # ── Routes ─────────────────────────────────────────────────────────────────────
 from fastapi import APIRouter
 
