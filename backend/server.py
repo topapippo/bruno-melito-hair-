@@ -295,16 +295,23 @@ app.add_middleware(SecurityHeadersMiddleware)
 
 # ── CORS ───────────────────────────────────────────────────────────────────────
 _cors_origins_raw = os.environ.get('CORS_ORIGINS', '')
-if _cors_origins_raw:
-    cors_origins = [o.strip() for o in _cors_origins_raw.split(',') if o.strip()]
-else:
-    # "*" + allow_credentials=True è vietato dalle specifiche CORS e bloccato dai browser.
-    # In sviluppo usiamo l'origine locale; in produzione impostare CORS_ORIGINS.
-    cors_origins = ["http://localhost:3000"]
+_env_origins = [o.strip() for o in _cors_origins_raw.split(',') if o.strip()] if _cors_origins_raw else []
+
+# Origini sempre permesse: sviluppo locale + frontend produzione di questo progetto.
+# Servono come safety-net se CORS_ORIGINS su Render viene resettata o scritta male.
+_always_allowed = [
+    "http://localhost:3000",
+    "https://bruno-melito-hair.onrender.com",
+    "https://brunomelitohair.it",
+    "https://www.brunomelitohair.it",
+]
+cors_origins = list(dict.fromkeys(_env_origins + _always_allowed))
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
+    # Regex copre eventuali preview/branch deploy di Render (es. brunomelito-pr-N.onrender.com)
+    allow_origin_regex=r"https://([a-z0-9-]+\.)?(brunomelitohair\.it|bruno-melito-hair[-a-z0-9]*\.onrender\.com)",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
