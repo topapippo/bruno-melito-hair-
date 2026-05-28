@@ -165,67 +165,9 @@ export default function TrendGallery({ setShowBooking }) {
                   style={{ boxShadow: `inset 0 0 60px ${glow}33`, borderRadius: 'inherit' }}
                 />
 
-                {/* Badge editoriale */}
-                {t.badge && (
-                  <div className="absolute top-4 left-4 z-10">
-                    <GlassTag>{t.badge}</GlassTag>
-                  </div>
-                )}
 
-                {/* Numero editoriale tipo magazine (es. N.01) */}
-                <div
-                  className="absolute top-4 right-4 z-10 text-white/40 font-bold tracking-widest text-[10px] uppercase pointer-events-none"
-                  style={{ fontFamily: "'Fredoka', sans-serif" }}
-                >
-                  N.{String(i + 1).padStart(2, '0')}
-                </div>
 
-                {/* Contenuto in basso */}
-                <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6 z-10">
-                  <p className="text-[10px] font-bold tracking-[0.35em] uppercase mb-2" style={{ color: glow }}>
-                    LOOK STAGIONE
-                  </p>
-                  <h3
-                    className="font-bold"
-                    style={{
-                      fontFamily: "'Fredoka', sans-serif",
-                      fontSize: isHero ? 'clamp(1.8rem, 3.5vw, 2.6rem)' : '1.4rem',
-                      color: 'white',
-                      lineHeight: 1.05,
-                    }}
-                  >
-                    {t.title}
-                  </h3>
-                  {t.desc && (
-                    <p
-                      className="bento-desc text-xs leading-relaxed mt-2 max-w-md"
-                      style={{ color: 'rgba(255,255,255,0.72)' }}
-                    >
-                      {t.desc}
-                    </p>
-                  )}
 
-                  {/* CTA in stile editoriale Vogue: linea + freccia */}
-                  {setShowBooking && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setShowBooking(true); }}
-                      className="bento-cta mt-4 inline-flex items-center gap-3 group/cta"
-                      style={{ color: 'white' }}
-                    >
-                      <span
-                        className="text-[11px] font-black tracking-[0.3em] uppercase pb-1"
-                        style={{ borderBottom: `1.5px solid ${glow}`, fontFamily: "'Fredoka', sans-serif" }}
-                      >
-                        Prenota questo look
-                      </span>
-                      <span
-                        className="bento-cta-line inline-block w-8 h-[1.5px]"
-                        style={{ background: glow }}
-                      />
-                      <ArrowUpRight className="w-4 h-4 transition-transform duration-500 group-hover/cta:translate-x-1 group-hover/cta:-translate-y-1" style={{ color: glow }} />
-                    </button>
-                  )}
-                </div>
               </motion.article>
             );
           })}
@@ -262,14 +204,7 @@ export default function TrendGallery({ setShowBooking }) {
               onClick={(e) => e.stopPropagation()}
               className="max-w-[95vw] max-h-[90vh] object-contain rounded-2xl shadow-2xl"
             />
-            {lightbox.title && (
-              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-center px-6 py-3 rounded-2xl bg-white/10 backdrop-blur">
-                <p className="text-white font-bold tracking-wide" style={{ fontFamily: "'Fredoka', sans-serif" }}>
-                  {lightbox.title}
-                </p>
-                {lightbox.desc && <p className="text-white/60 text-xs mt-1 max-w-md">{lightbox.desc}</p>}
-              </div>
-            )}
+
           </motion.div>
         )}
       </AnimatePresence>

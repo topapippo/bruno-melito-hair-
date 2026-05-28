@@ -140,13 +140,9 @@ export function AboutSection({ config, salonPhotos, T }) {
                   <div className="rounded-[3.5rem] overflow-hidden aspect-[4/5] lg:aspect-auto lg:h-[650px] shadow-2xl relative z-10 border border-white/5">
                     <img src={getMediaUrl(salonPhotos[0]?.image_url)} alt="Bruno Melito" className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                    <div className="absolute bottom-8 left-8">
-                       <p className="text-white font-black text-xs uppercase tracking-[0.4em] opacity-60">Tradizione & Futuro</p>
-                    </div>
+
                   </div>
-                  <div className="absolute -bottom-6 -right-6 w-32 h-32 rounded-full bg-white/5 backdrop-blur-3xl border border-white/10 flex items-center justify-center z-20 shadow-2xl hidden sm:flex">
-                     <span className="text-white font-black text-xs uppercase tracking-widest text-center">Since<br/>1983</span>
-                  </div>
+
                 </div>
               </AnimatedSection>
             )}
@@ -306,19 +302,11 @@ export function GallerySection({ config, hairstylePhotos, setShowBooking, T }) {
                   />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60" />
-                <div className="absolute inset-0 p-8 flex flex-col justify-end">
-                   <p className="text-[9px] font-black text-white uppercase tracking-[0.3em]">{item.tag || 'Style 2026'}</p>
-                   <h3 className="text-white text-2xl font-black uppercase tracking-tighter italic mt-1">{item.label || 'Look'}</h3>
-                </div>
               </motion.div>
             ))}
           </div>
 
-          <div className="text-center mt-20">
-            <button onClick={() => setShowBooking(true)} className="bg-white text-black px-12 py-6 rounded-3xl font-black uppercase tracking-widest hover:bg-purple-600 hover:text-white transition-all shadow-2xl">
-               PRENOTA IL TUO LOOK
-            </button>
-          </div>
+
         </div>
       </section>
 

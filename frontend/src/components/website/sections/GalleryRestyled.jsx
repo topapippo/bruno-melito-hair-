@@ -75,16 +75,7 @@ export function GallerySection({ config, hairstylePhotos, setShowBooking, T }) {
                 
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-500" />
                 
-                {/* Content Overlay */}
-                <div className="absolute inset-0 p-8 flex flex-col justify-end">
-                   <div className="flex items-center gap-3 mb-3 opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500">
-                      <span className="w-8 h-px bg-white/50" />
-                      <p className="text-[9px] font-black text-white uppercase tracking-[0.3em]">{item.tag || 'Style 2026'}</p>
-                   </div>
-                   <h3 className="text-white text-2xl font-black uppercase tracking-tighter italic opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500 delay-75">
-                      {item.label || 'Editorial Look'}
-                   </h3>
-                </div>
+
 
                 {/* Decorative border on hover */}
                 <div className="absolute inset-0 border-2 border-white/0 group-hover:border-white/20 rounded-[2.5rem] transition-all duration-500 m-2" />
@@ -142,10 +133,7 @@ export function GallerySection({ config, hairstylePhotos, setShowBooking, T }) {
                className="relative rounded-[3rem] overflow-hidden shadow-[0_0_80px_rgba(168,85,247,0.3)] border border-white/10"
             >
                <img src={getMediaUrl(imagePhotos[lightboxIdx]?.image_url)} alt="" className="max-h-[85vh] max-w-full object-contain" onClick={e => e.stopPropagation()} />
-               <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black via-black/50 to-transparent">
-                  <p className="text-white font-black text-xl italic uppercase tracking-tighter">{imagePhotos[lightboxIdx]?.label || 'Editorial Work'}</p>
-                  <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest mt-2">{lightboxIdx + 1} / {imagePhotos.length}</p>
-               </div>
+
             </motion.div>
           </div>
         </div>
