@@ -354,7 +354,7 @@ export default function WebsitePage() {
       case 'trend_gallery':
         return <TrendGallery key="trend_gallery" setShowBooking={setShowBooking} />;
       case 'gift_card':
-        return <GiftCardSection key="gift_card" T={T} config={config} />;
+        return <GiftCardSection key="gift_card" T={T} config={config} setShowBooking={setShowBooking} />;
       case 'contact':
         return <ContactSection key="contact" {...{ contactRef, config, hours, phones, setShowBooking, openWhatsApp, T }} />;
       default:

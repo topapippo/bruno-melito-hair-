@@ -199,8 +199,7 @@ export function PromotionsSection({ publicPromos, setShowBooking, T }) {
     <section className="py-24 sm:py-32" style={{ background: '#0a0a0f' }}>
       <div className="max-w-6xl mx-auto px-4 text-center">
         <AnimatedSection>
-          <p className="font-bold text-xs tracking-[0.4em] uppercase mb-4 text-purple-400">Vantaggi Esclusivi</p>
-          <h2 className="text-4xl sm:text-6xl font-black text-white mb-16" style={{ fontFamily: T.fontDisplay }}>Offerte Speciali</h2>
+          <p className="font-bold text-xs tracking-[0.4em] uppercase mb-16 text-purple-400">Vantaggi Esclusivi</p>
         </AnimatedSection>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {publicPromos.map((promo, idx) => (
@@ -381,17 +380,39 @@ export function WelcomeBanner({ T, setShowBooking }) {
   );
 }
 
-export function GiftCardSection({ T, config }) {
+export function GiftCardSection({ T, config, setShowBooking }) {
   return (
     <section className="py-24 sm:py-32" style={{ background: '#0a0a0f' }}>
+      <style>{`
+        @keyframes giftShimmer {
+          0% { transform: translateX(-150%) skewX(-22deg); }
+          100% { transform: translateX(260%) skewX(-22deg); }
+        }
+        .gift-cta { position: relative; overflow: hidden; transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease, filter 0.4s ease; }
+        .gift-cta::before {
+          content: '';
+          position: absolute; top: 0; left: 0; height: 100%; width: 55%;
+          background: linear-gradient(110deg, transparent 0%, rgba(255,236,160,0.85) 50%, transparent 100%);
+          transform: translateX(-150%) skewX(-22deg);
+          pointer-events: none;
+          mix-blend-mode: screen;
+          animation: giftShimmer 2.6s ease-in-out infinite;
+        }
+        .gift-cta:hover { transform: translateY(-4px) scale(1.03); filter: brightness(1.08); box-shadow: 0 22px 50px rgba(252,211,77,0.45); }
+        .gift-cta:active { transform: translateY(-1px) scale(0.99); }
+      `}</style>
       <div className="max-w-5xl mx-auto px-4">
         <div className="rounded-[4rem] bg-gradient-to-br from-purple-700 to-blue-800 p-12 sm:p-24 text-center text-white shadow-[0_30px_60px_rgba(0,0,0,0.4)] relative overflow-hidden group">
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20 group-hover:scale-110 transition-transform duration-1000" />
           <h2 className="text-5xl sm:text-8xl font-black mb-8 uppercase leading-tight italic tracking-tighter" style={{ fontFamily: T.fontDisplay }}>Regala<br/>Bellezza</h2>
           <p className="text-xl text-white/70 mb-14 max-w-2xl mx-auto font-medium leading-relaxed">Sorprendi chi ami con un'esperienza di lusso firmata Bruno Melito.</p>
           <div className="flex flex-wrap justify-center gap-6 relative z-10">
-             <button onClick={() => window.open(`https://wa.me/393397833526`)} className="bg-white text-black px-12 py-6 rounded-3xl font-black uppercase tracking-widest hover:bg-yellow-400 hover:scale-105 transition-all flex items-center gap-4 shadow-2xl">
-                <Gift size={24} /> SCOPRI LE GIFT CARD
+             <button
+                onClick={() => setShowBooking && setShowBooking(true)}
+                className="gift-cta text-black px-12 py-6 rounded-3xl font-black uppercase tracking-widest flex items-center gap-4 shadow-2xl"
+                style={{ background: 'linear-gradient(135deg, #fde68a 0%, #f59e0b 50%, #fbbf24 100%)', border: '1px solid rgba(255,236,160,0.55)' }}
+             >
+                <Gift size={24} /> PRENOTA COME REGALO
              </button>
           </div>
         </div>
