@@ -367,6 +367,12 @@ async def root():
 async def health():
     return {"status": "alive"}
 
+@api_router.get("/ping")
+@api_router.head("/ping")
+async def ping():
+    """Keepalive endpoint per evitare cold start su Render"""
+    return {"status": "pong"}
+
 for router in all_routers:
     api_router.include_router(router)
 
