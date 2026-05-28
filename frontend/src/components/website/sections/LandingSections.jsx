@@ -38,6 +38,10 @@ export function ServicesSection({ servicesRef, landingServiceGroups, cardTemplat
           85% { opacity: 1; }
           100% { transform: translateX(250%) skewX(-20deg); opacity: 0; }
         }
+        @keyframes buttonGlow {
+          0%, 100% { box-shadow: 0 0 10px rgba(168, 85, 247, 0.3), 0 4px 12px rgba(0,0,0,0.2); }
+          50% { box-shadow: 0 0 20px rgba(168, 85, 247, 0.6), 0 4px 16px rgba(0,0,0,0.3); }
+        }
         .cat-btn { position: relative; overflow: hidden; transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), filter 0.35s ease, box-shadow 0.35s ease; }
         .cat-btn::before {
           content: '';
@@ -50,6 +54,16 @@ export function ServicesSection({ servicesRef, landingServiceGroups, cardTemplat
         .cat-btn:hover { transform: translateY(-4px); filter: brightness(1.12); box-shadow: 0 18px 44px rgba(0,0,0,0.55); }
         .cat-btn:hover::before { animation: catShine 0.95s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
         .cat-btn:active { transform: translateY(-1px) scale(0.99); filter: brightness(1.05); }
+        .service-prenota-btn { 
+          transition: all 0.3s ease;
+          position: relative;
+          overflow: hidden;
+        }
+        .service-prenota-btn:hover {
+          transform: scale(1.05) translateY(-2px);
+          animation: buttonGlow 2s ease-in-out infinite;
+          box-shadow: 0 0 20px rgba(168, 85, 247, 0.5) !important;
+        }
       `}</style>
       <div className="max-w-6xl mx-auto px-4">
         <AnimatedSection>
@@ -84,7 +98,7 @@ export function ServicesSection({ servicesRef, landingServiceGroups, cardTemplat
                             </div>
                             <div className="flex items-center gap-4 ml-4">
                               {service.price > 0 && <span className="font-black text-base text-purple-400">€{service.price}</span>}
-                              <button onClick={() => setShowBooking(true)} className="text-[10px] font-black px-4 py-2 rounded-xl bg-white text-black hover:bg-purple-600 hover:text-white transition-all uppercase">Prenota</button>
+                              <button onClick={() => setShowBooking(true)} className="service-prenota-btn text-[10px] font-black px-4 py-2 rounded-xl bg-white text-black hover:bg-purple-600 hover:text-white transition-all uppercase">Prenota</button>
                             </div>
                           </div>
                         ))}
@@ -250,6 +264,28 @@ export function GallerySection({ config, hairstylePhotos, setShowBooking, T }) {
   return (
     <>
       <section className="py-24 sm:py-32 overflow-hidden relative" style={{ background: '#020205' }}>
+        <style>{`
+          @keyframes galleryShine {
+            0% { transform: translateX(-100%) skewX(-20deg); }
+            100% { transform: translateX(200%) skewX(-20deg); }
+          }
+          .gallery-photo-shine {
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 60%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+            transform: skewX(-20deg);
+            pointer-events: none;
+            opacity: 0;
+            border-radius: 2.5rem;
+          }
+          .group:hover .gallery-photo-shine {
+            animation: galleryShine 1.2s ease-in-out;
+            opacity: 1;
+          }
+        `}</style>
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-purple-600/5 blur-[120px] rounded-full pointer-events-none" />
         <div className="max-w-7xl mx-auto px-6">
           <motion.div
@@ -290,7 +326,7 @@ export function GallerySection({ config, hairstylePhotos, setShowBooking, T }) {
                 viewport={{ once: true, margin: '-40px' }}
                 transition={{ duration: 0.8, ease: _SITE_EASE, delay: idx * 0.05 }}
                 onClick={() => item.file_type !== 'video' && setLightboxIdx(imagePhotos.indexOf(item))}
-                className="group relative overflow-hidden rounded-[2.5rem] bg-zinc-900 border border-white/10 cursor-zoom-in shadow-2xl"
+                className="group relative overflow-hidden rounded-[2.5rem] bg-zinc-900 border border-white/10 cursor-zoom-in shadow-2xl transition-all duration-500 hover:border-purple-500/50"
               >
                 {item.file_type === 'video' ? (
                   <video src={getMediaUrl(item?.image_url)} className="w-full h-full object-cover" autoPlay muted loop playsInline />
@@ -301,7 +337,18 @@ export function GallerySection({ config, hairstylePhotos, setShowBooking, T }) {
                     className="w-full object-cover transition-transform duration-1000 group-hover:scale-110"
                   />
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60" />
+                {/* Mirror/Reflection gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-b from-white/8 via-transparent to-white/3 pointer-events-none rounded-[2.5rem]" />
+                {/* Dark gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-500" />
+                {/* Shine effect on hover */}
+                <div className="gallery-photo-shine" />
+                {/* Glow effect on hover */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-[2.5rem]"
+                  style={{
+                    boxShadow: 'inset 0 0 50px rgba(168, 85, 247, 0.25), 0 0 80px rgba(168, 85, 247, 0.15)',
+                  }}
+                />
               </motion.div>
             ))}
           </div>

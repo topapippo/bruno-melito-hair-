@@ -14,6 +14,7 @@ import BookingForm from '../components/website/BookingForm';
 import BookingSuccess from '../components/website/BookingSuccess';
 import MyAppointmentsModal from '../components/website/MyAppointmentsModal';
 import TrendGallery from '../components/website/TrendGallery';
+import { HeroGalleryStrip } from '../components/website/sections/HeroGalleryStrip';
 import {
   AnimatedSection,
   ServicesSection, SalonSection, AboutSection, PromotionsSection,
@@ -623,6 +624,9 @@ export default function WebsitePage() {
           </div>
         </div>
       </section>
+
+      {/* Hero Gallery Strip - Foto sparse con effetti parallax */}
+      {hairstylePhotos.length > 0 && <HeroGalleryStrip photos={hairstylePhotos} T={T} />}
 
       {/* ─── COME FUNZIONA — 3 tocchi per prenotare ─── */}
       <section className="py-20 sm:py-24 relative overflow-hidden" style={{ background: '#0d0d16' }}>
