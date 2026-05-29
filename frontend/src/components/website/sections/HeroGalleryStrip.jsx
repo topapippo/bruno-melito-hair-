@@ -144,6 +144,7 @@ export function HeroGalleryStrip({ photos, T }) {
           className="flex justify-center mt-16"
         >
           <motion.button
+            onClick={() => document.getElementById('gallery-edit')?.scrollIntoView({ behavior: 'smooth' })}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.98 }}
             className="px-12 py-4 rounded-full font-black uppercase text-sm tracking-[0.2em] relative overflow-hidden group shadow-2xl"

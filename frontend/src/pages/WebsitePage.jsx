@@ -20,6 +20,7 @@ import {
   ServicesSection, SalonSection, AboutSection, PromotionsSection,
   ReviewsSection, GallerySection, ContactSection,
   TransformationsSection, TeamSection, WelcomeBanner, GiftCardSection,
+  PhotoInterlude,
 } from '../components/website/sections/LandingSections';
 
 
@@ -690,8 +691,24 @@ export default function WebsitePage() {
         </div>
       </section>
 
-      {/* Sezioni dinamiche */}
-      {sectionOrder.map((id) => renderSection(id))}
+      {/* Sezioni dinamiche — con foto "sparse" interlacciate tra alcune sezioni */}
+      {(() => {
+        const out = [];
+        let photoCount = 0;
+        // sezioni dopo le quali far comparire una foto della galleria
+        const afterSections = new Set(['about', 'reviews', 'team', 'services']);
+        sectionOrder.forEach((id) => {
+          const sec = renderSection(id);
+          if (!sec) return;
+          out.push(sec);
+          if (hairstylePhotos.length > 0 && afterSections.has(id)) {
+            const photo = hairstylePhotos[photoCount % hairstylePhotos.length];
+            out.push(<PhotoInterlude key={`interlude-${id}`} photo={photo} index={photoCount} T={T} />);
+            photoCount++;
+          }
+        });
+        return out;
+      })()}
 
       {/* QR CODE SECTION */}
       <section className="py-16 sm:py-20 bg-gradient-to-b from-white/40 to-white/80" data-testid="qr-code-section">

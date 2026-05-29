@@ -203,24 +203,121 @@ export function AboutSection({ config, salonPhotos, T }) {
   );
 }
 
-export function PromotionsSection({ publicPromos, setShowBooking, T }) {
+// Palette di gradienti vivaci per le promo — accenti colorati su base scura
+const PROMO_GRADIENTS = [
+  { from: '#E8477C', to: '#A855F7', glow: 'rgba(232,71,124,0.45)' },  // rosa → viola
+  { from: '#2EC4B6', to: '#0EA5E9', glow: 'rgba(46,196,182,0.45)' },  // turchese → azzurro
+  { from: '#F59E0B', to: '#EF4444', glow: 'rgba(245,158,11,0.45)' },  // ambra → rosso
+  { from: '#8B5CF6', to: '#EC4899', glow: 'rgba(139,92,246,0.45)' },  // viola → fucsia
+  { from: '#10B981', to: '#84CC16', glow: 'rgba(16,185,129,0.45)' },  // verde → lime
+  { from: '#06B6D4', to: '#6366F1', glow: 'rgba(6,182,212,0.45)' },   // ciano → indaco
+];
+
+export function PromotionsSection({ publicPromos, setShowBooking, bookPromo, T }) {
   if (!publicPromos?.length) return null;
+  const open = (promo) => (bookPromo ? bookPromo(promo) : setShowBooking(true));
   return (
-    <section className="py-24 sm:py-32" style={{ background: '#0a0a0f' }}>
-      <div className="max-w-6xl mx-auto px-4 text-center">
+    <section className="py-24 sm:py-32 relative overflow-hidden" style={{ background: '#0a0a0f' }}>
+      {/* Blob di luce colorata sullo sfondo */}
+      <div className="absolute top-1/4 -left-24 w-96 h-96 rounded-full blur-[130px] opacity-25 pointer-events-none" style={{ background: '#E8477C' }} />
+      <div className="absolute bottom-0 -right-24 w-96 h-96 rounded-full blur-[130px] opacity-20 pointer-events-none" style={{ background: '#2EC4B6' }} />
+      <div className="max-w-6xl mx-auto px-4 text-center relative z-10">
         <AnimatedSection>
-          <p className="font-bold text-xs tracking-[0.4em] uppercase mb-16 text-purple-400">Vantaggi Esclusivi</p>
+          <p className="font-black text-xs tracking-[0.4em] uppercase mb-4"
+            style={{ background: 'linear-gradient(90deg,#E8477C,#A855F7,#2EC4B6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+            ✦ Vantaggi Esclusivi
+          </p>
+          <h2 className="text-4xl sm:text-6xl font-black text-white mb-16" style={{ fontFamily: T.fontDisplay }}>Offerte da non perdere</h2>
         </AnimatedSection>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {publicPromos.map((promo, idx) => (
-            <div key={promo.id || idx} className="rounded-[2.5rem] p-10 bg-zinc-900/80 border border-white/5 text-left flex flex-col h-full shadow-2xl relative overflow-hidden group hover:border-purple-500/50 transition-all duration-500">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600/5 blur-3xl group-hover:bg-purple-600/10 transition-colors" />
-              <h3 className="text-2xl font-black text-white mb-4 uppercase tracking-tighter italic">{promo.name}</h3>
-              <p className="text-white/50 text-sm mb-10 flex-1 leading-relaxed">{promo.description}</p>
-              <button onClick={() => setShowBooking(true)} className="w-full py-5 rounded-2xl bg-white text-black font-black text-sm hover:bg-purple-600 hover:text-white transition-all uppercase tracking-widest shadow-xl">Prenota Ora</button>
-            </div>
-          ))}
+          {publicPromos.map((promo, idx) => {
+            const g = PROMO_GRADIENTS[idx % PROMO_GRADIENTS.length];
+            return (
+              <motion.div
+                key={promo.id || idx}
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-40px' }}
+                transition={{ duration: 0.7, ease: _SITE_EASE, delay: idx * 0.12 }}
+                whileHover={{ y: -10 }}
+                className="group relative rounded-[2.5rem] p-[2px] shadow-2xl"
+                style={{ background: `linear-gradient(135deg, ${g.from}, ${g.to})`, boxShadow: `0 20px 60px ${g.glow}` }}
+              >
+                <div className="relative rounded-[2.4rem] p-9 h-full flex flex-col text-left overflow-hidden"
+                  style={{ background: 'linear-gradient(160deg, rgba(20,18,28,0.94), rgba(10,9,15,0.97))' }}>
+                  {/* Glow d'angolo colorato */}
+                  <div className="absolute -top-12 -right-12 w-44 h-44 rounded-full blur-3xl opacity-40 group-hover:opacity-75 transition-opacity duration-500" style={{ background: g.from }} />
+                  {/* Riflesso che scorre all'hover */}
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 pointer-events-none overflow-hidden rounded-[2.4rem]">
+                    <div className="absolute top-0 -left-full w-1/2 h-full bg-gradient-to-r from-transparent via-white/15 to-transparent skew-x-[-20deg] group-hover:left-full transition-all duration-1000 ease-in-out" />
+                  </div>
+                  <div className="relative">
+                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shadow-lg" style={{ background: `linear-gradient(135deg, ${g.from}, ${g.to})` }}>
+                      <Gift className="w-7 h-7 text-white" />
+                    </div>
+                    <h3 className="text-2xl font-black text-white mb-3 uppercase tracking-tight italic leading-tight">{promo.name}</h3>
+                    <p className="text-white/55 text-sm mb-8 leading-relaxed">{promo.description}</p>
+                  </div>
+                  <button onClick={() => open(promo)}
+                    className="relative mt-auto w-full py-4 rounded-2xl font-black text-sm text-white uppercase tracking-widest shadow-xl hover:scale-[1.03] transition-transform duration-300"
+                    style={{ background: `linear-gradient(135deg, ${g.from}, ${g.to})` }}>
+                    Prenota Ora
+                  </button>
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
+      </div>
+    </section>
+  );
+}
+
+// Foto "sparsa" tra le sezioni: entra in scena con rotazione, riflesso specchiato
+// sotto e glow colorato all'hover. Alterna lato (sinistra/destra) in base all'indice.
+export function PhotoInterlude({ photo, index = 0, T }) {
+  if (!photo) return null;
+  const flip = index % 2 === 1;
+  const isVideo = photo.file_type === 'video';
+  const src = getMediaUrl(photo.image_url);
+  return (
+    <section className="py-8 sm:py-14 relative overflow-hidden" style={{ background: '#020205' }}>
+      {/* alone colorato */}
+      <div className={`absolute top-1/2 -translate-y-1/2 w-80 h-80 rounded-full blur-[120px] opacity-25 pointer-events-none ${flip ? 'left-0' : 'right-0'}`}
+        style={{ background: flip ? T.accent : T.primary }} />
+      <div className="max-w-6xl mx-auto px-4 relative z-10">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.92, rotate: flip ? 2.5 : -2.5 }}
+          whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 1, ease: _SITE_EASE }}
+          className={`relative w-full sm:max-w-[72%] ${flip ? 'sm:ml-auto' : 'sm:mr-auto'}`}
+        >
+          <div className="group relative overflow-hidden rounded-[2.5rem] shadow-2xl border border-white/10">
+            {isVideo ? (
+              <video src={src} className="w-full h-[240px] sm:h-[420px] object-cover" autoPlay muted loop playsInline />
+            ) : (
+              <img src={src} alt="" className="w-full h-[240px] sm:h-[420px] object-cover transition-transform duration-[1200ms] group-hover:scale-105" />
+            )}
+            {/* velo specchiato */}
+            <div className="absolute inset-0 bg-gradient-to-b from-white/12 via-transparent to-white/5 pointer-events-none" />
+            {/* glow colorato all'hover */}
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-[2.5rem]"
+              style={{ boxShadow: `inset 0 0 70px ${(flip ? T.accent : T.primary)}55, 0 0 100px ${(flip ? T.accent : T.primary)}30` }} />
+            {photo.label && (
+              <div className="absolute bottom-5 left-6 right-6">
+                <span className="text-white font-black text-xl sm:text-3xl italic drop-shadow-2xl" style={{ fontFamily: T.fontDisplay }}>{photo.label}</span>
+              </div>
+            )}
+          </div>
+          {/* RIFLESSO SPECCHIATO sotto (solo immagini, desktop) */}
+          {!isVideo && (
+            <div className="hidden sm:block h-24 overflow-hidden rounded-b-[2.5rem]"
+              style={{ transform: 'scaleY(-1)', opacity: 0.32, WebkitMaskImage: 'linear-gradient(black, transparent)', maskImage: 'linear-gradient(black, transparent)' }}>
+              <img src={src} alt="" className="w-full h-[420px] object-cover object-bottom blur-[1px]" />
+            </div>
+          )}
+        </motion.div>
       </div>
     </section>
   );
@@ -263,7 +360,7 @@ export function GallerySection({ config, hairstylePhotos, setShowBooking, T }) {
 
   return (
     <>
-      <section className="py-24 sm:py-32 overflow-hidden relative" style={{ background: '#020205' }}>
+      <section id="gallery-edit" className="py-24 sm:py-32 overflow-hidden relative" style={{ background: '#020205' }}>
         <style>{`
           @keyframes galleryShine {
             0% { transform: translateX(-100%) skewX(-20deg); }
