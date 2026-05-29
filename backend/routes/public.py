@@ -155,6 +155,41 @@ def get_object(path: str):
     raise HTTPException(status_code=404, detail="File non trovato")
 
 
+# Dimensione massima di un singolo chunk per le richieste Range "aperte" (es. "bytes=0-").
+# Restituendo ~1MB alla volta i video partono subito su mobile e il browser chiede il resto
+# man mano, invece di scaricare tutto in un colpo.
+_RANGE_CHUNK = 1024 * 1024  # 1 MB
+
+
+def read_grid_range(path: str, range_header: str):
+    """Legge SOLO l'intervallo di byte richiesto direttamente da GridFS (seek + read),
+    senza caricare l'intero file in memoria. Ritorna (chunk, start, end, total) oppure None
+    se il file non è su GridFS (es. vecchie immagini inline) o il range non è valido."""
+    from database import fs
+    file_id = _file_id_from_path(path)
+    gf = fs.find_one({"filename": file_id})
+    if gf is None:
+        return None
+    total = gf.length
+    try:
+        range_val = range_header.replace("bytes=", "").strip()
+        start_str, _, end_str = range_val.partition("-")
+        start = int(start_str) if start_str else 0
+        if end_str.strip():
+            end = int(end_str)
+        else:
+            # Range aperto: restituiamo al massimo _RANGE_CHUNK byte
+            end = min(start + _RANGE_CHUNK - 1, total - 1)
+    except Exception:
+        return None
+    end = min(end, total - 1)
+    if start < 0 or start > end or start >= total:
+        return None
+    gf.seek(start)
+    chunk = gf.read(end - start + 1)
+    return chunk, start, end, total
+
+
 # ============== Default Website Config ==============
 
 DEFAULT_WEBSITE_CONFIG = {
@@ -686,20 +721,35 @@ async def website_serve_file(file_id: str, request: Request):
     if not record:
         raise HTTPException(status_code=404, detail="File non trovato")
 
-    # Lettura in threadpool: la lettura da GridFS è sincrona e su un video può
-    # essere pesante; fuori dall'event loop non blocca le altre richieste.
-    data, content_type = await run_in_threadpool(get_object, record["storage_path"])
-    content_type = record.get("content_type", content_type)
+    content_type = record.get("content_type", "application/octet-stream")
+    storage_path = record["storage_path"]
+    range_header = request.headers.get("range")
+
+    # VIDEO con Range: leggi da GridFS SOLO i byte richiesti (seek+read), senza
+    # rileggere l'intero file. È ciò che rende fluida la riproduzione su mobile.
+    if range_header and content_type.startswith("video/"):
+        result = await run_in_threadpool(read_grid_range, storage_path, range_header)
+        if result is not None:
+            chunk, start, end, total = result
+            headers = {
+                "Content-Range": f"bytes {start}-{end}/{total}",
+                "Accept-Ranges": "bytes",
+                "Content-Length": str(len(chunk)),
+                "Cache-Control": "public, max-age=31536000, immutable",
+            }
+            return Response(content=chunk, status_code=206, media_type=content_type, headers=headers)
+
+    # Immagini, o file non su GridFS, o video senza Range: lettura completa (in threadpool).
+    data, ct = await run_in_threadpool(get_object, storage_path)
+    content_type = content_type or ct
     total_size = len(data)
 
-    # Gestione Range requests — necessaria per la riproduzione video HTML5.
-    # I browser inviano "Range: bytes=X-Y" per caricare i video progressivamente.
-    range_header = request.headers.get("range")
+    # Video senza Range header ma file su GridFS: comunque accettiamo Range per il futuro.
     if range_header and content_type.startswith("video/"):
         try:
             range_val = range_header.replace("bytes=", "")
             start_str, end_str = range_val.split("-")
-            start = int(start_str)
+            start = int(start_str) if start_str else 0
             end = int(end_str) if end_str.strip() else total_size - 1
             end = min(end, total_size - 1)
             chunk = data[start:end + 1]
@@ -707,7 +757,7 @@ async def website_serve_file(file_id: str, request: Request):
                 "Content-Range": f"bytes {start}-{end}/{total_size}",
                 "Accept-Ranges": "bytes",
                 "Content-Length": str(len(chunk)),
-                "Cache-Control": "public, max-age=86400",
+                "Cache-Control": "public, max-age=31536000, immutable",
             }
             return Response(content=chunk, status_code=206, media_type=content_type, headers=headers)
         except Exception as e:
@@ -716,7 +766,7 @@ async def website_serve_file(file_id: str, request: Request):
     headers = {
         "Accept-Ranges": "bytes",
         "Content-Length": str(total_size),
-        "Cache-Control": "public, max-age=86400",
+        "Cache-Control": "public, max-age=31536000, immutable",
     }
     return Response(content=data, media_type=content_type, headers=headers)
 

@@ -295,7 +295,7 @@ export function PhotoInterlude({ photo, index = 0, T }) {
         >
           <div className="group relative overflow-hidden rounded-[2.5rem] shadow-2xl border border-white/10">
             {isVideo ? (
-              <video src={src} className="w-full h-[240px] sm:h-[420px] object-cover" autoPlay muted loop playsInline />
+              <video src={src} className="w-full h-[240px] sm:h-[420px] object-cover" autoPlay muted loop playsInline preload="metadata" />
             ) : (
               <img src={src} alt="" className="w-full h-[240px] sm:h-[420px] object-cover transition-transform duration-[1200ms] group-hover:scale-105" />
             )}
