@@ -304,11 +304,6 @@ export function PhotoInterlude({ photo, index = 0, T }) {
             {/* glow colorato all'hover */}
             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-[2.5rem]"
               style={{ boxShadow: `inset 0 0 70px ${(flip ? T.accent : T.primary)}55, 0 0 100px ${(flip ? T.accent : T.primary)}30` }} />
-            {photo.label && (
-              <div className="absolute bottom-5 left-6 right-6">
-                <span className="text-white font-black text-xl sm:text-3xl italic drop-shadow-2xl" style={{ fontFamily: T.fontDisplay }}>{photo.label}</span>
-              </div>
-            )}
           </div>
           {/* RIFLESSO SPECCHIATO sotto (solo immagini, desktop) */}
           {!isVideo && (

@@ -696,7 +696,8 @@ export default function WebsitePage() {
         const out = [];
         let photoCount = 0;
         // sezioni dopo le quali far comparire una foto della galleria
-        const afterSections = new Set(['about', 'reviews', 'team', 'services']);
+        // (escluse gallery/trend_gallery che sono già fatte di foto)
+        const afterSections = new Set(['services', 'salon', 'about', 'promotions', 'reviews', 'team', 'gift_card', 'contact']);
         sectionOrder.forEach((id) => {
           const sec = renderSection(id);
           if (!sec) return;
