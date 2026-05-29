@@ -125,18 +125,79 @@ async def create_appointment(data: AppointmentCreate, current_user: dict = Depen
 async def checkout_appointment(appointment_id: str, data: dict, current_user: dict = Depends(get_current_user)):
     apt = await db.appointments.find_one({"id": appointment_id, "user_id": current_user["id"]}, {"_id": 0})
     if not apt: raise HTTPException(status_code=404, detail="Appuntamento non trovato")
-    
+
+    payment_method = data.get("payment_method", "cash")
+    total_paid = data.get("total_paid", apt["total_price"])
+    card_id = data.get("card_id")
+
+    # ── Pagamento con card/abbonamento: scala la card in modo atomico ──────────────
+    # deduct = importo da togliere al credito della card:
+    #  - abbonamento a servizi → total_paid è 0 (servizio "gratis", si scala 1 servizio)
+    #  - card a valore          → total_paid è il prezzo del servizio (si scala dal credito)
+    card_info = None
+    if payment_method == "prepaid" and card_id:
+        card = await db.cards.find_one({"id": card_id, "user_id": current_user["id"]}, {"_id": 0})
+        if not card:
+            raise HTTPException(status_code=404, detail="Card/abbonamento non trovato")
+        if not card.get("active"):
+            raise HTTPException(status_code=400, detail="Card/abbonamento non più attivo")
+        if card.get("valid_until"):
+            try:
+                if datetime.strptime(card["valid_until"], "%Y-%m-%d").date() < datetime.now(timezone.utc).date():
+                    raise HTTPException(status_code=400, detail="Card/abbonamento scaduto")
+            except ValueError:
+                pass
+        deduct = float(total_paid or 0)
+        if card.get("remaining_value", 0) < deduct:
+            raise HTTPException(status_code=400, detail=f"Credito insufficiente sulla card. Disponibile: €{card.get('remaining_value', 0):.2f}")
+
+        service_names = ", ".join(s.get("name", "") for s in apt.get("services", [])) or "Servizio"
+        transaction = {
+            "id": str(uuid.uuid4()), "amount": deduct, "appointment_id": appointment_id,
+            "description": f"{service_names} — appuntamento del {apt.get('date', '')}",
+            "date": datetime.now(timezone.utc).isoformat(),
+        }
+        updated = await db.cards.find_one_and_update(
+            {"id": card_id, "user_id": current_user["id"], "active": True, "remaining_value": {"$gte": deduct}},
+            {"$inc": {"remaining_value": -deduct, "used_services": 1}, "$push": {"transactions": transaction}},
+            return_document=True,
+        )
+        if not updated:
+            raise HTTPException(status_code=409, detail="Scalo non riuscito: card non più attiva o credito insufficiente")
+
+        remaining_services = None
+        is_exhausted = updated.get("remaining_value", 0) <= 0
+        if updated.get("total_services"):
+            remaining_services = updated["total_services"] - updated.get("used_services", 0)
+            is_exhausted = is_exhausted or remaining_services <= 0
+        if is_exhausted:
+            await db.cards.update_one({"id": card_id}, {"$set": {"active": False}})
+        card_info = {
+            "card_id": card_id, "card_name": updated.get("name", ""),
+            "remaining_value": updated.get("remaining_value", 0),
+            "remaining_services": remaining_services, "card_active": not is_exhausted,
+        }
+
     payment_doc = {
         "id": str(uuid.uuid4()), "user_id": current_user["id"], "appointment_id": appointment_id,
         "client_id": apt["client_id"], "client_name": apt["client_name"],
-        "total_paid": data.get("total_paid", apt["total_price"]),
-        "payment_method": data.get("payment_method", "cash"),
+        "total_paid": total_paid,
+        "payment_method": payment_method,
+        "card_id": card_id if payment_method == "prepaid" else None,
+        "card_name": card_info["card_name"] if card_info else None,
         "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "services": apt["services"]
     }
     await db.payments.insert_one(payment_doc)
-    await db.appointments.update_one({"id": appointment_id}, {"$set": {"status": "completed"}})
+    await db.appointments.update_one(
+        {"id": appointment_id},
+        {"$set": {
+            "status": "completed", "paid": True,
+            "amount_paid": total_paid, "payment_method": payment_method,
+            "card_id": card_id if payment_method == "prepaid" else apt.get("card_id"),
+        }},
+    )
     
     # Notifica Ringraziamento (template + fallback UltraMsg/Green API)
     if apt.get("client_phone"):
@@ -162,7 +223,7 @@ async def checkout_appointment(appointment_id: str, data: dict, current_user: di
         except Exception as e:
             logger.error(f"Errore ringraziamento checkout: {e}")
         
-    return {"status": "ok", "payment_id": payment_doc["id"]}
+    return {"status": "ok", "payment_id": payment_doc["id"], "card": card_info}
 
 @router.get("/appointments", response_model=List[AppointmentResponse])
 async def get_appointments(date: Optional[str] = None, current_user: dict = Depends(get_current_user)):

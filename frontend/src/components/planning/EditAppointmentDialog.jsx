@@ -408,7 +408,7 @@ export default function EditAppointmentDialog({
 
     setProcessing(true);
     try {
-      await api.post(`${API}/appointments/${apt.id}/checkout`, {
+      const res = await api.post(`${API}/appointments/${apt.id}/checkout`, {
         payment_method: method,
         discount_type: discountType,
         discount_value: discountType !== 'none' ? (parseFloat(discountValue) || 0) : 0,
@@ -417,7 +417,16 @@ export default function EditAppointmentDialog({
         note: `Incasso ${method}${overridePrice ? ' per vendita abbonamento' : ''}`
       });
 
-      toast.success('Incasso completato con successo!');
+      const cardData = res?.data?.card;
+      if (cardData) {
+        if (cardData.remaining_services !== null && cardData.remaining_services !== undefined) {
+          toast.success(`Servizio scalato dall'abbonamento. Restano ${cardData.remaining_services} servizi${cardData.card_active ? '' : ' — abbonamento esaurito'}.`);
+        } else {
+          toast.success(`Pagato con la card. Credito residuo: €${(cardData.remaining_value || 0).toFixed(2)}.`);
+        }
+      } else {
+        toast.success('Incasso completato con successo!');
+      }
       resetCheckout();
       onClose();
       onSuccess?.();
