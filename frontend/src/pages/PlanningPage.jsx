@@ -943,6 +943,7 @@ export default function PlanningPage() {
           services={services}
           cardTemplates={cardTemplates}
           onSuccess={refreshAll}
+          onSaveAndCheckout={(apt) => { setNewDialogOpen(false); openEditDialogForCheckout(apt); }}
         />
 
         <ErrorBoundary>

@@ -62,7 +62,7 @@ const getFilteredSlots = (dateStr, hoursConfig, blockedSlots = []) => {
 
 export default function NewAppointmentDialog({
   open, onClose, initialDate, initialTime, initialOperatorId,
-  operators, clients, services, cardTemplates, onSuccess,
+  operators, clients, services, cardTemplates, onSuccess, onSaveAndCheckout,
 }) {
   const [saving, setSaving] = useState(false);
   const [checkoutMethod, setCheckoutMethod] = useState(null);
@@ -213,7 +213,7 @@ export default function NewAppointmentDialog({
   };
 
 
-  const handleSubmit = async (e, method = null) => {
+  const handleSubmit = async (e, method = null, goCheckout = false) => {
     if (e) e.preventDefault();
     const errors = {};
 
@@ -292,12 +292,18 @@ export default function NewAppointmentDialog({
           note: `Incasso immediato via ${method}`
         });
         toast.success(`Appuntamento creato e incassato (${method})!`);
-      } else {
+      } else if (!goCheckout) {
         toast.success('Appuntamento creato!');
       }
 
-      onClose();
-      onSuccess?.();
+      if (goCheckout && onSaveAndCheckout) {
+        // Crea l'appuntamento e apre subito la cassa completa (dove c'è "Vendi abbonamento")
+        onSuccess?.();
+        onSaveAndCheckout(newApt);
+      } else {
+        onClose();
+        onSuccess?.();
+      }
     } catch (err) {
       console.error('[NewAppointment] Error:', err.response?.status, err.response?.data, err.message);
       const detail = err.response?.data?.detail;
@@ -525,6 +531,15 @@ export default function NewAppointmentDialog({
               </div>
             )}
             
+            {formData.service_ids.length > 0 && (
+              <Button type="button" disabled={saving || isDayClosed || availableSlots.length === 0}
+                onClick={() => handleSubmit(null, null, true)}
+                className="w-full h-11 bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm shadow-lg gap-2">
+                {saving && checkoutMethod === null ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+                SALVA E VAI ALLA CASSA (vendi abbonamento)
+              </Button>
+            )}
+
             <Button type="submit" disabled={saving || isDayClosed || availableSlots.length === 0}
               className="w-full h-11 bg-black hover:bg-gray-800 text-white font-bold text-base shadow-lg">
               {saving && !checkoutMethod ? <Loader2 className="w-4 h-4 animate-spin" /> : 'SOLO SALVA APPUNTAMENTO'}
