@@ -29,12 +29,7 @@ logging.basicConfig(
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    try:
-        from routes.public import init_storage
-        init_storage()
-        logger.info("Object storage inizializzato")
-    except Exception as e:
-        logger.warning(f"Object storage init rinviato: {e}")
+    # (Storage file: ora su GridFS/MongoDB, nessuna init esterna necessaria.)
 
     # Crea indici MongoDB per performance
     try:

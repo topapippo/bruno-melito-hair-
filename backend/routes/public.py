@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Request, BackgroundTasks
 from fastapi.responses import Response, FileResponse
+from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, field_validator
 from typing import Optional, List, Any
 from datetime import datetime, timezone, timedelta
@@ -103,80 +104,53 @@ def init_storage():
         return None
 
 
-def put_object(path: str, data: bytes, content_type: str) -> dict:
-    global _use_local_storage
+def _file_id_from_path(path: str) -> str:
+    """Estrae il file_id (UUID) da un path qualsiasi: gridfs://, mongo://, local://
+    o vecchi path remoti tipo 'mbhssalon/uploads/<id>.<ext>'."""
     filename = path.split("/")[-1]
-    b64_data = base64.b64encode(data).decode('utf-8')
+    return filename.rsplit(".", 1)[0]
 
-    # Prova storage remoto
-    if not _use_local_storage:
-        try:
-            key = init_storage()
-            if key:
-                resp = http_requests.put(
-                    f"{STORAGE_URL}/objects/{path}",
-                    headers={"X-Storage-Key": key, "Content-Type": content_type},
-                    data=data, timeout=120
-                )
-                resp.raise_for_status()
-                result = resp.json()
-                # Salva sempre in MongoDB come backup — così le foto sopravvivono
-                # anche se lo storage remoto va offline in futuro
-                result["_mongo_data"] = b64_data
-                result["_content_type"] = content_type
-                return result
-        except Exception as e:
-            logger.warning(f"Remote storage failed, using MongoDB: {e}")
-            _use_local_storage = True
 
-    # MongoDB puro — path mongo:// sopravvive ai redeploy
-    return {"path": f"mongo://{filename}", "size": len(data), "_mongo_data": b64_data, "_content_type": content_type}
+def put_object(path: str, data: bytes, content_type: str) -> dict:
+    """Salva il file in GridFS (MongoDB). GridFS spezzetta i file in chunk, quindi
+    NON c'è il limite di 16MB del singolo documento BSON: foto e video di qualsiasi
+    dimensione vengono salvati e sopravvivono ai redeploy di Render.
+    (Lo storage esterno Emergent è stato dismesso: non viene più usato.)"""
+    from database import fs
+    file_id = _file_id_from_path(path)
+    # Rimuovi eventuali versioni precedenti con lo stesso id (re-upload)
+    for old in fs.find({"filename": file_id}):
+        fs.delete(old._id)
+    fs.put(data, filename=file_id, content_type=content_type)
+    return {"path": f"gridfs://{file_id}", "size": len(data)}
 
 
 def get_object(path: str):
-    from database import sync_db
+    from database import sync_db, fs
 
-    # Path MongoDB (mongo:// o local://)
-    if path.startswith("mongo://") or path.startswith("local://"):
-        filename = path.replace("mongo://", "").replace("local://", "")
-        file_id = filename.split(".")[0]
-        record = sync_db.website_files.find_one({"id": file_id})
-        if record and record.get("file_data"):
-            data = base64.b64decode(record["file_data"])
-            return data, record.get("content_type", "application/octet-stream")
-        if path.startswith("local://"):
-            local_path = os.path.join(LOCAL_UPLOAD_DIR, filename)
-            if os.path.exists(local_path):
-                with open(local_path, "rb") as f:
-                    data = f.read()
-                ext = filename.split(".")[-1].lower()
-                mime_map = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png", "gif": "image/gif", "webp": "image/webp"}
-                return data, mime_map.get(ext, "application/octet-stream")
-        raise HTTPException(status_code=404, detail="File non trovato")
+    file_id = _file_id_from_path(path)
 
-    # Path remoto — PRIMA prova MongoDB (locale, veloce), poi lo storage esterno.
-    # Lo storage Emergent è una dipendenza lenta/inaffidabile: chiamarlo per primo
-    # con timeout lungo bloccava l'event loop del worker (requests sincrono dentro
-    # endpoint async) → sito lentissimo, health check KO e foto che non comparivano.
-    filename = path.split("/")[-1]
-    file_id = filename.rsplit(".", 1)[0]
+    # 1) GridFS — storage principale attuale (foto e video di qualsiasi dimensione)
+    gf = fs.find_one({"filename": file_id})
+    if gf is not None:
+        return gf.read(), (gf.content_type or "application/octet-stream")
+
+    # 2) Legacy: base64 inline nel documento website_files (foto piccole pre-GridFS)
     record = sync_db.website_files.find_one({"id": file_id})
     if record and record.get("file_data"):
         data = base64.b64decode(record["file_data"])
         return data, record.get("content_type", "application/octet-stream")
 
-    # Ultima spiaggia: storage esterno, solo se il file non è in MongoDB, timeout breve
-    try:
-        key = _storage_key or init_storage()
-        if key:
-            resp = http_requests.get(
-                f"{STORAGE_URL}/objects/{path}",
-                headers={"X-Storage-Key": key}, timeout=5
-            )
-            if resp.ok:
-                return resp.content, resp.headers.get("Content-Type", "application/octet-stream")
-    except Exception as e:
-        logger.warning(f"Remote storage GET failed: {e}")
+    # 3) Legacy: file su disco locale (vecchi path local://)
+    if path.startswith("local://"):
+        filename = path.replace("local://", "")
+        local_path = os.path.join(LOCAL_UPLOAD_DIR, filename)
+        if os.path.exists(local_path):
+            with open(local_path, "rb") as f:
+                data = f.read()
+            ext = filename.split(".")[-1].lower()
+            mime_map = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png", "gif": "image/gif", "webp": "image/webp"}
+            return data, mime_map.get(ext, "application/octet-stream")
 
     raise HTTPException(status_code=404, detail="File non trovato")
 
@@ -692,21 +666,16 @@ async def website_upload_file(file: UploadFile = File(...), current_user: dict =
     data = await file.read()
     if len(data) > max_size:
         raise HTTPException(status_code=400, detail=f"File troppo grande. Max {'50MB' if file_type == 'video' else '10MB'}.")
-    result = put_object(path, data, mime_map.get(ext, "application/octet-stream"))
-    
-    # Store file data in MongoDB if using mongo:// fallback
-    mongo_data = result.pop("_mongo_data", None)
-    mongo_ct = result.pop("_content_type", None)
-    
+    # Scrittura in GridFS in threadpool: non blocca l'event loop su file grandi (video)
+    result = await run_in_threadpool(put_object, path, data, mime_map.get(ext, "application/octet-stream"))
+
     doc = {
         "id": file_id, "storage_path": result["path"], "original_filename": file.filename,
         "content_type": mime_map.get(ext, "application/octet-stream"), "size": result.get("size", len(data)),
         "file_type": file_type, "is_deleted": False, "user_id": current_user["id"],
         "created_at": datetime.now(timezone.utc).isoformat()
     }
-    if mongo_data:
-        doc["file_data"] = mongo_data
-    
+
     await db.website_files.insert_one(doc)
     return {"id": file_id, "path": result["path"], "url": f"/api/website/files/{file_id}", "file_type": file_type}
 
@@ -717,7 +686,9 @@ async def website_serve_file(file_id: str, request: Request):
     if not record:
         raise HTTPException(status_code=404, detail="File non trovato")
 
-    data, content_type = get_object(record["storage_path"])
+    # Lettura in threadpool: la lettura da GridFS è sincrona e su un video può
+    # essere pesante; fuori dall'event loop non blocca le altre richieste.
+    data, content_type = await run_in_threadpool(get_object, record["storage_path"])
     content_type = record.get("content_type", content_type)
     total_size = len(data)
 

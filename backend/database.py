@@ -2,6 +2,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import MongoClient
 from pathlib import Path
 from dotenv import load_dotenv
+import gridfs
 import os
 
 ROOT_DIR = Path(__file__).parent
@@ -25,3 +26,7 @@ db = client[db_name]
 # Sync client for file serving (used in synchronous get_object)
 sync_client = MongoClient(mongo_url)
 sync_db = sync_client[db_name]
+
+# GridFS per foto/video: spezzetta i file in chunk, niente limite 16MB del singolo
+# documento BSON, e sopravvive ai redeploy di Render (storage durevole in MongoDB).
+fs = gridfs.GridFS(sync_db)
