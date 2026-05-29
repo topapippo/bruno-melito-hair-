@@ -356,23 +356,40 @@ async def _global_exception_handler(request: Request, exc: Exception):
 # ── Routes ─────────────────────────────────────────────────────────────────────
 from fastapi import APIRouter
 
+# Health/warmup endpoints BEFORE /api prefix (Render/UptimeRobot need these at root)
+@app.get("/health")
+@app.head("/health")
+async def health_check():
+    return {"status": "ok"}
+
+@app.get("/api/health")
+@app.head("/api/health")
+async def api_health_check():
+    return {"status": "ok"}
+
+@app.get("/api/warmup")
+@app.head("/api/warmup")
+async def api_warmup_check():
+    return {"status": "warming", "ok": True}
+
+@app.get("/ping")
+@app.head("/ping")
+async def ping_check():
+    return {"status": "pong"}
+
+@app.get("/api/ping")
+@app.head("/api/ping")
+async def api_ping_check():
+    return {"status": "pong"}
+
+# Main API router with all other routes
 api_router = APIRouter(prefix="/api")
 
 @api_router.get("/")
 async def root():
     return {"message": "Salone Parrucchiera API", "status": "ok"}
 
-@api_router.get("/health")
-@api_router.head("/health")
-async def health():
-    return {"status": "alive"}
-
-@api_router.get("/ping")
-@api_router.head("/ping")
-async def ping():
-    """Keepalive endpoint per evitare cold start su Render"""
-    return {"status": "pong"}
-
+# Mount all routers under /api
 for router in all_routers:
     api_router.include_router(router)
 
