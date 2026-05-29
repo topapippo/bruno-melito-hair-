@@ -418,10 +418,14 @@ export function GallerySection({ config, hairstylePhotos, setShowBooking, T }) {
                 viewport={{ once: true, margin: '-40px' }}
                 transition={{ duration: 0.8, ease: _SITE_EASE, delay: idx * 0.05 }}
                 onClick={() => item.file_type !== 'video' && setLightboxIdx(imagePhotos.indexOf(item))}
-                className="group relative overflow-hidden rounded-[2.5rem] bg-zinc-900 border border-white/10 cursor-zoom-in shadow-2xl transition-all duration-500 hover:border-purple-500/50"
+                className="group relative overflow-hidden rounded-[2.5rem] bg-zinc-900 border border-white/10 cursor-zoom-in shadow-2xl transition-all duration-500 hover:border-purple-500/50 break-inside-avoid"
               >
                 {item.file_type === 'video' ? (
-                  <video src={getMediaUrl(item?.image_url)} className="w-full h-full object-cover" autoPlay muted loop playsInline />
+                  <video
+                    src={getMediaUrl(item?.image_url)}
+                    className="w-full h-auto object-cover block transition-transform duration-1000 group-hover:scale-110"
+                    autoPlay muted loop playsInline preload="metadata"
+                  />
                 ) : (
                   <img
                     src={getMediaUrl(item?.image_url)}

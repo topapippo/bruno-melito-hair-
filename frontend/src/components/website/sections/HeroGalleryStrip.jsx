@@ -21,8 +21,9 @@ export function HeroGalleryStrip({ photos, T }) {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
-  // Selezioniamo max 5 foto per il strip
-  const displayPhotos = photos.slice(0, 5);
+  // Selezioniamo max 5 foto (solo immagini: lo strip le mostra come <img>)
+  const displayPhotos = photos.filter(p => p.file_type !== 'video').slice(0, 5);
+  if (displayPhotos.length === 0) return null;
   
   const containerVariants = {
     hidden: { opacity: 0 },
