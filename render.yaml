@@ -38,7 +38,7 @@ services:
         destination: /index.html
     envVars:
       - key: REACT_APP_BACKEND_URL
-        sync: false        # URL del backend Render, es: https://bruno-melito-hair-backend.onrender.com
+        value: https://bruno-melito-hair-backend.onrender.com
       - key: REACT_APP_VAPID_PUBLIC_KEY
         sync: false        # opzionale, per push notifications
       - key: NODE_VERSION
