@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Request, BackgroundTasks
-from fastapi.responses import Response, FileResponse
+from fastapi.responses import Response, FileResponse, StreamingResponse
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, field_validator
 from typing import Optional, List, Any
@@ -188,6 +188,28 @@ def read_grid_range(path: str, range_header: str):
     gf.seek(start)
     chunk = gf.read(end - start + 1)
     return chunk, start, end, total
+
+
+def open_grid(path: str):
+    """Ritorna il GridOut (handle al file su GridFS) senza leggerlo in memoria, oppure None."""
+    from database import fs
+    return fs.find_one({"filename": _file_id_from_path(path)})
+
+
+def _stream_grid(gf, chunk_size: int = 256 * 1024):
+    """Generatore che legge il file da GridFS a blocchi (256KB) — non carica mai
+    l'intero file in RAM (evita l'OOM su Render con video grandi)."""
+    try:
+        while True:
+            data = gf.read(chunk_size)
+            if not data:
+                break
+            yield data
+    finally:
+        try:
+            gf.close()
+        except Exception:
+            pass
 
 
 # ============== Default Website Config ==============
@@ -739,33 +761,23 @@ async def website_serve_file(file_id: str, request: Request):
             }
             return Response(content=chunk, status_code=206, media_type=content_type, headers=headers)
 
-    # Immagini, o file non su GridFS, o video senza Range: lettura completa (in threadpool).
+    # File su GridFS: STREAMING a blocchi da 256KB — non carica mai l'intero file
+    # in memoria, così anche un video da 50MB non fa esplodere la RAM (causa dell'OOM).
+    gf = await run_in_threadpool(open_grid, storage_path)
+    if gf is not None:
+        headers = {
+            "Accept-Ranges": "bytes",
+            "Content-Length": str(gf.length),
+            "Cache-Control": "public, max-age=31536000, immutable",
+        }
+        return StreamingResponse(_stream_grid(gf), media_type=content_type, headers=headers)
+
+    # Legacy (immagini inline base64 / file locali, file piccoli): lettura in memoria.
     data, ct = await run_in_threadpool(get_object, storage_path)
     content_type = content_type or ct
-    total_size = len(data)
-
-    # Video senza Range header ma file su GridFS: comunque accettiamo Range per il futuro.
-    if range_header and content_type.startswith("video/"):
-        try:
-            range_val = range_header.replace("bytes=", "")
-            start_str, end_str = range_val.split("-")
-            start = int(start_str) if start_str else 0
-            end = int(end_str) if end_str.strip() else total_size - 1
-            end = min(end, total_size - 1)
-            chunk = data[start:end + 1]
-            headers = {
-                "Content-Range": f"bytes {start}-{end}/{total_size}",
-                "Accept-Ranges": "bytes",
-                "Content-Length": str(len(chunk)),
-                "Cache-Control": "public, max-age=31536000, immutable",
-            }
-            return Response(content=chunk, status_code=206, media_type=content_type, headers=headers)
-        except Exception as e:
-            logger.warning(f"Range parsing fallito per {file_id}: {e}")
-
     headers = {
         "Accept-Ranges": "bytes",
-        "Content-Length": str(total_size),
+        "Content-Length": str(len(data)),
         "Cache-Control": "public, max-age=31536000, immutable",
     }
     return Response(content=data, media_type=content_type, headers=headers)
