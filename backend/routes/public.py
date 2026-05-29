@@ -93,7 +93,7 @@ def init_storage():
     if _storage_key:
         return _storage_key
     try:
-        resp = http_requests.post(f"{STORAGE_URL}/init", json={"emergent_key": EMERGENT_KEY}, timeout=10)
+        resp = http_requests.post(f"{STORAGE_URL}/init", json={"emergent_key": EMERGENT_KEY}, timeout=5)
         resp.raise_for_status()
         _storage_key = resp.json()["storage_key"]
         return _storage_key
@@ -154,26 +154,29 @@ def get_object(path: str):
                 return data, mime_map.get(ext, "application/octet-stream")
         raise HTTPException(status_code=404, detail="File non trovato")
 
-    # Path remoto — prova storage esterno
-    try:
-        key = _storage_key or init_storage()
-        if key:
-            resp = http_requests.get(
-                f"{STORAGE_URL}/objects/{path}",
-                headers={"X-Storage-Key": key}, timeout=60
-            )
-            if resp.ok:
-                return resp.content, resp.headers.get("Content-Type", "application/octet-stream")
-    except Exception as e:
-        logger.warning(f"Remote storage GET failed, trying MongoDB fallback: {e}")
-
-    # Fallback MongoDB per file remoti — cerca per file_id estratto dal path
+    # Path remoto — PRIMA prova MongoDB (locale, veloce), poi lo storage esterno.
+    # Lo storage Emergent è una dipendenza lenta/inaffidabile: chiamarlo per primo
+    # con timeout lungo bloccava l'event loop del worker (requests sincrono dentro
+    # endpoint async) → sito lentissimo, health check KO e foto che non comparivano.
     filename = path.split("/")[-1]
     file_id = filename.rsplit(".", 1)[0]
     record = sync_db.website_files.find_one({"id": file_id})
     if record and record.get("file_data"):
         data = base64.b64decode(record["file_data"])
         return data, record.get("content_type", "application/octet-stream")
+
+    # Ultima spiaggia: storage esterno, solo se il file non è in MongoDB, timeout breve
+    try:
+        key = _storage_key or init_storage()
+        if key:
+            resp = http_requests.get(
+                f"{STORAGE_URL}/objects/{path}",
+                headers={"X-Storage-Key": key}, timeout=5
+            )
+            if resp.ok:
+                return resp.content, resp.headers.get("Content-Type", "application/octet-stream")
+    except Exception as e:
+        logger.warning(f"Remote storage GET failed: {e}")
 
     raise HTTPException(status_code=404, detail="File non trovato")
 
