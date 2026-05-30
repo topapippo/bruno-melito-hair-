@@ -185,17 +185,29 @@ async def send_automatic_message(
 
     last_error = None
 
+    # Punto di uscita unico: registra ogni esito nello storico prima di restituirlo.
+    # `user` è letto al momento della chiamata (può essere recuperato più sotto).
+    async def _done(result: dict) -> dict:
+        await _log_communication(
+            user_id=(user or {}).get("id", ""),
+            channel="whatsapp",
+            phone=phone,
+            message=fallback_text or template_name or "",
+            result=result,
+        )
+        return result
+
     # 1. Meta Cloud API template
     if template_name and WA_TOKEN:
         result = await send_whatsapp_template(phone, template_name, template_vars or [], lang=lang)
         if result.get("sent"):
-            return result
+            return await _done(result)
         last_error = result.get("error")
         logger.warning(f"[WA AUTO] Template '{template_name}' fallito ({last_error}) → tentativo fallback")
 
     # Se non c'è testo di fallback, non possiamo proseguire
     if not fallback_text:
-        return {"sent": False, "error": last_error or "Template e fallback_text mancanti", "method": "none"}
+        return await _done({"sent": False, "error": last_error or "Template e fallback_text mancanti", "method": "none"})
 
     # Recupera user se non passato (per credenziali UltraMsg/Green API)
     if not user:
@@ -204,21 +216,21 @@ async def send_automatic_message(
     # 2. UltraMsg
     result = await _send_ultramsg(phone, fallback_text, user)
     if result.get("sent"):
-        return result
+        return await _done(result)
     logger.warning(f"[WA AUTO] UltraMsg fallito: {result.get('error')}")
 
     # 3. Green API
     result = await _send_greenapi(phone, fallback_text, user)
     if result.get("sent"):
-        return result
+        return await _done(result)
     logger.warning(f"[WA AUTO] Green API fallito: {result.get('error')}")
 
     # 4. Ultima ratio: Cloud API testo libero (funziona solo entro 24h da ultimo msg ricevuto)
     result = await send_whatsapp_cloud(phone, fallback_text + WA_FOOTER)
     if result.get("sent"):
-        return result
+        return await _done(result)
 
-    return {"sent": False, "error": "Tutti i provider hanno fallito", "last_error": last_error, "method": "none"}
+    return await _done({"sent": False, "error": "Tutti i provider hanno fallito", "last_error": last_error, "method": "none"})
 
 
 async def send_whatsapp(phone: str, message: str, user: dict = None) -> dict:
@@ -285,10 +297,20 @@ def calculate_end_time(start_time: str, duration_minutes: int) -> str:
     except: return start_time
 
 async def _log_communication(user_id: str, channel: str, phone: str, message: str, result: dict):
+    """Salva uno storico degli invii in db.communication_logs (provider usato + esito).
+    Avvolto in try/except: un errore di logging NON deve mai bloccare l'invio."""
     try:
         from database import db
         await db.communication_logs.insert_one({
-            "id": str(_uuid.uuid4()), "user_id": user_id, "channel": channel, "phone": phone,
-            "message": message[:500], "sent": result.get("sent", False), "timestamp": datetime.now(timezone.utc).isoformat()
+            "id": str(_uuid.uuid4()),
+            "user_id": user_id or "",
+            "channel": channel,
+            "phone": phone,
+            "message": (message or "")[:500],
+            "sent": result.get("sent", False),
+            "method": result.get("method", ""),
+            "error": result.get("error") or result.get("last_error") or "",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         })
-    except: pass
+    except Exception:
+        pass

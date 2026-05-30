@@ -716,3 +716,19 @@ async def send_inactive_reminders(current_user: dict = Depends(get_current_user)
     """Invia WhatsApp ai clienti che non vengono da più di 60 giorni."""
     result = await _send_inactive_reminders_core(current_user)
     return result
+
+
+@router.get("/communication-logs")
+async def get_communication_logs(
+    limit: int = 100,
+    only_failed: bool = False,
+    current_user: dict = Depends(get_current_user),
+):
+    """Storico degli invii WhatsApp automatici: provider usato (`method`) ed esito (`sent`/`error`).
+    Utile per capire perché un messaggio non è arrivato. `only_failed=true` mostra solo i falliti."""
+    limit = max(1, min(limit, 500))
+    query = {}
+    if only_failed:
+        query["sent"] = False
+    logs = await db.communication_logs.find(query, {"_id": 0}).sort("timestamp", -1).to_list(limit)
+    return {"logs": logs, "count": len(logs)}
