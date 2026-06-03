@@ -17,58 +17,58 @@ IMGBB_API_KEY = os.environ.get("IMGBB_API_KEY")
 
 _WINGMAN_DEFAULTS = [
     {
+        "type": "estate",
+        "title": "S.O.S. Sole & Salsedine",
+        "text": "Il sole bacia i belli... ma mette a dura prova i capelli! ☀️🌊\nNon farti trovare impreparata: scopri i nostri trattamenti protettivi per un biondo che non vira e punte sempre idratate. Passa in salone per il tuo 'kit sopravvivenza' estivo! \n\n👇 Prenota la tua consulenza qui:\n👉 https://brunomelitohair.it",
+        "image_url": "https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/572ec519daddcad1f4a85c012592ce7cb5567c2466fd73ce966377d55a547053.png"
+    },
+    {
+        "type": "matrimoni",
+        "title": "Invitata Perfetta",
+        "text": "Hai già l'abito ma non sai cosa fare con i capelli? 👗✨\nChe sia un raccolto morbido o un'onda glamour, siamo qui per renderti l'invitata più ammirata. Giugno è il mese dei matrimoni, prenota il tuo posto in tempo! \n\n👉 https://brunomelitohair.it",
+        "image_url": "https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/23ccfe5aaadde1f4925524c2bf4de0408eb95858d844b45025838d9959197b1f.png"
+    },
+    {
+        "type": "divertente",
+        "title": "Domenica da Diva",
+        "text": "Il lunedì è lontano, ma la bellezza è a un click di distanza. ✨\nNon aspettare che i tuoi capelli gridino 'aiuto'. Regalati un sabato di relax e stile da Bruno Melito. Uscirai dal salone pronta a conquistare il mondo (o almeno l'aperitivo! 😉).\n\n👉 Prenota ora: https://brunomelitohair.it",
+        "image_url": "https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/28527e09a63e933c1a6707ec114afd3802828c9fdd7930a980697e2abe154cba.png"
+    },
+    {
+        "type": "stile",
+        "title": "Effetto Gloss 2026",
+        "text": "Capelli spenti? Dagli una scarica di luce! 💎✨\nIl nostro trattamento Gloss è il segreto delle star per capelli che riflettono la luce come uno specchio. Perfetto per ridare vita al colore tra una tinta e l'altra. \n\nScoprilo qui 👇\nhttps://brunomelitohair.it",
+        "image_url": "https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/caa3730f2b773f851f0f25819099c95113062e0f7ba5894fc18924330fbaf81e.png"
+    },
+    {
         "type": "weekend",
-        "title": "Posti Volanti!",
-        "text": "Chi dorme non piglia... il look perfetto! ✂️✨\nDomani è sabato e abbiamo gli ultimissimi posti disponibili per trasformare i tuoi capelli in un capolavoro. \n\nNon aspettare lunedì per sentirti bellissima. Prenota ora l'ultimo posto rimasto! 👇\n👉 https://brunomelitohair.it",
+        "title": "Posti 'Last Minute'",
+        "text": "Sei stata fortunata! ✨\nSi è appena liberato un posto per domani mattina. Chi lo prende? Se vuoi un cambio look dell'ultimo minuto, questa è la tua occasione. Corri a prenotare! 👇\n\n👉 https://brunomelitohair.it",
         "image_url": "https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/04492e144007b03d47cea802da126e127774cff08c2b44b6919c6640989d519a.png"
     },
     {
-        "type": "divertente",
-        "title": "Il Momento di Gloria",
-        "text": "La vita non è perfetta, ma i tuoi capelli possono esserlo. (Specialmente se passi da noi 😉). Prenota il tuo momento di gloria su https://brunomelitohair.it",
-        "image_url": "https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/28527e09a63e933c1a6707ec114afd3802828c9fdd7930a980697e2abe154cba.png",
+        "type": "cambiamento",
+        "title": "Bixie o Butterfly?",
+        "text": "Corto e grintoso o lungo e voluminoso? ✂️🦋\nLe tendenze dell'estate 2026 sono qui. Se sei indecisa, ti aiutiamo noi a trovare la forma perfetta per il tuo viso. Il cambiamento inizia dalla testa!\n\n👉 Guarda i nostri lavori: https://brunomelitohair.it",
+        "image_url": "https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/a81be5d7abc73969b2cb334a559dc8c2aac917f58f4e2b661015b9ef422f8d76.png"
     },
     {
-        "type": "divertente",
-        "title": "Effetto Psicologo",
-        "text": "Cambiare taglio costa meno di una seduta dallo psicologo e l'effetto è molto più immediato. Provare per credere! 💆‍♀️✨ Scopri i nostri servizi su https://brunomelitohair.it",
-        "image_url": "https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/99d308789e991a555a550483448efdcd7610cd3547dbb1e5041e2caf94ec39b8.png",
+        "type": "cura",
+        "title": "Clean Beauty",
+        "text": "La tua bellezza non ha bisogno di chimica aggressiva. 🌿✨\nUsiamo solo prodotti senza parabeni e solfati, per capelli sani che splendono di salute naturale. Perché amiamo te e amiamo la natura. \n\nScegli il meglio: https://brunomelitohair.it",
+        "image_url": "https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/99d308789e991a555a550483448efdcd7610cd3547dbb1e5041e2caf94ec39b8.png"
     },
     {
-        "type": "diva",
-        "title": "La tua Corona",
-        "text": "I capelli sono la corona che non ti togli mai. Assicurati che splenda come merita! ✨👑 Passa a trovarci o prenota online su https://brunomelitohair.it",
-        "image_url": "https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/23ccfe5aaadde1f4925524c2bf4de0408eb95858d844b45025838d9959197b1f.png",
-    },
-    {
-        "type": "divertente",
-        "title": "Grida AIUTO?",
-        "text": "Se i tuoi capelli gridano 'AIUTO', Bruno Melito risponde 'ARRIVO!'. ✂️ Smetti di litigare con la spazzola e vieni a farti coccolare. 👉 https://brunomelitohair.it",
-        "image_url": "https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/a81be5d7abc73969b2cb334a559dc8c2aac917f58f4e2b661015b9ef422f8d76.png",
-    },
-    {
-        "type": "diva",
-        "title": "Scatena l'Invidia",
-        "text": "Il tuo ex ti ha vista e ha sospirato? No, è solo il tuo nuovo colore firmato Bruno Melito. Scatena l'invidia, clicca qui: https://brunomelitohair.it",
-        "image_url": "https://i.ibb.co/vvP7jZFb/b28028e3900d.jpg",
-    },
-    {
-        "type": "curiosità",
-        "title": "Sogni a un Click",
-        "text": "I capelli dei tuoi sogni sono a un click di distanza. Non mordono, promesso! 😉 Guarda i nostri ultimi lavori su https://brunomelitohair.it",
-        "image_url": "https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/caa3730f2b773f851f0f25819099c95113062e0f7ba5894fc18924330fbaf81e.png",
-    },
-    {
-        "type": "stagionale",
-        "title": "SOS Mare",
-        "text": "Il mare rovina i capelli? Solo se non conosci i segreti di Bruno Melito. Scopri i trattamenti 'salva-chioma' prima di infilare il costume! 🌊 https://brunomelitohair.it",
-        "image_url": "https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/572ec519daddcad1f4a85c012592ce7cb5567c2466fd73ce966377d55a547053.png",
+        "type": "biondo",
+        "title": "Biondo Burro",
+        "text": "La nuance più calda e desiderata di questa estate. 🧈✨\nUn biondo cremoso, luminoso e mai banale. Vieni a scoprire come lo realizziamo con le nostre tecniche di schiaritura dolce. \n\nTi aspettiamo! 👇\nhttps://brunomelitohair.it",
+        "image_url": "https://i.ibb.co/vvP7jZFb/b28028e3900d.jpg"
     }
 ]
 
 @router.get("/social/wingman-suggestions")
 async def get_wingman_suggestions(current_user: dict = Depends(get_current_user)):
-    suggestions = await db.wingman_suggestions.find({"user_id": current_user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(10)
+    suggestions = await db.wingman_suggestions.find({"user_id": current_user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(20)
     if not suggestions:
         to_insert = [{**d, "id": str(uuid.uuid4()), "user_id": current_user["id"], "created_at": datetime.now(timezone.utc).isoformat()} for d in _WINGMAN_DEFAULTS]
         await db.wingman_suggestions.insert_many(to_insert)
@@ -79,12 +79,13 @@ async def get_wingman_suggestions(current_user: dict = Depends(get_current_user)
 @router.post("/social/refresh-suggestions")
 async def refresh_suggestions(current_user: dict = Depends(get_current_user)):
     await db.wingman_suggestions.delete_many({"user_id": current_user["id"]})
-    to_insert = [{**d, "id": str(uuid.uuid4()), "user_id": current_user["id"], "created_at": datetime.now(timezone.utc).isoformat()} for d in _WINGMAN_DEFAULTS]
-    random.shuffle(to_insert)
-    selected = to_insert[:6]
-    await db.wingman_suggestions.insert_many(selected)
-    for s in selected: s.pop("_id", None)
-    return selected
+    # Mixiamo i default con un ordine casuale ogni volta
+    pool = list(_WINGMAN_DEFAULTS)
+    random.shuffle(pool)
+    to_insert = [{**d, "id": str(uuid.uuid4()), "user_id": current_user["id"], "created_at": datetime.now(timezone.utc).isoformat()} for d in pool]
+    await db.wingman_suggestions.insert_many(to_insert)
+    for s in to_insert: s.pop("_id", None)
+    return to_insert
 
 @router.put("/social/wingman-suggestions/{suggestion_id}")
 async def update_suggestion(suggestion_id: str, data: dict, current_user: dict = Depends(get_current_user)):
@@ -110,14 +111,12 @@ async def publish_via_make(data: dict, current_user: dict = Depends(get_current_
     url = current_user.get("make_webhook_url")
     if not url: raise HTTPException(status_code=400, detail="Configura il Webhook")
     
-    # Invia a Make.com
     try:
         requests.post(url, json=data, timeout=10)
     except Exception as e:
         logger.error(f"Errore invio a Make.com: {e}")
         raise HTTPException(status_code=500, detail="Errore nell'invio ai social")
 
-    # Salva nello storico
     history_doc = {
         "id": str(uuid.uuid4()),
         "user_id": current_user["id"],
@@ -141,7 +140,6 @@ async def upload_image(file: UploadFile = File(...), current_user: dict = Depend
     
     try:
         contents = await file.read()
-        # Elaborazione immagine con Pillow per renderla quadrata (1:1)
         img = Image.open(io.BytesIO(contents))
         
         width, height = img.size
@@ -154,9 +152,7 @@ async def upload_image(file: UploadFile = File(...), current_user: dict = Depend
         img = img.crop((left, top, right, bottom))
         img = img.resize((1080, 1080), Image.Resampling.LANCZOS)
         
-        # Converti di nuovo in byte
         img_byte_arr = io.BytesIO()
-        # Salva in formato originale o JPEG come fallback
         format_to_save = img.format if img.format else "JPEG"
         img.save(img_byte_arr, format=format_to_save)
         final_contents = img_byte_arr.getvalue()
