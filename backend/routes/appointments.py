@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 from typing import List, Optional
 import uuid
 import logging
@@ -81,7 +81,7 @@ async def create_appointment(data: AppointmentCreate, current_user: dict = Depen
         d_parts = data.date.split('-')
         date_it = f"{d_parts[2]}/{d_parts[1]}/{d_parts[0]}" if len(d_parts) == 3 else data.date
 
-        # 1. Notifica a Bruno (testo libero — fallback chain UltraMsg/Green API)
+        # 1. Notifica a Bruno
         notif_msg = (
             f"🔔 NUOVA PRENOTAZIONE!\n"
             f"👤 Cliente: {client_name}\n"
@@ -90,14 +90,10 @@ async def create_appointment(data: AppointmentCreate, current_user: dict = Depen
             f"✂️ Servizi: {service_names}\n\n"
             f"https://brunomelitohair.it/admin"
         )
-        await send_automatic_message(
-            BRUNO_PHONE,
-            template_name=None,
-            fallback_text=notif_msg,
-            user=current_user,
-        )
+        # Invio a Bruno (testo libero)
+        await send_whatsapp(BRUNO_PHONE, notif_msg, current_user)
 
-        # 2. Notifica alla Cliente: template promemoria approvato + fallback UltraMsg/Green API
+        # 2. Notifica alla Cliente: template promemoria
         if client_phone:
             client_fallback = (
                 f"Ciao {client_name}! ✅ Prenotazione confermata da Bruno Melito Hair:\n\n"
@@ -105,24 +101,53 @@ async def create_appointment(data: AppointmentCreate, current_user: dict = Depen
                 f"✂️ {service_names}\n\n"
                 f"Ti aspettiamo! Per modifiche scrivici al 3397833526. 💇"
             )
-            wa_result = await send_automatic_message(
+            await send_automatic_message(
                 client_phone,
                 template_name="promemoria_appuntamento",
                 template_vars=[client_name, date_it, data.time],
                 fallback_text=client_fallback,
                 user=current_user,
             )
-            if wa_result.get("sent"):
-                logger.info(f"Conferma inviata a {client_name} ({client_phone}) via {wa_result.get('method')}")
-            else:
-                logger.error(f"Conferma FALLITA a {client_phone}: {wa_result.get('error')}")
     except Exception as e:
-        logger.error(f"Errore generale notifiche: {e}")
+        logger.error(f"Errore generale notifiche creazione: {e}")
 
     return AppointmentResponse(**{k: v for k, v in appointment_doc.items() if k != "user_id"})
 
+async def _send_checkout_thank_you(client_phone: str, client_name: str, current_user: dict):
+    """Logica separata per invio ringraziamento post-incasso (per BackgroundTasks)."""
+    try:
+        # Recupera review link
+        review_link = (
+            current_user.get("google_review_link")
+            or "https://www.google.com/search?q=Bruno+Melito+Hair+Stylist+Santa+Maria+Capua+Vetere"
+        )
+        
+        # Testo di fallback per provider diversi da Meta Cloud
+        ringr_text = (
+            f"Ciao {client_name}! Grazie per essere venuta da Bruno Melito Hair. 💇\n\n"
+            f"Se ti è piaciuto, ci aiuteresti tantissimo lasciando una recensione qui:\n{review_link}\n\n"
+            f"A presto!"
+        )
+        
+        # Invia usando la catena di fallback intelligente
+        await send_automatic_message(
+            client_phone,
+            template_name="ringraziamento_visita",
+            template_vars=[client_name, review_link],
+            fallback_text=ringr_text,
+            user=current_user,
+        )
+        logger.info(f"[CHECKOUT] Messaggio ringraziamento inviato a {client_phone}")
+    except Exception as e:
+        logger.error(f"[CHECKOUT] Errore invio ringraziamento: {e}")
+
 @router.post("/appointments/{appointment_id}/checkout")
-async def checkout_appointment(appointment_id: str, data: dict, current_user: dict = Depends(get_current_user)):
+async def checkout_appointment(
+    appointment_id: str, 
+    data: dict, 
+    background_tasks: BackgroundTasks,
+    current_user: dict = Depends(get_current_user)
+):
     apt = await db.appointments.find_one({"id": appointment_id, "user_id": current_user["id"]}, {"_id": 0})
     if not apt: raise HTTPException(status_code=404, detail="Appuntamento non trovato")
 
@@ -130,98 +155,46 @@ async def checkout_appointment(appointment_id: str, data: dict, current_user: di
     total_paid = data.get("total_paid", apt["total_price"])
     card_id = data.get("card_id")
 
-    # ── Pagamento con card/abbonamento: scala la card in modo atomico ──────────────
-    # deduct = importo da togliere al credito della card:
-    #  - abbonamento a servizi → total_paid è 0 (servizio "gratis", si scala 1 servizio)
-    #  - card a valore          → total_paid è il prezzo del servizio (si scala dal credito)
+    # ── Pagamento con card/abbonamento ───────────────────────────────────────────
     card_info = None
     if payment_method == "prepaid" and card_id:
         card = await db.cards.find_one({"id": card_id, "user_id": current_user["id"]}, {"_id": 0})
-        if not card:
-            raise HTTPException(status_code=404, detail="Card/abbonamento non trovato")
-        if not card.get("active"):
-            raise HTTPException(status_code=400, detail="Card/abbonamento non più attivo")
-        if card.get("valid_until"):
-            try:
-                if datetime.strptime(card["valid_until"], "%Y-%m-%d").date() < datetime.now(timezone.utc).date():
-                    raise HTTPException(status_code=400, detail="Card/abbonamento scaduto")
-            except ValueError:
-                pass
+        if not card: raise HTTPException(status_code=404, detail="Card non trovata")
+        
         deduct = float(total_paid or 0)
-        if card.get("remaining_value", 0) < deduct:
-            raise HTTPException(status_code=400, detail=f"Credito insufficiente sulla card. Disponibile: €{card.get('remaining_value', 0):.2f}")
-
-        service_names = ", ".join(s.get("name", "") for s in apt.get("services", [])) or "Servizio"
-        transaction = {
-            "id": str(uuid.uuid4()), "amount": deduct, "appointment_id": appointment_id,
-            "description": f"{service_names} — appuntamento del {apt.get('date', '')}",
-            "date": datetime.now(timezone.utc).isoformat(),
-        }
         updated = await db.cards.find_one_and_update(
             {"id": card_id, "user_id": current_user["id"], "active": True, "remaining_value": {"$gte": deduct}},
-            {"$inc": {"remaining_value": -deduct, "used_services": 1}, "$push": {"transactions": transaction}},
+            {"$inc": {"remaining_value": -deduct, "used_services": 1}},
             return_document=True,
         )
-        if not updated:
-            raise HTTPException(status_code=409, detail="Scalo non riuscito: card non più attiva o credito insufficiente")
-
-        remaining_services = None
-        is_exhausted = updated.get("remaining_value", 0) <= 0
-        if updated.get("total_services"):
-            remaining_services = updated["total_services"] - updated.get("used_services", 0)
-            is_exhausted = is_exhausted or remaining_services <= 0
-        if is_exhausted:
+        if not updated: raise HTTPException(status_code=409, detail="Credito insufficiente")
+        
+        if updated.get("remaining_value", 0) <= 0:
             await db.cards.update_one({"id": card_id}, {"$set": {"active": False}})
-        card_info = {
-            "card_id": card_id, "card_name": updated.get("name", ""),
-            "remaining_value": updated.get("remaining_value", 0),
-            "remaining_services": remaining_services, "card_active": not is_exhausted,
-        }
+        
+        card_info = {"card_name": updated.get("name", ""), "remaining_value": updated.get("remaining_value", 0)}
 
+    # ── Salvataggio Pagamento ────────────────────────────────────────────────────
     payment_doc = {
         "id": str(uuid.uuid4()), "user_id": current_user["id"], "appointment_id": appointment_id,
         "client_id": apt["client_id"], "client_name": apt["client_name"],
-        "total_paid": total_paid,
-        "payment_method": payment_method,
-        "card_id": card_id if payment_method == "prepaid" else None,
-        "card_name": card_info["card_name"] if card_info else None,
+        "total_paid": total_paid, "payment_method": payment_method,
         "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "services": apt["services"]
     }
     await db.payments.insert_one(payment_doc)
-    await db.appointments.update_one(
-        {"id": appointment_id},
-        {"$set": {
-            "status": "completed", "paid": True,
-            "amount_paid": total_paid, "payment_method": payment_method,
-            "card_id": card_id if payment_method == "prepaid" else apt.get("card_id"),
-        }},
-    )
+    await db.appointments.update_one({"id": appointment_id}, {"$set": {"status": "completed", "paid": True}})
     
-    # Notifica Ringraziamento (template + fallback UltraMsg/Green API)
-    if apt.get("client_phone"):
-        try:
-            # Fallback robusto: se il campo google_review_link e' vuoto/non impostato,
-            # usa una ricerca Google del salone (l'utente puo' lasciare comunque la recensione da li')
-            review_link = (
-                current_user.get("google_review_link")
-                or "https://www.google.com/search?q=Bruno+Melito+Hair+Stylist+Santa+Maria+Capua+Vetere"
-            )
-            ringr_text = (
-                f"Ciao {apt['client_name']}! Grazie per essere venuta da Bruno Melito Hair. 💇\n\n"
-                f"Se ti è piaciuto, ci aiuteresti tantissimo lasciando una recensione qui:\n{review_link}\n\n"
-                f"A presto!"
-            )
-            await send_automatic_message(
-                apt["client_phone"],
-                template_name="ringraziamento_visita",
-                template_vars=[apt["client_name"], review_link],
-                fallback_text=ringr_text,
-                user=current_user,
-            )
-        except Exception as e:
-            logger.error(f"Errore ringraziamento checkout: {e}")
+    # ── Notifica Ringraziamento (Background) ─────────────────────────────────────
+    # Se il telefono non è nell'appuntamento, cerchiamolo nel documento cliente
+    phone = apt.get("client_phone")
+    if not phone and apt.get("client_id"):
+        client_doc = await db.clients.find_one({"id": apt["client_id"]}, {"phone": 1})
+        if client_doc: phone = client_doc.get("phone")
+
+    if phone:
+        background_tasks.add_task(_send_checkout_thank_you, phone, apt["client_name"], current_user)
         
     return {"status": "ok", "payment_id": payment_doc["id"], "card": card_info}
 
@@ -229,7 +202,7 @@ async def checkout_appointment(appointment_id: str, data: dict, current_user: di
 async def get_appointments(date: Optional[str] = None, current_user: dict = Depends(get_current_user)):
     query = {"user_id": current_user["id"]}
     if date: query["date"] = date
-    res = await db.appointments.find(query, {"_id": 0}).sort("time", 1).to_list(500)
+    res = await db.appointments.find(query, {"_id": 0}).sort("time", 1).to_list(1000)
     return [AppointmentResponse(**a) for a in res]
 
 @router.get("/appointments/{appointment_id}", response_model=AppointmentResponse)
@@ -240,8 +213,8 @@ async def get_appointment(appointment_id: str, current_user: dict = Depends(get_
 
 @router.put("/appointments/{appointment_id}", response_model=AppointmentResponse)
 async def update_appointment(appointment_id: str, data: dict, current_user: dict = Depends(get_current_user)):
-    update = dict(data)
-
+    update = {k: v for k, v in data.items() if v is not None}
+    
     if "service_ids" in update:
         ids = update.get("service_ids") or []
         services = await db.services.find(
@@ -250,32 +223,31 @@ async def update_appointment(appointment_id: str, data: dict, current_user: dict
         ).to_list(100)
         services_by_id = {s["id"]: s for s in services}
         ordered = [services_by_id[i] for i in ids if i in services_by_id]
-        total_duration = sum(s.get("duration", 0) for s in ordered)
-        total_price = sum(s.get("price", 0) for s in ordered)
         update["services"] = [
             {"id": s["id"], "name": s["name"], "duration": s.get("duration", 0), "price": s.get("price", 0)}
             for s in ordered
         ]
-        update["total_duration"] = total_duration
-        update["total_price"] = total_price
+        update["total_duration"] = sum(s.get("duration", 0) for s in ordered)
+        update["total_price"] = sum(s.get("price", 0) for s in ordered)
 
     if "operator_id" in update:
         op_id = update.get("operator_id")
         if op_id:
             op = await db.operators.find_one({"id": op_id, "user_id": current_user["id"]}, {"_id": 0})
-            update["operator_name"] = op["name"] if op else None
+            if op:
+                update["operator_name"] = op["name"]
+                update["operator_color"] = op.get("color")
         else:
             update["operator_name"] = None
+            update["operator_color"] = None
 
-    if ("service_ids" in data) or ("time" in data):
-        current = await db.appointments.find_one(
-            {"id": appointment_id, "user_id": current_user["id"]}, {"_id": 0}
-        )
+    if "time" in update or "total_duration" in update:
+        current = await db.appointments.find_one({"id": appointment_id, "user_id": current_user["id"]}, {"_id": 0})
         if current:
-            time_val = update.get("time", current.get("time"))
-            duration_val = update.get("total_duration", current.get("total_duration", 0))
-            if time_val:
-                update["end_time"] = calculate_end_time(time_val, duration_val)
+            new_time = update.get("time", current.get("time"))
+            new_dur = update.get("total_duration", current.get("total_duration", 0))
+            if new_time:
+                update["end_time"] = calculate_end_time(new_time, new_dur)
 
     await db.appointments.update_one(
         {"id": appointment_id, "user_id": current_user["id"]}, {"$set": update}
