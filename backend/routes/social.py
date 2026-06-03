@@ -109,8 +109,30 @@ async def save_config(data: dict, current_user: dict = Depends(get_current_user)
 async def publish_via_make(data: dict, current_user: dict = Depends(get_current_user)):
     url = current_user.get("make_webhook_url")
     if not url: raise HTTPException(status_code=400, detail="Configura il Webhook")
-    requests.post(url, json=data, timeout=10)
+    
+    # Invia a Make.com
+    try:
+        requests.post(url, json=data, timeout=10)
+    except Exception as e:
+        logger.error(f"Errore invio a Make.com: {e}")
+        raise HTTPException(status_code=500, detail="Errore nell'invio ai social")
+
+    # Salva nello storico
+    history_doc = {
+        "id": str(uuid.uuid4()),
+        "user_id": current_user["id"],
+        "text": data.get("text") or data.get("message", ""),
+        "image_url": data.get("image_url", ""),
+        "published_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.social_history.insert_one(history_doc)
+    
     return {"success": True}
+
+@router.get("/social/history")
+async def get_social_history(current_user: dict = Depends(get_current_user)):
+    history = await db.social_history.find({"user_id": current_user["id"]}, {"_id": 0}).sort("published_at", -1).to_list(20)
+    return history
 
 @router.post("/social/upload-image")
 async def upload_image(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):

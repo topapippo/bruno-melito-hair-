@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
-import { Share2, History, Loader2, Send, Sparkles, Trash2, Edit3, Camera, RefreshCw } from 'lucide-react';
+import { Share2, History, Loader2, Send, Sparkles, Trash2, Edit3, Camera, RefreshCw, Calendar } from 'lucide-react';
 import Layout from '../components/Layout';
 import api from '../lib/api';
+import { format } from 'date-fns';
+import { it } from 'date-fns/locale';
 
 function SuggestionCard({ s, onPublish, onDelete }) {
   const [text, setText] = useState(s.text);
@@ -26,7 +28,7 @@ function SuggestionCard({ s, onPublish, onDelete }) {
   };
 
   return (
-    <div className="bg-white rounded-2xl border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex flex-col sm:flex-row mb-6 group transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-none">
+    <div className="bg-white rounded-2xl border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex flex-col sm:row mb-6 group transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-none">
       <div className="relative w-full sm:w-48 h-48 shrink-0 bg-gray-50 border-r-4 border-black">
         {imageUrl ? <img src={imageUrl} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-300"><Camera /></div>}
         <button onClick={() => fileRef.current?.click()} className="absolute bottom-2 right-2 bg-yellow-300 p-2 rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-black"><Edit3 className="w-4 h-4" /></button>
@@ -50,6 +52,41 @@ function SuggestionCard({ s, onPublish, onDelete }) {
   );
 }
 
+function HistoryTab() {
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.get('/social/history')
+      .then(r => setHistory(r.data))
+      .catch(() => toast.error('Errore nel caricamento dello storico'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-purple-600 w-10 h-10" /></div>;
+  if (history.length === 0) return <div className="text-center py-20 text-gray-400 font-bold">Nessun post pubblicato finora.</div>;
+
+  return (
+    <div className="space-y-6">
+      {history.map(post => (
+        <div key={post.id} className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden flex flex-col sm:flex-row shadow-sm">
+          <div className="w-full sm:w-32 h-32 shrink-0 bg-gray-50 border-r-2 border-gray-200">
+            {post.image_url ? <img src={post.image_url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-300"><Camera /></div>}
+          </div>
+          <div className="p-4 flex-1 flex flex-col justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                <Calendar size={12} /> {format(new Date(post.published_at), 'dd MMMM yyyy HH:mm', { locale: it })}
+              </div>
+              <p className="text-sm text-gray-700 whitespace-pre-wrap line-clamp-3">{post.text}</p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function WingmanTab({ configured }) {
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -68,10 +105,11 @@ function WingmanTab({ configured }) {
   const handlePublish = async (s) => {
     if (!configured) { toast.error('Configura il Webhook nelle Impostazioni'); return; }
     try {
-      await api.post('/social/publish-via-make', { message: s.text, image_url: s.image_url });
+      await api.post('/social/publish-via-make', { text: s.text, image_url: s.image_url });
       toast.success('Post inviato a Make.com!');
-      await api.delete(`/social/wingman-suggestions/${s.id}`);
-      setSuggestions(prev => prev.filter(x => x.id !== s.id));
+      // Non cancelliamo più la suggestione, ma rinfreschiamo lo stato se necessario
+      // await api.delete(`/social/wingman-suggestions/${s.id}`);
+      // setSuggestions(prev => prev.filter(x => x.id !== s.id));
     } catch { toast.error('Errore'); }
   };
 
@@ -95,13 +133,13 @@ export default function SocialPage() {
 
   return (
     <Layout>
-      <div className="max-w-2xl mx-auto px-4 py-8">
+      <div className="max-w-2xl mx-auto px-4 py-8 pb-24">
         <h1 className="text-4xl font-black uppercase italic mb-8 flex items-center gap-3"><Share2 className="w-8 h-8" /> Social Studio</h1>
         <div className="flex bg-gray-100 rounded-2xl p-1 mb-8">
-          <button onClick={() => setActiveTab('wingman')} className={`flex-1 py-3 rounded-xl text-sm font-black uppercase transition-all ${activeTab === 'wingman' ? 'bg-black text-white' : 'text-gray-500'}`}>Wingman AI</button>
-          <button onClick={() => setActiveTab('history')} className={`flex-1 py-3 rounded-xl text-sm font-black uppercase transition-all ${activeTab === 'history' ? 'bg-black text-white' : 'text-gray-500'}`}>Storico</button>
+          <button onClick={() => setActiveTab('wingman')} className={`flex-1 py-3 rounded-xl text-sm font-black uppercase transition-all ${activeTab === 'wingman' ? 'bg-black text-white shadow-lg' : 'text-gray-500'}`}>Wingman AI</button>
+          <button onClick={() => setActiveTab('history')} className={`flex-1 py-3 rounded-xl text-sm font-black uppercase transition-all ${activeTab === 'history' ? 'bg-black text-white shadow-lg' : 'text-gray-500'}`}>Storico</button>
         </div>
-        {activeTab === 'wingman' && <WingmanTab configured={config?.configured} />}
+        {activeTab === 'wingman' ? <WingmanTab configured={config?.configured} /> : <HistoryTab />}
       </div>
     </Layout>
   );
