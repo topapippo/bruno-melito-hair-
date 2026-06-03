@@ -7,10 +7,16 @@ import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 
 function SuggestionCard({ s, onPublish, onDelete }) {
-  const [text, setText] = useState(s.text);
-  const [imageUrl, setImageUrl] = useState(s.image_url);
+  const [text, setText] = useState(s.text || '');
+  const [imageUrl, setImageUrl] = useState(s.image_url || '');
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef();
+
+  // Sincronizza lo stato locale quando cambia la suggestione (es. dopo un refresh)
+  useEffect(() => {
+    setText(s.text || '');
+    setImageUrl(s.image_url || '');
+  }, [s]);
 
   const saveChange = async (t, i) => {
     try { await api.put(`/social/wingman-suggestions/${s.id}`, { text: t, image_url: i }); } catch {}
@@ -28,7 +34,7 @@ function SuggestionCard({ s, onPublish, onDelete }) {
   };
 
   return (
-    <div className="bg-white rounded-2xl border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex flex-col sm:row mb-6 group transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-none">
+    <div className="bg-white rounded-2xl border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex flex-col sm:flex-row mb-6 group transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-none">
       <div className="relative w-full sm:w-48 h-48 shrink-0 bg-gray-50 border-r-4 border-black">
         {imageUrl ? <img src={imageUrl} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-300"><Camera /></div>}
         <button onClick={() => fileRef.current?.click()} className="absolute bottom-2 right-2 bg-yellow-300 p-2 rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-black"><Edit3 className="w-4 h-4" /></button>
@@ -42,7 +48,14 @@ function SuggestionCard({ s, onPublish, onDelete }) {
             <button onClick={() => onDelete(s.id)} className="text-gray-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
           </div>
           <h4 className="font-black text-lg uppercase">{s.title}</h4>
-          <textarea className="w-full text-sm font-medium text-gray-800 border-2 border-transparent hover:border-gray-100 focus:border-black rounded-lg p-2 resize-none" rows={4} value={text} onChange={(e) => setText(e.target.value)} onBlur={() => saveChange(text, imageUrl)} />
+          <textarea 
+            className="w-full text-sm font-medium text-gray-800 border-2 border-transparent hover:border-gray-100 focus:border-black rounded-lg p-2 resize-none" 
+            rows={4} 
+            value={text} 
+            onChange={(e) => setText(e.target.value)} 
+            onBlur={() => saveChange(text, imageUrl)} 
+            placeholder="Scrivi qui la tua frase..."
+          />
         </div>
         <button onClick={() => onPublish({ ...s, text, image_url: imageUrl })} className="mt-4 w-full bg-black text-white font-black py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-purple-600 active:scale-95 transition-all">
           <Send className="w-5 h-5" /> PUBBLICA SUI SOCIAL
@@ -107,9 +120,6 @@ function WingmanTab({ configured }) {
     try {
       await api.post('/social/publish-via-make', { text: s.text, image_url: s.image_url });
       toast.success('Post inviato a Make.com!');
-      // Non cancelliamo più la suggestione, ma rinfreschiamo lo stato se necessario
-      // await api.delete(`/social/wingman-suggestions/${s.id}`);
-      // setSuggestions(prev => prev.filter(x => x.id !== s.id));
     } catch { toast.error('Errore'); }
   };
 
