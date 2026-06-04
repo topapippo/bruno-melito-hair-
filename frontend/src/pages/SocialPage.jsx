@@ -12,7 +12,6 @@ function SuggestionCard({ s, onPublish, onDelete }) {
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef();
 
-  // Sincronizza lo stato locale quando cambia la suggestione (es. dopo un refresh)
   useEffect(() => {
     setText(s.text || '');
     setImageUrl(s.image_url || '');
@@ -36,7 +35,7 @@ function SuggestionCard({ s, onPublish, onDelete }) {
   return (
     <div className="bg-white rounded-2xl border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex flex-col sm:flex-row mb-6 group transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-none">
       <div className="relative w-full sm:w-48 h-48 shrink-0 bg-gray-50 border-r-4 border-black">
-        {imageUrl ? <img src={imageUrl} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-300"><Camera /></div>}
+        {imageUrl ? <img src={imageUrl} className="w-full h-full object-cover" alt="" /> : <div className="w-full h-full flex items-center justify-center text-gray-300"><Camera /></div>}
         <button onClick={() => fileRef.current?.click()} className="absolute bottom-2 right-2 bg-yellow-300 p-2 rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-black"><Edit3 className="w-4 h-4" /></button>
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
         {uploading && <div className="absolute inset-0 bg-white/60 flex items-center justify-center"><Loader2 className="animate-spin text-black" /></div>}
@@ -49,7 +48,7 @@ function SuggestionCard({ s, onPublish, onDelete }) {
           </div>
           <h4 className="font-black text-lg uppercase">{s.title}</h4>
           <textarea 
-            className="w-full text-sm font-medium text-gray-800 border-2 border-transparent hover:border-gray-100 focus:border-black rounded-lg p-2 resize-none" 
+            className="w-full text-sm font-medium text-gray-800 border-2 border-transparent hover:border-gray-100 focus:border-black rounded-lg p-2 resize-none bg-transparent" 
             rows={4} 
             value={text} 
             onChange={(e) => setText(e.target.value)} 
@@ -80,11 +79,11 @@ function HistoryTab() {
   if (history.length === 0) return <div className="text-center py-20 text-gray-400 font-bold">Nessun post pubblicato finora.</div>;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-12">
       {history.map(post => (
         <div key={post.id} className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden flex flex-col sm:flex-row shadow-sm">
           <div className="w-full sm:w-32 h-32 shrink-0 bg-gray-50 border-r-2 border-gray-200">
-            {post.image_url ? <img src={post.image_url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-300"><Camera /></div>}
+            {post.image_url ? <img src={post.image_url} className="w-full h-full object-cover" alt="" /> : <div className="w-full h-full flex items-center justify-center text-gray-300"><Camera /></div>}
           </div>
           <div className="p-4 flex-1 flex flex-col justify-between">
             <div className="space-y-2">
@@ -118,7 +117,8 @@ function WingmanTab({ configured }) {
   const handlePublish = async (s) => {
     if (!configured) { toast.error('Configura il Webhook nelle Impostazioni'); return; }
     try {
-      await api.post('/social/publish-via-make', { text: s.text, image_url: s.image_url });
+      // Inviamo l'oggetto s completo, che include il campo 'text' aggiornato dallo stato locale del SuggestionCard
+      await api.post('/social/publish-via-make', s);
       toast.success('Post inviato a Make.com!');
     } catch { toast.error('Errore'); }
   };

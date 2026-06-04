@@ -31,7 +31,7 @@ _WINGMAN_DEFAULTS = [
     {
         "type": "divertente",
         "title": "Domenica da Diva",
-        "text": "Il lunedì è lontano, ma la bellezza è a un click di distanza. ✨\nNon aspettare che i tuoi capelli gridino 'aiuto'. Regalati un sabato di relax e stile da Bruno Melito. Uscirai dal salone pronta a conquistare il mondo (o almeno l'aperitivo! 😉).\n\n👉 Prenota ora: https://brunomelitohair.it",
+        "text": "Il lunedì è lontano, ma la bellezza è a un click di distanza. ✨\nNon aspettare che i tuoi capelli gridino 'aiuto'. Regalati un sabato di relax e stile da Bruno Melito. Uscirai dal salone pronta a conquistarom il mondo (o almeno l'aperitivo! 😉).\n\n👉 Prenota ora: https://brunomelitohair.it",
         "image_url": "https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/28527e09a63e933c1a6707ec114afd3802828c9fdd7930a980697e2abe154cba.png"
     },
     {
@@ -63,12 +63,24 @@ _WINGMAN_DEFAULTS = [
         "title": "Biondo Burro",
         "text": "La nuance più calda e desiderata di questa estate. 🧈✨\nUn biondo cremoso, luminoso e mai banale. Vieni a scoprire come lo realizziamo con le nostre tecniche di schiaritura dolce. \n\nTi aspettiamo! 👇\nhttps://brunomelitohair.it",
         "image_url": "https://i.ibb.co/vvP7jZFb/b28028e3900d.jpg"
+    },
+    {
+        "type": "tendenza",
+        "title": "Volume & Light",
+        "text": "Sogni capelli voluminosi che catturano ogni raggio di sole? ✨\nLa nostra tecnica di taglio 'Air-Light' dona leggerezza e movimento senza svuotare le punte. Il segreto per un'estate a tutto volume!\n\n👇 Prenota qui:\n👉 https://brunomelitohair.it",
+        "image_url": "https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/0932ee88330ef0ca32df8c7b548f976284064ebc11bc90f86b13a995c8abf80a.png"
+    },
+    {
+        "type": "relax",
+        "title": "Rituale Detox",
+        "text": "Senti i capelli pesanti? È ora di un reset! 💆‍♀️🌿\nIl nostro trattamento Detox purifica la cute e idrata le lunghezze, eliminando residui di smog e prodotti. Un momento di puro relax per te e la tua chioma.\n\n✨ Regalati una pausa: https://brunomelitohair.it",
+        "image_url": "https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/23ccfe5aaadde1f4925524c2bf4de0408eb95858d844b45025838d9959197b1f.png"
     }
 ]
 
 @router.get("/social/wingman-suggestions")
 async def get_wingman_suggestions(current_user: dict = Depends(get_current_user)):
-    suggestions = await db.wingman_suggestions.find({"user_id": current_user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(20)
+    suggestions = await db.wingman_suggestions.find({"user_id": current_user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(30)
     if not suggestions:
         to_insert = [{**d, "id": str(uuid.uuid4()), "user_id": current_user["id"], "created_at": datetime.now(timezone.utc).isoformat()} for d in _WINGMAN_DEFAULTS]
         await db.wingman_suggestions.insert_many(to_insert)
@@ -79,7 +91,6 @@ async def get_wingman_suggestions(current_user: dict = Depends(get_current_user)
 @router.post("/social/refresh-suggestions")
 async def refresh_suggestions(current_user: dict = Depends(get_current_user)):
     await db.wingman_suggestions.delete_many({"user_id": current_user["id"]})
-    # Mixiamo i default con un ordine casuale ogni volta
     pool = list(_WINGMAN_DEFAULTS)
     random.shuffle(pool)
     to_insert = [{**d, "id": str(uuid.uuid4()), "user_id": current_user["id"], "created_at": datetime.now(timezone.utc).isoformat()} for d in pool]
@@ -89,7 +100,13 @@ async def refresh_suggestions(current_user: dict = Depends(get_current_user)):
 
 @router.put("/social/wingman-suggestions/{suggestion_id}")
 async def update_suggestion(suggestion_id: str, data: dict, current_user: dict = Depends(get_current_user)):
-    await db.wingman_suggestions.update_one({"id": suggestion_id, "user_id": current_user["id"]}, {"$set": data})
+    # Assicuriamoci di mappare correttamente 'text'
+    update = {}
+    if "text" in data: update["text"] = data["text"]
+    if "image_url" in data: update["image_url"] = data["image_url"]
+    if "title" in data: update["title"] = data["title"]
+    
+    await db.wingman_suggestions.update_one({"id": suggestion_id, "user_id": current_user["id"]}, {"$set": update})
     return {"ok": True}
 
 @router.delete("/social/wingman-suggestions/{suggestion_id}")
@@ -111,8 +128,17 @@ async def publish_via_make(data: dict, current_user: dict = Depends(get_current_
     url = current_user.get("make_webhook_url")
     if not url: raise HTTPException(status_code=400, detail="Configura il Webhook")
     
+    # Invia payload ridondante per garantire che Make.com riceva il testo
+    # Aggiungiamo 'message' e 'caption' come fallback di 'text'
+    payload = {
+        **data,
+        "text": data.get("text") or data.get("message", ""),
+        "message": data.get("text") or data.get("message", ""),
+        "caption": data.get("text") or data.get("message", ""),
+    }
+    
     try:
-        requests.post(url, json=data, timeout=10)
+        requests.post(url, json=payload, timeout=10)
     except Exception as e:
         logger.error(f"Errore invio a Make.com: {e}")
         raise HTTPException(status_code=500, detail="Errore nell'invio ai social")
@@ -120,7 +146,7 @@ async def publish_via_make(data: dict, current_user: dict = Depends(get_current_
     history_doc = {
         "id": str(uuid.uuid4()),
         "user_id": current_user["id"],
-        "text": data.get("text") or data.get("message", ""),
+        "text": payload["text"],
         "image_url": data.get("image_url", ""),
         "published_at": datetime.now(timezone.utc).isoformat()
     }
