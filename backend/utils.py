@@ -8,309 +8,167 @@ from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
-# --- CONFIGURAZIONI TWILIO ---
-TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID')
-TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN')
-TWILIO_PHONE_NUMBER = os.environ.get('TWILIO_PHONE_NUMBER')
-
 # --- CONFIGURAZIONI WHATSAPP CLOUD API ---
 WA_PHONE_NUMBER_ID = os.environ.get('WHATSAPP_PHONE_ID', '1030164126858033')
 WA_TOKEN = os.environ.get('WHATSAPP_TOKEN', '')
 WA_FOOTER = "\n\nMessaggio automatico di cortesia di Bruno Melito Hair. Se hai bisogno di scriverci, rispondi al 3397833526. Grazie!"
 
-# Inizializzazione Twilio
-twilio_client = None
-if TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN:
-    try:
-        from twilio.rest import Client
-        twilio_client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
-    except:
-        pass
-
 def normalize_phone_wa(phone: str) -> str:
     """Restituisce il numero in formato 393XXXXXXXXX."""
+    if not phone: return ""
     d = re.sub(r'\D', '', str(phone))
     if d.startswith('0039'): d = d[4:]
     elif d.startswith('39') and len(d) > 10: d = d[2:]
-    return '39' + d
+    if not d.startswith('39') and len(d) >= 9: d = '39' + d
+    return d
 
-def format_phone_e164(phone: str) -> str:
-    phone = ''.join(filter(str.isdigit, str(phone)))
-    if phone.startswith('39'): return f"+{phone}"
-    return f"+39{phone}"
-
-# --- FUNZIONI DI INVIO ---
+async def _log_communication(user_id: str, channel: str, phone: str, message: str, result: dict):
+    """Registra l'esito della comunicazione nel database per lo storico/audit."""
+    try:
+        from database import db
+        log_entry = {
+            "id": str(_uuid.uuid4()),
+            "user_id": user_id,
+            "channel": channel,
+            "phone": phone,
+            "message": message[:1000],
+            "sent": result.get("sent", False),
+            "method": result.get("method", "unknown"),
+            "error": result.get("error"),
+            "provider_response": str(result.get("data", ""))[:500],
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        await db.communication_logs.insert_one(log_entry)
+        # Anche nello storico vecchio per compatibilità
+        await db.reminders_sent.insert_one({
+            "id": log_entry["id"], "user_id": user_id, "type": "automatico",
+            "client_phone": phone, "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+            "status": "sent" if log_entry["sent"] else "failed", "sent_at": log_entry["timestamp"]
+        })
+    except Exception as e:
+        logger.error(f"Errore logging comunicazione: {e}")
 
 async def send_whatsapp_template(phone: str, template_name: str, variables: list = None, lang: str = "it") -> dict:
-    """Invia un template ufficiale via Meta."""
-    if not WA_TOKEN: return {"sent": False, "error": "Token non configurato"}
+    if not WA_TOKEN: return {"sent": False, "error": "Token Meta non configurato"}
     phone_clean = normalize_phone_wa(phone)
     url = f"https://graph.facebook.com/v21.0/{WA_PHONE_NUMBER_ID}/messages"
     headers = {"Authorization": f"Bearer {WA_TOKEN}", "Content-Type": "application/json"}
     
-    parameters = [{"type": "text", "text": str(v)} for v in (variables or [])]
-    
     payload = {
-        "messaging_product": "whatsapp",
-        "to": phone_clean,
-        "type": "template",
+        "messaging_product": "whatsapp", "to": phone_clean, "type": "template",
         "template": {
-            "name": template_name,
-            "language": {"code": lang},
-            "components": [{"type": "body", "parameters": parameters}]
+            "name": template_name, "language": {"code": lang},
+            "components": [{"type": "body", "parameters": [{"type": "text", "text": str(v)} for v in (variables or [])]}]
         }
     }
-    
     try:
         resp = await asyncio.to_thread(_req.post, url, headers=headers, json=payload, timeout=15)
         rjson = resp.json()
         if resp.status_code == 200:
-            return {"sent": True, "method": "cloud_api_template", "message_id": rjson.get("messages", [{}])[0].get("id")}
-        else:
-            # Fallback it_IT if it fails with 404
-            if lang == "it" and resp.status_code == 404:
-                return await send_whatsapp_template(phone, template_name, variables, lang="it_IT")
-            return {"sent": False, "error": rjson.get("error", {}).get("message", "Errore API"), "code": resp.status_code}
+            return {"sent": True, "method": "meta_template", "data": rjson}
+        
+        # Fallback it_IT se it fallisce
+        if lang == "it" and (resp.status_code == 400 or resp.status_code == 404):
+            return await send_whatsapp_template(phone, template_name, variables, lang="it_IT")
+            
+        return {"sent": False, "error": rjson.get("error", {}).get("message", "Errore API"), "code": resp.status_code, "data": rjson}
     except Exception as e:
         return {"sent": False, "error": str(e)}
 
-async def send_whatsapp_cloud(phone: str, message: str) -> dict:
-    """Invia un messaggio di testo libero via Cloud API."""
+async def send_whatsapp_cloud_text(phone: str, message: str) -> dict:
     if not WA_TOKEN: return {"sent": False, "error": "Token mancante"}
     phone_clean = normalize_phone_wa(phone)
     url = f"https://graph.facebook.com/v21.0/{WA_PHONE_NUMBER_ID}/messages"
     headers = {"Authorization": f"Bearer {WA_TOKEN}", "Content-Type": "application/json"}
-    payload = {
-        "messaging_product": "whatsapp",
-        "to": phone_clean,
-        "type": "text",
-        "text": {"body": message}
-    }
+    payload = {"messaging_product": "whatsapp", "to": phone_clean, "type": "text", "text": {"body": message}}
     try:
         resp = await asyncio.to_thread(_req.post, url, headers=headers, json=payload, timeout=15)
-        return {"sent": resp.status_code == 200, "method": "cloud_api_text", "data": resp.text}
+        return {"sent": resp.status_code == 200, "method": "meta_text", "data": resp.json()}
     except Exception as e:
         return {"sent": False, "error": str(e)}
 
-async def _send_ultramsg(phone: str, message: str, user: dict = None) -> dict:
-    """Fallback legacy 1: UltraMsg (nessuna restrizione 24h)."""
-    if not user:
-        return {"sent": False, "error": "user mancante per UltraMsg"}
-    instance_id = user.get("ultramsg_instance_id", "")
-    token = user.get("ultramsg_token", "")
-    if not instance_id or not token:
-        return {"sent": False, "error": "UltraMsg non configurato"}
-    phone_clean = normalize_phone_wa(phone)
-    wa_number = phone_clean + "@c.us"
+async def _send_ultramsg(phone: str, message: str, user: dict) -> dict:
+    instance_id = (user or {}).get("ultramsg_instance_id")
+    token = (user or {}).get("ultramsg_token")
+    if not instance_id or not token: return {"sent": False, "error": "UltraMsg non configurato"}
     try:
         url = f"https://api.ultramsg.com/{instance_id}/messages/chat"
-        resp = await asyncio.to_thread(
-            _req.post, url,
-            data={"token": token, "to": wa_number, "body": message},
-            timeout=15
-        )
-        rjson = {}
-        try: rjson = resp.json()
-        except Exception: pass
-        if resp.status_code == 200 and str(rjson.get("sent", "")).lower() == "true":
-            return {"sent": True, "method": "ultramsg"}
-        return {"sent": False, "error": str(rjson.get("error") or rjson.get("message") or resp.text[:200]), "method": "ultramsg"}
-    except Exception as e:
-        return {"sent": False, "error": str(e), "method": "ultramsg"}
+        resp = await asyncio.to_thread(_req.post, url, data={"token": token, "to": normalize_phone_wa(phone) + "@c.us", "body": message}, timeout=15)
+        rjson = resp.json()
+        return {"sent": rjson.get("sent") == "true" or rjson.get("sent") == True, "method": "ultramsg", "data": rjson}
+    except Exception as e: return {"sent": False, "error": str(e)}
 
-
-async def _send_greenapi(phone: str, message: str, user: dict = None) -> dict:
-    """Fallback legacy 2: Green API (nessuna restrizione 24h)."""
-    if not user:
-        return {"sent": False, "error": "user mancante per Green API"}
-    instance_id = user.get("green_api_instance_id", "")
-    api_token = user.get("green_api_token", "")
-    if not instance_id or not api_token:
-        return {"sent": False, "error": "Green API non configurato"}
-    phone_clean = normalize_phone_wa(phone)
-    wa_number = phone_clean + "@c.us"
+async def _send_greenapi(phone: str, message: str, user: dict) -> dict:
+    id_instance = (user or {}).get("green_api_instance_id")
+    api_token = (user or {}).get("green_api_token")
+    if not id_instance or not api_token: return {"sent": False, "error": "Green API non configurata"}
     try:
-        url = f"https://api.greenapi.com/waInstance{instance_id}/sendMessage/{api_token}"
-        resp = await asyncio.to_thread(
-            _req.post, url,
-            json={"chatId": wa_number, "message": message},
-            timeout=15
-        )
-        rjson = {}
-        try: rjson = resp.json()
-        except Exception: pass
-        if resp.status_code == 200 and rjson.get("idMessage"):
-            return {"sent": True, "method": "greenapi"}
-        return {"sent": False, "error": resp.text[:200], "method": "greenapi"}
-    except Exception as e:
-        return {"sent": False, "error": str(e), "method": "greenapi"}
+        url = f"https://api.greenapi.com/waInstance{id_instance}/sendMessage/{api_token}"
+        resp = await asyncio.to_thread(_req.post, url, json={"chatId": normalize_phone_wa(phone) + "@c.us", "message": message}, timeout=15)
+        rjson = resp.json()
+        return {"sent": bool(rjson.get("idMessage")), "method": "greenapi", "data": rjson}
+    except Exception as e: return {"sent": False, "error": str(e)}
 
-
-async def _get_admin_user() -> dict:
-    """Recupera l'utente admin per accedere alle credenziali UltraMsg/Green API."""
-    try:
-        from database import db
-        email = os.environ.get("PUBLIC_ADMIN_EMAIL", "melitobruno@gmail.com")
-        user = await db.users.find_one({"email": email}, {"_id": 0})
-        if not user:
-            user = await db.users.find_one({}, {"_id": 0})
-        return user or {}
-    except Exception:
-        return {}
-
-
-async def send_automatic_message(
-    phone: str,
-    template_name: str = None,
-    template_vars: list = None,
-    fallback_text: str = None,
-    user: dict = None,
-    lang: str = "it"
-) -> dict:
-    """
-    Invio messaggi automatici con fallback chain robusta:
-      1. Meta Cloud API template (se template_name fornito e WA_TOKEN attivo)
-      2. UltraMsg (testo libero — no restrizione 24h)
-      3. Green API (testo libero — no restrizione 24h)
-      4. Cloud API testo libero (ultima ratio, funziona solo entro 24h)
-
-    Params:
-      - template_name: nome template Meta (se approvato, viene tentato per primo)
-      - template_vars: lista variabili per il template
-      - fallback_text: testo per UltraMsg/Green API se template fallisce
-      - user: documento utente con credenziali ultramsg/green (se None viene recuperato)
-    """
-    if not phone:
-        return {"sent": False, "error": "phone mancante"}
-
-    last_error = None
-
-    # Punto di uscita unico: registra ogni esito nello storico prima di restituirlo.
-    # `user` è letto al momento della chiamata (può essere recuperato più sotto).
-    async def _done(result: dict) -> dict:
-        await _log_communication(
-            user_id=(user or {}).get("id", ""),
-            channel="whatsapp",
-            phone=phone,
-            message=fallback_text or template_name or "",
-            result=result,
-        )
-        return result
-
-    # 1. Meta Cloud API template
+async def send_automatic_message(phone: str, template_name: str = None, template_vars: list = None, fallback_text: str = None, user: dict = None) -> dict:
+    """Funzione maestra con catena di fallback e logging obbligatorio."""
+    if not phone: return {"sent": False, "error": "Telefono mancante"}
+    
+    res = {"sent": False, "method": "none", "error": "Inizio invio"}
+    
+    # 1. Meta Template (Primo tentativo se fornito)
     if template_name and WA_TOKEN:
-        result = await send_whatsapp_template(phone, template_name, template_vars or [], lang=lang)
-        if result.get("sent"):
-            return await _done(result)
-        last_error = result.get("error")
-        logger.warning(f"[WA AUTO] Template '{template_name}' fallito ({last_error}) → tentativo fallback")
+        res = await send_whatsapp_template(phone, template_name, template_vars)
+        if res.get("sent"): 
+            await _log_communication((user or {}).get("id", "system"), "whatsapp", phone, f"Template: {template_name}", res)
+            return res
+        logger.warning(f"Meta Template {template_name} fallito: {res.get('error')}")
 
-    # Se non c'è testo di fallback, non possiamo proseguire
-    if not fallback_text:
-        return await _done({"sent": False, "error": last_error or "Template e fallback_text mancanti", "method": "none"})
+    # Se arriviamo qui, il template ha fallito o non è stato fornito. Serve il testo libero.
+    msg = fallback_text or (f"Ciao! Ti scriviamo da Bruno Melito Hair. Per info: 3397833526." if not template_name else "")
+    if not msg: return res
 
-    # Recupera user se non passato (per credenziali UltraMsg/Green API)
-    if not user:
-        user = await _get_admin_user()
+    # 2. UltraMsg (Ottimo per testo libero senza limiti 24h)
+    res_ultra = await _send_ultramsg(phone, msg, user)
+    if res_ultra.get("sent"):
+        await _log_communication((user or {}).get("id", "system"), "whatsapp", phone, msg, res_ultra)
+        return res_ultra
 
-    # 2. UltraMsg
-    result = await _send_ultramsg(phone, fallback_text, user)
-    if result.get("sent"):
-        return await _done(result)
-    logger.warning(f"[WA AUTO] UltraMsg fallito: {result.get('error')}")
+    # 3. Green API (Alternativa a UltraMsg)
+    res_green = await _send_greenapi(phone, msg, user)
+    if res_green.get("sent"):
+        await _log_communication((user or {}).get("id", "system"), "whatsapp", phone, msg, res_green)
+        return res_green
 
-    # 3. Green API
-    result = await _send_greenapi(phone, fallback_text, user)
-    if result.get("sent"):
-        return await _done(result)
-    logger.warning(f"[WA AUTO] Green API fallito: {result.get('error')}")
-
-    # 4. Ultima ratio: Cloud API testo libero (funziona solo entro 24h da ultimo msg ricevuto)
-    result = await send_whatsapp_cloud(phone, fallback_text + WA_FOOTER)
-    if result.get("sent"):
-        return await _done(result)
-
-    return await _done({"sent": False, "error": "Tutti i provider hanno fallito", "last_error": last_error, "method": "none"})
-
+    # 4. Meta Text (Ultimo tentativo, funziona solo se cliente ha scritto nelle ultime 24h)
+    res_meta = await send_whatsapp_cloud_text(phone, msg + WA_FOOTER)
+    await _log_communication((user or {}).get("id", "system"), "whatsapp", phone, msg, res_meta)
+    return res_meta
 
 async def send_whatsapp(phone: str, message: str, user: dict = None) -> dict:
-    """Invio messaggio libero con fallback chain (Cloud → UltraMsg → Green API).
-
-    Routing intelligente: se il messaggio è un promemoria o conferma riconoscibile,
-    usa il template Meta approvato. Altrimenti usa il testo libero (con fallback)."""
+    """Interfaccia semplificata per invio manuale o da pulsanti."""
     m_lower = message.lower()
+    # Rilevamento automatico template per ottimizzare invio
+    if "appuntamento" in m_lower or "ricordiamo" in m_lower:
+        # Estrai dati base se possibile
+        nome = re.search(r'Ciao\s+([^!,\n]+)', message)
+        nome = nome.group(1).strip() if nome else "Cliente"
+        ora = re.search(r'(\d{2}:\d{2})', message)
+        ora = ora.group(1) if ora else "10:00"
+        return await send_automatic_message(phone, "promemoria_appuntamento", [nome, "domani", ora], message, user)
+    
+    if "grazie" in m_lower or "visita" in m_lower:
+        nome = re.search(r'Ciao\s+([^!,\n]+)', message)
+        nome = nome.group(1).strip() if nome else "Cliente"
+        link = "https://maps.app.goo.gl/8FdnYpnNyQcd78LQ7"
+        return await send_automatic_message(phone, "ringraziamento_visita", [nome, link], message, user)
 
-    # Estrai nome cliente, data, ora dal messaggio (best effort) per riempire i parametri template
-    nome_cliente = "Cliente"
-    m_nome = re.search(r'Ciao\s+([^!,\n]+)', message)
-    if m_nome:
-        nome_cliente = m_nome.group(1).strip()[:40]
-    ora = re.search(r'(\d{2}:\d{2})', message)
-    ora_str = ora.group(1) if ora else "da concordare"
-    data_str = "prossimamente"
-    data_match = re.search(r'(\d{2}/\d{2}/\d{4})', message)
-    if data_match: data_str = data_match.group(1)
+    return await send_automatic_message(phone, None, None, message, user)
 
-    # Riconosce promemoria dell'agenda
-    if "appuntamento" in m_lower or "ti ricordiamo" in m_lower or "domani alle" in m_lower:
-        return await send_automatic_message(
-            phone,
-            template_name="promemoria_appuntamento",
-            template_vars=[nome_cliente, data_str, ora_str],
-            fallback_text=message,
-            user=user,
-        )
-
-    # Riconosce conferme prenotazione (sia "confermato" che "confermata")
-    if "confermat" in m_lower and "prenotazione" in m_lower:
-        return await send_automatic_message(
-            phone,
-            template_name="promemoria_appuntamento",
-            template_vars=[nome_cliente, data_str, ora_str],
-            fallback_text=message,
-            user=user,
-        )
-
-    # Testo libero generico: Cloud API → UltraMsg → Green API
-    return await send_automatic_message(
-        phone,
-        template_name=None,
-        fallback_text=message,
-        user=user,
-    )
-
-async def send_sms_reminder(phone: str, message: str, salon_name: str) -> dict:
-    if not twilio_client or not TWILIO_PHONE_NUMBER: return {"success": False, "error": "Twilio non configurato"}
+def calculate_end_time(start_time: str, duration: int) -> str:
     try:
-        phone_e164 = format_phone_e164(phone)
-        sms = twilio_client.messages.create(body=f"[{salon_name}] {message}", from_=TWILIO_PHONE_NUMBER, to=phone_e164)
-        return {"success": True, "sid": sms.sid}
-    except Exception as e: return {"success": False, "error": str(e)}
-
-# --- UTILITY ---
-def calculate_end_time(start_time: str, duration_minutes: int) -> str:
-    try:
-        hours, minutes = map(int, start_time.split(':'))
-        total = hours * 60 + minutes + duration_minutes
-        if total >= 24 * 60: return "23:59"
-        return f"{total // 60:02d}:{total % 60:02d}"
+        h, m = map(int, start_time.split(':'))
+        total = h * 60 + m + duration
+        return f"{(total // 60) % 24:02d}:{total % 60:02d}"
     except: return start_time
 
-async def _log_communication(user_id: str, channel: str, phone: str, message: str, result: dict):
-    """Salva uno storico degli invii in db.communication_logs (provider usato + esito).
-    Avvolto in try/except: un errore di logging NON deve mai bloccare l'invio."""
-    try:
-        from database import db
-        await db.communication_logs.insert_one({
-            "id": str(_uuid.uuid4()),
-            "user_id": user_id or "",
-            "channel": channel,
-            "phone": phone,
-            "message": (message or "")[:500],
-            "sent": result.get("sent", False),
-            "method": result.get("method", ""),
-            "error": result.get("error") or result.get("last_error") or "",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        })
-    except Exception:
-        pass
+def send_sms_reminder(p, m, s): return {"success": False, "error": "SMS disabilitati pro-WhatsApp"}
