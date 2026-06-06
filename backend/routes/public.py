@@ -39,7 +39,7 @@ async def warmup():
     return {"ok": True}
 
 # Email admin configurabile via env var (evita hardcoding)
-PUBLIC_ADMIN_EMAIL = os.environ.get("PUBLIC_ADMIN_EMAIL", "melitobruno@gmail.com")
+PUBLIC_ADMIN_EMAIL = os.environ.get("PUBLIC_ADMIN_EMAIL", "admin@brunomelito.it")
 
 
 def _normalize_phone(phone: str) -> str:
