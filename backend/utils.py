@@ -8,6 +8,13 @@ from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
+# --- CONFIGURAZIONI TWILIO (Legacy support) ---
+TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID')
+TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN')
+TWILIO_PHONE_NUMBER = os.environ.get('TWILIO_PHONE_NUMBER')
+twilio_client = None
+
+
 # --- CONFIGURAZIONI WHATSAPP CLOUD API ---
 WA_PHONE_NUMBER_ID = os.environ.get('WHATSAPP_PHONE_ID', '1030164126858033')
 WA_TOKEN = os.environ.get('WHATSAPP_TOKEN', '')
@@ -75,7 +82,7 @@ async def send_whatsapp_template(phone: str, template_name: str, variables: list
     except Exception as e:
         return {"sent": False, "error": str(e)}
 
-async def send_whatsapp_cloud_text(phone: str, message: str) -> dict:
+async def send_whatsapp_cloud(phone: str, message: str) -> dict:
     if not WA_TOKEN: return {"sent": False, "error": "Token mancante"}
     phone_clean = normalize_phone_wa(phone)
     url = f"https://graph.facebook.com/v21.0/{WA_PHONE_NUMBER_ID}/messages"
