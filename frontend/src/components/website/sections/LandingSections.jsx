@@ -25,7 +25,10 @@ function AnimatedSection({ children, className = '', delay = 0 }) {
 export { AnimatedSection };
 
 export function ServicesSection({ servicesRef, landingServiceGroups, cardTemplates, setShowBooking, bookService, bookCard, T }) {
-  const [openLandingCats, setOpenLandingCats] = useState({});
+    const [openLandingCats, setOpenLandingCats] = useState(() => {
+    const firstKey = landingServiceGroups?.orderedKeys?.[0];
+    return firstKey ? { [firstKey]: true } : {};
+  });
   const toggleLCat = (key) => setOpenLandingCats(prev => ({ ...prev, [key]: !prev[key] }));
   const orderedKeys = landingServiceGroups?.orderedKeys || [];
 
