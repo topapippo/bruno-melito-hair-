@@ -18,6 +18,7 @@ from database import db
 from auth import get_current_user
 from models import PublicBookingRequest
 from utils import normalize_phone_wa
+from cache_utils import invalidate_website_cache, get_cached_website, set_cached_website
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -918,20 +919,12 @@ async def delete_website_gallery_item(item_id: str, current_user: dict = Depends
     return {"success": True}
 
 
-_website_cache: dict = {"data": None, "ts": 0}
-_WEBSITE_CACHE_TTL = 600  # 10 minuti
 
-
-def _invalidate_website_cache():
-    _website_cache["data"] = None
-    _website_cache["ts"] = 0
 
 @router.get("/public/website")
 async def public_get_website():
-    import time as _time
-    now = _time.time()
-    if _website_cache["data"] and now - _website_cache["ts"] < _WEBSITE_CACHE_TTL:
-        return _website_cache["data"]
+    cached = get_cached_website()
+    if cached: return cached
 
     user = await get_public_admin_user()
     uid = user["id"] if user else None
@@ -959,8 +952,8 @@ async def public_get_website():
     loyalty_config = {"points_per_euro": LOYALTY_POINTS_PER_EURO, "rewards": loyalty_rewards_data}
 
     result = {"config": config, "reviews": reviews, "gallery": gallery, "services": services, "card_templates": card_templates, "operators": operators, "promotions": promotions, "loyalty": loyalty_config}
-    _website_cache["data"] = result
-    _website_cache["ts"] = now
+    set_cached_website(result)
+    
     return result
 
 

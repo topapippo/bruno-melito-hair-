@@ -1,3 +1,4 @@
+from cache_utils import invalidate_website_cache
 from fastapi import APIRouter, HTTPException, Depends
 from typing import List
 from datetime import datetime, timezone
@@ -6,13 +7,8 @@ import uuid
 from database import db
 from auth import get_current_user
 from models import OperatorCreate, OperatorResponse, OperatorUpdate
-def _invalidate_website_cache():
-    import routes.public as _pub
-    _pub._website_cache = None
-    _pub._website_cache_ts = None
 
 router = APIRouter()
-
 
 @router.post("/operators", response_model=OperatorResponse)
 async def create_operator(data: OperatorCreate, current_user: dict = Depends(get_current_user)):
@@ -23,16 +19,14 @@ async def create_operator(data: OperatorCreate, current_user: dict = Depends(get
         "active": True, "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.operators.insert_one(operator_doc)
-    _invalidate_website_cache()
+    invalidate_website_cache()
     return OperatorResponse(**{k: v for k, v in operator_doc.items() if k != "user_id"})
-
 
 @router.get("/operators", response_model=List[OperatorResponse])
 async def get_operators(current_user: dict = Depends(get_current_user)):
     return await db.operators.find(
         {"user_id": current_user["id"]}, {"_id": 0, "user_id": 0}
     ).sort("name", 1).to_list(100)
-
 
 @router.put("/operators/{operator_id}", response_model=OperatorResponse)
 async def update_operator(operator_id: str, data: OperatorUpdate, current_user: dict = Depends(get_current_user)):
@@ -42,14 +36,13 @@ async def update_operator(operator_id: str, data: OperatorUpdate, current_user: 
     result = await db.operators.update_one({"id": operator_id, "user_id": current_user["id"]}, {"$set": update_data})
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Operatore non trovato")
-    _invalidate_website_cache()
+    invalidate_website_cache()
     return await db.operators.find_one({"id": operator_id}, {"_id": 0, "user_id": 0})
-
 
 @router.delete("/operators/{operator_id}")
 async def delete_operator(operator_id: str, current_user: dict = Depends(get_current_user)):
     result = await db.operators.delete_one({"id": operator_id, "user_id": current_user["id"]})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Operatore non trovato")
-    _invalidate_website_cache()
+    invalidate_website_cache()
     return {"message": "Operatore eliminato"}
