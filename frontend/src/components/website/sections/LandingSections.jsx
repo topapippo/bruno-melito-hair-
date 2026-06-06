@@ -24,7 +24,7 @@ function AnimatedSection({ children, className = '', delay = 0 }) {
 
 export { AnimatedSection };
 
-export function ServicesSection({ servicesRef, landingServiceGroups, cardTemplates, setShowBooking, T }) {
+export function ServicesSection({ servicesRef, landingServiceGroups, cardTemplates, setShowBooking, bookService, bookCard, T }) {
   const [openLandingCats, setOpenLandingCats] = useState({});
   const toggleLCat = (key) => setOpenLandingCats(prev => ({ ...prev, [key]: !prev[key] }));
   const orderedKeys = landingServiceGroups?.orderedKeys || [];
@@ -98,7 +98,7 @@ export function ServicesSection({ servicesRef, landingServiceGroups, cardTemplat
                             </div>
                             <div className="flex items-center gap-4 ml-4">
                               {service.price > 0 && <span className="font-black text-base text-purple-400">€{service.price}</span>}
-                              <button onClick={() => setShowBooking(true)} className="service-prenota-btn text-[10px] font-black px-4 py-2 rounded-xl bg-white text-black hover:bg-purple-600 hover:text-white transition-all uppercase">Prenota</button>
+                              <button onClick={() => bookService ? bookService(service.id) : setShowBooking(true)} className="service-prenota-btn text-[10px] font-black px-4 py-2 rounded-xl bg-white text-black hover:bg-purple-600 hover:text-white transition-all uppercase">Prenota</button>
                             </div>
                           </div>
                         ))}
