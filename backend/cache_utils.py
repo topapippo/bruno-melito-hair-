@@ -4,7 +4,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 _website_cache = {"data": None, "ts": 0}
-_WEBSITE_CACHE_TTL = 3600  # 1 hour
+_WEBSITE_CACHE_TTL = 60  # 1 hour
 
 def invalidate_website_cache():
     global _website_cache
