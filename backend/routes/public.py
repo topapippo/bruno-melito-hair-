@@ -21,13 +21,6 @@ from utils import normalize_phone_wa, send_whatsapp, calculate_end_time, send_au
 from cache_utils import invalidate_website_cache, get_cached_website, set_cached_website
 
 router = APIRouter()
-async def _send_booking_push(client_name, date_it, time, services_names, date_iso=""):
-    try:
-        from routes.push import send_push_to_all
-        url = f"/planning?date={date_iso}" if date_iso else "/planning"
-        await send_push_to_all(title="🔔 Nuova Prenotazione Online!", body=f"{client_name} • {date_it} alle {time} • {services_names}", url=url)
-    except: pass
-
 logger = logging.getLogger(__name__)
 limiter = Limiter(key_func=get_remote_address)
 
@@ -70,8 +63,8 @@ async def public_get_website():
     (config_raw, reviews, gallery, services, card_templates_raw, operators, promotions, loyalty_rewards_data) = await asyncio.gather(
         db.website_config.find_one(uid_filter, {"_id": 0, "user_id": 0}),
         db.website_reviews.find(uid_filter, {"_id": 0, "user_id": 0}).to_list(100),
-        db.website_gallery.find({**uid_filter, "is_deleted": {"$ne": True}}, {"_id": 0, "user_id": 0}).sort("sort_order", 1).to_list(200),
-        db.services.find(uid_filter, {"_id": 0}).sort("order", 1).to_list(200),
+        db.website_gallery.find({**uid_filter, "is_deleted": {"$ne": True}}, {"_id": 0, "user_id": 0}).sort("sort_order", 1).to_list(100),
+        db.services.find(uid_filter, {"_id": 0}).sort("order", 1).to_list(100),
         db.card_templates.find({**uid_filter, "is_deleted": {"$ne": True}}, {"_id": 0}).to_list(100),
         db.operators.find(uid_filter, {"_id": 0, "user_id": 0}).to_list(50),
         db.promotions.find({"active": True}, {"_id": 0, "user_id": 0}).to_list(20),
@@ -108,7 +101,7 @@ async def create_public_booking(data: PublicBookingRequest, background_tasks: Ba
 
     busy_apts = await db.appointments.find({
         "user_id": user_id, "date": data.date, "time": data.time,
-        "status": {"": "cancelled"}
+        "status": {"$ne": "cancelled"}
     }).to_list(100)
     
     busy_operator_ids = {a.get("operator_id") for a in busy_apts if a.get("operator_id")}
@@ -118,18 +111,15 @@ async def create_public_booking(data: PublicBookingRequest, background_tasks: Ba
     assigned_op = None
     
     if data.operator_id:
-        # User chose a specific operator
         requested_op = next((o for o in all_operators if o["id"] == data.operator_id), None)
         if requested_op and requested_op["id"] not in busy_operator_ids:
             assigned_op = requested_op
         else:
-            # Requested op is busy, look for ANY other free operator
             if available_ops:
                 assigned_op = available_ops[0]
             else:
                 raise HTTPException(status_code=409, detail="Tutti gli operatori sono occupati a quest'ora")
     else:
-        # No operator chosen, pick the first free one
         if available_ops:
             assigned_op = available_ops[0]
         else:
@@ -147,7 +137,7 @@ async def create_public_booking(data: PublicBookingRequest, background_tasks: Ba
         })
 
     # 5. Fetch services and calculate times
-    services = await db.services.find({"id": {"": data.service_ids}, "user_id": user_id}).to_list(100)
+    services = await db.services.find({"id": {"$in": data.service_ids}, "user_id": user_id}).to_list(100)
     if not services:
         raise HTTPException(status_code=400, detail="Servizi non validi")
 
@@ -155,7 +145,7 @@ async def create_public_booking(data: PublicBookingRequest, background_tasks: Ba
     total_price = sum(s.get("price", 0) for s in services)
     end_time = calculate_end_time(data.time, total_duration)
 
-    # 6. Create appointment with the smart-assigned operator
+    # 6. Create appointment
     appointment_id = str(uuid.uuid4())
     booking_token = str(uuid.uuid4())
     
@@ -175,17 +165,13 @@ async def create_public_booking(data: PublicBookingRequest, background_tasks: Ba
     await db.appointments.insert_one(appointment_doc)
     invalidate_website_cache()
 
-    # 6. Notifications
+    # 7. Notifications
     try:
         service_names = ", ".join([s["name"] for s in services])
         d_p = data.date.split('-')
         date_it = f"{d_p[2]}/{d_p[1]}/{d_p[0]}" if len(d_p) == 3 else data.date
-
-        # Notifica Bruno
         msg_bruno = f"🔔 NUOVA PRENOTAZIONE ONLINE!\n👤 Cliente: {data.client_name}\n📅 Data: {date_it}\n⏰ Ora: {data.time}\n✂️ Servizi: {service_names}\n\nhttps://brunomelitohair.it/admin"
         background_tasks.add_task(send_whatsapp, "3397833526", msg_bruno, user)
-
-        # Notifica Cliente
         client_msg = f"Ciao {data.client_name}! ✅ Prenotazione confermata per il {date_it} alle {data.time}. Ti aspettiamo! 💇"
         background_tasks.add_task(send_automatic_message, data.client_phone, "promemoria_appuntamento", [data.client_name, date_it, data.time], client_msg, user)
     except: pass
