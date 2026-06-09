@@ -150,6 +150,7 @@ async def create_public_booking(data: PublicBookingRequest, background_tasks: Ba
         "booking_token": booking_token, "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.appointments.insert_one(appointment_doc)
+    invalidate_website_cache()
 
     # 6. Notifications
     try:
