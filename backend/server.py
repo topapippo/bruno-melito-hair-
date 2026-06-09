@@ -27,26 +27,33 @@ async def lifespan(app: FastAPI):
     except: pass
 
     # Migrazione una tantum: rimuove l'account "preview" residuo melitobruno@gmail.com.
-    # La produzione usa admin@brunomelito.it. SICUREZZA: cancella SOLO se l'account
-    # non possiede alcun documento in nessuna collezione (impossibile perdere dati).
+    # La produzione usa admin@brunomelito.it. SICUREZZA: si ferma se l'account possiede
+    # QUALSIASI dato di business reale (impossibile perdere dati). I documenti solo di
+    # servizio/auto-generati (loyalty_rewards di default, ecc.) vengono ripuliti insieme.
     try:
         ghost = await db.users.find_one({"email": "melitobruno@gmail.com"}, {"_id": 0, "id": 1})
         if ghost:
             uid = ghost["id"]
+            real = ("clients", "services", "appointments", "operators", "cards",
+                    "card_templates", "payments", "expenses", "promotions",
+                    "website_reviews", "website_gallery", "waitlist")
             owned = 0
-            for coll in ("appointments", "clients", "services", "operators", "cards",
-                         "card_templates", "payments", "expenses", "promotions",
-                         "website_config", "website_reviews", "website_gallery",
-                         "loyalty", "loyalty_rewards", "waitlist", "blocked_slots",
-                         "reminders_sent"):
+            for coll in real:
                 owned += await db[coll].count_documents({"user_id": uid})
                 if owned:
                     break
             if owned == 0:
+                aux = ("loyalty_rewards", "loyalty", "website_config",
+                       "blocked_slots", "reminders_sent", "communication_logs")
+                for coll in aux:
+                    try:
+                        await db[coll].delete_many({"user_id": uid})
+                    except Exception:
+                        pass
                 await db.users.delete_one({"id": uid})
-                logger.info("Migrazione: rimosso account vuoto melitobruno@gmail.com")
+                logger.info("Migrazione: rimosso account vuoto melitobruno@gmail.com (+ doc di servizio)")
             else:
-                logger.warning(f"melitobruno@gmail.com NON rimosso: possiede dati ({owned}+ doc)")
+                logger.warning(f"melitobruno@gmail.com NON rimosso: possiede dati reali ({owned}+ doc)")
     except Exception as e:
         logger.warning(f"Migrazione rimozione melitobruno: {e}")
 
