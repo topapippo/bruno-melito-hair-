@@ -101,15 +101,41 @@ async def create_public_booking(data: PublicBookingRequest, background_tasks: Ba
         raise HTTPException(status_code=400, detail="Salone non configurato")
     user_id = user["id"]
 
-    # 2. Check for conflicts (operator busy)
-    busy = await db.appointments.find_one({
-        "user_id": user_id, "date": data.date, "time": data.time,
-        "operator_id": data.operator_id, "status": {"$ne": "cancelled"}
-    })
-    if busy:
-        raise HTTPException(status_code=409, detail="Orario già occupato per questo operatore")
+    # 2. Fetch all active operators and current busy ones
+    all_operators = await db.operators.find({"user_id": user_id, "active": True}).to_list(50)
+    if not all_operators:
+        raise HTTPException(status_code=400, detail="Nessun operatore disponibile")
 
-    # 3. Find or create client
+    busy_apts = await db.appointments.find({
+        "user_id": user_id, "date": data.date, "time": data.time,
+        "status": {"": "cancelled"}
+    }).to_list(100)
+    
+    busy_operator_ids = {a.get("operator_id") for a in busy_apts if a.get("operator_id")}
+    available_ops = [o for o in all_operators if o["id"] not in busy_operator_ids]
+
+    # 3. Smart Assignment Logic
+    assigned_op = None
+    
+    if data.operator_id:
+        # User chose a specific operator
+        requested_op = next((o for o in all_operators if o["id"] == data.operator_id), None)
+        if requested_op and requested_op["id"] not in busy_operator_ids:
+            assigned_op = requested_op
+        else:
+            # Requested op is busy, look for ANY other free operator
+            if available_ops:
+                assigned_op = available_ops[0]
+            else:
+                raise HTTPException(status_code=409, detail="Tutti gli operatori sono occupati a quest'ora")
+    else:
+        # No operator chosen, pick the first free one
+        if available_ops:
+            assigned_op = available_ops[0]
+        else:
+            raise HTTPException(status_code=409, detail="Nessun operatore disponibile a quest'ora")
+
+    # 4. Find or create client
     client_id = str(uuid.uuid4())
     existing_client = await db.clients.find_one({"user_id": user_id, "phone": data.client_phone})
     if existing_client:
@@ -120,52 +146,32 @@ async def create_public_booking(data: PublicBookingRequest, background_tasks: Ba
             "created_at": datetime.now(timezone.utc).isoformat()
         })
 
-    # 4. Fetch services info
-    services = await db.services.find({"id": {"$in": data.service_ids}, "user_id": user_id}).to_list(100)
+    # 5. Fetch services and calculate times
+    services = await db.services.find({"id": {"": data.service_ids}, "user_id": user_id}).to_list(100)
     if not services:
-        raise HTTPException(status_code=400, detail="Nessun servizio valido selezionato")
+        raise HTTPException(status_code=400, detail="Servizi non validi")
 
     total_duration = sum(s.get("duration", 0) for s in services)
     total_price = sum(s.get("price", 0) for s in services)
     end_time = calculate_end_time(data.time, total_duration)
 
-        # 5. Create appointment
+    # 6. Create appointment with the smart-assigned operator
     appointment_id = str(uuid.uuid4())
     booking_token = str(uuid.uuid4())
     
-    # Resolve operator details
-    assigned_operator_id = data.operator_id
-    operator_name = None
-    operator_color = None
-    
-    all_operators = await db.operators.find({"user_id": user_id, "active": True}).to_list(50)
-    
-    if assigned_operator_id:
-        op = next((o for o in all_operators if o["id"] == assigned_operator_id), None)
-        if op:
-            operator_name = op["name"]
-            operator_color = op.get("color")
-    elif all_operators:
-        # Fallback to first operator if none selected
-        first_op = all_operators[0]
-        assigned_operator_id = first_op["id"]
-        operator_name = first_op["name"]
-        operator_color = first_op.get("color")
-
     appointment_doc = {
         "id": appointment_id, "user_id": user_id, "client_id": client_id,
         "client_name": data.client_name, "client_phone": data.client_phone,
         "service_ids": data.service_ids,
         "services": [{"id": s["id"], "name": s["name"], "duration": s["duration"], "price": s["price"]} for s in services],
-        "operator_id": assigned_operator_id, 
-        "operator_name": operator_name, 
-        "operator_color": operator_color,
+        "operator_id": assigned_op["id"], 
+        "operator_name": assigned_op["name"], 
+        "operator_color": assigned_op.get("color"),
         "date": data.date, "time": data.time, "end_time": end_time,
         "total_duration": total_duration, "total_price": total_price,
         "status": "scheduled", "source": "online", "notes": data.notes or "",
         "booking_token": booking_token, "created_at": datetime.now(timezone.utc).isoformat()
     }
-
     await db.appointments.insert_one(appointment_doc)
     invalidate_website_cache()
 
