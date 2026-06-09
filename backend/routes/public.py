@@ -129,26 +129,43 @@ async def create_public_booking(data: PublicBookingRequest, background_tasks: Ba
     total_price = sum(s.get("price", 0) for s in services)
     end_time = calculate_end_time(data.time, total_duration)
 
-    # 5. Create appointment
+        # 5. Create appointment
     appointment_id = str(uuid.uuid4())
     booking_token = str(uuid.uuid4())
     
-    op_name = None
-    if data.operator_id:
-        op = await db.operators.find_one({"id": data.operator_id, "user_id": user_id})
-        if op: op_name = op["name"]
+    # Resolve operator details
+    assigned_operator_id = data.operator_id
+    operator_name = None
+    operator_color = None
+    
+    all_operators = await db.operators.find({"user_id": user_id, "active": True}).to_list(50)
+    
+    if assigned_operator_id:
+        op = next((o for o in all_operators if o["id"] == assigned_operator_id), None)
+        if op:
+            operator_name = op["name"]
+            operator_color = op.get("color")
+    elif all_operators:
+        # Fallback to first operator if none selected
+        first_op = all_operators[0]
+        assigned_operator_id = first_op["id"]
+        operator_name = first_op["name"]
+        operator_color = first_op.get("color")
 
     appointment_doc = {
         "id": appointment_id, "user_id": user_id, "client_id": client_id,
         "client_name": data.client_name, "client_phone": data.client_phone,
         "service_ids": data.service_ids,
         "services": [{"id": s["id"], "name": s["name"], "duration": s["duration"], "price": s["price"]} for s in services],
-        "operator_id": data.operator_id, "operator_name": op_name,
+        "operator_id": assigned_operator_id, 
+        "operator_name": operator_name, 
+        "operator_color": operator_color,
         "date": data.date, "time": data.time, "end_time": end_time,
         "total_duration": total_duration, "total_price": total_price,
         "status": "scheduled", "source": "online", "notes": data.notes or "",
         "booking_token": booking_token, "created_at": datetime.now(timezone.utc).isoformat()
     }
+
     await db.appointments.insert_one(appointment_doc)
     invalidate_website_cache()
 
