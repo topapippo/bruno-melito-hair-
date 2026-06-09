@@ -21,6 +21,13 @@ from utils import normalize_phone_wa, send_whatsapp, calculate_end_time, send_au
 from cache_utils import invalidate_website_cache, get_cached_website, set_cached_website
 
 router = APIRouter()
+async def _send_booking_push(client_name, date_it, time, services_names, date_iso=""):
+    try:
+        from routes.push import send_push_to_all
+        url = f"/planning?date={date_iso}" if date_iso else "/planning"
+        await send_push_to_all(title="🔔 Nuova Prenotazione Online!", body=f"{client_name} • {date_it} alle {time} • {services_names}", url=url)
+    except: pass
+
 logger = logging.getLogger(__name__)
 limiter = Limiter(key_func=get_remote_address)
 
