@@ -2,9 +2,11 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from contextlib import asynccontextmanager
+from fastapi.responses import JSONResponse
 import logging
 import os
 import asyncio
+import traceback
 
 from database import client as mongo_client, db
 from routes import all_routers
@@ -18,17 +20,18 @@ logging.basicConfig(
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Warmup in background
+    # Startup tasks
     try:
         from routes.public import public_get_website
         asyncio.create_task(public_get_website())
     except: pass
     yield
+    # Shutdown
     mongo_client.close()
 
 app = FastAPI(title="MBHS SALON API", lifespan=lifespan)
 
-# Health checks at root for Render/UptimeRobot
+# --- 1. HEALTH CHECKS (Root level for Render/UptimeRobot) ---
 @app.get("/health")
 @app.head("/health")
 @app.get("/api/health")
@@ -38,24 +41,52 @@ async def health_check():
 
 @app.get("/api/warmup")
 @app.head("/api/warmup")
-async def api_warmup_check():
+async def warmup_check():
     return {"status": "warming", "ok": True}
 
-# CORS
+# --- 2. CORS (Permissive but secure) ---
 cors_origins = [
     "http://localhost:3000",
     "https://bruno-melito-hair.onrender.com",
+    "https://bruno-melito-hair-frontend.onrender.com",
     "https://brunomelitohair.it",
     "https://www.brunomelitohair.it",
 ]
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
+    allow_origin_regex=r"https://.*\.onrender\.com", # Permetti tutti i sottodomini onrender
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# --- 3. GLOBAL EXCEPTION HANDLER (Prevents Network Error on 500) ---
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"GLOBAL ERROR: {str(exc)}\n{traceback.format_exc()}")
+    # Aggiungiamo gli header CORS manualmente nella risposta di errore
+    headers = {
+        "Access-Control-Allow-Origin": request.headers.get("origin", "*"),
+        "Access-Control-Allow-Credentials": "true",
+    }
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Errore interno del server", "msg": str(exc)},
+        headers=headers
+    )
+
+# --- 4. MIDDLEWARES ---
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        return response
+
+app.add_middleware(SecurityHeadersMiddleware)
+
+# --- 5. ROUTES ---
 from fastapi import APIRouter
 api_router = APIRouter(prefix="/api")
 
@@ -63,7 +94,7 @@ api_router = APIRouter(prefix="/api")
 async def api_root():
     return {"message": "Salone Parrucchiera API", "status": "ok"}
 
-# Mount all routers under /api
+# Mount all feature routers
 for router in all_routers:
     api_router.include_router(router)
 
