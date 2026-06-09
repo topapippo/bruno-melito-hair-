@@ -36,6 +36,7 @@ const WaitlistPage          = lazy(() => import("./pages/WaitlistPage"));
 const ClientiAssentiPage    = lazy(() => import("./pages/ClientiAssentiPage"));
 const SocialPage            = lazy(() => import("./pages/SocialPage"));
 const ServiceDetailPage     = lazy(() => import("./pages/ServiceDetailPage"));
+const MessageLogsPage       = lazy(() => import("./pages/MessageLogsPage"));
 
 function PageLoader() {
   return (
@@ -326,6 +327,16 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <SocialPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* LOG MESSAGGI (storico invii WhatsApp) */}
+          <Route
+            path="/log-messaggi"
+            element={
+              <ProtectedRoute>
+                <MessageLogsPage />
               </ProtectedRoute>
             }
           />

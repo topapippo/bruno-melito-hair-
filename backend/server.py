@@ -25,6 +25,31 @@ async def lifespan(app: FastAPI):
         from routes.public import public_get_website
         asyncio.create_task(public_get_website())
     except: pass
+
+    # Migrazione una tantum: rimuove l'account "preview" residuo melitobruno@gmail.com.
+    # La produzione usa admin@brunomelito.it. SICUREZZA: cancella SOLO se l'account
+    # non possiede alcun documento in nessuna collezione (impossibile perdere dati).
+    try:
+        ghost = await db.users.find_one({"email": "melitobruno@gmail.com"}, {"_id": 0, "id": 1})
+        if ghost:
+            uid = ghost["id"]
+            owned = 0
+            for coll in ("appointments", "clients", "services", "operators", "cards",
+                         "card_templates", "payments", "expenses", "promotions",
+                         "website_config", "website_reviews", "website_gallery",
+                         "loyalty", "loyalty_rewards", "waitlist", "blocked_slots",
+                         "reminders_sent"):
+                owned += await db[coll].count_documents({"user_id": uid})
+                if owned:
+                    break
+            if owned == 0:
+                await db.users.delete_one({"id": uid})
+                logger.info("Migrazione: rimosso account vuoto melitobruno@gmail.com")
+            else:
+                logger.warning(f"melitobruno@gmail.com NON rimosso: possiede dati ({owned}+ doc)")
+    except Exception as e:
+        logger.warning(f"Migrazione rimozione melitobruno: {e}")
+
     yield
     # Shutdown
     mongo_client.close()

@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Calendar, CalendarDays, Users, Scissors,
   UserCircle, BarChart3, Settings, LogOut, Menu, CreditCard,
   Euro, Database, Star, Bell, FileBarChart, Globe, ArrowDownCircle, Gift,
-  AlertTriangle, Sparkles, ClockArrowUp, ChevronLeft, ChevronRight, ChevronDown, Share2
+  AlertTriangle, Sparkles, ClockArrowUp, ChevronLeft, ChevronRight, ChevronDown, Share2, MessageSquare
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
@@ -29,6 +29,7 @@ const navGroups = [
       { path: '/cards',       label: 'Card / Abbonamenti', icon: CreditCard },
       { path: '/card-alerts', label: 'Avvisi Card',        icon: AlertTriangle },
       { path: '/reminders',   label: 'Promemoria',         icon: Bell },
+      { path: '/log-messaggi', label: 'Log Messaggi',      icon: MessageSquare },
       { path: '/promozioni',  label: 'Promozioni',         icon: Gift },
       { path: '/waitlist',    label: "Lista d'attesa",     icon: ClockArrowUp },
     ],
