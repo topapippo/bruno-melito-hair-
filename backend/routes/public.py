@@ -159,7 +159,7 @@ async def create_public_booking(data: PublicBookingRequest, background_tasks: Ba
         background_tasks.add_task(send_automatic_message, data.client_phone, "promemoria_appuntamento", [data.client_name, date_it, data.time], client_msg, user)
     except: pass
 
-    return {"success": True, "appointment_id": appointment_id, "wa_sent": wa_sent}
+    return {"success": True, "appointment_id": appointment_id, "wa_sent": True}
 
 @router.get("/website/config")
 async def get_website_config(current_user: dict = Depends(get_current_user)):
