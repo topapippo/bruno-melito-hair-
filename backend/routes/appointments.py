@@ -15,23 +15,16 @@ logger = logging.getLogger(__name__)
 BRUNO_PHONE = "3397833526"
 
 async def _send_checkout_thank_you(phone: str, client_name: str, current_user: dict):
-    """Esegue l'invio del messaggio di ringraziamento in background."""
     try:
-        # Recupera il link recensioni personalizzato dell'utente
         review_link = current_user.get("google_review_link") or "https://maps.app.goo.gl/8FdnYpnNyQcd78LQ7"
-        
-        # Testo del messaggio
         message = (
             f"Ciao {client_name}! Grazie per essere venuta da Bruno Melito Hair. 💇\n\n"
             f"Se ti è piaciuto, ci aiuteresti tantissimo lasciando una recensione qui:\n{review_link}\n\n"
             f"A presto!"
         )
-        
-        # Invia con logica intelligente (usa template ringraziamento_visita se Meta Cloud, altrimenti testo libero)
         await send_whatsapp(phone, message, current_user)
-        logger.info(f"[WA AUTO] Ringraziamento inviato a {phone} per {client_name}")
     except Exception as e:
-        logger.error(f"[WA AUTO] Errore invio ringraziamento checkout: {e}")
+        logger.error(f"Errore invio ringraziamento checkout: {e}")
 
 @router.post("/appointments", response_model=AppointmentResponse)
 async def create_appointment(data: AppointmentCreate, current_user: dict = Depends(get_current_user)):
@@ -48,40 +41,62 @@ async def create_appointment(data: AppointmentCreate, current_user: dict = Depen
     elif data.client_name:
         client_name = data.client_name.strip()
         client_phone = (data.client_phone or "").strip()
-        client_id = str(uuid.uuid4())
-        await db.clients.insert_one({
-            "id": client_id, "user_id": current_user["id"], "name": client_name, "phone": client_phone,
-            "created_at": datetime.now(timezone.utc).isoformat()
-        })
+        existing = await db.clients.find_one({"user_id": current_user["id"], "name": {"$regex": f"^{re.escape(client_name)}$", "$options": "i"}})
+        if existing:
+            client_id = existing["id"]
+        else:
+            client_id = str(uuid.uuid4())
+            await db.clients.insert_one({
+                "id": client_id, "user_id": current_user["id"], "name": client_name, "phone": client_phone,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
     else: raise HTTPException(status_code=400, detail="Dati cliente mancanti")
 
-    services = await db.services.find({"id": {"$in": data.service_ids}, "user_id": current_user["id"]}).to_list(100)
+    services_list = await db.services.find({"id": {"$in": data.service_ids}, "user_id": current_user["id"]}).to_list(100)
+    
     operator_name = None
+    operator_color = None
     if data.operator_id:
         op = await db.operators.find_one({"id": data.operator_id, "user_id": current_user["id"]})
-        if op: operator_name = op["name"]
+        if op:
+            operator_name = op["name"]
+            operator_color = op.get("color")
 
-    total_duration = sum(s["duration"] for s in services)
-    total_price = sum(s["price"] for s in services)
+    # Safe price and duration calculation
+    total_duration = 0
+    total_price = 0.0
+    mapped_services = []
+    for s in services_list:
+        try:
+            d = int(s.get("duration", 0))
+            p = float(s.get("price", 0))
+            total_duration += d
+            total_price += p
+            mapped_services.append({"id": s["id"], "name": s["name"], "duration": d, "price": p})
+        except: continue
+
     end_time = calculate_end_time(data.time, total_duration)
 
     doc = {
         "id": str(uuid.uuid4()), "user_id": current_user["id"], "client_id": client_id,
         "client_name": client_name, "client_phone": client_phone, "service_ids": data.service_ids,
-        "services": [{"id": s["id"], "name": s["name"], "duration": s["duration"], "price": s["price"]} for s in services],
-        "operator_id": data.operator_id, "operator_name": operator_name,
+        "services": mapped_services,
+        "operator_id": data.operator_id, "operator_name": operator_name, "operator_color": operator_color,
         "date": data.date, "time": data.time, "end_time": end_time,
         "total_duration": total_duration, "total_price": total_price,
-        "status": "scheduled", "notes": data.notes or "", "created_at": datetime.now(timezone.utc).isoformat()
+        "status": "scheduled", "notes": data.notes or "", "source": "manual", "paid": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.appointments.insert_one(doc)
 
-    # Notifica creazione (non blocca risposta)
     try:
-        msg = f"🔔 NUOVA PRENOTAZIONE!\n👤 {client_name}\n📅 {data.date} ore {data.time}\n\nhttps://brunomelitohair.it/admin"
+        service_names = ", ".join([s["name"] for s in mapped_services])
+        d_p = data.date.split('-')
+        date_it = f"{d_p[2]}/{d_p[1]}/{d_p[0]}" if len(d_p) == 3 else data.date
+        msg = f"🔔 NUOVA PRENOTAZIONE!\n👤 {client_name}\n📅 {date_it} ore {data.time}\n✂️ {service_names}\n\nhttps://brunomelitohair.it/admin"
         asyncio.create_task(send_whatsapp(BRUNO_PHONE, msg, current_user))
         if client_phone:
-            asyncio.create_task(send_whatsapp(client_phone, f"Ciao {client_name}! ✅ Prenotazione confermata per il {data.date} alle {data.time}.", current_user))
+            asyncio.create_task(send_whatsapp(client_phone, f"Ciao {client_name}! ✅ Prenotazione confermata per il {date_it} alle {data.time}.", current_user))
     except: pass
 
     return AppointmentResponse(**{k: v for k, v in doc.items() if k != "user_id"})
@@ -90,8 +105,6 @@ async def create_appointment(data: AppointmentCreate, current_user: dict = Depen
 async def checkout_appointment(appointment_id: str, data: dict, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
     apt = await db.appointments.find_one({"id": appointment_id, "user_id": current_user["id"]}, {"_id": 0})
     if not apt: raise HTTPException(status_code=404, detail="Appuntamento non trovato")
-
-    # Salvataggio pagamento
     payment_doc = {
         "id": str(uuid.uuid4()), "user_id": current_user["id"], "appointment_id": appointment_id,
         "client_id": apt["client_id"], "client_name": apt["client_name"],
@@ -103,18 +116,11 @@ async def checkout_appointment(appointment_id: str, data: dict, background_tasks
     }
     await db.payments.insert_one(payment_doc)
     await db.appointments.update_one({"id": appointment_id}, {"$set": {"status": "completed", "paid": True}})
-
-    # Recupero telefono cliente per ringraziamento
     phone = apt.get("client_phone")
-    if not phone:
-        client = await db.clients.find_one({"id": apt["client_id"]})
-        if client: phone = client.get("phone")
-
-    if phone:
-        # IMPORTANTE: Usiamo BackgroundTasks per garantire l'invio post-risposta
-        background_tasks.add_task(_send_checkout_thank_you, phone, apt["client_name"], current_user)
-        logger.info(f"[CHECKOUT] Task ringraziamento aggiunto per {phone}")
-
+    if not phone and apt.get("client_id"):
+        cl = await db.clients.find_one({"id": apt["client_id"]})
+        if cl: phone = cl.get("phone")
+    if phone: background_tasks.add_task(_send_checkout_thank_you, phone, apt["client_name"], current_user)
     return {"status": "ok", "payment_id": payment_doc["id"]}
 
 @router.get("/appointments", response_model=List[AppointmentResponse])
@@ -132,7 +138,6 @@ async def update_appointment(appointment_id: str, data: dict, current_user: dict
         update["services"] = [{"id": s["id"], "name": s["name"], "duration": s["duration"], "price": s["price"]} for s in services]
         update["total_duration"] = sum(s["duration"] for s in services)
         update["total_price"] = sum(s["price"] for s in services)
-    
     await db.appointments.update_one({"id": appointment_id, "user_id": current_user["id"]}, {"$set": update})
     res = await db.appointments.find_one({"id": appointment_id}, {"_id": 0})
     return AppointmentResponse(**res)
