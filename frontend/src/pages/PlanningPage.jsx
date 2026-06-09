@@ -140,21 +140,23 @@ export default function PlanningPage() {
   }, [selectedDate, viewMode]);
 
   // Poll for new online bookings
+  const seenBookingIdsRef = useRef(new Set());
   useEffect(() => {
     const checkNewBookings = async () => {
       try {
         const res = await api.get(`${API}/notifications/new-bookings`);
         const unseen = res.data.filter(b => !b.seen_at);
-        setNewOnlineBookings(prev => {
-          // Se arrivano nuove prenotazioni non viste, ricarica il calendario
-          if (unseen.length > prev.length) {
-            const dateStr = format(selectedDateRef.current, 'yyyy-MM-dd');
-            api.get(`${API}/appointments?date=${dateStr}`)
-              .then(r => setAppointments(r.data))
-              .catch(() => {});
-          }
-          return unseen;
-        });
+        const newIds = unseen.map(b => b.id);
+        // Ricarica se c'è almeno un id non ancora visto (anche al primo caricamento)
+        const hasNew = newIds.some(id => !seenBookingIdsRef.current.has(id));
+        if (hasNew) {
+          const dateStr = format(selectedDateRef.current, 'yyyy-MM-dd');
+          api.get(`${API}/appointments?date=${dateStr}`)
+            .then(r => setAppointments(r.data))
+            .catch(() => {});
+        }
+        seenBookingIdsRef.current = new Set(newIds);
+        setNewOnlineBookings(unseen);
       } catch { /* silent */ }
     };
     checkNewBookings();
@@ -943,7 +945,6 @@ export default function PlanningPage() {
           services={services}
           cardTemplates={cardTemplates}
           onSuccess={refreshAll}
-          onSaveAndCheckout={(apt) => { setNewDialogOpen(false); openEditDialogForCheckout(apt); }}
         />
 
         <ErrorBoundary>
