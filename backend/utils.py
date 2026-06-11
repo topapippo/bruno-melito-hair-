@@ -147,7 +147,7 @@ async def send_automatic_message(phone: str, template_name: str = None, template
         return res_green
 
     # 4. Meta Text (Ultimo tentativo, funziona solo se cliente ha scritto nelle ultime 24h)
-    res_meta = await send_whatsapp_cloud_text(phone, msg + WA_FOOTER)
+    res_meta = await send_whatsapp_cloud(phone, msg + WA_FOOTER)
     await _log_communication((user or {}).get("id", "system"), "whatsapp", phone, msg, res_meta)
     return res_meta
 

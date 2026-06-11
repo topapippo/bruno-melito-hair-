@@ -554,14 +554,29 @@ async def send_whatsapp_direct(data: dict, current_user: dict = Depends(get_curr
     wa_number = phone_clean + "@c.us"
     wa_url = f"https://wa.me/{phone_clean}?text={urllib.parse.quote(message)}"
 
+    # Raccoglie l'esito di ogni provider tentato, così se nessuno riesce
+    # restituiamo l'errore VERO (e non un generico "nessun provider").
+    attempts = []  # list[(provider, esito_str)]
+
+    async def _finish(result: dict):
+        """Logga l'esito in communication_logs (visibile in pagina Log Messaggi) e ritorna."""
+        try:
+            from utils import _log_communication
+            await _log_communication(current_user["id"], "whatsapp", phone_clean, message, result)
+        except Exception as e:
+            logger.error(f"Errore logging send-direct: {e}")
+        return result
+
     # --- 1. WhatsApp Cloud API ufficiale Meta (provider principale) ---
     if WA_TOKEN:
         result = await send_whatsapp_cloud(phone, message)
         if result.get("sent"):
-            return {"sent": True, "method": "cloud_api"}
-        logger.warning(f"Cloud API failed: {result.get('error')} (code={result.get('code')})")
-
-    quota_esaurita = False
+            return await _finish({"sent": True, "method": "cloud_api"})
+        c_err = result.get("error") or "errore"
+        attempts.append(("Cloud API", f"{c_err} (code={result.get('code')})"))
+        logger.warning(f"Cloud API failed: {c_err} (code={result.get('code')})")
+    else:
+        attempts.append(("Cloud API", "token non configurato"))
 
     # --- 2. UltraMsg (legacy fallback) ---
     um_instance = current_user.get("ultramsg_instance_id", "")
@@ -580,16 +595,15 @@ async def send_whatsapp_direct(data: dict, current_user: dict = Depends(get_curr
             except Exception:
                 pass
             if resp.status_code == 200 and str(rjson.get("sent", "")).lower() == "true":
-                return {"sent": True, "method": "ultramsg"}
+                return await _finish({"sent": True, "method": "ultramsg"})
             err = rjson.get("error") or rjson.get("message") or resp.text[:200]
-            err_low = str(err).lower()
-            if "limit" in err_low or "quota" in err_low or "exceeded" in err_low:
-                quota_esaurita = True
-                logger.warning("UltraMsg quota esaurita — provo Green API")
-            else:
-                logger.warning(f"UltraMsg failed {resp.status_code}: {err}")
+            attempts.append(("UltraMsg", f"{err} (HTTP {resp.status_code})"))
+            logger.warning(f"UltraMsg failed {resp.status_code}: {err}")
         except Exception as e:
+            attempts.append(("UltraMsg", str(e)))
             logger.warning(f"UltraMsg exception: {e}")
+    else:
+        attempts.append(("UltraMsg", "non configurato"))
 
     # --- 3. Green API (legacy fallback) ---
     instance_id = current_user.get("green_api_instance_id", "")
@@ -608,13 +622,18 @@ async def send_whatsapp_direct(data: dict, current_user: dict = Depends(get_curr
             except Exception:
                 pass
             if resp.status_code == 200 and rjson.get("idMessage"):
-                return {"sent": True, "method": "greenapi"}
+                return await _finish({"sent": True, "method": "greenapi"})
+            g_err = rjson.get("error") or resp.text[:200]
+            attempts.append(("Green API", f"{g_err} (HTTP {resp.status_code})"))
             logger.warning(f"Green API failed {resp.status_code}: {resp.text[:200]}")
         except Exception as e:
+            attempts.append(("Green API", str(e)))
             logger.warning(f"Green API exception: {e}")
+    else:
+        attempts.append(("Green API", "non configurato"))
 
-    return {"sent": False, "method": "link", "url": wa_url,
-            "error": "Nessun provider disponibile"}
+    detail = " | ".join(f"{p}: {e}" for p, e in attempts) or "Nessun provider disponibile"
+    return await _finish({"sent": False, "method": "link", "url": wa_url, "error": detail})
 
 
 @router.get("/reminders/thank-you-template")
