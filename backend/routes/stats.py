@@ -592,6 +592,93 @@ async def test_whatsapp_api(current_user: dict = Depends(get_current_user)):
         return {"ok": False, "status": "error", "message": f"Errore connessione: {str(e)}"}
 
 
+@router.get("/settings/whatsapp-diagnosi")
+async def whatsapp_diagnosi(current_user: dict = Depends(get_current_user)):
+    """Diagnosi WhatsApp in un colpo solo: controlla i 3 provider + i template Meta
+    e restituisce un esito in italiano semplice. Pensato per il bottone unico in
+    Impostazioni — l'utente non deve toccare token/ID."""
+    import requests as _req
+
+    checks = []  # ogni voce: {nome, ok, dettaglio}
+
+    # --- 1. UltraMsg ---
+    um_id = current_user.get("ultramsg_instance_id", "")
+    um_token = current_user.get("ultramsg_token", "")
+    um_ok = False
+    if not um_id or not um_token:
+        checks.append({"nome": "UltraMsg", "ok": False, "dettaglio": "Non configurato"})
+    else:
+        try:
+            r = await asyncio.to_thread(_req.get, f"https://api.ultramsg.com/{um_id}/instance/status?token={um_token}", timeout=10)
+            sub = (((r.json() or {}).get("status") or {}).get("accountStatus") or {}).get("substatus", "unknown")
+            um_ok = sub == "normal"
+            checks.append({"nome": "UltraMsg", "ok": um_ok,
+                           "dettaglio": "Connesso e attivo" if um_ok else (
+                               "Da collegare: scansiona il QR su app.ultramsg.com" if sub in ("qrCode", "init") else f"Stato: {sub}")})
+        except Exception as e:
+            checks.append({"nome": "UltraMsg", "ok": False, "dettaglio": f"Errore connessione: {str(e)[:120]}"})
+
+    # --- 2. Green API ---
+    ga_id = current_user.get("green_api_instance_id", "")
+    ga_token = current_user.get("green_api_token", "")
+    ga_ok = False
+    if not ga_id or not ga_token:
+        checks.append({"nome": "Green API", "ok": False, "dettaglio": "Non configurato"})
+    else:
+        try:
+            r = await asyncio.to_thread(_req.get, f"https://api.greenapi.com/waInstance{ga_id}/getStateInstance/{ga_token}", timeout=10)
+            state = (r.json() or {}).get("stateInstance", "unknown")
+            ga_ok = state == "authorized"
+            checks.append({"nome": "Green API", "ok": ga_ok,
+                           "dettaglio": "Connesso e attivo" if ga_ok else (
+                               "Da collegare: scansiona il QR su greenapi.com" if state == "notAuthorized" else f"Stato: {state}")})
+        except Exception as e:
+            checks.append({"nome": "Green API", "ok": False, "dettaglio": f"Errore connessione: {str(e)[:120]}"})
+
+    # --- 3. Cloud API (Meta) + template ---
+    from utils import WA_TOKEN, WA_PHONE_NUMBER_ID
+    cloud_ok = False
+    approved_templates = []
+    if not WA_TOKEN:
+        checks.append({"nome": "WhatsApp ufficiale (Meta)", "ok": False, "dettaglio": "Token non impostato su Render"})
+    else:
+        waba_id = os.environ.get("WHATSAPP_BUSINESS_ACCOUNT_ID", "")
+        if not waba_id:
+            checks.append({"nome": "WhatsApp ufficiale (Meta)", "ok": True,
+                           "dettaglio": "Token presente. Per vedere i template imposta WHATSAPP_BUSINESS_ACCOUNT_ID su Render."})
+            cloud_ok = True
+        else:
+            try:
+                r = await asyncio.to_thread(_req.get, f"https://graph.facebook.com/v21.0/{waba_id}/message_templates",
+                                            headers={"Authorization": f"Bearer {WA_TOKEN}"}, params={"limit": 100}, timeout=15)
+                rj = r.json()
+                if r.status_code == 200:
+                    cloud_ok = True
+                    approved_templates = [t.get("name") for t in rj.get("data", []) if t.get("status") == "APPROVED"]
+                    checks.append({"nome": "WhatsApp ufficiale (Meta)", "ok": True,
+                                   "dettaglio": f"Token valido. Template approvati: {', '.join(approved_templates) or 'nessuno'}"})
+                else:
+                    msg = rj.get("error", {}).get("message", "errore")
+                    checks.append({"nome": "WhatsApp ufficiale (Meta)", "ok": False, "dettaglio": f"Token rifiutato da Meta: {msg}"})
+            except Exception as e:
+                checks.append({"nome": "WhatsApp ufficiale (Meta)", "ok": False, "dettaglio": f"Errore connessione: {str(e)[:120]}"})
+
+    # --- Verdetto in italiano ---
+    free_text_ok = um_ok or ga_ok  # i Richiami (testo libero) passano solo da questi
+    if free_text_ok and cloud_ok:
+        verdetto = "✅ Tutto a posto: i messaggi possono partire."
+    elif free_text_ok:
+        verdetto = "✅ I messaggi possono partire (via UltraMsg/Green API)."
+    elif cloud_ok and approved_templates:
+        verdetto = "⚠️ Funzionano solo i messaggi con template approvato (promemoria/conferma). I Richiami (testo libero) NON partono: collega UltraMsg o Green API."
+    elif cloud_ok:
+        verdetto = "⚠️ WhatsApp ufficiale presente ma nessun template approvato, e nessun provider per il testo libero. I messaggi NON partono finché non colleghi UltraMsg/Green API o approvi i template."
+    else:
+        verdetto = "❌ Nessun canale WhatsApp attivo: i messaggi non possono partire. Collega UltraMsg o Green API (scansiona il QR), oppure controlla il token Meta su Render."
+
+    return {"verdetto": verdetto, "controlli": checks, "free_text_ok": free_text_ok, "cloud_ok": cloud_ok}
+
+
 @router.post("/settings/whatsapp-send-test")
 async def test_whatsapp_send(data: dict, current_user: dict = Depends(get_current_user)):
     """Invia un messaggio di prova al numero configurato per verificare che l'invio funzioni."""

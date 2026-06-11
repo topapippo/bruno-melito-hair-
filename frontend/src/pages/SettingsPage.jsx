@@ -211,6 +211,17 @@ export default function SettingsPage() {
   const [testingUm, setTestingUm] = useState(false);
   const [umSendTest, setUmSendTest] = useState({ phone: '', result: null, loading: false });
   const [mergingDups, setMergingDups] = useState(false);
+  const [waDiag, setWaDiag] = useState({ loading: false, data: null });
+
+  const handleWaDiagnosi = async () => {
+    setWaDiag({ loading: true, data: null });
+    try {
+      const res = await api.get('/settings/whatsapp-diagnosi');
+      setWaDiag({ loading: false, data: res.data });
+    } catch {
+      setWaDiag({ loading: false, data: { verdetto: '❌ Impossibile eseguire la diagnosi. Riprova tra un momento.', controlli: [] } });
+    }
+  };
 
   const handleMergeDuplicates = async () => {
     if (!window.confirm('Unire tutti i clienti con lo stesso nome? Gli appuntamenti e i pagamenti dei duplicati verranno spostati su un unico cliente. Operazione consigliata, ma non reversibile.')) return;
@@ -944,6 +955,52 @@ export default function SettingsPage() {
                 Salva una copia di tutti i dati del salone sul tuo PC o condividila su WhatsApp.
               </p>
               <BackupButtons />
+            </CardContent>
+          </Card>
+
+          {/* Diagnosi WhatsApp — un click controlla tutto */}
+          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+            <CardHeader>
+              <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
+                <Settings className="w-5 h-5 text-[#C8617A]" />
+                Diagnosi WhatsApp
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-[#7C5C4A]">
+                Controlla con un click se i messaggi WhatsApp possono partire e, in caso contrario, cosa fare.
+              </p>
+              <Button
+                type="button"
+                onClick={handleWaDiagnosi}
+                disabled={waDiag.loading}
+                className="bg-[#C8617A] hover:bg-[#A0404F] text-white"
+                data-testid="wa-diagnosi-btn"
+              >
+                {waDiag.loading ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Controllo in corso…</>
+                ) : (
+                  <><Check className="w-4 h-4 mr-2" /> Controlla WhatsApp</>
+                )}
+              </Button>
+
+              {waDiag.data && (
+                <div className="mt-2 space-y-3">
+                  <div className="rounded-lg border border-[#F0E6DC] bg-[#FBF7F3] p-3 text-sm font-semibold text-[#2D1B14]">
+                    {waDiag.data.verdetto}
+                  </div>
+                  {Array.isArray(waDiag.data.controlli) && waDiag.data.controlli.length > 0 && (
+                    <ul className="space-y-1.5">
+                      {waDiag.data.controlli.map((c, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm">
+                          <span className="shrink-0">{c.ok ? '✅' : '❌'}</span>
+                          <span className="text-[#2D1B14]"><b>{c.nome}:</b> {c.dettaglio}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
 
