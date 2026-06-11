@@ -171,6 +171,24 @@ async def send_whatsapp(phone: str, message: str, user: dict = None) -> dict:
 
     return await send_automatic_message(phone, None, None, message, user)
 
+def visit_done_filter(today_str: str) -> dict:
+    """Filtro Mongo: un appuntamento conta come VISITA EFFETTUATA se non è
+    cancellato e o è già 'completed' (cassa fatta) o la sua data è passata
+    (effettuato ma senza checkout). Unifica storico cliente, richiami inattivi
+    e richiamo colore così concordano tutti sulla stessa definizione."""
+    return {
+        "status": {"$ne": "cancelled"},
+        "$or": [{"status": "completed"}, {"date": {"$lte": today_str}}],
+    }
+
+
+def visit_is_done(apt: dict, today_str: str) -> bool:
+    """Versione in-memory di visit_done_filter (per cicli su liste già caricate)."""
+    if apt.get("status") == "cancelled":
+        return False
+    return apt.get("status") == "completed" or (apt.get("date", "") <= today_str)
+
+
 def calculate_end_time(start_time: str, duration: int) -> str:
     try:
         h, m = map(int, start_time.split(':'))

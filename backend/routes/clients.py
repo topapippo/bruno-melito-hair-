@@ -10,7 +10,7 @@ import asyncio
 from database import db
 from auth import get_current_user
 from models import ClientCreate, ClientResponse, ClientUpdate, ClientBulkImport
-from utils import normalize_phone_wa
+from utils import normalize_phone_wa, visit_done_filter, visit_is_done
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -169,7 +169,7 @@ async def get_dormant_clients(days: int = 30, current_user: dict = Depends(get_c
             client_data[cid] = {"last_date": "0000-00-00", "service_counts": {}}
         if d > client_data[cid]["last_date"]:
             client_data[cid]["last_date"] = d
-        if apt.get("status") == "completed":
+        if visit_is_done(apt, today_str):
             for svc in apt.get("services", []):
                 name = svc.get("name", "")
                 if name:
@@ -396,9 +396,10 @@ async def get_client_history(client_id: str, current_user: dict = Depends(get_cu
             "payment_id": linked_pay.get("id", "") if linked_pay else "",
         })
 
-    # Ultima visita
+    # Ultima visita (effettuata = completed o data passata, non cancellata)
+    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     last_completed = await db.appointments.find_one(
-        {"client_id": client_id, "user_id": current_user["id"], "status": "completed"},
+        {"client_id": client_id, "user_id": current_user["id"], **visit_done_filter(today_str)},
         {"_id": 0, "date": 1}, sort=[("date", -1)]
     )
     last_visit = last_completed.get("date", "") if last_completed else ""

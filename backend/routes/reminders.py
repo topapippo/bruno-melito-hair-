@@ -22,7 +22,7 @@ from auth import get_current_user
 from models import SMSRequest
 from utils import (send_sms_reminder, twilio_client, TWILIO_PHONE_NUMBER,
                    normalize_phone_wa, send_whatsapp, send_whatsapp_cloud,
-                   send_automatic_message, WA_TOKEN)
+                   send_automatic_message, visit_done_filter, WA_TOKEN)
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -367,9 +367,11 @@ async def reset_reminder(appointment_id: str, current_user: dict = Depends(get_c
 async def get_inactive_clients(current_user: dict = Depends(get_current_user)):
     uid = current_user["id"]
     cutoff_date = (datetime.now(timezone.utc) - timedelta(days=60)).strftime("%Y-%m-%d")
-    # Aggregation: ultima visita completata per ogni cliente — 1 query invece di N
+    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    # Aggregation: ultima visita effettuata per ogni cliente — 1 query invece di N
+    # (visita = completed o data passata, non cancellata — vedi visit_done_filter)
     pipeline = [
-        {"$match": {"user_id": uid, "status": "completed"}},
+        {"$match": {"user_id": uid, **visit_done_filter(today_str)}},
         {"$sort": {"date": -1}},
         {"$group": {
             "_id": "$client_id",
@@ -690,9 +692,9 @@ async def _send_inactive_reminders_core(user: dict) -> dict:
         if not phone:
             continue
 
-        # Ultimo appuntamento completato
+        # Ultima visita effettuata (completed o data passata, non cancellata)
         last_apt = await db.appointments.find_one(
-            {"user_id": user_id, "client_id": cid, "status": "completed"},
+            {"user_id": user_id, "client_id": cid, **visit_done_filter(today)},
             {"_id": 0, "date": 1},
             sort=[("date", -1)]
         )
