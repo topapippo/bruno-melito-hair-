@@ -8,7 +8,7 @@ from datetime import datetime, timezone, timedelta
 from auth import get_current_user
 from database import db
 from models import AppointmentCreate, AppointmentResponse
-from utils import calculate_end_time, send_whatsapp, send_automatic_message
+from utils import calculate_end_time, send_whatsapp, send_automatic_message, resolve_client
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -40,17 +40,10 @@ async def create_appointment(data: AppointmentCreate, current_user: dict = Depen
             client_phone = client.get("phone", "")
         else: raise HTTPException(status_code=404, detail="Cliente non trovato")
     elif data.client_name:
-        client_name = data.client_name.strip()
-        client_phone = (data.client_phone or "").strip()
-        existing = await db.clients.find_one({"user_id": current_user["id"], "name": {"$regex": f"^{re.escape(client_name)}$", "$options": "i"}})
-        if existing:
-            client_id = existing["id"]
-        else:
-            client_id = str(uuid.uuid4())
-            await db.clients.insert_one({
-                "id": client_id, "user_id": current_user["id"], "name": client_name, "phone": client_phone,
-                "created_at": datetime.now(timezone.utc).isoformat()
-            })
+        # Find-or-create deduplicato per telefono normalizzato + nome esatto
+        client_id, client_name, client_phone = await resolve_client(
+            current_user["id"], data.client_name, data.client_phone
+        )
     else: raise HTTPException(status_code=400, detail="Dati cliente mancanti")
 
     services_list = await db.services.find({"id": {"$in": data.service_ids}, "user_id": current_user["id"]}).to_list(100)

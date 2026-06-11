@@ -171,6 +171,49 @@ async def send_whatsapp(phone: str, message: str, user: dict = None) -> dict:
 
     return await send_automatic_message(phone, None, None, message, user)
 
+async def resolve_client(user_id: str, name: str, phone: str = "") -> tuple:
+    """Trova un cliente esistente (per NOME esatto case-insensitive, poi per
+    TELEFONO normalizzato come fallback) o ne crea uno nuovo. Evita i duplicati
+    alla radice. Ritorna (client_id, nome_canonico, telefono_canonico): in caso di
+    match usa i valori del documento esistente, così storico/richiami raggruppano bene.
+
+    NB: il nome viene prima del telefono di proposito — i familiari spesso
+    condividono lo stesso numero (mamma che prenota per la figlia): col telefono
+    per primo si rischierebbe di unire persone diverse."""
+    from database import db
+    name = (name or "").strip()
+    phone = (phone or "").strip()
+
+    # 1. Match per nome esatto (case-insensitive) — causa principale dei duplicati
+    if name:
+        existing = await db.clients.find_one(
+            {"user_id": user_id, "name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}},
+            {"_id": 0, "id": 1, "name": 1, "phone": 1}
+        )
+        if existing:
+            return existing["id"], existing.get("name") or name, existing.get("phone") or phone
+
+    # 2. Fallback: match per telefono normalizzato (stessa persona, nome scritto diverso)
+    if phone:
+        norm = normalize_phone_wa(phone)
+        if norm:
+            candidates = await db.clients.find(
+                {"user_id": user_id, "phone": {"$exists": True, "$ne": ""}},
+                {"_id": 0, "id": 1, "name": 1, "phone": 1}
+            ).to_list(20000)
+            for c in candidates:
+                if normalize_phone_wa(c.get("phone", "")) == norm:
+                    return c["id"], c.get("name") or name, c.get("phone") or phone
+
+    # 3. Nessun match → crea nuovo cliente
+    cid = str(_uuid.uuid4())
+    await db.clients.insert_one({
+        "id": cid, "user_id": user_id, "name": name, "phone": phone,
+        "total_visits": 0, "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    return cid, name, phone
+
+
 def visit_done_filter(today_str: str) -> dict:
     """Filtro Mongo: un appuntamento conta come VISITA EFFETTUATA se non è
     cancellato e o è già 'completed' (cassa fatta) o la sua data è passata

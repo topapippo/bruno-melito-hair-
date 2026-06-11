@@ -17,7 +17,7 @@ from slowapi.util import get_remote_address
 from database import db
 from auth import get_current_user
 from models import PublicBookingRequest, get_loyalty_rewards, LOYALTY_POINTS_PER_EURO
-from utils import normalize_phone_wa, send_whatsapp, calculate_end_time, send_automatic_message
+from utils import normalize_phone_wa, send_whatsapp, calculate_end_time, send_automatic_message, resolve_client
 from cache_utils import invalidate_website_cache, get_cached_website, set_cached_website
 
 router = APIRouter()
@@ -125,16 +125,10 @@ async def create_public_booking(data: PublicBookingRequest, background_tasks: Ba
         else:
             raise HTTPException(status_code=409, detail="Nessun operatore disponibile a quest'ora")
 
-    # 4. Find or create client
-    client_id = str(uuid.uuid4())
-    existing_client = await db.clients.find_one({"user_id": user_id, "phone": data.client_phone})
-    if existing_client:
-        client_id = existing_client["id"]
-    else:
-        await db.clients.insert_one({
-            "id": client_id, "user_id": user_id, "name": data.client_name, "phone": data.client_phone,
-            "created_at": datetime.now(timezone.utc).isoformat()
-        })
+    # 4. Find or create client (deduplicato per telefono normalizzato + nome esatto)
+    client_id, client_name, client_phone = await resolve_client(
+        user_id, data.client_name, data.client_phone
+    )
 
     # 5. Fetch services and calculate times
     services = await db.services.find({"id": {"$in": data.service_ids}, "user_id": user_id}).to_list(100)
@@ -151,7 +145,7 @@ async def create_public_booking(data: PublicBookingRequest, background_tasks: Ba
     
     appointment_doc = {
         "id": appointment_id, "user_id": user_id, "client_id": client_id,
-        "client_name": data.client_name, "client_phone": data.client_phone,
+        "client_name": client_name, "client_phone": client_phone,
         "service_ids": data.service_ids,
         "services": [{"id": s["id"], "name": s["name"], "duration": s["duration"], "price": s["price"]} for s in services],
         "operator_id": assigned_op["id"], 

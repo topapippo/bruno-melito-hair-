@@ -210,6 +210,24 @@ export default function SettingsPage() {
   const [umTest, setUmTest] = useState(null);
   const [testingUm, setTestingUm] = useState(false);
   const [umSendTest, setUmSendTest] = useState({ phone: '', result: null, loading: false });
+  const [mergingDups, setMergingDups] = useState(false);
+
+  const handleMergeDuplicates = async () => {
+    if (!window.confirm('Unire tutti i clienti con lo stesso nome? Gli appuntamenti e i pagamenti dei duplicati verranno spostati su un unico cliente. Operazione consigliata, ma non reversibile.')) return;
+    setMergingDups(true);
+    try {
+      const res = await api.post('/clients/merge-duplicates');
+      const d = res.data || {};
+      if (d.groups_merged > 0) {
+        toast.success(`✅ Uniti ${d.groups_merged} gruppi di duplicati — ${d.clients_removed} clienti rimossi, ${d.appointments_moved} appuntamenti riassegnati.`, { duration: 8000 });
+      } else {
+        toast.success('Nessun cliente duplicato trovato — tutto in ordine!');
+      }
+    } catch {
+      toast.error('Errore durante l\'unione dei duplicati. Riprova.');
+    }
+    setMergingDups(false);
+  };
 
   useEffect(() => {
     fetchSettings();
@@ -926,6 +944,36 @@ export default function SettingsPage() {
                 Salva una copia di tutti i dati del salone sul tuo PC o condividila su WhatsApp.
               </p>
               <BackupButtons />
+            </CardContent>
+          </Card>
+
+          {/* Manutenzione dati — unione duplicati */}
+          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+            <CardHeader>
+              <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
+                <User className="w-5 h-5 text-[#C8617A]" />
+                Manutenzione dati
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-[#7C5C4A]">
+                Se una cliente appare due volte in rubrica o risulta "assente" pur essendo venuta,
+                potrebbe esserci un doppione. Questo strumento unisce i clienti con lo stesso nome
+                e riassegna i loro appuntamenti a un unico profilo.
+              </p>
+              <Button
+                type="button"
+                onClick={handleMergeDuplicates}
+                disabled={mergingDups}
+                className="bg-[#C8617A] hover:bg-[#A0404F] text-white"
+                data-testid="merge-duplicates-btn"
+              >
+                {mergingDups ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Unione in corso…</>
+                ) : (
+                  <><Check className="w-4 h-4 mr-2" /> Trova e unisci clienti duplicati</>
+                )}
+              </Button>
             </CardContent>
           </Card>
 

@@ -308,6 +308,64 @@ async def merge_clients(source_id: str, target_id: str, current_user: dict = Dep
     }
 
 
+@router.post("/clients/merge-duplicates")
+async def merge_duplicate_clients(current_user: dict = Depends(get_current_user)):
+    """Unisce automaticamente i clienti duplicati con lo STESSO nome (normalizzato
+    lower+trim). Per ogni gruppo sceglie come destinazione il documento con telefono
+    e più vecchio, sposta lì appuntamenti/pagamenti/promo/richiami ed elimina gli altri.
+    Non tocca persone con nomi diversi (familiari con stesso telefono restano separati)."""
+    uid = current_user["id"]
+    all_clients = await db.clients.find({"user_id": uid}, {"_id": 0}).to_list(20000)
+
+    groups: dict = {}
+    for c in all_clients:
+        key = (c.get("name") or "").strip().lower()
+        if not key:
+            continue
+        groups.setdefault(key, []).append(c)
+
+    groups_merged = 0
+    clients_removed = 0
+    appointments_moved = 0
+
+    for key, members in groups.items():
+        if len(members) < 2:
+            continue
+        # Destinazione: preferisci chi ha telefono, poi il più vecchio (created_at minore)
+        members.sort(key=lambda c: (0 if c.get("phone") else 1, c.get("created_at") or ""))
+        target = members[0]
+        target_id = target["id"]
+        target_phone = target.get("phone", "")
+
+        for src in members[1:]:
+            src_id = src["id"]
+            if src_id == target_id:
+                continue
+            apt_res = await db.appointments.update_many(
+                {"client_id": src_id, "user_id": uid},
+                {"$set": {"client_id": target_id, "client_name": target["name"], "client_phone": target_phone}}
+            )
+            appointments_moved += apt_res.modified_count
+            await db.payments.update_many({"client_id": src_id, "user_id": uid}, {"$set": {"client_id": target_id}})
+            await db.reminders_sent.update_many({"client_id": src_id, "user_id": uid}, {"$set": {"client_id": target_id}})
+            await db.promo_usage.update_many({"client_id": src_id, "user_id": uid}, {"$set": {"client_id": target_id}})
+            # Se la destinazione non aveva telefono ma il duplicato sì, recuperalo
+            if not target_phone and src.get("phone"):
+                await db.clients.update_one({"id": target_id, "user_id": uid}, {"$set": {"phone": src["phone"]}})
+                target_phone = src["phone"]
+            await db.clients.delete_one({"id": src_id, "user_id": uid})
+            clients_removed += 1
+        groups_merged += 1
+
+    logger.info(f"Merge duplicati utente {uid}: {groups_merged} gruppi, {clients_removed} clienti rimossi, {appointments_moved} appuntamenti spostati")
+    return {
+        "success": True,
+        "groups_merged": groups_merged,
+        "clients_removed": clients_removed,
+        "appointments_moved": appointments_moved,
+    }
+
+
 @router.get("/clients/{client_id}", response_model=ClientResponse)
 async def get_client(client_id: str, current_user: dict = Depends(get_current_user)):
     client = await db.clients.find_one({"id": client_id, "user_id": current_user["id"]}, {"_id": 0})
