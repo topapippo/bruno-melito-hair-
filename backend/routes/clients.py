@@ -149,16 +149,19 @@ async def get_dormant_clients(days: int = 30, current_user: dict = Depends(get_c
 
     all_service_names = [s["name"] for s in services_catalog]
 
-    # Aggrega per NOME normalizzato (non per client_id): così un appuntamento
-    # conta per la cliente anche se è finito su un documento duplicato o su un
-    # client_id orfano. Risolve il caso "venuta ieri ma risulta assente da X gg".
+    # Aggrega per NOME normalizzato della RUBRICA (risolvendo il client_id al nome
+    # del documento cliente). Così un appuntamento conta per la cliente sia se è
+    # finito su un duplicato/orfano (stesso nome) sia se sull'appuntamento il nome
+    # è scritto diverso da quello in rubrica (es. "roby" vs "Roberta").
+    id_to_name = {c["id"]: (c.get("name") or "").strip().lower() for c in all_clients}
     service_popularity: dict = {}
     client_data: dict = {}  # chiave = nome normalizzato
     for apt in all_appointments:
         cid = apt.get("client_id", "")
         if not cid or cid == "generic":
             continue
-        key = (apt.get("client_name") or "").strip().lower()
+        # nome canonico dal documento cliente; fallback al nome sull'appuntamento (orfani)
+        key = id_to_name.get(cid) or (apt.get("client_name") or "").strip().lower()
         if not key:
             continue
         d = apt.get("date", "")

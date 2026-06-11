@@ -146,10 +146,19 @@ async def send_automatic_message(phone: str, template_name: str = None, template
         await _log_communication((user or {}).get("id", "system"), "whatsapp", phone, msg, res_green)
         return res_green
 
-    # 4. Meta Text (Ultimo tentativo, funziona solo se cliente ha scritto nelle ultime 24h)
-    res_meta = await send_whatsapp_cloud(phone, msg + WA_FOOTER)
-    await _log_communication((user or {}).get("id", "system"), "whatsapp", phone, msg, res_meta)
-    return res_meta
+    # 4. NIENTE Cloud API per il testo libero: in modalità Live Meta lo "accetta"
+    # (HTTP 200, quindi sembrerebbe inviato) ma NON lo consegna a chi non ha scritto
+    # nelle ultime 24h → falso "inviato". Per il testo libero contano solo UltraMsg/
+    # Green API. Se falliscono entrambi, restituiamo un errore ONESTO (non inviato).
+    err_parts = []
+    if res_ultra.get("error"):
+        err_parts.append(f"UltraMsg: {res_ultra['error']}")
+    if res_green.get("error"):
+        err_parts.append(f"Green API: {res_green['error']}")
+    fail = {"sent": False, "method": "none",
+            "error": " | ".join(err_parts) or "Nessun provider per il testo libero disponibile (serve Green API a pagamento o un template Meta approvato)"}
+    await _log_communication((user or {}).get("id", "system"), "whatsapp", phone, msg, fail)
+    return fail
 
 async def send_whatsapp(phone: str, message: str, user: dict = None) -> dict:
     """Interfaccia semplificata per invio manuale o da pulsanti."""

@@ -371,15 +371,17 @@ async def get_inactive_clients(current_user: dict = Depends(get_current_user)):
     today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     # Aggregation: ultima visita effettuata per ogni cliente — 1 query invece di N
     # (visita = completed o data passata, non cancellata — vedi visit_done_filter)
-    # Raggruppa per NOME normalizzato (non per client_id): un appuntamento conta
-    # per la cliente anche se finito su un documento duplicato/orfano.
+    # Raggruppa per client_id, poi risolvi al NOME di rubrica in Python: così un
+    # appuntamento conta per la cliente sia se finito su duplicato/orfano sia se il
+    # nome sull'appuntamento è scritto diverso da quello in rubrica.
     pipeline = [
         {"$match": {"user_id": uid, **visit_done_filter(today_str)}},
         {"$sort": {"date": -1}},
         {"$group": {
-            "_id": {"$toLower": {"$trim": {"input": {"$ifNull": ["$client_name", ""]}}}},
+            "_id": "$client_id",
             "last_date": {"$first": "$date"},
-            "last_services": {"$first": "$services"}
+            "last_services": {"$first": "$services"},
+            "client_name": {"$first": "$client_name"},
         }}
     ]
     clients, last_apts_raw, recent_recalls = await asyncio.gather(
@@ -391,12 +393,21 @@ async def get_inactive_clients(current_user: dict = Depends(get_current_user)):
             {"_id": 0}
         ).to_list(500)
     )
-    last_apts = {a["_id"]: a for a in last_apts_raw}  # chiave = nome normalizzato
+    # Consolida per nome di rubrica (risolvendo client_id -> nome cliente)
+    id_to_name = {c["id"]: (c.get("name") or "").strip().lower() for c in clients}
+    last_apts = {}
+    for a in last_apts_raw:
+        key = id_to_name.get(a["_id"]) or (a.get("client_name") or "").strip().lower()
+        if not key:
+            continue
+        cur = last_apts.get(key)
+        if not cur or a["last_date"] > cur["last_date"]:
+            last_apts[key] = {"last_date": a["last_date"], "last_services": a.get("last_services", [])}
     recently_recalled_ids = {r.get("client_id") for r in recent_recalls}
     today = datetime.now(timezone.utc)
     inactive = []
     for client in clients:
-        last = last_apts.get(client["name"].strip().lower())
+        last = last_apts.get((client.get("name") or "").strip().lower())
         if last and last["last_date"] <= cutoff_date:
             days_ago = (today - datetime.strptime(last["last_date"], "%Y-%m-%d").replace(tzinfo=timezone.utc)).days
             inactive.append({
@@ -589,18 +600,12 @@ async def send_whatsapp_direct(data: dict, current_user: dict = Depends(get_curr
             logger.error(f"Errore logging send-direct: {e}")
         return result
 
-    # --- 1. WhatsApp Cloud API ufficiale Meta (provider principale) ---
-    if WA_TOKEN:
-        result = await send_whatsapp_cloud(phone, message)
-        if result.get("sent"):
-            return await _finish({"sent": True, "method": "cloud_api"})
-        c_err = result.get("error") or "errore"
-        attempts.append(("Cloud API", f"{c_err} (code={result.get('code')})"))
-        logger.warning(f"Cloud API failed: {c_err} (code={result.get('code')})")
-    else:
-        attempts.append(("Cloud API", "token non configurato"))
+    # NB: per il TESTO LIBERO non usiamo la Cloud API Meta: in Live risponde 200
+    # ("inviato") ma NON consegna a chi non ha scritto nelle 24h → falso positivo.
+    # Il testo libero va solo via UltraMsg/Green API. La Cloud API si usa solo coi
+    # template approvati (percorso template_name più sopra).
 
-    # --- 2. UltraMsg (legacy fallback) ---
+    # --- 1. UltraMsg ---
     um_instance = current_user.get("ultramsg_instance_id", "")
     um_token = current_user.get("ultramsg_token", "")
     if um_instance and um_token:
