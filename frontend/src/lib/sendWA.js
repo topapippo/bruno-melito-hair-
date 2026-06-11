@@ -6,10 +6,15 @@ import { toast } from 'sonner';
  * Non apre mai una finestra del browser.
  * @returns {boolean} true se inviato con successo
  */
-export async function sendWA(phone, message, { successMsg = '✅ WhatsApp inviato!' } = {}) {
+export async function sendWA(phone, message, { successMsg = '✅ WhatsApp inviato!', templateName = null, templateVars = null } = {}) {
   if (!phone || !message) return false;
   try {
-    const res = await api.post('/whatsapp/send-direct', { phone, message });
+    const payload = { phone, message };
+    if (templateName) {
+      payload.template_name = templateName;
+      payload.template_vars = templateVars || [];
+    }
+    const res = await api.post('/whatsapp/send-direct', payload);
     if (res.data?.sent) {
       const method = res.data?.method;
       const msg = method === 'telegram'

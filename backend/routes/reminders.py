@@ -21,7 +21,8 @@ from database import db
 from auth import get_current_user
 from models import SMSRequest
 from utils import (send_sms_reminder, twilio_client, TWILIO_PHONE_NUMBER,
-                   normalize_phone_wa, send_whatsapp, send_whatsapp_cloud, WA_TOKEN)
+                   normalize_phone_wa, send_whatsapp, send_whatsapp_cloud,
+                   send_automatic_message, WA_TOKEN)
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -549,6 +550,22 @@ async def send_whatsapp_direct(data: dict, current_user: dict = Depends(get_curr
     message = data.get("message", "")
     if not phone or not message:
         raise HTTPException(status_code=400, detail="Phone e message obbligatori")
+
+    # Se il chiamante indica un template Meta, usa la catena unificata
+    # (template Meta APPROVATO → UltraMsg → Green API → testo libero Cloud API).
+    # Se il template non è ancora approvato su Meta, degrada da solo al testo
+    # libero via provider, usando `message` come fallback_text. Logga l'esito.
+    template_name = data.get("template_name")
+    if template_name:
+        template_vars = data.get("template_vars") or []
+        result = await send_automatic_message(
+            phone, template_name, template_vars, fallback_text=message, user=current_user
+        )
+        if result.get("sent"):
+            return {"sent": True, "method": result.get("method", "auto")}
+        wa_url = f"https://wa.me/{normalize_phone_wa(phone)}?text={urllib.parse.quote(message)}"
+        return {"sent": False, "method": "link", "url": wa_url,
+                "error": result.get("error", "Nessun provider disponibile")}
 
     phone_clean = normalize_phone_wa(phone)
     wa_number = phone_clean + "@c.us"

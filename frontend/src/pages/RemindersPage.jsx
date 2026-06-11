@@ -208,8 +208,8 @@ export default function RemindersPage() {
     return p;
   };
 
-  const sendWhatsAppDirect = async (phone, message) => {
-    return await sendWA(formatPhone(phone), message);
+  const sendWhatsAppDirect = async (phone, message, opts = {}) => {
+    return await sendWA(formatPhone(phone), message, opts);
   };
 
   const sendMessage = async () => {
@@ -228,7 +228,10 @@ export default function RemindersPage() {
       return;
     }
 
-    const sent = await sendWhatsAppDirect(phone, msgText);
+    const opts = type === 'appointment'
+      ? {}
+      : { templateName: 'richiamo_inattivo', templateVars: [data.client_name || '', String(data.days_ago || '')] };
+    const sent = await sendWhatsAppDirect(phone, msgText, opts);
 
     const id = type === 'appointment' ? data.id : data.client_id;
     setSendingId(id);
@@ -355,7 +358,8 @@ export default function RemindersPage() {
     let msg = colorTemplate
       ? colorTemplate.text.replace('{nome}', next.client_name || '').replace('{giorni}', String(next.days_ago || ''))
       : `Ciao ${next.client_name}! Sono passati ${next.days_ago} giorni dal tuo ultimo colore. E' il momento di rinfrescare il look! Prenota da Bruno Melito Hair.`;
-    const sentColor = await sendWhatsAppDirect(next.phone, msg);
+    const sentColor = await sendWhatsAppDirect(next.phone, msg,
+      { templateName: 'richiamo_colore', templateVars: [next.client_name || ''] });
     if (sentColor) {
       try {
         await api.post(`${API}/reminders/color-expiry/${next.client_id}/mark-sent`);
@@ -373,7 +377,8 @@ export default function RemindersPage() {
     let msg = recallTemplate
       ? recallTemplate.text.replace('{nome}', next.client_name || '').replace('{giorni}', String(next.days_ago || '')).replace('{servizi}', next.last_services?.join(', ') || '')
       : `Ciao ${next.client_name}! Sono passati ${next.days_ago} giorni dalla tua ultima visita presso Bruno Melito Hair. Torna a trovarci, ti aspettiamo!`;
-    const sentInactive = await sendWhatsAppDirect(next.client_phone, msg);
+    const sentInactive = await sendWhatsAppDirect(next.client_phone, msg,
+      { templateName: 'richiamo_inattivo', templateVars: [next.client_name || '', String(next.days_ago || '')] });
     if (sentInactive) {
       try {
         await api.post(`${API}/reminders/inactive/${next.client_id}/mark-sent`);
@@ -874,7 +879,8 @@ export default function RemindersPage() {
                           onClick={async () => {
                             if (!cr.phone) { toast.error('Numero mancante'); return; }
                             const msg = `Ciao ${cr.client_name}! Sono passati ${cr.days_ago} giorni dal tuo ultimo colore. E' il momento di rinfrescare il look! Prenota su Bruno Melito Hair.`;
-                            await sendWhatsAppDirect(cr.phone, msg);
+                            await sendWhatsAppDirect(cr.phone, msg,
+                              { templateName: 'richiamo_colore', templateVars: [cr.client_name || ''] });
                             api.post(`${API}/reminders/color-expiry/${cr.client_id}/mark-sent`)
                               .then(() => {
                                 setColorReminders(prev => prev.map(c => c.client_id === cr.client_id ? {...c, already_sent: true} : c));
