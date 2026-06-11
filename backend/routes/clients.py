@@ -149,37 +149,34 @@ async def get_dormant_clients(days: int = 30, current_user: dict = Depends(get_c
 
     all_service_names = [s["name"] for s in services_catalog]
 
-    # Mappa nome normalizzato → client_id reale (per riconciliare orfani)
-    client_name_to_id = {c["name"].strip().lower(): c["id"] for c in all_clients}
-    real_client_ids = {c["id"] for c in all_clients}
-
-    # Conteggio popolarità globale dei servizi
+    # Aggrega per NOME normalizzato (non per client_id): così un appuntamento
+    # conta per la cliente anche se è finito su un documento duplicato o su un
+    # client_id orfano. Risolve il caso "venuta ieri ma risulta assente da X gg".
     service_popularity: dict = {}
-    client_data: dict = {}
+    client_data: dict = {}  # chiave = nome normalizzato
     for apt in all_appointments:
         cid = apt.get("client_id", "")
         if not cid or cid == "generic":
             continue
-        # Se il client_id è orfano (non esiste più come documento), prova a ricondurlo per nome
-        if cid not in real_client_ids:
-            apt_name = (apt.get("client_name") or "").strip().lower()
-            cid = client_name_to_id.get(apt_name, cid)
+        key = (apt.get("client_name") or "").strip().lower()
+        if not key:
+            continue
         d = apt.get("date", "")
-        if cid not in client_data:
-            client_data[cid] = {"last_date": "0000-00-00", "service_counts": {}}
-        if d > client_data[cid]["last_date"]:
-            client_data[cid]["last_date"] = d
+        if key not in client_data:
+            client_data[key] = {"last_date": "0000-00-00", "service_counts": {}}
+        if d > client_data[key]["last_date"]:
+            client_data[key]["last_date"] = d
         if visit_is_done(apt, today_str):
             for svc in apt.get("services", []):
                 name = svc.get("name", "")
                 if name:
-                    client_data[cid]["service_counts"][name] = client_data[cid]["service_counts"].get(name, 0) + 1
+                    client_data[key]["service_counts"][name] = client_data[key]["service_counts"].get(name, 0) + 1
                     service_popularity[name] = service_popularity.get(name, 0) + 1
 
     dormant = []
     for client in all_clients:
         cid = client["id"]
-        cd = client_data.get(cid, {})
+        cd = client_data.get(client["name"].strip().lower(), {})
         last_date = cd.get("last_date", "0000-00-00")
 
         if last_date == "0000-00-00":

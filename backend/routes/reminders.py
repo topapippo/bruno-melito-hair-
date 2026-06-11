@@ -14,6 +14,7 @@ def _fmt_date_it(date_str: str) -> str:
         return date_str
 import uuid
 import os
+import re
 import asyncio
 import logging
 
@@ -370,11 +371,13 @@ async def get_inactive_clients(current_user: dict = Depends(get_current_user)):
     today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     # Aggregation: ultima visita effettuata per ogni cliente — 1 query invece di N
     # (visita = completed o data passata, non cancellata — vedi visit_done_filter)
+    # Raggruppa per NOME normalizzato (non per client_id): un appuntamento conta
+    # per la cliente anche se finito su un documento duplicato/orfano.
     pipeline = [
         {"$match": {"user_id": uid, **visit_done_filter(today_str)}},
         {"$sort": {"date": -1}},
         {"$group": {
-            "_id": "$client_id",
+            "_id": {"$toLower": {"$trim": {"input": {"$ifNull": ["$client_name", ""]}}}},
             "last_date": {"$first": "$date"},
             "last_services": {"$first": "$services"}
         }}
@@ -388,12 +391,12 @@ async def get_inactive_clients(current_user: dict = Depends(get_current_user)):
             {"_id": 0}
         ).to_list(500)
     )
-    last_apts = {a["_id"]: a for a in last_apts_raw}
+    last_apts = {a["_id"]: a for a in last_apts_raw}  # chiave = nome normalizzato
     recently_recalled_ids = {r.get("client_id") for r in recent_recalls}
     today = datetime.now(timezone.utc)
     inactive = []
     for client in clients:
-        last = last_apts.get(client["id"])
+        last = last_apts.get(client["name"].strip().lower())
         if last and last["last_date"] <= cutoff_date:
             days_ago = (today - datetime.strptime(last["last_date"], "%Y-%m-%d").replace(tzinfo=timezone.utc)).days
             inactive.append({
@@ -692,11 +695,14 @@ async def _send_inactive_reminders_core(user: dict) -> dict:
         if not phone:
             continue
 
-        # Ultima visita effettuata (completed o data passata, non cancellata)
+        # Ultima visita effettuata — cerca per NOME (robusto a duplicati/orfani),
+        # così non richiamiamo una cliente che in realtà è venuta su un altro documento.
+        if name:
+            last_filter = {"user_id": user_id, "client_name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}, **visit_done_filter(today)}
+        else:
+            last_filter = {"user_id": user_id, "client_id": cid, **visit_done_filter(today)}
         last_apt = await db.appointments.find_one(
-            {"user_id": user_id, "client_id": cid, **visit_done_filter(today)},
-            {"_id": 0, "date": 1},
-            sort=[("date", -1)]
+            last_filter, {"_id": 0, "date": 1}, sort=[("date", -1)]
         )
         last_date = last_apt["date"] if last_apt else None
 
