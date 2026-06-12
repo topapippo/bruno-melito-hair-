@@ -20,15 +20,134 @@ from models import PublicBookingRequest, get_loyalty_rewards, LOYALTY_POINTS_PER
 from utils import normalize_phone_wa, send_whatsapp, calculate_end_time, send_automatic_message, resolve_client
 from cache_utils import invalidate_website_cache, get_cached_website, set_cached_website
 from database import fs, sync_db
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, Response
+from fastapi.concurrency import run_in_threadpool
 from bson import ObjectId
 import gridfs
+import base64
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 limiter = Limiter(key_func=get_remote_address)
 
 PUBLIC_ADMIN_EMAIL = os.environ.get("PUBLIC_ADMIN_EMAIL", "admin@brunomelito.it")
+APP_NAME = "mbhssalon"
+
+# Cartella legacy per i vecchissimi upload su disco (local://). Lo storage attuale
+# è GridFS; questa resta solo per leggere file vecchi.
+try:
+    LOCAL_UPLOAD_DIR = "/app/backend/uploads"
+    os.makedirs(LOCAL_UPLOAD_DIR, exist_ok=True)
+except Exception:
+    LOCAL_UPLOAD_DIR = "/tmp/uploads"
+    try:
+        os.makedirs(LOCAL_UPLOAD_DIR, exist_ok=True)
+    except Exception:
+        pass
+
+
+# ============== STORAGE FILE (GridFS) ==============
+
+def _file_id_from_path(path: str) -> str:
+    """Estrae il file_id (UUID) da un path qualsiasi: gridfs://, mongo://, local://
+    o vecchi path remoti tipo 'mbhssalon/uploads/<id>.<ext>'."""
+    filename = path.split("/")[-1]
+    return filename.rsplit(".", 1)[0]
+
+
+def put_object(path: str, data: bytes, content_type: str) -> dict:
+    """Salva il file in GridFS (MongoDB). GridFS spezzetta i file in chunk, quindi
+    NON c'è il limite di 16MB del singolo documento BSON: foto e video di qualsiasi
+    dimensione vengono salvati e sopravvivono ai redeploy di Render."""
+    file_id = _file_id_from_path(path)
+    # Rimuovi eventuali versioni precedenti con lo stesso id (re-upload)
+    for old in fs.find({"filename": file_id}):
+        fs.delete(old._id)
+    fs.put(data, filename=file_id, content_type=content_type)
+    return {"path": f"gridfs://{file_id}", "size": len(data)}
+
+
+def get_object(path: str):
+    file_id = _file_id_from_path(path)
+
+    # 1) GridFS — storage principale attuale (foto e video di qualsiasi dimensione)
+    gf = fs.find_one({"filename": file_id})
+    if gf is not None:
+        return gf.read(), (gf.content_type or "application/octet-stream")
+
+    # 2) Legacy: base64 inline nel documento website_files (foto piccole pre-GridFS)
+    record = sync_db.website_files.find_one({"id": file_id})
+    if record and record.get("file_data"):
+        data = base64.b64decode(record["file_data"])
+        return data, record.get("content_type", "application/octet-stream")
+
+    # 3) Legacy: file su disco locale (vecchi path local://)
+    if path.startswith("local://"):
+        filename = path.replace("local://", "")
+        local_path = os.path.join(LOCAL_UPLOAD_DIR, filename)
+        if os.path.exists(local_path):
+            with open(local_path, "rb") as f:
+                data = f.read()
+            ext = filename.split(".")[-1].lower()
+            mime_map = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png", "gif": "image/gif", "webp": "image/webp"}
+            return data, mime_map.get(ext, "application/octet-stream")
+
+    raise HTTPException(status_code=404, detail="File non trovato")
+
+
+# Dimensione massima di un singolo chunk per le richieste Range "aperte" (es. "bytes=0-").
+# Restituendo ~1MB alla volta i video partono subito su mobile e il browser chiede il resto
+# man mano, invece di scaricare tutto in un colpo.
+_RANGE_CHUNK = 1024 * 1024  # 1 MB
+
+
+def read_grid_range(path: str, range_header: str):
+    """Legge SOLO l'intervallo di byte richiesto direttamente da GridFS (seek + read),
+    senza caricare l'intero file in memoria. Ritorna (chunk, start, end, total) oppure None
+    se il file non è su GridFS o il range non è valido."""
+    file_id = _file_id_from_path(path)
+    gf = fs.find_one({"filename": file_id})
+    if gf is None:
+        return None
+    total = gf.length
+    try:
+        range_val = range_header.replace("bytes=", "").strip()
+        start_str, _, end_str = range_val.partition("-")
+        start = int(start_str) if start_str else 0
+        if end_str.strip():
+            end = int(end_str)
+        else:
+            end = min(start + _RANGE_CHUNK - 1, total - 1)
+    except Exception:
+        return None
+    end = min(end, total - 1)
+    if start < 0 or start > end or start >= total:
+        return None
+    gf.seek(start)
+    chunk = gf.read(end - start + 1)
+    return chunk, start, end, total
+
+
+def open_grid(path: str):
+    """Ritorna il GridOut (handle al file su GridFS) senza leggerlo in memoria, oppure None."""
+    return fs.find_one({"filename": _file_id_from_path(path)})
+
+
+def _stream_grid(gf, chunk_size: int = 256 * 1024):
+    """Generatore che legge il file da GridFS a blocchi (256KB) — non carica mai
+    l'intero file in RAM (evita l'OOM su Render con video grandi)."""
+    try:
+        while True:
+            data = gf.read(chunk_size)
+            if not data:
+                break
+            yield data
+    finally:
+        try:
+            gf.close()
+        except Exception:
+            pass
+
 
 @router.get("/ping")
 async def ping(): return {"ok": True}
@@ -200,39 +319,165 @@ async def update_website_config(data: dict, current_user: dict = Depends(get_cur
 async def get_website_reviews(current_user: dict = Depends(get_current_user)):
     return await db.website_reviews.find({"user_id": current_user["id"]}, {"_id": 0}).to_list(100)
 
+
+@router.post("/website/reviews")
+async def create_website_review(data: dict, current_user: dict = Depends(get_current_user)):
+    review = {
+        "id": str(uuid.uuid4()), "user_id": current_user["id"],
+        "name": data.get("name", ""), "text": data.get("text", ""),
+        "rating": data.get("rating", 5), "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.website_reviews.insert_one(review)
+    invalidate_website_cache()
+    return {k: v for k, v in review.items() if k != "_id"}
+
+
+@router.put("/website/reviews/{review_id}")
+async def update_website_review(review_id: str, data: dict, current_user: dict = Depends(get_current_user)):
+    await db.website_reviews.update_one(
+        {"id": review_id, "user_id": current_user["id"]},
+        {"$set": {"name": data.get("name"), "text": data.get("text"), "rating": data.get("rating", 5)}}
+    )
+    invalidate_website_cache()
+    return await db.website_reviews.find_one({"id": review_id}, {"_id": 0})
+
+
+@router.delete("/website/reviews/{review_id}")
+async def delete_website_review(review_id: str, current_user: dict = Depends(get_current_user)):
+    await db.website_reviews.delete_one({"id": review_id, "user_id": current_user["id"]})
+    invalidate_website_cache()
+    return {"success": True}
+
+
 @router.get("/website/gallery")
 async def get_website_gallery(current_user: dict = Depends(get_current_user)):
-    return await db.website_gallery.find({"user_id": current_user["id"], "is_deleted": {"$ne": True}}, {"_id": 0}).to_list(200)
+    return await db.website_gallery.find(
+        {"user_id": current_user["id"], "is_deleted": {"$ne": True}}, {"_id": 0}
+    ).sort("sort_order", 1).to_list(200)
+
+
+@router.post("/website/gallery")
+async def create_website_gallery_item(data: dict, current_user: dict = Depends(get_current_user)):
+    count = await db.website_gallery.count_documents({"user_id": current_user["id"], "is_deleted": {"$ne": True}})
+    item = {
+        "id": str(uuid.uuid4()), "user_id": current_user["id"],
+        "image_url": data.get("image_url", ""), "label": data.get("label", ""),
+        "tag": data.get("tag", ""), "section": data.get("section", "gallery"),
+        "file_type": data.get("file_type", "image"),
+        "sort_order": count, "is_deleted": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.website_gallery.insert_one(item)
+    invalidate_website_cache()
+    return {k: v for k, v in item.items() if k != "_id"}
+
+
+@router.put("/website/gallery/{item_id}")
+async def update_website_gallery_item(item_id: str, data: dict, current_user: dict = Depends(get_current_user)):
+    update_data = {k: data[k] for k in ("label", "tag", "sort_order", "section", "image_url") if k in data}
+    if update_data:
+        await db.website_gallery.update_one({"id": item_id, "user_id": current_user["id"]}, {"$set": update_data})
+    invalidate_website_cache()
+    return await db.website_gallery.find_one({"id": item_id}, {"_id": 0})
+
+
+@router.delete("/website/gallery/{item_id}")
+async def delete_website_gallery_item(item_id: str, current_user: dict = Depends(get_current_user)):
+    await db.website_gallery.update_one({"id": item_id, "user_id": current_user["id"]}, {"$set": {"is_deleted": True}})
+    invalidate_website_cache()
+    return {"success": True}
+
 
 def init_storage(): pass
 
 
+@router.post("/website/upload")
+async def website_upload_file(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
+    ext = file.filename.split(".")[-1].lower() if "." in (file.filename or "") else "jpg"
+    image_exts = ("jpg", "jpeg", "png", "gif", "webp")
+    video_exts = ("mp4", "webm", "mov")
+    allowed = image_exts + video_exts
+    if ext not in allowed:
+        raise HTTPException(status_code=400, detail="Formato non supportato. Usa JPG, PNG, GIF, WebP, MP4, WebM o MOV.")
+
+    mime_map = {
+        "jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png",
+        "gif": "image/gif", "webp": "image/webp",
+        "mp4": "video/mp4", "webm": "video/webm", "mov": "video/quicktime"
+    }
+    file_type = "video" if ext in video_exts else "image"
+    max_size = 50 * 1024 * 1024 if file_type == "video" else 10 * 1024 * 1024
+
+    file_id = str(uuid.uuid4())
+    path = f"{APP_NAME}/uploads/{file_id}.{ext}"
+    data = await file.read()
+    if len(data) > max_size:
+        raise HTTPException(status_code=400, detail=f"File troppo grande. Max {'50MB' if file_type == 'video' else '10MB'}.")
+    # Scrittura in GridFS in threadpool: non blocca l'event loop su file grandi (video)
+    result = await run_in_threadpool(put_object, path, data, mime_map.get(ext, "application/octet-stream"))
+
+    doc = {
+        "id": file_id, "storage_path": result["path"], "original_filename": file.filename,
+        "content_type": mime_map.get(ext, "application/octet-stream"), "size": result.get("size", len(data)),
+        "file_type": file_type, "is_deleted": False, "user_id": current_user["id"],
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.website_files.insert_one(doc)
+    return {"id": file_id, "path": result["path"], "url": f"/api/website/files/{file_id}", "file_type": file_type}
+
+
 @router.get('/website/files/{file_id}')
-async def get_website_file(file_id: str):
-    """Serve file (image/video) salvati in GridFS.
+async def website_serve_file(file_id: str, request: Request):
+    """Serve file (image/video) da GridFS con supporto HTTP Range.
 
-    Cerca prima per _id (ObjectId), altrimenti per filename == file_id.
-    Restituisce StreamingResponse con Content-Type corretto o 404.
+    I browser richiedono il byte-range (HTTP 206) per riprodurre i <video>: senza,
+    il tag video resta vuoto pur mostrando la cornice. Per questo i video servono Range.
     """
-    try:
-        # Proviamo come ObjectId
-        grid_out = None
-        try:
-            oid = ObjectId(file_id)
-            grid_out = fs.get(oid)
-        except Exception:
-            # Non è un ObjectId oppure get fallito: cerchiamo per filename
-            fdoc = sync_db['fs.files'].find_one({"filename": file_id})
-            if not fdoc:
-                raise HTTPException(status_code=404, detail="File non trovato")
-            grid_out = fs.get(fdoc['_id'])
+    record = await db.website_files.find_one({"id": file_id, "is_deleted": False}, {"_id": 0})
+    if not record:
+        # Fallback: file vecchi salvati direttamente in GridFS senza record website_files
+        gf = await run_in_threadpool(open_grid, f"gridfs://{file_id}")
+        if gf is None:
+            raise HTTPException(status_code=404, detail="File non trovato")
+        content_type = getattr(gf, "content_type", None) or "application/octet-stream"
+        headers = {"Accept-Ranges": "bytes", "Content-Length": str(gf.length),
+                   "Cache-Control": "public, max-age=31536000, immutable"}
+        return StreamingResponse(_stream_grid(gf), media_type=content_type, headers=headers)
 
-        content_type = getattr(grid_out, 'content_type', None) or 'application/octet-stream'
-        return StreamingResponse(grid_out, media_type=content_type)
-    except gridfs.errors.NoFile:
-        raise HTTPException(status_code=404, detail="File non trovato")
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Errore serving file {file_id}: {e}")
-        raise HTTPException(status_code=500, detail="Errore server")
+    content_type = record.get("content_type", "application/octet-stream")
+    storage_path = record["storage_path"]
+    range_header = request.headers.get("range")
+
+    # VIDEO con Range: leggi da GridFS SOLO i byte richiesti (seek+read), senza
+    # rileggere l'intero file. È ciò che rende fluida la riproduzione su mobile.
+    if range_header and content_type.startswith("video/"):
+        result = await run_in_threadpool(read_grid_range, storage_path, range_header)
+        if result is not None:
+            chunk, start, end, total = result
+            headers = {
+                "Content-Range": f"bytes {start}-{end}/{total}",
+                "Accept-Ranges": "bytes",
+                "Content-Length": str(len(chunk)),
+                "Cache-Control": "public, max-age=31536000, immutable",
+            }
+            return Response(content=chunk, status_code=206, media_type=content_type, headers=headers)
+
+    # File su GridFS: STREAMING a blocchi da 256KB — non carica mai l'intero file
+    # in memoria, così anche un video da 50MB non fa esplodere la RAM (causa dell'OOM).
+    gf = await run_in_threadpool(open_grid, storage_path)
+    if gf is not None:
+        headers = {
+            "Accept-Ranges": "bytes",
+            "Content-Length": str(gf.length),
+            "Cache-Control": "public, max-age=31536000, immutable",
+        }
+        return StreamingResponse(_stream_grid(gf), media_type=content_type, headers=headers)
+
+    # Legacy (immagini inline base64 / file locali): lettura in memoria.
+    data, ct = await run_in_threadpool(get_object, storage_path)
+    headers = {
+        "Accept-Ranges": "bytes",
+        "Content-Length": str(len(data)),
+        "Cache-Control": "public, max-age=31536000, immutable",
+    }
+    return Response(content=data, media_type=content_type or ct, headers=headers)
