@@ -3,6 +3,9 @@ node_modules/
 /.pnp
 .pnp.js
 
+# Claude Code local settings
+.claude/
+
 # Environment files
 *.env
 *.env.*
