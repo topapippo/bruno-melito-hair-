@@ -23,9 +23,6 @@ from database import fs, sync_db
 from fastapi.responses import StreamingResponse
 from bson import ObjectId
 import gridfs
-from database import fs, sync_db
-from fastapi.responses import StreamingResponse
-from bson import ObjectId
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -204,37 +201,6 @@ async def get_website_gallery(current_user: dict = Depends(get_current_user)):
     return await db.website_gallery.find({"user_id": current_user["id"], "is_deleted": {"$ne": True}}, {"_id": 0}).to_list(200)
 
 def init_storage(): pass
-
-
-@router.get('/website/files/{file_id}')
-async def get_website_file(file_id: str):
-    """Serve file (image/video) salvati in GridFS.
-
-    Cerca prima per _id (ObjectId), altrimenti per filename == file_id.
-    Restituisce StreamingResponse con Content-Type corretto o 404.
-    """
-    try:
-        # Proviamo come ObjectId
-        grid_out = None
-        try:
-            oid = ObjectId(file_id)
-            grid_out = fs.get(oid)
-        except Exception:
-            # Non è un ObjectId oppure get fallito: cerchiamo per filename
-            fdoc = sync_db['fs.files'].find_one({"filename": file_id})
-            if not fdoc:
-                raise HTTPException(status_code=404, detail="File non trovato")
-            grid_out = fs.get(fdoc['_id'])
-
-        content_type = getattr(grid_out, 'content_type', None) or 'application/octet-stream'
-        return StreamingResponse(grid_out, media_type=content_type)
-    except gridfs.errors.NoFile:
-        raise HTTPException(status_code=404, detail="File non trovato")
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Errore serving file {file_id}: {e}")
-        raise HTTPException(status_code=500, detail="Errore server")
 
 
 @router.get('/website/files/{file_id}')
