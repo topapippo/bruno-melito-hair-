@@ -23,7 +23,7 @@ from auth import get_current_user
 from models import SMSRequest
 from utils import (send_sms_reminder, twilio_client, TWILIO_PHONE_NUMBER,
                    normalize_phone_wa, send_whatsapp, send_whatsapp_cloud,
-                   send_automatic_message, visit_done_filter, WA_TOKEN)
+                   send_automatic_message, send_whatsapp_template, visit_done_filter, WA_TOKEN)
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -676,6 +676,29 @@ async def get_thank_you_template(current_user: dict = Depends(get_current_user))
 
 # ── Clienti inattivi ───────────────────────────────────────────────────────────
 
+async def _get_service_type_for_personalization(services: list) -> str:
+    """Identifica il tipo di servizio (colore, taglio, trattamento) da una lista di servizi.
+    
+    Ritorna: 'colore', 'taglio', 'trattamento', o None
+    """
+    if not services:
+        return None
+    
+    color_keywords = ["colore", "color", "tinta", "meche", "balayage", "colpi di sole", "schiaritu"]
+    cut_keywords = ["taglio", "cut", "piega"]
+    treatment_keywords = ["trattamento", "maschera", "keratina", "olio", "laminazione", "anticaduta", "idratante"]
+    
+    for svc in services:
+        svc_name = (svc.get("name") or "").lower()
+        if any(kw in svc_name for kw in color_keywords):
+            return "colore"
+        elif any(kw in svc_name for kw in cut_keywords):
+            return "taglio"
+        elif any(kw in svc_name for kw in treatment_keywords):
+            return "trattamento"
+    return None
+
+
 async def _send_inactive_reminders_core(user: dict) -> dict:
     """Trova clienti inattivi da >60 giorni e manda WhatsApp. Ritorna stats."""
     user_id = user["id"]
@@ -740,22 +763,125 @@ async def _send_inactive_reminders_core(user: dict) -> dict:
             continue
 
         first_name = name.split()[0] if name else "caro cliente"
-        message = (
-            f"Ciao {first_name}! 👋 Sono passati un po' di giorni dall'ultima volta da {salon_name}.\n"
-            f"Ti aspettiamo per coccolarti di nuovo! 💇\n"
-            f"Prenota il tuo appuntamento qui: {booking_url}"
-        )
+        days_ago = None
+        try:
+            last = await db.appointments.find_one(last_filter, {"_id": 0, "date": 1}, sort=[("date", -1)])
+            if last and last.get("date"):
+                days_ago = (datetime.now(timezone.utc) - datetime.strptime(last["date"], "%Y-%m-%d").replace(tzinfo=timezone.utc)).days
+        except Exception:
+            pass
 
-        result = await send_whatsapp(phone, message, user)
-        if result.get("sent"):
-            await db.reminders_sent.insert_one({
-                "id": str(uuid.uuid4()), "type": "inattivo",
-                "client_id": cid, "user_id": user_id,
-                "date": today, "sent_at": datetime.now(timezone.utc).isoformat()
-            })
-            sent += 1
+        # 1) Proviamo prima a inviare un template Meta (se esiste uno approvato)
+        # Template approvati su Meta (ordine di preferenza)
+        template_candidates = [
+            "richiamo_inattivo",
+            "richiamo_colore",
+            "promemoria_appuntamento",
+            "conferma_prenotazione",
+        ]
+        sent_flag = False
+        for tmpl in template_candidates:
+            try:
+                vars = [first_name, str(days_ago) if days_ago is not None else ""]
+                res_t = await send_whatsapp_template(phone, tmpl, variables=vars)
+                if res_t.get("sent"):
+                    await db.reminders_sent.insert_one({
+                        "id": str(uuid.uuid4()), "type": "inattivo",
+                        "client_id": cid, "user_id": user_id,
+                        "date": today, "sent_at": datetime.now(timezone.utc).isoformat()
+                    })
+                    sent += 1
+                    sent_flag = True
+                    break
+            except Exception:
+                continue
+
+        if sent_flag:
+            continue
+
+        # 2) Se nessun template è stato inviato, leggi l'ultimo servizio e personalizza il messaggio
+        last_apt_full = await db.appointments.find_one(
+            last_filter, {"_id": 0, "services": 1}, sort=[("date", -1)]
+        )
+        service_type = None
+        if last_apt_full and last_apt_full.get("services"):
+            service_type = await _get_service_type_for_personalization(last_apt_full["services"])
+        
+        # Personalizza il messaggio in base al tipo di ultimo servizio
+        if service_type == "colore":
+            message = (
+                f"Ciao {first_name}! 🎨 Il tuo colore ha bisogno di un ritocco!\n"
+                f"Torna da {salon_name} per mantenere il tuo look impeccabile.\n"
+                f"Prenota qui: {booking_url}"
+            )
+        elif service_type == "taglio":
+            message = (
+                f"Ciao {first_name}! ✂️ È ora di un nuovo taglio!\n"
+                f"Rinnova il tuo look con un taglio fresco da {salon_name}.\n"
+                f"Prenota qui: {booking_url}"
+            )
+        elif service_type == "trattamento":
+            message = (
+                f"Ciao {first_name}! 💆 I tuoi capelli hanno bisogno di coccole!\n"
+                f"Torna da {salon_name} per un trattamento rigenerante.\n"
+                f"Prenota qui: {booking_url}"
+            )
         else:
-            skipped += 1
+            # Messaggio generico se servizio non identificato
+            message = (
+                f"Ciao {first_name}! 👋 Sono passati un po' di giorni dall'ultima volta da {salon_name}.\n"
+                f"Ti aspettiamo per coccolarti di nuovo! 💇\n"
+                f"Prenota il tuo appuntamento qui: {booking_url}"
+            )
+
+        # Preferiamo usare la Cloud API Meta come primario SOLO se il cliente ha
+        # interagito nelle ultime 24 ore (evita falsi-positivi "inviato" quando
+        # il cliente non può ricevere testo libero). In caso contrario usiamo
+        # la catena legacy (UltraMsg → Green → Twilio).
+        use_cloud_primary = False
+        try:
+            import re as _re
+            digits = _re.sub(r"\D", "", phone or "")
+            tail = digits[-8:] if len(digits) >= 8 else digits
+            cutoff_24h = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
+            if tail:
+                recent = await db.communication_logs.find_one({
+                    "user_id": user_id,
+                    "phone": {"$regex": tail},
+                    "timestamp": {"$gte": cutoff_24h}
+                })
+                if recent:
+                    use_cloud_primary = True
+        except Exception:
+            use_cloud_primary = False
+
+        sent_this = False
+        # 3) Se possiamo, proviamo Cloud API per testo libero (client ha scritto nelle 24h)
+        if use_cloud_primary and WA_TOKEN:
+            try:
+                res_cloud = await send_whatsapp_cloud(phone, message)
+                if res_cloud.get("sent"):
+                    await db.reminders_sent.insert_one({
+                        "id": str(uuid.uuid4()), "type": "inattivo",
+                        "client_id": cid, "user_id": user_id,
+                        "date": today, "sent_at": datetime.now(timezone.utc).isoformat()
+                    })
+                    sent += 1
+                    sent_this = True
+            except Exception:
+                sent_this = False
+
+        if not sent_this:
+            result = await send_whatsapp(phone, message, user)
+            if result.get("sent"):
+                await db.reminders_sent.insert_one({
+                    "id": str(uuid.uuid4()), "type": "inattivo",
+                    "client_id": cid, "user_id": user_id,
+                    "date": today, "sent_at": datetime.now(timezone.utc).isoformat()
+                })
+                sent += 1
+            else:
+                skipped += 1
 
     return {"sent": sent, "skipped": skipped, "total": len(clients)}
 
@@ -765,6 +891,224 @@ async def send_inactive_reminders(current_user: dict = Depends(get_current_user)
     """Invia WhatsApp ai clienti che non vengono da più di 60 giorni."""
     result = await _send_inactive_reminders_core(current_user)
     return result
+
+
+# ── Follow-up post-visita ─────────────────────────────────────────────────
+
+@router.post("/reminders/follow-up/{appointment_id}")
+async def send_followup_message(appointment_id: str, current_user: dict = Depends(get_current_user)):
+    """Invia messaggio di follow-up post-visita per richiedere feedback/foto.
+    
+    Solo appuntamenti completati. Non richiede autenticazione speciale (staff/admin).
+    """
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
+    # 1. Verifica appuntamento esiste e appartiene all'utente
+    apt = await db.appointments.find_one(
+        {"id": appointment_id, "user_id": current_user["id"]}, {"_id": 0}
+    )
+    if not apt:
+        raise HTTPException(status_code=404, detail="Appuntamento non trovato")
+    
+    # 2. Verifica che sia completato
+    if apt.get("status") != "completed":
+        raise HTTPException(status_code=400, detail="L'appuntamento non è ancora completato")
+    
+    # 3. Verifica che il cliente abbia un numero WhatsApp
+    client_phone = apt.get("client_phone")
+    client_name = apt.get("client_name", "Cliente")
+    if not client_phone:
+        raise HTTPException(status_code=400, detail="Cliente senza numero di telefono")
+    
+    # 4. Prepara messaggio di follow-up con richiesta feedback + suggerimento servizio
+    first_name = client_name.split()[0] if client_name else "Cliente"
+    service_names = ", ".join([s.get("name", "") for s in apt.get("services", [])])
+    
+    # Identifica tipo di servizio per suggerimento complementare
+    last_service_type = await _get_service_type_for_personalization(apt.get("services", []))
+    
+    # Crea suggerimento di upsell in base al servizio appena ricevuto
+    upsell_suggestion = ""
+    if last_service_type == "taglio":
+        upsell_suggestion = "\n\n💡 Prova il nostro colore senza ammoniaca con keratina per un look ancora più raffinato! 🎨"
+    elif last_service_type == "colore":
+        upsell_suggestion = "\n\n💡 Mantieni la luminosità del tuo colore con il nostro trattamento idratante 💧"
+    elif last_service_type == "trattamento":
+        upsell_suggestion = "\n\n💡 Abbina un nuovo taglio per esaltare al massimo i benefici del trattamento! ✂️"
+    
+    # 5. Tenta invio via template Meta (se disponibile), con fallback a testo
+    fallback_message = (
+        f"Ciao {first_name}! 🌟\n\n"
+        f"Come è andata la tua visita per {service_names}? "
+        f"Ci piacerebbe molto una tua foto — condividi il tuo nuovo look con noi! 📸\n\n"
+        f"Grazie per la fiducia! A presto da Bruno Melito Hair 💇"
+        f"{upsell_suggestion}"
+    )
+    
+    result = await send_automatic_message(
+        client_phone,
+        template_name=None,  # Senza template fisso — usa feedback_request se esiste, altrimenti fallback testo
+        template_vars=None,
+        fallback_text=fallback_message,
+        user=current_user
+    )
+    
+    # 6. Registra l'invio nel log di comunicazioni
+    if result.get("sent"):
+        await db.communication_logs.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": current_user["id"],
+            "phone": client_phone,
+            "type": "follow_up",
+            "appointment_id": appointment_id,
+            "message": fallback_message,
+            "sent": True,
+            "provider": result.get("method", "unknown"),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
+        return {
+            "success": True,
+            "message": f"Follow-up inviato a {client_name}",
+            "provider": result.get("method", "unknown")
+        }
+    else:
+        await db.communication_logs.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": current_user["id"],
+            "phone": client_phone,
+            "type": "follow_up",
+            "appointment_id": appointment_id,
+            "message": fallback_message,
+            "sent": False,
+            "error": result.get("error", "Errore sconosciuto"),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
+        raise HTTPException(
+            status_code=400,
+            detail=f"Errore invio follow-up: {result.get('error', 'Errore sconosciuto')}"
+        )
+
+
+# ── Upsell intelligente ────────────────────────────────────────────────────
+
+@router.post("/reminders/upsell/{appointment_id}")
+async def send_upsell_suggestion(
+    appointment_id: str,
+    service_suggestion: str,
+    custom_message: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Invia suggerimento di servizio complementare al cliente.
+    
+    Parametri:
+    - service_suggestion: tipo di servizio da suggerire (es. "colore", "taglio", "trattamento")
+    - custom_message (opzionale): messaggio personalizzato. Se non fornito, usa template automatico.
+    """
+    # 1. Verifica appuntamento
+    apt = await db.appointments.find_one(
+        {"id": appointment_id, "user_id": current_user["id"]}, {"_id": 0}
+    )
+    if not apt:
+        raise HTTPException(status_code=404, detail="Appuntamento non trovato")
+    
+    client_phone = apt.get("client_phone")
+    client_name = apt.get("client_name", "Cliente")
+    if not client_phone:
+        raise HTTPException(status_code=400, detail="Cliente senza numero di telefono")
+    
+    first_name = client_name.split()[0] if client_name else "Cliente"
+    
+    # 2. Generi il messaggio di upsell in base al servizio suggerito
+    if custom_message:
+        # Usa messaggio personalizzato da Bruno
+        upsell_msg = custom_message
+    else:
+        # Template automatici per servizio
+        service_suggestion_lower = service_suggestion.lower()
+        
+        templates_map = {
+            "colore": (
+                f"Ciao {first_name}! 🎨\n\n"
+                f"Vuoi trasformare il tuo look con un colore senza ammoniaca con keratina e olio di argan? "
+                f"Scopri come risalta il tuo stile!\n\n"
+                f"Prenota il tuo colore esclusivo: https://brunomelitohair.it/prenota"
+            ),
+            "taglio": (
+                f"Ciao {first_name}! ✂️\n\n"
+                f"Un nuovo taglio = nuovo look! Scopri le ultime tendenze primavera-estate "
+                f"e rinnova il tuo stile con noi.\n\n"
+                f"Prenota il tuo taglio: https://brunomelitohair.it/prenota"
+            ),
+            "trattamento": (
+                f"Ciao {first_name}! 💆\n\n"
+                f"Vuoi capelli più idratati, lucidi e sani? Prova i nostri trattamenti "
+                f"con keratina, olio di argan e acido ialuronico.\n\n"
+                f"Prenota il tuo trattamento: https://brunomelitohair.it/prenota"
+            ),
+            "shampoo": (
+                f"Ciao {first_name}! 🧴\n\n"
+                f"Mantieni i benefici del nostro trattamento con lo shampoo specifico "
+                f"senza parabeni e solfati. Disponibile in salone!\n\n"
+                f"Contattaci: https://wa.me/+393397833526"
+            ),
+            "permanente": (
+                f"Ciao {first_name}! 〰️\n\n"
+                f"Vuoi capelli mossi e ondulati? La nostra permanente senza ammoniaca è delicata "
+                f"e dona volume naturale.\n\n"
+                f"Prenota: https://brunomelitohair.it/prenota"
+            )
+        }
+        
+        upsell_msg = templates_map.get(
+            service_suggestion_lower,
+            f"Ciao {first_name}! ✨ Scopri i nostri servizi esclusivi: https://brunomelitohair.it/prenota"
+        )
+    
+    # 3. Invia messaggio via fallback chain
+    result = await send_automatic_message(
+        client_phone,
+        template_name=None,
+        template_vars=None,
+        fallback_text=upsell_msg,
+        user=current_user
+    )
+    
+    # 4. Registra nel log
+    if result.get("sent"):
+        await db.communication_logs.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": current_user["id"],
+            "phone": client_phone,
+            "type": "upsell",
+            "appointment_id": appointment_id,
+            "service_suggested": service_suggestion,
+            "message": upsell_msg,
+            "sent": True,
+            "provider": result.get("method", "unknown"),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
+        return {
+            "success": True,
+            "message": f"Suggerimento di {service_suggestion} inviato a {client_name}",
+            "provider": result.get("method", "unknown")
+        }
+    else:
+        await db.communication_logs.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": current_user["id"],
+            "phone": client_phone,
+            "type": "upsell",
+            "appointment_id": appointment_id,
+            "service_suggested": service_suggestion,
+            "message": upsell_msg,
+            "sent": False,
+            "error": result.get("error", "Errore sconosciuto"),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
+        raise HTTPException(
+            status_code=400,
+            detail=f"Errore invio upsell: {result.get('error', 'Errore sconosciuto')}"
+        )
 
 
 @router.get("/communication-logs")

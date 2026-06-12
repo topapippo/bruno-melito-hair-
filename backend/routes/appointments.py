@@ -90,8 +90,10 @@ async def create_appointment(data: AppointmentCreate, current_user: dict = Depen
         msg = f"🔔 NUOVA PRENOTAZIONE!\n👤 {client_name}\n📅 {date_it} ore {data.time}\n✂️ {service_names}\n\nhttps://brunomelitohair.it/admin"
         asyncio.create_task(send_whatsapp(BRUNO_PHONE, msg, current_user))
         if client_phone:
-            asyncio.create_task(send_whatsapp(client_phone, f"Ciao {client_name}! ✅ Prenotazione confermata per il {date_it} alle {data.time}.", current_user))
-    except: pass
+            # Usa template di conferma per aumentare la probabilità di consegna
+            asyncio.create_task(send_automatic_message(client_phone, "conferma_prenotazione", [client_name, date_it, data.time], f"Ciao {client_name}! ✅ Prenotazione confermata per il {date_it} alle {data.time}.", current_user))
+    except Exception:
+        pass
 
     return AppointmentResponse(**{k: v for k, v in doc.items() if k != "user_id"})
 

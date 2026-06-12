@@ -19,6 +19,13 @@ from auth import get_current_user
 from models import PublicBookingRequest, get_loyalty_rewards, LOYALTY_POINTS_PER_EURO
 from utils import normalize_phone_wa, send_whatsapp, calculate_end_time, send_automatic_message, resolve_client
 from cache_utils import invalidate_website_cache, get_cached_website, set_cached_website
+from database import fs, sync_db
+from fastapi.responses import StreamingResponse
+from bson import ObjectId
+import gridfs
+from database import fs, sync_db
+from fastapi.responses import StreamingResponse
+from bson import ObjectId
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -160,6 +167,7 @@ async def create_public_booking(data: PublicBookingRequest, background_tasks: Ba
     invalidate_website_cache()
 
     # 7. Notifications
+    wa_result = False
     try:
         service_names = ", ".join([s["name"] for s in services])
         d_p = data.date.split('-')
@@ -167,10 +175,14 @@ async def create_public_booking(data: PublicBookingRequest, background_tasks: Ba
         msg_bruno = f"🔔 NUOVA PRENOTAZIONE ONLINE!\n👤 Cliente: {data.client_name}\n📅 Data: {date_it}\n⏰ Ora: {data.time}\n✂️ Servizi: {service_names}\n\nhttps://brunomelitohair.it/admin"
         background_tasks.add_task(send_whatsapp, "3397833526", msg_bruno, user)
         client_msg = f"Ciao {data.client_name}! ✅ Prenotazione confermata per il {date_it} alle {data.time}. Ti aspettiamo! 💇"
-        background_tasks.add_task(send_automatic_message, data.client_phone, "promemoria_appuntamento", [data.client_name, date_it, data.time], client_msg, user)
-    except: pass
+        if data.client_phone:
+            # Prefer template di conferma approvato su Meta
+            background_tasks.add_task(send_automatic_message, data.client_phone, "conferma_prenotazione", [data.client_name, date_it, data.time], client_msg, user)
+            wa_result = True
+    except Exception:
+        pass
 
-    return {"success": True, "appointment_id": appointment_id, "wa_sent": True}
+    return {"success": True, "appointment_id": appointment_id, "wa_scheduled": wa_result}
 
 @router.get("/website/config")
 async def get_website_config(current_user: dict = Depends(get_current_user)):
@@ -192,3 +204,65 @@ async def get_website_gallery(current_user: dict = Depends(get_current_user)):
     return await db.website_gallery.find({"user_id": current_user["id"], "is_deleted": {"$ne": True}}, {"_id": 0}).to_list(200)
 
 def init_storage(): pass
+
+
+@router.get('/website/files/{file_id}')
+async def get_website_file(file_id: str):
+    """Serve file (image/video) salvati in GridFS.
+
+    Cerca prima per _id (ObjectId), altrimenti per filename == file_id.
+    Restituisce StreamingResponse con Content-Type corretto o 404.
+    """
+    try:
+        # Proviamo come ObjectId
+        grid_out = None
+        try:
+            oid = ObjectId(file_id)
+            grid_out = fs.get(oid)
+        except Exception:
+            # Non è un ObjectId oppure get fallito: cerchiamo per filename
+            fdoc = sync_db['fs.files'].find_one({"filename": file_id})
+            if not fdoc:
+                raise HTTPException(status_code=404, detail="File non trovato")
+            grid_out = fs.get(fdoc['_id'])
+
+        content_type = getattr(grid_out, 'content_type', None) or 'application/octet-stream'
+        return StreamingResponse(grid_out, media_type=content_type)
+    except gridfs.errors.NoFile:
+        raise HTTPException(status_code=404, detail="File non trovato")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Errore serving file {file_id}: {e}")
+        raise HTTPException(status_code=500, detail="Errore server")
+
+
+@router.get('/website/files/{file_id}')
+async def get_website_file(file_id: str):
+    """Serve file (image/video) salvati in GridFS.
+
+    Cerca prima per _id (ObjectId), altrimenti per filename == file_id.
+    Restituisce StreamingResponse con Content-Type corretto o 404.
+    """
+    try:
+        # Proviamo come ObjectId
+        grid_out = None
+        try:
+            oid = ObjectId(file_id)
+            grid_out = fs.get(oid)
+        except Exception:
+            # Non è un ObjectId oppure get fallito: cerchiamo per filename
+            fdoc = sync_db['fs.files'].find_one({"filename": file_id})
+            if not fdoc:
+                raise HTTPException(status_code=404, detail="File non trovato")
+            grid_out = fs.get(fdoc['_id'])
+
+        content_type = getattr(grid_out, 'content_type', None) or 'application/octet-stream'
+        return StreamingResponse(grid_out, media_type=content_type)
+    except gridfs.errors.NoFile:
+        raise HTTPException(status_code=404, detail="File non trovato")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Errore serving file {file_id}: {e}")
+        raise HTTPException(status_code=500, detail="Errore server")

@@ -113,8 +113,32 @@ async def _send_greenapi(phone: str, message: str, user: dict) -> dict:
         url = f"https://api.greenapi.com/waInstance{id_instance}/sendMessage/{api_token}"
         resp = await asyncio.to_thread(_req.post, url, json={"chatId": normalize_phone_wa(phone) + "@c.us", "message": message}, timeout=15)
         rjson = resp.json()
+        # Alcuni errori di Green API contengono messaggi testuali quando la
+        # quota mensile è esaurita o quando il numero non è in whitelist.
+        rstr = str(rjson)
+        quota_indicators = ["quota", "whitelist", "esauri", "esaurita", "Quota mensile"]
+        if any(ind.lower() in rstr.lower() for ind in quota_indicators):
+            return {"sent": False, "method": "greenapi", "data": rjson, "error": rstr, "quota_exhausted": True}
         return {"sent": bool(rjson.get("idMessage")), "method": "greenapi", "data": rjson}
     except Exception as e: return {"sent": False, "error": str(e)}
+
+
+async def _send_twilio_sms(phone: str, message: str) -> dict:
+    """Fallback SMS via Twilio REST API se configurato."""
+    if not TWILIO_ACCOUNT_SID or not TWILIO_AUTH_TOKEN or not TWILIO_PHONE_NUMBER:
+        return {"sent": False, "error": "Twilio non configurato"}
+    try:
+        to = normalize_phone_wa(phone)
+        if not to.startswith('+'):
+            to = '+' + to
+        url = f"https://api.twilio.com/2010-04-01/Accounts/{TWILIO_ACCOUNT_SID}/Messages.json"
+        data = {"From": TWILIO_PHONE_NUMBER, "To": to, "Body": message}
+        resp = await asyncio.to_thread(_req.post, url, data=data, auth=(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN), timeout=15)
+        rjson = resp.json()
+        sent = resp.status_code in (200, 201)
+        return {"sent": sent, "method": "twilio_sms", "data": rjson, "code": resp.status_code}
+    except Exception as e:
+        return {"sent": False, "error": str(e)}
 
 async def send_automatic_message(phone: str, template_name: str = None, template_vars: list = None, fallback_text: str = None, user: dict = None) -> dict:
     """Funzione maestra con catena di fallback e logging obbligatorio."""
@@ -145,6 +169,22 @@ async def send_automatic_message(phone: str, template_name: str = None, template
     if res_green.get("sent"):
         await _log_communication((user or {}).get("id", "system"), "whatsapp", phone, msg, res_green)
         return res_green
+    # Se Green segnala quota esaurita, proviamo fallback automatici:
+    if res_green.get("quota_exhausted"):
+        logger.warning(f"Green API quota esaurita per user {(user or {}).get('id')}: {res_green.get('error')}")
+        # 3a) Proviamo comunque la Cloud API (anche se il testo libero potrebbe non
+        # essere recapitato se il cliente non ha scritto nelle ultime 24h).
+        if WA_TOKEN:
+            res_cloud = await send_whatsapp_cloud(phone, msg)
+            if res_cloud.get("sent"):
+                await _log_communication((user or {}).get("id", "system"), "whatsapp", phone, msg, res_cloud)
+                return res_cloud
+        # 3b) Proviamo invio via SMS Twilio come fallback definitivo se configurato.
+        if TWILIO_ACCOUNT_SID and TWILIO_PHONE_NUMBER:
+            res_tw = await _send_twilio_sms(phone, msg)
+            await _log_communication((user or {}).get("id", "system"), "sms", phone, msg, res_tw)
+            if res_tw.get("sent"):
+                return res_tw
 
     # 4. NIENTE Cloud API per il testo libero: in modalità Live Meta lo "accetta"
     # (HTTP 200, quindi sembrerebbe inviato) ma NON lo consegna a chi non ha scritto
