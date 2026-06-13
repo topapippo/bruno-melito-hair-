@@ -7,18 +7,17 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 @router.get("/fix/public-debug")
-async def public_debug():
-    """Endpoint pubblico per verificare quale account riceve le prenotazioni."""
+async def public_debug(current_user: dict = Depends(get_current_user)):
+    """Verifica quale account riceve le prenotazioni (solo utenti autenticati)."""
     from routes.public import PUBLIC_ADMIN_EMAIL, get_public_admin_user
     user = await get_public_admin_user()
-    
-    # Conta quanti servizi e appuntamenti ha questo utente
+
     svc_count = 0
     apt_count = 0
     if user:
         svc_count = await db.services.count_documents({"user_id": user["id"]})
         apt_count = await db.appointments.count_documents({"user_id": user["id"]})
-        
+
     return {
         "configured_email": PUBLIC_ADMIN_EMAIL,
         "active_user_id": user["id"] if user else None,
@@ -30,7 +29,7 @@ async def public_debug():
     }
 
 @router.get("/fix-ghost-payments")
-async def fix_ghost_payments():
+async def fix_ghost_payments(current_user: dict = Depends(get_current_user)):
     res = await db.payments.delete_many({"payment_method": "sospeso", "total_paid": 10})
     return {"status": "ok", "deleted_count": res.deleted_count}
 

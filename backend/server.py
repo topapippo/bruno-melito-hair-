@@ -95,17 +95,20 @@ app.add_middleware(
 )
 
 # --- 3. GLOBAL EXCEPTION HANDLER (Prevents Network Error on 500) ---
+import re as _re
+_cors_origin_re = _re.compile(r"https://.*\.onrender\.com")
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"GLOBAL ERROR: {str(exc)}\n{traceback.format_exc()}")
-    # Aggiungiamo gli header CORS manualmente nella risposta di errore
-    headers = {
-        "Access-Control-Allow-Origin": request.headers.get("origin", "*"),
-        "Access-Control-Allow-Credentials": "true",
-    }
+    origin = request.headers.get("origin", "")
+    allowed = origin if (origin in cors_origins or _cors_origin_re.fullmatch(origin)) else ""
+    headers: dict = {"Access-Control-Allow-Credentials": "true"}
+    if allowed:
+        headers["Access-Control-Allow-Origin"] = allowed
     return JSONResponse(
         status_code=500,
-        content={"detail": "Errore interno del server", "msg": str(exc)},
+        content={"detail": "Errore interno del server"},
         headers=headers
     )
 
