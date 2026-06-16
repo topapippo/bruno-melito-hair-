@@ -13,7 +13,6 @@ from utils import calculate_end_time, send_whatsapp, send_automatic_message, res
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-BRUNO_PHONE = "3397833526"
 
 async def _send_checkout_thank_you(phone: str, client_name: str, current_user: dict):
     try:
@@ -87,8 +86,6 @@ async def create_appointment(data: AppointmentCreate, current_user: dict = Depen
         service_names = ", ".join([s["name"] for s in mapped_services])
         d_p = data.date.split('-')
         date_it = f"{d_p[2]}/{d_p[1]}/{d_p[0]}" if len(d_p) == 3 else data.date
-        msg = f"🔔 NUOVA PRENOTAZIONE!\n👤 {client_name}\n📅 {date_it} ore {data.time}\n✂️ {service_names}\n\nhttps://brunomelitohair.it/admin"
-        asyncio.create_task(send_whatsapp(BRUNO_PHONE, msg, current_user))
         if client_phone:
             # Usa template di conferma per aumentare la probabilità di consegna
             asyncio.create_task(send_automatic_message(client_phone, "conferma_prenotazione", [client_name, date_it, data.time], f"Ciao {client_name}! ✅ Prenotazione confermata per il {date_it} alle {data.time}.", current_user))
