@@ -217,33 +217,51 @@ export default function Dashboard() {
                 {format(new Date(), "EEEE, d MMMM yyyy", { locale: it })}
               </p>
 
-              {/* Stat pills */}
-              <div className="flex flex-wrap items-center gap-2 mt-4">
+              {/* Stat tiles */}
+              <div className="flex flex-wrap gap-3 mt-5">
                 {totalToday > 0 && (
                   <div
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
-                    style={{ background: 'color-mix(in srgb, var(--admin-primary) 14%, transparent)', color: 'var(--admin-primary)' }}
+                    className="flex items-center gap-3 px-4 py-3 rounded-2xl"
+                    style={{ background: 'color-mix(in srgb, var(--admin-primary) 12%, transparent)', border: '1px solid color-mix(in srgb, var(--admin-primary) 20%, transparent)' }}
                   >
-                    <Calendar className="w-3.5 h-3.5" />
-                    {totalToday} appuntamenti oggi
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                      style={{ background: 'color-mix(in srgb, var(--admin-primary) 18%, transparent)' }}>
+                      <Calendar className="w-5 h-5" style={{ color: 'var(--admin-primary)' }} />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-black leading-none" style={{ color: 'var(--admin-primary)' }}>{totalToday}</p>
+                      <p className="text-[11px] font-semibold mt-0.5" style={{ color: 'color-mix(in srgb, var(--admin-primary) 70%, transparent)' }}>appuntamenti oggi</p>
+                    </div>
                   </div>
                 )}
                 {todayTotal > 0 && (
                   <div
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold hidden sm:flex"
-                    style={{ background: 'color-mix(in srgb, #10B981 12%, transparent)', color: '#059669' }}
+                    className="flex items-center gap-3 px-4 py-3 rounded-2xl"
+                    style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}
                   >
-                    <Euro className="w-3.5 h-3.5" />
-                    €{todayTotal.toFixed(0)} incassati oggi
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                      style={{ background: 'rgba(16,185,129,0.15)' }}>
+                      <Euro className="w-5 h-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-black leading-none text-emerald-600">€{todayTotal.toFixed(0)}</p>
+                      <p className="text-[11px] font-semibold mt-0.5 text-emerald-700">incassati oggi</p>
+                    </div>
                   </div>
                 )}
                 {(stats?.monthly_revenue || 0) > 0 && (
                   <div
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold hidden sm:flex"
-                    style={{ background: 'color-mix(in srgb, var(--admin-accent) 14%, transparent)', color: 'color-mix(in srgb, var(--admin-accent) 80%, #7a5000)' }}
+                    className="flex items-center gap-3 px-4 py-3 rounded-2xl"
+                    style={{ background: 'color-mix(in srgb, var(--admin-accent) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--admin-accent) 20%, transparent)' }}
                   >
-                    <TrendingUp className="w-3.5 h-3.5" />
-                    €{(stats.monthly_revenue || 0).toFixed(0)} questo mese
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                      style={{ background: 'color-mix(in srgb, var(--admin-accent) 15%, transparent)' }}>
+                      <TrendingUp className="w-5 h-5" style={{ color: 'var(--admin-accent)' }} />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-black leading-none" style={{ color: 'var(--admin-accent)' }}>€{(stats.monthly_revenue || 0).toFixed(0)}</p>
+                      <p className="text-[11px] font-semibold mt-0.5" style={{ color: 'color-mix(in srgb, var(--admin-accent) 70%, transparent)' }}>questo mese</p>
+                    </div>
                   </div>
                 )}
               </div>
