@@ -131,7 +131,7 @@ async def get_color_expiry_reminders(current_user: dict = Depends(get_current_us
             "client_id": real_client_id,
             "client_name": r["client_name"],
             "last_color_date": r["last_date"],
-            "days_ago": (datetime.now(timezone.utc) - datetime.strptime(r["last_date"], "%Y-%m-%d").replace(tzinfo=timezone.utc)).days,
+            "days_ago": (datetime.now(timezone.utc) - datetime.strptime(r["last_date"], "%Y-%m-%d").replace(tzinfo=timezone.utc)).days if r.get("last_date") else 0,
             "phone": client_doc.get("phone", "") or r.get("client_phone", ""),
             "already_sent": r["_id"] in sent_client_ids or real_client_id in sent_client_ids
         })
@@ -1120,7 +1120,7 @@ async def get_communication_logs(
     """Storico degli invii WhatsApp automatici: provider usato (`method`) ed esito (`sent`/`error`).
     Utile per capire perché un messaggio non è arrivato. `only_failed=true` mostra solo i falliti."""
     limit = max(1, min(limit, 500))
-    query = {}
+    query = {"user_id": current_user["id"]}
     if only_failed:
         query["sent"] = False
     logs = await db.communication_logs.find(query, {"_id": 0}).sort("timestamp", -1).to_list(limit)

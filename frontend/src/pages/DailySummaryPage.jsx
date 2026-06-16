@@ -103,8 +103,8 @@ export default function DailySummaryPage() {
         api.get(`${API}/payments?start=${startStr}&end=${endStr}`),
         api.get(`${API}/appointments?start_date=${startStr}&end_date=${endStr}`),
       ]);
-      const payments = paymentsRes.data;
-      const apts = appointmentsRes.data;
+      const payments = paymentsRes.data || [];
+      const apts = appointmentsRes.data || [];
 
       const total_earnings = payments.reduce((sum, p) => sum + p.total_paid, 0);
       const unique_clients = new Set(apts.map(a => a.client_name)).size;
