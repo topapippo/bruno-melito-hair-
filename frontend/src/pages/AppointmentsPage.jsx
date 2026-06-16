@@ -1,722 +1,383 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import api, { API } from '../lib/api';
-import { fmtDate } from '../lib/dateUtils';
 import Layout from '../components/Layout';
-import PageHeader from '../components/PageHeader';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Calendar, Plus, Clock, Loader2, CheckCircle, XCircle, Trash2, MessageSquare, Send, UserCircle } from 'lucide-react';
-import { format, addDays } from 'date-fns';
+  Calendar, ChevronLeft, ChevronRight, Users, Euro,
+  TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight,
+} from 'lucide-react';
+import { format, addDays, subDays, addMonths, subMonths, startOfMonth, getDaysInMonth } from 'date-fns';
 import { it } from 'date-fns/locale';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { toast } from 'sonner';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
+const fmtMonth = (d) => format(d, 'yyyy-MM');
+const fmtDay   = (d) => format(d, 'yyyy-MM-dd');
 
-export default function AppointmentsPage() {
-  const [appointments, setAppointments] = useState([]);
-  const [clients, setClients] = useState([]);
-  const [services, setServices] = useState([]);
-  const [operators, setOperators] = useState([]);
-  const [smsStatus, setSmsStatus] = useState({ configured: false });
-  const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [smsDialogOpen, setSmsDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [appointmentToDelete, setAppointmentToDelete] = useState(null);
-  const [appointmentForSms, setAppointmentForSms] = useState(null);
-  const [saving, setSaving] = useState(false);
-  const [sendingSms, setSendingSms] = useState(false);
-  
-  const [formData, setFormData] = useState({
-    client_id: '',
-    service_ids: [],
-    operator_id: '',
-    date: format(new Date(), 'yyyy-MM-dd'),
-    time: '09:00',
-    notes: ''
-  });
+function kpiDelta(curr, prev) {
+  if (!prev) return null;
+  const pct = ((curr - prev) / prev) * 100;
+  return { pct: Math.abs(pct).toFixed(0), up: pct >= 0 };
+}
 
-  const [smsMessage, setSmsMessage] = useState('');
-  const [cardAlerts, setCardAlerts] = useState({ expiring_cards: [], low_balance_cards: [], total_alerts: 0 });
-  const [upcomingAppointments, setUpcomingAppointments] = useState([]);
-  const [upcomingExpenses, setUpcomingExpenses] = useState([]);
+function KpiCard({ label, value, icon: Icon, color = '#C8617A', delta }) {
+  return (
+    <Card className="bg-white border-[#F0E6DC]/40 shadow-sm">
+      <CardContent className="p-4 flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs text-[#9C7060] font-medium mb-1">{label}</p>
+          <p className="text-2xl font-black text-[#2D1B14]">{value}</p>
+          {delta && (
+            <span className={`inline-flex items-center gap-0.5 text-xs font-bold mt-1 ${delta.up ? 'text-emerald-600' : 'text-red-500'}`}>
+              {delta.up ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+              {delta.pct}%
+            </span>
+          )}
+        </div>
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${color}18` }}>
+          <Icon className="w-5 h-5" style={{ color }} />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
-  useEffect(() => {
-    fetchData();
-    checkSmsStatus();
-    fetchAlerts();
-    fetchExpenses();
-  }, [selectedDate]);
+function StatusChip({ status }) {
+  const map = {
+    scheduled: { label: 'Programmato', cls: 'bg-blue-50 text-blue-700' },
+    completed:  { label: 'Completato',  cls: 'bg-emerald-50 text-emerald-700' },
+    cancelled:  { label: 'Cancellato',  cls: 'bg-red-50 text-red-600' },
+  };
+  const { label, cls } = map[status] || { label: status, cls: 'bg-gray-100 text-gray-600' };
+  return <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${cls}`}>{label}</span>;
+}
 
-  const fetchData = async () => {
+// ── Tab Giorno ─────────────────────────────────────────────────────────────────
+
+function GiornoTab() {
+  const [date, setDate]     = useState(new Date());
+  const [apts, setApts]     = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const load = async (d) => {
     setLoading(true);
     try {
-      const dateStr = format(selectedDate, 'yyyy-MM-dd');
-      const [appointmentsRes, clientsRes, servicesRes, operatorsRes] = await Promise.all([
-        api.get(`${API}/appointments?date=${dateStr}`),
-        api.get(`${API}/clients`),
-        api.get(`${API}/services`),
-        api.get(`${API}/operators`)
-      ]);
-      setAppointments(appointmentsRes.data);
-      setClients(clientsRes.data);
-      setServices(servicesRes.data);
-      const activeOps = operatorsRes.data.filter(op => op.active);
-      setOperators(activeOps);
-      // Set MBHS as default operator
-      if (!formData.operator_id) {
-        const mbhs = activeOps.find(op => op.name.toUpperCase().includes('MBHS')) || activeOps[0];
-        if (mbhs) setFormData(prev => ({ ...prev, operator_id: mbhs.id }));
-      }
-      
-      // Fetch upcoming 7 days with a single range query
-      const startDate = format(addDays(selectedDate, 1), 'yyyy-MM-dd');
-      const endDate = format(addDays(selectedDate, 7), 'yyyy-MM-dd');
-      const upcomingMap = {};
-      try {
-        const res = await api.get(`${API}/appointments?start_date=${startDate}&end_date=${endDate}`);
-        (res.data || []).forEach((apt) => {
-          if (!upcomingMap[apt.date]) upcomingMap[apt.date] = [];
-          upcomingMap[apt.date].push(apt);
-        });
-      } catch (e) { /* skip */ }
-      const upcoming = Object.entries(upcomingMap).map(([ds, appointments]) => ({
-        date: ds, dateObj: new Date(ds + 'T00:00:00'), appointments,
-      })).sort((a, b) => a.date.localeCompare(b.date));
-      setUpcomingAppointments(upcoming);
-    } catch (err) {
-      console.error('Error fetching data:', err);
-      toast.error('Errore nel caricamento dei dati');
-    } finally {
-      setLoading(false);
-    }
+      const res = await api.get(`${API}/appointments`, { params: { date: fmtDay(d) } });
+      setApts(res.data);
+    } catch { setApts([]); } finally { setLoading(false); }
   };
 
-  const fetchAlerts = async () => {
-    try {
-      const res = await api.get(`${API}/cards/alerts/all?days=30&threshold_percent=20`);
-      setCardAlerts(res.data);
-    } catch (e) { /* alerts not critical */ }
-  };
+  useEffect(() => { load(date); }, []);
 
-  const fetchExpenses = async () => {
-    try {
-      const res = await api.get(`${API}/expenses?paid=false`);
-      const today = new Date();
-      const in30Days = new Date(today);
-      in30Days.setDate(in30Days.getDate() + 30);
-      const upcoming = (res.data || []).filter(e => {
-        if (!e.due_date) return false;
-        const d = new Date(e.due_date);
-        return d >= new Date(today.toISOString().split('T')[0]) && d <= in30Days;
-      }).sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
-      setUpcomingExpenses(upcoming);
-    } catch (e) { /* not critical */ }
-  };
+  const go = (d) => { setDate(d); load(d); };
 
-  const checkSmsStatus = async () => {
-    try {
-      const res = await api.get(`${API}/sms/status`);
-      setSmsStatus(res.data);
-    } catch (err) {
-      console.error('Error checking SMS status:', err);
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.client_id || formData.service_ids.length === 0) {
-      toast.error('Seleziona un cliente e almeno un servizio');
-      return;
-    }
-    
-    setSaving(true);
-    try {
-      await api.post(`${API}/appointments`, {
-        ...formData,
-        date: format(selectedDate, 'yyyy-MM-dd'),
-        operator_id: formData.operator_id || null
-      });
-      toast.success('Appuntamento creato!');
-      setDialogOpen(false);
-      setFormData({ client_id: '', service_ids: [], operator_id: '', date: '', time: '09:00', notes: '' });
-      fetchData();
-    } catch (err) {
-      toast.error(err.response?.data?.detail || 'Errore nella creazione');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleStatusChange = async (id, status) => {
-    try {
-      await api.put(`${API}/appointments/${id}`, { status });
-      toast.success(status === 'completed' ? 'Appuntamento completato!' : 'Appuntamento annullato');
-      fetchData();
-    } catch (err) {
-      toast.error('Errore nell\'aggiornamento');
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!appointmentToDelete) return;
-    try {
-      await api.delete(`${API}/appointments/${appointmentToDelete}`);
-      toast.success('Appuntamento eliminato');
-      setDeleteDialogOpen(false);
-      setAppointmentToDelete(null);
-      fetchData();
-    } catch (err) {
-      toast.error('Errore nell\'eliminazione');
-    }
-  };
-
-  const handleSendSms = async () => {
-    if (!appointmentForSms) return;
-    setSendingSms(true);
-    try {
-      const res = await api.post(`${API}/sms/send-reminder`, {
-        appointment_id: appointmentForSms.id,
-        message: smsMessage || null
-      });
-      if (res.data.success) {
-        toast.success('SMS inviato con successo!');
-        setSmsDialogOpen(false);
-        setAppointmentForSms(null);
-        setSmsMessage('');
-        fetchData();
-      } else {
-        toast.error(res.data.error || 'Errore nell\'invio SMS');
-      }
-    } catch (err) {
-      toast.error(err.response?.data?.detail || 'Errore nell\'invio SMS');
-    } finally {
-      setSendingSms(false);
-    }
-  };
-
-  const openSmsDialog = (apt) => {
-    setAppointmentForSms(apt);
-    const servicesText = apt.services.map(s => s.name).join(', ');
-    setSmsMessage(`Promemoria: hai un appuntamento il ${fmtDate(apt.date)} alle ${apt.time} per ${servicesText}. Ti aspettiamo!`);
-    setSmsDialogOpen(true);
-  };
-
-  const toggleService = (serviceId) => {
-    setFormData(prev => ({
-      ...prev,
-      service_ids: prev.service_ids.includes(serviceId)
-        ? prev.service_ids.filter(id => id !== serviceId)
-        : [...prev.service_ids, serviceId]
-    }));
-  };
-
-  // Time slots from 8:00 to 20:00
-  const timeSlots = Array.from({ length: 25 }, (_, i) => {
-    const hour = Math.floor(i / 2) + 8;
-    const minute = (i % 2) * 30;
-    return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-  });
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'completed': return 'bg-[#789F8A]/10 border-[#789F8A] text-[#789F8A]';
-      case 'cancelled': return 'bg-[#E76F51]/10 border-[#E76F51] text-[#E76F51]';
-      default: return 'bg-[#C8617A]/10 border-[#C8617A] text-[#C8617A]';
-    }
-  };
+  const validi   = apts.filter(a => a.status !== 'cancelled');
+  const totale   = validi.reduce((s, a) => s + (a.total_price || 0), 0);
+  const nClienti = new Set(validi.map(a => a.client_id)).size;
 
   return (
-    <Layout>
-      <div className="space-y-6" data-testid="appointments-page">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="font-display text-3xl font-medium text-[#2D1B14]">Agenda</h1>
-            <p className="text-[#7C5C4A] mt-1 ">
-              {format(selectedDate, "EEEE dd/MM/yy", { locale: it })}
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="border-[#F0E6DC] text-[#2D1B14]">
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Cambia Data
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="end">
-                <CalendarComponent
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={(date) => date && setSelectedDate(date)}
-                  locale={it}
-                />
-              </PopoverContent>
-            </Popover>
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Button variant="outline" size="icon" onClick={() => go(subDays(date, 1))} className="h-9 w-9 border-[#F0E6DC]">
+          <ChevronLeft className="w-4 h-4" />
+        </Button>
+        <p className="flex-1 text-center font-bold text-[#2D1B14] capitalize">
+          {format(date, "EEEE d MMMM yyyy", { locale: it })}
+        </p>
+        <Button variant="outline" size="icon" onClick={() => go(addDays(date, 1))} className="h-9 w-9 border-[#F0E6DC]">
+          <ChevronRight className="w-4 h-4" />
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => go(new Date())} className="border-[#C8617A] text-[#C8617A] h-9">Oggi</Button>
+      </div>
 
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <Button 
-                onClick={() => setDialogOpen(true)}
-                data-testid="new-appointment-btn"
-                className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-[0_4px_12px_rgba(200,97,122,0.3)] shadow-lg shadow-[rgba(200,97,122,0.3)]"
-              >
-                <Plus className="w-5 h-5 mr-2" />
-                Nuovo
-              </Button>
-              <DialogContent className="sm:max-w-[500px]">
-                <DialogHeader>
-                  <DialogTitle className="font-display text-2xl text-[#2D1B14]">Nuovo Appuntamento</DialogTitle>
-                  <DialogDescription>
-                    {format(selectedDate, "EEEE dd/MM/yy", { locale: it })}
-                  </DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-                  <div className="space-y-2">
-                    <Label>Cliente</Label>
-                    <Select
-                      value={formData.client_id}
-                      onValueChange={(val) => setFormData({ ...formData, client_id: val })}
-                    >
-                      <SelectTrigger data-testid="select-client">
-                        <SelectValue placeholder="Seleziona cliente" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {clients.map((client) => (
-                          <SelectItem key={client.id} value={client.id}>
-                            {client.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+      <div className="grid grid-cols-3 gap-3">
+        <KpiCard label="Appuntamenti" value={validi.length} icon={Calendar} />
+        <KpiCard label="Incasso" value={`€${totale.toFixed(0)}`} icon={Euro} color="#10B981" />
+        <KpiCard label="Clienti" value={nClienti} icon={Users} color="#6366F1" />
+      </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Orario</Label>
-                      <Select
-                        value={formData.time}
-                        onValueChange={(val) => setFormData({ ...formData, time: val })}
-                      >
-                        <SelectTrigger data-testid="select-time">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-[200px]">
-                          {timeSlots.map((time) => (
-                            <SelectItem key={time} value={time} data-testid={`time-option-${time.replace(':', '-')}`}>
-                              {time}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Operatore</Label>
-                      <Select
-                        value={formData.operator_id || "none"}
-                        onValueChange={(val) => setFormData({ ...formData, operator_id: val === "none" ? "" : val })}
-                      >
-                        <SelectTrigger data-testid="select-operator">
-                          <SelectValue placeholder="Seleziona..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Non assegnato</SelectItem>
-                          {operators.map((op) => (
-                            <SelectItem key={op.id} value={op.id}>
-                              <div className="flex items-center gap-2">
-                                <div 
-                                  className="w-3 h-3 rounded-full"
-                                  style={{ backgroundColor: op.color }}
-                                />
-                                {op.name}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Servizi</Label>
-                    <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
-                      {services.map((service) => (
-                        <Button
-                          key={service.id}
-                          type="button"
-                          variant="outline"
-                          data-testid={`service-${service.id}`}
-                          className={`justify-start h-auto py-2 px-3 ${
-                            formData.service_ids.includes(service.id)
-                              ? 'bg-[#C8617A]/10 border-[#C8617A] text-[#C8617A]'
-                              : 'border-[#F0E6DC]'
-                          }`}
-                          onClick={() => toggleService(service.id)}
-                        >
-                          <div className="text-left">
-                            <p className="font-medium text-sm">{service.name}</p>
-                            <p className="text-xs opacity-70">{service.duration} min - €{service.price}</p>
-                          </div>
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Note (opzionale)</Label>
-                    <Input
-                      value={formData.notes}
-                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                      placeholder="Note aggiuntive..."
-                      className="bg-[#FAF7F2]"
-                    />
-                  </div>
-
-                  <DialogFooter>
-                    <Button
-                      type="submit"
-                      disabled={saving}
-                      data-testid="save-appointment-btn"
-                      className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-[0_4px_12px_rgba(200,97,122,0.3)]"
-                    >
-                      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salva Appuntamento'}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </div>
+      {loading ? <Skeleton className="h-48 w-full" /> : apts.length === 0 ? (
+        <p className="text-center py-12 text-[#9C7060]">Nessun appuntamento per questo giorno.</p>
+      ) : (
+        <div className="space-y-2">
+          {apts.map(a => (
+            <div key={a.id} className="bg-white border border-[#F0E6DC] rounded-xl p-3 flex items-start gap-3">
+              <div className="w-12 text-center shrink-0">
+                <p className="font-black text-[#C8617A] text-sm">{a.time}</p>
+                <p className="text-[10px] text-[#9C7060]">{a.total_duration}m</p>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-[#2D1B14] truncate">{a.client_name}</p>
+                <p className="text-xs text-[#9C7060] truncate">{a.services?.map(s => s.name).join(', ')}</p>
+                {a.operator_name && <p className="text-[10px] text-[#9C7060] mt-0.5">{a.operator_name}</p>}
+              </div>
+              <div className="text-right shrink-0 space-y-1">
+                <p className="font-bold text-[#2D1B14]">€{(a.total_price || 0).toFixed(0)}</p>
+                <StatusChip status={a.status} />
+              </div>
+            </div>
+          ))}
         </div>
+      )}
+    </div>
+  );
+}
 
-        {/* Card Alerts / Scadenze */}
-        {cardAlerts.total_alerts > 0 && (
-          <Card className="bg-amber-50 border-amber-200 shadow-sm" data-testid="card-alerts-section">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 bg-amber-100 rounded-xl flex items-center justify-center">
-                  <Calendar className="w-4 h-4 text-amber-600" />
-                </div>
-                <h3 className="font-semibold text-amber-800">Scadenze Card ({cardAlerts.total_alerts})</h3>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {cardAlerts.expiring_cards.map((card) => (
-                  <div key={card.id} className="flex items-center justify-between p-2 bg-white rounded-xl border border-amber-100">
-                    <div>
-                      <p className="font-medium text-sm text-[#2D1B14]">{card.client_name}</p>
-                      <p className="text-xs text-amber-700">{card.name} — scade {card.expiry_date ? format(new Date(card.expiry_date), 'dd/MM/yy') : 'presto'}</p>
-                    </div>
-                    <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full font-semibold">
-                      {card.days_until_expiry != null ? `${card.days_until_expiry}g` : '!'}
-                    </span>
+// ── Tab Mese ───────────────────────────────────────────────────────────────────
+
+function MeseTab() {
+  const [ref, setRef]         = useState(startOfMonth(new Date()));
+  const [apts, setApts]       = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const load = async (d) => {
+    setLoading(true);
+    try {
+      const res = await api.get(`${API}/appointments`, { params: { month: fmtMonth(d) } });
+      setApts(res.data.filter(a => a.status !== 'cancelled'));
+    } catch { setApts([]); } finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(ref); }, []);
+
+  const go = (d) => { setRef(d); load(d); };
+
+  const byDay = useMemo(() => {
+    const m = {};
+    apts.forEach(a => {
+      if (!m[a.date]) m[a.date] = { count: 0, revenue: 0 };
+      m[a.date].count++;
+      m[a.date].revenue += a.total_price || 0;
+    });
+    return m;
+  }, [apts]);
+
+  const days      = getDaysInMonth(ref);
+  const chartData = Array.from({ length: days }, (_, i) => {
+    const d = format(new Date(ref.getFullYear(), ref.getMonth(), i + 1), 'yyyy-MM-dd');
+    return { g: i + 1, incasso: byDay[d]?.revenue || 0 };
+  });
+
+  const totaleRicavi = apts.reduce((s, a) => s + (a.total_price || 0), 0);
+  const clientiUniche = new Set(apts.map(a => a.client_id)).size;
+  const avgTicket    = apts.length ? totaleRicavi / apts.length : 0;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Button variant="outline" size="icon" onClick={() => go(subMonths(ref, 1))} className="h-9 w-9 border-[#F0E6DC]">
+          <ChevronLeft className="w-4 h-4" />
+        </Button>
+        <p className="flex-1 text-center font-bold text-[#2D1B14] capitalize">
+          {format(ref, "MMMM yyyy", { locale: it })}
+        </p>
+        <Button variant="outline" size="icon" onClick={() => go(addMonths(ref, 1))} className="h-9 w-9 border-[#F0E6DC]">
+          <ChevronRight className="w-4 h-4" />
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => go(startOfMonth(new Date()))} className="border-[#C8617A] text-[#C8617A] h-9">
+          Questo mese
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <KpiCard label="Appuntamenti" value={apts.length} icon={Calendar} />
+        <KpiCard label="Incasso totale" value={`€${totaleRicavi.toFixed(0)}`} icon={Euro} color="#10B981" />
+        <KpiCard label="Clienti uniche" value={clientiUniche} icon={Users} color="#6366F1" />
+        <KpiCard label="Scontrino medio" value={`€${avgTicket.toFixed(0)}`} icon={TrendingUp} color="#F59E0B" />
+      </div>
+
+      {loading ? <Skeleton className="h-48 w-full" /> : (
+        <Card className="bg-white border-[#F0E6DC]/40 shadow-sm">
+          <CardHeader className="pb-2"><CardTitle className="text-sm font-bold text-[#2D1B14]">Incasso giornaliero</CardTitle></CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#F0E6DC" />
+                <XAxis dataKey="g" tick={{ fontSize: 10 }} />
+                <YAxis tick={{ fontSize: 10 }} />
+                <Tooltip formatter={(v) => [`€${v}`, 'Incasso']} />
+                <Bar dataKey="incasso" fill="#C8617A" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+
+      {!loading && Object.keys(byDay).length > 0 && (
+        <Card className="bg-white border-[#F0E6DC]/40 shadow-sm">
+          <CardHeader className="pb-2"><CardTitle className="text-sm font-bold text-[#2D1B14]">Dettaglio per giorno</CardTitle></CardHeader>
+          <CardContent className="p-0">
+            <div className="divide-y divide-[#F0E6DC]">
+              {Object.entries(byDay).sort(([a], [b]) => a.localeCompare(b)).map(([d, v]) => (
+                <div key={d} className="flex items-center justify-between px-4 py-2.5">
+                  <div>
+                    <p className="font-bold text-sm text-[#2D1B14] capitalize">
+                      {format(new Date(d + 'T12:00:00'), "EEEE d", { locale: it })}
+                    </p>
+                    <p className="text-xs text-[#9C7060]">{v.count} appuntament{v.count !== 1 ? 'i' : 'o'}</p>
                   </div>
-                ))}
-                {cardAlerts.low_balance_cards.map((card) => (
-                  <div key={card.id} className="flex items-center justify-between p-2 bg-white rounded-xl border border-red-100">
-                    <div>
-                      <p className="font-medium text-sm text-[#2D1B14]">{card.client_name}</p>
-                      <p className="text-xs text-red-600">{card.name} — credito basso: €{card.remaining_value?.toFixed(2)}</p>
-                    </div>
-                    <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-semibold">
-                      {card.usage_percent != null ? `${Math.round(card.usage_percent)}%` : '!'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Expense Deadlines / Scadenze Uscite */}
-        {upcomingExpenses.length > 0 && (
-          <Card className="bg-red-50/50 border-red-100 shadow-sm" data-testid="expense-alerts-section">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 bg-red-100 rounded-xl flex items-center justify-center">
-                  <Calendar className="w-4 h-4 text-red-600" />
+                  <p className="font-black text-[#C8617A]">€{v.revenue.toFixed(0)}</p>
                 </div>
-                <h3 className="font-semibold text-red-800">Scadenze Uscite ({upcomingExpenses.length})</h3>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {upcomingExpenses.map((exp) => {
-                  const dueDate = new Date(exp.due_date);
-                  const today = new Date();
-                  today.setHours(0,0,0,0);
-                  const daysLeft = Math.ceil((dueDate - today) / (1000*60*60*24));
-                  const isOverdue = daysLeft < 0;
-                  const isUrgent = daysLeft <= 3;
-                  return (
-                    <div key={exp.id} className={`flex items-center justify-between p-2 bg-white rounded-xl border ${isOverdue ? 'border-red-300 bg-red-50' : isUrgent ? 'border-amber-200' : 'border-red-100'}`}>
-                      <div>
-                        <p className="font-medium text-sm text-[#2D1B14]">{exp.description}</p>
-                        <p className="text-xs text-red-600">€{exp.amount?.toFixed(2)} — {format(dueDate, 'dd/MM/yy')}</p>
-                      </div>
-                      <span className={`text-xs px-2 py-1 rounded-full font-semibold ${isOverdue ? 'bg-red-200 text-red-800' : isUrgent ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600'}`}>
-                        {isOverdue ? 'SCADUTA' : daysLeft === 0 ? 'OGGI' : `${daysLeft}g`}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
 
-        {/* Upcoming Appointments / Prossimi giorni */}
-        {upcomingAppointments.length > 0 && (
-          <Card className="bg-blue-50/50 border-blue-100 shadow-sm" data-testid="upcoming-section">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 bg-blue-100 rounded-xl flex items-center justify-center">
-                  <Clock className="w-4 h-4 text-blue-600" />
-                </div>
-                <h3 className="font-semibold text-blue-800">Prossimi Appuntamenti (7 giorni)</h3>
-              </div>
-              <div className="space-y-2">
-                {upcomingAppointments.map((day) => (
-                  <div key={day.date} className="p-2 bg-white rounded-xl border border-blue-100 cursor-pointer hover:bg-blue-50 transition-colors"
-                    onClick={() => setSelectedDate(day.dateObj)}>
-                    <div className="flex items-center justify-between">
-                      <p className="font-medium text-sm text-[#2D1B14]">
-                        {format(day.dateObj, "EEEE dd/MM/yy", { locale: it })}
-                      </p>
-                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-semibold">
-                        {day.appointments.length} appuntament{day.appointments.length === 1 ? 'o' : 'i'}
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {day.appointments.slice(0, 4).map((a) => (
-                        <span key={a.id} className="text-xs text-[#7C5C4A] bg-gray-100 px-2 py-0.5 rounded">
-                          {a.time} {a.client_name}
+// ── Tab Confronto ──────────────────────────────────────────────────────────────
+
+function ConfrontoTab() {
+  const [ref, setRef]         = useState(startOfMonth(new Date()));
+  const [curr, setCurr]       = useState([]);
+  const [prev, setPrev]       = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const load = async (d) => {
+    setLoading(true);
+    try {
+      const [r1, r2] = await Promise.all([
+        api.get(`${API}/appointments`, { params: { month: fmtMonth(d) } }),
+        api.get(`${API}/appointments`, { params: { month: fmtMonth(subMonths(d, 1)) } }),
+      ]);
+      setCurr(r1.data.filter(a => a.status !== 'cancelled'));
+      setPrev(r2.data.filter(a => a.status !== 'cancelled'));
+    } catch { setCurr([]); setPrev([]); } finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(ref); }, []);
+
+  const go = (d) => { setRef(d); load(d); };
+
+  const stats = (apts) => ({
+    count:   apts.length,
+    revenue: apts.reduce((s, a) => s + (a.total_price || 0), 0),
+    clients: new Set(apts.map(a => a.client_id)).size,
+    avg:     apts.length ? apts.reduce((s, a) => s + (a.total_price || 0), 0) / apts.length : 0,
+  });
+
+  const c = stats(curr);
+  const p = stats(prev);
+
+  const byDayCurr = useMemo(() => {
+    const m = {}; curr.forEach(a => { const g = parseInt(a.date.split('-')[2]); m[g] = (m[g] || 0) + (a.total_price || 0); }); return m;
+  }, [curr]);
+  const byDayPrev = useMemo(() => {
+    const m = {}; prev.forEach(a => { const g = parseInt(a.date.split('-')[2]); m[g] = (m[g] || 0) + (a.total_price || 0); }); return m;
+  }, [prev]);
+
+  const maxDays   = Math.max(getDaysInMonth(ref), getDaysInMonth(subMonths(ref, 1)));
+  const chartData = Array.from({ length: maxDays }, (_, i) => ({
+    g: i + 1, corrente: byDayCurr[i + 1] || 0, precedente: byDayPrev[i + 1] || 0,
+  }));
+
+  const rows = [
+    { label: 'Appuntamenti',    cv: c.count,   pv: p.count,   fmt: (v) => v },
+    { label: 'Incasso totale',  cv: c.revenue,  pv: p.revenue, fmt: (v) => `€${v.toFixed(0)}` },
+    { label: 'Clienti uniche',  cv: c.clients,  pv: p.clients, fmt: (v) => v },
+    { label: 'Scontrino medio', cv: c.avg,      pv: p.avg,     fmt: (v) => `€${v.toFixed(0)}` },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Button variant="outline" size="icon" onClick={() => go(subMonths(ref, 1))} className="h-9 w-9 border-[#F0E6DC]">
+          <ChevronLeft className="w-4 h-4" />
+        </Button>
+        <div className="flex-1 text-center">
+          <p className="font-bold text-[#2D1B14] capitalize">{format(ref, "MMMM yyyy", { locale: it })}</p>
+          <p className="text-xs text-[#9C7060]">vs {format(subMonths(ref, 1), "MMMM yyyy", { locale: it })}</p>
+        </div>
+        <Button variant="outline" size="icon" onClick={() => go(addMonths(ref, 1))} className="h-9 w-9 border-[#F0E6DC]">
+          <ChevronRight className="w-4 h-4" />
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => go(startOfMonth(new Date()))} className="border-[#C8617A] text-[#C8617A] h-9">
+          Questo mese
+        </Button>
+      </div>
+
+      {loading ? <Skeleton className="h-64 w-full" /> : (
+        <>
+          <Card className="bg-white border-[#F0E6DC]/40 shadow-sm overflow-hidden">
+            <div className="grid grid-cols-3 bg-[#FAF7F2] text-xs font-bold text-[#9C7060] px-4 py-2 border-b border-[#F0E6DC]">
+              <span />
+              <span className="text-center capitalize">{format(subMonths(ref, 1), "MMM yyyy", { locale: it })}</span>
+              <span className="text-center capitalize text-[#C8617A]">{format(ref, "MMM yyyy", { locale: it })}</span>
+            </div>
+            <div className="divide-y divide-[#F0E6DC]">
+              {rows.map(r => {
+                const d = kpiDelta(r.cv, r.pv);
+                return (
+                  <div key={r.label} className="grid grid-cols-3 items-center px-4 py-3">
+                    <p className="text-sm font-medium text-[#7C5C4A]">{r.label}</p>
+                    <p className="text-center font-bold text-[#2D1B14]">{r.fmt(r.pv)}</p>
+                    <div className="flex flex-col items-center gap-0.5">
+                      <p className="font-black text-[#C8617A]">{r.fmt(r.cv)}</p>
+                      {d && (
+                        <span className={`text-[10px] font-bold flex items-center gap-0.5 ${d.up ? 'text-emerald-600' : 'text-red-500'}`}>
+                          {d.up ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                          {d.pct}%
                         </span>
-                      ))}
-                      {day.appointments.length > 4 && (
-                        <span className="text-xs text-[#7C5C4A]">+{day.appointments.length - 4} altri</span>
                       )}
                     </div>
                   </div>
-                ))}
+                );
+              })}
+            </div>
+          </Card>
+
+          <Card className="bg-white border-[#F0E6DC]/40 shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-bold text-[#2D1B14]">Incasso giorno per giorno</CardTitle>
+              <div className="flex items-center gap-4 text-xs mt-1">
+                <span className="flex items-center gap-1.5"><span className="w-3 h-2 rounded inline-block bg-[#F0E6DC]" />Mese prec.</span>
+                <span className="flex items-center gap-1.5"><span className="w-3 h-2 rounded inline-block bg-[#C8617A]" />Mese corrente</span>
               </div>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#F0E6DC" />
+                  <XAxis dataKey="g" tick={{ fontSize: 9 }} />
+                  <YAxis tick={{ fontSize: 9 }} />
+                  <Tooltip formatter={(v, n) => [`€${v}`, n === 'corrente' ? 'Corrente' : 'Precedente']} />
+                  <Bar dataKey="precedente" fill="#F0E6DC" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="corrente" fill="#C8617A" radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
-        )}
+        </>
+      )}
+    </div>
+  );
+}
 
-        {/* Appointments List */}
-        <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
-          <CardContent className="p-6">
-            {loading ? (
-              <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-24 w-full" />
-                ))}
-              </div>
-            ) : appointments.length > 0 ? (
-              <div className="space-y-4 stagger-fast">
-                {appointments.map((apt) => (
-                  <div
-                    key={apt.id}
-                    data-testid={`appointment-card-${apt.id}`}
-                    className={`p-4 rounded-xl border-l-4 transition-all hover:shadow-md ${
-                      getStatusColor(apt.status)
-                    }`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex gap-4">
-                        <div className="text-center min-w-[60px]">
-                          <p className="text-lg font-semibold ">{apt.time}</p>
-                          <p className="text-xs opacity-70">{apt.end_time}</p>
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-medium text-[#2D1B14] text-lg">{apt.client_name}</h3>
-                            {apt.operator_name && (
-                              <span 
-                                className="text-xs px-2 py-0.5 rounded-full text-white"
-                                style={{ backgroundColor: apt.operator_color || '#334155' }}
-                              >
-                                {apt.operator_name}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-sm text-[#7C5C4A] mt-1">
-                            {apt.services.map(s => s.name).join(' + ')}
-                          </p>
-                          <div className="flex items-center gap-4 mt-2 text-sm text-[#7C5C4A]">
-                            <span className="flex items-center gap-1">
-                              <Clock className="w-4 h-4" /> {apt.total_duration} min
-                            </span>
-                            <span className="font-medium text-[#2D1B14]">€{apt.total_price}</span>
-                            {apt.sms_sent && (
-                              <span className="text-[#789F8A] flex items-center gap-1">
-                                <MessageSquare className="w-4 h-4" /> SMS inviato
-                              </span>
-                            )}
-                          </div>
-                          {apt.notes && (
-                            <p className="text-sm text-[#7C5C4A] mt-2 italic">"{apt.notes}"</p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {apt.status === 'scheduled' && (
-                          <>
-                            {smsStatus.configured && apt.client_phone && !apt.sms_sent && (
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={() => openSmsDialog(apt)}
-                                className="text-[#3498DB] hover:bg-[#3498DB]/10"
-                                title="Invia SMS promemoria"
-                              >
-                                <Send className="w-5 h-5" />
-                              </Button>
-                            )}
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => handleStatusChange(apt.id, 'completed')}
-                              className="text-[#789F8A] hover:bg-[#789F8A]/10"
-                              title="Completa"
-                            >
-                              <CheckCircle className="w-5 h-5" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => handleStatusChange(apt.id, 'cancelled')}
-                              className="text-[#E76F51] hover:bg-[#E76F51]/10"
-                              title="Annulla"
-                            >
-                              <XCircle className="w-5 h-5" />
-                            </Button>
-                          </>
-                        )}
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => {
-                            setAppointmentToDelete(apt.id);
-                            setDeleteDialogOpen(true);
-                          }}
-                          className="text-[#7C5C4A] hover:text-[#E76F51] hover:bg-[#E76F51]/10"
-                          title="Elimina"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-16">
-                <Calendar className="w-16 h-16 mx-auto text-[#E2E8F0] mb-4" strokeWidth={1.5} />
-                <h3 className="font-display text-xl text-[#2D1B14] mb-2">Nessun appuntamento</h3>
-                <p className="text-[#7C5C4A] mb-4">Non ci sono appuntamenti per questa data</p>
-                <Button
-                  onClick={() => setDialogOpen(true)}
-                  className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-[0_4px_12px_rgba(200,97,122,0.3)]"
-                >
-                  <Plus className="w-4 h-4 mr-2" /> Aggiungi Appuntamento
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+// ── Pagina ─────────────────────────────────────────────────────────────────────
 
-        {/* Delete Confirmation */}
-        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Elimina Appuntamento</AlertDialogTitle>
-              <AlertDialogDescription>
-                Sei sicura di voler eliminare questo appuntamento? L'azione non può essere annullata.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Annulla</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDelete}
-                className="bg-[#E76F51] hover:bg-[#D55F41]"
-              >
-                Elimina
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+export default function AppointmentsPage() {
+  return (
+    <Layout>
+      <div className="space-y-4 pb-12">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-black text-[#2D1B14]">Storico Appuntamenti</h1>
+          <p className="text-sm text-[#9C7060] mt-0.5">Consulta per giorno, mese o confronta i periodi</p>
+        </div>
 
-        {/* SMS Dialog */}
-        <Dialog open={smsDialogOpen} onOpenChange={setSmsDialogOpen}>
-          <DialogContent className="sm:max-w-[450px]">
-            <DialogHeader>
-              <DialogTitle className="font-display text-2xl text-[#2D1B14]">Invia Promemoria SMS</DialogTitle>
-              <DialogDescription>
-                Invia un SMS al cliente per ricordargli l'appuntamento
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 mt-4">
-              {appointmentForSms && (
-                <div className="p-3 bg-[#FAF7F2] rounded-xl">
-                  <p className="font-medium text-[#2D1B14]">{appointmentForSms.client_name}</p>
-                  <p className="text-sm text-[#7C5C4A]">{appointmentForSms.client_phone}</p>
-                </div>
-              )}
-              <div className="space-y-2">
-                <Label>Messaggio</Label>
-                <textarea
-                  value={smsMessage}
-                  onChange={(e) => setSmsMessage(e.target.value)}
-                  className="w-full min-h-[100px] p-3 rounded-xl bg-[#FAF7F2] border-transparent focus:border-[#C8617A] focus:ring-1 focus:ring-[#C8617A] resize-none"
-                  placeholder="Scrivi il messaggio..."
-                />
-              </div>
-              <DialogFooter>
-                <Button
-                  onClick={handleSendSms}
-                  disabled={sendingSms}
-                  className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-[0_4px_12px_rgba(200,97,122,0.3)]"
-                >
-                  {sendingSms ? (
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  ) : (
-                    <Send className="w-4 h-4 mr-2" />
-                  )}
-                  Invia SMS
-                </Button>
-              </DialogFooter>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Tabs defaultValue="giorno">
+          <TabsList className="bg-[#FAF7F2] border border-[#F0E6DC] rounded-xl p-1 w-full sm:w-auto">
+            <TabsTrigger value="giorno"    className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white rounded-lg font-bold flex-1 sm:flex-none">Giorno</TabsTrigger>
+            <TabsTrigger value="mese"      className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white rounded-lg font-bold flex-1 sm:flex-none">Mese</TabsTrigger>
+            <TabsTrigger value="confronto" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white rounded-lg font-bold flex-1 sm:flex-none">Confronto</TabsTrigger>
+          </TabsList>
+          <TabsContent value="giorno"    className="mt-4"><GiornoTab /></TabsContent>
+          <TabsContent value="mese"      className="mt-4"><MeseTab /></TabsContent>
+          <TabsContent value="confronto" className="mt-4"><ConfrontoTab /></TabsContent>
+        </Tabs>
       </div>
     </Layout>
   );

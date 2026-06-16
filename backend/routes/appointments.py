@@ -117,10 +117,13 @@ async def checkout_appointment(appointment_id: str, data: dict, background_tasks
     return {"status": "ok", "payment_id": payment_doc["id"]}
 
 @router.get("/appointments", response_model=List[AppointmentResponse])
-async def get_appointments(date: Optional[str] = None, current_user: dict = Depends(get_current_user)):
+async def get_appointments(date: Optional[str] = None, month: Optional[str] = None, current_user: dict = Depends(get_current_user)):
     query = {"user_id": current_user["id"]}
-    if date: query["date"] = date
-    res = await db.appointments.find(query, {"_id": 0}).sort("time", 1).to_list(1000)
+    if date:
+        query["date"] = date
+    elif month:  # formato YYYY-MM
+        query["date"] = {"$gte": f"{month}-01", "$lte": f"{month}-31"}
+    res = await db.appointments.find(query, {"_id": 0}).sort([("date", 1), ("time", 1)]).to_list(5000)
     return [AppointmentResponse(**a) for a in res]
 
 @router.put("/appointments/{appointment_id}", response_model=AppointmentResponse)
