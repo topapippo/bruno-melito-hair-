@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
-import { Share2, History, Loader2, Send, Sparkles, Trash2, Edit3, Camera, RefreshCw, Calendar } from 'lucide-react';
+import { Share2, History, Loader2, Send, Trash2, Edit3, Camera, ChevronRight, Calendar, RefreshCw } from 'lucide-react';
 import Layout from '../components/Layout';
 import api from '../lib/api';
 import { format } from 'date-fns';
@@ -35,8 +35,13 @@ function SuggestionCard({ s, onPublish, onDelete }) {
   return (
     <div className="bg-white rounded-2xl border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex flex-col sm:flex-row mb-6 group transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-none">
       <div className="relative w-full sm:w-48 h-48 shrink-0 bg-gray-50 border-r-4 border-black">
-        {imageUrl ? <img src={imageUrl} className="w-full h-full object-cover" alt="" /> : <div className="w-full h-full flex items-center justify-center text-gray-300"><Camera /></div>}
-        <button onClick={() => fileRef.current?.click()} className="absolute bottom-2 right-2 bg-yellow-300 p-2 rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-black"><Edit3 className="w-4 h-4" /></button>
+        {imageUrl
+          ? <img src={imageUrl} className="w-full h-full object-cover" alt="" />
+          : <div className="w-full h-full flex items-center justify-center text-gray-300"><Camera /></div>
+        }
+        <button onClick={() => fileRef.current?.click()} className="absolute bottom-2 right-2 bg-yellow-300 p-2 rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-black">
+          <Edit3 className="w-4 h-4" />
+        </button>
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
         {uploading && <div className="absolute inset-0 bg-white/60 flex items-center justify-center"><Loader2 className="animate-spin text-black" /></div>}
       </div>
@@ -47,16 +52,19 @@ function SuggestionCard({ s, onPublish, onDelete }) {
             <button onClick={() => onDelete(s.id)} className="text-gray-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
           </div>
           <h4 className="font-black text-lg uppercase">{s.title}</h4>
-          <textarea 
-            className="w-full text-sm font-medium text-gray-800 border-2 border-transparent hover:border-gray-100 focus:border-black rounded-lg p-2 resize-none bg-transparent" 
-            rows={4} 
-            value={text} 
-            onChange={(e) => setText(e.target.value)} 
-            onBlur={() => saveChange(text, imageUrl)} 
+          <textarea
+            className="w-full text-sm font-medium text-gray-800 border-2 border-transparent hover:border-gray-100 focus:border-black rounded-lg p-2 resize-none bg-transparent"
+            rows={4}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onBlur={() => saveChange(text, imageUrl)}
             placeholder="Scrivi qui la tua frase..."
           />
         </div>
-        <button onClick={() => onPublish({ ...s, text, image_url: imageUrl })} className="mt-4 w-full bg-black text-white font-black py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-purple-600 active:scale-95 transition-all">
+        <button
+          onClick={() => onPublish({ ...s, text, image_url: imageUrl })}
+          className="mt-4 w-full bg-black text-white font-black py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-purple-600 active:scale-95 transition-all"
+        >
           <Send className="w-5 h-5" /> PUBBLICA SUI SOCIAL
         </button>
       </div>
@@ -83,7 +91,10 @@ function HistoryTab() {
       {history.map(post => (
         <div key={post.id} className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden flex flex-col sm:flex-row shadow-sm">
           <div className="w-full sm:w-32 h-32 shrink-0 bg-gray-50 border-r-2 border-gray-200">
-            {post.image_url ? <img src={post.image_url} className="w-full h-full object-cover" alt="" /> : <div className="w-full h-full flex items-center justify-center text-gray-300"><Camera /></div>}
+            {post.image_url
+              ? <img src={post.image_url} className="w-full h-full object-cover" alt="" />
+              : <div className="w-full h-full flex items-center justify-center text-gray-300"><Camera /></div>
+            }
           </div>
           <div className="p-4 flex-1 flex flex-col justify-between">
             <div className="space-y-2">
@@ -102,36 +113,75 @@ function HistoryTab() {
 function WingmanTab({ configured }) {
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [offset, setOffset] = useState(0);
+  const POOL_PAGES = 9; // 48 post / 5 per pagina ≈ 9 pagine
 
-  const load = async (refresh = false) => {
+  const todayLabel = format(new Date(), "EEEE d MMMM", { locale: it });
+
+  const load = async (newOffset) => {
     setLoading(true);
     try {
-      const res = refresh ? await api.post('/social/refresh-suggestions') : await api.get('/social/wingman-suggestions');
+      const res = await api.get('/social/daily-suggestions', { params: { offset: newOffset } });
       setSuggestions(res.data);
-      if (refresh) toast.success('Idee aggiornate!');
-    } catch { toast.error('Errore'); } finally { setLoading(false); }
+      setOffset(newOffset);
+    } catch { toast.error('Errore nel caricamento'); } finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(0); }, []);
+
+  const handleNext = () => load((offset + 1) % POOL_PAGES);
 
   const handlePublish = async (s) => {
     if (!configured) { toast.error('Configura il Webhook nelle Impostazioni'); return; }
     try {
-      // Inviamo l'oggetto s completo, che include il campo 'text' aggiornato dallo stato locale del SuggestionCard
       await api.post('/social/publish-via-make', s);
       toast.success('Post inviato a Make.com!');
     } catch { toast.error('Errore'); }
   };
 
-  if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-purple-600 w-10 h-10" /></div>;
-
   return (
     <div className="space-y-6">
-      <div className="bg-yellow-300 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-6 rounded-2xl flex items-center justify-between">
-        <div><h3 className="font-black text-2xl uppercase italic">Wingman AI</h3><p className="font-bold text-sm">Idee fresche per il tuo salone.</p></div>
-        <button onClick={() => load(true)} className="bg-white p-3 rounded-xl border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all"><RefreshCw className="w-6 h-6" /></button>
+      {/* Header card */}
+      <div className="bg-yellow-300 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-5 rounded-2xl">
+        <div className="flex items-start justify-between">
+          <div>
+            <h3 className="font-black text-2xl uppercase italic leading-tight">Post del Giorno</h3>
+            <p className="font-bold text-sm capitalize mt-0.5">{todayLabel}</p>
+          </div>
+          <button
+            onClick={handleNext}
+            disabled={loading}
+            title="Altre 5 idee"
+            className="bg-white p-3 rounded-xl border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all disabled:opacity-40 flex items-center gap-1.5"
+          >
+            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+            <span className="text-xs font-black hidden sm:inline">ALTRE IDEE</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="mt-3 flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-black bg-black text-yellow-300 px-2 py-0.5 rounded-full">
+            🔄 Cambiano automaticamente ogni giorno
+          </span>
+          {offset > 0 && (
+            <span className="text-xs font-bold bg-white border-2 border-black px-2 py-0.5 rounded-full">
+              Gruppo {offset + 1} di {POOL_PAGES}
+            </span>
+          )}
+        </div>
       </div>
-      {suggestions.map(s => <SuggestionCard key={s.id} s={s} onPublish={handlePublish} onDelete={id => setSuggestions(prev => prev.filter(x => x.id !== id))} />)}
+
+      {loading
+        ? <div className="flex justify-center py-20"><Loader2 className="animate-spin text-purple-600 w-10 h-10" /></div>
+        : suggestions.map(s => (
+            <SuggestionCard
+              key={s.id}
+              s={s}
+              onPublish={handlePublish}
+              onDelete={id => setSuggestions(prev => prev.filter(x => x.id !== id))}
+            />
+          ))
+      }
     </div>
   );
 }
@@ -144,10 +194,22 @@ export default function SocialPage() {
   return (
     <Layout>
       <div className="max-w-2xl mx-auto px-4 py-8 pb-24">
-        <h1 className="text-4xl font-black uppercase italic mb-8 flex items-center gap-3"><Share2 className="w-8 h-8" /> Social Studio</h1>
+        <h1 className="text-4xl font-black uppercase italic mb-8 flex items-center gap-3">
+          <Share2 className="w-8 h-8" /> Social Studio
+        </h1>
         <div className="flex bg-gray-100 rounded-2xl p-1 mb-8">
-          <button onClick={() => setActiveTab('wingman')} className={`flex-1 py-3 rounded-xl text-sm font-black uppercase transition-all ${activeTab === 'wingman' ? 'bg-black text-white shadow-lg' : 'text-gray-500'}`}>Wingman AI</button>
-          <button onClick={() => setActiveTab('history')} className={`flex-1 py-3 rounded-xl text-sm font-black uppercase transition-all ${activeTab === 'history' ? 'bg-black text-white shadow-lg' : 'text-gray-500'}`}>Storico</button>
+          <button
+            onClick={() => setActiveTab('wingman')}
+            className={`flex-1 py-3 rounded-xl text-sm font-black uppercase transition-all ${activeTab === 'wingman' ? 'bg-black text-white shadow-lg' : 'text-gray-500'}`}
+          >
+            Post del Giorno
+          </button>
+          <button
+            onClick={() => setActiveTab('history')}
+            className={`flex-1 py-3 rounded-xl text-sm font-black uppercase transition-all ${activeTab === 'history' ? 'bg-black text-white shadow-lg' : 'text-gray-500'}`}
+          >
+            Storico
+          </button>
         </div>
         {activeTab === 'wingman' ? <WingmanTab configured={config?.configured} /> : <HistoryTab />}
       </div>
