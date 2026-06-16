@@ -714,16 +714,53 @@ export default function ClientsPage() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div className="p-4 bg-gradient-to-r from-[#C8617A] to-[#A0404F]/10 rounded-xl text-center">
                     <p className="text-2xl font-black text-[#C8617A]">{clientHistory.total_visits}</p>
-                    <p className="text-xs text-[#7C5C4A] font-semibold">Visite</p>
+                    <p className="text-xs text-[#7C5C4A] font-semibold">Visite totali</p>
                   </div>
                   <div className="p-4 bg-green-100 rounded-xl text-center">
                     <p className="text-2xl font-black text-green-600">€{clientHistory.total_spent.toFixed(0)}</p>
-                    <p className="text-xs text-[#7C5C4A] font-semibold">Totale Speso</p>
+                    <p className="text-xs text-[#7C5C4A] font-semibold">Lifetime value</p>
                   </div>
                   <div className="p-4 bg-purple-100 rounded-xl text-center">
                     <p className="text-sm font-black text-purple-600">{clientHistory.last_visit || '-'}</p>
-                    <p className="text-xs text-[#7C5C4A] font-semibold">Ultima Visita</p>
+                    <p className="text-xs text-[#7C5C4A] font-semibold">Ultima visita</p>
                   </div>
+                  <div className="p-4 bg-amber-50 rounded-xl text-center">
+                    <p className="text-sm font-black text-amber-600">
+                      {clientHistory.avg_frequency_days ? `ogni ${clientHistory.avg_frequency_days}gg` : '-'}
+                    </p>
+                    <p className="text-xs text-[#7C5C4A] font-semibold">Frequenza</p>
+                  </div>
+                </div>
+
+                {/* Servizio preferito + Prossimo appuntamento */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {clientHistory.favorite_service && (
+                    <div className="p-3 bg-[#FFF0F5] border border-[#F9C8D6] rounded-xl flex items-center gap-2">
+                      <Scissors className="w-4 h-4 text-[#C8617A] shrink-0" />
+                      <div>
+                        <p className="text-[10px] font-bold text-[#C8617A] uppercase tracking-wide">Servizio preferito</p>
+                        <p className="text-sm font-bold text-[#2D1B14]">{clientHistory.favorite_service}</p>
+                      </div>
+                    </div>
+                  )}
+                  {clientHistory.next_appointment ? (
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl flex items-center gap-2">
+                      <Euro className="w-4 h-4 text-blue-600 shrink-0" />
+                      <div>
+                        <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wide">Prossimo appuntamento</p>
+                        <p className="text-sm font-bold text-[#2D1B14]">{clientHistory.next_appointment.date} · {clientHistory.next_appointment.time}</p>
+                        <p className="text-xs text-[#7C5C4A]">{clientHistory.next_appointment.services.join(', ')}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-orange-50 border border-orange-200 rounded-xl flex items-center gap-2">
+                      <Euro className="w-4 h-4 text-orange-500 shrink-0" />
+                      <div>
+                        <p className="text-[10px] font-bold text-orange-500 uppercase tracking-wide">Prossimo appuntamento</p>
+                        <p className="text-sm font-semibold text-orange-700">Nessuno in programma</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Note Capelli */}

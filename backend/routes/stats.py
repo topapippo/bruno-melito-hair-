@@ -92,6 +92,7 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
         "today_revenue": today_revenue,
         "total_clients": total_clients, "total_operators": total_operators,
         "monthly_revenue": monthly_revenue, "monthly_appointments": len(monthly_appointments),
+        "monthly_target": current_user.get("monthly_target", 0) or 0,
         "yearly_revenue": yearly_revenue, "yearly_appointments": len(yearly_appointments),
         "upcoming_appointments": upcoming,
         "sospeso_count": sospeso_count, "sospeso_total": sospeso_total,
@@ -565,6 +566,7 @@ async def get_settings(current_user: dict = Depends(get_current_user)):
         "um_configured": bool(current_user.get("ultramsg_instance_id") and current_user.get("ultramsg_token")),
         "cloud_api_configured": bool(os.environ.get("WHATSAPP_TOKEN")),
         "cloud_api_phone_number_id": os.environ.get("WHATSAPP_PHONE_ID", "1030164126858033"),
+        "monthly_target": current_user.get("monthly_target", 0) or 0,
     }
 
 

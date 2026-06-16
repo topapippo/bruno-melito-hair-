@@ -63,7 +63,14 @@ export default function Dashboard() {
   const fetchBirthdays = async () => {
     try {
       const res = await api.get(`${API}/reminders/birthdays?days=3`);
-      setBirthdayToday((res.data || []).filter(c => c.days_until <= 1));
+      const list = (res.data || []).filter(c => c.days_until <= 1);
+      setBirthdayToday(list);
+      // Auto-send birthday WhatsApp once per day (idempotente lato server)
+      const todayKey = `birthday_auto_sent_${new Date().toISOString().slice(0, 10)}`;
+      if (list.some(c => c.days_until === 0) && !localStorage.getItem(todayKey)) {
+        localStorage.setItem(todayKey, '1');
+        api.post(`${API}/reminders/birthday-auto-send`).catch(() => {});
+      }
     } catch {}
   };
 
@@ -157,6 +164,15 @@ export default function Dashboard() {
   const totalToday = stats?.today_appointments_count || 0;
   const progressPct = totalToday > 0 ? Math.round((completedToday / totalToday) * 100) : 0;
 
+  const monthlyTarget = stats?.monthly_target || 0;
+  const monthlyRevenue = stats?.monthly_revenue || 0;
+  const monthlyPct = monthlyTarget > 0 ? Math.min(100, Math.round((monthlyRevenue / monthlyTarget) * 100)) : 0;
+  const _today = new Date();
+  const _daysInMonth = new Date(_today.getFullYear(), _today.getMonth() + 1, 0).getDate();
+  const _dayOfMonth = _today.getDate();
+  const projectedRevenue = _dayOfMonth > 0 && _dayOfMonth < _daysInMonth
+    ? Math.round((monthlyRevenue / _dayOfMonth) * _daysInMonth) : 0;
+
   return (
     <Layout>
       <div className="space-y-5" data-testid="dashboard-page">
@@ -229,6 +245,37 @@ export default function Dashboard() {
                   </div>
                 )}
               </div>
+
+              {/* Progress bar obiettivo mensile */}
+              {monthlyTarget > 0 && (
+                <div className="mt-4 max-w-xs">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 45%, transparent)' }}>
+                      Obiettivo mensile
+                    </span>
+                    <span className="text-[10px] font-bold" style={{ color: monthlyPct >= 100 ? '#10B981' : 'var(--admin-accent)' }}>
+                      €{monthlyRevenue.toFixed(0)} / €{monthlyTarget.toFixed(0)} · {monthlyPct}%
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full overflow-hidden" style={{ background: 'color-mix(in srgb, var(--admin-content-text) 10%, transparent)' }}>
+                    <div
+                      className="h-full rounded-full transition-all duration-700"
+                      style={{
+                        width: `${monthlyPct}%`,
+                        background: monthlyPct >= 100
+                          ? 'linear-gradient(90deg, #10B981, #059669)'
+                          : 'linear-gradient(90deg, var(--admin-accent), var(--admin-primary))',
+                        minWidth: monthlyPct > 0 ? '8px' : '0',
+                      }}
+                    />
+                  </div>
+                  {projectedRevenue > monthlyRevenue && (
+                    <p className="text-[10px] mt-0.5 opacity-60" style={{ color: 'var(--admin-content-text)' }}>
+                      Proiezione fine mese: €{projectedRevenue.toFixed(0)}
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* Progress bar appuntamenti oggi */}
               {totalToday > 0 && (

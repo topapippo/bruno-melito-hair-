@@ -483,6 +483,73 @@ async def get_upcoming_birthdays(days: int = 7, current_user: dict = Depends(get
     return upcoming
 
 
+@router.post("/reminders/birthday-auto-send")
+async def birthday_auto_send(current_user: dict = Depends(get_current_user)):
+    """Manda automaticamente un WhatsApp di auguri ai clienti che compiono gli anni oggi.
+    Idempotente: se già inviato oggi non manda di nuovo."""
+    today = datetime.now(timezone.utc)
+    today_str = today.strftime("%Y-%m-%d")
+    salon_name = current_user.get("salon_name", "Bruno Melito Hair")
+
+    clients = await db.clients.find(
+        {"user_id": current_user["id"], "birthday": {"$ne": None, "$exists": True}},
+        {"_id": 0, "id": 1, "name": 1, "phone": 1, "birthday": 1}
+    ).to_list(500)
+
+    sent = 0
+    skipped = 0
+
+    for client in clients:
+        bday = client.get("birthday", "")
+        if not bday:
+            continue
+        try:
+            if len(bday) == 5 and bday[2] == '-':
+                month, day = int(bday[:2]), int(bday[3:])
+            elif len(bday) >= 8 and bday[4] == '-':
+                month, day = int(bday[5:7]), int(bday[8:10])
+            else:
+                continue
+            if today.month != month or today.day != day:
+                continue
+        except (ValueError, IndexError):
+            continue
+
+        existing = await db.reminders_sent.find_one({
+            "user_id": current_user["id"], "type": "birthday",
+            "client_id": client["id"], "date": today_str
+        })
+        if existing:
+            skipped += 1
+            continue
+
+        phone = client.get("phone")
+        if not phone:
+            skipped += 1
+            continue
+
+        first_name = (client.get("name") or "").split()[0] or "cara cliente"
+        message = (
+            f"🎂 Tanti auguri {first_name}! "
+            f"Tutto il team di {salon_name} ti augura una splendida giornata! 🥂\n\n"
+            f"Come regalo di compleanno hai diritto a uno sconto speciale alla tua prossima visita. "
+            f"Prenota qui: https://brunomelitohair.it/prenota 💕"
+        )
+
+        result = await send_whatsapp(phone, message, current_user)
+        if result.get("sent"):
+            await db.reminders_sent.insert_one({
+                "id": str(uuid.uuid4()), "user_id": current_user["id"],
+                "type": "birthday", "client_id": client["id"],
+                "date": today_str, "sent_at": datetime.now(timezone.utc).isoformat()
+            })
+            sent += 1
+        else:
+            skipped += 1
+
+    return {"sent": sent, "skipped": skipped, "total_checked": len(clients)}
+
+
 @router.post("/reminders/birthday/{client_id}/mark-sent")
 async def mark_birthday_sent(client_id: str, current_user: dict = Depends(get_current_user)):
     today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")

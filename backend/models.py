@@ -235,6 +235,7 @@ class SettingsUpdate(BaseModel):
     google_review_link: Optional[str] = None
     auto_backup_enabled: Optional[bool] = None
     auto_backup_email: Optional[str] = None
+    monthly_target: Optional[float] = None
 
 
 # ============== PREPAID CARD ==============

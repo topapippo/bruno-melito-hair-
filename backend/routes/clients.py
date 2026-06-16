@@ -475,12 +475,54 @@ async def get_client_history(client_id: str, current_user: dict = Depends(get_cu
         for p in active_rewards_raw if p["id"] in used_promo_ids
     ]
 
+    # Servizio preferito (più frequente tra tutti gli appuntamenti)
+    all_apts_for_stats = await db.appointments.find(
+        {"client_id": client_id, "user_id": current_user["id"], "status": {"$ne": "cancelled"}},
+        {"_id": 0, "date": 1, "services": 1}
+    ).sort("date", 1).to_list(500)
+
+    svc_count: dict = {}
+    for apt in all_apts_for_stats:
+        for svc in apt.get("services", []):
+            name = svc.get("name", "")
+            if name:
+                svc_count[name] = svc_count.get(name, 0) + 1
+    favorite_service = max(svc_count, key=svc_count.get) if svc_count else None
+
+    # Frequenza media tra visite (giorni)
+    visit_dates = sorted([a["date"] for a in all_apts_for_stats if a.get("date")])
+    avg_frequency_days = None
+    if len(visit_dates) >= 2:
+        from datetime import date as ddate
+        gaps = [(ddate.fromisoformat(visit_dates[i+1]) - ddate.fromisoformat(visit_dates[i])).days
+                for i in range(len(visit_dates) - 1)]
+        avg_frequency_days = round(sum(gaps) / len(gaps))
+
+    # Prossimo appuntamento
+    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    next_apt_raw = await db.appointments.find_one(
+        {"client_id": client_id, "user_id": current_user["id"],
+         "date": {"$gte": today_str}, "status": {"$ne": "cancelled"}},
+        {"_id": 0, "date": 1, "time": 1, "services": 1},
+        sort=[("date", 1), ("time", 1)]
+    )
+    next_appointment = None
+    if next_apt_raw:
+        next_appointment = {
+            "date": next_apt_raw["date"],
+            "time": next_apt_raw["time"],
+            "services": [s.get("name", "") for s in next_apt_raw.get("services", [])]
+        }
+
     return {
         "client": {"id": client.get("id"), "name": client.get("name"), "phone": client.get("phone", ""), "hair_notes": client.get("hair_notes", "")},
         "total_visits": client.get("total_visits", 0),
         "total_spent": total_spent,
         "active_rewards": active_rewards,
         "last_visit": last_visit,
+        "favorite_service": favorite_service,
+        "avg_frequency_days": avg_frequency_days,
+        "next_appointment": next_appointment,
         "appointments": appointments,
         "payments": payments,
     }

@@ -534,7 +534,8 @@ export default function SettingsPage() {
         working_days: settings.working_days,
         google_review_link: settings.google_review_link,
         auto_backup_enabled: settings.auto_backup_enabled,
-        auto_backup_email: settings.auto_backup_email
+        auto_backup_email: settings.auto_backup_email,
+        monthly_target: settings.monthly_target ? parseFloat(settings.monthly_target) : null,
       });
       updateUser({ name: settings.name, salon_name: settings.salon_name });
       toast.success('Impostazioni salvate!');
@@ -659,6 +660,19 @@ export default function SettingsPage() {
                   className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
                 />
                 <p className="text-xs text-[#9C7060]">Cerca il tuo salone su Google Maps → Condividi → Copia link recensione</p>
+              </div>
+              <div className="space-y-2">
+                <Label>Obiettivo incasso mensile (€)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="100"
+                  value={settings.monthly_target || ''}
+                  onChange={(e) => setSettings({ ...settings, monthly_target: e.target.value })}
+                  placeholder="es. 3000"
+                  className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
+                />
+                <p className="text-xs text-[#9C7060]">Imposta un target e vedrai il progresso in dashboard ogni giorno</p>
               </div>
             </CardContent>
           </Card>
