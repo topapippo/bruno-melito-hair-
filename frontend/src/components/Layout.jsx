@@ -18,7 +18,6 @@ const navGroups = [
     items: [
       { path: '/dashboard', label: 'Dashboard',      icon: LayoutDashboard },
       { path: '/',          label: 'Planning',        icon: Calendar },
-      { path: '/appointments', label: 'Appuntamenti', icon: CalendarDays },
     ],
   },
   {
@@ -40,7 +39,7 @@ const navGroups = [
     items: [
       { path: '/incassi',       label: 'Report Incassi',  icon: Euro },
       { path: '/uscite',        label: 'Registro Uscite', icon: ArrowDownCircle },
-      { path: '/daily-summary', label: 'Riepilogo Giorno',icon: FileBarChart },
+      { path: '/appointments',  label: 'Storico Appuntamenti', icon: CalendarDays },
       { path: '/stats',         label: 'Statistiche',     icon: BarChart3 },
     ],
   },
