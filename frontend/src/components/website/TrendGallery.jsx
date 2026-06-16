@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowUpRight, X } from 'lucide-react';
 import api from '../../lib/api';
 import { getMediaUrl } from '../../lib/mediaUrl';
+import { format } from 'date-fns';
+import { it } from 'date-fns/locale';
 
 const FALLBACK = [
   { id: '1', title: 'Bixie Cut', desc: "Il mix perfetto tra pixie e bob per un'estate fresca e grintosa.", img: 'https://static.prod-images.emergentagent.com/jobs/54de4f01-9f73-4673-b57f-fff1f6660cfe/images/a81be5d7abc73969b2cb334a559dc8c2aac917f58f4e2b661015b9ef422f8d76.png', badge: '🔥 Trend', color_code: '#FFD93D' },
@@ -62,7 +64,7 @@ export default function TrendGallery({ setShowBooking }) {
   const [lightbox, setLightbox] = useState(null);
 
   useEffect(() => {
-    api.get('/website-trends/public')
+    api.get('/website-trends/daily')
       .then(r => setTrends(r.data?.length ? r.data : FALLBACK))
       .catch(() => setTrends(FALLBACK));
   }, []);
@@ -105,7 +107,7 @@ export default function TrendGallery({ setShowBooking }) {
           className="mb-14"
         >
           <p className="text-xs font-bold tracking-[0.4em] uppercase mb-5" style={{ color: 'rgba(255,255,255,0.3)' }}>
-            VOGUE 2026 — EDITORIAL LOOK BOOK
+            VOGUE 2026 — EDITORIAL LOOK BOOK &nbsp;·&nbsp; {format(new Date(), "d MMMM yyyy", { locale: it }).toUpperCase()}
           </p>
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
             <h2
