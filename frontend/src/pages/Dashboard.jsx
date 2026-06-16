@@ -175,6 +175,7 @@ export default function Dashboard() {
     ? Math.round((monthlyRevenue / _dayOfMonth) * _daysInMonth) : 0;
 
   return (
+    <>
     <Layout>
       <div className="space-y-5" data-testid="dashboard-page">
 
@@ -994,141 +995,137 @@ export default function Dashboard() {
 
       </div>
 
-      {/* Modal dettaglio obiettivo mensile */}
-      {showTargetModal && monthlyTarget > 0 && (() => {
-        const _today = new Date();
-        const _daysInMonth = new Date(_today.getFullYear(), _today.getMonth() + 1, 0).getDate();
-        const _dayOfMonth = _today.getDate();
-        const _daysLeft = _daysInMonth - _dayOfMonth;
-        const _remaining = Math.max(0, monthlyTarget - monthlyRevenue);
-        const _dailyNeeded = _daysLeft > 0 ? _remaining / _daysLeft : 0;
-        const _dailyAvg = _dayOfMonth > 0 ? monthlyRevenue / _dayOfMonth : 0;
-        const monthName = _today.toLocaleString('it-IT', { month: 'long' });
-        return (
-          <div
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
-            style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
-            onClick={() => setShowTargetModal(false)}
-          >
-            <div
-              className="w-full max-w-sm rounded-3xl p-6 shadow-2xl"
-              style={{ background: 'var(--admin-card-bg)', border: '1px solid color-mix(in srgb, var(--admin-content-text) 10%, transparent)' }}
-              onClick={e => e.stopPropagation()}
-            >
-              {/* Header */}
-              <div className="flex items-center justify-between mb-5">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-                    style={{ background: monthlyPct >= 100 ? 'rgba(16,185,129,0.15)' : 'color-mix(in srgb, var(--admin-accent) 15%, transparent)' }}>
-                    <Target className="w-5 h-5" style={{ color: monthlyPct >= 100 ? '#10B981' : 'var(--admin-accent)' }} />
-                  </div>
-                  <div>
-                    <p className="font-black text-base" style={{ color: 'var(--admin-content-text)' }}>Obiettivo {monthName}</p>
-                    <p className="text-xs" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 50%, transparent)' }}>
-                      giorno {_dayOfMonth} / {_daysInMonth}
-                    </p>
-                  </div>
-                </div>
-                <button onClick={() => setShowTargetModal(false)}
-                  className="w-8 h-8 rounded-full flex items-center justify-center"
-                  style={{ background: 'color-mix(in srgb, var(--admin-content-text) 8%, transparent)' }}>
-                  <X className="w-4 h-4" style={{ color: 'var(--admin-content-text)' }} />
-                </button>
-              </div>
-
-              {/* Barra grande */}
-              <div className="mb-2 flex items-end justify-between">
-                <span className="text-4xl font-black" style={{ color: monthlyPct >= 100 ? '#10B981' : 'var(--admin-accent)' }}>
-                  €{monthlyRevenue.toFixed(0)}
-                </span>
-                <span className="text-xl font-bold mb-1" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 40%, transparent)' }}>
-                  / €{monthlyTarget.toFixed(0)}
-                </span>
-              </div>
-              <div className="h-4 rounded-full overflow-hidden mb-1"
-                style={{ background: 'color-mix(in srgb, var(--admin-content-text) 10%, transparent)' }}>
-                <div className="h-full rounded-full transition-all duration-700 relative"
-                  style={{
-                    width: `${monthlyPct}%`,
-                    background: monthlyPct >= 100
-                      ? 'linear-gradient(90deg, #10B981, #059669)'
-                      : 'linear-gradient(90deg, var(--admin-accent), var(--admin-primary))',
-                    minWidth: monthlyPct > 0 ? '16px' : '0',
-                  }}>
-                  <div className="absolute inset-0 rounded-full opacity-40"
-                    style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.4) 0%, transparent 100%)' }} />
-                </div>
-              </div>
-              <p className="text-right text-sm font-black mb-5"
-                style={{ color: monthlyPct >= 100 ? '#10B981' : 'var(--admin-accent)' }}>
-                {monthlyPct}% completato
-              </p>
-
-              {/* Statistiche griglia */}
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="p-3 rounded-2xl" style={{ background: 'color-mix(in srgb, var(--admin-content-text) 5%, transparent)' }}>
-                  <p className="text-[10px] font-bold uppercase tracking-wider mb-1"
-                    style={{ color: 'color-mix(in srgb, var(--admin-content-text) 45%, transparent)' }}>Media giornaliera</p>
-                  <p className="text-xl font-black" style={{ color: 'var(--admin-content-text)' }}>
-                    €{_dailyAvg.toFixed(0)}
-                  </p>
-                </div>
-                <div className="p-3 rounded-2xl" style={{ background: 'color-mix(in srgb, var(--admin-content-text) 5%, transparent)' }}>
-                  <p className="text-[10px] font-bold uppercase tracking-wider mb-1"
-                    style={{ color: 'color-mix(in srgb, var(--admin-content-text) 45%, transparent)' }}>Giorni rimasti</p>
-                  <p className="text-xl font-black" style={{ color: 'var(--admin-content-text)' }}>
-                    {_daysLeft}
-                  </p>
-                </div>
-                {monthlyPct < 100 && (
-                  <div className="p-3 rounded-2xl" style={{ background: 'color-mix(in srgb, var(--admin-content-text) 5%, transparent)' }}>
-                    <p className="text-[10px] font-bold uppercase tracking-wider mb-1"
-                      style={{ color: 'color-mix(in srgb, var(--admin-content-text) 45%, transparent)' }}>Mancante</p>
-                    <p className="text-xl font-black text-rose-500">
-                      €{_remaining.toFixed(0)}
-                    </p>
-                  </div>
-                )}
-                {monthlyPct < 100 && _daysLeft > 0 && (
-                  <div className="p-3 rounded-2xl" style={{ background: 'color-mix(in srgb, var(--admin-content-text) 5%, transparent)' }}>
-                    <p className="text-[10px] font-bold uppercase tracking-wider mb-1"
-                      style={{ color: 'color-mix(in srgb, var(--admin-content-text) 45%, transparent)' }}>Serve al giorno</p>
-                    <p className="text-xl font-black" style={{ color: _dailyNeeded > _dailyAvg ? '#f97316' : '#10B981' }}>
-                      €{_dailyNeeded.toFixed(0)}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Messaggio di stato */}
-              {monthlyPct >= 100 ? (
-                <div className="p-3 rounded-2xl text-center" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)' }}>
-                  <p className="font-black text-emerald-600">Obiettivo raggiunto!</p>
-                  <p className="text-xs text-emerald-700 mt-0.5">Ottimo lavoro questo mese</p>
-                </div>
-              ) : projectedRevenue >= monthlyTarget ? (
-                <div className="p-3 rounded-2xl" style={{ background: 'rgba(251,146,60,0.1)', border: '1px solid rgba(251,146,60,0.25)' }}>
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <Flame className="w-4 h-4 text-orange-500" />
-                    <p className="font-bold text-orange-600 text-sm">Sei in anticipo sul target!</p>
-                  </div>
-                  <p className="text-xs text-orange-700">Proiezione fine mese: €{projectedRevenue.toFixed(0)}</p>
-                </div>
-              ) : projectedRevenue > 0 ? (
-                <div className="p-3 rounded-2xl" style={{ background: 'color-mix(in srgb, var(--admin-accent) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--admin-accent) 20%, transparent)' }}>
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <TrendingDown className="w-4 h-4" style={{ color: 'var(--admin-accent)' }} />
-                    <p className="font-bold text-sm" style={{ color: 'var(--admin-accent)' }}>Proiezione sotto target</p>
-                  </div>
-                  <p className="text-xs" style={{ color: 'color-mix(in srgb, var(--admin-accent) 80%, #7a3000)' }}>
-                    A questo ritmo: €{projectedRevenue.toFixed(0)} — aumenta €{(_dailyNeeded - _dailyAvg).toFixed(0)}/gg
-                  </p>
-                </div>
-              ) : null}
-            </div>
-          </div>
-        );
-      })()}
     </Layout>
+
+    {/* Modal dettaglio obiettivo mensile — fuori da Layout per evitare stacking context */}
+    {showTargetModal && monthlyTarget > 0 && (() => {
+      const _today = new Date();
+      const _daysInMonth = new Date(_today.getFullYear(), _today.getMonth() + 1, 0).getDate();
+      const _dayOfMonth = _today.getDate();
+      const _daysLeft = _daysInMonth - _dayOfMonth;
+      const _remaining = Math.max(0, monthlyTarget - monthlyRevenue);
+      const _dailyNeeded = _daysLeft > 0 ? _remaining / _daysLeft : 0;
+      const _dailyAvg = _dayOfMonth > 0 ? monthlyRevenue / _dayOfMonth : 0;
+      const monthName = _today.toLocaleString('it-IT', { month: 'long' });
+      return (
+        <div
+          className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setShowTargetModal(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-3xl p-6 shadow-2xl"
+            style={{ background: 'var(--admin-card-bg)', border: '1px solid color-mix(in srgb, var(--admin-content-text) 10%, transparent)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+                  style={{ background: monthlyPct >= 100 ? 'rgba(16,185,129,0.15)' : 'color-mix(in srgb, var(--admin-accent) 15%, transparent)' }}>
+                  <Target className="w-5 h-5" style={{ color: monthlyPct >= 100 ? '#10B981' : 'var(--admin-accent)' }} />
+                </div>
+                <div>
+                  <p className="font-black text-base" style={{ color: 'var(--admin-content-text)' }}>Obiettivo {monthName}</p>
+                  <p className="text-xs" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 50%, transparent)' }}>
+                    giorno {_dayOfMonth} / {_daysInMonth}
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => setShowTargetModal(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center"
+                style={{ background: 'color-mix(in srgb, var(--admin-content-text) 8%, transparent)' }}>
+                <X className="w-4 h-4" style={{ color: 'var(--admin-content-text)' }} />
+              </button>
+            </div>
+
+            {/* Cifre + barra */}
+            <div className="mb-2 flex items-end justify-between">
+              <span className="text-4xl font-black" style={{ color: monthlyPct >= 100 ? '#10B981' : 'var(--admin-accent)' }}>
+                €{monthlyRevenue.toFixed(0)}
+              </span>
+              <span className="text-xl font-bold mb-1" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 40%, transparent)' }}>
+                / €{monthlyTarget.toFixed(0)}
+              </span>
+            </div>
+            <div className="h-4 rounded-full overflow-hidden mb-1"
+              style={{ background: 'color-mix(in srgb, var(--admin-content-text) 10%, transparent)' }}>
+              <div className="h-full rounded-full transition-all duration-700 relative"
+                style={{
+                  width: `${monthlyPct}%`,
+                  background: monthlyPct >= 100
+                    ? 'linear-gradient(90deg, #10B981, #059669)'
+                    : 'linear-gradient(90deg, var(--admin-accent), var(--admin-primary))',
+                  minWidth: monthlyPct > 0 ? '16px' : '0',
+                }}>
+                <div className="absolute inset-0 rounded-full opacity-40"
+                  style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.4) 0%, transparent 100%)' }} />
+              </div>
+            </div>
+            <p className="text-right text-sm font-black mb-5"
+              style={{ color: monthlyPct >= 100 ? '#10B981' : 'var(--admin-accent)' }}>
+              {monthlyPct}% completato
+            </p>
+
+            {/* Griglia statistiche */}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="p-3 rounded-2xl" style={{ background: 'color-mix(in srgb, var(--admin-content-text) 5%, transparent)' }}>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-1"
+                  style={{ color: 'color-mix(in srgb, var(--admin-content-text) 45%, transparent)' }}>Media/giorno</p>
+                <p className="text-xl font-black" style={{ color: 'var(--admin-content-text)' }}>€{_dailyAvg.toFixed(0)}</p>
+              </div>
+              <div className="p-3 rounded-2xl" style={{ background: 'color-mix(in srgb, var(--admin-content-text) 5%, transparent)' }}>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-1"
+                  style={{ color: 'color-mix(in srgb, var(--admin-content-text) 45%, transparent)' }}>Giorni rimasti</p>
+                <p className="text-xl font-black" style={{ color: 'var(--admin-content-text)' }}>{_daysLeft}</p>
+              </div>
+              {monthlyPct < 100 && (
+                <div className="p-3 rounded-2xl" style={{ background: 'color-mix(in srgb, var(--admin-content-text) 5%, transparent)' }}>
+                  <p className="text-[10px] font-bold uppercase tracking-wider mb-1"
+                    style={{ color: 'color-mix(in srgb, var(--admin-content-text) 45%, transparent)' }}>Mancante</p>
+                  <p className="text-xl font-black text-rose-500">€{_remaining.toFixed(0)}</p>
+                </div>
+              )}
+              {monthlyPct < 100 && _daysLeft > 0 && (
+                <div className="p-3 rounded-2xl" style={{ background: 'color-mix(in srgb, var(--admin-content-text) 5%, transparent)' }}>
+                  <p className="text-[10px] font-bold uppercase tracking-wider mb-1"
+                    style={{ color: 'color-mix(in srgb, var(--admin-content-text) 45%, transparent)' }}>Serve/giorno</p>
+                  <p className="text-xl font-black" style={{ color: _dailyNeeded > _dailyAvg ? '#f97316' : '#10B981' }}>
+                    €{_dailyNeeded.toFixed(0)}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Banner stato */}
+            {monthlyPct >= 100 ? (
+              <div className="p-3 rounded-2xl text-center" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)' }}>
+                <p className="font-black text-emerald-600">Obiettivo raggiunto!</p>
+                <p className="text-xs text-emerald-700 mt-0.5">Ottimo lavoro questo mese</p>
+              </div>
+            ) : projectedRevenue >= monthlyTarget ? (
+              <div className="p-3 rounded-2xl" style={{ background: 'rgba(251,146,60,0.1)', border: '1px solid rgba(251,146,60,0.25)' }}>
+                <div className="flex items-center gap-2 mb-0.5">
+                  <Flame className="w-4 h-4 text-orange-500" />
+                  <p className="font-bold text-orange-600 text-sm">Sei in anticipo sul target!</p>
+                </div>
+                <p className="text-xs text-orange-700">Proiezione fine mese: €{projectedRevenue.toFixed(0)}</p>
+              </div>
+            ) : projectedRevenue > 0 ? (
+              <div className="p-3 rounded-2xl" style={{ background: 'color-mix(in srgb, var(--admin-accent) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--admin-accent) 20%, transparent)' }}>
+                <div className="flex items-center gap-2 mb-0.5">
+                  <TrendingDown className="w-4 h-4" style={{ color: 'var(--admin-accent)' }} />
+                  <p className="font-bold text-sm" style={{ color: 'var(--admin-accent)' }}>Proiezione sotto target</p>
+                </div>
+                <p className="text-xs" style={{ color: 'color-mix(in srgb, var(--admin-accent) 80%, #7a3000)' }}>
+                  A questo ritmo: €{projectedRevenue.toFixed(0)} — serve +€{(_dailyNeeded - _dailyAvg).toFixed(0)}/gg
+                </p>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      );
+    })()}
+    </>
   );
 }
