@@ -390,7 +390,8 @@ async def refresh_suggestions(current_user: dict = Depends(get_current_user)):
     pool_size = len(_POST_POOL)
     ordered = _daily_order(user_id, today)
 
-    seed2 = int(hashlib.md5(f"{user_id}:{today}:refresh:{datetime.now().hour}".encode()).hexdigest(), 16)
+    now = datetime.now()
+    seed2 = int(hashlib.md5(f"{user_id}:{today}:refresh:{now.hour}:{now.minute // 3}".encode()).hexdigest(), 16)
     offset = (seed2 % (pool_size // DAILY_PAGE_SIZE)) + 1
 
     start = (offset * DAILY_PAGE_SIZE) % pool_size

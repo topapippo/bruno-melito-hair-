@@ -5,6 +5,7 @@ from typing import List, Optional
 import uuid
 import logging
 from datetime import datetime, timezone, timedelta
+from calendar import monthrange
 from auth import get_current_user
 from database import db
 from models import AppointmentCreate, AppointmentResponse
@@ -122,7 +123,12 @@ async def get_appointments(date: Optional[str] = None, month: Optional[str] = No
     if date:
         query["date"] = date
     elif month:  # formato YYYY-MM
-        query["date"] = {"$gte": f"{month}-01", "$lte": f"{month}-31"}
+        try:
+            y, m = map(int, month.split('-'))
+            last_day = monthrange(y, m)[1]
+        except Exception:
+            last_day = 31
+        query["date"] = {"$gte": f"{month}-01", "$lte": f"{month}-{last_day:02d}"}
     res = await db.appointments.find(query, {"_id": 0}).sort([("date", 1), ("time", 1)]).to_list(5000)
     return [AppointmentResponse(**a) for a in res]
 

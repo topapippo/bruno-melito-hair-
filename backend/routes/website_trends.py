@@ -164,14 +164,16 @@ def _daily_trend_ids(all_ids: list[str], today_str: str) -> list[str]:
 
 
 async def _ensure_defaults(user_id: str):
-    """Popola il DB con i 14 default se è la prima volta (o ne mancano troppi)."""
-    count = await db.website_trends.count_documents({"user_id": user_id})
-    if count > 0:
+    """Inserisce i default mancanti (confronto per titolo — idempotente)."""
+    existing = await db.website_trends.find({"user_id": user_id}, {"title": 1}).to_list(100)
+    existing_titles = {d["title"] for d in existing}
+    missing = [d for d in _TREND_DEFAULTS if d["title"] not in existing_titles]
+    if not missing:
         return
     to_insert = [
         {**d, "id": str(uuid.uuid4()), "user_id": user_id,
          "created_at": datetime.now(timezone.utc).isoformat()}
-        for d in _TREND_DEFAULTS
+        for d in missing
     ]
     await db.website_trends.insert_many(to_insert)
 
