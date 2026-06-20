@@ -16,8 +16,8 @@ if not BASE_URL:
     BASE_URL = "https://salon-cms-system.preview.emergentagent.com"
 
 # Test credentials
-ADMIN_EMAIL = "admin@brunomelito.it"
-ADMIN_PASSWORD = "mbhs637104"
+ADMIN_EMAIL = os.environ.get("TEST_ADMIN_EMAIL", "")
+ADMIN_PASSWORD = os.environ.get("TEST_ADMIN_PASSWORD", "")
 
 
 class TestAppointmentCreationBugFix:
