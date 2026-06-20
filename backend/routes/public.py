@@ -210,7 +210,7 @@ async def public_get_website():
 @router.get("/public/website")
 async def get_website_data(response: Response):
     data = await public_get_website()
-    response.headers["Cache-Control"] = "public, max-age=300"
+    response.headers["Cache-Control"] = "no-store"
     return data
 
 @router.post("/public/booking")
