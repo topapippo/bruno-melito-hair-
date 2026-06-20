@@ -178,8 +178,8 @@ class TestWebsiteConfigUpselling:
     def auth_token(self):
         """Get authentication token"""
         login_data = {
-            "email": "admin@brunomelito.it",
-            "password": "mbhs637104"
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
+            "password": os.environ.get("TEST_ADMIN_PASSWORD", "")
         }
         response = requests.post(f"{BASE_URL}/api/auth/login", json=login_data)
         if response.status_code == 200:

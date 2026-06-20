@@ -20,7 +20,7 @@ class TestVideoUpload:
     def auth_token(self):
         """Login and get auth token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "password123"
         })
         assert response.status_code == 200, f"Login failed: {response.text}"
@@ -109,7 +109,7 @@ class TestGalleryFileType:
     def auth_token(self):
         """Login and get auth token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "password123"
         })
         assert response.status_code == 200
@@ -166,7 +166,7 @@ class TestAppointmentPromoCard:
     def auth_token(self):
         """Login and get auth token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "password123"
         })
         assert response.status_code == 200
@@ -361,7 +361,7 @@ class TestPromotionsEndpoints:
     @pytest.fixture
     def auth_token(self):
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "password123"
         })
         assert response.status_code == 200
@@ -400,7 +400,7 @@ class TestCardsEndpoints:
     @pytest.fixture
     def auth_token(self):
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "password123"
         })
         assert response.status_code == 200
@@ -431,7 +431,7 @@ class TestLoginEndpoint:
     def test_login_success(self):
         """Test login with valid credentials"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "password123"
         })
         

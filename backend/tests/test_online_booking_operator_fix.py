@@ -22,7 +22,7 @@ class TestOnlineBookingOperatorAutoAssign:
     def setup(self):
         """Login and get auth token"""
         login_response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "password123"
         })
         assert login_response.status_code == 200, f"Login failed: {login_response.text}"
@@ -187,7 +187,7 @@ class TestInternalAppointmentCreation:
     @pytest.fixture(autouse=True)
     def setup(self):
         login_response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "password123"
         })
         assert login_response.status_code == 200
@@ -265,7 +265,7 @@ class TestAppointmentUpdateAndDelete:
     @pytest.fixture(autouse=True)
     def setup(self):
         login_response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "password123"
         })
         assert login_response.status_code == 200
@@ -386,7 +386,7 @@ class TestWeeklyAndMonthlyViews:
     @pytest.fixture(autouse=True)
     def setup(self):
         login_response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "password123"
         })
         assert login_response.status_code == 200
@@ -432,7 +432,7 @@ class TestLoginFlow:
     def test_login_valid_credentials(self):
         """Login with valid credentials"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "password123"
         })
         assert response.status_code == 200, f"Login failed: {response.text}"
@@ -445,7 +445,7 @@ class TestLoginFlow:
     def test_login_invalid_credentials(self):
         """Login with invalid credentials should fail"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "wrongpassword"
         })
         assert response.status_code == 401, "Should fail with wrong password"

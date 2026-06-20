@@ -10,7 +10,7 @@ import os
 from datetime import datetime, timedelta
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
-LOGIN_EMAIL = "melitobruno@gmail.com"
+LOGIN_EMAIL = os.environ.get("TEST_ADMIN_EMAIL", "")
 LOGIN_PASSWORD = "password123"
 
 @pytest.fixture(scope="session")

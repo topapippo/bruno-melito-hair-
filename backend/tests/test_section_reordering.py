@@ -9,8 +9,8 @@ import os
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://salon-cms-system.preview.emergentagent.com')
 
 # Test credentials
-ADMIN_EMAIL = "admin@brunomelito.it"
-ADMIN_PASSWORD = "mbhs637104"
+ADMIN_EMAIL = os.environ.get("TEST_ADMIN_EMAIL", "")
+ADMIN_PASSWORD = os.environ.get("TEST_ADMIN_PASSWORD", "")
 
 # Expected sections that can be reordered
 EXPECTED_SECTIONS = ["services", "salon", "about", "promotions", "reviews", "gallery", "loyalty", "contact"]
@@ -64,7 +64,7 @@ class TestAdminAuthentication:
     """Tests for admin login with provided credentials"""
     
     def test_admin_login_success(self):
-        """Admin login with email admin@brunomelito.it and password mbhs637104"""
+        """Admin login with email admin@brunomelito.it and password ***"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
             "email": ADMIN_EMAIL,
             "password": ADMIN_PASSWORD

@@ -10,7 +10,7 @@ import io
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://salon-cms-system.preview.emergentagent.com').rstrip('/')
 
 # Test credentials
-TEST_EMAIL = "melitobruno@gmail.com"
+TEST_EMAIL = os.environ.get("TEST_ADMIN_EMAIL", "")
 TEST_PASSWORD = "password123"
 
 

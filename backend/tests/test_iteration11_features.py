@@ -15,7 +15,7 @@ class TestAuthentication:
     def test_login_success(self):
         """Test login with valid credentials"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "password123"
         })
         assert response.status_code == 200
@@ -33,7 +33,7 @@ class TestAppointmentsAPI:
     def setup(self):
         """Login and setup auth token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "password123"
         })
         self.token = response.json().get("access_token")
@@ -95,7 +95,7 @@ class TestPromotionsAPI:
     def setup(self):
         """Login and setup auth token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "password123"
         })
         self.token = response.json().get("access_token")
@@ -133,7 +133,7 @@ class TestPrepaidCardsAPI:
     def setup(self):
         """Login and setup auth token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "password123"
         })
         self.token = response.json().get("access_token")
@@ -163,7 +163,7 @@ class TestDashboardStatsAPI:
     def setup(self):
         """Login and setup auth token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "password123"
         })
         self.token = response.json().get("access_token")
@@ -186,7 +186,7 @@ class TestServicesAPI:
     def setup(self):
         """Login and setup auth token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "password123"
         })
         self.token = response.json().get("access_token")
@@ -209,7 +209,7 @@ class TestOperatorsAPI:
     def setup(self):
         """Login and setup auth token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "password123"
         })
         self.token = response.json().get("access_token")
@@ -259,7 +259,7 @@ class TestCheckoutFlow:
     def setup(self):
         """Login and setup auth token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "password123"
         })
         self.token = response.json().get("access_token")

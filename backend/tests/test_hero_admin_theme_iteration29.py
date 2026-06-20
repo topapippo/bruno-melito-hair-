@@ -16,8 +16,8 @@ class TestAuthAndSettings:
     def auth_token(self):
         """Login and get auth token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "admin@brunomelito.it",
-            "password": "mbhs637104"
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
+            "password": os.environ.get("TEST_ADMIN_PASSWORD", "")
         })
         assert response.status_code == 200, f"Login failed: {response.text}"
         data = response.json()
@@ -148,8 +148,8 @@ class TestWebsiteConfigAPI:
     def auth_token(self):
         """Login and get auth token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "admin@brunomelito.it",
-            "password": "mbhs637104"
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
+            "password": os.environ.get("TEST_ADMIN_PASSWORD", "")
         })
         assert response.status_code == 200
         return response.json()["access_token"]
@@ -218,8 +218,8 @@ class TestUploadEndpoint:
     def auth_token(self):
         """Login and get auth token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "admin@brunomelito.it",
-            "password": "mbhs637104"
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
+            "password": os.environ.get("TEST_ADMIN_PASSWORD", "")
         })
         assert response.status_code == 200
         return response.json()["access_token"]

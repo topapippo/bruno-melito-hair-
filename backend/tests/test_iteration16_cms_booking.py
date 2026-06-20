@@ -107,7 +107,7 @@ class TestAuthenticatedWebsiteEndpoints:
     def auth_token(self):
         """Get authentication token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "password123"
         })
         if response.status_code == 200:
@@ -191,7 +191,7 @@ class TestWebsiteUploadEndpoint:
     def auth_headers(self):
         """Get authentication headers"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "password123"
         })
         if response.status_code == 200:

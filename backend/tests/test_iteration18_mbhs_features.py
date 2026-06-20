@@ -26,7 +26,7 @@ class TestLogin:
     def test_login_success(self):
         """Test valid login credentials"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "password123"
         })
         assert response.status_code == 200, f"Login failed: {response.text}"
@@ -52,7 +52,7 @@ class TestOperators:
     @pytest.fixture
     def auth_token(self):
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "password123"
         })
         assert response.status_code == 200
@@ -100,7 +100,7 @@ class TestAppointmentsAutoAssign:
     @pytest.fixture
     def auth_token(self):
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "password123"
         })
         assert response.status_code == 200
@@ -178,7 +178,7 @@ class TestExpenses:
     @pytest.fixture
     def auth_token(self):
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "password123"
         })
         assert response.status_code == 200
@@ -299,7 +299,7 @@ class TestPromotions:
     @pytest.fixture
     def auth_token(self):
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "password123"
         })
         assert response.status_code == 200
@@ -349,7 +349,7 @@ class TestCardAlerts:
     @pytest.fixture
     def auth_token(self):
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "password123"
         })
         assert response.status_code == 200
@@ -402,7 +402,7 @@ class TestAppointments:
     @pytest.fixture
     def auth_token(self):
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "password123"
         })
         assert response.status_code == 200

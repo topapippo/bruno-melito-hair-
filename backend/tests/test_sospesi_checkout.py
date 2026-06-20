@@ -16,8 +16,8 @@ class TestAuth:
     def auth_token(self):
         """Get authentication token for admin user"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "admin@brunomelito.it",
-            "password": "mbhs637104"
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
+            "password": os.environ.get("TEST_ADMIN_PASSWORD", "")
         })
         assert response.status_code == 200, f"Login failed: {response.text}"
         data = response.json()
@@ -28,8 +28,8 @@ class TestAuth:
     def test_login_success(self):
         """Test login with valid credentials"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "admin@brunomelito.it",
-            "password": "mbhs637104"
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
+            "password": os.environ.get("TEST_ADMIN_PASSWORD", "")
         })
         assert response.status_code == 200
         data = response.json()
@@ -45,8 +45,8 @@ class TestSospesiAPI:
     def auth_headers(self):
         """Get auth headers"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "admin@brunomelito.it",
-            "password": "mbhs637104"
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
+            "password": os.environ.get("TEST_ADMIN_PASSWORD", "")
         })
         assert response.status_code == 200
         token = response.json()["access_token"]
@@ -117,8 +117,8 @@ class TestCheckoutWithSospeso:
     def auth_headers(self):
         """Get auth headers"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "admin@brunomelito.it",
-            "password": "mbhs637104"
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
+            "password": os.environ.get("TEST_ADMIN_PASSWORD", "")
         })
         assert response.status_code == 200
         token = response.json()["access_token"]

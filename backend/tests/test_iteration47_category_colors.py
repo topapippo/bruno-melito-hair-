@@ -23,7 +23,7 @@ class TestCategoryColorsAndAutoAssign:
         """Setup: Login and get auth token"""
         login_response = requests.post(
             f"{BASE_URL}/api/auth/login",
-            json={"email": "admin@brunomelito.it", "password": "mbhs637104"}
+            json={"email": os.environ.get("TEST_ADMIN_EMAIL", ""), "password": os.environ.get("TEST_ADMIN_PASSWORD", "")}
         )
         assert login_response.status_code == 200, f"Login failed: {login_response.text}"
         self.token = login_response.json()["access_token"]

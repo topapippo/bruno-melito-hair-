@@ -14,7 +14,7 @@ BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://salon-cms-system.pre
 def auth_token():
     """Get authentication token"""
     response = requests.post(f"{BASE_URL}/api/auth/login", json={
-        "email": "melitobruno@gmail.com",
+        "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
         "password": "password123"
     })
     if response.status_code != 200:
@@ -48,7 +48,7 @@ class TestAuthentication:
     
     def test_login_success(self):
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "password123"
         })
         assert response.status_code == 200

@@ -17,7 +17,7 @@ class TestNotificationEndpoints:
     def auth_token(self):
         """Get authentication token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "password123"
         })
         assert response.status_code == 200, f"Login failed: {response.text}"
@@ -215,7 +215,7 @@ class TestLoginFlow:
     def test_login_valid_credentials(self):
         """Login with valid credentials returns token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "password123"
         })
         assert response.status_code == 200
@@ -228,7 +228,7 @@ class TestLoginFlow:
     def test_login_invalid_credentials(self):
         """Login with wrong password returns 401"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "wrongpassword"
         })
         assert response.status_code == 401
@@ -240,7 +240,7 @@ class TestPlanningAppointments:
     @pytest.fixture
     def auth_token(self):
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "melitobruno@gmail.com",
+            "email": os.environ.get("TEST_ADMIN_EMAIL", ""),
             "password": "password123"
         })
         return response.json()["access_token"]
