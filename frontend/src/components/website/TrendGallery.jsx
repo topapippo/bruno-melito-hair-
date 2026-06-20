@@ -64,7 +64,7 @@ export default function TrendGallery({ setShowBooking }) {
   const [lightbox, setLightbox] = useState(null);
 
   useEffect(() => {
-    api.get('/website-trends/daily')
+    api.get('/website-trends')
       .then(r => setTrends(r.data?.length ? r.data : FALLBACK))
       .catch(() => setTrends(FALLBACK));
   }, []);
