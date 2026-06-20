@@ -13,7 +13,7 @@ import random
 import string
 import time
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://salon-cms-system.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'http://localhost:8000')
 
 # Test data - service IDs from the database
 TAGLIO_DONNA_ID = "7188fb89-2029-449a-8c09-a322104355bc"

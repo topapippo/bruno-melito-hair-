@@ -222,7 +222,29 @@ async def create_public_booking(request: Request, data: PublicBookingRequest, ba
         raise HTTPException(status_code=400, detail="Salone non configurato")
     user_id = user["id"]
 
-    # 2. Fetch all active operators and current busy ones
+    # 2. Valida che data/ora richiesta rispetti gli orari di apertura
+    _day_map = {0: "lun", 1: "mar", 2: "mer", 3: "gio", 4: "ven", 5: "sab", 6: "dom"}
+    try:
+        req_dt = datetime.strptime(data.date, "%Y-%m-%d")
+        day_key = _day_map[req_dt.weekday()]
+        config_raw = await db.website_config.find_one({"user_id": user_id}, {"_id": 0, "hours": 1})
+        hours_cfg = (config_raw or {}).get("hours", DEFAULT_WEBSITE_CONFIG["hours"])
+        if day_key not in hours_cfg:
+            raise HTTPException(status_code=400, detail=f"Il salone è chiuso il {day_key.capitalize()}.")
+        h_range = hours_cfg[day_key]  # es. "08:00 - 19:00"
+        h_open, _, h_close = h_range.partition(" - ")
+        if h_open and h_close and data.time:
+            if not (h_open.strip() <= data.time.strip() < h_close.strip()):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Orario non disponibile. Il salone è aperto dalle {h_open.strip()} alle {h_close.strip()}."
+                )
+    except HTTPException:
+        raise
+    except Exception:
+        pass  # se la config manca, non blocchiamo la prenotazione
+
+    # 3. Fetch all active operators and current busy ones
     all_operators = await db.operators.find({"user_id": user_id, "active": True}).to_list(50)
     if not all_operators:
         raise HTTPException(status_code=400, detail="Nessun operatore disponibile")
