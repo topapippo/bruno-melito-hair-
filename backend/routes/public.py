@@ -304,6 +304,151 @@ async def create_public_booking(data: PublicBookingRequest, background_tasks: Ba
 
     return {"success": True, "appointment_id": appointment_id, "wa_scheduled": wa_result}
 
+
+class MyAppointmentsRequest(BaseModel):
+    phone: str
+
+@router.post("/public/my-appointments")
+async def get_my_appointments(data: MyAppointmentsRequest):
+    if not data.phone or len(re.sub(r'\D', '', data.phone)) < 6:
+        raise HTTPException(status_code=400, detail="Numero di telefono non valido")
+
+    user = await get_public_admin_user()
+    if not user:
+        raise HTTPException(status_code=400, detail="Salone non configurato")
+    user_id = user["id"]
+
+    phone_norm = normalize_phone_wa(data.phone)
+    phone_digits = re.sub(r'\D', '', data.phone)
+
+    # Trova cliente per telefono normalizzato
+    candidates = await db.clients.find(
+        {"user_id": user_id, "phone": {"$exists": True, "$ne": ""}},
+        {"_id": 0, "id": 1, "name": 1, "phone": 1}
+    ).to_list(20000)
+
+    client_id = None
+    client_name = None
+    for c in candidates:
+        if normalize_phone_wa(c.get("phone", "")) == phone_norm:
+            client_id = c["id"]
+            client_name = c.get("name")
+            break
+
+    now = datetime.now(timezone.utc)
+    today = now.date().isoformat()
+    three_months_ago = (now - timedelta(days=90)).date().isoformat()
+
+    if client_id:
+        query = {"user_id": user_id, "client_id": client_id, "date": {"$gte": three_months_ago}}
+    else:
+        suffix = phone_digits[-9:] if len(phone_digits) >= 9 else phone_digits
+        query = {
+            "user_id": user_id,
+            "date": {"$gte": three_months_ago},
+            "client_phone": {"$regex": re.escape(suffix)}
+        }
+
+    all_apts = await db.appointments.find(query, {"_id": 0}).sort("date", 1).to_list(200)
+
+    upcoming = []
+    history = []
+    for apt in all_apts:
+        booking_code = (apt.get("booking_token") or apt.get("id") or "")[:8].upper()
+        services_raw = apt.get("services", [])
+        service_names = [s["name"] if isinstance(s, dict) else str(s) for s in services_raw]
+        item = {
+            "id": apt["id"],
+            "date": apt["date"],
+            "time": apt["time"],
+            "services": service_names,
+            "service_ids": apt.get("service_ids", []),
+            "operator_name": apt.get("operator_name"),
+            "booking_code": booking_code,
+            "total_price": apt.get("total_price", 0),
+            "status": apt.get("status", "scheduled"),
+        }
+        if apt["date"] >= today and apt.get("status") != "cancelled":
+            upcoming.append(item)
+        else:
+            history.append(item)
+
+    history.sort(key=lambda x: (x["date"], x["time"]), reverse=True)
+    return {"upcoming": upcoming, "history": history, "client_name": client_name}
+
+
+@router.delete("/public/appointments/{appt_id}")
+async def cancel_public_appointment(appt_id: str, phone: str):
+    user = await get_public_admin_user()
+    if not user:
+        raise HTTPException(status_code=400, detail="Salone non configurato")
+    user_id = user["id"]
+
+    apt = await db.appointments.find_one({"id": appt_id, "user_id": user_id}, {"_id": 0})
+    if not apt:
+        raise HTTPException(status_code=404, detail="Appuntamento non trovato")
+
+    if normalize_phone_wa(phone) != normalize_phone_wa(apt.get("client_phone", "")):
+        raise HTTPException(status_code=403, detail="Numero di telefono non corrispondente")
+
+    if apt.get("status") == "cancelled":
+        raise HTTPException(status_code=400, detail="Appuntamento già annullato")
+
+    today = datetime.now(timezone.utc).date().isoformat()
+    if apt["date"] < today:
+        raise HTTPException(status_code=400, detail="Non è possibile annullare appuntamenti passati")
+
+    await db.appointments.update_one(
+        {"id": appt_id},
+        {"$set": {"status": "cancelled", "cancelled_at": datetime.now(timezone.utc).isoformat(), "cancelled_by": "client"}}
+    )
+    return {"success": True}
+
+
+class ModifyAppointmentRequest(BaseModel):
+    phone: str
+    date: str
+    time: str
+
+@router.put("/public/appointments/{appt_id}")
+async def modify_public_appointment(appt_id: str, data: ModifyAppointmentRequest):
+    user = await get_public_admin_user()
+    if not user:
+        raise HTTPException(status_code=400, detail="Salone non configurato")
+    user_id = user["id"]
+
+    apt = await db.appointments.find_one({"id": appt_id, "user_id": user_id}, {"_id": 0})
+    if not apt:
+        raise HTTPException(status_code=404, detail="Appuntamento non trovato")
+
+    if normalize_phone_wa(data.phone) != normalize_phone_wa(apt.get("client_phone", "")):
+        raise HTTPException(status_code=403, detail="Numero di telefono non corrispondente")
+
+    if apt.get("status") == "cancelled":
+        raise HTTPException(status_code=400, detail="Appuntamento già annullato")
+
+    today = datetime.now(timezone.utc).date().isoformat()
+    if data.date < today:
+        raise HTTPException(status_code=400, detail="Non puoi spostare un appuntamento nel passato")
+
+    busy_apts = await db.appointments.find({
+        "user_id": user_id, "date": data.date, "time": data.time,
+        "status": {"$ne": "cancelled"}, "id": {"$ne": appt_id}
+    }).to_list(100)
+    busy_op_ids = {a.get("operator_id") for a in busy_apts if a.get("operator_id")}
+
+    if apt.get("operator_id") in busy_op_ids:
+        raise HTTPException(status_code=409, detail="L'operatore non è disponibile in questo orario. Scegli un altro orario.")
+
+    end_time = calculate_end_time(data.time, apt.get("total_duration", 60))
+    await db.appointments.update_one(
+        {"id": appt_id},
+        {"$set": {"date": data.date, "time": data.time, "end_time": end_time,
+                  "modified_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    return {"success": True}
+
+
 @router.get("/website/config")
 async def get_website_config(current_user: dict = Depends(get_current_user)):
     config = await db.website_config.find_one({"user_id": current_user["id"]}, {"_id": 0})
