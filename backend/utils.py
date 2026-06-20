@@ -201,23 +201,8 @@ async def send_automatic_message(phone: str, template_name: str = None, template
     return fail
 
 async def send_whatsapp(phone: str, message: str, user: dict = None) -> dict:
-    """Interfaccia semplificata per invio manuale o da pulsanti."""
-    m_lower = message.lower()
-    # Rilevamento automatico template per ottimizzare invio
-    if "appuntamento" in m_lower or "ricordiamo" in m_lower:
-        # Estrai dati base se possibile
-        nome = re.search(r'Ciao\s+([^!,\n]+)', message)
-        nome = nome.group(1).strip() if nome else "Cliente"
-        ora = re.search(r'(\d{2}:\d{2})', message)
-        ora = ora.group(1) if ora else "10:00"
-        return await send_automatic_message(phone, "promemoria_appuntamento", [nome, "domani", ora], message, user)
-    
-    if "grazie" in m_lower or "visita" in m_lower:
-        nome = re.search(r'Ciao\s+([^!,\n]+)', message)
-        nome = nome.group(1).strip() if nome else "Cliente"
-        link = "https://maps.app.goo.gl/8FdnYpnNyQcd78LQ7"
-        return await send_automatic_message(phone, "ringraziamento_visita", [nome, link], message, user)
-
+    """Invio testo libero via UltraMsg / Green API / Cloud API (in quest'ordine).
+    Per promemoria e ringraziamenti usa send_automatic_message() direttamente con il template."""
     return await send_automatic_message(phone, None, None, message, user)
 
 async def resolve_client(user_id: str, name: str, phone: str = "") -> tuple:

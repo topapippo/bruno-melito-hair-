@@ -613,9 +613,16 @@ async def send_confirmation_link(appointment_id: str, current_user: dict = Depen
 
     whatsapp_url = f"https://wa.me/{wa_phone}?text={urllib.parse.quote(message)}"
 
-    # Tenta invio via send_whatsapp (Cloud API → UltraMsg → Green API)
-    from utils import send_whatsapp
-    result = await send_whatsapp(client_phone, message, current_user)
+    # Usa il template Meta con data corretta (non "domani" hardcoded)
+    from utils import send_automatic_message
+    first_name = (apt.get('client_name') or '').split()[0] or 'cara cliente'
+    result = await send_automatic_message(
+        client_phone,
+        "promemoria_appuntamento",
+        [first_name, _fmt_date_it(apt['date']), apt['time']],
+        message,
+        current_user
+    )
     if result.get("sent"):
         return {"success": True, "sent": True, "message": message, "client_phone": client_phone}
 

@@ -23,7 +23,7 @@ async def _send_checkout_thank_you(phone: str, client_name: str, current_user: d
             f"Se ti è piaciuto, ci aiuteresti tantissimo lasciando una recensione qui:\n{review_link}\n\n"
             f"A presto!"
         )
-        await send_whatsapp(phone, message, current_user)
+        await send_automatic_message(phone, "ringraziamento_visita", [client_name, review_link], message, current_user)
     except Exception as e:
         logger.error(f"Errore invio ringraziamento checkout: {e}")
 
