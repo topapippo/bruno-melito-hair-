@@ -138,6 +138,28 @@ async def get_color_expiry_reminders(current_user: dict = Depends(get_current_us
     return output
 
 
+@router.post("/reminders/color-expiry/{client_id}/send")
+async def send_color_reminder(client_id: str, current_user: dict = Depends(get_current_user)):
+    """Invia il template richiamo_colore al cliente via Cloud API Meta."""
+    client = await db.clients.find_one({"id": client_id, "user_id": current_user["id"]}, {"_id": 0})
+    if not client:
+        raise HTTPException(status_code=404, detail="Cliente non trovato")
+    phone = client.get("phone", "")
+    if not phone:
+        raise HTTPException(status_code=400, detail="Cliente senza numero di telefono")
+    first_name = (client.get("name") or "").split()[0] or "cara cliente"
+
+    result = await send_automatic_message(phone, "richiamo_colore", [first_name], None, current_user)
+
+    if result.get("sent"):
+        await db.reminders_sent.insert_one({
+            "id": str(uuid.uuid4()), "user_id": current_user["id"],
+            "type": "color_expiry", "client_id": client_id,
+            "sent_at": datetime.now(timezone.utc).isoformat()
+        })
+    return {"sent": result.get("sent", False), "method": result.get("method"), "error": result.get("error")}
+
+
 @router.post("/reminders/color-expiry/{client_id}/mark-sent")
 async def mark_color_reminder_sent(client_id: str, current_user: dict = Depends(get_current_user)):
     await db.reminders_sent.insert_one({
@@ -845,19 +867,16 @@ async def _send_inactive_reminders_core(user: dict) -> dict:
         except Exception:
             pass
 
-        # 1) Proviamo prima a inviare un template Meta (se esiste uno approvato)
-        # Template approvati su Meta (ordine di preferenza)
-        template_candidates = [
-            "richiamo_inattivo",
-            "richiamo_colore",
-            "promemoria_appuntamento",
-            "conferma_prenotazione",
+        # 1) Template Meta con variabili corrette per ciascuno
+        days_str = str(days_ago) if days_ago is not None else "60"
+        template_send_map = [
+            ("richiamo_inattivo", [first_name, days_str]),
+            ("richiamo_colore",   [first_name]),
         ]
         sent_flag = False
-        for tmpl in template_candidates:
+        for tmpl, tmpl_vars in template_send_map:
             try:
-                vars = [first_name, str(days_ago) if days_ago is not None else ""]
-                res_t = await send_whatsapp_template(phone, tmpl, variables=vars)
+                res_t = await send_whatsapp_template(phone, tmpl, variables=tmpl_vars)
                 if res_t.get("sent"):
                     await db.reminders_sent.insert_one({
                         "id": str(uuid.uuid4()), "type": "inattivo",
