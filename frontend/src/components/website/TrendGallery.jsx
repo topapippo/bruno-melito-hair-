@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { ArrowUpRight, X } from 'lucide-react';
 import api from '../../lib/api';
 import { getMediaUrl } from '../../lib/mediaUrl';
@@ -20,15 +20,6 @@ const BENTO_PATTERN = [
   { col: 1, row: 1 },
 ];
 
-const GlassTag = ({ children }) => (
-  <span
-    className="px-3 py-1 rounded-full text-white text-[11px] font-bold tracking-wide"
-    style={{ background: 'rgba(255,255,255,0.14)', backdropFilter: 'blur(14px)', border: '1px solid rgba(255,255,255,0.22)' }}
-  >
-    {children}
-  </span>
-);
-
 const cardVariants = {
   hidden: { opacity: 0, scale: 0.94, filter: 'blur(14px)', y: 30 },
   visible: (i) => ({
@@ -39,6 +30,20 @@ const cardVariants = {
     transition: { duration: 1.0, ease: EASE, delay: 0.08 * (i % 6) },
   }),
 };
+
+const cardVariantsReduced = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.2 } },
+};
+
+const GlassTag = ({ children }) => (
+  <span
+    className="px-3 py-1 rounded-full text-white text-[11px] font-bold tracking-wide"
+    style={{ background: 'rgba(255,255,255,0.14)', backdropFilter: 'blur(14px)', border: '1px solid rgba(255,255,255,0.22)' }}
+  >
+    {children}
+  </span>
+);
 
 function isVideoItem(item) {
   if (item.file_type === 'video') return true;
@@ -58,6 +63,7 @@ function isAutoTitle(title) {
 export default function TrendGallery({ setShowBooking }) {
   const [trends, setTrends] = useState([]);
   const [lightbox, setLightbox] = useState(null);
+  const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
     api.get('/website-trends')
@@ -92,17 +98,25 @@ export default function TrendGallery({ setShowBooking }) {
           .bento-card { grid-column: span 1 !important; }
           .bento-card.span-2 { grid-column: span 2 !important; }
         }
+        @media (prefers-reduced-motion: reduce) {
+          .bento-card .bento-img,
+          .bento-card .bento-desc,
+          .bento-card .bento-cta,
+          .bento-cta-line { transition: none !important; transform: none !important; }
+          .bento-card:hover .bento-desc,
+          .bento-card:hover .bento-cta { opacity: 1; }
+        }
       `}</style>
 
       <div className="max-w-6xl mx-auto">
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
+          initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.85, ease: EASE }}
+          transition={{ duration: prefersReducedMotion ? 0.2 : 0.85, ease: EASE }}
           className="mb-14"
         >
-          <p className="text-xs font-bold tracking-[0.4em] uppercase mb-5" style={{ color: 'rgba(255,255,255,0.3)' }}>
+          <p className="text-xs font-bold tracking-[0.4em] uppercase mb-5" style={{ color: 'rgba(255,255,255,0.65)' }}>
             VOGUE 2026 — EDITORIAL LOOK BOOK &nbsp;·&nbsp; {format(new Date(), "d MMMM yyyy", { locale: it }).toUpperCase()}
           </p>
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
@@ -116,7 +130,7 @@ export default function TrendGallery({ setShowBooking }) {
                 dell&apos;Estate
               </span>
             </h2>
-            <p style={{ color: 'rgba(255,255,255,0.4)', maxWidth: '22rem', fontSize: '0.9rem', lineHeight: 1.75 }}>
+            <p style={{ color: 'rgba(255,255,255,0.65)', maxWidth: '22rem', fontSize: '0.9rem', lineHeight: 1.75 }}>
               Tendenze selezionate da <strong className="text-white">Bruno Melito</strong> — prenotale subito per portarle con te.
             </p>
           </div>
@@ -145,12 +159,12 @@ export default function TrendGallery({ setShowBooking }) {
               <motion.article
                 key={t.id}
                 custom={i}
-                variants={cardVariants}
+                variants={prefersReducedMotion ? cardVariantsReduced : cardVariants}
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, amount: 0.15 }}
                 onClick={() => !isVideo && setLightbox({ img: mediaSrc, title: hasTitle ? t.title : '', desc: t.desc })}
-                whileHover={{
+                whileHover={prefersReducedMotion ? undefined : {
                   boxShadow: `0 0 70px ${glow}55, 0 0 140px ${glow}25, 0 12px 36px rgba(0,0,0,0.65)`,
                   borderColor: `${glow}80`,
                   y: -4,
@@ -174,6 +188,7 @@ export default function TrendGallery({ setShowBooking }) {
                   <img
                     src={mediaSrc}
                     alt={hasTitle ? t.title : ''}
+                    loading="lazy"
                     className="bento-img absolute inset-0 w-full h-full object-cover"
                   />
                 )}
@@ -228,7 +243,8 @@ export default function TrendGallery({ setShowBooking }) {
                     {setShowBooking && (
                       <button
                         onClick={(e) => { e.stopPropagation(); setShowBooking(true); }}
-                        className="bento-cta mt-4 inline-flex items-center gap-3 group/cta"
+                        aria-label="Prenota questo look"
+                        className="bento-cta mt-4 inline-flex items-center gap-3 group/cta min-h-[44px]"
                         style={{ color: 'white' }}
                       >
                         <span
@@ -255,26 +271,26 @@ export default function TrendGallery({ setShowBooking }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
+            transition={{ duration: prefersReducedMotion ? 0.1 : 0.25 }}
             onClick={() => setLightbox(null)}
             className="fixed inset-0 z-[9999] flex items-center justify-center p-4 cursor-zoom-out"
             style={{ background: 'rgba(0,0,0,0.94)', backdropFilter: 'blur(8px)' }}
           >
             <button
               onClick={(e) => { e.stopPropagation(); setLightbox(null); }}
-              className="absolute top-4 right-4 z-10 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
-              aria-label="Chiudi"
+              aria-label="Chiudi immagine"
+              className="absolute top-4 right-4 z-10 w-11 h-11 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
             >
               <X className="w-6 h-6" />
             </button>
             <motion.img
               key={lightbox.img}
               src={lightbox.img}
-              alt={lightbox.title || ''}
-              initial={{ scale: 0.92, opacity: 0, filter: 'blur(12px)' }}
+              alt={lightbox.title || 'Immagine look'}
+              initial={{ scale: prefersReducedMotion ? 1 : 0.92, opacity: 0, filter: prefersReducedMotion ? 'none' : 'blur(12px)' }}
               animate={{ scale: 1, opacity: 1, filter: 'blur(0px)' }}
-              exit={{ scale: 0.92, opacity: 0 }}
-              transition={{ duration: 0.45, ease: EASE }}
+              exit={{ scale: prefersReducedMotion ? 1 : 0.92, opacity: 0 }}
+              transition={{ duration: prefersReducedMotion ? 0.1 : 0.45, ease: EASE }}
               onClick={(e) => e.stopPropagation()}
               className="max-w-[95vw] max-h-[90vh] object-contain rounded-2xl shadow-2xl"
             />
