@@ -214,7 +214,8 @@ async def get_website_data(response: Response):
     return data
 
 @router.post("/public/booking")
-async def create_public_booking(data: PublicBookingRequest, background_tasks: BackgroundTasks):
+@limiter.limit("10/minute")
+async def create_public_booking(request: Request, data: PublicBookingRequest, background_tasks: BackgroundTasks):
     # 1. Get the admin user
     user = await get_public_admin_user()
     if not user:
@@ -309,7 +310,8 @@ class MyAppointmentsRequest(BaseModel):
     phone: str
 
 @router.post("/public/my-appointments")
-async def get_my_appointments(data: MyAppointmentsRequest):
+@limiter.limit("20/minute")
+async def get_my_appointments(request: Request, data: MyAppointmentsRequest):
     if not data.phone or len(re.sub(r'\D', '', data.phone)) < 6:
         raise HTTPException(status_code=400, detail="Numero di telefono non valido")
 
@@ -378,7 +380,8 @@ async def get_my_appointments(data: MyAppointmentsRequest):
 
 
 @router.delete("/public/appointments/{appt_id}")
-async def cancel_public_appointment(appt_id: str, phone: str):
+@limiter.limit("10/minute")
+async def cancel_public_appointment(request: Request, appt_id: str, phone: str, background_tasks: BackgroundTasks):
     user = await get_public_admin_user()
     if not user:
         raise HTTPException(status_code=400, detail="Salone non configurato")
@@ -402,6 +405,19 @@ async def cancel_public_appointment(appt_id: str, phone: str):
         {"id": appt_id},
         {"$set": {"status": "cancelled", "cancelled_at": datetime.now(timezone.utc).isoformat(), "cancelled_by": "client"}}
     )
+
+    try:
+        d_p = apt["date"].split('-')
+        date_it = f"{d_p[2]}/{d_p[1]}/{d_p[0]}" if len(d_p) == 3 else apt["date"]
+        service_names = ", ".join(s["name"] if isinstance(s, dict) else str(s) for s in apt.get("services", []))
+        msg = (f"⚠️ ANNULLAMENTO ONLINE\n"
+               f"👤 Cliente: {apt.get('client_name', 'N/D')}\n"
+               f"📅 Data: {date_it}  ⏰ {apt.get('time', '')}\n"
+               f"✂️ {service_names}")
+        background_tasks.add_task(send_whatsapp, "3397833526", msg, user)
+    except Exception:
+        pass
+
     return {"success": True}
 
 
@@ -411,7 +427,8 @@ class ModifyAppointmentRequest(BaseModel):
     time: str
 
 @router.put("/public/appointments/{appt_id}")
-async def modify_public_appointment(appt_id: str, data: ModifyAppointmentRequest):
+@limiter.limit("10/minute")
+async def modify_public_appointment(request: Request, appt_id: str, data: ModifyAppointmentRequest):
     user = await get_public_admin_user()
     if not user:
         raise HTTPException(status_code=400, detail="Salone non configurato")
