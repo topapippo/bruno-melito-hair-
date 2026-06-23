@@ -30,10 +30,11 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token scaduto o non valido: pulisci e vai al login
       localStorage.removeItem('token');
-      // Evita loop infiniti se siamo già al login
-      if (!window.location.pathname.includes('/login')) {
+      // Non redirigere su pagine pubbliche (sito, booking) — evita loop su token scaduto
+      const path = window.location.pathname;
+      const isPublic = path.startsWith('/sito') || path.startsWith('/booking');
+      if (!isPublic && !path.includes('/login')) {
         window.location.href = '/login?session=expired';
       }
     }

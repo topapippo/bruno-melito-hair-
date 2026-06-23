@@ -66,7 +66,7 @@ export default function MyAppointmentsModal({ onClose, onRebook }) {
 
   return (
     <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-start justify-center p-4 pt-20 overflow-y-auto" onClick={onClose}>
-      <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl" onClick={e => e.stopPropagation()} data-testid="my-appointments-modal">
+      <div className="bg-white text-gray-900 rounded-3xl w-full max-w-lg shadow-2xl" onClick={e => e.stopPropagation()} data-testid="my-appointments-modal">
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-black text-[#1e293b]">I Miei Appuntamenti</h2>
