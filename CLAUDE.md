@@ -8,19 +8,26 @@ Gestionale salone + sito web pubblico. Stack: React (frontend) + FastAPI (backen
 ### Dopo ogni implementazione backend (file `.py`):
 1. Esegui `/security` sui file modificati.
 2. Esegui `/deploy-check` per verificare console.log e debug code.
-3. Correggi eventuali problemi trovati PRIMA del commit.
+3. Esegui `/perf` per query pericolose e N+1.
+4. Esegui `/db-audit` per verifica user_id filter su ogni endpoint.
+5. Correggi eventuali problemi trovati PRIMA del commit.
 
 ### Dopo ogni implementazione frontend (file `.jsx`, `.tsx`, `.css`):
-1. Esegui `/ui-check` per brand consistency e accessibilità.
-2. Esegui `/deploy-check` per import inutilizzati e debug code.
-3. Correggi problemi ❌ prima del commit; segnala ⚠️ all'utente.
+1. Esegui `/ui-check` per brand consistency.
+2. Esegui `/fix-purple` per rimuovere viola residuo.
+3. Esegui `/a11y` per accessibilità (bottoni icona, input, contrasto).
+4. Esegui `/deploy-check` per import inutilizzati e debug code.
+5. Correggi problemi ❌ prima del commit; segnala ⚠️ all'utente.
 
 ### Prima di ogni commit/push:
 - Grep `console.log` in tutti i file staged: `git diff --cached --name-only | xargs grep -l console.log 2>/dev/null`
 - Se trovato: rimuovere e ri-committare.
 
+### Inizio sessione:
+- Esegui `/status` per vedere file modificati, ultimi commit e TODOs aperti.
+
 ### Dopo ogni sessione:
-- Aggiorna `memory/project_changelog.md` con le modifiche della sessione.
+- Esegui `/changelog-gen` per aggiornare `memory/project_changelog.md` automaticamente.
 
 ## Tech stack — dettagli critici
 
@@ -78,6 +85,14 @@ Queste regole si applicano SEMPRE, senza eccezioni:
 - `/security` — audit MongoDB injection, auth, XSS, secrets
 - `/review` — code review logico e performance
 - `/ui-check` — brand consistency, accessibilità, responsive
+- `/perf` — audit performance: to_list, N+1, query senza indice
+- `/db-audit` — verifica user_id filter + auth su ogni endpoint
+- `/api-map` — mappa tutti gli endpoint con metodo, auth, collection
+- `/fix-purple` — rimuove viola residuo dal gestionale
+- `/a11y` — audit accessibilità: aria-label, contrasto, touch target
+- `/status` — git status + ultimi commit + TODOs in una sola lettura
+- `/scope <file>` — focalizza contesto su un file/modulo specifico
+- `/changelog-gen` — genera entry project_changelog.md dall'ultimo commit
 - `/terse` — attiva modalità ultra-compatta (risposta max 3 righe)
 - `/compact-now` — ricorda di digitare /compact per comprimere la chat
 - `/ui-ux-pro-max` — design system avanzato (skill installata in `.claude/skills/`)
