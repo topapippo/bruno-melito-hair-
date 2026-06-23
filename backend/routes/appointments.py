@@ -102,12 +102,14 @@ async def checkout_appointment(appointment_id: str, data: dict, background_tasks
 
     card_id = data.get("card_id")
     card_result = None
+    card_type_used = None  # traccia il tipo card per calcolo total_paid
 
     # Deduce dalla card/abbonamento se specificato
     if card_id:
         card = await db.cards.find_one({"id": card_id, "user_id": current_user["id"]}, {"_id": 0})
         if card and card.get("active"):
-            amount_to_deduct = float(data.get("total_paid", 0)) if card.get("card_type") != "subscription" else 0.0
+            card_type_used = card.get("card_type")
+            amount_to_deduct = float(data.get("total_paid", 0)) if card_type_used != "subscription" else 0.0
             transaction = {
                 "id": str(uuid.uuid4()),
                 "amount": amount_to_deduct,
@@ -145,11 +147,19 @@ async def checkout_appointment(appointment_id: str, data: dict, background_tasks
                     "used_services": used,
                 }
 
+    # Per abbonamento: il frontend manda total_paid=0 ma registriamo il valore del
+    # servizio negli incassi (l'incasso monetario è stato anticipato alla vendita abb.)
+    if card_type_used == "subscription":
+        total_paid_amount = float(apt.get("total_price", 0))
+    else:
+        total_paid_amount = float(data.get("total_paid", apt.get("total_price", 0)))
+
+    payment_method = data.get("payment_method", "cash")
     payment_doc = {
         "id": str(uuid.uuid4()), "user_id": current_user["id"], "appointment_id": appointment_id,
         "client_id": apt["client_id"], "client_name": apt["client_name"],
-        "total_paid": data.get("total_paid", apt["total_price"]),
-        "payment_method": data.get("payment_method", "cash"),
+        "total_paid": total_paid_amount,
+        "payment_method": payment_method,
         "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "services": apt["services"],
@@ -159,7 +169,7 @@ async def checkout_appointment(appointment_id: str, data: dict, background_tasks
         "note": data.get("note"),
     }
     await db.payments.insert_one(payment_doc)
-    await db.appointments.update_one({"id": appointment_id}, {"$set": {"status": "completed", "paid": True}})
+    await db.appointments.update_one({"id": appointment_id}, {"$set": {"status": "completed", "paid": True, "payment_method": payment_method}})
     phone = apt.get("client_phone")
     if not phone and apt.get("client_id"):
         cl = await db.clients.find_one({"id": apt["client_id"]})
