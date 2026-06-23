@@ -59,7 +59,7 @@ async def update_card(card_id: str, data: PrepaidCardUpdate, current_user: dict 
     result = await db.cards.update_one({"id": card_id, "user_id": current_user["id"]}, {"$set": update_data})
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Card non trovata")
-    return await db.cards.find_one({"id": card_id}, {"_id": 0, "user_id": 0})
+    return await db.cards.find_one({"id": card_id, "user_id": current_user["id"]}, {"_id": 0, "user_id": 0})
 
 
 @router.delete("/cards/{card_id}")

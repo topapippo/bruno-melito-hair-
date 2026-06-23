@@ -16,9 +16,7 @@ if ('serviceWorker' in navigator) {
       }
       // Registra il nuovo SW
       const reg = await navigator.serviceWorker.register('/sw.js');
-      console.log('SW registrato:', reg.scope);
     } catch (e) {
-      console.log('SW errore:', e);
     }
   });
 }

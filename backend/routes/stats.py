@@ -318,7 +318,7 @@ async def get_client_stats(start_date: str, end_date: str, current_user: dict = 
     appointments = await db.appointments.find(
         {"user_id": uid, "date": {"$gte": start_date, "$lte": end_date}, "status": "completed"},
         {"_id": 0, "client_id": 1, "client_name": 1, "total_price": 1, "date": 1}
-    ).to_list(50000)
+    ).to_list(5000)
 
     client_visits = {}
     for apt in appointments:
@@ -503,7 +503,7 @@ async def get_top_clients(limit: int = 5, current_user: dict = Depends(get_curre
     payments = await db.payments.find(
         {"user_id": current_user["id"], "client_id": {"$exists": True}},
         {"_id": 0, "client_id": 1, "client_name": 1, "total_paid": 1}
-    ).to_list(50000)
+    ).to_list(10000)
     totals = {}
     for p in payments:
         cid = p.get("client_id", "")

@@ -172,7 +172,7 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, backgrou
         "note": data.note,
     }
     await db.payments.insert_one(payment_doc)
-    await db.appointments.update_one({"id": appointment_id}, {"$set": {"status": "completed", "paid": True, "payment_method": payment_method}})
+    await db.appointments.update_one({"id": appointment_id, "user_id": current_user["id"]}, {"$set": {"status": "completed", "paid": True, "payment_method": payment_method}})
     phone = apt.get("client_phone")
     if not phone and apt.get("client_id"):
         cl = await db.clients.find_one({"id": apt["client_id"]})
@@ -204,7 +204,7 @@ async def update_appointment(appointment_id: str, data: dict, current_user: dict
         update["total_duration"] = sum(s["duration"] for s in services)
         update["total_price"] = sum(s["price"] for s in services)
     await db.appointments.update_one({"id": appointment_id, "user_id": current_user["id"]}, {"$set": update})
-    res = await db.appointments.find_one({"id": appointment_id}, {"_id": 0})
+    res = await db.appointments.find_one({"id": appointment_id, "user_id": current_user["id"]}, {"_id": 0})
     return AppointmentResponse(**res)
 
 @router.delete("/appointments/{appointment_id}")
