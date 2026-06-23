@@ -88,6 +88,8 @@ export default function PrepaidCardsPage() {
     card_type: 'prepaid',
     name: '',
     total_value: '',
+    amount_paid: '',
+    payment_method: 'cash',
     total_services: '',
     valid_until: '',
     notes: ''
@@ -125,17 +127,26 @@ export default function PrepaidCardsPage() {
 
     setSaving(true);
     try {
-      const response = await api.post(`${API}/cards`, {
-        ...formData,
+      const response = await api.post(`${API}/cards/sell-direct`, {
+        client_id: formData.client_id,
+        card_type: formData.card_type,
+        name: formData.name,
         total_value: parseFloat(formData.total_value),
         total_services: formData.total_services ? parseInt(formData.total_services) : null,
-        valid_until: formData.valid_until || null
+        valid_until: formData.valid_until || null,
+        notes: formData.notes || '',
+        amount_paid: parseFloat(formData.amount_paid) || parseFloat(formData.total_value),
+        payment_method: formData.payment_method,
       });
-      toast.success('Card creata con successo!');
+      toast.success(`Card creata! Incasso €${(parseFloat(formData.amount_paid) || parseFloat(formData.total_value)).toFixed(2)} registrato.`);
       setDialogOpen(false);
-      // Save card info to show "Go to checkout" dialog
-      const clientName = clients.find(c => c.id === formData.client_id)?.name || 'Cliente';
-      setNewlyCreatedCard({ ...response.data, client_name: clientName });
+      setNewlyCreatedCard({
+        client_name: response.data.client_name,
+        name: response.data.card_name,
+        card_type: formData.card_type,
+        total_value: response.data.total_value,
+        total_services: formData.total_services ? parseInt(formData.total_services) : null,
+      });
       setGoToCheckoutDialog(true);
       resetForm();
       fetchData();
@@ -195,6 +206,8 @@ export default function PrepaidCardsPage() {
       card_type: 'prepaid',
       name: '',
       total_value: '',
+      amount_paid: '',
+      payment_method: 'cash',
       total_services: '',
       valid_until: '',
       notes: ''
@@ -689,8 +702,8 @@ export default function PrepaidCardsPage() {
                     step="0.01"
                     min="0"
                     value={formData.total_value}
-                    onChange={(e) => setFormData({ ...formData, total_value: e.target.value })}
-                    placeholder="es. 200"
+                    onChange={(e) => setFormData({ ...formData, total_value: e.target.value, amount_paid: e.target.value })}
+                    placeholder="es. 65"
                     className="bg-[#FAF7F2]"
                     data-testid="total-value-input"
                   />
@@ -707,6 +720,36 @@ export default function PrepaidCardsPage() {
                     className="bg-[#FAF7F2]"
                     data-testid="total-services-input"
                   />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Importo Incassato (€) *</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.amount_paid}
+                    onChange={(e) => setFormData({ ...formData, amount_paid: e.target.value })}
+                    placeholder="es. 65"
+                    className="bg-[#FAF7F2]"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Metodo Pagamento</Label>
+                  <Select
+                    value={formData.payment_method}
+                    onValueChange={(val) => setFormData({ ...formData, payment_method: val })}
+                  >
+                    <SelectTrigger className="bg-[#FAF7F2]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">Contanti</SelectItem>
+                      <SelectItem value="pos">POS</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
