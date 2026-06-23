@@ -58,8 +58,14 @@ const navGroups = [
 ];
 
 const NEW_DEFAULTS = {
-  primary: '#A855F7', sidebar_bg: '#12053A', sidebar_text: '#FAF5FF',
-  accent: '#FBBF24', content_bg: '#FAF5FF', content_text: '#12053A',
+  primary:      '#C8617A',
+  sidebar_bg:   '#1A0A10',
+  sidebar_text: '#FAF0F2',
+  accent:       '#D4AF7A',
+  content_bg:   '#FDF8F5',
+  content_text: '#2D1B14',
+  font_display: 'Playfair Display',
+  font_body:    'DM Sans',
 };
 
 export default function Layout({ children }) {
@@ -79,10 +85,12 @@ export default function Layout({ children }) {
   const [adminTheme, setAdminTheme] = useState(() => {
     try {
       const stored = JSON.parse(localStorage.getItem('adminTheme'));
-      const OLD = ['#C8617A', '#E8477C'];
-      if (stored && OLD.includes(stored.primary) && stored.sidebar_bg === '#FAF7F2') {
-        localStorage.removeItem('adminTheme'); return NEW_DEFAULTS;
-      }
+      // Migra da qualsiasi palette precedente (vecchio rose o vecchio viola) ai nuovi brand colors
+      const isOldTheme = stored && (
+        (stored.primary === '#A855F7') ||
+        (['#C8617A', '#E8477C'].includes(stored.primary) && stored.sidebar_bg === '#FAF7F2')
+      );
+      if (isOldTheme) { localStorage.removeItem('adminTheme'); return NEW_DEFAULTS; }
       return stored || NEW_DEFAULTS;
     } catch { return NEW_DEFAULTS; }
   });
@@ -145,10 +153,15 @@ export default function Layout({ children }) {
     api.get(`${API}/settings`).then(res => {
       const t = res.data?.admin_theme;
       if (t) {
-        const merged = { ...themeRef.current, ...t };
+        const isOldDB = t.primary === '#A855F7' ||
+          (['#C8617A', '#E8477C'].includes(t.primary) && t.sidebar_bg === '#FAF7F2');
+        const merged = isOldDB ? { ...NEW_DEFAULTS } : { ...themeRef.current, ...t };
         setAdminTheme(merged);
         themeRef.current = merged;
         localStorage.setItem('adminTheme', JSON.stringify(merged));
+        if (isOldDB) {
+          api.put(`${API}/settings`, { admin_theme: NEW_DEFAULTS }).catch(() => {});
+        }
       }
     }).catch(() => {});
 
@@ -208,9 +221,15 @@ export default function Layout({ children }) {
     const mini = !mobile && collapsed;
     return (
       <div
-        className="flex flex-col h-full overflow-hidden"
-        style={{ backgroundColor: t.sidebar_bg, fontFamily: `${t.font_body || 'Poppins'}, sans-serif` }}
+        className="flex flex-col h-full overflow-hidden relative"
+        style={{ backgroundColor: t.sidebar_bg, fontFamily: `${t.font_body || 'DM Sans'}, sans-serif` }}
       >
+        {/* Ambient glow top-right */}
+        <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full pointer-events-none" style={{ background: `radial-gradient(circle, ${t.primary}40 0%, transparent 65%)`, filter: 'blur(28px)' }} />
+        {/* Accent glow bottom-left */}
+        <div className="absolute -bottom-20 -left-20 w-52 h-52 rounded-full pointer-events-none" style={{ background: `radial-gradient(circle, ${t.accent || '#D4AF7A'}28 0%, transparent 65%)`, filter: 'blur(22px)' }} />
+        {/* Top shimmer line */}
+        <div className="absolute top-0 left-0 right-0 h-[2px] pointer-events-none" style={{ background: `linear-gradient(90deg, transparent, ${t.primary}CC, transparent)` }} />
         {/* ── Header / Logo ── */}
         <div
           className={`${mini ? 'p-3 justify-center' : 'p-4 justify-between'} flex items-center flex-shrink-0`}
@@ -305,9 +324,9 @@ export default function Layout({ children }) {
                       style={{ color: hasActive ? t.primary : t.sidebar_text + '55' }}
                       data-no-anim
                     >
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-2">
                         <span className="text-sm leading-none">{group.emoji}</span>
-                        <span className="text-[10px] font-black uppercase tracking-widest">{group.label}</span>
+                        <span className="text-[9px] font-black uppercase tracking-[0.2em]" style={{ fontFamily: `'DM Sans', sans-serif`, letterSpacing: '0.18em' }}>{group.label}</span>
                       </div>
                       <ChevronDown
                         className="w-3 h-3 transition-transform duration-200"
@@ -391,7 +410,7 @@ export default function Layout({ children }) {
         '--admin-content-text': t.content_text || '#2D1B14',
         '--admin-font-display': `'${t.font_display || 'Cormorant Garamond'}'`,
         '--admin-font-body': `'${t.font_body || 'Poppins'}'`,
-        fontFamily: `'${t.font_body || 'Poppins'}', sans-serif`,
+        fontFamily: `'${t.font_body || 'DM Sans'}', sans-serif`,
         backgroundColor: t.content_bg || '#FCFCFD',
         color: t.content_text || '#2D1B14',
       }}
@@ -462,8 +481,16 @@ export default function Layout({ children }) {
       </header>
 
       {/* Main Content */}
-      <main className={`min-h-screen pt-[60px] pb-16 md:pt-0 md:pb-0 transition-all duration-300 ${collapsed ? 'md:ml-14' : 'md:ml-60'}`}>
-        <div key={location.pathname} className="p-3 md:p-5 lg:p-7 admin-page-in">
+      <main className={`min-h-screen pt-[60px] pb-16 md:pt-0 md:pb-0 transition-all duration-300 relative ${collapsed ? 'md:ml-14' : 'md:ml-60'}`}>
+        {/* Ambient mesh gradient — sottile, non distrae */}
+        <div className="fixed inset-0 pointer-events-none z-0" style={{
+          background: `
+            radial-gradient(ellipse at 12% 12%, ${t.primary}09 0%, transparent 50%),
+            radial-gradient(ellipse at 88% 88%, ${t.accent || t.primary}07 0%, transparent 45%),
+            radial-gradient(ellipse at 65% 8%,  ${t.primary}05 0%, transparent 35%)
+          `,
+        }} />
+        <div key={location.pathname} className="p-3 md:p-5 lg:p-7 admin-page-in relative z-10">
           {children}
         </div>
       </main>

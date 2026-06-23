@@ -83,12 +83,22 @@ a, button { transition: all 0.2s ease; }
   100% { background-position: 200% center; }
 }
 .shimmer-text {
-  background: linear-gradient(90deg, #D03367 0%, #2EC4B6 40%, #E8477C 60%, #D03367 100%);
+  background: linear-gradient(90deg, #C8617A 0%, #D4AF7A 35%, #C8617A 65%, #D4AF7A 100%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  animation: shimmer 4s linear infinite;
+  animation: shimmer 5s linear infinite;
+}
+
+/* Variante brand per titoli admin */
+.shimmer-text-admin {
+  background: linear-gradient(90deg, var(--admin-primary, #C8617A) 0%, var(--admin-accent, #D4AF7A) 40%, var(--admin-primary, #C8617A) 70%, var(--admin-accent, #D4AF7A) 100%);
+  background-size: 250% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 6s linear infinite;
 }
 
 @keyframes float {
@@ -181,22 +191,53 @@ a, button { transition: all 0.2s ease; }
 
 
 /* ═══════════════════════════════════════════════════════════════════
+   Tipografia Admin — Playfair Display per titoli di pagina
+   ═══════════════════════════════════════════════════════════════════ */
+
+.admin-heading {
+  font-family: 'Playfair Display', 'Cormorant Garamond', Georgia, serif;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  background: linear-gradient(135deg, var(--admin-primary, #C8617A) 0%, color-mix(in srgb, var(--admin-primary, #C8617A) 60%, var(--admin-accent, #D4AF7A)) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Orologio sidebar — più elegante */
+.sidebar-clock {
+  font-family: 'Playfair Display', 'Cormorant Garamond', Georgia, serif !important;
+  letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Badge conteggi */
+.admin-badge {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 700;
+  font-size: 0.65rem;
+  line-height: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
    Animazioni Allegre — Admin Panel
    ═══════════════════════════════════════════════════════════════════ */
 
-/* Entrata card con rimbalzo */
-@keyframes bounceIn {
-  0%   { opacity: 0; transform: scale(0.92) translateY(12px); }
-  60%  { opacity: 1; transform: scale(1.03) translateY(-3px); }
-  100% { transform: scale(1) translateY(0); }
+/* Entrata pagina — elegante lift + fade */
+@keyframes pageItemIn {
+  0%   { opacity: 0; transform: translateY(18px) scale(0.97); filter: blur(2px); }
+  55%  { opacity: 1; filter: blur(0px); }
+  80%  { transform: translateY(-2px) scale(1.005); }
+  100% { transform: translateY(0) scale(1); }
 }
-.admin-page-in > * { animation: bounceIn 0.35s cubic-bezier(.34,1.56,.64,1) both; }
+.admin-page-in > * { animation: pageItemIn 0.45s cubic-bezier(.22,1,.36,1) both; }
 .admin-page-in > *:nth-child(1) { animation-delay: 0.00s; }
-.admin-page-in > *:nth-child(2) { animation-delay: 0.06s; }
-.admin-page-in > *:nth-child(3) { animation-delay: 0.12s; }
-.admin-page-in > *:nth-child(4) { animation-delay: 0.18s; }
-.admin-page-in > *:nth-child(5) { animation-delay: 0.24s; }
-.admin-page-in > *:nth-child(6) { animation-delay: 0.30s; }
+.admin-page-in > *:nth-child(2) { animation-delay: 0.07s; }
+.admin-page-in > *:nth-child(3) { animation-delay: 0.14s; }
+.admin-page-in > *:nth-child(4) { animation-delay: 0.21s; }
+.admin-page-in > *:nth-child(5) { animation-delay: 0.28s; }
+.admin-page-in > *:nth-child(6) { animation-delay: 0.35s; }
+.admin-page-in > *:nth-child(7) { animation-delay: 0.40s; }
 
 /* Glow pulsante sui bottoni primari */
 @keyframes glowPulse {
