@@ -28,7 +28,7 @@ services:
     name: bruno-melito-hair-frontend
     runtime: static
     rootDir: frontend
-    buildCommand: yarn install && DISABLE_ESLINT_PLUGIN=true yarn build
+    buildCommand: NODE_OPTIONS=--max-old-space-size=460 yarn install && DISABLE_ESLINT_PLUGIN=true NODE_OPTIONS=--max-old-space-size=460 yarn build
     staticPublishPath: build
     headers:
       - path: /*

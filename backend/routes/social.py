@@ -9,7 +9,6 @@ import random
 import hashlib
 import base64
 import io
-from PIL import Image
 from datetime import datetime, timezone, date
 
 router = APIRouter()
@@ -472,6 +471,7 @@ async def upload_image(file: UploadFile = File(...), current_user: dict = Depend
     if not IMGBB_API_KEY:
         raise HTTPException(status_code=500, detail="ImgBB API Key non configurata sul server (Render)")
     try:
+        from PIL import Image
         contents = await file.read()
         img = Image.open(io.BytesIO(contents))
         width, height = img.size

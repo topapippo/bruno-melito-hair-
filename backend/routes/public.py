@@ -349,7 +349,7 @@ async def get_my_appointments(request: Request, data: MyAppointmentsRequest):
     candidates = await db.clients.find(
         {"user_id": user_id, "phone": {"$exists": True, "$ne": ""}},
         {"_id": 0, "id": 1, "name": 1, "phone": 1}
-    ).to_list(20000)
+    ).to_list(5000)
 
     client_id = None
     client_name = None

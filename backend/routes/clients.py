@@ -138,12 +138,14 @@ async def get_dormant_clients(days: int = 30, current_user: dict = Depends(get_c
     cutoff = (ddate.today() - timedelta(days=days)).isoformat()
     today_str = ddate.today().isoformat()
 
+    # Filtro ultimi 3 anni per evitare OOM — per un salone ~25k appuntamenti al massimo
+    three_years_ago = (ddate.today() - timedelta(days=1095)).isoformat()
     all_clients, all_appointments, services_catalog = await asyncio.gather(
-        db.clients.find({"user_id": uid}, {"_id": 0, "id": 1, "name": 1, "phone": 1, "hair_notes": 1}).to_list(10000),
+        db.clients.find({"user_id": uid}, {"_id": 0, "id": 1, "name": 1, "phone": 1, "hair_notes": 1}).to_list(5000),
         db.appointments.find(
-            {"user_id": uid, "status": {"$ne": "cancelled"}},
+            {"user_id": uid, "status": {"$ne": "cancelled"}, "date": {"$gte": three_years_ago}},
             {"_id": 0, "client_id": 1, "client_name": 1, "date": 1, "services": 1, "status": 1}
-        ).to_list(200000),
+        ).to_list(30000),
         db.services.find({"user_id": uid}, {"_id": 0, "name": 1, "category": 1}).to_list(500),
     )
 
@@ -318,7 +320,7 @@ async def merge_duplicate_clients(current_user: dict = Depends(get_current_user)
     e più vecchio, sposta lì appuntamenti/pagamenti/promo/richiami ed elimina gli altri.
     Non tocca persone con nomi diversi (familiari con stesso telefono restano separati)."""
     uid = current_user["id"]
-    all_clients = await db.clients.find({"user_id": uid}, {"_id": 0}).to_list(20000)
+    all_clients = await db.clients.find({"user_id": uid}, {"_id": 0}).to_list(5000)
 
     groups: dict = {}
     for c in all_clients:
