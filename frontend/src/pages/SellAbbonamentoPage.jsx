@@ -132,7 +132,7 @@ export default function SellAbbonamentoPage() {
         <PageHeader
           title="Vendi Abbonamento"
           subtitle="Crea e vendi un abbonamento al cliente"
-          icon={<CreditCard className="w-6 h-6" />}
+          icon={CreditCard}
         />
 
         {/* Step indicator */}
