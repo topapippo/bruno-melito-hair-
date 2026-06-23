@@ -403,3 +403,4 @@ class CheckoutData(BaseModel):
     loyalty_points_used: Optional[int] = 0
     promo_id: Optional[str] = None
     promo_free_service: Optional[str] = None
+    note: Optional[str] = None

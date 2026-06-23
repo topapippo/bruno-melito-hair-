@@ -152,6 +152,7 @@ async def _create_card_and_payment(
     await db.cards.insert_one(card_doc)
 
     payment_id = str(uuid.uuid4())
+    payment_type = "subscription_sale" if card_type == "subscription" else "prepaid_sale"
     await db.payments.insert_one({
         "id": payment_id, "user_id": user_id,
         "appointment_id": None,
@@ -160,6 +161,7 @@ async def _create_card_and_payment(
         "original_amount": total_value,
         "discount_type": None, "discount_value": 0,
         "total_paid": amount_paid, "payment_method": payment_method,
+        "payment_type": payment_type,
         "card_sale_id": card_id,
         "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         "created_at": datetime.now(timezone.utc).isoformat()

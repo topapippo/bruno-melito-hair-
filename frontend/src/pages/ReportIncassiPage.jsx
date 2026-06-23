@@ -178,10 +178,12 @@ export default function ReportIncassiPage() {
       setExpenses(expensesData);
 
       const total = paymentsData.reduce((sum, p) => sum + p.total_paid, 0);
-      const cash = paymentsData.filter(p => p.payment_method === 'cash' && !p.card_sale_id).reduce((sum, p) => sum + p.total_paid, 0);
-      const pos = paymentsData.filter(p => p.payment_method === 'pos' && !p.card_sale_id).reduce((sum, p) => sum + p.total_paid, 0);
-      const sospeso = paymentsData.filter(p => p.payment_method === 'sospeso').reduce((sum, p) => sum + p.total_paid, 0);
-      const prepaid = paymentsData.filter(p => p.card_sale_id).reduce((sum, p) => sum + p.total_paid, 0);
+      // payment_type (nuovi record) + card_sale_id (vecchi) per backwards compat
+      const isCardSale = p => p.payment_type === 'subscription_sale' || p.payment_type === 'prepaid_sale' || (!p.payment_type && !!p.card_sale_id);
+      const cash = paymentsData.filter(p => p.payment_type === 'cash' || (!p.payment_type && p.payment_method === 'cash' && !p.card_sale_id)).reduce((sum, p) => sum + p.total_paid, 0);
+      const pos = paymentsData.filter(p => p.payment_type === 'pos' || (!p.payment_type && p.payment_method === 'pos' && !p.card_sale_id)).reduce((sum, p) => sum + p.total_paid, 0);
+      const sospeso = paymentsData.filter(p => p.payment_type === 'sospeso' || (!p.payment_type && p.payment_method === 'sospeso')).reduce((sum, p) => sum + p.total_paid, 0);
+      const prepaid = paymentsData.filter(isCardSale).reduce((sum, p) => sum + p.total_paid, 0);
       const totalExpenses = expensesData.reduce((sum, e) => sum + e.amount, 0);
 
       setStats({ total, count: paymentsData.length, cash, pos, sospeso, prepaid, totalExpenses, net: total - totalExpenses });
@@ -513,7 +515,7 @@ export default function ReportIncassiPage() {
                             <div className="text-right shrink-0">
                               <p className="text-xl font-black text-green-600">+€{entry.total_paid.toFixed(2)}</p>
                               <p className="text-xs text-[#7C5C4A] capitalize">
-                                {entry.card_sale_id ? 'Vendita Abbonamento' : entry.payment_method === 'cash' ? 'Contanti' : entry.payment_method === 'pos' ? 'POS' : entry.payment_method === 'sospeso' ? 'Sospeso' : 'Abbonamento'}
+                                {(entry.payment_type === 'subscription_sale' || entry.payment_type === 'prepaid_sale' || (!entry.payment_type && entry.card_sale_id)) ? 'Vendita Abbonamento' : entry.payment_type === 'subscription_checkout' ? 'Abbonamento' : entry.payment_method === 'cash' ? 'Contanti' : entry.payment_method === 'pos' ? 'POS' : entry.payment_method === 'sospeso' ? 'Sospeso' : 'Abbonamento'}
                               </p>
                             </div>
                             <div className="flex flex-col gap-1 shrink-0">

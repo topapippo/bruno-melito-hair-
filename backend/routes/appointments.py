@@ -8,7 +8,7 @@ from datetime import datetime, timezone, timedelta
 from calendar import monthrange
 from auth import get_current_user
 from database import db
-from models import AppointmentCreate, AppointmentResponse
+from models import AppointmentCreate, AppointmentResponse, CheckoutData
 from utils import calculate_end_time, send_whatsapp, send_automatic_message, resolve_client
 
 router = APIRouter()
@@ -96,20 +96,19 @@ async def create_appointment(data: AppointmentCreate, current_user: dict = Depen
     return AppointmentResponse(**{k: v for k, v in doc.items() if k != "user_id"})
 
 @router.post("/appointments/{appointment_id}/checkout")
-async def checkout_appointment(appointment_id: str, data: dict, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
+async def checkout_appointment(appointment_id: str, data: CheckoutData, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
     apt = await db.appointments.find_one({"id": appointment_id, "user_id": current_user["id"]}, {"_id": 0})
     if not apt: raise HTTPException(status_code=404, detail="Appuntamento non trovato")
 
-    card_id = data.get("card_id")
+    card_id = data.card_id
     card_result = None
-    card_type_used = None  # traccia il tipo card per calcolo total_paid
+    card_type_used = None
 
-    # Deduce dalla card/abbonamento se specificato
     if card_id:
         card = await db.cards.find_one({"id": card_id, "user_id": current_user["id"]}, {"_id": 0})
         if card and card.get("active"):
             card_type_used = card.get("card_type")
-            amount_to_deduct = float(data.get("total_paid", 0)) if card_type_used != "subscription" else 0.0
+            amount_to_deduct = data.total_paid if card_type_used != "subscription" else 0.0
             transaction = {
                 "id": str(uuid.uuid4()),
                 "amount": amount_to_deduct,
@@ -117,7 +116,7 @@ async def checkout_appointment(appointment_id: str, data: dict, background_tasks
                 "description": f"Servizio scalato — {apt.get('client_name', '')}",
                 "date": datetime.now(timezone.utc).isoformat()
             }
-            if card.get("card_type") == "subscription":
+            if card_type_used == "subscription":
                 updated_card = await db.cards.find_one_and_update(
                     {"id": card_id, "user_id": current_user["id"], "active": True},
                     {"$inc": {"used_services": 1}, "$push": {"transactions": transaction}},
@@ -147,21 +146,30 @@ async def checkout_appointment(appointment_id: str, data: dict, background_tasks
                     "used_services": used,
                 }
 
-    total_paid_amount = float(data.get("total_paid", apt.get("total_price", 0)))
+    # Subscription checkout: incasso già registrato alla vendita → €0
+    total_paid_amount = 0.0 if card_type_used == "subscription" else data.total_paid
 
-    payment_method = data.get("payment_method", "cash")
+    # payment_type esplicito per classificazione precisa in ReportIncassi
+    if card_type_used == "subscription":
+        payment_type = "subscription_checkout"
+    elif card_type_used == "prepaid":
+        payment_type = "prepaid_checkout"
+    else:
+        payment_type = data.payment_method
+
     payment_doc = {
         "id": str(uuid.uuid4()), "user_id": current_user["id"], "appointment_id": appointment_id,
         "client_id": apt["client_id"], "client_name": apt["client_name"],
         "total_paid": total_paid_amount,
-        "payment_method": payment_method,
+        "payment_method": data.payment_method,
+        "payment_type": payment_type,
         "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "services": apt["services"],
         "card_id": card_id,
-        "discount_type": data.get("discount_type"),
-        "discount_value": data.get("discount_value"),
-        "note": data.get("note"),
+        "discount_type": data.discount_type,
+        "discount_value": data.discount_value,
+        "note": data.note,
     }
     await db.payments.insert_one(payment_doc)
     await db.appointments.update_one({"id": appointment_id}, {"$set": {"status": "completed", "paid": True, "payment_method": payment_method}})
