@@ -880,63 +880,54 @@ export default function EditAppointmentDialog({
                   )}
                 </div>
 
-                {/* ── 2. ABBONAMENTI / CARD (collassabile) ── */}
+                {/* ── 2. ABBONAMENTI / CARD ── */}
                 {activeCards.length > 0 && (
-                  <div className="rounded-xl border-2 border-purple-200 overflow-hidden">
-                    <button type="button" onClick={()=>toggleCat('_cards')}
-                      className={`w-full flex items-center justify-between px-3 py-3 transition-colors ${selectedCard?'bg-purple-100':'bg-purple-50 hover:bg-purple-100'}`}>
-                      <div className="flex items-center gap-2">
-                        <Ticket className="w-4 h-4 text-purple-600"/>
-                        <span className="font-bold text-sm uppercase tracking-wide text-purple-700">Abbonamenti / Card</span>
-                        <span className="text-xs text-purple-400">({activeCards.length})</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {selectedCard && <span className="text-xs font-bold px-2 py-0.5 bg-purple-500 text-white rounded-full">✓</span>}
-                        <ChevronDown className={`w-4 h-4 text-purple-400 transition-transform ${openCats['_cards']?'rotate-180':''}`}/>
-                      </div>
-                    </button>
-                    {openCats['_cards'] && (
-                      <div className="border-t border-purple-100 px-2 py-2 space-y-1.5 bg-white">
-                        {activeCards.map(card => {
-                          const isSel = selectedCardId === card.id;
-                          const isSub = card.card_type === 'subscription';
-                          const used = card.used_services || 0;
-                          const total = card.total_services;
-                          const left = total ? total - used : null;
-                          return (
-                            <button key={card.id} type="button"
-                              onClick={()=>{
-                                if (isSel) { setPaymentMethod('cash'); setSelectedCardId(''); }
-                                else { setPaymentMethod('prepaid'); setSelectedCardId(card.id); }
-                              }}
-                              className={`w-full p-3 rounded-xl border-2 text-left transition-all ${isSel?'border-purple-500 bg-purple-50 shadow-sm':'border-gray-200 hover:border-purple-300'}`}>
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2 min-w-0">
-                                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${isSel?'bg-purple-500 border-purple-500':'border-gray-300'}`}>
-                                    {isSel && <Check className="w-3 h-3 text-white"/>}
-                                  </div>
-                                  <div className="min-w-0">
-                                    <p className="font-bold text-sm text-[#2D1B14] truncate">{card.name}</p>
-                                    <p className="text-[10px] text-gray-500">{isSub?'Abbonamento':'Prepagata'}</p>
-                                  </div>
+                  <div className="rounded-xl border-2 border-[#C8617A] overflow-hidden">
+                    <div className="px-3 py-2 bg-[#FFF0F3] flex items-center gap-2">
+                      <Ticket className="w-4 h-4 text-[#C8617A]"/>
+                      <span className="font-bold text-sm uppercase tracking-wide text-[#C8617A]">Abbonamenti / Card</span>
+                      {selectedCard && <span className="ml-auto text-xs font-bold px-2 py-0.5 bg-[#C8617A] text-white rounded-full">Selezionato</span>}
+                    </div>
+                    <div className="border-t border-[#F5D0DA] px-2 py-2 space-y-1.5 bg-white">
+                      {activeCards.map(card => {
+                        const isSel = selectedCardId === card.id;
+                        const isSub = card.card_type === 'subscription';
+                        const used = card.used_services || 0;
+                        const total = card.total_services;
+                        const left = total ? total - used : null;
+                        return (
+                          <button key={card.id} type="button"
+                            onClick={()=>{
+                              if (isSel) { setPaymentMethod('cash'); setSelectedCardId(''); }
+                              else { setPaymentMethod('prepaid'); setSelectedCardId(card.id); }
+                            }}
+                            className={`w-full p-3 rounded-xl border-2 text-left transition-all ${isSel?'border-[#C8617A] bg-[#FFF0F3] shadow-sm':'border-gray-200 hover:border-[#C8617A]'}`}>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${isSel?'bg-[#C8617A] border-[#C8617A]':'border-gray-300'}`}>
+                                  {isSel && <Check className="w-3 h-3 text-white"/>}
                                 </div>
-                                <div className="text-right shrink-0 ml-2">
-                                  {isSub ? (
-                                    <>
-                                      <p className="font-black text-purple-600 text-sm">{left!==null?`${left} servizi rimasti`:'∞'}</p>
-                                      {total && <p className="text-[10px] text-gray-400">{used}/{total} usati</p>}
-                                    </>
-                                  ) : (
-                                    <p className="font-black text-purple-600 text-sm">€{(card.remaining_value??0).toFixed(2)}</p>
-                                  )}
-                                  {isSel && <p className="text-[10px] font-bold text-purple-500">{isSub?'€0 — da abbonamento':'da carta'}</p>}
+                                <div className="min-w-0">
+                                  <p className="font-bold text-sm text-[#2D1B14] truncate">{card.name}</p>
+                                  <p className="text-[10px] text-gray-500">{isSub?'Abbonamento':'Prepagata'}</p>
                                 </div>
                               </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
+                              <div className="text-right shrink-0 ml-2">
+                                {isSub ? (
+                                  <>
+                                    <p className="font-black text-[#C8617A] text-sm">{left!==null?`${left} rimasti`:'∞'}</p>
+                                    {total && <p className="text-[10px] text-gray-400">{used}/{total} usati</p>}
+                                  </>
+                                ) : (
+                                  <p className="font-black text-[#C8617A] text-sm">€{(card.remaining_value??0).toFixed(2)}</p>
+                                )}
+                                {isSel && <p className="text-[10px] font-bold text-[#C8617A]">{isSub?'scala €0':'da carta'}</p>}
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
 
@@ -1066,21 +1057,21 @@ export default function EditAppointmentDialog({
                       <span className="text-base leading-tight">€{totalAfterDiscount.toFixed(2)}</span>
                     </button>
 
-                    {/* PREPAGATE */}
+                    {/* ABBONAMENTO / CARD */}
                     <button type="button"
                       onClick={()=>{
-                        if (!selectedCardId) { toast.error('Seleziona prima una card o abbonamento'); setOpenCats(p=>({...p,_cards:true})); return; }
+                        if (!selectedCardId) { toast.error('Seleziona un abbonamento o card dalla lista sopra'); return; }
                         handleCheckout('prepaid', selectedCardId);
                       }}
                       disabled={processing}
                       className={`flex flex-col items-center gap-1 active:scale-95 disabled:opacity-60 font-black rounded-2xl py-4 shadow-md transition-all ${
                         selectedCard
-                          ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                          ? 'bg-[#C8617A] hover:bg-[#b04f67] text-white'
                           : 'bg-gray-200 hover:bg-gray-300 text-gray-600'
                       }`}>
-                      <CreditCard className="w-6 h-6"/>
+                      <Ticket className="w-6 h-6"/>
                       <span className="text-xs truncate px-1 w-full text-center">
-                        {selectedCard ? selectedCard.name.split(' ')[0] : 'Card/Abb.'}
+                        {selectedCard ? (selectedCardIsSubscription ? 'Scala Abb.' : selectedCard.name.split(' ')[0]) : 'Card/Abb.'}
                       </span>
                       <span className="text-base leading-tight">
                         {selectedCard

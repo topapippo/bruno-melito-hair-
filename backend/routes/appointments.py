@@ -99,6 +99,52 @@ async def create_appointment(data: AppointmentCreate, current_user: dict = Depen
 async def checkout_appointment(appointment_id: str, data: dict, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
     apt = await db.appointments.find_one({"id": appointment_id, "user_id": current_user["id"]}, {"_id": 0})
     if not apt: raise HTTPException(status_code=404, detail="Appuntamento non trovato")
+
+    card_id = data.get("card_id")
+    card_result = None
+
+    # Deduce dalla card/abbonamento se specificato
+    if card_id:
+        card = await db.cards.find_one({"id": card_id, "user_id": current_user["id"]}, {"_id": 0})
+        if card and card.get("active"):
+            amount_to_deduct = float(data.get("total_paid", 0)) if card.get("card_type") != "subscription" else 0.0
+            transaction = {
+                "id": str(uuid.uuid4()),
+                "amount": amount_to_deduct,
+                "appointment_id": appointment_id,
+                "description": f"Servizio scalato — {apt.get('client_name', '')}",
+                "date": datetime.now(timezone.utc).isoformat()
+            }
+            if card.get("card_type") == "subscription":
+                updated_card = await db.cards.find_one_and_update(
+                    {"id": card_id, "user_id": current_user["id"], "active": True},
+                    {"$inc": {"used_services": 1}, "$push": {"transactions": transaction}},
+                    return_document=True
+                )
+            else:
+                updated_card = await db.cards.find_one_and_update(
+                    {"id": card_id, "user_id": current_user["id"], "active": True, "remaining_value": {"$gte": amount_to_deduct}},
+                    {"$inc": {"remaining_value": -amount_to_deduct, "used_services": 1}, "$push": {"transactions": transaction}},
+                    return_document=True
+                )
+            if updated_card:
+                used = updated_card.get("used_services", 0)
+                total_svc = updated_card.get("total_services")
+                remaining_val = updated_card.get("remaining_value", 0)
+                is_exhausted = remaining_val <= 0
+                if total_svc:
+                    is_exhausted = is_exhausted or used >= total_svc
+                if is_exhausted:
+                    await db.cards.update_one({"id": card_id}, {"$set": {"active": False}})
+                remaining_services = (total_svc - used) if total_svc else None
+                card_result = {
+                    "card_id": card_id,
+                    "card_active": not is_exhausted,
+                    "remaining_value": remaining_val,
+                    "remaining_services": remaining_services,
+                    "used_services": used,
+                }
+
     payment_doc = {
         "id": str(uuid.uuid4()), "user_id": current_user["id"], "appointment_id": appointment_id,
         "client_id": apt["client_id"], "client_name": apt["client_name"],
@@ -106,7 +152,11 @@ async def checkout_appointment(appointment_id: str, data: dict, background_tasks
         "payment_method": data.get("payment_method", "cash"),
         "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "services": apt["services"]
+        "services": apt["services"],
+        "card_id": card_id,
+        "discount_type": data.get("discount_type"),
+        "discount_value": data.get("discount_value"),
+        "note": data.get("note"),
     }
     await db.payments.insert_one(payment_doc)
     await db.appointments.update_one({"id": appointment_id}, {"$set": {"status": "completed", "paid": True}})
@@ -115,7 +165,7 @@ async def checkout_appointment(appointment_id: str, data: dict, background_tasks
         cl = await db.clients.find_one({"id": apt["client_id"]})
         if cl: phone = cl.get("phone")
     if phone: background_tasks.add_task(_send_checkout_thank_you, phone, apt["client_name"], current_user)
-    return {"status": "ok", "payment_id": payment_doc["id"]}
+    return {"status": "ok", "payment_id": payment_doc["id"], "card": card_result}
 
 @router.get("/appointments", response_model=List[AppointmentResponse])
 async def get_appointments(date: Optional[str] = None, month: Optional[str] = None, current_user: dict = Depends(get_current_user)):
