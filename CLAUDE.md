@@ -47,11 +47,39 @@ Gestionale salone + sito web pubblico. Stack: React (frontend) + FastAPI (backen
 - Testo scuro: `#2D1B14`
 - **MAI viola** (`purple`, `#A855F7`) nel gestionale
 
+## Risparmio token — REGOLE OBBLIGATORIE
+
+Queste regole si applicano SEMPRE, senza eccezioni:
+
+### Lettura file
+- **MAI** leggere un file intero se serve solo una sezione: usare sempre `offset` + `limit` sul Read tool.
+- **MAI** ri-leggere un file appena modificato per "verificare" — Edit/Write confermano il successo con errore se falliscono.
+- **MAI** ri-leggere codice già visto nella sessione corrente — ricordarlo dal contesto.
+- Prima di Read, provare Grep per trovare il numero di riga esatto, poi leggere solo quelle righe (±20 righe contesto).
+
+### Risposte
+- Risposte corte per default: una frase di intro, le tool call, una frase di esito.
+- Nessun riepilogo "ho fatto X, Y, Z" dopo il commit — l'utente vede il diff.
+- Nessun elenco puntato di "cosa ho cambiato" se non richiesto esplicitamente.
+- Nessuna spiegazione del codice se non richiesta.
+
+### Contesto chat
+- Quando la conversazione supera ~15 scambi, ricordare all'utente: `La chat è lunga — digita /compact per risparmiare token`.
+- Usare agenti (`Agent` tool) per ricerche larghe che esploreranno molti file — proteggono il contesto principale.
+
+### Tool usage
+- Preferire `Edit` su `Write` per file esistenti (manda solo il diff, non il file intero).
+- Preferire `Grep` su `Bash(grep ...)` — più efficiente.
+- Chiamate tool parallele quando i dati sono indipendenti (es. leggere backend e frontend insieme).
+- Non usare `Bash(cat file)` — usare `Read` con `offset`/`limit`.
+
 ## Skill disponibili
 - `/deploy-check` — scan console.log, import, TODO, to_list pericolosi
 - `/security` — audit MongoDB injection, auth, XSS, secrets
 - `/review` — code review logico e performance
 - `/ui-check` — brand consistency, accessibilità, responsive
+- `/terse` — attiva modalità ultra-compatta (risposta max 3 righe)
+- `/compact-now` — ricorda di digitare /compact per comprimere la chat
 - `/ui-ux-pro-max` — design system avanzato (skill installata in `.claude/skills/`)
 
 ## Memoria persistente
