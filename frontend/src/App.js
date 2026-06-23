@@ -37,6 +37,7 @@ const ClientiAssentiPage    = lazy(() => import("./pages/ClientiAssentiPage"));
 const SocialPage            = lazy(() => import("./pages/SocialPage"));
 const ServiceDetailPage     = lazy(() => import("./pages/ServiceDetailPage"));
 const MessageLogsPage       = lazy(() => import("./pages/MessageLogsPage"));
+const SellAbbonamentoPage   = lazy(() => import("./pages/SellAbbonamentoPage"));
 
 function PageLoader() {
   return (
@@ -204,6 +205,16 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <CardAlertsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* VENDI ABBONAMENTO — wizard 3 step */}
+          <Route
+            path="/vendi-abbonamento"
+            element={
+              <ProtectedRoute>
+                <SellAbbonamentoPage />
               </ProtectedRoute>
             }
           />
