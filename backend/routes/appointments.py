@@ -147,12 +147,7 @@ async def checkout_appointment(appointment_id: str, data: dict, background_tasks
                     "used_services": used,
                 }
 
-    # Per abbonamento: il frontend manda total_paid=0 ma registriamo il valore del
-    # servizio negli incassi (l'incasso monetario è stato anticipato alla vendita abb.)
-    if card_type_used == "subscription":
-        total_paid_amount = float(apt.get("total_price", 0))
-    else:
-        total_paid_amount = float(data.get("total_paid", apt.get("total_price", 0)))
+    total_paid_amount = float(data.get("total_paid", apt.get("total_price", 0)))
 
     payment_method = data.get("payment_method", "cash")
     payment_doc = {

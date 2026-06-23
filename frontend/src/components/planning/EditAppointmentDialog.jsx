@@ -420,7 +420,13 @@ export default function EditAppointmentDialog({
       const cardData = res?.data?.card;
       if (cardData) {
         if (cardData.remaining_services !== null && cardData.remaining_services !== undefined) {
-          toast.success(`Servizio scalato dall'abbonamento. Restano ${cardData.remaining_services} servizi${cardData.card_active ? '' : ' — abbonamento esaurito'}.`);
+          if (!cardData.card_active || cardData.remaining_services === 0) {
+            toast.success('Abbonamento esaurito — tutti i servizi sono stati utilizzati.');
+          } else if (cardData.remaining_services === 1) {
+            toast.warning('⚠️ IN SCADENZA: rimane solo 1 servizio sull\'abbonamento.');
+          } else {
+            toast.success(`Servizio scalato. Restano ${cardData.remaining_services} servizi.`);
+          }
         } else {
           toast.success(`Pagato con la card. Credito residuo: €${(cardData.remaining_value || 0).toFixed(2)}.`);
         }
