@@ -64,7 +64,7 @@ Queste regole si applicano SEMPRE, senza eccezioni:
 - Nessuna spiegazione del codice se non richiesta.
 
 ### Contesto chat
-- Quando la conversazione supera ~15 scambi, ricordare all'utente: `La chat è lunga — digita /compact per risparmiare token`.
+- **REGOLA OBBLIGATORIA**: in ogni risposta dopo i primi ~10 scambi, aggiungere in fondo una riga: `> La chat è lunga — digita /compact prima di continuare.` — senza spiegazioni, senza preambolo.
 - Usare agenti (`Agent` tool) per ricerche larghe che esploreranno molti file — proteggono il contesto principale.
 
 ### Tool usage
