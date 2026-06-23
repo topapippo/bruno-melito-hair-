@@ -172,7 +172,7 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, backgrou
         "note": data.note,
     }
     await db.payments.insert_one(payment_doc)
-    await db.appointments.update_one({"id": appointment_id, "user_id": current_user["id"]}, {"$set": {"status": "completed", "paid": True, "payment_method": payment_method}})
+    await db.appointments.update_one({"id": appointment_id, "user_id": current_user["id"]}, {"$set": {"status": "completed", "paid": True, "payment_method": data.payment_method}})
     phone = apt.get("client_phone")
     if not phone and apt.get("client_id"):
         cl = await db.clients.find_one({"id": apt["client_id"]})
