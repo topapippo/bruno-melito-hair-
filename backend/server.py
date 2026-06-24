@@ -100,18 +100,15 @@ _cors_origin_re = _re.compile(r"https://.*\.onrender\.com")
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    err_detail = f"{type(exc).__name__}: {str(exc)}"
-    print(f"GLOBAL ERROR: {err_detail}\n{traceback.format_exc()}", flush=True)
-    logger.error(f"GLOBAL ERROR: {err_detail}\n{traceback.format_exc()}")
+    logger.error(f"GLOBAL ERROR: {str(exc)}\n{traceback.format_exc()}")
     origin = request.headers.get("origin", "")
     allowed = origin if (origin in cors_origins or _cors_origin_re.fullmatch(origin)) else ""
     headers: dict = {"Access-Control-Allow-Credentials": "true"}
     if allowed:
         headers["Access-Control-Allow-Origin"] = allowed
-    is_dev = os.environ.get("ENV") == "development"
     return JSONResponse(
         status_code=500,
-        content={"detail": err_detail if is_dev else "Errore interno del server"},
+        content={"detail": "Errore interno del server"},
         headers=headers
     )
 
