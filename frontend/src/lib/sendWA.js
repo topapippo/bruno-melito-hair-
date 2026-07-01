@@ -34,7 +34,7 @@ export async function sendWA(phone, message, { successMsg = '✅ WhatsApp inviat
     } else if (err.startsWith('sessione_scaduta')) {
       toast.error('⚠️ Sessione WhatsApp scaduta. Vai su Impostazioni → WhatsApp e riscannerizza il QR code.', { duration: 8000 });
     } else if (err === 'quota_esaurita' || errLow.includes('quote_allowed') || errLow.includes('quota has been exceeded') || errLow.includes('monthly quota') || errLow.includes('credito')) {
-      toast.warning('⚠️ Quota mensile Green API esaurita — solo 3 numeri in whitelist possono ricevere. Vai su app.greenapi.com → il tuo account → cambia piano per ripristinare l\'invio a tutti i numeri.', { duration: 15000 });
+      toast.warning('⚠️ Quota Green API esaurita e template Meta non ancora attivo. Attendi l\'approvazione del template "messaggio_diretto" su Meta Business Manager.', { duration: 15000 });
     } else if (errLow.includes('notauthorized') || errLow.includes('not authorized') || (err.includes('401') && !err.includes('4010'))) {
       toast.error('❌ Sessione Green API non autorizzata. Vai su Impostazioni → WhatsApp e riscannerizza il QR code.', { duration: 8000 });
     } else if (err.includes('403') || errLow.includes('forbidden')) {

@@ -172,31 +172,30 @@ async def send_automatic_message(phone: str, template_name: str = None, template
     # Se Green segnala quota esaurita, proviamo fallback automatici:
     if res_green.get("quota_exhausted"):
         logger.warning(f"Green API quota esaurita per user {(user or {}).get('id')}: {res_green.get('error')}")
-        # 3a) Proviamo comunque la Cloud API (anche se il testo libero potrebbe non
-        # essere recapitato se il cliente non ha scritto nelle ultime 24h).
-        if WA_TOKEN:
-            res_cloud = await send_whatsapp_cloud(phone, msg)
-            if res_cloud.get("sent"):
-                await _log_communication((user or {}).get("id", "system"), "whatsapp", phone, msg, res_cloud)
-                return res_cloud
-        # 3b) Proviamo invio via SMS Twilio come fallback definitivo se configurato.
-        if TWILIO_ACCOUNT_SID and TWILIO_PHONE_NUMBER:
-            res_tw = await _send_twilio_sms(phone, msg)
-            await _log_communication((user or {}).get("id", "system"), "sms", phone, msg, res_tw)
-            if res_tw.get("sent"):
-                return res_tw
 
-    # 4. NIENTE Cloud API per il testo libero: in modalità Live Meta lo "accetta"
-    # (HTTP 200, quindi sembrerebbe inviato) ma NON lo consegna a chi non ha scritto
-    # nelle ultime 24h → falso "inviato". Per il testo libero contano solo UltraMsg/
-    # Green API. Se falliscono entrambi, restituiamo un errore ONESTO (non inviato).
+    # 3a) Template Meta "messaggio_diretto" — invia il testo libero come {{1}} del template.
+    # Funziona anche fuori dalla finestra 24h (business-initiated).
+    if WA_TOKEN and not template_name:
+        res_tpl = await send_whatsapp_template(phone, "messaggio_diretto", [msg])
+        if res_tpl.get("sent"):
+            await _log_communication((user or {}).get("id", "system"), "whatsapp", phone, msg, res_tpl)
+            return res_tpl
+        logger.warning(f"Template messaggio_diretto fallito: {res_tpl.get('error')}")
+
+    # 3b) Proviamo invio via SMS Twilio come fallback definitivo se configurato.
+    if TWILIO_ACCOUNT_SID and TWILIO_PHONE_NUMBER:
+        res_tw = await _send_twilio_sms(phone, msg)
+        await _log_communication((user or {}).get("id", "system"), "sms", phone, msg, res_tw)
+        if res_tw.get("sent"):
+            return res_tw
+
     err_parts = []
     if res_ultra.get("error"):
         err_parts.append(f"UltraMsg: {res_ultra['error']}")
     if res_green.get("error"):
         err_parts.append(f"Green API: {res_green['error']}")
     fail = {"sent": False, "method": "none",
-            "error": " | ".join(err_parts) or "Nessun provider per il testo libero disponibile (serve Green API a pagamento o un template Meta approvato)"}
+            "error": " | ".join(err_parts) or "Nessun provider disponibile"}
     await _log_communication((user or {}).get("id", "system"), "whatsapp", phone, msg, fail)
     return fail
 
