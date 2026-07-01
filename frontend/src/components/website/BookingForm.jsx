@@ -100,7 +100,7 @@ export default function BookingForm({
     try {
       const res = await api.post(`${API}/public/booking`, bookingData);
       const aptId = res.data.appointment_id;
-      const waSent = res.data.wa_sent === true;
+      const waSent = res.data.wa_scheduled === true;
       let upsells = [];
       try {
         const upsellRes = await api.get(`${API}/public/upselling?service_ids=${formData.service_ids.join(',')}`);

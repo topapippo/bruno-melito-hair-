@@ -15,8 +15,9 @@ export default function BookingSuccess({
   const [addedUpsells, setAddedUpsells] = useState([]);
 
   const whatsappNum = config.whatsapp || '393397833526';
-  const serviceNames = selectedServices.map(s => s.name).join(', ');
-  const dateFormatted = format(new Date(formData.date), 'dd/MM/yy');
+  const serviceNames = (selectedServices || []).map(s => s.name).join(', ');
+  let dateFormatted = formData.date || '';
+  try { dateFormatted = format(new Date(formData.date + 'T12:00:00'), 'dd/MM/yy'); } catch {}
   const confirmMsg = encodeURIComponent(
     `Ciao, confermo la prenotazione per il ${dateFormatted} alle ${formData.time}.\n` +
     `Nome: ${formData.client_name}\n` +

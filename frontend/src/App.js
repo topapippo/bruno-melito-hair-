@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState, Component } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster, toast } from "sonner";
 
@@ -45,6 +45,34 @@ function PageLoader() {
       <div className="w-9 h-9 border-4 border-[#C8617A] border-t-transparent rounded-full animate-spin" />
     </div>
   );
+}
+
+class ErrorBoundary extends Component {
+  constructor(props) { super(props); this.state = { hasError: false }; }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(err, info) { console.error('[ErrorBoundary]', err, info?.componentStack); }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-[#1C1008] px-6">
+          <div className="max-w-sm text-center">
+            <div className="text-5xl mb-4">⚠️</div>
+            <h2 className="text-white font-black text-xl mb-2">Qualcosa è andato storto</h2>
+            <p className="text-amber-200/70 text-sm mb-6">
+              Si è verificato un errore imprevisto. Ricarica la pagina e riprova.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-[#C8617A] text-white font-bold px-6 py-3 rounded-2xl text-sm hover:bg-[#B14F66] transition-colors"
+            >
+              Ricarica la pagina
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }
 
 // Offline indicator component
@@ -107,6 +135,7 @@ export default function App() {
       <OfflineIndicator />
       <PWAInstallBanner />
       <BrowserRouter basename="/">
+        <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* LOGIN (non protetto) */}
@@ -354,6 +383,7 @@ export default function App() {
 
         </Routes>
         </Suspense>
+        </ErrorBoundary>
       </BrowserRouter>
       <Toaster 
         position="top-right" 
