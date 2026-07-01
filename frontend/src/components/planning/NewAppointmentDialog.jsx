@@ -9,7 +9,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Loader2, User, CreditCard, Bell, UserPlus, Gift, Check, Ticket, Wallet, Smartphone, Banknote } from 'lucide-react';
+import { Loader2, User, CreditCard, Bell, UserPlus, Gift, Check, Ticket, Smartphone, Banknote } from 'lucide-react';
 import { format, isToday } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -485,7 +485,7 @@ export default function NewAppointmentDialog({
                         <div className="border-t border-[#F0E6DC] p-2 space-y-1">
                           {catServices.map(service => (
                             <button key={service.id} type="button" onClick={() => toggleService(service.id)}
-                              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm ${formData.service_ids.includes(service.id) ? 'bg-purple-100 text-purple-700 font-bold border border-purple-300' : 'bg-transparent hover:bg-gray-50'}`}>
+                              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm ${formData.service_ids.includes(service.id) ? 'bg-[#C8617A]/10 text-[#C8617A] font-bold border border-[#C8617A]/30' : 'bg-transparent hover:bg-gray-50'}`}>
                               <span>{service.name}</span>
                               <span>€{service.price}</span>
                             </button>
@@ -511,30 +511,26 @@ export default function NewAppointmentDialog({
             {formData.service_ids.length > 0 && isToday(new Date(formData.date)) && (
               <div className="space-y-2">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Salva e Incassa subito</p>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <Button type="button" disabled={saving} onClick={() => handleSubmit(null, 'cash')}
                     className="h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs gap-1.5">
                     {checkoutMethod === 'cash' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Banknote className="w-3.5 h-3.5" />}
                     CONTANTI
                   </Button>
-                  <Button type="button" disabled={saving} onClick={() => handleSubmit(null, 'card')}
+                  <Button type="button" disabled={saving} onClick={() => handleSubmit(null, 'pos')}
                     className="h-10 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs gap-1.5">
-                    {checkoutMethod === 'card' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-3.5 h-3.5" />}
-                    CARTA
-                  </Button>
-                  <Button type="button" disabled={saving} onClick={() => handleSubmit(null, 'transfer')}
-                    className="h-10 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs gap-1.5">
-                    {checkoutMethod === 'transfer' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wallet className="w-3.5 h-3.5" />}
-                    ALTRO
+                    {checkoutMethod === 'pos' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-3.5 h-3.5" />}
+                    POS
                   </Button>
                 </div>
+                <p className="text-[10px] text-gray-400 text-center">Per sospeso o pagamento con abbonamento/tessera, usa "Salva e vai alla cassa"</p>
               </div>
             )}
             
             {formData.service_ids.length > 0 && (
               <Button type="button" disabled={saving || isDayClosed || availableSlots.length === 0}
                 onClick={() => handleSubmit(null, null, true)}
-                className="w-full h-11 bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm shadow-lg gap-2">
+                className="w-full h-11 bg-[#C8617A] hover:bg-[#B14F66] text-white font-bold text-sm shadow-lg gap-2">
                 {saving && checkoutMethod === null ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
                 SALVA E VAI ALLA CASSA (vendi abbonamento)
               </Button>
