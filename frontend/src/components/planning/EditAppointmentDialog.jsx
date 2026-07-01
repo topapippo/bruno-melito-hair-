@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import ManualWAButton from './ManualWAButton';
 import api, { API } from '../../lib/api';
 import { fmtDate } from '../../lib/dateUtils';
+import { checkoutAppointment, extractErrorMessage } from '../../lib/checkoutApi';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -359,12 +360,10 @@ export default function EditAppointmentDialog({
       const newCardId = sellRes.data.card_id;
 
       // 2. Scala l'appuntamento corrente dal nuovo abbonamento (totale 0, prepaid)
-      await api.post(`${API}/appointments/${apt.id}/checkout`, {
-        payment_method: 'prepaid',
-        discount_type: 'none',
-        discount_value: 0,
-        total_paid: 0,
-        card_id: newCardId,
+      await checkoutAppointment(apt.id, {
+        paymentMethod: 'prepaid',
+        totalPaid: 0,
+        cardId: newCardId,
       });
 
       const totalSvc = parseInt(newSubscriptionForm.total_services);
@@ -375,7 +374,7 @@ export default function EditAppointmentDialog({
       onClose();
       onSuccess?.();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Errore vendita abbonamento');
+      toast.error(extractErrorMessage(err, 'Errore vendita abbonamento'));
     } finally {
       setCreatingSubscription(false);
     }
@@ -408,16 +407,16 @@ export default function EditAppointmentDialog({
 
     setProcessing(true);
     try {
-      const res = await api.post(`${API}/appointments/${apt.id}/checkout`, {
-        payment_method: method,
-        discount_type: discountType,
-        discount_value: discountType !== 'none' ? (parseFloat(discountValue) || 0) : 0,
-        total_paid: finalAmount,
-        card_id: cardId,
-        note: `Incasso ${method}${overridePrice ? ' per vendita abbonamento' : ''}`
+      const data = await checkoutAppointment(apt.id, {
+        paymentMethod: method,
+        discountType,
+        discountValue,
+        totalPaid: finalAmount,
+        cardId,
+        note: `Incasso ${method}${overridePrice ? ' per vendita abbonamento' : ''}`,
       });
 
-      const cardData = res?.data?.card;
+      const cardData = data?.card;
       if (cardData) {
         if (cardData.remaining_services !== null && cardData.remaining_services !== undefined) {
           if (!cardData.card_active || cardData.remaining_services === 0) {
@@ -437,7 +436,7 @@ export default function EditAppointmentDialog({
       onClose();
       onSuccess?.();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Errore nel pagamento');
+      toast.error(extractErrorMessage(err));
     } finally {
       setProcessing(false);
     }

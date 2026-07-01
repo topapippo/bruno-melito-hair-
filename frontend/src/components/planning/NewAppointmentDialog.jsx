@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api, { API } from '../../lib/api';
+import { checkoutAppointment } from '../../lib/checkoutApi';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -284,12 +285,12 @@ export default function NewAppointmentDialog({
         const cardDiscount = preSelectedCardId ? Math.min(dialogClientCards.find(c => c.id === preSelectedCardId)?.remaining_value || 0, totalPrice) : 0;
         const finalAmount = Math.max(0, totalPrice - cardDiscount);
 
-        await api.post(`${API}/appointments/${newApt.id}/checkout`, {
-          payment_method: method,
-          total_paid: finalAmount,
-          card_id: preSelectedCardId || null,
-          promo_id: preSelectedPromoId || null,
-          note: `Incasso immediato via ${method}`
+        await checkoutAppointment(newApt.id, {
+          paymentMethod: method,
+          totalPaid: finalAmount,
+          cardId: preSelectedCardId || null,
+          promoId: preSelectedPromoId || null,
+          note: `Incasso immediato via ${method}`,
         });
         toast.success(`Appuntamento creato e incassato (${method})!`);
       } else if (!goCheckout) {
