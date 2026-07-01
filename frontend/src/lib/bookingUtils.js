@@ -50,7 +50,7 @@ export const getAvailableSlotsForDate = (dateStr, hoursConfig, blockedSlots = []
       TIME_SLOTS.forEach(slot => {
         const [h, m] = slot.split(':').map(Number);
         const t = h * 60 + m;
-        if (t >= openMin && t <= closeMin) slots.push(slot);
+        if (t >= openMin && t < closeMin) slots.push(slot);
       });
     }
     if (!foundRange && !dayHours) {
