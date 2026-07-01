@@ -225,20 +225,33 @@ async def create_public_booking(request: Request, data: PublicBookingRequest, ba
     # 2. Valida che data/ora richiesta rispetti gli orari di apertura
     _day_map = {0: "lun", 1: "mar", 2: "mer", 3: "gio", 4: "ven", 5: "sab", 6: "dom"}
     try:
+        import re as _re_h
         req_dt = datetime.strptime(data.date, "%Y-%m-%d")
         day_key = _day_map[req_dt.weekday()]
         config_raw = await db.website_config.find_one({"user_id": user_id}, {"_id": 0, "hours": 1})
         hours_cfg = (config_raw or {}).get("hours", DEFAULT_WEBSITE_CONFIG["hours"])
         if day_key not in hours_cfg:
             raise HTTPException(status_code=400, detail=f"Il salone è chiuso il {day_key.capitalize()}.")
-        h_range = hours_cfg[day_key]  # es. "08:00 - 19:00"
-        h_open, _, h_close = h_range.partition(" - ")
-        if h_open and h_close and data.time:
-            if not (h_open.strip() <= data.time.strip() < h_close.strip()):
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Orario non disponibile. Il salone è aperto dalle {h_open.strip()} alle {h_close.strip()}."
+        h_range = (hours_cfg[day_key] or "").strip()
+        h_val = h_range.lower()
+        if h_val in ("chiuso", "-", ""):
+            raise HTTPException(status_code=400, detail=f"Il salone è chiuso il {day_key.capitalize()}.")
+        if data.time:
+            # Supporta sia orario singolo ("09:00 - 19:00") sia split con pausa
+            # ("09:00 - 12:30 / 14:30 - 18:30") — stesso approccio del frontend
+            ranges = _re_h.findall(r'(\d{1,2})[.:](\d{2})\s*[-–]\s*(\d{1,2})[.:](\d{2})', h_range)
+            if ranges:
+                bh, bm = int(data.time.split(":")[0]), int(data.time.split(":")[1])
+                book_min = bh * 60 + bm
+                in_range = any(
+                    int(oh) * 60 + int(om) <= book_min < int(ch) * 60 + int(cm)
+                    for oh, om, ch, cm in ranges
                 )
+                if not in_range:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Orario non disponibile per questo giorno ({h_range})."
+                    )
     except HTTPException:
         raise
     except Exception:
