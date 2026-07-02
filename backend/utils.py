@@ -141,67 +141,30 @@ async def _send_twilio_sms(phone: str, message: str) -> dict:
         return {"sent": False, "error": str(e)}
 
 async def send_automatic_message(phone: str, template_name: str = None, template_vars: list = None, fallback_text: str = None, user: dict = None) -> dict:
-    """Funzione maestra con catena di fallback e logging obbligatorio."""
+    """Invia via Meta Cloud API: prima template (se fornito), poi testo libero."""
     if not phone: return {"sent": False, "error": "Telefono mancante"}
-    
-    res = {"sent": False, "method": "none", "error": "Inizio invio"}
-    
-    # 1. Meta Template (Primo tentativo se fornito)
-    if template_name and WA_TOKEN:
+    if not WA_TOKEN: return {"sent": False, "error": "WHATSAPP_TOKEN non configurato"}
+
+    # 1. Meta Template
+    if template_name:
         res = await send_whatsapp_template(phone, template_name, template_vars)
-        if res.get("sent"): 
+        if res.get("sent"):
             await _log_communication((user or {}).get("id", "system"), "whatsapp", phone, f"Template: {template_name}", res)
             return res
         logger.warning(f"Meta Template {template_name} fallito: {res.get('error')}")
+        fail = {**res, "sent": False}
+        await _log_communication((user or {}).get("id", "system"), "whatsapp", phone, f"Template: {template_name}", fail)
+        return fail
 
-    # Se arriviamo qui, il template ha fallito o non è stato fornito. Serve il testo libero.
-    msg = fallback_text or (f"Ciao! Ti scriviamo da Bruno Melito Hair. Per info: 3397833526." if not template_name else "")
-    if not msg: return res
-
-    # 2. UltraMsg (Ottimo per testo libero senza limiti 24h)
-    res_ultra = await _send_ultramsg(phone, msg, user)
-    if res_ultra.get("sent"):
-        await _log_communication((user or {}).get("id", "system"), "whatsapp", phone, msg, res_ultra)
-        return res_ultra
-
-    # 3. Green API (Alternativa a UltraMsg)
-    res_green = await _send_greenapi(phone, msg, user)
-    if res_green.get("sent"):
-        await _log_communication((user or {}).get("id", "system"), "whatsapp", phone, msg, res_green)
-        return res_green
-    # Se Green segnala quota esaurita, proviamo fallback automatici:
-    if res_green.get("quota_exhausted"):
-        logger.warning(f"Green API quota esaurita per user {(user or {}).get('id')}: {res_green.get('error')}")
-
-    # 3a) Template Meta "messaggio_diretto" — invia il testo libero come {{1}} del template.
-    # Funziona anche fuori dalla finestra 24h (business-initiated).
-    if WA_TOKEN and not template_name:
-        res_tpl = await send_whatsapp_template(phone, "messaggio_diretto", [msg])
-        if res_tpl.get("sent"):
-            await _log_communication((user or {}).get("id", "system"), "whatsapp", phone, msg, res_tpl)
-            return res_tpl
-        logger.warning(f"Template messaggio_diretto fallito: {res_tpl.get('error')}")
-
-    # 3b) Proviamo invio via SMS Twilio come fallback definitivo se configurato.
-    if TWILIO_ACCOUNT_SID and TWILIO_PHONE_NUMBER:
-        res_tw = await _send_twilio_sms(phone, msg)
-        await _log_communication((user or {}).get("id", "system"), "sms", phone, msg, res_tw)
-        if res_tw.get("sent"):
-            return res_tw
-
-    err_parts = []
-    if res_ultra.get("error"):
-        err_parts.append(f"UltraMsg: {res_ultra['error']}")
-    if res_green.get("error"):
-        err_parts.append(f"Green API: {res_green['error']}")
-    fail = {"sent": False, "method": "none",
-            "error": " | ".join(err_parts) or "Nessun provider disponibile"}
-    await _log_communication((user or {}).get("id", "system"), "whatsapp", phone, msg, fail)
-    return fail
+    # 2. Meta testo libero (funziona solo nella finestra 24h del cliente)
+    msg = fallback_text or ""
+    if not msg: return {"sent": False, "error": "Nessun testo da inviare"}
+    res = await send_whatsapp_cloud(phone, msg)
+    await _log_communication((user or {}).get("id", "system"), "whatsapp", phone, msg, res)
+    return res
 
 async def send_whatsapp(phone: str, message: str, user: dict = None) -> dict:
-    """Invio testo libero via UltraMsg / Green API / Cloud API (in quest'ordine).
-    Per promemoria e ringraziamenti usa send_automatic_message() direttamente con il template."""
+    """Invio testo libero via Meta Cloud API."""
     return await send_automatic_message(phone, None, None, message, user)
 
 async def resolve_client(user_id: str, name: str, phone: str = "") -> tuple:
