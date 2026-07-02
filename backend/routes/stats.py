@@ -16,6 +16,18 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
+async def sum_payments(uid: str, start_date: str, end_date: str) -> float:
+    """Somma total_paid di tutti i pagamenti dell'utente nell'intervallo di date
+    (incluso start e end). Helper condiviso usato da dashboard, daily-summary
+    e revenue per evitare di ricalcolare lo stesso aggregato con codice
+    leggermente diverso in più punti."""
+    docs = await db.payments.find(
+        {"user_id": uid, "date": {"$gte": start_date, "$lte": end_date}},
+        {"_id": 0, "total_paid": 1}
+    ).to_list(100000)
+    return sum(d.get("total_paid", 0) for d in docs)
+
+
 # ============== DASHBOARD ==============
 
 @router.get("/stats/dashboard")
@@ -35,11 +47,11 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
         total_clients,
         total_operators,
         monthly_appointments,
-        monthly_payments,
+        monthly_revenue,
         yearly_appointments,
         yearly_agg,
         upcoming,
-        today_payments,
+        today_revenue,
         sospeso_payments,
         waitlist_count,
     ) = await asyncio.gather(
@@ -47,21 +59,19 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
         db.clients.count_documents({"user_id": uid}),
         db.operators.count_documents({"user_id": uid, "active": True}),
         db.appointments.find({"user_id": uid, "date": {"$gte": first_of_month, "$lte": last_of_month}, "status": "completed"}, {"_id": 0, "total_price": 1}).to_list(1000),
-        db.payments.find({"user_id": uid, "date": {"$gte": first_of_month, "$lte": last_of_month}}, {"_id": 0, "total_paid": 1}).to_list(10000),
+        sum_payments(uid, first_of_month, last_of_month),
         db.appointments.find({"user_id": uid, "date": {"$gte": first_of_year, "$lte": last_of_year}, "status": "completed"}, {"_id": 0, "total_price": 1}).to_list(10000),
         db.payments.aggregate([
             {"$match": {"user_id": uid, "date": {"$gte": first_of_year, "$lte": last_of_year}}},
             {"$group": {"_id": None, "total": {"$sum": "$total_paid"}}}
         ]).to_list(1),
         db.appointments.find({"user_id": uid, "date": {"$gte": today, "$lte": next_week}, "status": "scheduled"}, {"_id": 0, "user_id": 0}).sort([("date", 1), ("time", 1)]).to_list(10),
-        db.payments.find({"user_id": uid, "date": today}, {"_id": 0, "total_paid": 1, "payment_method": 1}).to_list(500),
+        sum_payments(uid, today, today),
         db.payments.find({"user_id": uid, "payment_method": "sospeso"}, {"_id": 0, "total_paid": 1}).to_list(1000),
         db.waitlist.count_documents({"user_id": uid, "status": "waiting"}),
     )
 
-    monthly_revenue = sum(p.get("total_paid", 0) for p in monthly_payments)
     yearly_revenue = yearly_agg[0]["total"] if yearly_agg else 0
-    today_revenue = sum(p.get("total_paid", 0) for p in today_payments)
     sospeso_count = len(sospeso_payments)
     sospeso_total = sum(p.get("total_paid", 0) for p in sospeso_payments)
 
@@ -119,16 +129,8 @@ async def get_daily_summary(date: Optional[str] = None, current_user: dict = Dep
     ).to_list(200)
     completed = [a for a in today_apts if a.get("status") == "completed"]
     # Incassi reali dal db.payments (checkout contanti + vendite abbonamento, esclude consumi carta)
-    today_payments = await db.payments.find(
-        {"user_id": current_user["id"], "date": target_date},
-        {"_id": 0, "total_paid": 1}
-    ).to_list(500)
-    total_earnings = sum(p.get("total_paid", 0) for p in today_payments)
-    yesterday_payments = await db.payments.find(
-        {"user_id": current_user["id"], "date": yesterday},
-        {"_id": 0, "total_paid": 1}
-    ).to_list(500)
-    yesterday_earnings = sum(p.get("total_paid", 0) for p in yesterday_payments)
+    total_earnings = await sum_payments(current_user["id"], target_date, target_date)
+    yesterday_earnings = await sum_payments(current_user["id"], yesterday, yesterday)
     hourly = {f"{h:02d}:00": 0 for h in range(8, 21)}
     for apt in today_apts:
         hour = apt.get("time", "09:00")[:2] + ":00"
@@ -221,13 +223,6 @@ async def get_revenue_stats(start_date: str, end_date: str, current_user: dict =
         {"_id": 0}
     ).to_list(10000)
     all_cash_appointments = appointments + appointments_no_method
-    operator_stats = {}
-    for apt in all_cash_appointments:
-        op_name = apt.get("operator_name", "Non assegnato")
-        if op_name not in operator_stats:
-            operator_stats[op_name] = {"count": 0, "revenue": 0, "color": apt.get("operator_color", "#78716C")}
-        operator_stats[op_name]["count"] += 1
-        operator_stats[op_name]["revenue"] += apt.get("total_price", 0)
     # Fascia oraria (tutti gli appuntamenti del periodo, non solo completati)
     all_period_apts = await db.appointments.find(
         {"user_id": current_user["id"], "date": {"$gte": start_date, "$lte": end_date}, "status": {"$ne": "cancelled"}},
@@ -247,11 +242,7 @@ async def get_revenue_stats(start_date: str, end_date: str, current_user: dict =
         duration_days = (ed - sd).days + 1
         prev_end = sd - timedelta(days=1)
         prev_start = prev_end - timedelta(days=duration_days - 1)
-        prev_payments = await db.payments.find(
-            {"user_id": current_user["id"], "date": {"$gte": prev_start.isoformat(), "$lte": prev_end.isoformat()}},
-            {"_id": 0, "total_paid": 1}
-        ).to_list(10000)
-        prev_revenue = sum(p.get("total_paid", 0) for p in prev_payments)
+        prev_revenue = await sum_payments(current_user["id"], prev_start.isoformat(), prev_end.isoformat())
         prev_apts_count = await db.appointments.count_documents(
             {"user_id": current_user["id"], "date": {"$gte": prev_start.isoformat(), "$lte": prev_end.isoformat()}, "status": "completed"}
         )
@@ -295,7 +286,6 @@ async def get_revenue_stats(start_date: str, end_date: str, current_user: dict =
         "total_revenue": total_revenue, "total_appointments": len(all_cash_appointments),
         "daily_revenue": [{"date": k, "revenue": v} for k, v in sorted(daily_revenue.items())],
         "service_breakdown": [{"name": k, **v} for k, v in sorted(service_revenue.items(), key=lambda x: x[1]["revenue"], reverse=True)],
-        "operator_breakdown": [{"name": k, **v} for k, v in sorted(operator_stats.items(), key=lambda x: x[1]["revenue"], reverse=True)],
         "hourly_distribution": [{"hour": k, "count": v} for k, v in sorted(hourly_counts.items())],
         "prev_period_revenue": prev_revenue,
         "prev_period_appointments": prev_apts_count,
@@ -454,13 +444,6 @@ async def export_stats_pdf(start_date: str, end_date: str, current_user: dict = 
         {"_id": 0}
     ).to_list(10000)
     total_appointments = len(appointments) + len(appointments_no_method)
-    operator_stats = {}
-    for apt in appointments + appointments_no_method:
-        op_name = apt.get("operator_name", "Non assegnato")
-        if op_name not in operator_stats:
-            operator_stats[op_name] = {"count": 0, "revenue": 0}
-        operator_stats[op_name]["count"] += 1
-        operator_stats[op_name]["revenue"] += apt.get("total_price", 0)
     lines = [
         f"REPORT STATISTICHE - {current_user['salon_name']}", f"Periodo: {start_date} - {end_date}", "",
         "=" * 50, "RIEPILOGO", "=" * 50,
@@ -470,9 +453,6 @@ async def export_stats_pdf(start_date: str, end_date: str, current_user: dict = 
     ]
     for name, data in sorted(service_stats.items(), key=lambda x: x[1]["revenue"], reverse=True):
         lines.append(f"{name}: {data['count']} volte - €{data['revenue']:.2f}")
-    lines.extend(["", "=" * 50, "OPERATORI", "=" * 50])
-    for name, data in sorted(operator_stats.items(), key=lambda x: x[1]["revenue"], reverse=True):
-        lines.append(f"{name}: {data['count']} appuntamenti - €{data['revenue']:.2f}")
     return StreamingResponse(
         io.BytesIO("\n".join(lines).encode('utf-8')), media_type="text/plain",
         headers={"Content-Disposition": f"attachment; filename=report_{start_date}_{end_date}.txt"}
@@ -560,8 +540,6 @@ async def get_settings(current_user: dict = Depends(get_current_user)):
         "google_review_link": current_user.get("google_review_link", ""),
         "green_api_instance_id": current_user.get("green_api_instance_id", ""),
         "wa_configured": bool(current_user.get("green_api_instance_id") and current_user.get("green_api_token")),
-        "telegram_instance_id": current_user.get("telegram_instance_id", ""),
-        "tg_configured": bool(current_user.get("telegram_instance_id") and current_user.get("telegram_api_token")),
         "ultramsg_instance_id": current_user.get("ultramsg_instance_id", ""),
         "um_configured": bool(current_user.get("ultramsg_instance_id") and current_user.get("ultramsg_token")),
         "cloud_api_configured": bool(os.environ.get("WHATSAPP_TOKEN")),
@@ -941,43 +919,6 @@ async def test_cloud_api_send_template(data: dict, current_user: dict = Depends(
     return {"ok": False,
             "message": f"Errore template: {result.get('error')} (code={result.get('code')})",
             "details": result.get("details")}
-
-
-@router.put("/settings/telegram-api")
-async def update_telegram_api(data: dict, current_user: dict = Depends(get_current_user)):
-    await db.users.update_one(
-        {"id": current_user["id"]},
-        {"$set": {
-            "telegram_instance_id": data.get("telegram_instance_id", ""),
-            "telegram_api_token": data.get("telegram_api_token", ""),
-        }}
-    )
-    return {"success": True}
-
-
-@router.get("/settings/telegram-test")
-async def test_telegram_api(current_user: dict = Depends(get_current_user)):
-    """Verifica che l'istanza Green API Telegram sia attiva."""
-    import asyncio
-    import requests as _req
-    instance_id = current_user.get("telegram_instance_id", "")
-    api_token = current_user.get("telegram_api_token", "")
-    if not instance_id or not api_token:
-        return {"ok": False, "status": "not_configured", "message": "Instance ID o Token Telegram non impostati"}
-    try:
-        tg_base = f"https://{instance_id[:4]}.api.green-api.com"
-        url = f"{tg_base}/waInstance{instance_id}/getStateInstance/{api_token}"
-        resp = await asyncio.to_thread(_req.get, url, timeout=10)
-        data = resp.json()
-        state = data.get("stateInstance", "unknown")
-        if state == "authorized":
-            return {"ok": True, "status": state, "message": "✅ Connesso — Telegram attivo e funzionante"}
-        elif state == "notAuthorized":
-            return {"ok": False, "status": state, "message": "⚠️ Non autorizzato — configura l'istanza su app.green-api.com"}
-        else:
-            return {"ok": False, "status": state, "message": f"Stato istanza: {state}"}
-    except Exception as e:
-        return {"ok": False, "status": "error", "message": f"Errore connessione: {str(e)}"}
 
 
 # ============== RICERCA GLOBALE ==============

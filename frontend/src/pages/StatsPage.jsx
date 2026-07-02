@@ -779,30 +779,6 @@ export default function StatsPage() {
                     </CardContent>
                   </Card>
 
-                  <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="font-display text-lg text-[#2D1B14] flex items-center gap-2">
-                        <Users className="w-4 h-4 text-[#C8617A]" /> Performance Operatori
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        {(revenueStats?.operator_breakdown || []).map((op, i) => (
-                          <div key={op.name} className="p-3 rounded-xl bg-[#FAF7F2] border-l-4"
-                            style={{ borderLeftColor: op.color || COLORS[i % COLORS.length] }}>
-                            <div className="flex items-center justify-between">
-                              <h4 className="font-medium text-[#2D1B14] text-sm">{op.name}</h4>
-                              <span className="font-semibold text-[#2D1B14]">€{op.revenue.toFixed(0)}</span>
-                            </div>
-                            <p className="text-xs text-[#7C5C4A] mt-0.5">
-                              {op.count} appuntamenti · media €{op.count > 0 ? (op.revenue / op.count).toFixed(0) : 0}/app
-                            </p>
-                          </div>
-                        ))}
-                        {!(revenueStats?.operator_breakdown || []).length && <EmptyChart height={80} />}
-                      </div>
-                    </CardContent>
-                  </Card>
                 </div>
               </>
             )}
