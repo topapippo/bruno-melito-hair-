@@ -1055,3 +1055,13 @@ a, button { transition: all 0.2s ease; }
   text-shadow: 0 2px 8px rgba(45,27,20,0.07);
 }
 
+
+/* ── Animations: side panel + FAB ── */
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+@keyframes fabPulse {
+  0%, 100% { box-shadow: 0 8px 28px rgba(200,97,122,0.55), 0 0 0 0 rgba(200,97,122,0.35); }
+  50%       { box-shadow: 0 8px 28px rgba(200,97,122,0.55), 0 0 0 8px rgba(200,97,122,0); }
+}

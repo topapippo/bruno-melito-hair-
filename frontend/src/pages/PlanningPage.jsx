@@ -5,7 +5,7 @@ import { sendWA } from '../lib/sendWA';
 import Layout from '../components/Layout';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ChevronLeft, ChevronRight, Plus, CalendarDays, CheckCircle, RefreshCcw, MessageCircle, Lock, Unlock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, CalendarDays, CheckCircle, RefreshCcw, MessageCircle, Lock, Unlock, Euro, TrendingUp } from 'lucide-react';
 import { format, addDays, subDays, startOfWeek, endOfWeek, addWeeks, subWeeks, startOfMonth, endOfMonth, addMonths, subMonths, eachDayOfInterval, isToday } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -24,6 +24,7 @@ import BlockSlotDialog from '../components/planning/BlockSlotDialog';
 import { OnlineBookingBanner, ReminderBanner, ExpensesBanner, LastServiceBanner } from '../components/planning/PlanningBanners';
 import PlanningSearch from '../components/planning/PlanningSearch';
 import ErrorBoundary from '../components/ErrorBoundary';
+import AppointmentDetailPanel from '../components/planning/AppointmentDetailPanel';
 
 
 const TIME_SLOTS = generateTimeSlots();
@@ -88,6 +89,9 @@ export default function PlanningPage() {
   const [dayClosureBlock, setDayClosureBlock] = useState(null);
   const [dayHolidayBlock, setDayHolidayBlock] = useState(null);
   const [closingDay, setClosingDay] = useState(false);
+
+  // Detail panel
+  const [detailApt, setDetailApt] = useState(null);
 
   // Thank You dialog
   const [thankYouData, setThankYouData] = useState(null);
@@ -867,6 +871,59 @@ export default function PlanningPage() {
           </div>
         </div>
 
+        {/* KPI Bar — visibile solo in day view */}
+        {!loading && viewMode === 'day' && filteredAppointments.length > 0 && (
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl"
+              style={{ background: 'rgba(200,97,122,0.07)', border: '1px solid rgba(200,97,122,0.13)' }}>
+              <CalendarDays className="w-4 h-4 text-[#C8617A] shrink-0" />
+              <div>
+                <p className="text-[10px] text-[#9C7060] font-medium leading-none">Totale</p>
+                <p className="text-xl font-black text-[#2D1B14] leading-tight">{filteredAppointments.length}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl"
+              style={{ background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.14)' }}>
+              <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
+              <div>
+                <p className="text-[10px] text-[#9C7060] font-medium leading-none">Completati</p>
+                <p className="text-xl font-black text-emerald-600 leading-tight">
+                  {filteredAppointments.filter(a => a.status === 'completed').length}
+                </p>
+              </div>
+            </div>
+            {(() => {
+              const rev = filteredAppointments
+                .filter(a => a.status === 'completed')
+                .reduce((s, a) => s + (a.total_price || 0), 0);
+              return rev > 0 ? (
+                <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl"
+                  style={{ background: 'rgba(212,175,122,0.09)', border: '1px solid rgba(212,175,122,0.18)' }}>
+                  <Euro className="w-4 h-4 text-[#D4AF7A] shrink-0" />
+                  <div>
+                    <p className="text-[10px] text-[#9C7060] font-medium leading-none">Incassato</p>
+                    <p className="text-xl font-black text-[#2D1B14] leading-tight">€{rev.toFixed(0)}</p>
+                  </div>
+                </div>
+              ) : null;
+            })()}
+            {(() => {
+              const pending = filteredAppointments.filter(a => a.status !== 'completed' && a.status !== 'cancelled');
+              const est = pending.reduce((s, a) => s + (a.total_price || 0), 0);
+              return est > 0 ? (
+                <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl"
+                  style={{ background: 'rgba(200,97,122,0.04)', border: '1px solid rgba(200,97,122,0.09)' }}>
+                  <TrendingUp className="w-4 h-4 text-[#C8617A]/60 shrink-0" />
+                  <div>
+                    <p className="text-[10px] text-[#9C7060] font-medium leading-none">Stimato</p>
+                    <p className="text-xl font-black text-[#9C7060] leading-tight">€{est.toFixed(0)}</p>
+                  </div>
+                </div>
+              ) : null;
+            })()}
+          </div>
+        )}
+
         {/* Planning Grid */}
         {loading ? (
           <Skeleton className="h-[600px] w-full" />
@@ -898,6 +955,7 @@ export default function PlanningPage() {
             touchStartRef={touchStartRef}
             services={services}
             clients={clients}
+            onViewDetail={setDetailApt}
           />
         ) : viewMode === 'week' ? (
           <WeekView
@@ -1013,13 +1071,27 @@ export default function PlanningPage() {
         )}
         {/* Mobile FAB - nuovo appuntamento */}
         <button
-          className="md:hidden fixed bottom-20 right-4 z-40 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center active:scale-95 transition-transform"
-          style={{ background: 'linear-gradient(135deg, #C8617A, #A0404F)' }}
+          className="md:hidden fixed bottom-20 right-4 z-40 w-14 h-14 rounded-full flex items-center justify-center active:scale-95 transition-transform"
+          style={{
+            background: 'linear-gradient(135deg, #C8617A, #A0404F)',
+            boxShadow: '0 8px 28px rgba(200,97,122,0.55), 0 2px 8px rgba(0,0,0,0.15)',
+            animation: 'fabPulse 3s ease-in-out infinite',
+          }}
           onClick={() => openNewAppointmentForDate(selectedDate)}
           data-testid="mobile-fab-btn"
         >
           <Plus className="w-6 h-6 text-white" />
         </button>
+
+        {/* Pannello dettaglio appuntamento */}
+        {detailApt && (
+          <AppointmentDetailPanel
+            apt={detailApt}
+            onClose={() => setDetailApt(null)}
+            onEdit={openEditDialog}
+            onCheckout={openEditDialogForCheckout}
+          />
+        )}
 
       </div>
     </Layout>

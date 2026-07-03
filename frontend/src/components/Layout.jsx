@@ -83,6 +83,8 @@ export default function Layout({ children }) {
     catch { return navGroups.map(g => g.label); }
   });
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [badgeCounts, setBadgeCounts] = useState({ cardAlerts: 0, waitlist: 0 });
+  const [todayApptCount, setTodayApptCount] = useState(0);
   const [adminTheme, setAdminTheme] = useState(() => {
     try {
       const stored = JSON.parse(localStorage.getItem('adminTheme'));
@@ -121,6 +123,25 @@ export default function Layout({ children }) {
     return () => clearInterval(tick);
   }, []);
 
+  useEffect(() => {
+    if (!user) return;
+    const fetchBadges = async () => {
+      try {
+        const [alertsRes, waitRes] = await Promise.all([
+          api.get(`${API}/cards/alerts/all?days=30&threshold_percent=20`),
+          api.get(`${API}/waitlist`),
+        ]);
+        setBadgeCounts({
+          cardAlerts: alertsRes.data?.length || 0,
+          waitlist: waitRes.data?.length || 0,
+        });
+      } catch {}
+    };
+    fetchBadges();
+    const interval = setInterval(fetchBadges, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [user]); // eslint-disable-line
+
   // Notifiche browser per nuove prenotazioni online
   useEffect(() => {
     if (!user) return;
@@ -143,6 +164,7 @@ export default function Layout({ children }) {
           }
         }
         lastApptCountRef.current = count;
+        setTodayApptCount(count);
       } catch {}
     };
     checkBookings();
@@ -192,6 +214,9 @@ export default function Layout({ children }) {
   const NavLink = ({ item, mobile = false, mini = false }) => {
     const isActive = location.pathname === item.path;
     const Icon = item.icon;
+    const badge = item.path === '/card-alerts' ? badgeCounts.cardAlerts
+      : item.path === '/waitlist' ? badgeCounts.waitlist
+      : 0;
     return (
       <Link
         to={item.path}
@@ -202,17 +227,35 @@ export default function Layout({ children }) {
           ${mini ? 'justify-center px-1.5 py-2.5' : 'px-2.5 py-2.5'}
           ${isActive ? 'nav-active' : ''}`}
         style={isActive
-          ? { background: `linear-gradient(135deg, ${t.primary}28, ${t.primary}12)`, color: t.primary, fontWeight: 700, boxShadow: `inset 3px 0 0 ${t.primary}` }
+          ? { background: `linear-gradient(135deg, ${t.primary}32, ${t.primary}16)`, color: t.primary, fontWeight: 700, boxShadow: `inset 4px 0 0 ${t.primary}, 0 2px 18px ${t.primary}1C` }
           : { color: t.sidebar_text + 'AA' }
         }
       >
         <div
-          className="nav-icon flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center"
-          style={isActive ? { background: `${t.primary}22`, color: t.primary } : { color: 'inherit' }}
+          className="nav-icon flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center relative"
+          style={isActive ? { background: `${t.primary}28`, color: t.primary } : { color: 'inherit' }}
         >
           <Icon className="w-4 h-4" strokeWidth={isActive ? 2.5 : 1.8} />
+          {badge > 0 && (
+            <span
+              className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full text-[8px] font-black flex items-center justify-center text-white leading-none"
+              style={{ backgroundColor: t.primary, boxShadow: `0 0 0 1.5px ${t.sidebar_bg}` }}
+            >
+              {badge > 9 ? '9+' : badge}
+            </span>
+          )}
         </div>
-        {!mini && <span className="truncate text-xs">{item.label}</span>}
+        {!mini && (
+          <span className="truncate text-xs flex-1">{item.label}</span>
+        )}
+        {!mini && badge > 0 && (
+          <span
+            className="text-[9px] font-black px-1.5 py-0.5 rounded-full shrink-0"
+            style={{ backgroundColor: `${t.primary}20`, color: t.primary }}
+          >
+            {badge}
+          </span>
+        )}
       </Link>
     );
   };
@@ -362,23 +405,41 @@ export default function Layout({ children }) {
           style={{ borderTop: `1px solid ${t.sidebar_text}14` }}
         >
           {!mini && (
-            <div
-              className="flex items-center gap-2.5 mb-2 px-2.5 py-2 rounded-xl"
-              style={{ background: `${t.primary}12` }}
-            >
+            <>
+              {/* Day progress */}
+              {todayApptCount > 0 && (
+                <div className="mb-2 rounded-xl px-2.5 py-2" style={{ background: `${t.primary}10`, border: `1px solid ${t.primary}18` }}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: t.sidebar_text + '66' }}>Oggi</span>
+                    <span className="text-xs font-black" style={{ color: t.primary }}>{todayApptCount}</span>
+                  </div>
+                  <div className="h-1 rounded-full overflow-hidden" style={{ background: `${t.sidebar_text}14` }}>
+                    <div
+                      className="h-full rounded-full transition-all duration-700"
+                      style={{ width: `${Math.min(100, (todayApptCount / 12) * 100)}%`, background: `linear-gradient(90deg, ${t.primary}, ${t.accent || t.primary})` }}
+                    />
+                  </div>
+                  <p className="text-[9px] mt-0.5" style={{ color: t.sidebar_text + '44' }}>appuntamenti</p>
+                </div>
+              )}
               <div
-                className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow"
-                style={{ background: `linear-gradient(135deg, ${t.primary}, ${t.accent || t.primary}CC)` }}
+                className="flex items-center gap-2.5 mb-2 px-2.5 py-2 rounded-xl"
+                style={{ background: `${t.primary}12` }}
               >
-                {user?.name?.[0]?.toUpperCase() || 'B'}
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow"
+                  style={{ background: `linear-gradient(135deg, ${t.primary}, ${t.accent || t.primary}CC)` }}
+                >
+                  {user?.name?.[0]?.toUpperCase() || 'B'}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold truncate" style={{ color: t.sidebar_text }}>
+                    {user?.name || 'Bruno'}
+                  </p>
+                  <p className="text-[10px] truncate" style={{ color: t.sidebar_text + '55' }}>Amministratore</p>
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold truncate" style={{ color: t.sidebar_text }}>
-                  {user?.name || 'Bruno'}
-                </p>
-                <p className="text-[10px] truncate" style={{ color: t.sidebar_text + '55' }}>Amministratore</p>
-              </div>
-            </div>
+            </>
           )}
 
           <button

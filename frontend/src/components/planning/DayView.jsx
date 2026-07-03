@@ -1,5 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { Clock, Repeat, MessageCircle, Euro } from 'lucide-react';
+import { Clock, Repeat, MessageCircle, Euro, Info } from 'lucide-react';
 import { addDays, subDays } from 'date-fns';
 import { getAppointmentColor, getServiceColors, buildServiceLookups } from '../../lib/categories';
 import ClientAvatar from '../ClientAvatar';
@@ -32,6 +32,7 @@ export default function DayView({
   onDrop,
   touchStartRef,
   services,
+  onViewDetail,
 }) {
   const { svcById, svcByName } = buildServiceLookups(services);
 
@@ -243,6 +244,11 @@ export default function DayView({
                             <button onClick={(e) => { e.stopPropagation(); openRecurringDialog(apt); }} className="p-0.5 rounded hover:bg-white/20" title="Ripeti" data-testid={`repeat-btn-${apt.id}`}>
                               <Repeat className="w-3 h-3" />
                             </button>
+                            {onViewDetail && (
+                              <button onClick={(e) => { e.stopPropagation(); onViewDetail(apt); }} className="p-0.5 rounded hover:bg-white/20" title="Dettagli" data-testid={`detail-btn-${apt.id}`}>
+                                <Info className="w-3 h-3 text-sky-300" />
+                              </button>
+                            )}
                           </div>
                         </div>
                         {/* Una riga colorata per ogni servizio */}
