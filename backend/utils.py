@@ -151,10 +151,12 @@ async def send_automatic_message(phone: str, template_name: str = None, template
         if res.get("sent"):
             await _log_communication((user or {}).get("id", "system"), "whatsapp", phone, f"Template: {template_name}", res)
             return res
-        logger.warning(f"Meta Template {template_name} fallito: {res.get('error')}")
-        fail = {**res, "sent": False}
-        await _log_communication((user or {}).get("id", "system"), "whatsapp", phone, f"Template: {template_name}", fail)
-        return fail
+        logger.warning(f"Meta Template {template_name} fallito: {res.get('error')} — fallback testo libero")
+        # Se il template non esiste/fallisce, prova fallback_text (valido entro 24h)
+        if not fallback_text:
+            fail = {**res, "sent": False}
+            await _log_communication((user or {}).get("id", "system"), "whatsapp", phone, f"Template: {template_name}", fail)
+            return fail
 
     # 2. Meta testo libero (funziona solo nella finestra 24h del cliente)
     msg = fallback_text or ""
