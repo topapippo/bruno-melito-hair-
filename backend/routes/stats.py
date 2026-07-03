@@ -533,8 +533,8 @@ async def get_settings(current_user: dict = Depends(get_current_user)):
         "working_days": current_user.get("working_days", ["lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato"]),
         "twilio_configured": twilio_client is not None,
         "admin_theme": current_user.get("admin_theme", {
-            "primary": "#A855F7", "sidebar_bg": "#12053A", "sidebar_text": "#FAF5FF",
-            "accent": "#FBBF24", "content_bg": "#FAF5FF", "content_text": "#12053A",
+            "primary": "#C8617A", "sidebar_bg": "#1A0A10", "sidebar_text": "#FAF5FF",
+            "accent": "#D4AF7A", "content_bg": "#FDF8F5", "content_text": "#2D1B14",
             "font_display": "Cormorant Garamond", "font_body": "Poppins"
         }),
         "google_review_link": current_user.get("google_review_link", ""),
