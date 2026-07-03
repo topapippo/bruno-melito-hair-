@@ -281,36 +281,33 @@ async def integrity_check(current_user: dict = Depends(get_current_user)):
     }
 
 
+async def _merge_client_data(uid: str, source_id: str, target_id: str, target_name: str, target_phone: str) -> tuple:
+    """Sposta appointments/payments/reminders/promo_usage da source a target, elimina source.
+    Ritorna (apt_moved, pay_moved)."""
+    apt_res = await db.appointments.update_many(
+        {"client_id": source_id, "user_id": uid},
+        {"$set": {"client_id": target_id, "client_name": target_name, "client_phone": target_phone}}
+    )
+    pay_res = await db.payments.update_many(
+        {"client_id": source_id, "user_id": uid}, {"$set": {"client_id": target_id}}
+    )
+    await db.reminders_sent.update_many({"client_id": source_id, "user_id": uid}, {"$set": {"client_id": target_id}})
+    await db.promo_usage.update_many({"client_id": source_id, "user_id": uid}, {"$set": {"client_id": target_id}})
+    await db.clients.delete_one({"id": source_id, "user_id": uid})
+    return apt_res.modified_count, pay_res.modified_count
+
+
 @router.post("/clients/{source_id}/merge-into/{target_id}")
 async def merge_clients(source_id: str, target_id: str, current_user: dict = Depends(get_current_user)):
     """Sposta tutti gli appuntamenti e pagamenti da source a target, poi elimina source."""
     uid = current_user["id"]
-    source = await db.clients.find_one({"id": source_id, "user_id": uid}, {"_id": 0})
     target = await db.clients.find_one({"id": target_id, "user_id": uid}, {"_id": 0})
     if not target:
         raise HTTPException(status_code=404, detail="Cliente destinazione non trovato")
 
-    apt_res = await db.appointments.update_many(
-        {"client_id": source_id, "user_id": uid},
-        {"$set": {"client_id": target_id, "client_name": target["name"], "client_phone": target.get("phone", "")}}
-    )
-    pay_res = await db.payments.update_many(
-        {"client_id": source_id, "user_id": uid},
-        {"$set": {"client_id": target_id}}
-    )
-    await db.reminders_sent.update_many(
-        {"client_id": source_id, "user_id": uid},
-        {"$set": {"client_id": target_id}}
-    )
-    if source:
-        await db.clients.delete_one({"id": source_id, "user_id": uid})
-
-    logger.info(f"Merge {source_id} → {target_id}: {apt_res.modified_count} apt, {pay_res.modified_count} pay")
-    return {
-        "success": True,
-        "appointments_moved": apt_res.modified_count,
-        "payments_moved": pay_res.modified_count,
-    }
+    apt_moved, pay_moved = await _merge_client_data(uid, source_id, target_id, target["name"], target.get("phone", ""))
+    logger.info(f"Merge {source_id} → {target_id}: {apt_moved} apt, {pay_moved} pay")
+    return {"success": True, "appointments_moved": apt_moved, "payments_moved": pay_moved}
 
 
 @router.post("/clients/merge-duplicates")
@@ -346,19 +343,12 @@ async def merge_duplicate_clients(current_user: dict = Depends(get_current_user)
             src_id = src["id"]
             if src_id == target_id:
                 continue
-            apt_res = await db.appointments.update_many(
-                {"client_id": src_id, "user_id": uid},
-                {"$set": {"client_id": target_id, "client_name": target["name"], "client_phone": target_phone}}
-            )
-            appointments_moved += apt_res.modified_count
-            await db.payments.update_many({"client_id": src_id, "user_id": uid}, {"$set": {"client_id": target_id}})
-            await db.reminders_sent.update_many({"client_id": src_id, "user_id": uid}, {"$set": {"client_id": target_id}})
-            await db.promo_usage.update_many({"client_id": src_id, "user_id": uid}, {"$set": {"client_id": target_id}})
+            apt_count, _ = await _merge_client_data(uid, src_id, target_id, target["name"], target_phone)
+            appointments_moved += apt_count
             # Se la destinazione non aveva telefono ma il duplicato sì, recuperalo
             if not target_phone and src.get("phone"):
                 await db.clients.update_one({"id": target_id, "user_id": uid}, {"$set": {"phone": src["phone"]}})
                 target_phone = src["phone"]
-            await db.clients.delete_one({"id": src_id, "user_id": uid})
             clients_removed += 1
         groups_merged += 1
 

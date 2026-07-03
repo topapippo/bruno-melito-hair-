@@ -1,10 +1,8 @@
 from fastapi import APIRouter, Depends
 from auth import get_current_user
-from database import db
 from utils import WA_TOKEN, WA_PHONE_NUMBER_ID
 import asyncio
 import requests as _req
-import os
 
 router = APIRouter()
 
@@ -95,11 +93,3 @@ async def social_status(current_user: dict = Depends(get_current_user)):
     }
 
 
-@router.get("/settings/communication-logs")
-async def communication_logs(current_user: dict = Depends(get_current_user), limit: int = 50):
-    """Ultimi N log di comunicazione (WhatsApp/SMS) per l'utente."""
-    limit = min(max(int(limit), 1), 200)
-    logs = await db.communication_logs.find(
-        {"user_id": current_user["id"]}, {"_id": 0}
-    ).sort("timestamp", -1).to_list(limit)
-    return logs
