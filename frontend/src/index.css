@@ -950,3 +950,85 @@ a, button { transition: all 0.2s ease; }
 /* Dialog entrance */
 [data-admin-theme="true"] [data-state="open"] { animation: adminPageIn 0.3s cubic-bezier(.22,1,.36,1) both; }
 
+/* ═══════════════════════════════════════════════════════════
+   PREMIUM DEPTH SYSTEM v2 — profondità reale, non solo animazioni
+   ═══════════════════════════════════════════════════════════ */
+
+/* Card warm border + shadow a strati */
+[data-admin-theme="true"] .rounded-xl.border,
+[data-admin-theme="true"] .rounded-2xl.border {
+  border-color: rgba(200, 97, 122, 0.12) !important;
+  box-shadow:
+    0 1px 2px rgba(45,27,20,0.04),
+    0 5px 18px rgba(45,27,20,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.75);
+  transition: box-shadow 0.32s cubic-bezier(.22,1,.36,1),
+              transform  0.32s cubic-bezier(.22,1,.36,1),
+              border-color 0.28s ease !important;
+}
+
+/* Hover card con elevazione — solo div, non input/nav */
+[data-admin-theme="true"] div.rounded-xl.border:not(.sidebar-nav-link):hover,
+[data-admin-theme="true"] div.rounded-2xl.border:not(.sidebar-nav-link):hover {
+  border-color: rgba(200, 97, 122, 0.22) !important;
+  box-shadow:
+    0 4px 10px rgba(45,27,20,0.06),
+    0 20px 56px rgba(200,97,122,0.13),
+    inset 0 1px 0 rgba(255,255,255,0.9) !important;
+  transform: translateY(-2px);
+}
+
+/* stat-hero-card: sfondo caldo + ombra più profonda */
+[data-admin-theme="true"] .stat-hero-card {
+  background: linear-gradient(145deg, #ffffff 0%, rgba(253,248,245,0.88) 100%) !important;
+  border-color: rgba(200,97,122,0.14) !important;
+  box-shadow:
+    0 2px 5px rgba(45,27,20,0.05),
+    0 10px 30px rgba(45,27,20,0.09),
+    inset 0 1px 0 rgba(255,255,255,1) !important;
+}
+[data-admin-theme="true"] .stat-hero-card:hover {
+  border-color: rgba(200,97,122,0.26) !important;
+  box-shadow:
+    0 6px 14px rgba(45,27,20,0.07),
+    0 26px 64px rgba(200,97,122,0.15),
+    inset 0 1px 0 rgba(255,255,255,1) !important;
+  transform: translateY(-3px) !important;
+}
+
+/* Gradient text — numeri KPI importanti */
+[data-admin-theme="true"] .gradient-text {
+  background: linear-gradient(135deg, var(--admin-primary, #C8617A) 0%, var(--admin-accent, #D4AF7A) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 800 !important;
+  letter-spacing: -0.04em !important;
+}
+
+/* Intestazioni tabella premium */
+[data-admin-theme="true"] thead th {
+  background: linear-gradient(180deg, rgba(200,97,122,0.07) 0%, rgba(200,97,122,0.02) 100%) !important;
+  color: var(--admin-primary) !important;
+  font-weight: 700 !important;
+  font-size: 0.68rem !important;
+  letter-spacing: 0.07em !important;
+  text-transform: uppercase !important;
+}
+
+/* Empty state e testo secondario con tono caldo */
+[data-admin-theme="true"] .text-muted-foreground { color: #9C7060 !important; }
+[data-admin-theme="true"] .text-gray-500 { color: #A07060 !important; }
+[data-admin-theme="true"] .text-gray-400 { color: #B08070 !important; }
+
+/* Headings: tracking più tight */
+[data-admin-theme="true"] h2, [data-admin-theme="true"] h3 { letter-spacing: -0.015em; }
+
+/* Sezione label in grassetto */
+[data-admin-theme="true"] .text-xs.font-semibold.uppercase,
+[data-admin-theme="true"] .text-xs.font-bold.uppercase {
+  letter-spacing: 0.1em;
+  color: var(--admin-primary) !important;
+  opacity: 0.75;
+}
+

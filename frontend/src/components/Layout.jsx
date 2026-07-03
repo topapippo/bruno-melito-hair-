@@ -210,7 +210,7 @@ export default function Layout({ children }) {
           className="nav-icon flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center"
           style={isActive ? { background: `${t.primary}22`, color: t.primary } : { color: 'inherit' }}
         >
-          <Icon className="w-3.5 h-3.5" strokeWidth={isActive ? 2.5 : 1.8} />
+          <Icon className="w-4 h-4" strokeWidth={isActive ? 2.5 : 1.8} />
         </div>
         {!mini && <span className="truncate text-xs">{item.label}</span>}
       </Link>
@@ -421,7 +421,7 @@ export default function Layout({ children }) {
         className={`hidden md:flex flex-col h-screen fixed left-0 top-0 border-r transition-all duration-300 z-40
           ${collapsed ? 'w-14' : 'w-60'}`}
         style={{
-          boxShadow: `4px 0 28px ${t.primary}0C`,
+          boxShadow: `6px 0 50px ${t.primary}1E, 2px 0 8px rgba(0,0,0,0.10)`,
           borderColor: `${t.sidebar_text}10`,
         }}
       >
@@ -486,9 +486,9 @@ export default function Layout({ children }) {
         {/* Ambient mesh gradient — sottile, non distrae */}
         <div className="fixed inset-0 pointer-events-none z-0" style={{
           background: `
-            radial-gradient(ellipse at 12% 12%, ${t.primary}09 0%, transparent 50%),
-            radial-gradient(ellipse at 88% 88%, ${t.accent || t.primary}07 0%, transparent 45%),
-            radial-gradient(ellipse at 65% 8%,  ${t.primary}05 0%, transparent 35%)
+            radial-gradient(ellipse at 8% 10%,  ${t.primary}1E 0%, transparent 52%),
+            radial-gradient(ellipse at 92% 90%, ${t.accent || t.primary}16 0%, transparent 48%),
+            radial-gradient(ellipse at 55% 5%,  ${t.primary}0D 0%, transparent 38%)
           `,
         }} />
         <div key={location.pathname} className="p-3 md:p-5 lg:p-7 admin-page-in relative z-10">
