@@ -19,45 +19,25 @@ REGISTER_MAX_PER_DAY = 3
 REGISTER_WINDOW_SECONDS = 86400  # 24 ore
 
 
-async def _check_rate_limit(ip: str):
-    """Blocca l'IP dopo 5 tentativi falliti in 15 minuti."""
-    window_start = datetime.now(timezone.utc) - timedelta(seconds=LOGIN_WINDOW_SECONDS)
-    count = await db.login_attempts.count_documents({
+async def _check_rate_limit(collection, ip: str, max_attempts: int, window_seconds: int, error_message: str, cleanup: bool = False):
+    """Blocca l'IP dopo troppi tentativi in una finestra temporale."""
+    window_start = datetime.now(timezone.utc) - timedelta(seconds=window_seconds)
+    count = await collection.count_documents({
         "ip": ip,
         "ts": {"$gte": window_start.isoformat()}
     })
-    if count >= LOGIN_MAX_ATTEMPTS:
+    if count >= max_attempts:
         raise HTTPException(
             status_code=429,
-            detail=f"Troppi tentativi di login. Riprova tra {LOGIN_WINDOW_SECONDS // 60} minuti.",
-            headers={"Retry-After": str(LOGIN_WINDOW_SECONDS)},
+            detail=error_message,
+            headers={"Retry-After": str(window_seconds)},
         )
-    await db.login_attempts.insert_one({
+    await collection.insert_one({
         "ip": ip,
         "ts": datetime.now(timezone.utc).isoformat()
     })
-    await db.login_attempts.delete_many({
-        "ts": {"$lt": window_start.isoformat()}
-    })
-
-
-async def _check_register_rate_limit(ip: str):
-    """Blocca l'IP dopo 3 registrazioni nelle ultime 24 ore."""
-    window_start = datetime.now(timezone.utc) - timedelta(seconds=REGISTER_WINDOW_SECONDS)
-    count = await db.register_attempts.count_documents({
-        "ip": ip,
-        "ts": {"$gte": window_start.isoformat()}
-    })
-    if count >= REGISTER_MAX_PER_DAY:
-        raise HTTPException(
-            status_code=429,
-            detail="Troppi account creati da questo indirizzo. Riprova domani.",
-            headers={"Retry-After": str(REGISTER_WINDOW_SECONDS)},
-        )
-    await db.register_attempts.insert_one({
-        "ip": ip,
-        "ts": datetime.now(timezone.utc).isoformat()
-    })
+    if cleanup:
+        await collection.delete_many({"ts": {"$lt": window_start.isoformat()}})
 
 
 async def _notify_login_whatsapp(user: dict, ip: str):
@@ -85,7 +65,7 @@ async def _notify_login_whatsapp(user: dict, ip: str):
 @router.post("/auth/register", response_model=TokenResponse)
 async def register(data: UserCreate, request: Request):
     client_ip = request.client.host if request.client else "unknown"
-    await _check_register_rate_limit(client_ip)
+    await _check_rate_limit(db.register_attempts, client_ip, REGISTER_MAX_PER_DAY, REGISTER_WINDOW_SECONDS, "Troppi account creati da questo indirizzo. Riprova domani.")
     existing = await db.users.find_one({"email": data.email}, {"_id": 0})
     if existing:
         raise HTTPException(status_code=400, detail="Email già registrata")
@@ -208,7 +188,7 @@ async def _repair_categories(user_id: str):
 @router.post("/auth/login", response_model=TokenResponse)
 async def login(data: UserLogin, request: Request, background_tasks: BackgroundTasks):
     client_ip = request.client.host if request.client else "unknown"
-    await _check_rate_limit(client_ip)
+    await _check_rate_limit(db.login_attempts, client_ip, LOGIN_MAX_ATTEMPTS, LOGIN_WINDOW_SECONDS, f"Troppi tentativi di login. Riprova tra {LOGIN_WINDOW_SECONDS // 60} minuti.", cleanup=True)
 
     user = await db.users.find_one({"email": data.email}, {"_id": 0})
     # Messaggio generico per non rivelare se l'email esiste

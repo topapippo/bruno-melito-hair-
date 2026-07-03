@@ -3,8 +3,19 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime, timezone, date as date_type, timedelta
 import uuid
+import os
 from database import db
 from routes.auth import get_current_user
+
+PUBLIC_ADMIN_EMAIL = os.environ.get("PUBLIC_ADMIN_EMAIL", "admin@brunomelito.it")
+
+
+async def _get_salon_owner() -> Optional[dict]:
+    """Trova il titolare del salone tramite PUBLIC_ADMIN_EMAIL (fallback: primo utente)."""
+    user = await db.users.find_one({"email": PUBLIC_ADMIN_EMAIL}, {"_id": 0})
+    if not user:
+        user = await db.users.find_one({}, {"_id": 0})
+    return user
 
 router = APIRouter()
 
@@ -111,18 +122,14 @@ async def delete_blocked_slot(slot_id: str, current_user: dict = Depends(get_cur
 @router.get("/public/blocked-slots/{date}")
 async def get_public_blocked_for_date(date: str):
     """Get blocked time slots for a specific date (public, for booking page)."""
-    user = await db.users.find_one({"email": "admin@brunomelito.it"}, {"_id": 0})
-    if not user:
-        user = await db.users.find_one({}, {"_id": 0})
+    user = await _get_salon_owner()
     if not user:
         return []
     user_id = user["id"]
 
-    # Parse date to get day of week in Italian
-    from datetime import datetime as dt
     day_names = ["lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato", "domenica"]
     try:
-        d = dt.strptime(date, "%Y-%m-%d")
+        d = datetime.strptime(date, "%Y-%m-%d")
         day_of_week = day_names[d.weekday()]
     except ValueError:
         return []
@@ -167,9 +174,7 @@ async def get_public_blocked_for_date(date: str):
 @router.get("/public/blocked-all-day")
 async def get_public_all_day_blocked():
     """Returns fully-blocked dates and recurring weekdays for the public booking calendar."""
-    user = await db.users.find_one({"email": "admin@brunomelito.it"}, {"_id": 0})
-    if not user:
-        user = await db.users.find_one({}, {"_id": 0})
+    user = await _get_salon_owner()
     if not user:
         return {"dates": [], "recurring_days": []}
     user_id = user["id"]

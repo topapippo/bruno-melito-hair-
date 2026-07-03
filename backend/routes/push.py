@@ -17,6 +17,15 @@ class PushSubscription(BaseModel):
     keys: dict
 
 
+def _build_vapid_pem() -> str:
+    """Ricostruisce la chiave PEM privata VAPID dal valore base64 dell'env var."""
+    lines = ["-----BEGIN PRIVATE KEY-----"]
+    for i in range(0, len(VAPID_PRIVATE_KEY), 64):
+        lines.append(VAPID_PRIVATE_KEY[i:i+64])
+    lines.append("-----END PRIVATE KEY-----")
+    return "\n".join(lines)
+
+
 @router.get("/push/vapid-key")
 async def get_vapid_key():
     return {"public_key": VAPID_PUBLIC_KEY}
@@ -64,12 +73,7 @@ async def send_push_to_all(title: str, body: str, url: str = "/", icon: str = "/
     if not subscriptions:
         return {"sent": 0, "message": "No push subscriptions"}
 
-    private_key_b64 = VAPID_PRIVATE_KEY
-    pem_lines = ["-----BEGIN PRIVATE KEY-----"]
-    for i in range(0, len(private_key_b64), 64):
-        pem_lines.append(private_key_b64[i:i+64])
-    pem_lines.append("-----END PRIVATE KEY-----")
-    private_pem = "\n".join(pem_lines)
+    private_pem = _build_vapid_pem()
 
     payload = json.dumps({"title": title, "body": body, "icon": icon, "url": url})
     sent = 0
@@ -124,15 +128,7 @@ async def _send_push_reminders_core():
     sent = 0
     failed = 0
 
-    # Reconstruct PEM from base64 DER
-    private_key_b64 = VAPID_PRIVATE_KEY
-    # Build proper PEM
-    pem_lines = ["-----BEGIN PRIVATE KEY-----"]
-    # Split into 64-char lines
-    for i in range(0, len(private_key_b64), 64):
-        pem_lines.append(private_key_b64[i:i+64])
-    pem_lines.append("-----END PRIVATE KEY-----")
-    private_pem = "\n".join(pem_lines)
+    private_pem = _build_vapid_pem()
 
     for apt in appointments:
         client_name = apt.get("client_name", "Cliente")
