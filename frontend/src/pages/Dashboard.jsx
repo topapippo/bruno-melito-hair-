@@ -185,18 +185,19 @@ export default function Dashboard() {
         <div
           className="relative rounded-3xl overflow-hidden px-6 pt-7 pb-6 md:px-9 md:pt-9 md:pb-7 greeting-in"
           style={{
-            background: 'linear-gradient(135deg, color-mix(in srgb, var(--admin-primary) 14%, var(--admin-content-bg)), color-mix(in srgb, var(--admin-accent) 10%, var(--admin-content-bg)))',
-            border: '1px solid color-mix(in srgb, var(--admin-primary) 20%, transparent)',
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--admin-primary) 22%, var(--admin-content-bg)) 0%, color-mix(in srgb, var(--admin-accent) 16%, var(--admin-content-bg)) 100%)',
+            border: '1px solid color-mix(in srgb, var(--admin-primary) 32%, transparent)',
+            boxShadow: '0 4px 32px color-mix(in srgb, var(--admin-primary) 8%, transparent)',
           }}
         >
           {/* Blob decorativi */}
           <div
             className="absolute top-0 right-0 w-80 h-80 rounded-full pointer-events-none blob-animate"
-            style={{ background: 'radial-gradient(circle, var(--admin-primary) 0%, transparent 70%)', opacity: 0.09, transform: 'translate(35%, -35%)' }}
+            style={{ background: 'radial-gradient(circle, var(--admin-primary) 0%, transparent 70%)', opacity: 0.17, transform: 'translate(35%, -35%)' }}
           />
           <div
             className="absolute bottom-0 left-16 w-48 h-48 rounded-full pointer-events-none"
-            style={{ background: 'radial-gradient(circle, var(--admin-accent) 0%, transparent 70%)', opacity: 0.07, transform: 'translateY(40%)' }}
+            style={{ background: 'radial-gradient(circle, var(--admin-accent) 0%, transparent 70%)', opacity: 0.14, transform: 'translateY(40%)' }}
           />
 
           <div className="relative flex flex-col md:flex-row md:items-start md:justify-between gap-5">
@@ -210,7 +211,7 @@ export default function Dashboard() {
                   Dashboard Bruno Melito Hair
                 </span>
               </div>
-              <h1 className="font-display text-3xl md:text-4xl font-bold leading-tight" style={{ color: 'var(--admin-content-text)' }}>
+              <h1 className="font-display text-4xl md:text-5xl font-black leading-tight tracking-tight" style={{ color: 'var(--admin-content-text)' }}>
                 {greetingEmoji} {greeting}, {firstName}!
               </h1>
               <p className="text-sm mt-1 capitalize font-medium" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 50%, transparent)' }}>
