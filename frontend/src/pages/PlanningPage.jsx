@@ -280,12 +280,10 @@ export default function PlanningPage() {
     } catch { /* silent */ }
   };
 
-  const fetchWeekData = async () => {
-    const ws = startOfWeek(selectedDate, { weekStartsOn: 1 });
-    const we = endOfWeek(selectedDate, { weekStartsOn: 1 });
-    const days = eachDayOfInterval({ start: ws, end: we });
-    const startDate = format(ws, 'yyyy-MM-dd');
-    const endDate = format(we, 'yyyy-MM-dd');
+  const fetchRangeAppointments = async (start, end, setter) => {
+    const days = eachDayOfInterval({ start, end });
+    const startDate = format(start, 'yyyy-MM-dd');
+    const endDate = format(end, 'yyyy-MM-dd');
     const results = {};
     days.forEach((day) => { results[format(day, 'yyyy-MM-dd')] = []; });
     try {
@@ -294,47 +292,32 @@ export default function PlanningPage() {
         if (results[apt.date] !== undefined) results[apt.date].push(apt);
       });
     } catch { /* silent */ }
-    setWeekAppointments(results);
+    setter(results);
   };
 
-  const fetchMonthData = async () => {
-    const ms = startOfMonth(selectedDate);
-    const me = endOfMonth(selectedDate);
-    const days = eachDayOfInterval({ start: ms, end: me });
-    const startDate = format(ms, 'yyyy-MM-dd');
-    const endDate = format(me, 'yyyy-MM-dd');
-    const results = {};
-    days.forEach((day) => { results[format(day, 'yyyy-MM-dd')] = []; });
-    try {
-      const res = await api.get(`${API}/appointments?start_date=${startDate}&end_date=${endDate}`);
-      (res.data || []).forEach((apt) => {
-        if (results[apt.date] !== undefined) results[apt.date].push(apt);
-      });
-    } catch { /* silent */ }
-    setMonthAppointments(results);
-  };
-
-  const filteredAppointments = appointments
-    .filter((apt) => !selectedOperatorId || apt.operator_id === selectedOperatorId)
-    .filter((apt) => !selectedServiceId || (apt.services || []).some((service) => service.id === selectedServiceId));
-
-  const filteredWeekAppointments = Object.fromEntries(
-    Object.entries(weekAppointments).map(([date, apts]) => [
-      date,
-      apts
-        .filter((apt) => !selectedOperatorId || apt.operator_id === selectedOperatorId)
-        .filter((apt) => !selectedServiceId || (apt.services || []).some((service) => service.id === selectedServiceId)),
-    ])
+  const fetchWeekData = () => fetchRangeAppointments(
+    startOfWeek(selectedDate, { weekStartsOn: 1 }),
+    endOfWeek(selectedDate, { weekStartsOn: 1 }),
+    setWeekAppointments
   );
 
-  const filteredMonthAppointments = Object.fromEntries(
-    Object.entries(monthAppointments).map(([date, apts]) => [
-      date,
-      apts
-        .filter((apt) => !selectedOperatorId || apt.operator_id === selectedOperatorId)
-        .filter((apt) => !selectedServiceId || (apt.services || []).some((service) => service.id === selectedServiceId)),
-    ])
+  const fetchMonthData = () => fetchRangeAppointments(
+    startOfMonth(selectedDate),
+    endOfMonth(selectedDate),
+    setMonthAppointments
   );
+
+  const matchesFilters = (apt) =>
+    (!selectedOperatorId || apt.operator_id === selectedOperatorId) &&
+    (!selectedServiceId || (apt.services || []).some((service) => service.id === selectedServiceId));
+
+  const filterGroupedAppointments = (grouped) => Object.fromEntries(
+    Object.entries(grouped).map(([date, apts]) => [date, apts.filter(matchesFilters)])
+  );
+
+  const filteredAppointments = appointments.filter(matchesFilters);
+  const filteredWeekAppointments = filterGroupedAppointments(weekAppointments);
+  const filteredMonthAppointments = filterGroupedAppointments(monthAppointments);
 
   const filteredColumns = selectedOperatorId ? operators.filter((op) => op.id === selectedOperatorId) : operators;
 
