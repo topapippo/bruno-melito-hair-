@@ -62,7 +62,6 @@ def sample_client():
         "phone": "3331234567",
         "email": "mario@example.com",
         "notes": "",
-        "send_sms_reminders": True,
         "total_visits": 0,
         "created_at": "2024-01-01T00:00:00+00:00"
     }

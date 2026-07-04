@@ -237,4 +237,3 @@ def calculate_end_time(start_time: str, duration: int) -> str:
         return f"{(total // 60) % 24:02d}:{total % 60:02d}"
     except: return start_time
 
-def send_sms_reminder(p, m, s): return {"success": False, "error": "SMS disabilitati pro-WhatsApp"}

@@ -30,10 +30,8 @@ def _normalize_phone(phone: str) -> str:
 
 
 def _normalize_client(doc: dict) -> dict:
-    """Normalizza il campo sms: unifica sms_reminder legacy → send_sms_reminders."""
-    if "sms_reminder" in doc and "send_sms_reminders" not in doc:
-        doc["send_sms_reminders"] = doc.pop("sms_reminder")
     doc.pop("sms_reminder", None)
+    doc.pop("send_sms_reminders", None)
     doc.pop("_id", None)
     doc.pop("user_id", None)
     return doc
@@ -68,7 +66,6 @@ async def import_clients_bulk(data: ClientBulkImport, current_user: dict = Depen
             "id": str(uuid.uuid4()), "user_id": current_user["id"],
             "name": name, "phone": incoming_phone,
             "email": client_data.get("email") or "", "hair_notes": client_data.get("hair_notes") or client_data.get("notes") or "",
-            "send_sms_reminders": client_data.get("send_sms_reminders", client_data.get("sms_reminder", True)),
             "total_visits": 0, "created_at": datetime.now(timezone.utc).isoformat()
         }
         await db.clients.insert_one(client_doc)
@@ -87,7 +84,6 @@ async def create_client(data: ClientCreate, current_user: dict = Depends(get_cur
         "id": client_id, "user_id": current_user["id"],
         "name": data.name, "phone": data.phone or "",
         "email": data.email or "", "hair_notes": data.hair_notes or "",
-        "send_sms_reminders": data.send_sms_reminders if data.send_sms_reminders is not None else True,
         "birthday": data.birthday or None,
         "total_visits": 0, "created_at": datetime.now(timezone.utc).isoformat()
     }

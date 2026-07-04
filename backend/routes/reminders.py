@@ -20,8 +20,7 @@ import logging
 
 from database import db
 from auth import get_current_user
-from models import SMSRequest
-from utils import (send_sms_reminder, twilio_client, TWILIO_PHONE_NUMBER,
+from utils import (twilio_client, TWILIO_PHONE_NUMBER,
                    normalize_phone_wa, send_whatsapp, send_whatsapp_cloud,
                    send_automatic_message, send_whatsapp_template, visit_done_filter, WA_TOKEN)
 from pydantic import BaseModel
@@ -39,28 +38,6 @@ class MessageTemplateUpdate(BaseModel):
     name: Optional[str] = None
     text: Optional[str] = None
 
-
-# ============== SMS ==============
-
-@router.post("/sms/send-reminder")
-async def send_appointment_reminder(data: SMSRequest, current_user: dict = Depends(get_current_user)):
-    appointment = await db.appointments.find_one({"id": data.appointment_id, "user_id": current_user["id"]}, {"_id": 0})
-    if not appointment:
-        raise HTTPException(status_code=404, detail="Appuntamento non trovato")
-    client = await db.clients.find_one({"id": appointment["client_id"], "user_id": current_user["id"]}, {"_id": 0})
-    if not client or not client.get("phone"):
-        raise HTTPException(status_code=400, detail="Cliente senza numero di telefono")
-    if not client.get("sms_reminder", True):
-        raise HTTPException(status_code=400, detail="Cliente ha disabilitato promemoria SMS")
-    from utils import WA_FOOTER
-    services_text = ", ".join([s["name"] for s in appointment["services"]])
-    default_message = f"Promemoria: hai un appuntamento il {_fmt_date_it(appointment['date'])} alle {appointment['time']} per {services_text}. Ti aspettiamo!" + WA_FOOTER
-    message = data.message or default_message
-    result = await send_sms_reminder(client["phone"], message, current_user["salon_name"])
-    if result["success"]:
-        await db.appointments.update_one({"id": data.appointment_id}, {"$set": {"sms_sent": True}})
-        return {"success": True, "message": "SMS inviato con successo"}
-    return {"success": False, "error": result.get("error", "Errore sconosciuto")}
 
 
 @router.get("/sms/status")

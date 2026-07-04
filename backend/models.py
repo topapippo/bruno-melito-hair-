@@ -78,7 +78,6 @@ class ClientCreate(BaseModel):
     phone: Optional[str] = ""
     email: Optional[str] = ""
     hair_notes: Optional[str] = ""
-    send_sms_reminders: Optional[bool] = True
     birthday: Optional[str] = None   # formato MM-DD (es. "03-15")
 
 class ClientResponse(BaseModel):
@@ -87,7 +86,6 @@ class ClientResponse(BaseModel):
     phone: Optional[str] = ""
     email: Optional[str] = ""
     hair_notes: Optional[str] = ""
-    send_sms_reminders: Optional[bool] = True
     birthday: Optional[str] = None
     created_at: str
     total_visits: int = 0
@@ -97,7 +95,6 @@ class ClientUpdate(BaseModel):
     phone: Optional[str] = None
     email: Optional[str] = None
     hair_notes: Optional[str] = None
-    send_sms_reminders: Optional[bool] = None
     birthday: Optional[str] = None
 
 class ClientBulkImport(BaseModel):
@@ -217,11 +214,6 @@ class AppointmentUpdate(BaseModel):
         return v
 
 
-# ============== SMS ==============
-
-class SMSRequest(BaseModel):
-    appointment_id: str
-    message: Optional[str] = None
 
 
 # ============== SETTINGS ==============

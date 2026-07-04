@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
   DialogContent,
@@ -63,7 +62,6 @@ export default function ClientsPage() {
     phone: '',
     email: '',
     hair_notes: '',
-    send_sms_reminders: true,
     birthday: '',
   });
 
@@ -101,7 +99,7 @@ export default function ClientsPage() {
       }
       setDialogOpen(false);
       setEditingClient(null);
-      setFormData({ name: '', phone: '', email: '', hair_notes: '', send_sms_reminders: true, birthday: '' });
+      setFormData({ name: '', phone: '', email: '', hair_notes: '', birthday: '' });
       fetchClients();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Errore nel salvataggio');
@@ -117,7 +115,6 @@ export default function ClientsPage() {
       phone: client.phone,
       email: client.email,
       hair_notes: client.hair_notes || '',
-      send_sms_reminders: client.send_sms_reminders !== false,
       birthday: client.birthday || '',
     });
     setDialogOpen(true);
@@ -138,7 +135,7 @@ export default function ClientsPage() {
 
   const openNewDialog = () => {
     setEditingClient(null);
-    setFormData({ name: '', phone: '', email: '', hair_notes: '', send_sms_reminders: true, birthday: '' });
+    setFormData({ name: '', phone: '', email: '', hair_notes: '', birthday: '' });
     setDialogOpen(true);
   };
 
@@ -241,10 +238,9 @@ export default function ClientsPage() {
           phone: c.phone || '',
           email: c.email || '',
           hair_notes: c.notes || '',
-          send_sms_reminders: true
         }))
       });
-      
+
       toast.success(`Importati ${res.data.imported} clienti! (${res.data.skipped} già esistenti)`);
       setImportDialogOpen(false);
       setImportPreview([]);
@@ -415,9 +411,6 @@ export default function ClientsPage() {
                       <div className="flex items-center gap-2 text-[#7C5C4A]">
                         <Phone className="w-4 h-4" />
                         <span>{client.phone}</span>
-                        {client.send_sms_reminders && (
-                          <MessageSquare className="w-3 h-3 text-[#789F8A]" title="SMS attivi" />
-                        )}
                       </div>
                     ) : (
                       <div className="flex items-center gap-2 text-red-500 bg-red-50 px-2 py-1.5 rounded-xl">
@@ -570,17 +563,6 @@ export default function ClientsPage() {
                   className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
                 />
               </div>
-              <div className="flex items-center justify-between p-3 rounded-xl bg-[#FAF7F2]">
-                <div className="flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4 text-[#7C5C4A]" />
-                  <Label className="font-normal">Promemoria SMS</Label>
-                </div>
-                <Switch
-                  checked={formData.send_sms_reminders}
-                  onCheckedChange={(checked) => setFormData({ ...formData, send_sms_reminders: checked })}
-                  className="data-[state=checked]:bg-[#789F8A]"
-                />
-              </div>
               <DialogFooter>
                 <Button
                   type="submit"
@@ -720,8 +702,8 @@ export default function ClientsPage() {
                     <p className="text-2xl font-black text-green-600">€{clientHistory.total_spent.toFixed(0)}</p>
                     <p className="text-xs text-[#7C5C4A] font-semibold">Lifetime value</p>
                   </div>
-                  <div className="p-4 bg-purple-100 rounded-xl text-center">
-                    <p className="text-sm font-black text-purple-600">{clientHistory.last_visit || '-'}</p>
+                  <div className="p-4 bg-rose-50 rounded-xl text-center">
+                    <p className="text-sm font-black text-[#C8617A]">{clientHistory.last_visit || '-'}</p>
                     <p className="text-xs text-[#7C5C4A] font-semibold">Ultima visita</p>
                   </div>
                   <div className="p-4 bg-amber-50 rounded-xl text-center">

@@ -124,7 +124,6 @@ export default function EditAppointmentDialog({
       email: selectedClientInfo.email || '',
       birthday: selectedClientInfo.birthday || '',
       hair_notes: selectedClientInfo.hair_notes || '',
-      send_sms_reminders: selectedClientInfo.send_sms_reminders !== false,
     });
     setEditingClient(true);
     setShowHistory(false);
@@ -1023,7 +1022,7 @@ export default function EditAppointmentDialog({
                   {selectedPromo && <div className="flex justify-between text-sm text-pink-600"><span className="flex items-center gap-1"><Gift className="w-3.5 h-3.5"/>Omaggio:</span><span className="font-semibold">{selectedPromo.free_service_name}</span></div>}
                   {discountType!=='none' && calculateDiscount()>0 && <div className="flex justify-between text-sm text-red-500"><span>Sconto:</span><span className="font-semibold">-€{calculateDiscount().toFixed(2)}</span></div>}
                   {selectedCard && (
-                    <div className="flex justify-between text-sm text-purple-600">
+                    <div className="flex justify-between text-sm text-[#D4AF7A]">
                       <span className="flex items-center gap-1"><Ticket className="w-3.5 h-3.5"/>{selectedCard.name}:</span>
                       <span className="font-semibold">
                         {selectedCardIsSubscription
