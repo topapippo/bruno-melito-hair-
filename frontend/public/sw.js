@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bruno-melito-v5';
+const CACHE_NAME = 'bruno-melito-v6';
 const ASSETS_TO_CACHE = [
   '/logo.png',
 ];
@@ -31,11 +31,16 @@ self.addEventListener('fetch', (event) => {
 
   event.respondWith(
     fetch(event.request)
-      .then((response) => {
-        return response;
-      })
-      .catch(() => {
-        return caches.match(event.request);
+      .then((response) => response)
+      .catch(async () => {
+        const cached = await caches.match(event.request);
+        if (cached) return cached;
+        // Nessuna versione in cache: evita il crash, ritorna una risposta valida
+        return new Response('Contenuto non disponibile offline', {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: { 'Content-Type': 'text/plain' },
+        });
       })
   );
 });
