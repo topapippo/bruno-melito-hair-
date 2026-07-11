@@ -39,6 +39,9 @@ export default function PlanningPage() {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [cardTemplates, setCardTemplates] = useState([]);
+  // Incasso reale del giorno selezionato, da db.payments — stessa fonte del riepilogo (DailySummaryPage),
+  // per evitare che il KPI "Incassato" sul planning diverga da "Incasso Totale" sul riepilogo.
+  const [dayEarnings, setDayEarnings] = useState(0);
 
   // Navigation
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -219,13 +222,15 @@ export default function PlanningPage() {
     setLoading(true);
     try {
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
-      const [appointmentsRes, blockedRes, adminBlocksRes] = await Promise.all([
+      const [appointmentsRes, blockedRes, adminBlocksRes, paymentsRes] = await Promise.all([
         api.get(`${API}/appointments?date=${dateStr}`),
         api.get(`${API}/public/blocked-slots/${dateStr}`).catch(() => ({ data: [] })),
         api.get(`${API}/blocked-slots`).catch(() => ({ data: [] })),
+        api.get(`${API}/payments?start=${dateStr}&end=${dateStr}`).catch(() => ({ data: [] })),
       ]);
       setAppointments(appointmentsRes.data);
       setBlockedSlots(blockedRes.data || []);
+      setDayEarnings((paymentsRes.data || []).reduce((s, p) => s + (p.total_paid || 0), 0));
       const allBlocks = adminBlocksRes.data || [];
       const jsDay = new Date(dateStr + 'T12:00:00').getDay();
       const dayNameMap = { 0:'domenica',1:'lunedì',2:'martedì',3:'mercoledì',4:'giovedì',5:'venerdì',6:'sabato' };
@@ -879,21 +884,16 @@ export default function PlanningPage() {
                 </p>
               </div>
             </div>
-            {(() => {
-              const rev = filteredAppointments
-                .filter(a => a.status === 'completed')
-                .reduce((s, a) => s + (a.total_price || 0), 0);
-              return rev > 0 ? (
-                <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl"
-                  style={{ background: 'rgba(212,175,122,0.09)', border: '1px solid rgba(212,175,122,0.18)' }}>
-                  <Euro className="w-4 h-4 text-[#D4AF7A] shrink-0" />
-                  <div>
-                    <p className="text-[10px] text-[#9C7060] font-medium leading-none">Incassato</p>
-                    <p className="text-xl font-black text-[#2D1B14] leading-tight">€{rev.toFixed(0)}</p>
-                  </div>
+            {dayEarnings > 0 && (
+              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl"
+                style={{ background: 'rgba(212,175,122,0.09)', border: '1px solid rgba(212,175,122,0.18)' }}>
+                <Euro className="w-4 h-4 text-[#D4AF7A] shrink-0" />
+                <div>
+                  <p className="text-[10px] text-[#9C7060] font-medium leading-none">Incassato</p>
+                  <p className="text-xl font-black text-[#2D1B14] leading-tight">€{dayEarnings.toFixed(0)}</p>
                 </div>
-              ) : null;
-            })()}
+              </div>
+            )}
             {(() => {
               const pending = filteredAppointments.filter(a => a.status !== 'completed' && a.status !== 'cancelled');
               const est = pending.reduce((s, a) => s + (a.total_price || 0), 0);
