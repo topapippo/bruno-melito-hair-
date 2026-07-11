@@ -1,887 +1,1406 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import api, { API } from '../lib/api';
+import { getCategoryInfo, groupServicesByCategory } from '../lib/categories';
 import { getMediaUrl } from '../lib/mediaUrl';
+import Layout from '../components/Layout';
+import PageHeader from '../components/PageHeader';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Scissors, ChevronDown, MapPin, Phone, CalendarDays, Printer, Download, X, MessageCircle, Sparkles, Star } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { format } from 'date-fns';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Save, Plus, Trash2, Upload, Image, Star, Globe, Eye, Loader2, X, GripVertical, Palette, Type, ArrowUp, ArrowDown, LayoutGrid, EyeOff, TrendingUp, Percent, Gift, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
-import { groupServicesByCategory } from '../lib/categories';
-import { SOCIAL_LINKS } from '../lib/websiteConstants';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 
-// Extracted components
-import BookingForm from '../components/website/BookingForm';
-import BookingSuccess from '../components/website/BookingSuccess';
-import MyAppointmentsModal from '../components/website/MyAppointmentsModal';
-import TrendGallery from '../components/website/TrendGallery';
-import { HeroGalleryStrip } from '../components/website/sections/HeroGalleryStrip';
-import {
-  AnimatedSection,
-  ServicesSection, SalonSection, AboutSection, PromotionsSection,
-  ReviewsSection, GallerySection, ContactSection,
-  TransformationsSection, TeamSection, WelcomeBanner, GiftCardSection,
-  PhotoInterlude,
-} from '../components/website/sections/LandingSections';
+const FONT_OPTIONS = [
+  'Cormorant Garamond', 'Playfair Display', 'Lora', 'Merriweather', 'Libre Baskerville',
+  'Montserrat', 'Nunito', 'Poppins', 'Raleway', 'Open Sans', 'Roboto', 'Inter',
+  'DM Sans', 'Work Sans', 'Outfit', 'Josefin Sans',
+];
 
-
-// Count-up animato con IntersectionObserver
-function CountUp({ to, duration = 1800, decimals = 0 }) {
-  const [count, setCount] = useState(0);
-  const ref = useRef(null);
-  const started = useRef(false);
-  useEffect(() => {
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting && !started.current) {
-        started.current = true;
-        const steps = Math.round(duration / 16);
-        let step = 0;
-        const timer = setInterval(() => {
-          step++;
-          const progress = step / steps;
-          const ease = 1 - Math.pow(1 - progress, 3);
-          const val = ease * to;
-          setCount(decimals ? parseFloat(val.toFixed(decimals)) : Math.floor(val));
-          if (step >= steps) { setCount(to); clearInterval(timer); }
-        }, 16);
-      }
-    }, { threshold: 0.4 });
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, [to, duration, decimals]);
-  return <span ref={ref}>{decimals ? count.toFixed(decimals) : count}</span>;
-}
-
-// #10 — Typewriter effect: cicla frasi nel hero
-function Typewriter({ phrases, color }) {
-  const [idx, setIdx] = useState(0);
-  const [text, setText] = useState('');
-  const [deleting, setDeleting] = useState(false);
-  useEffect(() => {
-    const current = phrases[idx];
-    if (!deleting && text === current) {
-      const t = setTimeout(() => setDeleting(true), 2400);
-      return () => clearTimeout(t);
-    }
-    if (deleting && text === '') {
-      setDeleting(false);
-      setIdx(p => (p + 1) % phrases.length);
-      return;
-    }
-    const t = setTimeout(() => {
-      setText(p => deleting ? p.slice(0, -1) : current.slice(0, p.length + 1));
-    }, deleting ? 35 : 75);
-    return () => clearTimeout(t);
-  }, [text, deleting, idx, phrases]);
+// Componente condiviso per editare una lista di stringhe (telefoni, punti di forza, ecc.)
+// Usa un editor creato con makeStringListEditor(field): { update, add, remove }
+function StringListEditor({ items, editor, addLabel }) {
   return (
-    <span>
-      {text}
-      <span className="inline-block w-0.5 h-[0.9em] ml-0.5 align-middle animate-pulse rounded-sm" style={{ backgroundColor: color }} />
-    </span>
-  );
-}
-
-export default function WebsitePage() {
-  const [siteData, setSiteData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [loadingSlow, setLoadingSlow] = useState(false);
-  const [showBooking, setShowBooking] = useState(false);
-  const [showServices, setShowServices] = useState(true);
-  const [bookingServices, setBookingServices] = useState([]);
-  const [operators, setOperators] = useState([]);
-  const servicesRef = useRef(null);
-  const contactRef = useRef(null);
-
-  const [publicPromos, setPublicPromos] = useState([]);
-  const [cardTemplates, setCardTemplates] = useState([]);
-
-  // Success state
-  const [success, setSuccess] = useState(false);
-  const [appointmentId, setAppointmentId] = useState(null);
-  const [upsellingSuggestions, setUpsellingSuggestions] = useState([]);
-  const [bookingWaSent, setBookingWaSent] = useState(false);
-
-  // Booking form data
-  const [formData, setFormData] = useState({
-    client_name: '', client_phone: '', service_ids: [], operator_id: '',
-    date: format(new Date(), 'yyyy-MM-dd'), time: '09:00', notes: ''
-  });
-  const [blockedSlots, setBlockedSlots] = useState([]);
-
-  // My Appointments
-  const [showMyAppts, setShowMyAppts] = useState(false);
-  const [bookingInitialStep, setBookingInitialStep] = useState(1);
-
-  const [navScrolled, setNavScrolled] = useState(false);
-  const [heroVisible, setHeroVisible] = useState(true);
-  useEffect(() => {
-    const onScroll = () => {
-      setNavScrolled(window.scrollY > 80);
-      setHeroVisible(window.scrollY < 500);
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  useEffect(() => {
-    const slowTimer = setTimeout(() => setLoadingSlow(true), 4000);
-    const fetchAll = async () => {
-      // Retry fino a 3 volte: se il server è in cold start il primo tentativo può scadere
-      // (Axios timeout 90s), ma il server è già sveglio al secondo tentativo (1-2s)
-      for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-          if (attempt > 0) await new Promise(r => setTimeout(r, 5000));
-          const res = await api.get(`${API}/public/website`);
-          const d = res.data;
-          setSiteData(d);
-          setOperators(d.operators || []);
-          setBookingServices(d.services || []);
-          setCardTemplates(d.card_templates || []);
-          setPublicPromos(d.promotions || []);
-          clearTimeout(slowTimer);
-          setLoading(false);
-          return;
-        } catch (err) {
-          console.error(`Caricamento sito tentativo ${attempt + 1}/3 fallito:`, err);
-        }
-      }
-      clearTimeout(slowTimer);
-      setLoading(false);
-    };
-    fetchAll();
-    // Keepalive: ping ogni 14 minuti per evitare il cold start di Render sul booking
-    const keepalive = setInterval(() => {
-      api.get(`${API}/ping`).catch(() => {});
-    }, 14 * 60 * 1000);
-    return () => { clearTimeout(slowTimer); clearInterval(keepalive); };
-  }, []);
-
-  const config = siteData?.config || {};
-  const reviews = siteData?.reviews || [];
-  const gallery = siteData?.gallery || [];
-  const salonPhotos = gallery.filter(g => g.section === 'salon');
-  const hairstylePhotos = gallery.filter(g => g.section === 'gallery');
-
-  // SEO: title + meta tags dinamici
-  useEffect(() => {
-    if (!siteData) return;
-    const name = config.salon_name || 'Bruno Melito Hair';
-    const desc = config.hero_description || `Prenota online il tuo appuntamento da ${name}. Taglio, colore, trattamenti professionali.`;
-    const url = window.location.origin + '/sito';
-
-    document.title = `${name} — Prenota Online`;
-
-    const setMeta = (name, content, prop = false) => {
-      const attr = prop ? 'property' : 'name';
-      let el = document.querySelector(`meta[${attr}="${name}"]`);
-      if (!el) { el = document.createElement('meta'); el.setAttribute(attr, name); document.head.appendChild(el); }
-      el.setAttribute('content', content);
-    };
-
-    setMeta('description', desc);
-    setMeta('og:title', `${name} — Prenota Online`, true);
-    setMeta('og:description', desc, true);
-    setMeta('og:type', 'website', true);
-    setMeta('og:url', url, true);
-    if (config.hero_image) setMeta('og:image', config.hero_image, true);
-    setMeta('twitter:card', 'summary_large_image');
-    setMeta('twitter:title', `${name} — Prenota Online`);
-    setMeta('twitter:description', desc);
-
-    return () => { document.title = 'Bruno Melito Hair'; };
-  }, [siteData, config.salon_name, config.hero_description, config.hero_image]);
-
-  // Load CMS fonts — evita link duplicati
-  useEffect(() => {
-    if (!config.font_display && !config.font_body) return;
-    const fonts = [config.font_display, config.font_body].filter(Boolean);
-    if (fonts.length === 0) return;
-    const href = `https://fonts.googleapis.com/css2?${fonts.map(f => `family=${f.replace(/ /g, '+')}:wght@400;600;700;800;900`).join('&')}&display=swap`;
-    if (document.querySelector(`link[href="${href}"]`)) return; // già caricato
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = href;
-    link.dataset.cmsFonts = 'true';
-    document.head.appendChild(link);
-    return () => { document.querySelector('link[data-cms-fonts="true"]')?.remove(); };
-  }, [config.font_display, config.font_body]);
-
-  const themeStyle = {
-    '--theme-primary': config.primary_color || '#E8477C',
-    '--theme-accent': config.accent_color || '#2EC4B6',
-    '--theme-bg': config.bg_color || '#FAFBFD',
-    '--theme-text': config.text_color || '#1A1A2E',
-    '--theme-font-display': config.font_display || 'Cormorant Garamond, serif',
-    '--theme-font-body': config.font_body || 'Nunito, sans-serif',
-  };
-
-  const T = {
-    primary: config.primary_color || '#E8477C',
-    accent: config.accent_color || '#2EC4B6',
-    bg: config.bg_color || '#FAFBFD',
-    text: config.text_color || '#1A1A2E',
-    fontDisplay: config.font_display || 'Cormorant Garamond, serif',
-    fontBody: config.font_body || 'Nunito, sans-serif',
-  };
-
-  const selectedServices = bookingServices.filter(s => formData.service_ids.includes(s.id));
-
-  const escapeHtml = (str) => String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-
-  // #2 — Prenota da ogni servizio: pre-seleziona il servizio e apre il form
-  const bookService = (serviceId) => {
-    setFormData(prev => ({ ...prev, service_ids: [serviceId] }));
-    setBookingInitialStep(2);
-    setShowBooking(true);
-  };
-
-  const bookPromo = (promo) => {
-    setFormData(prev => ({
-      ...prev,
-      notes: `[PROMO: ${promo.name}]`,
-      service_ids: promo.free_service_id ? [promo.free_service_id] : prev.service_ids,
-    }));
-    setBookingInitialStep(1);
-    setShowBooking(true);
-  };
-
-  const bookCard = (tmpl) => {
-    setFormData(prev => ({ ...prev, notes: `[CARD: ${tmpl.name}]` }));
-    setBookingInitialStep(1);
-    setShowBooking(true);
-  };
-
-  const scrollTo = (ref) => { ref.current?.scrollIntoView({ behavior: 'smooth' }); };
-  const openWhatsApp = () => {
-    const num = config.whatsapp || '393397833526';
-    window.open(`https://wa.me/${num}?text=Ciao, vorrei prenotare un appuntamento!`, '_blank');
-  };
-
-  const handleBookingSuccess = (aptId, upsells, waSent = false) => {
-    setAppointmentId(aptId);
-    setUpsellingSuggestions(upsells);
-    setBookingWaSent(waSent);
-    setSuccess(true);
-  };
-
-  const resetBooking = () => {
-    setSuccess(false);
-    setShowBooking(false);
-    setAppointmentId(null);
-    setUpsellingSuggestions([]);
-    setBookingInitialStep(1);
-    setFormData({ client_name: '', client_phone: '', service_ids: [], operator_id: '', date: format(new Date(), 'yyyy-MM-dd'), time: '09:00', notes: '' });
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#1C1008] flex flex-col items-center justify-center gap-5 px-6">
-        <img src="/logo.png?v=4" alt="Bruno Melito Hair" className="w-16 h-16 rounded-2xl border-2 border-amber-400/40" />
-        <div className="w-10 h-10 border-4 border-amber-400 border-t-transparent rounded-full animate-spin" />
-        {loadingSlow && (
-          <div className="text-center max-w-xs animate-pulse">
-            <p className="text-amber-300 font-bold text-sm">☕ Un momento…</p>
-            <p className="text-amber-200/70 text-xs mt-1">Il server si sta avviando.<br />Ci vorranno ancora pochi secondi.</p>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // SUCCESS PAGE
-  if (success) {
-    return (
-      <BookingSuccess
-        config={config}
-        formData={formData}
-        selectedServices={selectedServices}
-        appointmentId={appointmentId}
-        upsellingSuggestions={upsellingSuggestions}
-        setUpsellingSuggestions={setUpsellingSuggestions}
-        onReset={resetBooking}
-        waSent={bookingWaSent}
-      />
-    );
-  }
-
-  // BOOKING FORM
-  if (showBooking) {
-    return (
-      <BookingForm
-        config={config}
-        bookingServices={bookingServices}
-        operators={operators}
-        cardTemplates={cardTemplates}
-        publicPromos={publicPromos}
-        blockedSlots={blockedSlots}
-        setBlockedSlots={setBlockedSlots}
-        formData={formData}
-        setFormData={setFormData}
-        onBack={() => { setBookingInitialStep(1); setShowBooking(false); }}
-        onSuccess={handleBookingSuccess}
-        T={T}
-        initialStep={bookingInitialStep}
-      />
-    );
-  }
-
-  // ==================== WEBSITE LANDING PAGE ====================
-  const hours = config.hours || {};
-  const phones = config.phones || [];
-  const landingServiceGroups = groupServicesByCategory(bookingServices);
-
-  // Dynamic section ordering from CMS config
-  const defaultSectionOrder = ['services', 'team', 'salon', 'about', 'promotions', 'reviews', 'gallery', 'trend_gallery', 'gift_card', 'contact'];
-  const rawSectionOrder = config.section_order || defaultSectionOrder;
-  const normalizedSectionOrder = [...new Set(rawSectionOrder.filter(id => defaultSectionOrder.includes(id)))];
-  const sectionOrder = [...normalizedSectionOrder, ...defaultSectionOrder.filter(id => !normalizedSectionOrder.includes(id))];
-  const hiddenSections = config.hidden_sections || [];
-
-  const renderSection = (sectionId) => {
-    if (hiddenSections.includes(sectionId)) return null;
-    switch (sectionId) {
-      case 'services':
-        return bookingServices.length > 0 ? <ServicesSection key="services" {...{ servicesRef, showServices, setShowServices, landingServiceGroups, cardTemplates, setShowBooking, bookService, bookCard, T }} /> : null;
-      case 'salon':
-        return salonPhotos.length > 0 ? <SalonSection key="salon" salonPhotos={salonPhotos} T={T} /> : null;
-      case 'about':
-        return config.about_title ? <AboutSection key="about" config={config} salonPhotos={salonPhotos} T={T} /> : null;
-      case 'promotions':
-        return publicPromos.length > 0 ? <PromotionsSection key="promotions" publicPromos={publicPromos} setShowBooking={setShowBooking} bookPromo={bookPromo} T={T} /> : null;
-      case 'reviews':
-        return reviews.length > 0 ? <ReviewsSection key="reviews" reviews={reviews} T={T} config={config} /> : null;
-      case 'team':
-        return operators.filter(o => o.active !== false).length > 0 ? <TeamSection key="team" operators={operators} T={T} setShowBooking={setShowBooking} /> : null;
-      case 'gallery':
-        return hairstylePhotos.length > 0 ? <GallerySection key="gallery" config={config} hairstylePhotos={hairstylePhotos} setShowBooking={setShowBooking} T={T} /> : null;
-      case 'trend_gallery':
-        return <TrendGallery key="trend_gallery" setShowBooking={setShowBooking} />;
-      case 'gift_card':
-        return <GiftCardSection key="gift_card" T={T} config={config} setShowBooking={setShowBooking} />;
-      case 'contact':
-        return <ContactSection key="contact" {...{ contactRef, config, hours, phones, setShowBooking, openWhatsApp, T }} />;
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <div className="min-h-screen text-white" style={{ ...themeStyle, backgroundColor: config.bg_color || '#0a0a0f', fontFamily: `var(--theme-font-body)` }} data-testid="website-landing">
-      <WelcomeBanner T={T} setShowBooking={setShowBooking} />
-      <style>{`
-        @keyframes heroFadeIn { from { opacity: 0; transform: translateY(25px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
-        @keyframes pulseGlow { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.6; } }
-        @keyframes heroShimmer { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
-        .hero-animate { animation: heroFadeIn 1s ease forwards; opacity: 0; }
-        .hero-d1 { animation-delay: 0.15s; }
-        .hero-d2 { animation-delay: 0.3s; }
-        .hero-d3 { animation-delay: 0.45s; }
-        .hero-d4 { animation-delay: 0.6s; }
-        .hero-d5 { animation-delay: 0.75s; }
-        .float-slow { animation: float 6s ease-in-out infinite; }
-        .float-med { animation: float 4s ease-in-out infinite 1s; }
-        .pulse-glow { animation: pulseGlow 3s ease-in-out infinite; }
-        .hero-cta-primary {
-          background: linear-gradient(270deg, var(--theme-primary), color-mix(in srgb, var(--theme-primary) 80%, white), #C084FC, color-mix(in srgb, var(--theme-primary) 80%, white), var(--theme-primary)) !important;
-          background-size: 300% 300% !important;
-          animation: heroShimmer 4s ease infinite;
-          transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .hero-cta-primary:hover { transform: scale(1.06) translateY(-3px) !important; box-shadow: 0 16px 40px rgba(0,0,0,0.3) !important; }
-      `}</style>
-
-      {/* NAVBAR */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navScrolled ? 'bg-white shadow-md border-b border-gray-200' : 'bg-transparent border-b border-white/10'}`}>
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src="/logo.png?v=4" alt={config.salon_name} className="w-10 h-10 rounded-lg" />
-            <span className={`font-black text-sm sm:text-base tracking-tight transition-colors duration-300 ${navScrolled ? '' : 'text-white'}`}
-              style={navScrolled ? { color: T.text } : {}}>
-              {config.salon_name || 'BRUNO MELITO HAIR'}
-            </span>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-4">
-            <div className="hidden sm:flex items-center gap-6 text-sm">
-              <button
-                onClick={() => { setShowServices(true); setTimeout(() => scrollTo(servicesRef), 100); }}
-                className="transition-colors font-semibold"
-                style={{ color: navScrolled ? '#64748B' : 'rgba(255,255,255,0.75)' }}
-                onMouseEnter={e => { e.currentTarget.style.color = T.primary; }}
-                onMouseLeave={e => { e.currentTarget.style.color = navScrolled ? '#64748B' : 'rgba(255,255,255,0.75)'; }}
-              >Servizi</button>
-              <button
-                onClick={() => scrollTo(contactRef)}
-                className="transition-colors font-semibold"
-                style={{ color: navScrolled ? '#64748B' : 'rgba(255,255,255,0.75)' }}
-                onMouseEnter={e => { e.currentTarget.style.color = T.primary; }}
-                onMouseLeave={e => { e.currentTarget.style.color = navScrolled ? '#64748B' : 'rgba(255,255,255,0.75)'; }}
-              >Contatti</button>
-              <div className={`flex items-center gap-3 border-l pl-4 ${navScrolled ? 'border-gray-300' : 'border-white/20'}`}>
-                {SOCIAL_LINKS.map((link, i) => (
-                  <a key={i} href={link.url} target="_blank" rel="noopener noreferrer"
-                    className={`transition-colors ${navScrolled ? `text-[#B89A7A] ${link.color}` : 'text-white/50 hover:text-white'}`}
-                    title={link.label}>
-                    <link.icon className="w-4 h-4" />
-                  </a>
-                ))}
-              </div>
-            </div>
-            <Button asChild variant="outline"
-              className={`border-none rounded-lg px-2.5 py-1.5 sm:px-3 sm:py-2 ${navScrolled ? 'bg-gray-100 hover:bg-gray-200' : 'bg-white/10 hover:bg-white/20'}`}
-              data-testid="admin-link" title="Area Riservata">
-              <a href="/login" className={`flex items-center gap-1.5 transition-colors ${navScrolled ? 'text-[#64748B] hover:text-[#0EA5E9]' : 'text-white/60 hover:text-white'}`}>
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-                <span className="text-xs font-bold hidden xs:inline sm:inline">Accedi</span>
-              </a>
-            </Button>
-            <button onClick={() => setShowMyAppts(true)}
-              className={`flex flex-col items-center transition-colors px-2 py-1 ${navScrolled ? 'text-amber-600 hover:text-amber-700' : 'text-white/60 hover:text-white'}`}
-              data-testid="my-appointments-btn" title="Inserisci il tuo numero di telefono per vedere le tue prenotazioni">
-              <span className="flex items-center gap-1 font-bold text-[10px] sm:text-sm"><CalendarDays className="w-3 h-3 sm:w-4 sm:h-4" />I Miei Appuntamenti</span>
-              <span className={`text-[7px] sm:text-[9px] font-normal sm:hidden ${navScrolled ? 'text-amber-400' : 'text-white/40'}`}>Verifica prenotazione</span>
-            </button>
-            <Button
-              onClick={() => setShowBooking(true)}
-              style={{ backgroundColor: T.primary }}
-              className={`text-white font-bold text-sm px-4 sm:px-6 hover:opacity-90 transition-all duration-300 ${navScrolled ? 'shadow-lg shadow-pink-400/30 scale-105' : ''}`}
-              data-testid="website-book-btn">
-              PRENOTA ORA
-            </Button>
-          </div>
+    <div className="space-y-2 mt-2">
+      {(items || []).map((val, idx) => (
+        <div key={idx} className="flex gap-2">
+          <Input value={val} onChange={e => editor.update(idx, e.target.value)} />
+          <Button variant="ghost" size="icon" onClick={() => editor.remove(idx)} className="text-red-500 shrink-0"><Trash2 className="w-4 h-4" /></Button>
         </div>
-      </nav>
-
-      {/* MOBILE NAV STRIP — visible only on small screens */}
-      <div className={`sm:hidden fixed top-[60px] left-0 right-0 z-40 flex items-center justify-center gap-6 border-b py-1.5 px-4 transition-all duration-300 ${navScrolled ? 'bg-white/90 backdrop-blur-md border-gray-200/50 shadow-sm' : 'bg-transparent border-white/10'}`}>
-        <button
-          onClick={() => { setShowServices(true); setTimeout(() => scrollTo(servicesRef), 100); }}
-          className="text-xs font-bold transition-colors"
-          style={{ color: navScrolled ? T.primary : 'rgba(255,255,255,0.75)' }}
-        >Servizi</button>
-        <span className={`text-sm ${navScrolled ? 'text-gray-300' : 'text-white/20'}`}>|</span>
-        <button
-          onClick={() => scrollTo(contactRef)}
-          className="text-xs font-bold transition-colors"
-          style={{ color: navScrolled ? T.primary : 'rgba(255,255,255,0.75)' }}
-        >Contatti</button>
-      </div>
-
-      {/* HERO */}
-      <section className="relative min-h-screen flex items-center pt-24 md:pt-16 overflow-hidden">
-        {config.hero_image ? (
-          <>
-            <div className="absolute inset-0">
-              <img src={getMediaUrl(config.hero_image)} alt="" className="w-full h-full object-cover" />
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80" />
-          </>
-        ) : (
-          <>
-            <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, color-mix(in srgb, ${T.primary} 40%, #000) 0%, #08000F 45%, color-mix(in srgb, ${T.accent} 30%, #000010) 100%)` }} />
-            <div className="absolute inset-0 opacity-40" style={{ background: 'radial-gradient(ellipse at 20% 50%, rgba(168,85,247,0.35) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(6,182,212,0.25) 0%, transparent 55%)' }} />
-          </>
-        )}
-        <div className="absolute top-24 left-[8%] w-96 h-96 rounded-full opacity-25 blur-3xl float-slow" style={{ backgroundColor: T.primary }} />
-        <div className="absolute bottom-16 right-[12%] w-72 h-72 rounded-full opacity-20 blur-3xl float-med" style={{ backgroundColor: T.accent }} />
-        <div className="absolute top-[35%] left-[38%] w-56 h-56 rounded-full opacity-15 blur-3xl" style={{ backgroundColor: '#8B5CF6', animation: 'float 9s ease-in-out infinite 3s' }} />
-        {/* Geometric shapes — slow drift */}
-        {[
-          { shape: 'circle', w: 90,  h: 90,  color: '#FF6B9D', top: '22%', left: '2%',   xA: [0,25,0],   yA: [0,-18,0], dur: 9,  rot: 0   },
-          { shape: 'square', w: 65,  h: 65,  color: '#FFD93D', top: '62%', right: '3%',  xA: [0,-22,0],  yA: [0,14,0],  dur: 11, rot: 20  },
-          { shape: 'circle', w: 50,  h: 50,  color: '#C3F0CA', top: '8%',  right: '22%', xA: [0,12,0],   yA: [0,20,0],  dur: 7,  rot: 0   },
-          { shape: 'square', w: 42,  h: 42,  color: '#A8DAFF', top: '78%', left: '22%',  xA: [0,-14,0],  yA: [0,-16,0], dur: 8,  rot: -15 },
-          { shape: 'circle', w: 30,  h: 30,  color: '#FFB347', top: '32%', left: '14%',  xA: [0,18,0],   yA: [0,8,0],   dur: 13, rot: 0   },
-          { shape: 'square', w: 55,  h: 55,  color: '#FF2E63', top: '50%', right: '12%', xA: [0,-10,0],  yA: [0,22,0],  dur: 10, rot: 35  },
-        ].map((s, i) => (
-          <motion.div
-            key={`geo-${i}`}
-            className="absolute pointer-events-none select-none"
-            style={{
-              top: s.top, left: s.left, right: s.right,
-              width: s.w, height: s.h,
-              backgroundColor: s.color,
-              borderRadius: s.shape === 'circle' ? '50%' : '14px',
-              border: '2px solid rgba(255,255,255,0.25)',
-              opacity: 0.22,
-              rotate: s.rot,
-            }}
-            animate={{ x: s.xA, y: s.yA }}
-            transition={{ duration: s.dur, repeat: Infinity, ease: 'easeInOut' }}
-          />
-        ))}
-        {/* Floating icons — framer-motion Lucide */}
-        {[
-          { Icon: Sparkles, top: '13%', left: '7%',  size: 28, color: '#FFD93D', delay: 0 },
-          { Icon: Scissors, top: '72%', left: '5%',  size: 22, color: T.primary, delay: 0.8 },
-          { Icon: Star,     top: '16%', right: '9%', size: 32, color: '#FF6B9D', delay: 0.4 },
-          { Icon: Sparkles, top: '58%', right: '6%', size: 20, color: '#C3F0CA', delay: 1.2 },
-          { Icon: Star,     top: '85%', left: '18%', size: 24, color: '#A8DAFF', delay: 0.6 },
-          { Icon: Scissors, top: '42%', right:'17%', size: 18, color: T.accent,  delay: 1.0 },
-        ].map(({ Icon, top, left, right, size, color, delay }, i) => (
-          <motion.div
-            key={`icon-${i}`}
-            className="absolute select-none pointer-events-none"
-            style={{ top, left, right, color, opacity: 0.60 }}
-            animate={{ y: [0, -15, 0] }}
-            transition={{ duration: 3.5 + i * 0.3, repeat: Infinity, delay, ease: 'easeInOut' }}
-          >
-            <Icon size={size} strokeWidth={1.5} />
-          </motion.div>
-        ))}
-        <div className="relative w-full px-6 sm:px-14 py-20 sm:py-24">
-          {/* Titolo editoriale gigante */}
-          <div className="hero-animate hero-d1 mb-10">
-            <h1 className="font-black" style={{ fontFamily: "'Fredoka', sans-serif", lineHeight: 0.82 }}>
-              <span className="block text-white" style={{ fontSize: 'clamp(3.5rem, 14vw, 11rem)', letterSpacing: '-0.03em' }}>BRUNO</span>
-              <span className="block" style={{ fontSize: 'clamp(3.5rem, 14vw, 11rem)', letterSpacing: '-0.03em', WebkitTextStroke: '2px rgba(255,255,255,0.6)', color: 'transparent' }}>MELITO</span>
-              <span className="block text-white" style={{ fontSize: 'clamp(1rem, 3.5vw, 3rem)', letterSpacing: '0.25em', opacity: 0.28, fontWeight: 500, marginTop: '0.35em' }}>HAIR STUDIO</span>
-            </h1>
-          </div>
-          <div className="text-center max-w-xl mx-auto">
-            <div className="hero-animate hero-d3">
-              <div className="inline-block backdrop-blur-sm text-xs font-bold px-5 py-2.5 rounded-full border mb-6" style={{ backgroundColor: `${T.primary}20`, color: T.primary, borderColor: `${T.primary}40` }}>
-                {config.subtitle || 'SOLO PER APPUNTAMENTO'}
-              </div>
-            </div>
-
-            {/* #10 — Typewriter: specializzazioni */}
-            <p className="text-sm text-white/40 mb-2 hero-animate hero-d3">
-              Specializzati in{' '}
-              <span className="font-bold" style={{ color: T.accent }}>
-                <Typewriter
-                  phrases={['Taglio & Styling', 'Colorazione', 'Trattamenti', 'Piega & Volumi']}
-                  color={T.accent}
-                />
-              </span>
-            </p>
-
-            {/* #1 — Disponibilità online */}
-            <div className="flex justify-center mb-8 hero-animate hero-d4">
-              <div className="flex items-center gap-2 bg-emerald-500/15 border border-emerald-500/30 rounded-full px-4 py-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-                <span className="text-emerald-300 text-xs font-semibold">Prenota online 24/7 · Conferma immediata</span>
-              </div>
-            </div>
-
-            <p className="text-base sm:text-lg text-white/60 max-w-lg mx-auto mb-10 leading-relaxed hero-animate hero-d4">
-              {config.hero_description || ''}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center mb-10 hero-animate hero-d5">
-              <button onClick={() => setShowBooking(true)} className="hero-cta-primary text-white font-black text-base px-10 py-7 rounded-2xl shadow-lg" data-testid="website-hero-book-btn">
-                <Scissors className="w-5 h-5 mr-2 inline" /> PRENOTA ORA
-              </button>
-              <Button onClick={openWhatsApp} className="bg-[#25D366] hover:bg-[#20BD5A] text-white font-black text-base px-10 py-7 rounded-2xl shadow-lg shadow-green-400/20 hover:shadow-xl hover:scale-105 transition-all duration-300" data-testid="website-hero-whatsapp-btn">
-                <MessageCircle className="w-5 h-5 mr-2" /> WHATSAPP
-              </Button>
-              <Button onClick={() => { setShowServices(true); setTimeout(() => scrollTo(servicesRef), 100); }} variant="outline" style={{ borderColor: `${T.primary}40`, color: T.primary }} className="hover:opacity-80 font-bold text-base px-10 py-7 rounded-2xl backdrop-blur-sm hover:scale-105 transition-all duration-300">
-                Scopri i Servizi <ChevronDown className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-4 text-sm justify-center hero-animate hero-d5">
-              {phones.map((p, i) => (
-                <a key={i} href={`tel:${p.replace(/\s/g, '')}`} className="flex items-center gap-2 text-white/50 hover:text-white transition-colors duration-300 justify-center group">
-                  <Phone className="w-4 h-4 group-hover:scale-110 transition-transform" /> {p}
-                </a>
-              ))}
-              {config.address && (
-                <a href={config.maps_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-white/50 hover:text-white transition-colors duration-300 justify-center group">
-                  <MapPin className="w-4 h-4 group-hover:scale-110 transition-transform" /> {config.address}
-                </a>
-              )}
-            </div>
-
-            {/* ── Contatori animati ── */}
-            <div className="mt-14 pt-10 border-t border-white/10 grid grid-cols-2 sm:grid-cols-4 gap-5 hero-animate hero-d5">
-              {[
-                { value: 500, suffix: '+', label: 'Clienti Soddisfatti', icon: '👥', color: T.primary },
-                { value: config.years_experience || 10, suffix: '+', label: 'Anni di Esperienza', icon: '🏆', color: '#F59E0B' },
-                { value: bookingServices.length || 20, suffix: '', label: 'Servizi Disponibili', icon: '✂️', color: T.accent },
-                { value: 5.0, suffix: '', label: 'Stelle su Google', icon: '⭐', color: '#22D3EE', decimals: 1 },
-              ].map((c, i) => (
-                <div key={i} className="text-center group">
-                  <div className="mx-auto mb-3 w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-lg" style={{ background: `linear-gradient(135deg, ${c.color}35, ${c.color}15)`, border: `1px solid ${c.color}50` }}>
-                    {c.icon}
-                  </div>
-                  <p className="text-4xl sm:text-5xl font-black leading-none" style={{ fontFamily: T.fontDisplay, color: c.color }}>
-                    <CountUp to={c.value} decimals={c.decimals || 0} />{c.suffix}
-                  </p>
-                  <p className="text-xs text-white/45 mt-2 font-semibold uppercase tracking-widest">{c.label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-          {config.years_experience && (
-            <div className="absolute right-4 sm:right-8 bottom-20 sm:bottom-32 bg-white/80 backdrop-blur-xl border border-white/50 rounded-3xl p-5 text-center hidden md:block shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-500 float-slow">
-              <p className="text-4xl font-black" style={{ color: T.primary }}>{config.years_experience}</p>
-              <p className="text-xs text-[#64748B] font-semibold">Anni di<br />Esperienza</p>
-              {config.year_founded && <p className="text-[10px] text-[#94A3B8] mt-1">Dal {config.year_founded}</p>}
-            </div>
-          )}
-        </div>
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 hidden sm:flex flex-col items-center gap-2 hero-animate hero-d5">
-          <span className="text-white/30 text-xs font-semibold tracking-widest uppercase">Scorri</span>
-          <div className="w-6 h-10 rounded-full border-2 border-white/20 flex items-start justify-center p-1.5">
-            <div className="w-1.5 h-3 bg-white/40 rounded-full" style={{ animation: 'float 2s ease-in-out infinite' }} />
-          </div>
-        </div>
-      </section>
-
-      {/* Hero Gallery Strip - Foto sparse con effetti parallax */}
-      {hairstylePhotos.length > 0 && <HeroGalleryStrip photos={hairstylePhotos} T={T} />}
-
-      {/* ─── COME FUNZIONA — 3 tocchi per prenotare ─── */}
-      <section className="py-20 sm:py-24 relative overflow-hidden" style={{ background: '#0d0d16' }}>
-        <div className="absolute top-0 left-0 right-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${T.primary}60, ${T.accent}60, transparent)` }} />
-        <div className="max-w-5xl mx-auto px-4">
-          <AnimatedSection>
-            <div className="text-center mb-14">
-              <span className="inline-block text-xs font-bold tracking-[0.3em] uppercase px-5 py-2 rounded-full mb-5"
-                style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.1)' }}>✦ SEMPLICISSIMO</span>
-              <h2 className="text-4xl sm:text-5xl font-black leading-tight text-white" style={{ fontFamily: T.fontDisplay }}>
-                Prenota in{' '}
-                <span style={{ background: `linear-gradient(135deg, ${T.primary}, ${T.accent})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-                  3 Tocchi
-                </span>
-              </h2>
-              <p className="text-sm mt-4 max-w-sm mx-auto text-white/35">
-                Nessuna telefonata, nessuna attesa. Solo tu e il tuo appuntamento.
-              </p>
-            </div>
-          </AnimatedSection>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6 relative">
-            <div className="hidden sm:block absolute top-12 left-[18%] right-[18%] h-px"
-              style={{ background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.12), rgba(255,255,255,0.06))' }} />
-            {[
-              { num: '1', icon: '✂️', title: 'Scegli il Servizio', desc: 'Sfoglia il listino e clicca quello che vuoi', color: T.primary },
-              { num: '2', icon: '📅', title: 'Giorno e Ora', desc: 'Slot disponibili in tempo reale, scegli il momento', color: T.accent },
-              { num: '3', icon: '✅', title: 'Confermato Subito', desc: 'Conferma automatica immediata. Nessuna attesa', color: '#22C55E' },
-            ].map((step, i) => (
-              <AnimatedSection key={i} delay={i * 0.15}>
-                <div
-                  className="relative text-center px-6 py-8 rounded-3xl hover:-translate-y-2 transition-all duration-500 cursor-default"
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', backdropFilter: 'blur(12px)' }}
-                >
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full flex items-center justify-center text-white font-black text-sm"
-                    style={{ background: `linear-gradient(135deg, ${step.color}, ${step.color}BB)` }}>
-                    {step.num}
-                  </div>
-                  <div className="w-14 h-14 rounded-2xl mx-auto mb-5 mt-2 flex items-center justify-center text-2xl"
-                    style={{ background: `${step.color}18`, border: `1px solid ${step.color}30` }}>
-                    {step.icon}
-                  </div>
-                  <h3 className="font-black text-base mb-2 text-white">{step.title}</h3>
-                  <p className="text-sm leading-relaxed text-white/40">{step.desc}</p>
-                </div>
-              </AnimatedSection>
-            ))}
-          </div>
-          <AnimatedSection delay={0.5}>
-            <div className="text-center mt-12">
-              <button onClick={() => setShowBooking(true)}
-                className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl text-white font-black text-lg hover:scale-105 transition-all duration-300"
-                style={{ background: `linear-gradient(135deg, ${T.primary}, ${T.accent})`, boxShadow: `0 14px 40px ${T.primary}40` }}>
-                <Scissors className="w-5 h-5" />
-                Prenota Ora — Conferma Immediata
-              </button>
-              <p className="text-xs mt-3 text-white/25">
-                Nessuna registrazione · Gratuito · Sempre disponibile
-              </p>
-            </div>
-          </AnimatedSection>
-        </div>
-      </section>
-
-      {/* Sezioni dinamiche — con foto "sparse" interlacciate tra alcune sezioni */}
-      {(() => {
-        const out = [];
-        let photoCount = 0;
-        // sezioni dopo le quali far comparire una foto della galleria
-        // (escluse gallery/trend_gallery che sono già fatte di foto)
-        const afterSections = new Set(['services', 'salon', 'about', 'promotions', 'reviews', 'team', 'gift_card', 'contact']);
-        sectionOrder.forEach((id) => {
-          const sec = renderSection(id);
-          if (!sec) return;
-          out.push(sec);
-          if (hairstylePhotos.length > 0 && afterSections.has(id)) {
-            const photo = hairstylePhotos[photoCount % hairstylePhotos.length];
-            out.push(<PhotoInterlude key={`interlude-${id}`} photo={photo} index={photoCount} T={T} />);
-            photoCount++;
-          }
-        });
-        return out;
-      })()}
-
-      {/* QR CODE SECTION */}
-      <section className="py-16 sm:py-20 bg-gradient-to-b from-white/40 to-white/80" data-testid="qr-code-section">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="text-center mb-8">
-            <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Prenota Subito</p>
-            <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>Inquadra e Prenota</h2>
-            <p className="text-[#64748B] mt-3 max-w-md mx-auto">Scansiona il QR Code con il tuo smartphone per prenotare direttamente il tuo prossimo appuntamento</p>
-          </div>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-8">
-            <div className="bg-white rounded-3xl p-8 shadow-lg border border-gray-100 flex flex-col items-center" id="qr-print-area" data-testid="qr-code-card">
-              <div className="bg-white p-3 rounded-2xl border-2 border-gray-100">
-                <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(window.location.origin + '/sito')}&margin=8`}
-                  alt="QR Code Prenotazione"
-                  width={200}
-                  height={200}
-                  className="block"
-                  data-testid="qr-code-img"
-                />
-              </div>
-              <p className="font-black text-lg mt-4" style={{ color: T.text }}>{config.salon_name || 'BRUNO MELITO HAIR'}</p>
-              <p className="text-sm text-[#64748B] mt-1">Prenota il tuo appuntamento</p>
-              {config.address && <p className="text-xs text-[#94A3B8] mt-1">{config.address}</p>}
-            </div>
-            <div className="flex flex-col gap-3">
-              <Button
-                onClick={() => {
-                  const printContent = document.getElementById('qr-print-area');
-                  const imgSrc = printContent.querySelector('img')?.src || '';
-                  const win = window.open('', '_blank');
-                  win.document.write(`
-                    <html><head><title>QR Code - ${escapeHtml(config.salon_name || 'Bruno Melito Hair')}</title>
-                    <style>
-                      @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap');
-                      body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #fff; }
-                      .card { text-align: center; padding: 60px 40px; }
-                      .card h1 { font-family: 'Playfair Display', serif; font-size: 28px; margin: 24px 0 8px; color: #1C1008; }
-                      .card p { font-size: 16px; color: #64748B; margin: 4px 0; }
-                      .card .addr { font-size: 13px; color: #94A3B8; }
-                      .card .hint { font-size: 14px; color: #C8617A; font-weight: bold; margin-top: 16px; }
-                      img { display: block; margin: 0 auto; }
-                    </style></head><body>
-                    <div class="card">
-                      <img src="${escapeHtml(imgSrc)}" width="250" height="250" />
-                      <h1>${escapeHtml(config.salon_name || 'BRUNO MELITO HAIR')}</h1>
-                      <p>Prenota il tuo appuntamento</p>
-                      ${config.address ? `<p class="addr">${escapeHtml(config.address)}</p>` : ''}
-                      <p class="hint">Inquadra il QR Code con la fotocamera</p>
-                    </div>
-                    </body></html>
-                  `);
-                  win.document.close();
-                  setTimeout(() => { win.print(); }, 500);
-                }}
-                className="text-white font-bold px-6 py-5 rounded-xl shadow-md hover:opacity-90"
-                style={{ backgroundColor: T.primary }}
-                data-testid="qr-print-btn"
-              >
-                <Printer className="w-5 h-5 mr-2" /> Stampa QR Code
-              </Button>
-              <Button
-                onClick={() => {
-                  const imgSrc = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(window.location.origin + '/sito')}&margin=20`;
-                  const link = document.createElement('a');
-                  link.href = imgSrc;
-                  link.download = 'qr-code-bruno-melito.png';
-                  link.target = '_blank';
-                  link.click();
-                  toast.success('QR Code scaricato!');
-                }}
-                variant="outline"
-                className="font-bold px-6 py-5 rounded-xl border-2"
-                style={{ borderColor: T.primary, color: T.primary }}
-                data-testid="qr-download-btn"
-              >
-                <Download className="w-5 h-5 mr-2" /> Scarica Immagine
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* FOOTER */}
-      <footer className="py-12 relative" style={{ backgroundColor: `${T.text}`, color: '#fff' }}>
-        <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, transparent, ${T.primary}, ${T.accent}, transparent)` }} />
-        <div className="max-w-6xl mx-auto px-4">
-          <AnimatedSection>
-            <div className="flex flex-col items-center gap-6">
-              <img src="/logo.png?v=4" alt={config.salon_name} className="w-14 h-14 rounded-2xl border border-white/20 shadow-sm hover:scale-110 transition-transform duration-300" />
-              <p className="text-white text-sm font-bold">{config.salon_name || 'BRUNO MELITO HAIR'}</p>
-              <div className="flex items-center gap-3">
-                {SOCIAL_LINKS.map((link, i) => (
-                  <a key={i} href={link.url} target="_blank" rel="noopener noreferrer"
-                    className={`w-10 h-10 rounded-full bg-white/10 border border-white/15 flex items-center justify-center text-white/60 ${link.color} transition-all duration-300 hover:shadow-lg hover:scale-110 hover:-translate-y-1`}
-                    title={link.label}>
-                    <link.icon className="w-5 h-5" />
-                  </a>
-                ))}
-              </div>
-              <div className="flex items-center gap-6 text-sm text-white/50">
-                <a href="/sito" className="hover:text-white transition-colors">Prenota Online</a>
-                <a href={`https://wa.me/${config.whatsapp || '393397833526'}?text=Ciao, vorrei prenotare un appuntamento!`} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">WhatsApp</a>
-                <a href={config.maps_url} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Come Raggiungerci</a>
-              </div>
-              <p className="text-white/30 text-xs">{config.address}</p>
-              <p className="text-white/20 text-xs">&copy; {new Date().getFullYear()} {config.salon_name || 'Bruno Melito Hair'}. Tutti i diritti riservati.</p>
-              <p className="text-white/10 text-[9px]" data-testid="build-version">v2.4-refactored</p>
-            </div>
-          </AnimatedSection>
-        </div>
-      </footer>
-
-      {/* Mobile bottom bar — WhatsApp + Prenota */}
-      <div className="fixed bottom-0 left-0 right-0 p-3 bg-white/95 backdrop-blur-xl border-t border-gray-200/50 sm:hidden z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] flex gap-2">
-        <a
-          href={`https://wa.me/${config.whatsapp || '393397833526'}?text=Ciao, vorrei prenotare un appuntamento!`}
-          target="_blank" rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20BD5A] text-white font-black py-4 px-4 rounded-2xl shadow-lg transition-all active:scale-95"
-          data-testid="website-mobile-wa-btn"
-        >
-          <MessageCircle className="w-5 h-5 shrink-0" />
-          <span className="text-sm">WA</span>
-        </a>
-        <Button onClick={() => setShowBooking(true)} style={{ backgroundColor: T.primary }} className="flex-1 text-white hover:opacity-90 font-black py-5 rounded-2xl shadow-lg" data-testid="website-mobile-book-btn">
-          <Scissors className="w-5 h-5 mr-2" /> PRENOTA ORA
-        </Button>
-      </div>
-
-      {/* #5 — WhatsApp floating button (desktop, bottom-right) */}
-      <a
-        href={`https://wa.me/${config.whatsapp || '393397833526'}?text=Ciao, vorrei prenotare un appuntamento!`}
-        target="_blank" rel="noopener noreferrer"
-        className="hidden sm:flex fixed bottom-6 right-6 z-50 items-center gap-2 bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold text-sm px-4 py-3 rounded-full shadow-xl hover:shadow-2xl hover:scale-110 transition-all duration-300 group"
-        title="Scrivici su WhatsApp"
-        data-testid="whatsapp-float-btn"
-      >
-        <MessageCircle className="w-5 h-5" />
-        <span className="max-w-0 overflow-hidden group-hover:max-w-[120px] transition-all duration-300 whitespace-nowrap">Scrivici ora</span>
-      </a>
-
-      {/* Floating PRENOTA pill — appare dopo hero, desktop */}
-      {!heroVisible && (
-        <div className="hidden sm:block fixed bottom-8 left-1/2 -translate-x-1/2 z-40">
-          <button
-            onClick={() => setShowBooking(true)}
-            className="relative flex items-center gap-2.5 px-7 py-3.5 rounded-full text-white font-black text-sm hover:scale-110 transition-all duration-300"
-            style={{ background: `linear-gradient(135deg, ${T.primary}, ${T.accent})`, boxShadow: `0 8px 32px ${T.primary}55` }}
-            data-testid="floating-book-btn"
-          >
-            <Scissors className="w-4 h-4" />
-            PRENOTA ORA
-            <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-white animate-pulse" />
-          </button>
-        </div>
-      )}
-
-      {/* MY APPOINTMENTS MODAL */}
-      {showMyAppts && (
-        <MyAppointmentsModal
-          onClose={() => setShowMyAppts(false)}
-          onRebook={({ service_ids, client_name, client_phone }) => {
-            setFormData(prev => ({
-              ...prev,
-              service_ids,
-              client_name: client_name || prev.client_name,
-              client_phone: client_phone || prev.client_phone,
-            }));
-            setShowBooking(true);
-          }}
-        />
-      )}
+      ))}
+      <Button variant="outline" size="sm" onClick={editor.add}><Plus className="w-4 h-4 mr-1" /> {addLabel}</Button>
     </div>
   );
 }
+
+export default function WebsiteAdminPage() {
+  const [config, setConfig] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [gallery, setGallery] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [reviewDialog, setReviewDialog] = useState(false);
+  const [editReview, setEditReview] = useState(null);
+  const [reviewForm, setReviewForm] = useState({ name: '', text: '', rating: 5 });
+  const [uploadSection, setUploadSection] = useState('gallery');
+  const [allServices, setAllServices] = useState([]);
+  const [promotions, setPromotions] = useState([]);
+  const [promoDialog, setPromoDialog] = useState(false);
+  const [editPromo, setEditPromo] = useState(null);
+  const [promoForm, setPromoForm] = useState({ name: '', description: '', discount_type: 'percent', discount_value: 10, active: true, show_on_booking: true });
+  const heroInputRef = useRef(null);
+  const [isDirty, setIsDirty] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, type: null, id: null, label: '' });
+  const [trends, setTrends] = useState([]);
+  const [trendUploading, setTrendUploading] = useState(null);
+  const [newTrendForm, setNewTrendForm] = useState(null);
+
+  const handleHeroImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const uploadRes = await api.post('/website/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      updateField('hero_image', uploadRes.data.url);
+      toast.success('Immagine hero caricata!');
+    } catch (err) { toast.error('Errore upload immagine hero'); }
+    finally { setUploading(false); }
+  };
+
+  useEffect(() => { fetchAll(); }, []);
+
+  const fetchAll = async () => {
+    try {
+      const [configRes, reviewsRes, galleryRes, servicesRes, promosRes, trendsRes] = await Promise.all([
+        api.get('/website/config'),
+        api.get('/website/reviews'),
+        api.get('/website/gallery'),
+        api.get('/services'),
+        api.get('/promotions'),
+        api.get('/website-trends'),
+      ]);
+      setConfig(configRes.data);
+      setReviews(reviewsRes.data);
+      setGallery(galleryRes.data);
+      setAllServices(servicesRes.data || []);
+      setPromotions(promosRes.data || []);
+      setTrends(trendsRes.data || []);
+    } catch (err) { toast.error('Errore caricamento dati'); }
+    finally { setLoading(false); }
+  };
+
+  const saveConfig = async () => {
+    setSaving(true);
+    try {
+      const res = await api.put('/website/config', config);
+      setConfig(res.data);
+      setIsDirty(false);
+      toast.success('Configurazione salvata!');
+    } catch (err) { toast.error('Errore nel salvataggio'); }
+    finally { setSaving(false); }
+  };
+
+  // ── Promotions helpers ──
+  const openNewPromo = () => {
+    setEditPromo(null);
+    setPromoForm({ name: '', description: '', discount_type: 'percent', discount_value: 10, active: true, show_on_booking: true });
+    setPromoDialog(true);
+  };
+
+  const openEditPromo = (promo) => {
+    setEditPromo(promo);
+    setPromoForm({ name: promo.name, description: promo.description || '', discount_type: promo.discount_type || 'percent', discount_value: promo.discount_value || 0, active: promo.active !== false, show_on_booking: promo.show_on_booking !== false });
+    setPromoDialog(true);
+  };
+
+  const savePromo = async () => {
+    try {
+      if (editPromo) {
+        const res = await api.put(`/promotions/${editPromo.id}`, promoForm);
+        const updated = res.data;
+        setPromotions(prev => prev.map(p => p.id === editPromo.id ? { ...p, ...updated } : p));
+      } else {
+        const res = await api.post('/promotions', promoForm);
+        setPromotions(prev => [...prev, res.data]);
+      }
+      toast.success(editPromo ? 'Promozione aggiornata!' : 'Promozione creata!');
+      setPromoDialog(false);
+    } catch (err) { toast.error('Errore salvataggio promozione'); }
+  };
+
+  const deletePromo = async (id) => {
+    try {
+      await api.delete(`/promotions/${id}`);
+      setPromotions(prev => prev.filter(p => p.id !== id));
+      toast.success('Promozione eliminata');
+    } catch (err) { toast.error('Errore eliminazione'); }
+  };
+
+  const togglePromoActive = async (promo) => {
+    try {
+      await api.put(`/promotions/${promo.id}`, { ...promo, active: !promo.active });
+      setPromotions(prev => prev.map(p => p.id === promo.id ? { ...p, active: !promo.active } : p));
+    } catch (err) { toast.error('Errore aggiornamento'); }
+  };
+
+  // Avviso modifiche non salvate — beforeunload
+  useEffect(() => {
+    if (!isDirty) return;
+    const handler = (e) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [isDirty]);
+
+  const updateField = (field, value) => {
+    setConfig(prev => ({ ...prev, [field]: value }));
+    setIsDirty(true);
+  };
+
+  // Reviews
+  const openReviewDialog = (review = null) => {
+    if (review) {
+      setEditReview(review);
+      setReviewForm({ name: review.name, text: review.text, rating: review.rating });
+    } else {
+      setEditReview(null);
+      setReviewForm({ name: '', text: '', rating: 5 });
+    }
+    setReviewDialog(true);
+  };
+
+  const saveReview = async () => {
+    try {
+      if (editReview) {
+        await api.put(`/website/reviews/${editReview.id}`, reviewForm);
+      } else {
+        await api.post('/website/reviews', reviewForm);
+      }
+      setReviewDialog(false);
+      const res = await api.get('/website/reviews');
+      setReviews(res.data);
+      toast.success('Recensione salvata!');
+    } catch (err) { toast.error('Errore'); }
+  };
+
+  const deleteReview = async (id) => {
+    setDeleteConfirm({ open: true, type: 'review', id, label: 'questa recensione' });
+  };
+
+  const confirmDelete = async () => {
+    const { type, id } = deleteConfirm;
+    setDeleteConfirm({ open: false, type: null, id: null, label: '' });
+    try {
+      if (type === 'review') {
+        await api.delete(`/website/reviews/${id}`);
+        setReviews(prev => prev.filter(r => r.id !== id));
+        toast.success('Recensione eliminata');
+      } else if (type === 'gallery') {
+        await api.delete(`/website/gallery/${id}`);
+        setGallery(prev => prev.filter(g => g.id !== id));
+        toast.success('Foto eliminata');
+      }
+    } catch (err) { toast.error('Errore eliminazione'); }
+  };
+
+  // Gallery upload (images + videos)
+  const handleMediaUpload = async (e, section) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+    setUploading(true);
+    try {
+      const uploadFile = async (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const uploadRes = await api.post('/website/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+        const fileType = uploadRes.data.file_type || (file.type.startsWith('video') ? 'video' : 'image');
+        const galleryRes = await api.post('/website/gallery', {
+          image_url: uploadRes.data.url,
+          label: file.name.split('.')[0],
+          tag: '',
+          section: section,
+          file_type: fileType
+        });
+        return galleryRes.data;
+      };
+      const newItems = await Promise.all(files.map(uploadFile));
+      setGallery(prev => [...prev, ...newItems]);
+      const videoCount = files.filter(f => f.type.startsWith('video')).length;
+      const imageCount = files.length - videoCount;
+      const msg = [];
+      if (imageCount > 0) msg.push(`${imageCount} foto`);
+      if (videoCount > 0) msg.push(`${videoCount} video`);
+      toast.success(`${msg.join(' e ')} caricati!`);
+    } catch (err) { toast.error('Errore upload: ' + (err.response?.data?.detail || err.message)); }
+    finally { setUploading(false); e.target.value = ''; }
+  };
+
+  const updateGalleryItem = async (id, field, value) => {
+    try {
+      await api.put(`/website/gallery/${id}`, { [field]: value });
+      setGallery(prev => prev.map(g => g.id === id ? { ...g, [field]: value } : g));
+    } catch (err) { toast.error('Errore'); }
+  };
+
+  const deleteGalleryItem = async (id) => {
+    setDeleteConfirm({ open: true, type: 'gallery', id, label: 'questa foto/video' });
+  };
+
+  // ── Trends (Restyling Sito) ──
+  const createTrend = async (data) => {
+    try {
+      const res = await api.post('/website-trends', data);
+      setTrends(prev => [...prev, res.data]);
+      setNewTrendForm(null);
+      toast.success('Look aggiunto!');
+    } catch { toast.error('Errore creazione look'); }
+  };
+
+  const updateTrend = async (id, data) => {
+    try {
+      await api.put(`/website-trends/${id}`, data);
+      setTrends(prev => prev.map(t => t.id === id ? { ...t, ...data } : t));
+    } catch { toast.error('Errore aggiornamento'); }
+  };
+
+  const deleteTrend = async (id) => {
+    try {
+      await api.delete(`/website-trends/${id}`);
+      setTrends(prev => prev.filter(t => t.id !== id));
+      toast.success('Look eliminato');
+    } catch { toast.error('Errore eliminazione'); }
+  };
+
+  const uploadTrendImage = async (trendId, file) => {
+    setTrendUploading(trendId);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const { data } = await api.post('/website-trends/upload-image', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      await updateTrend(trendId, { img: data.url });
+      toast.success('Foto caricata!');
+    } catch { toast.error('Errore upload foto'); }
+    finally { setTrendUploading(null); }
+  };
+
+  // getMediaUrl importato da ../lib/mediaUrl
+
+  // Service categories editor
+  const updateCategory = (idx, field, value) => {
+    const cats = [...(config.service_categories || [])];
+    cats[idx] = { ...cats[idx], [field]: value };
+    updateField('service_categories', cats);
+  };
+
+  const updateCategoryItem = (catIdx, itemIdx, field, value) => {
+    const cats = [...(config.service_categories || [])];
+    const items = [...(cats[catIdx].items || [])];
+    items[itemIdx] = { ...items[itemIdx], [field]: value };
+    cats[catIdx] = { ...cats[catIdx], items };
+    updateField('service_categories', cats);
+  };
+
+  const addCategoryItem = (catIdx) => {
+    const cats = [...(config.service_categories || [])];
+    cats[catIdx] = { ...cats[catIdx], items: [...(cats[catIdx].items || []), { name: '', price: '' }] };
+    updateField('service_categories', cats);
+  };
+
+  const removeCategoryItem = (catIdx, itemIdx) => {
+    const cats = [...(config.service_categories || [])];
+    cats[catIdx] = { ...cats[catIdx], items: cats[catIdx].items.filter((_, i) => i !== itemIdx) };
+    updateField('service_categories', cats);
+  };
+
+  const addCategory = () => {
+    updateField('service_categories', [...(config.service_categories || []), { title: 'Nuova Categoria', desc: '', items: [] }]);
+  };
+
+  const removeCategory = (idx) => {
+    updateField('service_categories', (config.service_categories || []).filter((_, i) => i !== idx));
+  };
+
+  // Hours editor
+  const updateHour = (day, value) => {
+    updateField('hours', { ...(config.hours || {}), [day]: value });
+  };
+
+  // Factory condivisa per editor di liste di stringhe (telefoni, punti di forza, ecc.)
+  const makeStringListEditor = (field) => ({
+    update: (idx, value) => {
+      const list = [...(config[field] || [])];
+      list[idx] = value;
+      updateField(field, list);
+    },
+    add: () => updateField(field, [...(config[field] || []), '']),
+    remove: (idx) => updateField(field, (config[field] || []).filter((_, i) => i !== idx)),
+  });
+
+  const phoneEditor = makeStringListEditor('phones');
+  const featureEditor = makeStringListEditor('about_features');
+
+  // Section ordering
+  const ALL_SECTIONS = [
+    { id: 'services',     label: 'Servizi',        desc: 'Listino servizi con categorie' },
+    { id: 'salon',        label: 'Foto Salone',     desc: 'Galleria foto e video del salone' },
+    { id: 'about',        label: 'Chi Siamo',       desc: 'Storia e punti di forza' },
+    { id: 'promotions',   label: 'Promozioni',      desc: 'Offerte speciali attive' },
+    { id: 'reviews',      label: 'Recensioni',      desc: 'Testimonianze dei clienti' },
+    { id: 'gallery',      label: 'Gallery Lavori',  desc: 'Portfolio acconciature' },
+    { id: 'trend_gallery', label: 'Trend 2026',     desc: 'Galleria look estate 2026 (Bixie, Butterfly, Biondo Burro)' },
+    { id: 'gift_card',    label: 'Gift Card',       desc: 'Sezione gift card e regali' },
+    { id: 'contact',      label: 'Contatti',        desc: 'Orari, indirizzo, telefono' },
+  ];
+
+  const rawSectionOrder = config?.section_order || ALL_SECTIONS.map(s => s.id);
+  const normalizedSectionOrder = [...new Set(rawSectionOrder.filter(id => ALL_SECTIONS.some(s => s.id === id)))];
+  const missingSectionIds = ALL_SECTIONS.map(s => s.id).filter(id => !normalizedSectionOrder.includes(id));
+  const sectionOrder = [...normalizedSectionOrder, ...missingSectionIds];
+
+  const moveSectionUp = (idx) => {
+    if (idx <= 0) return;
+    const order = [...sectionOrder];
+    [order[idx - 1], order[idx]] = [order[idx], order[idx - 1]];
+    updateField('section_order', order);
+  };
+
+  const moveSectionDown = (idx) => {
+    if (idx >= sectionOrder.length - 1) return;
+    const order = [...sectionOrder];
+    [order[idx], order[idx + 1]] = [order[idx + 1], order[idx]];
+    updateField('section_order', order);
+  };
+
+  const toggleSectionVisibility = (sectionId) => {
+    const hidden = config?.hidden_sections || [];
+    if (hidden.includes(sectionId)) {
+      updateField('hidden_sections', hidden.filter(s => s !== sectionId));
+    } else {
+      updateField('hidden_sections', [...hidden, sectionId]);
+    }
+  };
+
+  if (loading) {
+    return <Layout><div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-[#C8617A]" /></div></Layout>;
+  }
+
+  // Handle case when config failed to load (e.g., auth error)
+  if (!config) {
+    return (
+      <Layout>
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <p className="text-red-500 font-bold mb-4">Errore nel caricamento della configurazione</p>
+          <p className="text-[#7C5C4A] mb-4">Potrebbe essere un problema di autenticazione. Prova a effettuare nuovamente il login.</p>
+          <Button onClick={fetchAll} className="bg-[#C8617A] hover:bg-[#A0404F] text-white">
+            Riprova
+          </Button>
+        </div>
+      </Layout>
+    );
+  }
+
+  const salonPhotos = gallery.filter(g => g.section === 'salon');
+  const galleryPhotos = gallery.filter(g => g.section === 'gallery');
+
+  return (
+    <Layout>
+      <div className="space-y-6" data-testid="website-admin-page">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-[#2D1B14]">Gestione Sito Web</h1>
+            <p className="text-sm text-[#7C5C4A]">Modifica i contenuti della tua pagina web pubblica</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {isDirty && (
+              <span className="text-xs font-semibold text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg animate-pulse">
+                Modifiche non salvate
+              </span>
+            )}
+            <Button onClick={async () => { await saveConfig(); window.open('/sito', '_blank'); }} variant="outline" className="border-[#0EA5E9] text-[#0EA5E9]" data-testid="preview-live-btn">
+              <Globe className="w-4 h-4 mr-2" /> Salva e Vedi Live
+            </Button>
+            <a href="/sito" target="_blank" rel="noopener noreferrer">
+              <Button variant="outline" className="border-[#C8617A] text-[#C8617A]" data-testid="preview-site-btn">
+                <Eye className="w-4 h-4 mr-2" /> Anteprima Sito
+              </Button>
+            </a>
+            <Button onClick={saveConfig} disabled={saving} className="bg-[#C8617A] hover:bg-[#A0404F] text-white" data-testid="save-config-btn">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+              Salva Modifiche
+            </Button>
+          </div>
+        </div>
+
+        <Tabs defaultValue="general" className="space-y-4">
+          <TabsList className="bg-white border shadow-sm flex-wrap h-auto gap-1 p-1">
+            <TabsTrigger value="general" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Generale</TabsTrigger>
+            <TabsTrigger value="layout" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Layout</TabsTrigger>
+            <TabsTrigger value="aspetto" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Aspetto</TabsTrigger>
+            <TabsTrigger value="services" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Servizi</TabsTrigger>
+            <TabsTrigger value="photos" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Foto Salone</TabsTrigger>
+            <TabsTrigger value="gallery" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Gallery Lavori</TabsTrigger>
+            <TabsTrigger value="reviews" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Recensioni</TabsTrigger>
+            <TabsTrigger value="upselling" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Upselling</TabsTrigger>
+            <TabsTrigger value="promotions" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Promozioni</TabsTrigger>
+            <TabsTrigger value="trends" className="data-[state=active]:bg-[#FF6B9D] data-[state=active]:text-white flex items-center gap-1"><TrendingUp className="w-3 h-3" /> Trend 2026</TabsTrigger>
+            <TabsTrigger value="hours" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white">Orari & Contatti</TabsTrigger>
+          </TabsList>
+
+          {/* GENERAL */}
+          <TabsContent value="general">
+            <Card>
+              <CardHeader><CardTitle>Informazioni Generali</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                {/* Hero Section */}
+                <div className="p-4 border-2 border-dashed border-[#C8617A]/30 rounded-xl bg-[#C8617A]/5">
+                  <Label className="text-sm font-bold text-[#2D1B14] flex items-center gap-2 mb-3"><Image className="w-4 h-4 text-[#C8617A]" /> Copertina Hero</Label>
+                  <div className="flex flex-col md:flex-row gap-4 items-start">
+                    {/* Preview */}
+                    <div className="relative w-full md:w-64 h-36 rounded-xl overflow-hidden bg-[#1a0e08] shrink-0">
+                      {config.hero_image ? (
+                        <img src={getMediaUrl(config.hero_image)} alt="Hero" className="w-full h-full object-cover opacity-70" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-white/40 text-sm">Nessuna immagine</div>
+                      )}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <p className="text-white font-bold text-lg drop-shadow-lg">{config.salon_name || 'BRUNO MELITO'}</p>
+                      </div>
+                    </div>
+                    {/* Controls */}
+                    <div className="flex-1 space-y-2">
+                      <p className="text-xs text-[#7C5C4A]">Questa immagine appare come sfondo della sezione Hero del sito pubblico, come una copertina social.</p>
+                      <div className="flex gap-2">
+                        <input ref={heroInputRef} type="file" accept="image/*" className="hidden" onChange={handleHeroImageUpload} />
+                        <Button variant="outline" size="sm" onClick={() => heroInputRef.current?.click()} disabled={uploading}
+                          className="border-[#C8617A] text-[#C8617A] hover:bg-[#C8617A]/10" data-testid="hero-image-upload-btn">
+                          <Upload className="w-4 h-4 mr-1" /> {config.hero_image ? 'Cambia Immagine' : 'Carica Immagine'}
+                        </Button>
+                        {config.hero_image && (
+                          <Button variant="ghost" size="sm" onClick={() => updateField('hero_image', '')} className="text-red-500">
+                            <Trash2 className="w-4 h-4 mr-1" /> Rimuovi
+                          </Button>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-[#94A3B8]">Consigliato: 1920x1080px, formato orizzontale</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div><Label>Nome Salone</Label><Input value={config.salon_name || ''} onChange={e => updateField('salon_name', e.target.value)} data-testid="config-salon-name" /></div>
+                  <div><Label>Sottotitolo (badge hero)</Label><Input value={config.subtitle || ''} onChange={e => updateField('subtitle', e.target.value)} /></div>
+                </div>
+                <div><Label>Slogan Hero</Label><Input value={config.hero_slogan || ''} onChange={e => updateField('hero_slogan', e.target.value)} placeholder="es. Metti la testa a posto!!" data-testid="config-hero-slogan" /></div>
+                <div><Label>Descrizione Hero</Label><Textarea value={config.hero_description || ''} onChange={e => updateField('hero_description', e.target.value)} rows={3} /></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div><Label>Titolo Chi Siamo</Label><Input value={config.about_title || ''} onChange={e => updateField('about_title', e.target.value)} /></div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div><Label>Anni Esperienza</Label><Input value={config.years_experience || ''} onChange={e => updateField('years_experience', e.target.value)} /></div>
+                    <div><Label>Anno Fondazione</Label><Input value={config.year_founded || ''} onChange={e => updateField('year_founded', e.target.value)} /></div>
+                  </div>
+                </div>
+                <div><Label>Testo Chi Siamo (paragrafo 1)</Label><Textarea value={config.about_text || ''} onChange={e => updateField('about_text', e.target.value)} rows={3} /></div>
+                <div><Label>Testo Chi Siamo (paragrafo 2)</Label><Textarea value={config.about_text_2 || ''} onChange={e => updateField('about_text_2', e.target.value)} rows={3} /></div>
+                <div>
+                  <Label>Punti di Forza</Label>
+                  <StringListEditor items={config.about_features} editor={featureEditor} addLabel="Aggiungi" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div><Label>Titolo Gallery</Label><Input value={config.gallery_title || ''} onChange={e => updateField('gallery_title', e.target.value)} /></div>
+                  <div><Label>Sottotitolo Gallery</Label><Input value={config.gallery_subtitle || ''} onChange={e => updateField('gallery_subtitle', e.target.value)} /></div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* LAYOUT - Section Reordering */}
+          <TabsContent value="layout">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><LayoutGrid className="w-5 h-5" /> Ordine Sezioni del Sito</CardTitle>
+                <p className="text-sm text-[#7C5C4A] mt-1">Riordina le sezioni della pagina pubblica. La Hero è sempre in cima e il Footer in fondo. Usa le frecce per spostare, o nascondi le sezioni che non vuoi mostrare.</p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2" data-testid="section-order-list">
+                  {/* Fixed Hero */}
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-100 border border-gray-200 opacity-60">
+                    <div className="w-8 h-8 bg-[#C8617A] text-white rounded-lg flex items-center justify-center text-xs font-bold">1</div>
+                    <div className="flex-1"><p className="font-bold text-sm text-[#2D1B14]">Hero</p><p className="text-xs text-[#7C5C4A]">Intestazione principale (sempre prima)</p></div>
+                    <span className="text-xs text-[#7C5C4A] font-semibold bg-gray-200 px-2 py-1 rounded">FISSO</span>
+                  </div>
+
+                  {sectionOrder.map((sectionId, idx) => {
+                    const info = ALL_SECTIONS.find(s => s.id === sectionId);
+                    if (!info) return null;
+                    const isHidden = (config?.hidden_sections || []).includes(sectionId);
+                    return (
+                      <div key={sectionId} className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${isHidden ? 'bg-gray-50 border-gray-200 opacity-50' : 'bg-white border-gray-200 hover:border-[#C8617A]/40 hover:shadow-sm'}`}
+                        data-testid={`section-item-${sectionId}`}>
+                        <div className="w-8 h-8 bg-[#C8617A]/10 text-[#C8617A] rounded-lg flex items-center justify-center text-xs font-bold">{idx + 2}</div>
+                        <GripVertical className="w-4 h-4 text-gray-300" />
+                        <div className="flex-1">
+                          <p className={`font-bold text-sm ${isHidden ? 'line-through text-gray-400' : 'text-[#2D1B14]'}`}>{info.label}</p>
+                          <p className="text-xs text-[#7C5C4A]">{info.desc}</p>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => toggleSectionVisibility(sectionId)}
+                            className={`h-8 w-8 ${isHidden ? 'text-gray-400' : 'text-[#7C5C4A]'}`}
+                            title={isHidden ? 'Mostra sezione' : 'Nascondi sezione'}
+                            data-testid={`section-toggle-${sectionId}`}>
+                            {isHidden ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => moveSectionUp(idx)} disabled={idx === 0}
+                            className="h-8 w-8 text-[#7C5C4A] disabled:opacity-30"
+                            data-testid={`section-up-${sectionId}`}>
+                            <ArrowUp className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => moveSectionDown(idx)} disabled={idx === sectionOrder.length - 1}
+                            className="h-8 w-8 text-[#7C5C4A] disabled:opacity-30"
+                            data-testid={`section-down-${sectionId}`}>
+                            <ArrowDown className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* Fixed Footer */}
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-100 border border-gray-200 opacity-60">
+                    <div className="w-8 h-8 bg-[#C8617A] text-white rounded-lg flex items-center justify-center text-xs font-bold">{sectionOrder.length + 2}</div>
+                    <div className="flex-1"><p className="font-bold text-sm text-[#2D1B14]">Footer</p><p className="text-xs text-[#7C5C4A]">Piè di pagina (sempre ultimo)</p></div>
+                    <span className="text-xs text-[#7C5C4A] font-semibold bg-gray-200 px-2 py-1 rounded">FISSO</span>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-4">Le modifiche all'ordine saranno visibili sul sito dopo aver cliccato "Salva Modifiche".</p>
+                <Button variant="outline" size="sm" onClick={() => {
+                  updateField('section_order', ALL_SECTIONS.map(s => s.id));
+                  updateField('hidden_sections', []);
+                  toast.success('Ordine predefinito ripristinato');
+                }} className="mt-3 text-[#7C5C4A] border-[#7C5C4A]/30" data-testid="reset-section-order-btn">
+                  Ripristina ordine predefinito
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ASPETTO (Colori, Font, Dimensioni) */}
+          <TabsContent value="aspetto">
+            {/* TEMI PREIMPOSTATI */}
+            <Card className="mb-6">
+              <CardHeader><CardTitle className="flex items-center gap-2"><Palette className="w-5 h-5" /> Temi Preimpostati</CardTitle>
+                <p className="text-sm text-[#7C5C4A]">Seleziona un tema per applicare colori e font automaticamente</p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3" data-testid="theme-presets">
+                  {[
+                    { name: 'Elegante Scuro', primary: '#C8617A', accent: '#D4A847', bg: '#1A1A2E', text: '#F5F5F5', fontD: 'Playfair Display', fontB: 'Nunito' },
+                    { name: 'Rosa Classico', primary: '#E91E63', accent: '#FF9800', bg: '#FFF8F0', text: '#1e293b', fontD: 'Cormorant Garamond', fontB: 'Nunito' },
+                    { name: 'Blu Moderno', primary: '#2563EB', accent: '#10B981', bg: '#F8FAFC', text: '#0F172A', fontD: 'Montserrat', fontB: 'Inter' },
+                    { name: 'Oro & Nero', primary: '#D4A847', accent: '#C8617A', bg: '#0A0A0A', text: '#F5F5F5', fontD: 'Playfair Display', fontB: 'Lato' },
+                    { name: 'Verde Natura', primary: '#059669', accent: '#D97706', bg: '#FEFCE8', text: '#1C1917', fontD: 'Merriweather', fontB: 'Source Sans 3' },
+                    { name: 'Viola Lusso', primary: '#7C3AED', accent: '#F59E0B', bg: '#FAF5FF', text: '#1E1B4B', fontD: 'Cormorant Garamond', fontB: 'Quicksand' },
+                    { name: 'Corallo', primary: '#EF4444', accent: '#06B6D4', bg: '#FFFBEB', text: '#292524', fontD: 'Poppins', fontB: 'Nunito' },
+                    { name: 'Minimal Bianco', primary: '#18181B', accent: '#A1A1AA', bg: '#FFFFFF', text: '#18181B', fontD: 'Inter', fontB: 'Inter' },
+                    { name: 'Teal Fresco', primary: '#0D9488', accent: '#EC4899', bg: '#F0FDFA', text: '#134E4A', fontD: 'Raleway', fontB: 'Open Sans' },
+                    { name: 'Borgogna', primary: '#9F1239', accent: '#CA8A04', bg: '#FFF1F2', text: '#1C1917', fontD: 'Playfair Display', fontB: 'Lato' },
+                  ].map((theme, i) => (
+                    <button key={i} onClick={() => {
+                      updateField('primary_color', theme.primary);
+                      updateField('accent_color', theme.accent);
+                      updateField('bg_color', theme.bg);
+                      updateField('text_color', theme.text);
+                      updateField('font_display', theme.fontD);
+                      updateField('font_body', theme.fontB);
+                      toast.success(`Tema "${theme.name}" applicato`);
+                    }} className="group relative rounded-xl border-2 border-gray-200 hover:border-[#C8617A] p-3 transition-all hover:shadow-lg text-left" data-testid={`theme-preset-${i}`}>
+                      <div className="flex gap-1 mb-2">
+                        <div className="w-6 h-6 rounded-full border" style={{ backgroundColor: theme.primary }} />
+                        <div className="w-6 h-6 rounded-full border" style={{ backgroundColor: theme.accent }} />
+                        <div className="w-6 h-6 rounded-full border" style={{ backgroundColor: theme.bg }} />
+                        <div className="w-6 h-6 rounded-full border" style={{ backgroundColor: theme.text }} />
+                      </div>
+                      <p className="text-xs font-bold text-[#2D1B14] truncate">{theme.name}</p>
+                      <p className="text-[10px] text-gray-400">{theme.fontD}</p>
+                    </button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Colori + Font */}
+              <div className="lg:col-span-1 space-y-6">
+                <Card>
+                  <CardHeader><CardTitle className="flex items-center gap-2 text-base"><Palette className="w-4 h-4" /> Colori</CardTitle></CardHeader>
+                  <CardContent className="space-y-3">
+                    {[
+                      { label: 'Primario', key: 'primary_color', def: '#ff3366', desc: 'Pulsanti, link' },
+                      { label: 'Accento', key: 'accent_color', def: '#33CC99', desc: 'Badge, etichette' },
+                      { label: 'Sfondo', key: 'bg_color', def: '#F0F4FF', desc: 'Sfondo pagina' },
+                      { label: 'Testo', key: 'text_color', def: '#2D3047', desc: 'Testo corpo' },
+                    ].map(c => (
+                      <div key={c.key} className="flex items-center gap-2">
+                        <input type="color" value={config[c.key] || c.def} onChange={e => updateField(c.key, e.target.value)} className="w-8 h-8 rounded border cursor-pointer shrink-0" />
+                        <div className="flex-1">
+                          <Input value={config[c.key] || c.def} onChange={e => updateField(c.key, e.target.value)} className="font-mono text-xs h-8" data-testid={`config-${c.key.replace('_','-')}`} />
+                        </div>
+                        <span className="text-[10px] text-gray-400 w-16 shrink-0">{c.label}</span>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader><CardTitle className="flex items-center gap-2 text-base"><Type className="w-4 h-4" /> Font</CardTitle></CardHeader>
+                  <CardContent className="space-y-3">
+                    <div>
+                      <Label className="text-xs font-semibold">Font Titoli</Label>
+                      <select value={config.font_display || 'Cormorant Garamond'} onChange={e => updateField('font_display', e.target.value)} className="w-full mt-1 p-2 border rounded-lg text-sm" data-testid="config-font-display">
+                        {FONT_OPTIONS.map(f => <option key={f} value={f}>{f}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <Label className="text-xs font-semibold">Font Corpo</Label>
+                      <select value={config.font_body || 'Nunito'} onChange={e => updateField('font_body', e.target.value)} className="w-full mt-1 p-2 border rounded-lg text-sm" data-testid="config-font-body">
+                        {FONT_OPTIONS.map(f => <option key={f} value={f}>{f}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <Label className="text-xs font-semibold">Slogan / Motto</Label>
+                      <Input value={config.slogan || ''} onChange={e => updateField('slogan', e.target.value)} placeholder="es. Metti la testa a posto!!" className="text-sm" data-testid="config-slogan" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* ANTEPRIMA LIVE */}
+              <Card className="lg:col-span-2">
+                <CardHeader><CardTitle className="flex items-center gap-2">Anteprima Live</CardTitle></CardHeader>
+                <CardContent>
+                  <div className="rounded-2xl overflow-hidden border-2 border-gray-200 shadow-lg" data-testid="live-preview-panel">
+                    {/* Preview Navbar */}
+                    <div className="flex items-center justify-between px-4 py-3" style={{ backgroundColor: config.text_color || '#2D3047' }}>
+                      <span className="text-white font-bold text-sm" style={{ fontFamily: config.font_display || 'Cormorant Garamond' }}>{config.salon_name || 'BRUNO MELITO HAIR'}</span>
+                      <div className="flex gap-2">
+                        <span className="text-white/60 text-xs">Servizi</span>
+                        <span className="text-white/60 text-xs">Contatti</span>
+                        <span className="text-xs font-bold px-3 py-1 rounded text-white" style={{ backgroundColor: config.primary_color || '#ff3366' }}>PRENOTA</span>
+                      </div>
+                    </div>
+                    {/* Preview Hero */}
+                    <div className="py-12 px-6 text-center" style={{ backgroundColor: config.bg_color || '#F0F4FF' }}>
+                      <h2 className="text-3xl font-black mb-3" style={{ color: config.text_color || '#2D3047', fontFamily: config.font_display || 'Cormorant Garamond' }}>
+                        {config.salon_name || 'BRUNO MELITO HAIR'}
+                      </h2>
+                      <p className="text-sm mb-2" style={{ color: config.primary_color || '#ff3366', fontFamily: config.font_body || 'Nunito' }}>
+                        {config.slogan || config.subtitle || 'SOLO PER APPUNTAMENTO'}
+                      </p>
+                      <p className="text-sm mb-5 max-w-md mx-auto" style={{ color: `${config.text_color || '#2D3047'}99`, fontFamily: config.font_body || 'Nunito' }}>
+                        Scopri l'eccellenza dell'hair styling dove ogni taglio è un'opera d'arte.
+                      </p>
+                      <div className="flex justify-center gap-3">
+                        <span className="px-5 py-2 rounded-lg text-white text-sm font-bold" style={{ backgroundColor: config.primary_color || '#ff3366' }}>PRENOTA ORA</span>
+                        <span className="px-5 py-2 rounded-lg text-sm font-bold border" style={{ borderColor: config.primary_color || '#ff3366', color: config.primary_color || '#ff3366' }}>Scopri i Servizi</span>
+                      </div>
+                    </div>
+                    {/* Preview Sections */}
+                    <div className="px-6 py-6" style={{ backgroundColor: config.bg_color || '#F0F4FF' }}>
+                      <div className="grid grid-cols-2 gap-4">
+                        {/* Services preview */}
+                        <div className="bg-white rounded-xl p-4 border">
+                          <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: config.accent_color || '#33CC99' }}>I Nostri Servizi</p>
+                          <h3 className="text-base font-black mb-3" style={{ color: config.text_color || '#2D3047', fontFamily: config.font_display }}>Servizi Professionali</h3>
+                          {['Taglio Uomo', 'Colore', 'Trattamento'].map((s, i) => (
+                            <div key={i} className="flex justify-between py-1 border-b border-gray-100 last:border-0">
+                              <span className="text-xs" style={{ color: config.text_color || '#2D3047', fontFamily: config.font_body }}>{s}</span>
+                              <span className="text-xs font-bold" style={{ color: config.primary_color || '#ff3366' }}>{'\u20AC'}{[18, 45, 25][i]}</span>
+                            </div>
+                          ))}
+                        </div>
+                        {/* Reviews preview */}
+                        <div className="rounded-xl p-4" style={{ backgroundColor: `${config.text_color || '#2D3047'}E6` }}>
+                          <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: config.accent_color || '#33CC99' }}>Recensioni</p>
+                          <p className="text-xs text-white/70 italic mb-2" style={{ fontFamily: config.font_body }}>"Servizio eccellente, ambiente accogliente"</p>
+                          <div className="flex gap-0.5">
+                            {[1,2,3,4,5].map(i => <span key={i} className="text-amber-400 text-xs">&#9733;</span>)}
+                          </div>
+                          <p className="text-[10px] text-white/50 mt-1">- Maria R.</p>
+                        </div>
+                      </div>
+                      {/* Contact preview */}
+                      <div className="mt-4 text-center">
+                        <span className="px-6 py-2 rounded-lg text-white text-sm font-bold" style={{ backgroundColor: config.primary_color || '#ff3366' }}>PRENOTA ORA</span>
+                        <span className="ml-2 px-6 py-2 rounded-lg text-white text-sm font-bold bg-[#25D366]">WHATSAPP</span>
+                      </div>
+                    </div>
+                    {/* Preview Footer */}
+                    <div className="px-4 py-3 text-center" style={{ backgroundColor: config.text_color || '#2D3047' }}>
+                      <span className="text-white/40 text-xs" style={{ fontFamily: config.font_body }}>&copy; 2026 {config.salon_name || 'Bruno Melito Hair'}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* SERVICES */}
+          <TabsContent value="services">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Servizi del Salone (Listino Pubblico)</CardTitle>
+                  <Button asChild variant="outline" className="border-[#C8617A] text-[#C8617A] hover:bg-[#C8617A]/10">
+                    <a href="/services">
+                      <Plus className="w-4 h-4 mr-1" /> Gestisci Servizi
+                    </a>
+                  </Button>
+                </div>
+                <div className="flex items-start gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg mt-2">
+                  <TrendingUp className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-bold text-emerald-800">Sincronizzazione Automatica</p>
+                    <p className="text-xs text-emerald-700 mt-0.5">I servizi mostrati sul sito pubblico vengono letti direttamente dalla pagina <strong>Servizi</strong> del gestionale. Qualsiasi modifica fatta li aggiorna automaticamente sul sito.</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {allServices.length > 0 ? (
+                  <div className="space-y-3">
+                    {(() => {
+                      const { groups, orderedKeys } = groupServicesByCategory(allServices);
+                      return orderedKeys.map(catKey => {
+                        const catInfo = getCategoryInfo(catKey);
+                        const svcs = groups[catKey];
+                        return (
+                          <div key={catKey} className="border-2 rounded-xl overflow-hidden" style={{ borderColor: catInfo.color + '40' }}>
+                            <div className="flex items-center gap-2 px-4 py-2.5" style={{ backgroundColor: catInfo.bg }}>
+                              <div className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: catInfo.color }} />
+                              <p className="font-bold text-sm uppercase tracking-wide" style={{ color: catInfo.text }}>{catInfo.label}</p>
+                              <span className="text-xs ml-1 opacity-60" style={{ color: catInfo.text }}>({svcs.length})</span>
+                            </div>
+                            <div className="divide-y divide-gray-100">
+                              {svcs.map(s => (
+                                <div key={s.id} className="flex justify-between items-center py-2 px-4 hover:bg-gray-50 text-sm">
+                                  <span className="text-[#2D1B14] font-medium">{s.name}</span>
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-xs text-gray-400">{s.duration} min</span>
+                                    <span className="font-bold" style={{ color: catInfo.color }}>{'\u20AC'}{s.price}</span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>Nessun servizio trovato. Vai alla pagina Servizi per aggiungerne.</p>
+                    <Button asChild className="mt-3 bg-[#C8617A] text-white">
+                      <a href="/services">Vai a Servizi</a>
+                    </Button>
+                  </div>
+                )}
+                
+                {/* Custom categories aggiuntive */}
+                {(config.service_categories || []).length > 0 && (
+                  <div className="mt-6 pt-4 border-t border-gray-200">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-sm font-bold text-gray-500">Categorie Personalizzate (Solo sito)</p>
+                      <Button variant="outline" size="sm" onClick={addCategory}><Plus className="w-4 h-4 mr-1" /> Categoria</Button>
+                    </div>
+                    {(config.service_categories || []).map((cat, catIdx) => (
+                      <div key={catIdx} className="border rounded-xl p-4 space-y-3 mb-3 bg-gray-50">
+                        <div className="flex items-center gap-3">
+                          <Input value={cat.title} onChange={e => updateCategory(catIdx, 'title', e.target.value)} placeholder="Nome Categoria" className="font-bold" />
+                          <Button variant="ghost" size="icon" onClick={() => removeCategory(catIdx)} className="text-red-500 shrink-0"><Trash2 className="w-4 h-4" /></Button>
+                        </div>
+                        <Input value={cat.desc || ''} onChange={e => updateCategory(catIdx, 'desc', e.target.value)} placeholder="Descrizione (opzionale)" className="text-sm" />
+                        <div className="space-y-2 pl-4">
+                          {(cat.items || []).map((item, itemIdx) => (
+                            <div key={itemIdx} className="flex gap-2 items-center">
+                              <Input value={item.name} onChange={e => updateCategoryItem(catIdx, itemIdx, 'name', e.target.value)} placeholder="Servizio" className="flex-1" />
+                              <Input value={item.price} onChange={e => updateCategoryItem(catIdx, itemIdx, 'price', e.target.value)} placeholder="Prezzo" className="w-28" />
+                              <Button variant="ghost" size="icon" onClick={() => removeCategoryItem(catIdx, itemIdx)} className="text-red-500 shrink-0"><X className="w-4 h-4" /></Button>
+                            </div>
+                          ))}
+                          <Button variant="outline" size="sm" onClick={() => addCategoryItem(catIdx)}><Plus className="w-4 h-4 mr-1" /> Servizio</Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {(config.service_categories || []).length === 0 && (
+                  <p className="text-xs text-gray-400 mt-4">Puoi aggiungere categorie personalizzate extra per il sito pubblico cliccando su "+" sopra.</p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* SALON PHOTOS */}
+          <TabsContent value="photos">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Foto e Video del Salone</CardTitle>
+                  <div className="relative">
+                    <input type="file" accept="image/*,video/mp4,video/webm,video/quicktime" multiple onChange={(e) => handleMediaUpload(e, 'salon')} className="absolute inset-0 opacity-0 cursor-pointer z-10" disabled={uploading} />
+                    <Button variant="outline" disabled={uploading}>
+                      {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Upload className="w-4 h-4 mr-2" />}
+                      Carica Foto/Video
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {salonPhotos.length === 0 ? (
+                  <div className="text-center py-12 text-gray-500">
+                    <Image className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <p>Nessuna foto del salone. Carica le prime foto!</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 stagger-fast">
+                    {salonPhotos.map((item) => (
+                      <div key={item.id} className="relative group rounded-xl overflow-hidden border">
+                        {item.file_type === 'video' ? (
+                          <video src={getMediaUrl(item?.image_url)} className="w-full aspect-square object-cover" muted playsInline />
+                        ) : (
+                          <img src={getMediaUrl(item?.image_url)} alt={item.label} className="w-full aspect-square object-cover" />
+                        )}
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <Button variant="ghost" size="icon" onClick={() => deleteGalleryItem(item.id)} className="text-white hover:text-red-400 hover:bg-red-400/20">
+                            <Trash2 className="w-5 h-5" />
+                          </Button>
+                        </div>
+                        {item.file_type === 'video' && (
+                          <div className="absolute top-2 left-2 bg-black/60 text-white text-xs font-bold px-2 py-1 rounded">VIDEO</div>
+                        )}
+                        <div className="p-2">
+                          <Input value={item.label || ''} onChange={e => updateGalleryItem(item.id, 'label', e.target.value)} placeholder="Etichetta" className="text-xs h-8" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <p className="text-xs text-gray-500 mt-4">La prima foto viene usata come sfondo dell'hero. La seconda nella sezione "Chi Siamo".</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* GALLERY */}
+          <TabsContent value="gallery">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Gallery Lavori / Acconciature</CardTitle>
+                  <div className="relative">
+                    <input type="file" accept="image/*,video/mp4,video/webm,video/quicktime" multiple onChange={(e) => handleMediaUpload(e, 'gallery')} className="absolute inset-0 opacity-0 cursor-pointer z-10" disabled={uploading} />
+                    <Button variant="outline" disabled={uploading}>
+                      {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Upload className="w-4 h-4 mr-2" />}
+                      Carica Foto/Video
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {galleryPhotos.length === 0 ? (
+                  <div className="text-center py-12 text-gray-500">
+                    <Image className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <p>Nessuna foto/video nella gallery. Carica i tuoi lavori!</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {galleryPhotos.map((item) => (
+                      <div key={item.id} className="relative group rounded-xl overflow-hidden border">
+                        {item.file_type === 'video' ? (
+                          <video src={getMediaUrl(item?.image_url)} className="w-full aspect-[3/4] object-cover" muted playsInline />
+                        ) : (
+                          <img src={getMediaUrl(item?.image_url)} alt={item.label} className="w-full aspect-[3/4] object-cover" />
+                        )}
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <Button variant="ghost" size="icon" onClick={() => deleteGalleryItem(item.id)} className="text-white hover:text-red-400 hover:bg-red-400/20">
+                            <Trash2 className="w-5 h-5" />
+                          </Button>
+                        </div>
+                        {item.file_type === 'video' && (
+                          <div className="absolute top-2 left-2 bg-black/60 text-white text-xs font-bold px-2 py-1 rounded">VIDEO</div>
+                        )}
+                        <div className="p-2 space-y-1">
+                          <Input value={item.label || ''} onChange={e => updateGalleryItem(item.id, 'label', e.target.value)} placeholder="Nome" className="text-xs h-8" />
+                          <Input value={item.tag || ''} onChange={e => updateGalleryItem(item.id, 'tag', e.target.value)} placeholder="Tag (es. Balayage)" className="text-xs h-8" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* REVIEWS */}
+          <TabsContent value="reviews">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Recensioni Clienti</CardTitle>
+                  <Button variant="outline" onClick={() => openReviewDialog()} data-testid="add-review-btn"><Plus className="w-4 h-4 mr-1" /> Aggiungi</Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {reviews.length === 0 ? (
+                  <div className="text-center py-12 text-gray-500">
+                    <Star className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <p>Nessuna recensione. Aggiungi le recensioni dei tuoi clienti!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {reviews.map((review) => (
+                      <div key={review.id} className="flex items-start gap-4 p-4 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-bold text-sm">{review.name}</span>
+                            <div className="flex gap-0.5">
+                              {[...Array(review.rating || 5)].map((_, i) => (<Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />))}
+                            </div>
+                          </div>
+                          <p className="text-sm text-gray-600">"{review.text}"</p>
+                        </div>
+                        <div className="flex gap-1 shrink-0">
+                          <Button variant="ghost" size="icon" onClick={() => openReviewDialog(review)} className="h-8 w-8"><Pencil className="w-3 h-3" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => deleteReview(review.id)} className="h-8 w-8 text-red-500"><Trash2 className="w-3 h-3" /></Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* UPSELLING */}
+          <TabsContent value="upselling">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2"><TrendingUp className="w-5 h-5" /> Upselling Servizi</CardTitle>
+                    <p className="text-sm text-[#7C5C4A] mt-1">Dopo la prenotazione, suggerisci servizi complementari con uno sconto. Il cliente può aggiungerli con un click.</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Sconto globale */}
+                <div className="flex items-center gap-4 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+                  <Percent className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <div className="flex-1">
+                    <label className="text-sm font-bold text-[#2D1B14]">Sconto Upselling</label>
+                    <p className="text-xs text-[#7C5C4A]">Sconto applicato ai servizi suggeriti dopo la prenotazione</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input type="number" min={0} max={50} value={config.upselling_discount || 15}
+                      onChange={e => updateField('upselling_discount', parseInt(e.target.value) || 0)}
+                      className="w-20 text-center font-bold" data-testid="upselling-discount-input" />
+                    <span className="text-sm font-bold text-emerald-600">%</span>
+                  </div>
+                </div>
+
+                {/* Regole */}
+                <div className="space-y-4" data-testid="upselling-rules">
+                  {(config.upselling_rules || []).map((rule, ruleIdx) => (
+                    <div key={ruleIdx} className="border rounded-xl p-4 space-y-3 bg-white hover:shadow-sm transition-shadow">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-bold text-[#7C5C4A] uppercase tracking-wider">Regola {ruleIdx + 1}</p>
+                        <Button variant="ghost" size="icon" onClick={() => {
+                          const rules = (config.upselling_rules || []).filter((_, i) => i !== ruleIdx);
+                          updateField('upselling_rules', rules);
+                        }} className="text-red-500 h-8 w-8" data-testid={`upselling-rule-delete-${ruleIdx}`}><Trash2 className="w-4 h-4" /></Button>
+                      </div>
+                      {/* Trigger service */}
+                      <div>
+                        <label className="text-xs font-semibold text-[#2D1B14] mb-1 block">Quando il cliente prenota:</label>
+                        <select value={rule.trigger_service_id || ''} onChange={e => {
+                          const rules = [...(config.upselling_rules || [])];
+                          const svc = allServices.find(s => s.id === e.target.value);
+                          rules[ruleIdx] = { ...rules[ruleIdx], trigger_service_id: e.target.value, trigger_service_name: svc?.name || '' };
+                          updateField('upselling_rules', rules);
+                        }} className="w-full p-2 border rounded-lg text-sm" data-testid={`upselling-trigger-${ruleIdx}`}>
+                          <option value="">-- Seleziona servizio --</option>
+                          {allServices.map(s => <option key={s.id} value={s.id}>{s.name} ({'\u20AC'}{s.price})</option>)}
+                        </select>
+                      </div>
+                      {/* Suggested services */}
+                      <div>
+                        <label className="text-xs font-semibold text-[#2D1B14] mb-1 block">Suggerisci questi servizi:</label>
+                        <div className="space-y-2">
+                          {allServices.filter(s => s.id !== rule.trigger_service_id).map(s => {
+                            const isSelected = (rule.suggested_service_ids || []).includes(s.id);
+                            return (
+                              <label key={s.id} className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${isSelected ? 'bg-[#C8617A]/10 border border-[#C8617A]/30' : 'hover:bg-gray-50'}`}>
+                                <input type="checkbox" checked={isSelected} onChange={() => {
+                                  const rules = [...(config.upselling_rules || [])];
+                                  const current = rules[ruleIdx].suggested_service_ids || [];
+                                  const currentNames = rules[ruleIdx].suggested_service_names || [];
+                                  if (isSelected) {
+                                    rules[ruleIdx] = { ...rules[ruleIdx], suggested_service_ids: current.filter(id => id !== s.id), suggested_service_names: currentNames.filter(n => n !== s.name) };
+                                  } else {
+                                    rules[ruleIdx] = { ...rules[ruleIdx], suggested_service_ids: [...current, s.id], suggested_service_names: [...currentNames, s.name] };
+                                  }
+                                  updateField('upselling_rules', rules);
+                                }} className="accent-[#C8617A]" />
+                                <span className="text-sm flex-1">{s.name}</span>
+                                <span className="text-xs text-[#7C5C4A]">{'\u20AC'}{s.price}</span>
+                                {isSelected && <span className="text-xs font-bold text-emerald-600">{'\u2192'} {'\u20AC'}{(s.price * (1 - (config.upselling_discount || 15) / 100)).toFixed(2)}</span>}
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <Button variant="outline" onClick={() => {
+                  updateField('upselling_rules', [...(config.upselling_rules || []), { trigger_service_id: '', trigger_service_name: '', suggested_service_ids: [], suggested_service_names: [] }]);
+                }} className="w-full border-dashed border-2 border-[#C8617A]/30 text-[#C8617A] hover:bg-[#C8617A]/5" data-testid="add-upselling-rule-btn">
+                  <Plus className="w-4 h-4 mr-2" /> Aggiungi Regola Upselling
+                </Button>
+
+                {(config.upselling_rules || []).length === 0 && (
+                  <div className="text-center py-8 text-gray-400">
+                    <TrendingUp className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <p className="text-sm">Nessuna regola di upselling configurata.</p>
+                    <p className="text-xs mt-1">Aggiungi regole per suggerire servizi complementari dopo le prenotazioni.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* PROMOTIONS */}
+          <TabsContent value="promotions">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Promozioni</CardTitle>
+                  <Button size="sm" onClick={openNewPromo} className="bg-[#C8617A] text-white"><Plus className="w-4 h-4 mr-1" /> Nuova Promozione</Button>
+                </div>
+                <div className="flex items-start gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg mt-2">
+                  <TrendingUp className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-bold text-emerald-800">Visibili sul sito</p>
+                    <p className="text-xs text-emerald-700 mt-0.5">Le promozioni attive con "Mostra sul sito" appaiono nella sezione Promozioni della pagina pubblica.</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {promotions.length > 0 ? (
+                  <div className="space-y-3">
+                    {promotions.map(promo => (
+                      <div key={promo.id} className={`border rounded-xl p-4 flex items-center gap-4 ${promo.active ? 'bg-white' : 'bg-gray-50 opacity-60'}`} data-testid={`promo-card-${promo.id}`}>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold text-[#2D1B14]">{promo.name}</p>
+                            {promo.active ? <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">Attiva</span> : <span className="text-xs px-2 py-0.5 rounded-full bg-gray-200 text-gray-500 font-medium">Disattiva</span>}
+                            {promo.show_on_booking && <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">Sul sito</span>}
+                          </div>
+                          <p className="text-sm text-gray-500 mt-1">{promo.description || 'Nessuna descrizione'}</p>
+                          <p className="text-xs text-[#C8617A] font-bold mt-1">
+                            {promo.discount_type === 'percent' && promo.discount_value ? `Sconto: ${promo.discount_value}%` : promo.discount_type === 'fixed' && promo.discount_value ? `Sconto: ${promo.discount_value}\u20AC` : ''}
+                          </p>
+                        </div>
+                        <div className="flex gap-1 shrink-0">
+                          <Button variant="ghost" size="icon" onClick={() => togglePromoActive(promo)} className={promo.active ? 'text-emerald-600' : 'text-gray-400'}>
+                            {promo.active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => openEditPromo(promo)} className="text-gray-600"><Pencil className="w-4 h-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => deletePromo(promo.id)} className="text-red-500"><Trash2 className="w-4 h-4" /></Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-400">
+                    <Percent className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <p className="text-sm">Nessuna promozione configurata.</p>
+                    <p className="text-xs mt-1">Crea promozioni per attrarre nuovi clienti e fidelizzare quelli esistenti.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* TREND 2026 — RESTYLING SITO */}
+          <TabsContent value="trends">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <TrendingUp className="w-5 h-5 text-[#FF6B9D]" /> I Look dell&apos;Estate 2026
+                    </CardTitle>
+                    <p className="text-sm text-[#7C5C4A] mt-1">
+                      Aggiungi i tuoi lavori estivi. Appaiono nella sezione &quot;Trend 2026&quot; del sito pubblico.
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => setNewTrendForm({ title: '', desc: '', badge: '' })}
+                    className="text-white"
+                    style={{ background: 'linear-gradient(135deg, #FF6B9D, #FFB347)' }}
+                  >
+                    <Plus className="w-4 h-4 mr-1" /> Aggiungi Look
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {/* New trend form */}
+                {newTrendForm !== null && (
+                  <div className="mb-5 p-4 border-2 border-dashed border-[#FF6B9D]/40 rounded-2xl bg-pink-50 space-y-3">
+                    <p className="text-sm font-bold text-[#FF6B9D]">✨ Nuovo look</p>
+                    <Input
+                      placeholder="Nome del look (es. Bixie Cut)"
+                      value={newTrendForm.title}
+                      onChange={e => setNewTrendForm(prev => ({ ...prev, title: e.target.value }))}
+                    />
+                    <Input
+                      placeholder="Badge (es. 🔥 Trend)"
+                      value={newTrendForm.badge}
+                      onChange={e => setNewTrendForm(prev => ({ ...prev, badge: e.target.value }))}
+                    />
+                    <Textarea
+                      placeholder="Descrizione breve..."
+                      value={newTrendForm.desc}
+                      rows={2}
+                      onChange={e => setNewTrendForm(prev => ({ ...prev, desc: e.target.value }))}
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        disabled={!newTrendForm.title}
+                        onClick={() => createTrend(newTrendForm)}
+                        className="bg-[#FF6B9D] text-white hover:bg-[#e05588]"
+                      >
+                        Salva
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setNewTrendForm(null)}>Annulla</Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Trend cards grid */}
+                {trends.length === 0 && newTrendForm === null ? (
+                  <div className="text-center py-16 text-gray-400">
+                    <TrendingUp className="w-14 h-14 mx-auto mb-3 text-gray-200" />
+                    <p className="font-semibold">Nessun look aggiunto ancora.</p>
+                    <p className="text-xs mt-1">Clicca &quot;+ Aggiungi Look&quot; per iniziare!</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {trends.map(trend => {
+                      const isUploading = trendUploading === trend.id;
+                      return (
+                        <div
+                          key={trend.id}
+                          className="rounded-2xl overflow-hidden border-2 border-gray-100 bg-white shadow-sm hover:shadow-md transition-all"
+                        >
+                          {/* Image area */}
+                          <div className="relative h-52 bg-gray-50">
+                            {trend.img ? (
+                              <img src={trend.img} alt={trend.title} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-gray-300 flex-col gap-2">
+                                <Image className="w-10 h-10" />
+                                <span className="text-xs">Nessuna foto</span>
+                              </div>
+                            )}
+                            {/* Upload overlay */}
+                            <label className="absolute bottom-2 right-2 cursor-pointer">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={e => { const f = e.target.files?.[0]; if (f) uploadTrendImage(trend.id, f); e.target.value = ''; }}
+                              />
+                              <div className="bg-white/90 hover:bg-white text-[#FF6B9D] p-2 rounded-full shadow-md transition-all">
+                                {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                              </div>
+                            </label>
+                            {/* Badge */}
+                            {trend.badge && (
+                              <div className="absolute top-2 left-2 text-xs font-black px-2.5 py-1 rounded-full bg-yellow-300 border-2 border-black">
+                                {trend.badge}
+                              </div>
+                            )}
+                          </div>
+                          {/* Edit fields */}
+                          <div className="p-4 space-y-2">
+                            <Input
+                              value={trend.title || ''}
+                              onChange={e => setTrends(prev => prev.map(t => t.id === trend.id ? { ...t, title: e.target.value } : t))}
+                              onBlur={e => updateTrend(trend.id, { title: e.target.value })}
+                              placeholder="Nome del look"
+                              className="font-bold text-sm border-gray-200"
+                            />
+                            <Input
+                              value={trend.badge || ''}
+                              onChange={e => setTrends(prev => prev.map(t => t.id === trend.id ? { ...t, badge: e.target.value } : t))}
+                              onBlur={e => updateTrend(trend.id, { badge: e.target.value })}
+                              placeholder="Badge (es. 🔥 Trend)"
+                              className="text-xs border-gray-200"
+                            />
+                            <Textarea
+                              value={trend.desc || ''}
+                              onChange={e => setTrends(prev => prev.map(t => t.id === trend.id ? { ...t, desc: e.target.value } : t))}
+                              onBlur={e => updateTrend(trend.id, { desc: e.target.value })}
+                              placeholder="Descrizione breve..."
+                              rows={2}
+                              className="text-xs border-gray-200 resize-none"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => deleteTrend(trend.id)}
+                              className="w-full text-red-400 hover:text-red-600 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Elimina look
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <p className="text-xs text-gray-400 mt-5">
+                  Le modifiche ai campi vengono salvate automaticamente quando esci dal campo. Le foto vengono ottimizzate (800×800px) prima del caricamento.
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* HOURS & CONTACTS */}
+          <TabsContent value="hours">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader><CardTitle>Orari di Apertura</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  {['lun', 'mar', 'mer', 'gio', 'ven', 'sab', 'dom'].map(day => (
+                    <div key={day} className="flex items-center gap-3">
+                      <span className="w-10 font-bold text-sm capitalize">{day}</span>
+                      <Input value={(config.hours || {})[day] || ''} onChange={e => updateHour(day, e.target.value)} placeholder="es. 08:00 - 19:00 oppure Chiuso" />
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader><CardTitle>Contatti</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                  <div><Label>Email</Label><Input value={config.email || ''} onChange={e => updateField('email', e.target.value)} /></div>
+                  <div><Label>Indirizzo</Label><Input value={config.address || ''} onChange={e => updateField('address', e.target.value)} /></div>
+                  <div><Label>Link Google Maps</Label><Input value={config.maps_url || ''} onChange={e => updateField('maps_url', e.target.value)} /></div>
+                  <div><Label>WhatsApp (con prefisso, es. 393397833526)</Label><Input value={config.whatsapp || ''} onChange={e => updateField('whatsapp', e.target.value)} /></div>
+                  <div>
+                    <Label>Numeri di Telefono</Label>
+                    <StringListEditor items={config.phones} editor={phoneEditor} addLabel="Telefono" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        {/* Review Dialog */}
+        <Dialog open={reviewDialog} onOpenChange={setReviewDialog}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>{editReview ? 'Modifica Recensione' : 'Nuova Recensione'}</DialogTitle></DialogHeader>
+            <div className="space-y-4">
+              <div><Label>Nome Cliente</Label><Input value={reviewForm.name} onChange={e => setReviewForm({ ...reviewForm, name: e.target.value })} placeholder="Es. Maria R." data-testid="review-name-input" /></div>
+              <div><Label>Testo Recensione</Label><Textarea value={reviewForm.text} onChange={e => setReviewForm({ ...reviewForm, text: e.target.value })} rows={3} data-testid="review-text-input" /></div>
+              <div>
+                <Label>Valutazione</Label>
+                <div className="flex gap-1 mt-2">
+                  {[1, 2, 3, 4, 5].map(n => (
+                    <button key={n} onClick={() => setReviewForm({ ...reviewForm, rating: n })}>
+                      <Star className={`w-6 h-6 ${n <= reviewForm.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-300'}`} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setReviewDialog(false)}>Annulla</Button>
+              <Button onClick={saveReview} className="bg-[#C8617A] text-white" data-testid="save-review-btn">Salva</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirm Dialog */}
+        <AlertDialog open={deleteConfirm.open} onOpenChange={(open) => !open && setDeleteConfirm(prev => ({ ...prev, open: false }))}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Conferma eliminazione</AlertDialogTitle>
+              <AlertDialogDescription>Sei sicuro di voler eliminare {deleteConfirm.label}? L'azione non è reversibile.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annulla</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDelete} className="bg-red-500 hover:bg-red-600 text-white">Elimina</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Promo Dialog */}
+        <Dialog open={promoDialog} onOpenChange={setPromoDialog}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>{editPromo ? 'Modifica Promozione' : 'Nuova Promozione'}</DialogTitle></DialogHeader>
+            <div className="space-y-4">
+              <div><Label>Nome Promozione</Label><Input value={promoForm.name} onChange={e => setPromoForm({ ...promoForm, name: e.target.value })} placeholder="Es. Sconto Primavera" data-testid="promo-name-input" /></div>
+              <div><Label>Descrizione</Label><Textarea value={promoForm.description} onChange={e => setPromoForm({ ...promoForm, description: e.target.value })} rows={2} placeholder="Descrizione della promozione..." data-testid="promo-desc-input" /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Tipo Sconto</Label>
+                  <Select value={promoForm.discount_type} onValueChange={v => setPromoForm({ ...promoForm, discount_type: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="percent">Percentuale (%)</SelectItem>
+                      <SelectItem value="fixed">Fisso ({'\u20AC'})</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Valore Sconto</Label>
+                  <Input type="number" value={promoForm.discount_value} onChange={e => setPromoForm({ ...promoForm, discount_value: parseFloat(e.target.value) || 0 })} />
+                </div>
+              </div>
+              <div className="flex items-center gap-6">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Switch checked={promoForm.active} onCheckedChange={v => setPromoForm({ ...promoForm, active: v })} />
+                  <span className="text-sm">Attiva</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Switch checked={promoForm.show_on_booking} onCheckedChange={v => setPromoForm({ ...promoForm, show_on_booking: v })} />
+                  <span className="text-sm">Mostra sul sito</span>
+                </label>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setPromoDialog(false)}>Annulla</Button>
+              <Button onClick={savePromo} className="bg-[#C8617A] text-white" data-testid="save-promo-btn">{editPromo ? 'Aggiorna' : 'Crea'}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </Layout>
+  );
+}
+
