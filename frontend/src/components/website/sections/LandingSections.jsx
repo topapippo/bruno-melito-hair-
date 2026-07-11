@@ -496,8 +496,16 @@ export function WelcomeBanner({ T, setShowBooking }) {
   const [visible, setVisible] = useState(() => {
     try { return !localStorage.getItem('bmh_welcome_dismissed'); } catch { return true; }
   });
+  const dismiss = () => { setVisible(false); try { localStorage.setItem('bmh_welcome_dismissed', '1'); } catch {} };
+
+  // Si chiude da solo dopo 3 secondi, senza bisogno che l'utente tocchi la X
+  useEffect(() => {
+    if (!visible) return;
+    const t = setTimeout(dismiss, 3000);
+    return () => clearTimeout(t);
+  }, [visible]);
+
   if (!visible) return null;
-  const dismiss = () => { setVisible(false); localStorage.setItem('bmh_welcome_dismissed', '1'); };
 
   return (
     <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-2rem)] max-w-2xl bg-purple-600 rounded-[2rem] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center gap-6 border border-white/20 text-white">
@@ -507,7 +515,7 @@ export function WelcomeBanner({ T, setShowBooking }) {
          <p className="text-white/80 text-sm font-medium">Ricevi il <strong>10% di sconto</strong> sul tuo primo appuntamento!</p>
       </div>
       <div className="flex items-center gap-4">
-         <button onClick={() => setShowBooking(true)} className="bg-white text-black px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-yellow-400 transition-colors shadow-lg">PRENOTA</button>
+         <button onClick={() => { setShowBooking(true); dismiss(); }} className="bg-white text-black px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-yellow-400 transition-colors shadow-lg">PRENOTA</button>
          <button onClick={dismiss} className="text-white/40 hover:text-white transition-colors p-2"><X size={20} /></button>
       </div>
     </div>
