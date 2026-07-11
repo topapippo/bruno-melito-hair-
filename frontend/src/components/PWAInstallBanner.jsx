@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 const STORAGE_KEY = 'pwa_install_dismissed';
 
@@ -16,12 +17,16 @@ function isSafari() {
 }
 
 export default function PWAInstallBanner() {
+  const { user } = useAuth();
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showAndroid, setShowAndroid] = useState(false);
   const [showIOS, setShowIOS] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
+    // Non mostrare l'invito a installare il gestionale ai visitatori pubblici
+    // (clienti che aprono /prenota o /sito per prenotare): il banner è per lo staff.
+    if (!user) return;
     if (isInStandaloneMode()) return;
     if (sessionStorage.getItem(STORAGE_KEY)) return;
 
@@ -58,7 +63,7 @@ export default function PWAInstallBanner() {
     setDismissed(true);
   };
 
-  if (dismissed || (!showAndroid && !showIOS)) return null;
+  if (!user || dismissed || (!showAndroid && !showIOS)) return null;
 
   // Banner Android
   if (showAndroid) {
