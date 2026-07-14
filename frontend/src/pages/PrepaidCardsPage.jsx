@@ -31,6 +31,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import CardAlertsPanel from '../components/CardAlertsPanel';
 import {
   CreditCard,
   Plus,
@@ -338,6 +340,13 @@ export default function PrepaidCardsPage() {
           </Button>
         </div>
 
+        <Tabs defaultValue="cards">
+          <TabsList className="bg-[#FAF7F2] border border-[#F0E6DC] rounded-xl p-1">
+            <TabsTrigger value="cards" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white rounded-lg font-bold">Le mie Card</TabsTrigger>
+            <TabsTrigger value="alerts" className="data-[state=active]:bg-[#C8617A] data-[state=active]:text-white rounded-lg font-bold">Avvisi</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="cards" className="space-y-6 mt-4">
         {/* Filters */}
         <Card className="bg-white border-[#F0E6DC]/30">
           <CardContent className="p-4">
@@ -1000,6 +1009,12 @@ export default function PrepaidCardsPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+          </TabsContent>
+
+          <TabsContent value="alerts" className="mt-4">
+            <CardAlertsPanel />
+          </TabsContent>
+        </Tabs>
       </div>
     </Layout>
   );

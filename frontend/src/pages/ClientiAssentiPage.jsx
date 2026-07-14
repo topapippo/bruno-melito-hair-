@@ -68,6 +68,8 @@ export default function ClientiAssentiPage() {
     try {
       const res = await api.get(`${API}/clients/dormant`, { params: { days: d } });
       setClients(res.data);
+      // Il "già invitato" arriva dal backend (persistente), non si perde più al refresh
+      setSentIds(new Set(res.data.filter(c => c.already_recalled).map(c => c.id)));
     } catch {
       toast.error('Errore nel caricamento');
     } finally {
@@ -94,7 +96,10 @@ export default function ClientiAssentiPage() {
     if (!dialogClient?.phone || !msgText.trim()) return;
     setSending(true);
     const ok = await sendWA(dialogClient.phone, msgText, { successMsg: `✅ Invito inviato a ${dialogClient.name}!` });
-    if (ok) setSentIds(prev => new Set([...prev, dialogClient.id]));
+    if (ok) {
+      setSentIds(prev => new Set([...prev, dialogClient.id]));
+      try { await api.post(`${API}/reminders/inactive/${dialogClient.id}/mark-sent`); } catch {}
+    }
     setSending(false);
     if (ok) setDialogClient(null);
   };
@@ -107,7 +112,11 @@ export default function ClientiAssentiPage() {
     let sent = 0;
     for (const c of targets) {
       const ok = await sendWA(c.phone, DEFAULT_TEMPLATE(c.name));
-      if (ok) { sent++; setSentIds(prev => new Set([...prev, c.id])); }
+      if (ok) {
+        sent++;
+        setSentIds(prev => new Set([...prev, c.id]));
+        try { await api.post(`${API}/reminders/inactive/${c.id}/mark-sent`); } catch {}
+      }
       await new Promise(r => setTimeout(r, 600));
     }
     toast.success(`Inviti inviati: ${sent} / ${targets.length}`);

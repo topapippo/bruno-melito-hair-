@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api, { API } from '../lib/api';
 import { sendWA } from '../lib/sendWA';
 import { fmtDate } from '../lib/dateUtils';
@@ -32,8 +33,8 @@ import { toast } from 'sonner';
 
 
 export default function RemindersPage() {
+  const navigate = useNavigate();
   const [tomorrowReminders, setTomorrowReminders] = useState([]);
-  const [inactiveClients, setInactiveClients] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sendingId, setSendingId] = useState(null);
@@ -71,15 +72,13 @@ export default function RemindersPage() {
 
   const fetchData = async () => {
     try {
-      const [remRes, inactRes, templRes, colorRes, birthRes] = await Promise.all([
+      const [remRes, templRes, colorRes, birthRes] = await Promise.all([
         api.get(`${API}/reminders/tomorrow`),
-        api.get(`${API}/reminders/inactive-clients`),
         api.get(`${API}/reminders/templates`),
         api.get(`${API}/reminders/color-expiry`).catch(() => ({ data: [] })),
         api.get(`${API}/reminders/birthdays?days=${birthdayDays}`).catch(() => ({ data: [] })),
       ]);
       setTomorrowReminders(remRes.data);
-      setInactiveClients(inactRes.data);
       setTemplates(templRes.data);
       setColorReminders(colorRes.data);
       setBirthdayClients(birthRes.data);
@@ -153,19 +152,12 @@ export default function RemindersPage() {
   const buildMessage = (template, target) => {
     if (!template) return '';
     let text = template;
-    if (target.type === 'appointment') {
-      const apt = target.data;
-      text = text.replace('{nome}', apt.client_name || '');
-      text = text.replace('{ora}', apt.time || '');
-      text = text.replace('{servizi}', apt.services?.map(s => s.name).join(', ') || '');
-      text = text.replace('{operatore}', apt.operator_name || '');
-      text = text.replace('{data}', fmtDate(apt.date || ''));
-    } else {
-      const client = target.data;
-      text = text.replace('{nome}', client.client_name || '');
-      text = text.replace('{giorni}', String(client.days_ago || ''));
-      text = text.replace('{servizi}', client.last_services?.join(', ') || '');
-    }
+    const apt = target.data;
+    text = text.replace('{nome}', apt.client_name || '');
+    text = text.replace('{ora}', apt.time || '');
+    text = text.replace('{servizi}', apt.services?.map(s => s.name).join(', ') || '');
+    text = text.replace('{operatore}', apt.operator_name || '');
+    text = text.replace('{data}', fmtDate(apt.date || ''));
     return text;
   };
 
@@ -174,20 +166,14 @@ export default function RemindersPage() {
     setMsgTarget(target);
 
     // Auto-select matching template
-    const tType = type === 'appointment' ? 'appointment' : 'recall';
-    const matching = templates.find(t => t.template_type === tType);
+    const matching = templates.find(t => t.template_type === 'appointment');
     if (matching) {
       setSelectedTemplateId(matching.id);
       setMsgText(buildMessage(matching.text, target));
     } else {
       setSelectedTemplateId('');
-      if (type === 'appointment') {
-        const apt = data;
-        setMsgText(`Ciao ${apt.client_name}! Ti ricordiamo il tuo appuntamento domani alle ${apt.time} presso Bruno Melito Hair. Ti aspettiamo!`);
-      } else {
-        const client = data;
-        setMsgText(`Ciao ${client.client_name}! Sono passati ${client.days_ago} giorni dalla tua ultima visita. Torna a trovarci!`);
-      }
+      const apt = data;
+      setMsgText(`Ciao ${apt.client_name}! Ti ricordiamo il tuo appuntamento domani alle ${apt.time} presso Bruno Melito Hair. Ti aspettiamo!`);
     }
     setMsgDialog(true);
   };
@@ -214,40 +200,23 @@ export default function RemindersPage() {
 
   const sendMessage = async () => {
     if (!msgTarget) return;
-    const { type, data } = msgTarget;
-
-    let phone = '';
-    if (type === 'appointment') {
-      phone = data.client_phone;
-    } else {
-      phone = data.client_phone;
-    }
+    const { data } = msgTarget;
+    const phone = data.client_phone;
 
     if (!phone) {
       toast.error('Numero di telefono non disponibile');
       return;
     }
 
-    const opts = type === 'appointment'
-      ? {}
-      : { templateName: 'richiamo_inattivo', templateVars: [data.client_name || '', String(data.days_ago || '')] };
-    const sent = await sendWhatsAppDirect(phone, msgText, opts);
+    const sent = await sendWhatsAppDirect(phone, msgText, {});
 
-    const id = type === 'appointment' ? data.id : data.client_id;
-    setSendingId(id);
+    setSendingId(data.id);
     if (sent) {
       try {
-        if (type === 'appointment') {
-          await api.post(`${API}/reminders/appointment/${data.id}/mark-sent`);
-          setTomorrowReminders(prev =>
-            prev.map(r => r.id === data.id ? { ...r, reminded: true } : r)
-          );
-        } else {
-          await api.post(`${API}/reminders/inactive/${data.client_id}/mark-sent`);
-          setInactiveClients(prev =>
-            prev.map(c => c.client_id === data.client_id ? { ...c, already_recalled: true } : c)
-          );
-        }
+        await api.post(`${API}/reminders/appointment/${data.id}/mark-sent`);
+        setTomorrowReminders(prev =>
+          prev.map(r => r.id === data.id ? { ...r, reminded: true } : r)
+        );
       } catch (err) {
         console.error(err);
       }
@@ -256,22 +225,14 @@ export default function RemindersPage() {
     setMsgDialog(false);
   };
 
-  const resetReminder = async (type, id) => {
+  const resetReminder = async (id) => {
     setResettingId(id);
     try {
-      if (type === 'appointment') {
-        await api.delete(`${API}/reminders/appointment/${id}/reset`);
-        setTomorrowReminders(prev =>
-          prev.map(r => r.id === id ? { ...r, reminded: false } : r)
-        );
-        toast.success('Promemoria resettato, puoi reinviarlo');
-      } else {
-        await api.delete(`${API}/reminders/inactive/${id}/reset`);
-        setInactiveClients(prev =>
-          prev.map(c => c.client_id === id ? { ...c, already_recalled: false } : c)
-        );
-        toast.success('Richiamo resettato, puoi reinviarlo');
-      }
+      await api.delete(`${API}/reminders/appointment/${id}/reset`);
+      setTomorrowReminders(prev =>
+        prev.map(r => r.id === id ? { ...r, reminded: false } : r)
+      );
+      toast.success('Promemoria resettato, puoi reinviarlo');
     } catch (err) {
       console.error(err);
       toast.error('Errore nel reset');
@@ -347,7 +308,6 @@ export default function RemindersPage() {
   };
 
   const pendingReminders = tomorrowReminders.filter(r => !r.reminded);
-  const pendingRecalls = inactiveClients.filter(c => !c.already_recalled);
   const pendingColors = colorReminders.filter(c => !c.already_sent);
 
   const batchSendColors = async () => {
@@ -364,25 +324,6 @@ export default function RemindersPage() {
       try {
         await api.post(`${API}/reminders/color-expiry/${next.client_id}/mark-sent`);
         setColorReminders(prev => prev.map(c => c.client_id === next.client_id ? { ...c, already_sent: true } : c));
-      } catch {}
-    }
-    setBatchSending(false);
-  };
-
-  const batchSendInactive = async () => {
-    const next = inactiveClients.find(c => !c.already_recalled && c.client_phone);
-    if (!next) { toast('Tutti i richiami sono stati inviati!'); return; }
-    setBatchSending(true);
-    const recallTemplate = templates.find(t => t.template_type === 'recall');
-    let msg = recallTemplate
-      ? recallTemplate.text.replace('{nome}', next.client_name || '').replace('{giorni}', String(next.days_ago || '')).replace('{servizi}', next.last_services?.join(', ') || '')
-      : `Ciao ${next.client_name}! Sono passati ${next.days_ago} giorni dalla tua ultima visita presso Bruno Melito Hair. Torna a trovarci, ti aspettiamo!`;
-    const sentInactive = await sendWhatsAppDirect(next.client_phone, msg,
-      { templateName: 'richiamo_inattivo', templateVars: [next.client_name || '', String(next.days_ago || '')] });
-    if (sentInactive) {
-      try {
-        await api.post(`${API}/reminders/inactive/${next.client_id}/mark-sent`);
-        setInactiveClients(prev => prev.map(c => c.client_id === next.client_id ? { ...c, already_recalled: true } : c));
       } catch {}
     }
     setBatchSending(false);
@@ -457,18 +398,18 @@ export default function RemindersPage() {
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+          <Card
+            onClick={() => navigate('/clienti-assenti')}
+            className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200 cursor-pointer hover:border-orange-300 transition-colors"
+          >
             <CardContent className="p-5">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 bg-orange-500 rounded-xl">
                   <UserX className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <p className="text-sm text-orange-700 font-semibold">Clienti Inattivi (60+g)</p>
-                  <p className="text-3xl font-black text-orange-600" data-testid="inactive-clients-count">
-                    {pendingRecalls.length}
-                    <span className="text-sm font-semibold text-orange-500 ml-1">/ {inactiveClients.length}</span>
-                  </p>
+                  <p className="text-sm text-orange-700 font-semibold">Clienti Assenti</p>
+                  <p className="text-sm font-bold text-orange-600">Vai alla pagina dedicata →</p>
                 </div>
               </div>
             </CardContent>
@@ -476,7 +417,7 @@ export default function RemindersPage() {
         </div>
 
         {/* Centro Invio Rapido */}
-        {(pendingReminders.length > 0 || pendingColors.length > 0 || pendingRecalls.length > 0) && (
+        {(pendingReminders.length > 0 || pendingColors.length > 0) && (
           <Card className="border-2 border-green-400 bg-gradient-to-r from-green-50 to-emerald-50 shadow-md">
             <CardContent className="p-5">
               <div className="flex items-start gap-3 mb-4">
@@ -501,13 +442,6 @@ export default function RemindersPage() {
                     className="bg-purple-500 hover:bg-purple-600 text-white font-bold h-auto py-3" data-testid="batch-send-colors-btn">
                     {batchSending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Palette className="w-4 h-4 mr-2" />}
                     Invia Prossimo ({pendingColors.length})
-                  </Button>
-                )}
-                {pendingRecalls.length > 0 && (
-                  <Button onClick={batchSendInactive} disabled={batchSending}
-                    className="bg-orange-500 hover:bg-orange-600 text-white font-bold h-auto py-3" data-testid="batch-send-inactive-btn">
-                    {batchSending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <UserX className="w-4 h-4 mr-2" />}
-                    Invia Prossimo ({pendingRecalls.length})
                   </Button>
                 )}
               </div>
@@ -662,7 +596,7 @@ export default function RemindersPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => resetReminder('appointment', apt.id)}
+                          onClick={() => resetReminder(apt.id)}
                           disabled={resettingId === apt.id}
                           className="border-red-300 text-red-600 hover:bg-red-50"
                           data-testid={`reset-reminder-${apt.id}`}
@@ -723,97 +657,6 @@ export default function RemindersPage() {
               <div className="text-center py-8 text-[#7C5C4A]">
                 <Calendar className="w-12 h-12 mx-auto text-[#E2E8F0] mb-3" strokeWidth={1.5} />
                 <p className="font-semibold">Nessun appuntamento domani</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Inactive Clients */}
-        <Card className="border-[#F0E6DC]/30">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg font-bold text-[#2D1B14] flex items-center gap-2">
-              <UserX className="w-5 h-5 text-orange-500" />
-              Clienti Inattivi — Offri 10% di Sconto
-              {pendingRecalls.length > 0 && (
-                <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-semibold">
-                  {pendingRecalls.length} da richiamare
-                </span>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {inactiveClients.length > 0 ? (
-              <div className="space-y-3">
-                {inactiveClients.map((client) => (
-                  <div
-                    key={client.client_id}
-                    className={`p-4 rounded-xl border-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
-                      client.already_recalled ? 'border-green-200 bg-green-50' : 'border-orange-200 bg-orange-50'
-                    }`}
-                    data-testid={`inactive-client-${client.client_id}`}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-bold text-[#2D1B14] truncate">{client.client_name}</p>
-                        {client.already_recalled && (
-                          <span className="text-xs bg-green-200 text-green-800 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
-                            <Check className="w-3 h-3" /> Richiamato
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-3 text-sm mt-1 flex-wrap">
-                        <span className="text-orange-700 font-semibold flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5" /> {client.days_ago} giorni fa
-                        </span>
-                        {client.client_phone && (
-                          <span className="text-[#7C5C4A] flex items-center gap-1">
-                            <Phone className="w-3.5 h-3.5" /> {client.client_phone}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-[#64748B] mt-1">
-                        Ultima visita: {client.last_visit} — {client.last_services?.join(', ')}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {client.already_recalled ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => resetReminder('recall', client.client_id)}
-                          disabled={resettingId === client.client_id}
-                          className="border-orange-300 text-orange-600 hover:bg-orange-50"
-                          data-testid={`reset-recall-${client.client_id}`}
-                        >
-                          {resettingId === client.client_id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <><RotateCcw className="w-4 h-4 mr-1" /> Reinvia</>
-                          )}
-                        </Button>
-                      ) : (
-                        <Button
-                          onClick={() => openMessageDialog('recall', client)}
-                          disabled={sendingId === client.client_id || !client.client_phone}
-                          className="bg-orange-500 hover:bg-orange-600 text-white font-bold"
-                          data-testid={`send-recall-${client.client_id}`}
-                        >
-                          {sendingId === client.client_id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <><MessageSquare className="w-4 h-4 mr-2" /> Richiama</>
-                          )}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-[#7C5C4A]">
-                <UserX className="w-12 h-12 mx-auto text-[#E2E8F0] mb-3" strokeWidth={1.5} />
-                <p className="font-semibold">Nessun cliente inattivo da 60+ giorni</p>
-                <p className="text-sm">Ottimo lavoro!</p>
               </div>
             )}
           </CardContent>

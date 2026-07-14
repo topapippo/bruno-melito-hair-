@@ -23,6 +23,22 @@ const FONT_OPTIONS = [
   'DM Sans', 'Work Sans', 'Outfit', 'Josefin Sans',
 ];
 
+// Componente condiviso per editare una lista di stringhe (telefoni, punti di forza, ecc.)
+// Usa un editor creato con makeStringListEditor(field): { update, add, remove }
+function StringListEditor({ items, editor, addLabel }) {
+  return (
+    <div className="space-y-2 mt-2">
+      {(items || []).map((val, idx) => (
+        <div key={idx} className="flex gap-2">
+          <Input value={val} onChange={e => editor.update(idx, e.target.value)} />
+          <Button variant="ghost" size="icon" onClick={() => editor.remove(idx)} className="text-red-500 shrink-0"><Trash2 className="w-4 h-4" /></Button>
+        </div>
+      ))}
+      <Button variant="outline" size="sm" onClick={editor.add}><Plus className="w-4 h-4 mr-1" /> {addLabel}</Button>
+    </div>
+  );
+}
+
 export default function WebsiteAdminPage() {
   const [config, setConfig] = useState(null);
   const [reviews, setReviews] = useState([]);
@@ -319,23 +335,19 @@ export default function WebsiteAdminPage() {
     updateField('hours', { ...(config.hours || {}), [day]: value });
   };
 
-  // Phones editor
-  const updatePhone = (idx, value) => {
-    const phones = [...(config.phones || [])];
-    phones[idx] = value;
-    updateField('phones', phones);
-  };
-  const addPhone = () => updateField('phones', [...(config.phones || []), '']);
-  const removePhone = (idx) => updateField('phones', (config.phones || []).filter((_, i) => i !== idx));
+  // Factory condivisa per editor di liste di stringhe (telefoni, punti di forza, ecc.)
+  const makeStringListEditor = (field) => ({
+    update: (idx, value) => {
+      const list = [...(config[field] || [])];
+      list[idx] = value;
+      updateField(field, list);
+    },
+    add: () => updateField(field, [...(config[field] || []), '']),
+    remove: (idx) => updateField(field, (config[field] || []).filter((_, i) => i !== idx)),
+  });
 
-  // About features editor
-  const updateFeature = (idx, value) => {
-    const features = [...(config.about_features || [])];
-    features[idx] = value;
-    updateField('about_features', features);
-  };
-  const addFeature = () => updateField('about_features', [...(config.about_features || []), '']);
-  const removeFeature = (idx) => updateField('about_features', (config.about_features || []).filter((_, i) => i !== idx));
+  const phoneEditor = makeStringListEditor('phones');
+  const featureEditor = makeStringListEditor('about_features');
 
   // Section ordering
   const ALL_SECTIONS = [
@@ -502,15 +514,7 @@ export default function WebsiteAdminPage() {
                 <div><Label>Testo Chi Siamo (paragrafo 2)</Label><Textarea value={config.about_text_2 || ''} onChange={e => updateField('about_text_2', e.target.value)} rows={3} /></div>
                 <div>
                   <Label>Punti di Forza</Label>
-                  <div className="space-y-2 mt-2">
-                    {(config.about_features || []).map((feat, idx) => (
-                      <div key={idx} className="flex gap-2">
-                        <Input value={feat} onChange={e => updateFeature(idx, e.target.value)} />
-                        <Button variant="ghost" size="icon" onClick={() => removeFeature(idx)} className="text-red-500 shrink-0"><Trash2 className="w-4 h-4" /></Button>
-                      </div>
-                    ))}
-                    <Button variant="outline" size="sm" onClick={addFeature}><Plus className="w-4 h-4 mr-1" /> Aggiungi</Button>
-                  </div>
+                  <StringListEditor items={config.about_features} editor={featureEditor} addLabel="Aggiungi" />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div><Label>Titolo Gallery</Label><Input value={config.gallery_title || ''} onChange={e => updateField('gallery_title', e.target.value)} /></div>
@@ -1308,15 +1312,7 @@ export default function WebsiteAdminPage() {
                   <div><Label>WhatsApp (con prefisso, es. 393397833526)</Label><Input value={config.whatsapp || ''} onChange={e => updateField('whatsapp', e.target.value)} /></div>
                   <div>
                     <Label>Numeri di Telefono</Label>
-                    <div className="space-y-2 mt-2">
-                      {(config.phones || []).map((phone, idx) => (
-                        <div key={idx} className="flex gap-2">
-                          <Input value={phone} onChange={e => updatePhone(idx, e.target.value)} />
-                          <Button variant="ghost" size="icon" onClick={() => removePhone(idx)} className="text-red-500 shrink-0"><Trash2 className="w-4 h-4" /></Button>
-                        </div>
-                      ))}
-                      <Button variant="outline" size="sm" onClick={addPhone}><Plus className="w-4 h-4 mr-1" /> Telefono</Button>
-                    </div>
+                    <StringListEditor items={config.phones} editor={phoneEditor} addLabel="Telefono" />
                   </div>
                 </CardContent>
               </Card>

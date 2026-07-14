@@ -32,7 +32,7 @@ export async function sendWA(phone, message, { successMsg = '✅ WhatsApp inviat
     } else if (err.startsWith('sessione_scaduta')) {
       toast.error('⚠️ Sessione WhatsApp scaduta. Vai su Impostazioni → WhatsApp e riscannerizza il QR code.', { duration: 8000 });
     } else if (err === 'quota_esaurita' || errLow.includes('quote_allowed') || errLow.includes('quota has been exceeded') || errLow.includes('monthly quota') || errLow.includes('credito')) {
-      toast.warning('⚠️ Invio fallito: quota esaurita. Controlla la configurazione Meta Cloud API in Impostazioni → WhatsApp.', { duration: 10000 });
+      toast.warning('⚠️ Invio fallito: quota mensile esaurita su Green API o UltraMsg. Controlla il piano/credito residuo nella dashboard del provider e in Impostazioni → WhatsApp.', { duration: 10000 });
     } else if (errLow.includes('notauthorized') || errLow.includes('not authorized') || (err.includes('401') && !err.includes('4010'))) {
       toast.error('❌ Sessione Green API non autorizzata. Vai su Impostazioni → WhatsApp e riscannerizza il QR code.', { duration: 8000 });
     } else if (err.includes('403') || errLow.includes('forbidden')) {

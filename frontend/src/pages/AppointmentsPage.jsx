@@ -9,7 +9,7 @@ import {
   Calendar, ChevronLeft, ChevronRight, Users, Euro,
   TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight,
 } from 'lucide-react';
-import { format, addDays, subDays, addMonths, subMonths, startOfMonth, getDaysInMonth } from 'date-fns';
+import { format, addDays, subDays, addMonths, subMonths, startOfMonth, endOfMonth, getDaysInMonth } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
@@ -59,14 +59,20 @@ function StatusChip({ status }) {
 function GiornoTab() {
   const [date, setDate]     = useState(new Date());
   const [apts, setApts]     = useState([]);
+  const [incasso, setIncasso] = useState(0);
   const [loading, setLoading] = useState(false);
 
   const load = async (d) => {
     setLoading(true);
     try {
-      const res = await api.get(`${API}/appointments`, { params: { date: fmtDay(d) } });
-      setApts(res.data);
-    } catch { setApts([]); } finally { setLoading(false); }
+      const day = fmtDay(d);
+      const [aptsRes, paymentsRes] = await Promise.all([
+        api.get(`${API}/appointments`, { params: { date: day } }),
+        api.get(`${API}/payments`, { params: { start: day, end: day } }),
+      ]);
+      setApts(aptsRes.data);
+      setIncasso(paymentsRes.data.reduce((s, p) => s + (p.total_paid || 0), 0));
+    } catch { setApts([]); setIncasso(0); } finally { setLoading(false); }
   };
 
   useEffect(() => { load(date); }, []);
@@ -74,7 +80,6 @@ function GiornoTab() {
   const go = (d) => { setDate(d); load(d); };
 
   const validi   = apts.filter(a => a.status !== 'cancelled');
-  const totale   = validi.reduce((s, a) => s + (a.total_price || 0), 0);
   const nClienti = new Set(validi.map(a => a.client_id)).size;
 
   return (
@@ -94,7 +99,7 @@ function GiornoTab() {
 
       <div className="grid grid-cols-3 gap-3">
         <KpiCard label="Appuntamenti" value={validi.length} icon={Calendar} />
-        <KpiCard label="Incasso" value={`€${totale.toFixed(0)}`} icon={Euro} color="#10B981" />
+        <KpiCard label="Incasso" value={`€${incasso.toFixed(0)}`} icon={Euro} color="#10B981" />
         <KpiCard label="Clienti" value={nClienti} icon={Users} color="#6366F1" />
       </div>
 
@@ -130,14 +135,21 @@ function GiornoTab() {
 function MeseTab() {
   const [ref, setRef]         = useState(startOfMonth(new Date()));
   const [apts, setApts]       = useState([]);
+  const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const load = async (d) => {
     setLoading(true);
     try {
-      const res = await api.get(`${API}/appointments`, { params: { month: fmtMonth(d) } });
-      setApts(res.data.filter(a => a.status !== 'cancelled'));
-    } catch { setApts([]); } finally { setLoading(false); }
+      const start = fmtDay(startOfMonth(d));
+      const end = fmtDay(endOfMonth(d));
+      const [aptsRes, paymentsRes] = await Promise.all([
+        api.get(`${API}/appointments`, { params: { month: fmtMonth(d) } }),
+        api.get(`${API}/payments`, { params: { start, end } }),
+      ]);
+      setApts(aptsRes.data.filter(a => a.status !== 'cancelled'));
+      setPayments(paymentsRes.data);
+    } catch { setApts([]); setPayments([]); } finally { setLoading(false); }
   };
 
   useEffect(() => { load(ref); }, []);
@@ -149,18 +161,16 @@ function MeseTab() {
     apts.forEach(a => {
       if (!m[a.date]) m[a.date] = { count: 0, revenue: 0 };
       m[a.date].count++;
-      m[a.date].revenue += a.total_price || 0;
+    });
+    payments.forEach(p => {
+      const d = (p.date || '').slice(0, 10);
+      if (!m[d]) m[d] = { count: 0, revenue: 0 };
+      m[d].revenue += p.total_paid || 0;
     });
     return m;
-  }, [apts]);
+  }, [apts, payments]);
 
-  const days      = getDaysInMonth(ref);
-  const chartData = Array.from({ length: days }, (_, i) => {
-    const d = format(new Date(ref.getFullYear(), ref.getMonth(), i + 1), 'yyyy-MM-dd');
-    return { g: i + 1, incasso: byDay[d]?.revenue || 0 };
-  });
-
-  const totaleRicavi = apts.reduce((s, a) => s + (a.total_price || 0), 0);
+  const totaleRicavi = payments.reduce((s, p) => s + (p.total_paid || 0), 0);
   const clientiUniche = new Set(apts.map(a => a.client_id)).size;
   const avgTicket    = apts.length ? totaleRicavi / apts.length : 0;
 
@@ -188,24 +198,7 @@ function MeseTab() {
         <KpiCard label="Scontrino medio" value={`€${avgTicket.toFixed(0)}`} icon={TrendingUp} color="#F59E0B" />
       </div>
 
-      {loading ? <Skeleton className="h-48 w-full" /> : (
-        <Card className="bg-white border-[#F0E6DC]/40 shadow-sm">
-          <CardHeader className="pb-2"><CardTitle className="text-sm font-bold text-[#2D1B14]">Incasso giornaliero</CardTitle></CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#F0E6DC" />
-                <XAxis dataKey="g" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 10 }} />
-                <Tooltip formatter={(v) => [`€${v}`, 'Incasso']} />
-                <Bar dataKey="incasso" fill="#C8617A" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      )}
-
-      {!loading && Object.keys(byDay).length > 0 && (
+      {loading ? <Skeleton className="h-48 w-full" /> : Object.keys(byDay).length > 0 && (
         <Card className="bg-white border-[#F0E6DC]/40 shadow-sm">
           <CardHeader className="pb-2"><CardTitle className="text-sm font-bold text-[#2D1B14]">Dettaglio per giorno</CardTitle></CardHeader>
           <CardContent className="p-0">
@@ -235,40 +228,50 @@ function ConfrontoTab() {
   const [ref, setRef]         = useState(startOfMonth(new Date()));
   const [curr, setCurr]       = useState([]);
   const [prev, setPrev]       = useState([]);
+  const [currPayments, setCurrPayments] = useState([]);
+  const [prevPayments, setPrevPayments] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const load = async (d) => {
     setLoading(true);
     try {
-      const [r1, r2] = await Promise.all([
+      const prevMonth = subMonths(d, 1);
+      const [r1, r2, p1, p2] = await Promise.all([
         api.get(`${API}/appointments`, { params: { month: fmtMonth(d) } }),
-        api.get(`${API}/appointments`, { params: { month: fmtMonth(subMonths(d, 1)) } }),
+        api.get(`${API}/appointments`, { params: { month: fmtMonth(prevMonth) } }),
+        api.get(`${API}/payments`, { params: { start: fmtDay(startOfMonth(d)), end: fmtDay(endOfMonth(d)) } }),
+        api.get(`${API}/payments`, { params: { start: fmtDay(startOfMonth(prevMonth)), end: fmtDay(endOfMonth(prevMonth)) } }),
       ]);
       setCurr(r1.data.filter(a => a.status !== 'cancelled'));
       setPrev(r2.data.filter(a => a.status !== 'cancelled'));
-    } catch { setCurr([]); setPrev([]); } finally { setLoading(false); }
+      setCurrPayments(p1.data);
+      setPrevPayments(p2.data);
+    } catch { setCurr([]); setPrev([]); setCurrPayments([]); setPrevPayments([]); } finally { setLoading(false); }
   };
 
   useEffect(() => { load(ref); }, []);
 
   const go = (d) => { setRef(d); load(d); };
 
-  const stats = (apts) => ({
-    count:   apts.length,
-    revenue: apts.reduce((s, a) => s + (a.total_price || 0), 0),
-    clients: new Set(apts.map(a => a.client_id)).size,
-    avg:     apts.length ? apts.reduce((s, a) => s + (a.total_price || 0), 0) / apts.length : 0,
-  });
+  const stats = (apts, payments) => {
+    const revenue = payments.reduce((s, p) => s + (p.total_paid || 0), 0);
+    return {
+      count:   apts.length,
+      revenue,
+      clients: new Set(apts.map(a => a.client_id)).size,
+      avg:     apts.length ? revenue / apts.length : 0,
+    };
+  };
 
-  const c = stats(curr);
-  const p = stats(prev);
+  const c = stats(curr, currPayments);
+  const p = stats(prev, prevPayments);
 
   const byDayCurr = useMemo(() => {
-    const m = {}; curr.forEach(a => { const g = parseInt(a.date.split('-')[2]); m[g] = (m[g] || 0) + (a.total_price || 0); }); return m;
-  }, [curr]);
+    const m = {}; currPayments.forEach(pay => { const g = parseInt((pay.date || '').slice(8, 10)); m[g] = (m[g] || 0) + (pay.total_paid || 0); }); return m;
+  }, [currPayments]);
   const byDayPrev = useMemo(() => {
-    const m = {}; prev.forEach(a => { const g = parseInt(a.date.split('-')[2]); m[g] = (m[g] || 0) + (a.total_price || 0); }); return m;
-  }, [prev]);
+    const m = {}; prevPayments.forEach(pay => { const g = parseInt((pay.date || '').slice(8, 10)); m[g] = (m[g] || 0) + (pay.total_paid || 0); }); return m;
+  }, [prevPayments]);
 
   const maxDays   = Math.max(getDaysInMonth(ref), getDaysInMonth(subMonths(ref, 1)));
   const chartData = Array.from({ length: maxDays }, (_, i) => ({

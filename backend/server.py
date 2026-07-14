@@ -57,6 +57,35 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Migrazione rimozione melitobruno: {e}")
 
+    # Creazione indici MongoDB (approvata da Bruno). Idempotente: create_index
+    # non fa nulla se l'indice esiste già con le stesse opzioni. Ogni indice è
+    # racchiuso in un try/except separato così un eventuale fallimento (es.
+    # email duplicate che impediscono l'indice unique) non blocca l'avvio
+    # del server né gli altri indici.
+    try:
+        await db.users.create_index("email", unique=True)
+        logger.info("Indice creato/verificato: users.email (unique)")
+    except Exception as e:
+        logger.warning(f"Indice users.email non creato: {e}")
+
+    try:
+        await db.appointments.create_index([("user_id", 1), ("date", 1)])
+        logger.info("Indice creato/verificato: appointments.user_id_1_date_1")
+    except Exception as e:
+        logger.warning(f"Indice appointments (user_id, date) non creato: {e}")
+
+    try:
+        await db.payments.create_index([("user_id", 1), ("date", 1)])
+        logger.info("Indice creato/verificato: payments.user_id_1_date_1")
+    except Exception as e:
+        logger.warning(f"Indice payments (user_id, date) non creato: {e}")
+
+    try:
+        await db.clients.create_index("user_id")
+        logger.info("Indice creato/verificato: clients.user_id")
+    except Exception as e:
+        logger.warning(f"Indice clients.user_id non creato: {e}")
+
     yield
     # Shutdown
     mongo_client.close()

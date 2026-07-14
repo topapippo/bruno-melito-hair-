@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Calendar, CalendarDays, Users, Scissors,
   UserCircle, BarChart3, Settings, LogOut, Menu, CreditCard,
   Euro, Database, Star, Bell, FileBarChart, Globe, ArrowDownCircle, Gift,
-  AlertTriangle, Sparkles, ClockArrowUp, ChevronLeft, ChevronRight, ChevronDown, Share2, MessageSquare, ShoppingBag
+  Sparkles, ClockArrowUp, ChevronLeft, ChevronRight, ChevronDown, Share2, MessageSquare, ShoppingBag
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
@@ -27,7 +27,6 @@ const navGroups = [
       { path: '/clients',     label: 'Clienti',           icon: Users },
       { path: '/vendi-abbonamento', label: 'Vendi Abbonamento', icon: ShoppingBag },
       { path: '/cards',       label: 'Card / Abbonamenti', icon: CreditCard },
-      { path: '/card-alerts', label: 'Avvisi Card',        icon: AlertTriangle },
       { path: '/reminders',   label: 'Promemoria',         icon: Bell },
       { path: '/log-messaggi', label: 'Log Messaggi',      icon: MessageSquare },
       { path: '/promozioni',  label: 'Promozioni',         icon: Gift },
@@ -214,7 +213,7 @@ export default function Layout({ children }) {
   const NavLink = ({ item, mobile = false, mini = false }) => {
     const isActive = location.pathname === item.path;
     const Icon = item.icon;
-    const badge = item.path === '/card-alerts' ? badgeCounts.cardAlerts
+    const badge = item.path === '/cards' ? badgeCounts.cardAlerts
       : item.path === '/waitlist' ? badgeCounts.waitlist
       : 0;
     return (

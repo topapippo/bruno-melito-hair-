@@ -112,7 +112,7 @@ export default function Dashboard() {
       const [remRes, colorRes, inactRes] = await Promise.all([
         api.get(`${API}/reminders/tomorrow`),
         api.get(`${API}/reminders/color-expiry`).catch(() => ({ data: [] })),
-        api.get(`${API}/reminders/inactive-clients`),
+        api.get(`${API}/clients/dormant?days=60`),
       ]);
       const rem  = (remRes.data   || []).filter(r => !r.reminded).length;
       const col  = (colorRes.data || []).filter(c => !c.already_sent).length;

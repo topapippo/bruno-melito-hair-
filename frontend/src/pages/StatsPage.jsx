@@ -723,25 +723,6 @@ export default function StatsPage() {
                   <KpiCard label="Periodo precedente" value={fmt(revenueStats?.prev_period_revenue)} sub="Stesso numero di giorni" icon={BarChart3} color="#0EA5E9" />
                 </div>
 
-                <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="font-display text-lg text-[#2D1B14]">Incassi Giornalieri</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {(revenueStats?.daily_revenue || []).length > 0 ? (
-                      <ResponsiveContainer width="100%" height={280}>
-                        <BarChart data={revenueStats.daily_revenue}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#F0E6DC" />
-                          <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={(v) => format(new Date(v), 'dd/MM')} />
-                          <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `€${v}`} />
-                          <Tooltip formatter={(v) => [`€${v.toFixed(2)}`, 'Incasso']} labelFormatter={(v) => format(new Date(v), 'dd/MM/yyyy')} />
-                          <Bar dataKey="revenue" fill="#C8617A" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    ) : <EmptyChart height={280} />}
-                  </CardContent>
-                </Card>
-
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                   <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
                     <CardHeader className="pb-2">
