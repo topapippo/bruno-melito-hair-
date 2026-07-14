@@ -136,14 +136,20 @@ async def get_dormant_clients(days: int = 30, current_user: dict = Depends(get_c
 
     # Filtro ultimi 3 anni per evitare OOM — per un salone ~25k appuntamenti al massimo
     three_years_ago = (ddate.today() - timedelta(days=1095)).isoformat()
-    all_clients, all_appointments, services_catalog = await asyncio.gather(
+    all_clients, all_appointments, services_catalog, recent_recalls = await asyncio.gather(
         db.clients.find({"user_id": uid}, {"_id": 0, "id": 1, "name": 1, "phone": 1, "hair_notes": 1}).to_list(5000),
         db.appointments.find(
             {"user_id": uid, "status": {"$ne": "cancelled"}, "date": {"$gte": three_years_ago}},
             {"_id": 0, "client_id": 1, "client_name": 1, "date": 1, "services": 1, "status": 1}
         ).to_list(30000),
         db.services.find({"user_id": uid}, {"_id": 0, "name": 1, "category": 1}).to_list(500),
+        db.reminders_sent.find(
+            {"user_id": uid, "type": "inactive_recall",
+             "sent_at": {"$gte": (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()}},
+            {"_id": 0}
+        ).to_list(500),
     )
+    recently_recalled_ids = {r.get("client_id") for r in recent_recalls}
 
     all_service_names = [s["name"] for s in services_catalog]
 
@@ -207,6 +213,7 @@ async def get_dormant_clients(days: int = 30, current_user: dict = Depends(get_c
             "top_services": [{"name": s[0], "count": s[1]} for s in top_services],
             "never_done": never_done,
             "total_visits": sum(svc_counts.values()),
+            "already_recalled": cid in recently_recalled_ids,
         })
 
     dormant.sort(key=lambda x: -(x["days_absent"] or 99999))
