@@ -24,7 +24,6 @@ const SettingsPage     = lazy(() => import("./pages/SettingsPage"));
 const AppointmentsPage = lazy(() => import("./pages/AppointmentsPage"));
 const OperatorsPage    = lazy(() => import("./pages/OperatorsPage"));
 const PrepaidCardsPage = lazy(() => import("./pages/PrepaidCardsPage"));
-const CardAlertsPage   = lazy(() => import("./pages/CardAlertsPage"));
 const ReportIncassiPage= lazy(() => import("./pages/ReportIncassiPage"));
 const BackupPage       = lazy(() => import("./pages/BackupPage"));
 const RemindersPage    = lazy(() => import("./pages/RemindersPage"));
@@ -224,16 +223,6 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <PrepaidCardsPage />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* AVVISI CARD (Scadenza / Credito Basso) */}
-          <Route
-            path="/card-alerts"
-            element={
-              <ProtectedRoute>
-                <CardAlertsPage />
               </ProtectedRoute>
             }
           />
