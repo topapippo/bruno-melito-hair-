@@ -25,8 +25,8 @@ const DAY_OPTIONS = [
   { label: '1 anno', days: 365 },
 ];
 
-const DEFAULT_TEMPLATE = (name) =>
-  `Ciao ${name}! 👋\nSono passati un po' di giorni dall'ultima volta da Bruno Melito Hair — ci manchi!\nQuando vuoi tornare a prenderti cura di te, siamo qui ad aspettarti 💇\nPrenota il tuo appuntamento qui: https://brunomelitohair.it/prenota`;
+const DEFAULT_TEMPLATE = (name, days) =>
+  `Ciao ${name}! Ci manchi! Sono passati ${days ?? ''} giorni dalla tua ultima visita da Bruno Melito Hair. Per il tuo bentornato hai uno sconto del 10% sulla prossima visita. Prenota qui: https://brunomelitohair.it`;
 
 function DayBadge({ days }) {
   if (days == null)
@@ -89,11 +89,11 @@ export default function ClientiAssentiPage() {
 
   const openDialog = (client) => {
     setDialogClient(client);
-    setMsgText(DEFAULT_TEMPLATE(client.name));
+    setMsgText(DEFAULT_TEMPLATE(client.name, client.days_absent));
   };
 
   const handleSend = async () => {
-    if (!dialogClient?.phone || !msgText.trim()) return;
+    if (!dialogClient?.phone) return;
     setSending(true);
     const ok = await sendWA(dialogClient.phone, msgText, {
       successMsg: `✅ Invito inviato a ${dialogClient.name}!`,
@@ -115,7 +115,7 @@ export default function ClientiAssentiPage() {
     setBulkSending(true);
     let sent = 0;
     for (const c of targets) {
-      const ok = await sendWA(c.phone, DEFAULT_TEMPLATE(c.name), {
+      const ok = await sendWA(c.phone, DEFAULT_TEMPLATE(c.name, c.days_absent), {
         templateName: 'richiamo_inattivo',
         templateVars: [c.name, String(c.days_absent ?? '')],
       });
@@ -329,11 +329,11 @@ export default function ClientiAssentiPage() {
             </p>
             <Textarea
               value={msgText}
-              onChange={e => setMsgText(e.target.value)}
+              readOnly
               rows={6}
-              className="border-[#F0E6DC] resize-none text-sm"
+              className="border-[#F0E6DC] resize-none text-sm bg-[#FDF8F5]"
             />
-            <p className="text-xs text-[#7C5C4A]">Puoi personalizzare il messaggio prima di inviarlo.</p>
+            <p className="text-xs text-[#7C5C4A]">Template Meta approvato "richiamo_inattivo" — il testo non è personalizzabile, viene inviato così com'è approvato da Meta.</p>
           </div>
 
           <DialogFooter className="gap-2">
