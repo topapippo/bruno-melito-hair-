@@ -95,7 +95,11 @@ export default function ClientiAssentiPage() {
   const handleSend = async () => {
     if (!dialogClient?.phone || !msgText.trim()) return;
     setSending(true);
-    const ok = await sendWA(dialogClient.phone, msgText, { successMsg: `✅ Invito inviato a ${dialogClient.name}!` });
+    const ok = await sendWA(dialogClient.phone, msgText, {
+      successMsg: `✅ Invito inviato a ${dialogClient.name}!`,
+      templateName: 'richiamo_inattivo',
+      templateVars: [dialogClient.name, String(dialogClient.days_absent ?? '')],
+    });
     if (ok) {
       setSentIds(prev => new Set([...prev, dialogClient.id]));
       try { await api.post(`${API}/reminders/inactive/${dialogClient.id}/mark-sent`); } catch {}
@@ -111,7 +115,10 @@ export default function ClientiAssentiPage() {
     setBulkSending(true);
     let sent = 0;
     for (const c of targets) {
-      const ok = await sendWA(c.phone, DEFAULT_TEMPLATE(c.name));
+      const ok = await sendWA(c.phone, DEFAULT_TEMPLATE(c.name), {
+        templateName: 'richiamo_inattivo',
+        templateVars: [c.name, String(c.days_absent ?? '')],
+      });
       if (ok) {
         sent++;
         setSentIds(prev => new Set([...prev, c.id]));
