@@ -40,27 +40,6 @@ async def _check_rate_limit(collection, ip: str, max_attempts: int, window_secon
         await collection.delete_many({"ts": {"$lt": window_start.isoformat()}})
 
 
-async def _notify_login_whatsapp(user: dict, ip: str):
-    """Invia WA a Bruno quando qualcuno accede al gestionale (background task)."""
-    try:
-        phone = user.get("whatsapp") or user.get("phone", "")
-        if not phone:
-            return
-        from utils import send_whatsapp
-        now_str = datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')
-        email_masked = user['email'][:3] + '***@' + user['email'].split('@')[-1]
-        msg = (
-            f"🔐 *Accesso al gestionale*\n\n"
-            f"👤 Account: {email_masked}\n"
-            f"🕐 Orario: {now_str} UTC\n"
-            f"🌐 IP: {ip}\n\n"
-            f"Se non sei stato tu, cambia subito la password da Impostazioni!"
-        )
-        await send_whatsapp(phone, msg, user)
-    except Exception as e:
-        logger.warning(f"Notifica login WA fallita: {e}")
-
-
 # ── Register ──────────────────────────────────────────────────────────────────
 @router.post("/auth/register", response_model=TokenResponse)
 async def register(data: UserCreate, request: Request):
@@ -199,9 +178,8 @@ async def login(data: UserLogin, request: Request, background_tasks: BackgroundT
     logger.info(f"Login riuscito per: {data.email} da IP: {client_ip}")
     token = create_token(user["id"])
 
-    # Auto-repair categorie + notifica WA accesso
+    # Auto-repair categorie
     background_tasks.add_task(_repair_categories, user["id"])
-    background_tasks.add_task(_notify_login_whatsapp, user, client_ip)
 
     return TokenResponse(
         access_token=token,

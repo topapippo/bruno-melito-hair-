@@ -94,34 +94,6 @@ async def send_whatsapp_cloud(phone: str, message: str) -> dict:
     except Exception as e:
         return {"sent": False, "error": str(e)}
 
-async def _send_ultramsg(phone: str, message: str, user: dict) -> dict:
-    instance_id = (user or {}).get("ultramsg_instance_id")
-    token = (user or {}).get("ultramsg_token")
-    if not instance_id or not token: return {"sent": False, "error": "UltraMsg non configurato"}
-    try:
-        url = f"https://api.ultramsg.com/{instance_id}/messages/chat"
-        resp = await asyncio.to_thread(_req.post, url, data={"token": token, "to": normalize_phone_wa(phone) + "@c.us", "body": message}, timeout=15)
-        rjson = resp.json()
-        return {"sent": rjson.get("sent") == "true" or rjson.get("sent") == True, "method": "ultramsg", "data": rjson}
-    except Exception as e: return {"sent": False, "error": str(e)}
-
-async def _send_greenapi(phone: str, message: str, user: dict) -> dict:
-    id_instance = (user or {}).get("green_api_instance_id")
-    api_token = (user or {}).get("green_api_token")
-    if not id_instance or not api_token: return {"sent": False, "error": "Green API non configurata"}
-    try:
-        url = f"https://api.greenapi.com/waInstance{id_instance}/sendMessage/{api_token}"
-        resp = await asyncio.to_thread(_req.post, url, json={"chatId": normalize_phone_wa(phone) + "@c.us", "message": message}, timeout=15)
-        rjson = resp.json()
-        # Alcuni errori di Green API contengono messaggi testuali quando la
-        # quota mensile è esaurita o quando il numero non è in whitelist.
-        rstr = str(rjson)
-        quota_indicators = ["quota", "whitelist", "esauri", "esaurita", "Quota mensile"]
-        if any(ind.lower() in rstr.lower() for ind in quota_indicators):
-            return {"sent": False, "method": "greenapi", "data": rjson, "error": rstr, "quota_exhausted": True}
-        return {"sent": bool(rjson.get("idMessage")), "method": "greenapi", "data": rjson}
-    except Exception as e: return {"sent": False, "error": str(e)}
-
 
 async def _send_twilio_sms(phone: str, message: str) -> dict:
     """Fallback SMS via Twilio REST API se configurato."""

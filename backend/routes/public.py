@@ -158,9 +158,6 @@ async def warmup(background_tasks: BackgroundTasks):
     return {"ok": True}
 
 async def get_public_admin_user():
-    # NB: serve il documento utente COMPLETO (escluso _id e password), non solo "id":
-    # le notifiche WhatsApp di prenotazione usano ultramsg_*/green_api_* presi da qui.
-    # Con la vecchia projection {"id": 1} quei campi mancavano e l'invio falliva muto.
     proj = {"_id": 0, "password": 0}
     user = await db.users.find_one({"email": PUBLIC_ADMIN_EMAIL}, proj)
     if not user:

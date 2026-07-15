@@ -196,16 +196,6 @@ export default function SettingsPage() {
   const [testingCloudApi, setTestingCloudApi] = useState(false);
   const [cloudApiSendTest, setCloudApiSendTest] = useState({ phone: '', result: null, loading: false });
   const [templatesList, setTemplatesList] = useState({ loading: false, data: null, error: null });
-  const [waForm, setWaForm] = useState({ green_api_instance_id: '', green_api_token: '' });
-  const [savingWa, setSavingWa] = useState(false);
-  const [waTest, setWaTest] = useState(null);
-  const [testingWa, setTestingWa] = useState(false);
-  const [waSendTest, setWaSendTest] = useState({ phone: '', result: null, loading: false });
-  const [umForm, setUmForm] = useState({ ultramsg_instance_id: '', ultramsg_token: '' });
-  const [savingUm, setSavingUm] = useState(false);
-  const [umTest, setUmTest] = useState(null);
-  const [testingUm, setTestingUm] = useState(false);
-  const [umSendTest, setUmSendTest] = useState({ phone: '', result: null, loading: false });
   const [mergingDups, setMergingDups] = useState(false);
   const [waDiag, setWaDiag] = useState({ loading: false, data: null });
 
@@ -247,8 +237,6 @@ export default function SettingsPage() {
       setSettings(res.data);
       if (res.data.admin_theme) setAdminTheme(res.data.admin_theme);
       if (res.data.cloud_api_configured) setCloudApiTest({ ok: true, message: '✅ WhatsApp Cloud API configurata e attiva' });
-      if (res.data.green_api_instance_id) setWaForm(f => ({ ...f, green_api_instance_id: res.data.green_api_instance_id }));
-      if (res.data.ultramsg_instance_id) setUmForm(f => ({ ...f, ultramsg_instance_id: res.data.ultramsg_instance_id }));
     } catch (err) {
       console.error('Error fetching settings:', err);
       toast.error('Errore nel caricamento delle impostazioni');
@@ -322,41 +310,6 @@ export default function SettingsPage() {
     } catch (e) {
       setCloudApiSendTest(p => ({ ...p, result: { ok: false, message: 'Errore server: ' + (e?.response?.data?.detail || e.message) }, loading: false }));
     }
-  };
-
-  const saveWaSettings = async () => {
-    if (!waForm.green_api_instance_id || !waForm.green_api_token) { toast.error('Inserisci Instance ID e API Token'); return; }
-    setSavingWa(true);
-    try { await api.put(`${API}/settings/whatsapp-api`, waForm); toast.success('Green API salvata!'); setWaTest(null); }
-    catch { toast.error('Errore nel salvataggio'); } finally { setSavingWa(false); }
-  };
-  const testWaConnection = async () => {
-    setTestingWa(true); setWaTest(null);
-    try { const res = await api.get(`${API}/settings/whatsapp-test`); setWaTest(res.data); }
-    catch { setWaTest({ ok: false, message: 'Errore di connessione' }); } finally { setTestingWa(false); }
-  };
-  const sendWaTestMessage = async () => {
-    if (!waSendTest.phone) return;
-    setWaSendTest(p => ({ ...p, loading: true, result: null }));
-    try { const res = await api.post(`${API}/settings/whatsapp-send-test`, { phone: waSendTest.phone }); setWaSendTest(p => ({ ...p, result: res.data, loading: false })); }
-    catch (e) { setWaSendTest(p => ({ ...p, result: { ok: false, message: 'Errore: ' + (e?.response?.data?.detail || e.message) }, loading: false })); }
-  };
-  const saveUmSettings = async () => {
-    if (!umForm.ultramsg_instance_id || !umForm.ultramsg_token) { toast.error('Inserisci Instance ID e Token UltraMsg'); return; }
-    setSavingUm(true);
-    try { await api.put(`${API}/settings/ultramsg-api`, umForm); toast.success('UltraMsg salvato!'); setUmTest(null); }
-    catch { toast.error('Errore nel salvataggio'); } finally { setSavingUm(false); }
-  };
-  const testUmConnection = async () => {
-    setTestingUm(true); setUmTest(null);
-    try { const res = await api.get(`${API}/settings/ultramsg-test`); setUmTest(res.data); }
-    catch { setUmTest({ ok: false, message: 'Errore di connessione' }); } finally { setTestingUm(false); }
-  };
-  const sendUmTestMessage = async () => {
-    if (!umSendTest.phone) return;
-    setUmSendTest(p => ({ ...p, loading: true, result: null }));
-    try { const res = await api.post(`${API}/settings/ultramsg-send-test`, { phone: umSendTest.phone }); setUmSendTest(p => ({ ...p, result: res.data, loading: false })); }
-    catch (e) { setUmSendTest(p => ({ ...p, result: { ok: false, message: 'Errore: ' + (e?.response?.data?.detail || e.message) }, loading: false })); }
   };
 
   const saveAdminTheme = async () => {
@@ -1250,88 +1203,6 @@ export default function SettingsPage() {
                   )}
                 </>
               )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* UltraMsg */}
-        <Card className="border-2 border-emerald-100">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-[#2D1B14]">
-              <Share2 className="w-5 h-5 text-emerald-600" />
-              UltraMsg — WhatsApp (provider principale)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <Label className="font-semibold text-sm">Instance ID</Label>
-                <Input value={umForm.ultramsg_instance_id} onChange={e => setUmForm(f => ({ ...f, ultramsg_instance_id: e.target.value }))} placeholder="es. instance123456" className="border-2" />
-              </div>
-              <div className="space-y-1">
-                <Label className="font-semibold text-sm">Token</Label>
-                <Input value={umForm.ultramsg_token} onChange={e => setUmForm(f => ({ ...f, ultramsg_token: e.target.value }))} placeholder="Token dalla dashboard UltraMsg" type="password" className="border-2" />
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <Button onClick={saveUmSettings} disabled={savingUm} className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                {savingUm ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-2" />Salva</>}
-              </Button>
-              <Button onClick={testUmConnection} disabled={testingUm} variant="outline" className="border-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50">
-                {testingUm ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}Testa connessione
-              </Button>
-            </div>
-            {umTest && <div className={`p-3 rounded-xl text-sm font-medium ${umTest.ok ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>{umTest.message}</div>}
-            <div className="border-t border-emerald-100 pt-4 space-y-2">
-              <Label className="font-semibold text-sm">Prova invio reale</Label>
-              <div className="flex gap-2">
-                <Input placeholder="Es. 339 783 3526" value={umSendTest.phone} onChange={e => setUmSendTest(p => ({ ...p, phone: e.target.value, result: null }))} className="border-emerald-200" />
-                <Button onClick={sendUmTestMessage} disabled={umSendTest.loading || !umSendTest.phone} className="bg-emerald-600 hover:bg-emerald-700 text-white shrink-0">
-                  {umSendTest.loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Invia prova'}
-                </Button>
-              </div>
-              {umSendTest.result && <div className={`p-3 rounded-xl text-sm font-medium ${umSendTest.result.ok ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>{umSendTest.result.message}</div>}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Green API */}
-        <Card className="border-2 border-green-100">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-[#2D1B14]">
-              <Share2 className="w-5 h-5 text-green-600" />
-              Green API — WhatsApp (fallback se UltraMsg non disponibile)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <Label className="font-semibold text-sm">Instance ID</Label>
-                <Input value={waForm.green_api_instance_id} onChange={e => setWaForm(f => ({ ...f, green_api_instance_id: e.target.value }))} placeholder="es. 1101234567" className="border-2" />
-              </div>
-              <div className="space-y-1">
-                <Label className="font-semibold text-sm">API Token</Label>
-                <Input value={waForm.green_api_token} onChange={e => setWaForm(f => ({ ...f, green_api_token: e.target.value }))} placeholder="Token dalla dashboard Green API" type="password" className="border-2" />
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <Button onClick={saveWaSettings} disabled={savingWa} className="bg-green-600 hover:bg-green-700 text-white">
-                {savingWa ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-2" />Salva</>}
-              </Button>
-              <Button onClick={testWaConnection} disabled={testingWa} variant="outline" className="border-2 border-green-200 text-green-700 hover:bg-green-50">
-                {testingWa ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}Testa connessione
-              </Button>
-            </div>
-            {waTest && <div className={`p-3 rounded-xl text-sm font-medium ${waTest.ok ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>{waTest.message}</div>}
-            <div className="border-t border-green-100 pt-4 space-y-2">
-              <Label className="font-semibold text-sm">Prova invio reale</Label>
-              <div className="flex gap-2">
-                <Input placeholder="Es. 339 783 3526" value={waSendTest.phone} onChange={e => setWaSendTest(p => ({ ...p, phone: e.target.value, result: null }))} className="border-green-200" />
-                <Button onClick={sendWaTestMessage} disabled={waSendTest.loading || !waSendTest.phone} className="bg-green-600 hover:bg-green-700 text-white shrink-0">
-                  {waSendTest.loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Invia prova'}
-                </Button>
-              </div>
-              {waSendTest.result && <div className={`p-3 rounded-xl text-sm font-medium ${waSendTest.result.ok ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>{waSendTest.result.message}</div>}
             </div>
           </CardContent>
         </Card>

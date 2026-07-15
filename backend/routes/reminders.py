@@ -572,10 +572,8 @@ async def send_confirmation_link(appointment_id: str, current_user: dict = Depen
 
 @router.post("/whatsapp/send-direct")
 async def send_whatsapp_direct(data: dict, current_user: dict = Depends(get_current_user)):
-    """Invia WhatsApp via Cloud API → UltraMsg → Green API (fallback legacy)."""
+    """Invia WhatsApp solo via Cloud API Meta (template approvato, poi testo libero)."""
     import urllib.parse
-    import asyncio
-    import requests as _req
 
     phone = data.get("phone", "")
     message = data.get("message", "")
@@ -583,97 +581,22 @@ async def send_whatsapp_direct(data: dict, current_user: dict = Depends(get_curr
         raise HTTPException(status_code=400, detail="Phone e message obbligatori")
 
     phone_clean = normalize_phone_wa(phone)
-    wa_number = phone_clean + "@c.us"
     wa_url = f"https://wa.me/{phone_clean}?text={urllib.parse.quote(message)}"
 
-    # Raccoglie l'esito di ogni provider tentato, così se nessuno riesce
-    # restituiamo l'errore VERO (e non un generico "nessun provider").
-    attempts = []  # list[(provider, esito_str)]
-
-    # Se il chiamante indica un template Meta, prova prima la Cloud API
-    # (template APPROVATO). Se non va (token assente, Cloud API sospesa,
-    # template non approvato), non ritorna: cade nel fallback UltraMsg →
-    # Green API più sotto, invece di lasciare il messaggio non inviato.
     template_name = data.get("template_name")
-    if template_name:
-        template_vars = data.get("template_vars") or []
-        result = await send_automatic_message(
-            phone, template_name, template_vars, fallback_text=None, user=current_user
-        )
-        if result.get("sent"):
-            return {"sent": True, "method": result.get("method", "auto")}
-        attempts.append(("Cloud API Template", result.get("error", "invio non riuscito")))
+    template_vars = data.get("template_vars") or []
+    result = await send_automatic_message(
+        phone, template_name, template_vars, fallback_text=message, user=current_user
+    )
+    try:
+        from utils import _log_communication
+        await _log_communication(current_user["id"], "whatsapp", phone_clean, message, result)
+    except Exception as e:
+        logger.error(f"Errore logging send-direct: {e}")
 
-    async def _finish(result: dict):
-        """Logga l'esito in communication_logs (visibile in pagina Log Messaggi) e ritorna."""
-        try:
-            from utils import _log_communication
-            await _log_communication(current_user["id"], "whatsapp", phone_clean, message, result)
-        except Exception as e:
-            logger.error(f"Errore logging send-direct: {e}")
-        return result
-
-    # NB: per il TESTO LIBERO non usiamo la Cloud API Meta: in Live risponde 200
-    # ("inviato") ma NON consegna a chi non ha scritto nelle 24h → falso positivo.
-    # Il testo libero va solo via UltraMsg/Green API. La Cloud API si usa solo coi
-    # template approvati (percorso template_name più sopra).
-
-    # --- 1. UltraMsg ---
-    um_instance = current_user.get("ultramsg_instance_id", "")
-    um_token = current_user.get("ultramsg_token", "")
-    if um_instance and um_token:
-        try:
-            url = f"https://api.ultramsg.com/{um_instance}/messages/chat"
-            resp = await asyncio.to_thread(
-                _req.post, url,
-                data={"token": um_token, "to": wa_number, "body": message},
-                timeout=15
-            )
-            rjson = {}
-            try:
-                rjson = resp.json()
-            except Exception:
-                pass
-            if resp.status_code == 200 and str(rjson.get("sent", "")).lower() == "true":
-                return await _finish({"sent": True, "method": "ultramsg"})
-            err = rjson.get("error") or rjson.get("message") or resp.text[:200]
-            attempts.append(("UltraMsg", f"{err} (HTTP {resp.status_code})"))
-            logger.warning(f"UltraMsg failed {resp.status_code}: {err}")
-        except Exception as e:
-            attempts.append(("UltraMsg", str(e)))
-            logger.warning(f"UltraMsg exception: {e}")
-    else:
-        attempts.append(("UltraMsg", "non configurato"))
-
-    # --- 3. Green API (legacy fallback) ---
-    instance_id = current_user.get("green_api_instance_id", "")
-    api_token = current_user.get("green_api_token", "")
-    if instance_id and api_token:
-        try:
-            url = f"https://api.greenapi.com/waInstance{instance_id}/sendMessage/{api_token}"
-            resp = await asyncio.to_thread(
-                _req.post, url,
-                json={"chatId": wa_number, "message": message},
-                timeout=15
-            )
-            rjson = {}
-            try:
-                rjson = resp.json()
-            except Exception:
-                pass
-            if resp.status_code == 200 and rjson.get("idMessage"):
-                return await _finish({"sent": True, "method": "greenapi"})
-            g_err = rjson.get("error") or resp.text[:200]
-            attempts.append(("Green API", f"{g_err} (HTTP {resp.status_code})"))
-            logger.warning(f"Green API failed {resp.status_code}: {resp.text[:200]}")
-        except Exception as e:
-            attempts.append(("Green API", str(e)))
-            logger.warning(f"Green API exception: {e}")
-    else:
-        attempts.append(("Green API", "non configurato"))
-
-    detail = " | ".join(f"{p}: {e}" for p, e in attempts) or "Nessun provider disponibile"
-    return await _finish({"sent": False, "method": "link", "url": wa_url, "error": detail})
+    if result.get("sent"):
+        return {"sent": True, "method": result.get("method", "auto")}
+    return {"sent": False, "method": "link", "url": wa_url, "error": result.get("error", "invio non riuscito")}
 
 
 @router.get("/reminders/thank-you-template")

@@ -538,84 +538,21 @@ async def get_settings(current_user: dict = Depends(get_current_user)):
             "font_display": "Cormorant Garamond", "font_body": "Poppins"
         }),
         "google_review_link": current_user.get("google_review_link", ""),
-        "green_api_instance_id": current_user.get("green_api_instance_id", ""),
-        "wa_configured": bool(current_user.get("green_api_instance_id") and current_user.get("green_api_token")),
-        "ultramsg_instance_id": current_user.get("ultramsg_instance_id", ""),
-        "um_configured": bool(current_user.get("ultramsg_instance_id") and current_user.get("ultramsg_token")),
         "cloud_api_configured": bool(os.environ.get("WHATSAPP_TOKEN")),
         "cloud_api_phone_number_id": os.environ.get("WHATSAPP_PHONE_ID", "1030164126858033"),
         "monthly_target": current_user.get("monthly_target", 0) or 0,
     }
 
 
-@router.get("/settings/whatsapp-test")
-async def test_whatsapp_api(current_user: dict = Depends(get_current_user)):
-    """Verifica che l'istanza Green API sia attiva e autorizzata."""
-    import asyncio
-    import requests as _req
-    instance_id = current_user.get("green_api_instance_id", "")
-    api_token = current_user.get("green_api_token", "")
-    if not instance_id or not api_token:
-        return {"ok": False, "status": "not_configured", "message": "Instance ID o Token non impostati"}
-    try:
-        url = f"https://api.greenapi.com/waInstance{instance_id}/getStateInstance/{api_token}"
-        resp = await asyncio.to_thread(_req.get, url, timeout=10)
-        data = resp.json()
-        state = data.get("stateInstance", "unknown")
-        if state == "authorized":
-            return {"ok": True, "status": state, "message": "✅ Connesso — WhatsApp diretto attivo"}
-        elif state == "notAuthorized":
-            return {"ok": False, "status": state, "message": "⚠️ Non autorizzato — scansiona il QR code"}
-        else:
-            return {"ok": False, "status": state, "message": f"Stato: {state} — risposta raw: {str(data)[:200]}"}
-    except Exception as e:
-        return {"ok": False, "status": "error", "message": f"Errore connessione: {str(e)}"}
-
-
 @router.get("/settings/whatsapp-diagnosi")
 async def whatsapp_diagnosi(current_user: dict = Depends(get_current_user)):
-    """Diagnosi WhatsApp in un colpo solo: controlla i 3 provider + i template Meta
-    e restituisce un esito in italiano semplice. Pensato per il bottone unico in
-    Impostazioni — l'utente non deve toccare token/ID."""
+    """Diagnosi WhatsApp in un colpo solo: controlla Cloud API Meta + i template
+    e restituisce un esito in italiano semplice."""
+    import asyncio
     import requests as _req
 
     checks = []  # ogni voce: {nome, ok, dettaglio}
 
-    # --- 1. UltraMsg ---
-    um_id = current_user.get("ultramsg_instance_id", "")
-    um_token = current_user.get("ultramsg_token", "")
-    um_ok = False
-    if not um_id or not um_token:
-        checks.append({"nome": "UltraMsg", "ok": False, "dettaglio": "Non configurato"})
-    else:
-        try:
-            r = await asyncio.to_thread(_req.get, f"https://api.ultramsg.com/{um_id}/instance/status?token={um_token}", timeout=10)
-            sub = (((r.json() or {}).get("status") or {}).get("accountStatus") or {}).get("substatus", "unknown")
-            um_ok = sub == "normal"
-            checks.append({"nome": "UltraMsg", "ok": um_ok,
-                           "dettaglio": "Connesso e attivo" if um_ok else (
-                               "Da collegare: scansiona il QR su app.ultramsg.com" if sub in ("qrCode", "init") else f"Stato: {sub}")})
-        except Exception as e:
-            checks.append({"nome": "UltraMsg", "ok": False, "dettaglio": f"Errore connessione: {str(e)[:120]}"})
-
-    # --- 2. Green API ---
-    ga_id = current_user.get("green_api_instance_id", "")
-    ga_token = current_user.get("green_api_token", "")
-    ga_ok = False
-    if not ga_id or not ga_token:
-        checks.append({"nome": "Green API", "ok": False, "dettaglio": "Non configurato"})
-    else:
-        try:
-            r = await asyncio.to_thread(_req.get, f"https://api.greenapi.com/waInstance{ga_id}/getStateInstance/{ga_token}", timeout=10)
-            state = (r.json() or {}).get("stateInstance", "unknown")
-            ga_ok = state == "authorized"
-            checks.append({"nome": "Green API", "ok": ga_ok,
-                           "dettaglio": "Connesso e attivo" if ga_ok else (
-                               "Da collegare: scansiona il QR su greenapi.com" if state == "notAuthorized" else f"Stato: {state}")})
-        except Exception as e:
-            checks.append({"nome": "Green API", "ok": False, "dettaglio": f"Errore connessione: {str(e)[:120]}"})
-
-    # --- 3. Cloud API (Meta) + template ---
     from utils import WA_TOKEN, WA_PHONE_NUMBER_ID
     cloud_ok = False
     approved_templates = []
@@ -644,135 +581,14 @@ async def whatsapp_diagnosi(current_user: dict = Depends(get_current_user)):
                 checks.append({"nome": "WhatsApp ufficiale (Meta)", "ok": False, "dettaglio": f"Errore connessione: {str(e)[:120]}"})
 
     # --- Verdetto in italiano ---
-    free_text_ok = um_ok or ga_ok  # i Richiami (testo libero) passano solo da questi
-    if free_text_ok and cloud_ok:
-        verdetto = "✅ Tutto a posto: i messaggi possono partire."
-    elif free_text_ok:
-        verdetto = "✅ I messaggi possono partire (via UltraMsg/Green API)."
-    elif cloud_ok and approved_templates:
-        verdetto = "⚠️ Funzionano solo i messaggi con template approvato (promemoria/conferma). I Richiami (testo libero) NON partono: collega UltraMsg o Green API."
+    if cloud_ok and approved_templates:
+        verdetto = "✅ Tutto a posto: i messaggi con template approvato possono partire. Il testo libero funziona solo se il cliente ti ha scritto nelle ultime 24h."
     elif cloud_ok:
-        verdetto = "⚠️ WhatsApp ufficiale presente ma nessun template approvato, e nessun provider per il testo libero. I messaggi NON partono finché non colleghi UltraMsg/Green API o approvi i template."
+        verdetto = "⚠️ WhatsApp ufficiale presente ma nessun template approvato — i messaggi automatici NON partono finché non approvi almeno un template su Meta Business Manager."
     else:
-        verdetto = "❌ Nessun canale WhatsApp attivo: i messaggi non possono partire. Collega UltraMsg o Green API (scansiona il QR), oppure controlla il token Meta su Render."
+        verdetto = "❌ Nessun canale WhatsApp attivo: controlla il token Meta su Render."
 
-    return {"verdetto": verdetto, "controlli": checks, "free_text_ok": free_text_ok, "cloud_ok": cloud_ok}
-
-
-@router.post("/settings/whatsapp-send-test")
-async def test_whatsapp_send(data: dict, current_user: dict = Depends(get_current_user)):
-    """Invia un messaggio di prova al numero configurato per verificare che l'invio funzioni."""
-    import asyncio
-    import requests as _req
-    instance_id = current_user.get("green_api_instance_id", "")
-    api_token = current_user.get("green_api_token", "")
-    if not instance_id or not api_token:
-        return {"ok": False, "message": "Green API non configurata"}
-    phone = data.get("phone", "")
-    if not phone:
-        return {"ok": False, "message": "Numero di telefono mancante"}
-    phone_clean = normalize_phone_wa(phone)
-    try:
-        url = f"https://api.greenapi.com/waInstance{instance_id}/sendMessage/{api_token}"
-        resp = await asyncio.to_thread(
-            _req.post, url,
-            json={"chatId": phone_clean + "@c.us", "message": "✅ Test invio WhatsApp — Bruno Melito Hair funziona!"},
-            timeout=15
-        )
-        rjson = {}
-        try:
-            rjson = resp.json()
-        except Exception:
-            pass
-        if resp.status_code == 200 and rjson.get("idMessage"):
-            return {"ok": True, "message": f"✅ Messaggio inviato! ID: {rjson['idMessage']}"}
-        err = rjson.get("message") or rjson.get("error") or resp.text[:300]
-        return {"ok": False, "message": f"Errore Green API ({resp.status_code}): {err}"}
-    except Exception as e:
-        return {"ok": False, "message": f"Errore: {str(e)}"}
-
-
-@router.put("/settings/whatsapp-api")
-async def update_whatsapp_api(data: dict, current_user: dict = Depends(get_current_user)):
-    await db.users.update_one(
-        {"id": current_user["id"]},
-        {"$set": {
-            "green_api_instance_id": data.get("green_api_instance_id", ""),
-            "green_api_token": data.get("green_api_token", ""),
-        }}
-    )
-    return {"success": True}
-
-
-@router.put("/settings/ultramsg-api")
-async def update_ultramsg_api(data: dict, current_user: dict = Depends(get_current_user)):
-    await db.users.update_one(
-        {"id": current_user["id"]},
-        {"$set": {
-            "ultramsg_instance_id": data.get("ultramsg_instance_id", ""),
-            "ultramsg_token": data.get("ultramsg_token", ""),
-        }}
-    )
-    return {"success": True}
-
-
-@router.get("/settings/ultramsg-test")
-async def test_ultramsg_api(current_user: dict = Depends(get_current_user)):
-    """Verifica che l'istanza UltraMsg sia attiva."""
-    import asyncio
-    import requests as _req
-    instance_id = current_user.get("ultramsg_instance_id", "")
-    token = current_user.get("ultramsg_token", "")
-    if not instance_id or not token:
-        return {"ok": False, "status": "not_configured", "message": "Instance ID o Token UltraMsg non impostati"}
-    try:
-        url = f"https://api.ultramsg.com/{instance_id}/instance/status?token={token}"
-        resp = await asyncio.to_thread(_req.get, url, timeout=10)
-        data = resp.json()
-        status = (data.get("status") or {})
-        account = (status.get("accountStatus") or {})
-        substatus = account.get("substatus", "unknown")
-        if substatus == "normal":
-            return {"ok": True, "status": substatus, "message": "✅ Connesso — UltraMsg attivo e funzionante"}
-        elif substatus in ("qrCode", "init"):
-            return {"ok": False, "status": substatus, "message": "⚠️ Scansiona il QR code su app.ultramsg.com per collegare WhatsApp"}
-        else:
-            return {"ok": False, "status": substatus, "message": f"Stato: {substatus}"}
-    except Exception as e:
-        return {"ok": False, "status": "error", "message": f"Errore connessione: {str(e)}"}
-
-
-@router.post("/settings/ultramsg-send-test")
-async def test_ultramsg_send(data: dict, current_user: dict = Depends(get_current_user)):
-    """Invia un messaggio di prova via UltraMsg."""
-    import asyncio
-    import requests as _req
-    instance_id = current_user.get("ultramsg_instance_id", "")
-    token = current_user.get("ultramsg_token", "")
-    if not instance_id or not token:
-        return {"ok": False, "message": "UltraMsg non configurato"}
-    phone = data.get("phone", "")
-    if not phone:
-        return {"ok": False, "message": "Numero di telefono mancante"}
-    phone_clean = normalize_phone_wa(phone)
-    try:
-        url = f"https://api.ultramsg.com/{instance_id}/messages/chat"
-        resp = await asyncio.to_thread(
-            _req.post, url,
-            data={"token": token, "to": phone_clean, "body": "✅ Test invio WhatsApp via UltraMsg — Bruno Melito Hair funziona!"},
-            timeout=15
-        )
-        rjson = {}
-        try:
-            rjson = resp.json()
-        except Exception:
-            pass
-        if resp.status_code == 200 and str(rjson.get("sent", "")).lower() == "true":
-            return {"ok": True, "message": f"✅ Messaggio inviato! ID: {rjson.get('id', 'ok')}"}
-        err = rjson.get("error") or rjson.get("message") or resp.text[:300]
-        return {"ok": False, "message": f"Errore UltraMsg ({resp.status_code}): {err}"}
-    except Exception as e:
-        return {"ok": False, "message": f"Errore: {str(e)}"}
+    return {"verdetto": verdetto, "controlli": checks, "cloud_ok": cloud_ok}
 
 
 @router.get("/settings/cloud-api-test")
