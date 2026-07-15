@@ -18,6 +18,13 @@ export default function LoginPage() {
   const [loginData, setLoginData] = useState({ email: '', password: '' });
   const [registerData, setRegisterData] = useState({ email: '', password: '', name: '', salon_name: '' });
 
+  const errMsg = (err, fallback) => {
+    const detail = err.response?.data?.detail;
+    if (typeof detail === 'string') return detail;
+    if (Array.isArray(detail)) return detail.map(d => d.msg || JSON.stringify(d)).join(' | ');
+    return fallback;
+  };
+
   useEffect(() => {
     if (searchParams.get('session') === 'expired') {
       toast.warning('Sessione scaduta. Effettua nuovamente il login.');
@@ -35,7 +42,7 @@ export default function LoginPage() {
       if (err.code === 'ECONNABORTED' || !err.response) {
         toast.error('Il server si sta avviando, riprova tra qualche secondo...');
       } else {
-        toast.error(err.response?.data?.detail || 'Credenziali non valide');
+        toast.error(errMsg(err, 'Credenziali non valide'));
       }
     } finally { setLoading(false); }
   };
@@ -48,7 +55,7 @@ export default function LoginPage() {
       toast.success('Account creato! Benvenuta 🎉');
       navigate('/');
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Errore di registrazione');
+      toast.error(errMsg(err, 'Errore di registrazione'));
     } finally { setLoading(false); }
   };
 
