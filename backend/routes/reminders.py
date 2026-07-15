@@ -585,14 +585,14 @@ async def send_whatsapp_direct(data: dict, current_user: dict = Depends(get_curr
 
     template_name = data.get("template_name")
     template_vars = data.get("template_vars") or []
+    # Se c'è un template, NIENTE fallback a testo libero: il testo libero fuori dalla
+    # finestra 24h risponde HTTP 200 senza consegnare (falso positivo) — meglio un
+    # fallimento onesto che un "inviato" doppio/non recapitato.
+    fallback = None if template_name else message
     result = await send_automatic_message(
-        phone, template_name, template_vars, fallback_text=message, user=current_user
+        phone, template_name, template_vars, fallback_text=fallback, user=current_user
     )
-    try:
-        from utils import _log_communication
-        await _log_communication(current_user["id"], "whatsapp", phone_clean, message, result)
-    except Exception as e:
-        logger.error(f"Errore logging send-direct: {e}")
+    # send_automatic_message registra già la comunicazione internamente — non farlo di nuovo qui.
 
     if result.get("sent"):
         return {"sent": True, "method": result.get("method", "auto")}
