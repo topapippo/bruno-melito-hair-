@@ -582,22 +582,6 @@ async def send_whatsapp_direct(data: dict, current_user: dict = Depends(get_curr
     if not phone or not message:
         raise HTTPException(status_code=400, detail="Phone e message obbligatori")
 
-    # Se il chiamante indica un template Meta, usa la catena unificata
-    # (template Meta APPROVATO → UltraMsg → Green API → testo libero Cloud API).
-    # Se il template non è ancora approvato su Meta, degrada da solo al testo
-    # libero via provider, usando `message` come fallback_text. Logga l'esito.
-    template_name = data.get("template_name")
-    if template_name:
-        template_vars = data.get("template_vars") or []
-        result = await send_automatic_message(
-            phone, template_name, template_vars, fallback_text=message, user=current_user
-        )
-        if result.get("sent"):
-            return {"sent": True, "method": result.get("method", "auto")}
-        wa_url = f"https://wa.me/{normalize_phone_wa(phone)}?text={urllib.parse.quote(message)}"
-        return {"sent": False, "method": "link", "url": wa_url,
-                "error": result.get("error", "Nessun provider disponibile")}
-
     phone_clean = normalize_phone_wa(phone)
     wa_number = phone_clean + "@c.us"
     wa_url = f"https://wa.me/{phone_clean}?text={urllib.parse.quote(message)}"
@@ -605,6 +589,20 @@ async def send_whatsapp_direct(data: dict, current_user: dict = Depends(get_curr
     # Raccoglie l'esito di ogni provider tentato, così se nessuno riesce
     # restituiamo l'errore VERO (e non un generico "nessun provider").
     attempts = []  # list[(provider, esito_str)]
+
+    # Se il chiamante indica un template Meta, prova prima la Cloud API
+    # (template APPROVATO). Se non va (token assente, Cloud API sospesa,
+    # template non approvato), non ritorna: cade nel fallback UltraMsg →
+    # Green API più sotto, invece di lasciare il messaggio non inviato.
+    template_name = data.get("template_name")
+    if template_name:
+        template_vars = data.get("template_vars") or []
+        result = await send_automatic_message(
+            phone, template_name, template_vars, fallback_text=None, user=current_user
+        )
+        if result.get("sent"):
+            return {"sent": True, "method": result.get("method", "auto")}
+        attempts.append(("Cloud API Template", result.get("error", "invio non riuscito")))
 
     async def _finish(result: dict):
         """Logga l'esito in communication_logs (visibile in pagina Log Messaggi) e ritorna."""
