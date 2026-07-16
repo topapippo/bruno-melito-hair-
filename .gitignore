@@ -54,3 +54,8 @@ frontend/node_modules/.cache/
 
 # npm (progetto usa yarn, non committare package-lock)
 frontend/package-lock.json
+
+# Artefatti export/audit — non fanno parte del progetto
+bruno-melito-hair--main/
+pack_project.py
+project_export.txt

@@ -722,6 +722,7 @@ export default function PlanningPage() {
                 }}
                 className="border-[#F0E6DC] h-10 w-10"
                 data-testid="prev-day-btn"
+                aria-label="Giorno precedente"
               >
                 <ChevronLeft className="w-5 h-5" />
               </Button>
@@ -743,6 +744,7 @@ export default function PlanningPage() {
                 }}
                 className="border-[#F0E6DC] h-10 w-10"
                 data-testid="next-day-btn"
+                aria-label="Giorno successivo"
               >
                 <ChevronRight className="w-5 h-5" />
               </Button>
@@ -808,6 +810,7 @@ export default function PlanningPage() {
                 value={selectedOperatorId}
                 onChange={(e) => setSelectedOperatorId(e.target.value)}
                 data-testid="operator-filter-select"
+                aria-label="Filtra per operatore"
               >
                 <option value="">Tutti</option>
                 {operators.map((op) => (
@@ -822,6 +825,7 @@ export default function PlanningPage() {
                 value={selectedServiceId}
                 onChange={(e) => setSelectedServiceId(e.target.value)}
                 data-testid="service-filter-select"
+                aria-label="Filtra per servizio"
               >
                 <option value="">Tutti</option>
                 {services.map((service) => (
@@ -1062,6 +1066,7 @@ export default function PlanningPage() {
           }}
           onClick={() => openNewAppointmentForDate(selectedDate)}
           data-testid="mobile-fab-btn"
+          aria-label="Nuovo appuntamento"
         >
           <Plus className="w-6 h-6 text-white" />
         </button>

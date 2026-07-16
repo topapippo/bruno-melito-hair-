@@ -37,7 +37,7 @@ async def update_operator(operator_id: str, data: OperatorUpdate, current_user: 
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Operatore non trovato")
     invalidate_website_cache()
-    return await db.operators.find_one({"id": operator_id}, {"_id": 0, "user_id": 0})
+    return await db.operators.find_one({"id": operator_id, "user_id": current_user["id"]}, {"_id": 0, "user_id": 0})
 
 @router.delete("/operators/{operator_id}")
 async def delete_operator(operator_id: str, current_user: dict = Depends(get_current_user)):

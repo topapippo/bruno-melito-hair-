@@ -6,7 +6,7 @@ import api, { API } from '../lib/api';
 import {
   LayoutDashboard, Calendar, CalendarDays, Users, Scissors,
   UserCircle, BarChart3, Settings, LogOut, Menu, CreditCard,
-  Euro, Database, Star, Bell, FileBarChart, Globe, ArrowDownCircle, Gift,
+  Euro, Database, Bell, Globe, ArrowDownCircle, Gift,
   Sparkles, ClockArrowUp, ChevronLeft, ChevronRight, ChevronDown, Share2, MessageSquare, ShoppingBag
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -324,6 +324,7 @@ export default function Layout({ children }) {
               className="w-7 h-7 rounded-lg flex items-center justify-center transition-all hover:scale-110 flex-shrink-0 ml-1"
               style={{ backgroundColor: `${t.primary}18`, color: t.primary }}
               data-no-anim
+              aria-label={collapsed ? "Espandi sidebar" : "Comprimi sidebar"}
             >
               {collapsed
                 ? <ChevronRight className="w-3.5 h-3.5" />
@@ -588,6 +589,7 @@ export default function Layout({ children }) {
             className="flex flex-col items-center gap-0.5 px-2 py-2 rounded-xl transition-all min-w-[56px]"
             style={{ color: t.sidebar_text + '66' }}
             data-no-anim
+            aria-label="Apri menu"
           >
             <Menu className="w-5 h-5" strokeWidth={1.8} />
             <span className="text-[10px] font-semibold">Menu</span>

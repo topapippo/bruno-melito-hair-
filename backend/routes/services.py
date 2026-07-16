@@ -36,7 +36,7 @@ async def update_service(service_id: str, data: ServiceUpdate, current_user: dic
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Servizio non trovato")
     invalidate_website_cache()
-    return await db.services.find_one({"id": service_id}, {"_id": 0, "user_id": 0})
+    return await db.services.find_one({"id": service_id, "user_id": current_user["id"]}, {"_id": 0, "user_id": 0})
 
 @router.delete("/services/{service_id}")
 async def delete_service(service_id: str, current_user: dict = Depends(get_current_user)):

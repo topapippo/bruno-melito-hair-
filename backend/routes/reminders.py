@@ -82,7 +82,7 @@ async def get_color_expiry_reminders(current_user: dict = Depends(get_current_us
     ]
     results = await db.appointments.aggregate(pipeline).to_list(100)
     client_ids = [r["_id"] for r in results]
-    clients = {c["id"]: c for c in await db.clients.find({"id": {"$in": client_ids}}, {"_id": 0}).to_list(100)}
+    clients = {c["id"]: c for c in await db.clients.find({"id": {"$in": client_ids}, "user_id": current_user["id"]}, {"_id": 0}).to_list(100)}
 
     # Se il client_id dell'appuntamento non corrisponde a nessun documento cliente (record orfano/duplicato),
     # cerca il cliente per nome — questo risolve i casi in cui la stessa persona è stata creata due volte
@@ -239,7 +239,7 @@ async def get_tomorrow_reminders(current_user: dict = Depends(get_current_user))
     missing_phone_ids = [apt["client_id"] for apt in appointments if not apt.get("client_phone") and apt.get("client_id")]
     if missing_phone_ids:
         missing_list = await db.clients.find(
-            {"id": {"$in": missing_phone_ids}}, {"_id": 0, "id": 1, "phone": 1}
+            {"id": {"$in": missing_phone_ids}, "user_id": current_user["id"]}, {"_id": 0, "id": 1, "phone": 1}
         ).to_list(len(missing_phone_ids) + 1)
         missing_map = {c["id"]: c for c in missing_list}
     else:
@@ -315,7 +315,7 @@ async def auto_reminder_check(current_user: dict = Depends(get_current_user)):
     missing_phone_ids = [apt["client_id"] for apt in appointments if not apt.get("client_phone") and apt.get("client_id")]
     if missing_phone_ids:
         missing_list = await db.clients.find(
-            {"id": {"$in": missing_phone_ids}}, {"_id": 0, "id": 1, "phone": 1}
+            {"id": {"$in": missing_phone_ids}, "user_id": current_user["id"]}, {"_id": 0, "id": 1, "phone": 1}
         ).to_list(len(missing_phone_ids) + 1)
         missing_map = {c["id"]: c for c in missing_list}
     else:
@@ -518,7 +518,7 @@ async def send_confirmation_link(appointment_id: str, current_user: dict = Depen
 
     client_phone = apt.get("client_phone", "")
     if not client_phone and apt.get("client_id"):
-        cl = await db.clients.find_one({"id": apt["client_id"]}, {"_id": 0})
+        cl = await db.clients.find_one({"id": apt["client_id"], "user_id": current_user["id"]}, {"_id": 0})
         if cl:
             client_phone = cl.get("phone", "")
     if not client_phone:
@@ -526,7 +526,7 @@ async def send_confirmation_link(appointment_id: str, current_user: dict = Depen
 
     token = apt.get("confirmation_token") or str(uuid.uuid4())
     await db.appointments.update_one(
-        {"id": appointment_id},
+        {"id": appointment_id, "user_id": current_user["id"]},
         {"$set": {
             "confirmation_token": token,
             "confirmation_status": "pending",
@@ -544,14 +544,7 @@ async def send_confirmation_link(appointment_id: str, current_user: dict = Depen
     )
 
     import urllib.parse
-    wa_phone = client_phone.replace(" ", "").replace("-", "")
-    if wa_phone.startswith("0"):
-        wa_phone = "39" + wa_phone[1:]
-    elif wa_phone.startswith("+"):
-        wa_phone = wa_phone[1:]
-    elif not wa_phone.startswith("39"):
-        wa_phone = "39" + wa_phone
-
+    wa_phone = normalize_phone_wa(client_phone)
     whatsapp_url = f"https://wa.me/{wa_phone}?text={urllib.parse.quote(message)}"
 
     # Usa il template Meta con data corretta (non "domani" hardcoded)

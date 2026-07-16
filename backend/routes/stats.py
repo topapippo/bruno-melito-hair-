@@ -20,12 +20,13 @@ async def sum_payments(uid: str, start_date: str, end_date: str) -> float:
     """Somma total_paid di tutti i pagamenti dell'utente nell'intervallo di date
     (incluso start e end). Helper condiviso usato da dashboard, daily-summary
     e revenue per evitare di ricalcolare lo stesso aggregato con codice
-    leggermente diverso in più punti."""
-    docs = await db.payments.find(
-        {"user_id": uid, "date": {"$gte": start_date, "$lte": end_date}},
-        {"_id": 0, "total_paid": 1}
-    ).to_list(100000)
-    return sum(d.get("total_paid", 0) for d in docs)
+    leggermente diverso in più punti. Aggregation pipeline invece di to_list+sum
+    in Python: evita di caricare in RAM tutti i pagamenti del periodo."""
+    agg = await db.payments.aggregate([
+        {"$match": {"user_id": uid, "date": {"$gte": start_date, "$lte": end_date}}},
+        {"$group": {"_id": None, "total": {"$sum": "$total_paid"}}}
+    ]).to_list(1)
+    return agg[0]["total"] if agg else 0
 
 
 # ============== DASHBOARD ==============
@@ -46,9 +47,9 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
         today_appointments,
         total_clients,
         total_operators,
-        monthly_appointments,
+        monthly_appointments_count,
         monthly_revenue,
-        yearly_appointments,
+        yearly_appointments_count,
         yearly_agg,
         upcoming,
         today_revenue,
@@ -58,9 +59,9 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
         db.appointments.find({"user_id": uid, "date": today, "status": {"$ne": "cancelled"}}, {"_id": 0, "user_id": 0}).sort("time", 1).to_list(100),
         db.clients.count_documents({"user_id": uid}),
         db.operators.count_documents({"user_id": uid, "active": True}),
-        db.appointments.find({"user_id": uid, "date": {"$gte": first_of_month, "$lte": last_of_month}, "status": "completed"}, {"_id": 0, "total_price": 1}).to_list(1000),
+        db.appointments.count_documents({"user_id": uid, "date": {"$gte": first_of_month, "$lte": last_of_month}, "status": "completed"}),
         sum_payments(uid, first_of_month, last_of_month),
-        db.appointments.find({"user_id": uid, "date": {"$gte": first_of_year, "$lte": last_of_year}, "status": "completed"}, {"_id": 0, "total_price": 1}).to_list(10000),
+        db.appointments.count_documents({"user_id": uid, "date": {"$gte": first_of_year, "$lte": last_of_year}, "status": "completed"}),
         db.payments.aggregate([
             {"$match": {"user_id": uid, "date": {"$gte": first_of_year, "$lte": last_of_year}}},
             {"$group": {"_id": None, "total": {"$sum": "$total_paid"}}}
@@ -101,9 +102,9 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
         "today_appointments": today_appointments, "today_appointments_count": len(today_appointments),
         "today_revenue": today_revenue,
         "total_clients": total_clients, "total_operators": total_operators,
-        "monthly_revenue": monthly_revenue, "monthly_appointments": len(monthly_appointments),
+        "monthly_revenue": monthly_revenue, "monthly_appointments": monthly_appointments_count,
         "monthly_target": current_user.get("monthly_target", 0) or 0,
-        "yearly_revenue": yearly_revenue, "yearly_appointments": len(yearly_appointments),
+        "yearly_revenue": yearly_revenue, "yearly_appointments": yearly_appointments_count,
         "upcoming_appointments": upcoming,
         "sospeso_count": sospeso_count, "sospeso_total": sospeso_total,
         "next_2h": next_2h, "free_slots": free_slots,
@@ -539,7 +540,7 @@ async def get_settings(current_user: dict = Depends(get_current_user)):
         }),
         "google_review_link": current_user.get("google_review_link", ""),
         "cloud_api_configured": bool(os.environ.get("WHATSAPP_TOKEN")),
-        "cloud_api_phone_number_id": os.environ.get("WHATSAPP_PHONE_ID", "1030164126858033"),
+        "cloud_api_phone_number_id": os.environ.get("WHATSAPP_PHONE_ID", ""),
         "monthly_target": current_user.get("monthly_target", 0) or 0,
     }
 
@@ -595,7 +596,7 @@ async def whatsapp_diagnosi(current_user: dict = Depends(get_current_user)):
 async def test_cloud_api(current_user: dict = Depends(get_current_user)):
     """Verifica che WHATSAPP_TOKEN e PHONE_NUMBER_ID siano configurati."""
     token = os.environ.get("WHATSAPP_TOKEN", "")
-    phone_id = os.environ.get("WHATSAPP_PHONE_ID", "1030164126858033")
+    phone_id = os.environ.get("WHATSAPP_PHONE_ID", "")
     if not token:
         return {"ok": False, "status": "not_configured",
                 "message": "WHATSAPP_TOKEN non impostato nelle variabili d'ambiente"}
@@ -781,7 +782,7 @@ async def update_payment(payment_id: str, data: dict, current_user: dict = Depen
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Pagamento non trovato")
-    updated = await db.payments.find_one({"id": payment_id}, {"_id": 0, "user_id": 0})
+    updated = await db.payments.find_one({"id": payment_id, "user_id": current_user["id"]}, {"_id": 0, "user_id": 0})
     return updated
 
 
