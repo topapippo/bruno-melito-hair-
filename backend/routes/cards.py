@@ -105,7 +105,7 @@ async def use_card(card_id: str, data: CardTransaction, current_user: dict = Dep
     if result.get("total_services"):
         is_exhausted = is_exhausted or new_used_services >= result["total_services"]
     if is_exhausted:
-        await db.cards.update_one({"id": card_id}, {"$set": {"active": False}})
+        await db.cards.update_one({"id": card_id, "user_id": current_user["id"]}, {"$set": {"active": False}})
     return {"success": True, "transaction": transaction, "remaining_value": new_remaining,
             "used_services": new_used_services, "card_active": not is_exhausted}
 
@@ -186,8 +186,6 @@ class SellCardRequest(BaseModel):
 async def sell_card_from_template(data: SellCardRequest, current_user: dict = Depends(get_current_user)):
     """Vende una card/abbonamento da template: crea card + registra incasso."""
     template = await db.card_templates.find_one({"id": data.template_id, "user_id": current_user["id"]}, {"_id": 0})
-    if not template:
-        template = await db.card_templates.find_one({"id": data.template_id}, {"_id": 0})
     if not template:
         raise HTTPException(status_code=404, detail="Template non trovato")
 

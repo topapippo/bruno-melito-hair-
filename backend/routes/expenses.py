@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Optional
 from datetime import datetime, timezone, timedelta
+import calendar
 import uuid
 from pydantic import BaseModel
 
@@ -8,6 +9,15 @@ from database import db
 from auth import get_current_user
 
 router = APIRouter()
+
+
+def _add_months_clamped(due: datetime, months: int) -> datetime:
+    """Aggiunge N mesi a `due`, clampando il giorno se il mese di destinazione è più corto (es. 31 gen + 1 mese -> 28/29 feb)."""
+    total = due.month - 1 + months
+    year = due.year + total // 12
+    month = total % 12 + 1
+    day = min(due.day, calendar.monthrange(year, month)[1])
+    return due.replace(year=year, month=month, day=day)
 
 
 class ExpenseCreate(BaseModel):
@@ -93,19 +103,16 @@ async def mark_expense_paid(expense_id: str, current_user: dict = Depends(get_cu
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Uscita non trovata")
-    expense = await db.expenses.find_one({"id": expense_id}, {"_id": 0})
+    expense = await db.expenses.find_one({"id": expense_id, "user_id": current_user["id"]}, {"_id": 0})
     if expense and expense.get("is_recurring") and expense.get("recurrence"):
         due = datetime.strptime(expense["due_date"], "%Y-%m-%d")
         next_due = None
         if expense["recurrence"] == "monthly":
-            next_due = due.replace(month=due.month % 12 + 1) if due.month < 12 else due.replace(year=due.year + 1, month=1)
+            next_due = _add_months_clamped(due, 1)
         elif expense["recurrence"] == "quarterly":
-            next_month = due.month + 3
-            next_year = due.year + (next_month - 1) // 12
-            next_month = ((next_month - 1) % 12) + 1
-            next_due = due.replace(year=next_year, month=next_month)
+            next_due = _add_months_clamped(due, 3)
         elif expense["recurrence"] == "yearly":
-            next_due = due.replace(year=due.year + 1)
+            next_due = _add_months_clamped(due, 12)
         if next_due:
             new_expense = {
                 "id": str(uuid.uuid4()), "user_id": current_user["id"],

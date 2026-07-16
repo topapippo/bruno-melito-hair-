@@ -16,9 +16,8 @@ twilio_client = None
 
 
 # --- CONFIGURAZIONI WHATSAPP CLOUD API ---
-WA_PHONE_NUMBER_ID = os.environ.get('WHATSAPP_PHONE_ID', '1030164126858033')
+WA_PHONE_NUMBER_ID = os.environ.get('WHATSAPP_PHONE_ID', '')
 WA_TOKEN = os.environ.get('WHATSAPP_TOKEN', '')
-WA_FOOTER = "\n\nMessaggio automatico di cortesia di Bruno Melito Hair. Se hai bisogno di scriverci, rispondi al 3397833526. Grazie!"
 
 def normalize_phone_wa(phone: str) -> str:
     """Restituisce il numero in formato 393XXXXXXXXX."""
@@ -170,7 +169,7 @@ async def resolve_client(user_id: str, name: str, phone: str = "") -> tuple:
             candidates = await db.clients.find(
                 {"user_id": user_id, "phone": {"$exists": True, "$ne": ""}},
                 {"_id": 0, "id": 1, "name": 1, "phone": 1}
-            ).to_list(20000)
+            ).to_list(5000)
             for c in candidates:
                 if normalize_phone_wa(c.get("phone", "")) == norm:
                     return c["id"], c.get("name") or name, c.get("phone") or phone

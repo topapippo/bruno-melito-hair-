@@ -24,7 +24,8 @@ async def lifespan(app: FastAPI):
     try:
         from routes.public import public_get_website
         asyncio.create_task(public_get_website())
-    except: pass
+    except Exception as e:
+        logger.warning(f"Warm-up cache sito pubblico non avviato: {e}")
 
     # Migrazione una tantum: rimuove l'account "preview" residuo melitobruno@gmail.com.
     # La produzione usa admin@brunomelito.it. SICUREZZA: si ferma se l'account possiede

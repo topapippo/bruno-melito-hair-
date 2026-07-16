@@ -326,7 +326,7 @@ async def create_public_booking(request: Request, data: PublicBookingRequest, ba
         d_p = data.date.split('-')
         date_it = f"{d_p[2]}/{d_p[1]}/{d_p[0]}" if len(d_p) == 3 else data.date
         msg_bruno = f"🔔 NUOVA PRENOTAZIONE ONLINE!\n👤 Cliente: {data.client_name}\n📅 Data: {date_it}\n⏰ Ora: {data.time}\n✂️ Servizi: {service_names}\n\nhttps://brunomelitohair.it/admin"
-        background_tasks.add_task(send_whatsapp, "3397833526", msg_bruno, user)
+        background_tasks.add_task(send_whatsapp, user.get("phone") or "3397833526", msg_bruno, user)
         client_msg = f"Ciao {data.client_name}! ✅ Prenotazione confermata per il {date_it} alle {data.time}. Ti aspettiamo! 💇"
         if data.client_phone:
             # Prefer template di conferma approvato su Meta
@@ -434,7 +434,7 @@ async def cancel_public_appointment(request: Request, appt_id: str, phone: str, 
         raise HTTPException(status_code=400, detail="Non è possibile annullare appuntamenti passati")
 
     await db.appointments.update_one(
-        {"id": appt_id},
+        {"id": appt_id, "user_id": user_id},
         {"$set": {"status": "cancelled", "cancelled_at": datetime.now(timezone.utc).isoformat(), "cancelled_by": "client"}}
     )
 
@@ -446,7 +446,7 @@ async def cancel_public_appointment(request: Request, appt_id: str, phone: str, 
                f"👤 Cliente: {apt.get('client_name', 'N/D')}\n"
                f"📅 Data: {date_it}  ⏰ {apt.get('time', '')}\n"
                f"✂️ {service_names}")
-        background_tasks.add_task(send_whatsapp, "3397833526", msg, user)
+        background_tasks.add_task(send_whatsapp, user.get("phone") or "3397833526", msg, user)
     except Exception:
         pass
 
@@ -491,7 +491,7 @@ async def modify_public_appointment(request: Request, appt_id: str, data: Modify
 
     end_time = calculate_end_time(data.time, apt.get("total_duration", 60))
     await db.appointments.update_one(
-        {"id": appt_id},
+        {"id": appt_id, "user_id": user_id},
         {"$set": {"date": data.date, "time": data.time, "end_time": end_time,
                   "modified_at": datetime.now(timezone.utc).isoformat()}}
     )

@@ -1,11 +1,10 @@
-import { X, Phone, Clock, Euro, Info } from 'lucide-react';
+import { X, Phone, Clock, Euro } from 'lucide-react';
 
 export default function AppointmentDetailPanel({ apt, onClose, onEdit, onCheckout }) {
   if (!apt) return null;
 
   const totalPrice = apt.total_price || (apt.services || []).reduce((sum, s) => sum + (s.price || 0), 0);
-  const completedServices = (apt.services || []).filter(s => s.price > 0);
-  const statusLabel = { completed: 'Completato', cancelled: 'Cancellato', pending: 'Da fare' };
+  const statusLabel = { completed: 'Completato', cancelled: 'Cancellato', pending: 'Da fare', scheduled: 'Programmato' };
 
   return (
     <div className="fixed inset-0 z-[100] pointer-events-none">
@@ -41,7 +40,8 @@ export default function AppointmentDetailPanel({ apt, onClose, onEdit, onCheckou
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#F0E6DC] transition-colors shrink-0 mt-0.5"
+            aria-label="Chiudi pannello"
+            className="w-11 h-11 rounded-lg flex items-center justify-center hover:bg-[#F0E6DC] transition-colors shrink-0 mt-0.5"
           >
             <X className="w-4 h-4 text-[#9C7060]" />
           </button>
@@ -90,7 +90,7 @@ export default function AppointmentDetailPanel({ apt, onClose, onEdit, onCheckou
               <div className="space-y-1.5">
                 {apt.services.map((s, i) => (
                   <div
-                    key={i}
+                    key={s.id || s.name || i}
                     className="flex items-center justify-between px-3 py-2.5 rounded-xl"
                     style={{ background: 'rgba(200,97,122,0.06)', border: '1px solid rgba(200,97,122,0.09)' }}
                   >

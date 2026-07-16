@@ -488,7 +488,6 @@ async def get_client_history(client_id: str, current_user: dict = Depends(get_cu
     visit_dates = sorted([a["date"] for a in all_apts_for_stats if a.get("date")])
     avg_frequency_days = None
     if len(visit_dates) >= 2:
-        from datetime import date as ddate
         gaps = [(ddate.fromisoformat(visit_dates[i+1]) - ddate.fromisoformat(visit_dates[i])).days
                 for i in range(len(visit_dates) - 1)]
         avg_frequency_days = round(sum(gaps) / len(gaps))

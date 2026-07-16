@@ -41,7 +41,7 @@ class MBHSAPITester:
                 print(f"✅ Passed - Status: {response.status_code}")
                 try:
                     return True, response.json() if response.content else {}
-                except:
+                except ValueError:
                     return True, {}
             else:
                 self.test_results["failed"].append(f"{name} - Expected {expected_status}, got {response.status_code}")
@@ -50,7 +50,7 @@ class MBHSAPITester:
                     try:
                         error_data = response.json()
                         print(f"   Error: {error_data}")
-                    except:
+                    except ValueError:
                         print(f"   Response: {response.text[:500]}")
                 return False, {}
 
@@ -83,17 +83,22 @@ class MBHSAPITester:
         
         if success and 'access_token' in response:
             self.token = response['access_token']
+            self.test_email = register_data["email"]
+            self.test_password = register_data["password"]
             print(f"   Registration successful, token acquired: {self.token[:20]}...")
             return True
         return False
 
     def test_login(self):
-        """Test user login - try with a common test account"""
+        """Test user login using the account created by test_register"""
+        if not getattr(self, "test_email", None):
+            print("   Skipped: no registered test account available (run test_register first)")
+            return False
         login_data = {
-            "email": "admin@test.com", 
-            "password": "admin123"
+            "email": self.test_email,
+            "password": self.test_password
         }
-        
+
         success, response = self.run_test(
             "User Login", 
             "POST", 
@@ -131,25 +136,15 @@ class MBHSAPITester:
             "notes": "Test booking"
         }
         
-        # This might fail if no services available, but should return proper error
+        # Deve rifiutare la prenotazione con service_ids vuoto
         success, response = self.run_test(
-            "Public Booking (POST)", 
-            "POST", 
-            "public/booking", 
-            400,  # Expecting 400 due to empty service_ids or validation
+            "Public Booking (POST)",
+            "POST",
+            "public/booking",
+            400,
             booking_data
         )
-        
-        # Also try with 200 in case it works
-        if not success:
-            success, response = self.run_test(
-                "Public Booking (POST) - Alternative", 
-                "POST", 
-                "public/booking", 
-                200, 
-                booking_data
-            )
-        
+
         return success
 
 def main():

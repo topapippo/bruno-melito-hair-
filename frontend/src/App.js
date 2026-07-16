@@ -100,7 +100,7 @@ function OfflineIndicator() {
   if (isOnline) return null;
 
   return (
-    <div className="fixed top-0 left-0 right-0 bg-gradient-to-r from-[#C8617A] to-[#A0404F] text-white text-center py-2 text-sm z-50 font-medium shadow-lg">
+    <div role="status" aria-live="polite" className="fixed top-0 left-0 right-0 bg-gradient-to-r from-[#C8617A] to-[#A0404F] text-white text-center py-2 text-sm z-50 font-medium shadow-lg">
       Modalità Offline - I dati mostrati potrebbero non essere aggiornati
     </div>
   );

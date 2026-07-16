@@ -136,7 +136,7 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, backgrou
                 if total_svc:
                     is_exhausted = is_exhausted or used >= total_svc
                 if is_exhausted:
-                    await db.cards.update_one({"id": card_id}, {"$set": {"active": False}})
+                    await db.cards.update_one({"id": card_id, "user_id": current_user["id"]}, {"$set": {"active": False}})
                 remaining_services = (total_svc - used) if total_svc else None
                 card_result = {
                     "card_id": card_id,
@@ -175,7 +175,7 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, backgrou
     await db.appointments.update_one({"id": appointment_id, "user_id": current_user["id"]}, {"$set": {"status": "completed", "paid": True, "payment_method": data.payment_method}})
     phone = apt.get("client_phone")
     if not phone and apt.get("client_id"):
-        cl = await db.clients.find_one({"id": apt["client_id"]})
+        cl = await db.clients.find_one({"id": apt["client_id"], "user_id": current_user["id"]})
         if cl: phone = cl.get("phone")
     if phone: background_tasks.add_task(_send_checkout_thank_you, phone, apt["client_name"], current_user)
     return {"status": "ok", "payment_id": payment_doc["id"], "card": card_result}

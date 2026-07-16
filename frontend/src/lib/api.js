@@ -26,6 +26,7 @@ api.interceptors.request.use(
 );
 
 // ── Response interceptor: gestisci token scaduto ────────────────────────────
+let isRedirecting = false;
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -34,7 +35,8 @@ api.interceptors.response.use(
       // Non redirigere su pagine pubbliche (sito, booking) — evita loop su token scaduto
       const path = window.location.pathname;
       const isPublic = path.startsWith('/sito') || path.startsWith('/booking');
-      if (!isPublic && !path.includes('/login')) {
+      if (!isPublic && !path.includes('/login') && !isRedirecting) {
+        isRedirecting = true;
         window.location.href = '/login?session=expired';
       }
     }
