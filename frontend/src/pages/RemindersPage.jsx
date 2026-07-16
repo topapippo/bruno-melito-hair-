@@ -382,17 +382,17 @@ export default function RemindersPage() {
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+          <Card className="bg-gradient-to-br from-[#D4AF7A]/10 to-[#D4AF7A]/20 border-[#D4AF7A]/40">
             <CardContent className="p-5">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-purple-500 rounded-xl">
+                <div className="p-2.5 bg-[#D4AF7A] rounded-xl">
                   <Palette className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <p className="text-sm text-purple-700 font-semibold">Scadenza Colore</p>
-                  <p className="text-3xl font-black text-purple-600" data-testid="pending-colors-count">
+                  <p className="text-sm text-[#9C7B3F] font-semibold">Scadenza Colore</p>
+                  <p className="text-3xl font-black text-[#9C7B3F]" data-testid="pending-colors-count">
                     {pendingColors.length}
-                    <span className="text-sm font-semibold text-purple-500 ml-1">/ {colorReminders.length}</span>
+                    <span className="text-sm font-semibold text-[#D4AF7A] ml-1">/ {colorReminders.length}</span>
                   </p>
                 </div>
               </div>
@@ -439,7 +439,7 @@ export default function RemindersPage() {
                 )}
                 {pendingColors.length > 0 && (
                   <Button onClick={batchSendColors} disabled={batchSending}
-                    className="bg-purple-500 hover:bg-purple-600 text-white font-bold h-auto py-3" data-testid="batch-send-colors-btn">
+                    className="bg-[#D4AF7A] hover:bg-[#c19d68] text-white font-bold h-auto py-3" data-testid="batch-send-colors-btn">
                     {batchSending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Palette className="w-4 h-4 mr-2" />}
                     Invia Prossimo ({pendingColors.length})
                   </Button>
@@ -473,7 +473,7 @@ export default function RemindersPage() {
                           tmpl.template_type === 'appointment'
                             ? 'bg-blue-100 text-blue-700'
                             : tmpl.template_type === 'color_expiry'
-                            ? 'bg-purple-100 text-purple-700'
+                            ? 'bg-[#D4AF7A]/15 text-[#9C7B3F]'
                             : tmpl.template_type === 'thank_you'
                             ? 'bg-emerald-100 text-emerald-700'
                             : 'bg-orange-100 text-orange-700'
@@ -667,9 +667,9 @@ export default function RemindersPage() {
           <Card className="border-[#F0E6DC]/30">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg font-bold text-[#2D1B14] flex items-center gap-2">
-                <Palette className="w-5 h-5 text-purple-500" />
+                <Palette className="w-5 h-5 text-[#D4AF7A]" />
                 Scadenza Colore (30+ giorni)
-                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-semibold">
+                <span className="text-xs bg-[#D4AF7A]/15 text-[#9C7B3F] px-2 py-0.5 rounded-full font-semibold">
                   {colorReminders.filter(c => !c.already_sent).length} da avvisare
                 </span>
               </CardTitle>
@@ -679,7 +679,7 @@ export default function RemindersPage() {
                 {colorReminders.map((cr) => (
                   <div key={cr.client_id}
                     className={`p-4 rounded-xl border-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
-                      cr.already_sent ? 'border-green-200 bg-green-50' : 'border-purple-200 bg-purple-50'
+                      cr.already_sent ? 'border-green-200 bg-green-50' : 'border-[#D4AF7A]/40 bg-[#D4AF7A]/10'
                     }`}
                     data-testid={`color-reminder-${cr.client_id}`}>
                     <div className="flex-1 min-w-0">
@@ -692,7 +692,7 @@ export default function RemindersPage() {
                         )}
                       </div>
                       <div className="flex items-center gap-3 text-sm mt-1 flex-wrap">
-                        <span className="text-purple-700 font-semibold flex items-center gap-1">
+                        <span className="text-[#9C7B3F] font-semibold flex items-center gap-1">
                           <Clock className="w-3.5 h-3.5" /> {cr.days_ago} giorni fa
                         </span>
                         {cr.phone && (
@@ -732,7 +732,7 @@ export default function RemindersPage() {
                               .catch(() => {});
                           }}
                           disabled={!cr.phone}
-                          className="bg-purple-500 hover:bg-purple-600 text-white font-bold"
+                          className="bg-[#D4AF7A] hover:bg-[#c19d68] text-white font-bold"
                           data-testid={`send-color-${cr.client_id}`}>
                           <MessageSquare className="w-4 h-4 mr-2" /> Avvisa Colore
                         </Button>
