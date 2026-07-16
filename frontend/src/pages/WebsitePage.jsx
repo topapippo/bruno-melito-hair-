@@ -161,7 +161,7 @@ export default function WebsitePage() {
   const salonPhotos = gallery.filter(g => g.section === 'salon');
   const hairstylePhotos = gallery.filter(g => g.section === 'gallery');
 
-  // SEO: title + meta tags dinamici
+  // SEO: title + meta tags dinamici + Dati Strutturati (JSON-LD)
   useEffect(() => {
     if (!siteData) return;
     const name = config.salon_name || 'Bruno Melito Hair';
@@ -187,8 +187,58 @@ export default function WebsitePage() {
     setMeta('twitter:title', `${name} — Prenota Online`);
     setMeta('twitter:description', desc);
 
-    return () => { document.title = 'Bruno Melito Hair'; };
-  }, [siteData, config.salon_name, config.hero_description, config.hero_image]);
+    // --- INIZIO DATI STRUTTURATI SCHEMA.ORG ---
+    const dayMap = { lun: 'Monday', mar: 'Tuesday', mer: 'Wednesday', gio: 'Thursday', ven: 'Friday', sab: 'Saturday', dom: 'Sunday' };
+    const openingHoursArray = Object.entries(config.hours || {})
+      .filter(([k, v]) => dayMap[k] && v && !['chiuso', '-'].includes(String(v).toLowerCase().trim()))
+      .map(([k, v]) => `${dayMap[k]} ${String(v).replace(/\s/g, '')}`);
+
+    const totalReviews = reviews.length;
+    const avgRating = totalReviews > 0 ? (reviews.reduce((sum, r) => sum + (r.rating || 5), 0) / totalReviews).toFixed(1) : 5.0;
+
+    const schema = {
+      "@context": "https://schema.org",
+      "@type": "HairSalon",
+      "name": name,
+      "description": desc,
+      "url": url,
+      "telephone": config.whatsapp || (config.phones && config.phones[0]) || "",
+      "image": config.hero_image ? `${window.location.origin}${config.hero_image}` : `${window.location.origin}/logo.png`,
+      "priceRange": "€€",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": config.address || "Caserta",
+        "addressCountry": "IT"
+      },
+      "openingHoursSpecification": openingHoursArray.length > 0 ? [{
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": openingHoursArray.map(o => o.split(' ')[0]),
+        "opens": openingHoursArray[0].split(' ')[1].split('-')[0],
+        "closes": openingHoursArray[0].split(' ')[1].split('-')[1]
+      }] : [],
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": avgRating,
+        "reviewCount": totalReviews || 1
+      }
+    };
+
+    let schemaScript = document.querySelector('script[type="application/ld+json"]');
+    if (!schemaScript) {
+      schemaScript = document.createElement('script');
+      schemaScript.type = 'application/ld+json';
+      document.head.appendChild(schemaScript);
+    }
+    schemaScript.text = JSON.stringify(schema);
+    // --- FINE DATI STRUTTURATI ---
+
+    return () => {
+      document.title = 'Bruno Melito Hair';
+      // Pulisce il JSON-LD quando si lascia la pagina
+      const existingScript = document.querySelector('script[type="application/ld+json"]');
+      if (existingScript) existingScript.remove();
+    };
+  }, [siteData, config.salon_name, config.hero_description, config.hero_image, config.hours, config.address, config.phones, config.whatsapp, reviews]);
 
   // Load CMS fonts — evita link duplicati
   useEffect(() => {
