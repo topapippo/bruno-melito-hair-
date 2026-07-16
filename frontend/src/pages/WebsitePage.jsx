@@ -421,7 +421,7 @@ export default function WebsitePage() {
         @keyframes heroFadeIn { from { opacity: 0; transform: translateY(25px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
         @keyframes pulseGlow { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.6; } }
-        @keyframes heroShimmer { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+        @keyframes heroShimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
         .hero-animate { animation: heroFadeIn 1s ease forwards; opacity: 0; }
         .hero-d1 { animation-delay: 0.15s; }
         .hero-d2 { animation-delay: 0.3s; }
@@ -432,12 +432,14 @@ export default function WebsitePage() {
         .float-med { animation: float 4s ease-in-out infinite 1s; }
         .pulse-glow { animation: pulseGlow 3s ease-in-out infinite; }
         .hero-cta-primary {
-          background: linear-gradient(270deg, var(--theme-primary), color-mix(in srgb, var(--theme-primary) 80%, white), #C084FC, color-mix(in srgb, var(--theme-primary) 80%, white), var(--theme-primary)) !important;
-          background-size: 300% 300% !important;
-          animation: heroShimmer 4s ease infinite;
-          transition: transform 0.2s, box-shadow 0.2s;
+          background: linear-gradient(110deg, #D4AF7A 0%, #FDF8F5 45%, #D4AF7A 60%, #D4AF7A 100%) !important;
+          background-size: 200% auto !important;
+          animation: heroShimmer 3s linear infinite;
+          transition: transform 0.3s, box-shadow 0.3s;
+          color: #1A0A10 !important;
+          text-shadow: 0 1px 1px rgba(255,255,255,0.3);
         }
-        .hero-cta-primary:hover { transform: scale(1.06) translateY(-3px) !important; box-shadow: 0 16px 40px rgba(0,0,0,0.3) !important; }
+        .hero-cta-primary:hover { transform: scale(1.05) translateY(-3px) !important; box-shadow: 0 16px 40px rgba(212, 175, 122, 0.4) !important; }
       `}</style>
 
       {/* NAVBAR */}
@@ -581,10 +583,10 @@ export default function WebsitePage() {
         <div className="relative w-full px-6 sm:px-14 py-20 sm:py-24">
           {/* Titolo editoriale gigante */}
           <div className="hero-animate hero-d1 mb-10">
-            <h1 className="font-black" style={{ fontFamily: "'Playfair Display', serif", lineHeight: 0.82 }}>
-              <span className="block text-white" style={{ fontSize: 'clamp(3.5rem, 14vw, 11rem)', letterSpacing: '-0.03em' }}>BRUNO</span>
-              <span className="block" style={{ fontSize: 'clamp(3.5rem, 14vw, 11rem)', letterSpacing: '-0.03em', WebkitTextStroke: '2px rgba(255,255,255,0.6)', color: 'transparent' }}>MELITO</span>
-              <span className="block text-white" style={{ fontSize: 'clamp(1rem, 3.5vw, 3rem)', letterSpacing: '0.25em', opacity: 0.28, fontWeight: 500, marginTop: '0.35em' }}>HAIR STUDIO</span>
+            <h1 className="font-black tracking-tighter" style={{ fontFamily: "'Playfair Display', serif", lineHeight: 0.85 }}>
+              <span className="block text-white" style={{ fontSize: 'clamp(3.5rem, 14vw, 11rem)', letterSpacing: '-0.04em' }}>BRUNO</span>
+              <span className="block" style={{ fontSize: 'clamp(3.5rem, 14vw, 11rem)', letterSpacing: '-0.04em', WebkitTextStroke: '1.5px rgba(212, 175, 122, 0.8)', color: 'transparent' }}>MELITO</span>
+              <span className="block text-white/40 mt-4" style={{ fontSize: 'clamp(0.9rem, 3vw, 2.5rem)', letterSpacing: '0.35em', fontWeight: 400, fontFamily: "'DM Sans', sans-serif" }}>HAIR STUDIO</span>
             </h1>
           </div>
           <div className="text-center max-w-xl mx-auto">
@@ -617,7 +619,7 @@ export default function WebsitePage() {
               {config.hero_description || ''}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center mb-10 hero-animate hero-d5">
-              <button onClick={() => setShowBooking(true)} className="hero-cta-primary text-white font-black text-base px-10 py-7 rounded-2xl shadow-lg" data-testid="website-hero-book-btn">
+              <button onClick={() => setShowBooking(true)} className="hero-cta-primary font-black text-base px-10 py-7 rounded-2xl shadow-lg" data-testid="website-hero-book-btn">
                 <Scissors className="w-5 h-5 mr-2 inline" /> PRENOTA ORA
               </button>
               <Button onClick={openWhatsApp} className="bg-[#25D366] hover:bg-[#20BD5A] text-white font-black text-base px-10 py-7 rounded-2xl shadow-lg shadow-green-400/20 hover:shadow-xl hover:scale-105 transition-all duration-300" data-testid="website-hero-whatsapp-btn">
