@@ -464,7 +464,7 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <Link to="/card-alerts">
+                <Link to="/cards">
                   <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-white text-xs h-7 rounded-lg">Vedi tutti</Button>
                 </Link>
                 <button onClick={() => setShowAlerts(false)} className="w-7 h-7 rounded-lg hover:bg-amber-100 flex items-center justify-center transition-colors">
