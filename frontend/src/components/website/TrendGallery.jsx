@@ -122,7 +122,7 @@ export default function TrendGallery({ setShowBooking }) {
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
             <h2
               className="font-black"
-              style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 'clamp(3rem, 8vw, 6.5rem)', lineHeight: 0.88, color: 'white' }}
+              style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(3rem, 8vw, 6.5rem)', lineHeight: 0.88, color: 'white' }}
             >
               I Look
               <br />
@@ -210,7 +210,7 @@ export default function TrendGallery({ setShowBooking }) {
 
                 <div
                   className="absolute top-4 right-4 z-10 text-white/40 font-bold tracking-widest text-[10px] uppercase pointer-events-none"
-                  style={{ fontFamily: "'Fredoka', sans-serif" }}
+                  style={{ fontFamily: "'DM Sans', sans-serif" }}
                 >
                   N.{String(i + 1).padStart(2, '0')}
                 </div>
@@ -225,7 +225,7 @@ export default function TrendGallery({ setShowBooking }) {
                         <h3
                           className="font-bold"
                           style={{
-                            fontFamily: "'Fredoka', sans-serif",
+                            fontFamily: "'Playfair Display', serif",
                             fontSize: isHero ? 'clamp(1.8rem, 3.5vw, 2.6rem)' : '1.4rem',
                             color: 'white',
                             lineHeight: 1.05,
@@ -249,7 +249,7 @@ export default function TrendGallery({ setShowBooking }) {
                       >
                         <span
                           className="text-[11px] font-black tracking-[0.3em] uppercase pb-1"
-                          style={{ borderBottom: `1.5px solid ${glow}`, fontFamily: "'Fredoka', sans-serif" }}
+                          style={{ borderBottom: `1.5px solid ${glow}`, fontFamily: "'DM Sans', sans-serif" }}
                         >
                           Prenota questo look
                         </span>
@@ -296,7 +296,7 @@ export default function TrendGallery({ setShowBooking }) {
             />
             {lightbox.title && (
               <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-center px-6 py-3 rounded-2xl bg-white/10 backdrop-blur">
-                <p className="text-white font-bold tracking-wide" style={{ fontFamily: "'Fredoka', sans-serif" }}>
+                <p className="text-white font-bold tracking-wide" style={{ fontFamily: "'Playfair Display', serif" }}>
                   {lightbox.title}
                 </p>
                 {lightbox.desc && <p className="text-white/60 text-xs mt-1 max-w-md">{lightbox.desc}</p>}

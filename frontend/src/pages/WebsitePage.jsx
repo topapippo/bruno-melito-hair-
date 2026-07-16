@@ -581,7 +581,7 @@ export default function WebsitePage() {
         <div className="relative w-full px-6 sm:px-14 py-20 sm:py-24">
           {/* Titolo editoriale gigante */}
           <div className="hero-animate hero-d1 mb-10">
-            <h1 className="font-black" style={{ fontFamily: "'Fredoka', sans-serif", lineHeight: 0.82 }}>
+            <h1 className="font-black" style={{ fontFamily: "'Playfair Display', serif", lineHeight: 0.82 }}>
               <span className="block text-white" style={{ fontSize: 'clamp(3.5rem, 14vw, 11rem)', letterSpacing: '-0.03em' }}>BRUNO</span>
               <span className="block" style={{ fontSize: 'clamp(3.5rem, 14vw, 11rem)', letterSpacing: '-0.03em', WebkitTextStroke: '2px rgba(255,255,255,0.6)', color: 'transparent' }}>MELITO</span>
               <span className="block text-white" style={{ fontSize: 'clamp(1rem, 3.5vw, 3rem)', letterSpacing: '0.25em', opacity: 0.28, fontWeight: 500, marginTop: '0.35em' }}>HAIR STUDIO</span>

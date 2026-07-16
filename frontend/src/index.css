@@ -142,10 +142,10 @@ a, button { transition: all 0.2s ease; }
   [data-debug-wrapper="true"] { display: contents !important; }
 }
 
-/* Fredoka per le sezioni del sito pubblico (WebsitePage, TrendGallery, BookingForm) */
+/* Playfair Display per le sezioni del sito pubblico (WebsitePage, TrendGallery, BookingForm) */
 .website-fredoka h1, .website-fredoka h2, .website-fredoka h3,
 .trend-title, .fredoka-heading {
-  font-family: 'Fredoka', sans-serif;
+  font-family: 'Playfair Display', serif;
 }
 
 /* Sfondo scuro sito pubblico */
@@ -157,7 +157,7 @@ a, button { transition: all 0.2s ease; }
 
 /* Titoli website high-end */
 .website-wow-h2 {
-  font-family: 'Fredoka', sans-serif;
+  font-family: 'Playfair Display', serif;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: white;
