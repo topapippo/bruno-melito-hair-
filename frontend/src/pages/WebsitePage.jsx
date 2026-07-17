@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import api, { API } from '../lib/api';
 import { getMediaUrl } from '../lib/mediaUrl';
 import { Button } from '@/components/ui/button';
-import { Scissors, ChevronDown, MapPin, Phone, CalendarDays, Printer, Download, X, MessageCircle, Sparkles, Star } from 'lucide-react';
+import { Scissors, ChevronDown, MapPin, Phone, CalendarDays, Printer, Download, X, MessageCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -440,6 +440,20 @@ export default function WebsitePage() {
           text-shadow: 0 1px 1px rgba(255,255,255,0.3);
         }
         .hero-cta-primary:hover { transform: scale(1.05) translateY(-3px) !important; box-shadow: 0 16px 40px rgba(212, 175, 122, 0.4) !important; }
+        @keyframes textReveal {
+          from { opacity: 0; transform: translateY(100%); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .reveal-mask {
+          display: inline-block;
+          overflow: hidden;
+          vertical-align: bottom;
+        }
+        .reveal-text {
+          display: inline-block;
+          animation: textReveal 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+          animation-delay: 0.3s;
+        }
       `}</style>
 
       {/* NAVBAR */}
@@ -536,56 +550,26 @@ export default function WebsitePage() {
         <div className="absolute top-24 left-[8%] w-96 h-96 rounded-full opacity-25 blur-3xl float-slow" style={{ backgroundColor: T.primary }} />
         <div className="absolute bottom-16 right-[12%] w-72 h-72 rounded-full opacity-20 blur-3xl float-med" style={{ backgroundColor: T.accent }} />
         <div className="absolute top-[35%] left-[38%] w-56 h-56 rounded-full opacity-15 blur-3xl" style={{ backgroundColor: '#8B5CF6', animation: 'float 9s ease-in-out infinite 3s' }} />
-        {/* Geometric shapes — slow drift */}
-        {[
-          { shape: 'circle', w: 90,  h: 90,  color: '#FF6B9D', top: '22%', left: '2%',   xA: [0,25,0],   yA: [0,-18,0], dur: 9,  rot: 0   },
-          { shape: 'square', w: 65,  h: 65,  color: '#FFD93D', top: '62%', right: '3%',  xA: [0,-22,0],  yA: [0,14,0],  dur: 11, rot: 20  },
-          { shape: 'circle', w: 50,  h: 50,  color: '#C3F0CA', top: '8%',  right: '22%', xA: [0,12,0],   yA: [0,20,0],  dur: 7,  rot: 0   },
-          { shape: 'square', w: 42,  h: 42,  color: '#A8DAFF', top: '78%', left: '22%',  xA: [0,-14,0],  yA: [0,-16,0], dur: 8,  rot: -15 },
-          { shape: 'circle', w: 30,  h: 30,  color: '#FFB347', top: '32%', left: '14%',  xA: [0,18,0],   yA: [0,8,0],   dur: 13, rot: 0   },
-          { shape: 'square', w: 55,  h: 55,  color: '#FF2E63', top: '50%', right: '12%', xA: [0,-10,0],  yA: [0,22,0],  dur: 10, rot: 35  },
-        ].map((s, i) => (
-          <motion.div
-            key={`geo-${i}`}
-            className="absolute pointer-events-none select-none"
-            style={{
-              top: s.top, left: s.left, right: s.right,
-              width: s.w, height: s.h,
-              backgroundColor: s.color,
-              borderRadius: s.shape === 'circle' ? '50%' : '14px',
-              border: '2px solid rgba(255,255,255,0.25)',
-              opacity: 0.22,
-              rotate: s.rot,
-            }}
-            animate={{ x: s.xA, y: s.yA }}
-            transition={{ duration: s.dur, repeat: Infinity, ease: 'easeInOut' }}
-          />
-        ))}
-        {/* Floating icons — framer-motion Lucide */}
-        {[
-          { Icon: Sparkles, top: '13%', left: '7%',  size: 28, color: '#FFD93D', delay: 0 },
-          { Icon: Scissors, top: '72%', left: '5%',  size: 22, color: T.primary, delay: 0.8 },
-          { Icon: Star,     top: '16%', right: '9%', size: 32, color: '#FF6B9D', delay: 0.4 },
-          { Icon: Sparkles, top: '58%', right: '6%', size: 20, color: '#C3F0CA', delay: 1.2 },
-          { Icon: Star,     top: '85%', left: '18%', size: 24, color: '#A8DAFF', delay: 0.6 },
-          { Icon: Scissors, top: '42%', right:'17%', size: 18, color: T.accent,  delay: 1.0 },
-        ].map(({ Icon, top, left, right, size, color, delay }, i) => (
-          <motion.div
-            key={`icon-${i}`}
-            className="absolute select-none pointer-events-none"
-            style={{ top, left, right, color, opacity: 0.60 }}
-            animate={{ y: [0, -15, 0] }}
-            transition={{ duration: 3.5 + i * 0.3, repeat: Infinity, delay, ease: 'easeInOut' }}
-          >
-            <Icon size={size} strokeWidth={1.5} />
-          </motion.div>
-        ))}
         <div className="relative w-full px-6 sm:px-14 py-20 sm:py-24">
           {/* Titolo editoriale gigante */}
-          <div className="hero-animate hero-d1 mb-10">
-            <h1 className="font-black tracking-tighter" style={{ fontFamily: "'Playfair Display', serif", lineHeight: 0.85 }}>
-              <span className="block text-white" style={{ fontSize: 'clamp(3.5rem, 14vw, 11rem)', letterSpacing: '-0.04em' }}>BRUNO</span>
-              <span className="block" style={{ fontSize: 'clamp(3.5rem, 14vw, 11rem)', letterSpacing: '-0.04em', WebkitTextStroke: '1.5px rgba(212, 175, 122, 0.8)', color: 'transparent' }}>MELITO</span>
+          <div className="hero-animate hero-d1 mb-10 text-center">
+            <h1 className="font-black" style={{ fontFamily: "'Playfair Display', serif", lineHeight: 0.85 }}>
+              <span className="reveal-mask block">
+                <span className="reveal-text block text-white" style={{ fontSize: 'clamp(3.5rem, 14vw, 11rem)', letterSpacing: '-0.04em' }}>
+                  BRUNO
+                </span>
+              </span>
+              <span className="reveal-mask block">
+                <span className="reveal-text block" style={{
+                    fontSize: 'clamp(3.5rem, 14vw, 11rem)',
+                    letterSpacing: '-0.04em',
+                    WebkitTextStroke: '1.5px rgba(212, 175, 122, 0.8)',
+                    color: 'transparent',
+                    animationDelay: '0.5s'
+                }}>
+                  MELITO
+                </span>
+              </span>
               <span className="block text-white/40 mt-4" style={{ fontSize: 'clamp(0.9rem, 3vw, 2.5rem)', letterSpacing: '0.35em', fontWeight: 400, fontFamily: "'DM Sans', sans-serif" }}>HAIR STUDIO</span>
             </h1>
           </div>
