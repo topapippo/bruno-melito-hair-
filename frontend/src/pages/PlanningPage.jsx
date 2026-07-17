@@ -646,14 +646,18 @@ export default function PlanningPage() {
     <Layout>
       <div className="space-y-4" data-testid="planning-page">
         {/* Banners */}
-        <OnlineBookingBanner
-          newOnlineBookings={newOnlineBookings}
-          dismissOnlineBooking={dismissOnlineBooking}
-          dismissAllOnlineBookings={dismissAllOnlineBookings}
-          goToBookingDate={goToBookingDate}
-          onSendConfirmation={sendConfirmation}
-          sendingConfirmId={sendingConfirmId}
-        />
+        {newOnlineBookings.length > 0 && (
+          <div className="pulse-heartbeat rounded-xl">
+            <OnlineBookingBanner
+              newOnlineBookings={newOnlineBookings}
+              dismissOnlineBooking={dismissOnlineBooking}
+              dismissAllOnlineBookings={dismissAllOnlineBookings}
+              goToBookingDate={goToBookingDate}
+              onSendConfirmation={sendConfirmation}
+              sendingConfirmId={sendingConfirmId}
+            />
+          </div>
+        )}
         <ReminderBanner
           pendingRemindersCount={pendingRemindersCount}
           inactiveClientsCount={inactiveClientsCount}
@@ -865,7 +869,7 @@ export default function PlanningPage() {
 
         {/* KPI Bar — visibile solo in day view */}
         {!loading && viewMode === 'day' && filteredAppointments.length > 0 && (
-          <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="flex items-center gap-2.5 flex-wrap sticky top-0 z-20 py-2 -mx-1 px-1 backdrop-blur-md bg-[#FDF8F5]/80 border-b border-[#F0E6DC]/50">
             <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl"
               style={{ background: 'rgba(200,97,122,0.07)', border: '1px solid rgba(200,97,122,0.13)' }}>
               <CalendarDays className="w-4 h-4 text-[#C8617A] shrink-0" />
