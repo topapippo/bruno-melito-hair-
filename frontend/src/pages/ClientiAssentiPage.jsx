@@ -62,6 +62,7 @@ export default function ClientiAssentiPage() {
   const [sending, setSending] = useState(false);
   const [bulkSending, setBulkSending] = useState(false);
   const [sentIds, setSentIds] = useState(new Set());
+  const [resettingId, setResettingId] = useState(null);
 
   const fetch = async (d) => {
     setLoading(true);
@@ -128,6 +129,22 @@ export default function ClientiAssentiPage() {
     }
     toast.success(`Inviti inviati: ${sent} / ${targets.length}`);
     setBulkSending(false);
+  };
+
+  const handleReset = async (client) => {
+    setResettingId(client.id);
+    try {
+      await api.delete(`${API}/reminders/inactive/${client.id}/reset`);
+      setSentIds(prev => {
+        const next = new Set(prev);
+        next.delete(client.id);
+        return next;
+      });
+    } catch {
+      toast.error('Errore nel ripristinare l\'invito');
+    } finally {
+      setResettingId(null);
+    }
   };
 
   const fmtVisit = (d) => {
@@ -290,19 +307,33 @@ export default function ClientiAssentiPage() {
 
                     {/* Azione WA */}
                     {client.phone ? (
-                      <Button
-                        onClick={() => openDialog(client)}
-                        size="sm"
-                        disabled={sentIds.has(client.id)}
-                        className={`flex-shrink-0 ${
-                          sentIds.has(client.id)
-                            ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
-                            : 'bg-[#25D366] hover:bg-[#128C7E] text-white'
-                        }`}
-                      >
-                        <MessageCircle className="w-3.5 h-3.5 mr-1" />
-                        {sentIds.has(client.id) ? 'Inviato' : 'Invita'}
-                      </Button>
+                      sentIds.has(client.id) ? (
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          <Button size="sm" disabled className="bg-emerald-100 text-emerald-700 border border-emerald-200">
+                            <MessageCircle className="w-3.5 h-3.5 mr-1" />
+                            Inviato
+                          </Button>
+                          <Button
+                            onClick={() => handleReset(client)}
+                            disabled={resettingId === client.id}
+                            size="sm"
+                            variant="outline"
+                            aria-label={`Consenti di reinviare l'invito a ${client.name}`}
+                            className="border-[#F0E6DC] text-[#7C5C4A]"
+                          >
+                            <RefreshCw className={`w-3.5 h-3.5 ${resettingId === client.id ? 'animate-spin' : ''}`} />
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          onClick={() => openDialog(client)}
+                          size="sm"
+                          className="flex-shrink-0 bg-[#25D366] hover:bg-[#128C7E] text-white"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5 mr-1" />
+                          Invita
+                        </Button>
+                      )
                     ) : (
                       <span className="text-xs text-[#7C5C4A] flex-shrink-0 pt-1">Senza telefono</span>
                     )}
