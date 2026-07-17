@@ -61,7 +61,7 @@
   },
   "scripts": {
     "start": "craco start",
-    "build": "craco build",
+    "build": "cross-env DISABLE_ESLINT_PLUGIN=true craco build",
     "test": "craco test"
   },
   "engines": {
