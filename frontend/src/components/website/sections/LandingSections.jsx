@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Scissors, CheckCircle, ChevronDown, ChevronUp, Star, MessageSquare, MapPin, Phone, Mail, Clock, Gift, CreditCard, Search, ArrowLeft, ArrowRight, X, ExternalLink, ThumbsUp, Sparkles } from 'lucide-react';
 import { getCategoryInfo } from '../../../lib/categories';
 import { SOCIAL_LINKS, BORDER_COLORS, GLOW_COLORS, AVATAR_BGS, AVATAR_TEXTS } from '../../../lib/websiteConstants';
+import TiltCard from '../TiltCard';
 
 const _SITE_EASE = [0.22, 1, 0.36, 1];
 
@@ -94,7 +95,7 @@ export function ServicesSection({ servicesRef, landingServiceGroups, cardTemplat
                   {isOpen && (
                     <div className="mt-2 rounded-3xl overflow-hidden border border-white/5 bg-white/5 p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 animate-in slide-in-from-top-4 duration-300">
                         {catServices.map((service) => (
-                          <div key={service.id} className="flex items-center justify-between p-4 rounded-2xl bg-zinc-900/50 border border-white/5 hover:border-purple-500/30 transition-colors">
+                          <TiltCard key={service.id} className="flex items-center justify-between p-4 rounded-2xl bg-zinc-900/50 border border-white/5 hover:border-purple-500/30 transition-colors">
                             <div className="min-w-0 flex-1">
                               <p className="font-bold text-base text-white">{service.name}</p>
                               {service.duration > 0 && <p className="text-[10px] font-bold text-white/30 uppercase mt-1 tracking-widest">⏱ {service.duration} min</p>}
@@ -103,7 +104,7 @@ export function ServicesSection({ servicesRef, landingServiceGroups, cardTemplat
                               {service.price > 0 && <span className="font-black text-base text-purple-400">€{service.price}</span>}
                               <button onClick={() => bookService ? bookService(service.id) : setShowBooking(true)} className="service-prenota-btn text-[10px] font-black px-4 py-2 rounded-xl bg-white text-black hover:bg-purple-600 hover:text-white transition-all uppercase">Prenota</button>
                             </div>
-                          </div>
+                          </TiltCard>
                         ))}
                     </div>
                   )}
