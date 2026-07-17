@@ -25,7 +25,7 @@ import { useNavigate } from 'react-router-dom';
 const RULE_TYPES = [
   { value: 'under_30', label: 'Under 30', icon: Users, color: 'bg-pink-100 text-pink-700' },
   { value: 'first_visit', label: 'Prima Visita', icon: UserPlus, color: 'bg-blue-100 text-blue-700' },
-  { value: 'birthday', label: 'Compleanno', icon: Cake, color: 'bg-purple-100 text-purple-700' },
+  { value: 'birthday', label: 'Compleanno', icon: Cake, color: 'bg-[#D4AF7A]/15 text-[#8A6D3B]' },
   { value: 'bring_friend', label: "Porta un'Amica", icon: Heart, color: 'bg-red-100 text-red-700' },
   { value: 'google_review', label: 'Recensione Google', icon: Star, color: 'bg-yellow-100 text-yellow-700' },
   { value: 'fidelity_vip', label: 'Fidelity VIP (10+ visite)', icon: Award, color: 'bg-emerald-100 text-emerald-700' },

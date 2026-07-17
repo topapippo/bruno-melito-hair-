@@ -479,7 +479,7 @@ export default function DailySummaryPage() {
                     <div className="space-y-4">
                       {Object.entries(data.payment_methods).map(([method, count]) => {
                         const labels = { contanti: 'Contanti', cash: 'Contanti', pos: 'POS', sospeso: 'Sospeso', carta: 'Carta', prepagata: 'Prepagata', prepaid: 'Abb./Prepagata', 'non specificato': 'Non specificato' };
-                        const colors = { contanti: 'bg-emerald-400', cash: 'bg-emerald-400', pos: 'bg-blue-400', sospeso: 'bg-amber-400', carta: 'bg-blue-400', prepagata: 'bg-violet-400', prepaid: 'bg-violet-400', 'non specificato': 'bg-gray-300' };
+                        const colors = { contanti: 'bg-emerald-400', cash: 'bg-emerald-400', pos: 'bg-blue-400', sospeso: 'bg-amber-400', carta: 'bg-blue-400', prepagata: 'bg-[#D4AF7A]', prepaid: 'bg-[#D4AF7A]', 'non specificato': 'bg-gray-300' };
                         const totalPayments = Object.values(data.payment_methods).reduce((a, b) => a + b, 0);
                         return (
                           <div key={method} className="flex items-center gap-3">
@@ -625,7 +625,7 @@ export default function DailySummaryPage() {
                       <div className="space-y-4">
                         {Object.entries(aggData.payment_methods).map(([method, count]) => {
                           const labels = { contanti: 'Contanti', cash: 'Contanti', pos: 'POS', sospeso: 'Sospeso', carta: 'Carta', prepagata: 'Prepagata', prepaid: 'Abb./Prepagata', 'non specificato': 'Non specificato' };
-                          const colors = { contanti: 'bg-emerald-400', cash: 'bg-emerald-400', pos: 'bg-blue-400', sospeso: 'bg-amber-400', carta: 'bg-blue-400', prepagata: 'bg-violet-400', prepaid: 'bg-violet-400', 'non specificato': 'bg-gray-300' };
+                          const colors = { contanti: 'bg-emerald-400', cash: 'bg-emerald-400', pos: 'bg-blue-400', sospeso: 'bg-amber-400', carta: 'bg-blue-400', prepagata: 'bg-[#D4AF7A]', prepaid: 'bg-[#D4AF7A]', 'non specificato': 'bg-gray-300' };
                           const totalPayments = Object.values(aggData.payment_methods).reduce((a, b) => a + b, 0);
                           return (
                             <div key={method} className="flex items-center gap-3">

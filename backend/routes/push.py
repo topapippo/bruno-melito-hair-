@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from database import db
+from auth import get_current_user
 from datetime import datetime, timezone, timedelta
 import os
 import json
@@ -32,16 +33,21 @@ async def get_vapid_key():
 
 
 @router.post("/push/subscribe")
-async def subscribe_push(sub: PushSubscription):
+async def subscribe_push(sub: PushSubscription, current_user: dict = Depends(get_current_user)):
     existing = await db.push_subscriptions.find_one(
         {"endpoint": sub.endpoint}, {"_id": 0}
     )
     if existing:
+        await db.push_subscriptions.update_one(
+            {"endpoint": sub.endpoint},
+            {"$set": {"user_id": current_user["id"], "active": True}}
+        )
         return {"status": "already_subscribed"}
 
     await db.push_subscriptions.insert_one({
         "endpoint": sub.endpoint,
         "keys": sub.keys,
+        "user_id": current_user["id"],
         "created_at": datetime.now(timezone.utc).isoformat(),
         "active": True,
     })
@@ -49,8 +55,8 @@ async def subscribe_push(sub: PushSubscription):
 
 
 @router.delete("/push/unsubscribe")
-async def unsubscribe_push(sub: PushSubscription):
-    await db.push_subscriptions.delete_one({"endpoint": sub.endpoint})
+async def unsubscribe_push(sub: PushSubscription, current_user: dict = Depends(get_current_user)):
+    await db.push_subscriptions.delete_one({"endpoint": sub.endpoint, "user_id": current_user["id"]})
     return {"status": "unsubscribed"}
 
 
@@ -125,12 +131,20 @@ async def _send_push_reminders_core():
     if not subscriptions:
         return {"sent": 0, "message": "No push subscriptions"}
 
+    subs_by_user = {}
+    for sub in subscriptions:
+        subs_by_user.setdefault(sub.get("user_id"), []).append(sub)
+
     sent = 0
     failed = 0
 
     private_pem = _build_vapid_pem()
 
     for apt in appointments:
+        user_subs = subs_by_user.get(apt.get("user_id"), [])
+        if not user_subs:
+            continue
+
         client_name = apt.get("client_name", "Cliente")
         apt_date = apt.get("date", "")
         apt_time = apt.get("time", "")
@@ -143,7 +157,7 @@ async def _send_push_reminders_core():
             "url": "/",
         })
 
-        for sub in subscriptions:
+        for sub in user_subs:
             try:
                 webpush(
                     subscription_info={

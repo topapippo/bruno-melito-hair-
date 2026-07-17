@@ -32,7 +32,7 @@ import { toast } from 'sonner';
 
 
 const CATEGORIES = [
-  { value: 'affitto', label: 'Affitto', color: 'bg-purple-100 text-purple-700' },
+  { value: 'affitto', label: 'Affitto', color: 'bg-[#D4AF7A]/15 text-[#8A6D3B]' },
   { value: 'fornitori', label: 'Fornitori', color: 'bg-blue-100 text-blue-700' },
   { value: 'bollette', label: 'Bollette', color: 'bg-yellow-100 text-yellow-700' },
   { value: 'stipendi', label: 'Stipendi', color: 'bg-green-100 text-green-700' },

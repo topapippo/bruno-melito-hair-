@@ -23,11 +23,11 @@ const MODULES = [
   { path: '/',          label: 'Planning',      desc: 'Agenda giornaliera', icon: Calendar,       emoji: '📅', from: '#E8477C', to: '#F49AB3' },
   { path: '/appointments', label: 'Prenota',    desc: 'Nuovo appuntamento', icon: Plus,           emoji: '✂️', from: '#F59E0B', to: '#FCD34D' },
   { path: '/clients',   label: 'Clienti',       desc: 'Gestione clienti',   icon: Users,          emoji: '👥', from: '#3B82F6', to: '#93C5FD' },
-  { path: '/services',  label: 'Servizi',       desc: 'Listino prezzi',     icon: Scissors,       emoji: '💈', from: '#8B5CF6', to: '#C4B5FD' },
+  { path: '/services',  label: 'Servizi',       desc: 'Listino prezzi',     icon: Scissors,       emoji: '💈', from: '#D4AF7A', to: '#EBD9B8' },
   { path: '/operators', label: 'Operatori',     desc: 'Staff del salone',   icon: UserCheck,      emoji: '👤', from: '#F97316', to: '#FDBA74' },
   { path: '/stats',     label: 'Statistiche',   desc: 'Report e grafici',   icon: BarChart3,      emoji: '📊', from: '#EC4899', to: '#F9A8D4' },
   { path: '/incassi',   label: 'Incassi',       desc: 'Report pagamenti',   icon: Euro,           emoji: '💰', from: '#10B981', to: '#6EE7B7' },
-  { path: '/daily-summary', label: 'Riepilogo', desc: 'Giornaliero',        icon: FileBarChart,   emoji: '📋', from: '#A855F7', to: '#D8B4FE' },
+  { path: '/daily-summary', label: 'Riepilogo', desc: 'Giornaliero',        icon: FileBarChart,   emoji: '📋', from: '#B8860B', to: '#E9C46A' },
   { path: '/cards',     label: 'Card',          desc: 'Abbonamenti',        icon: CreditCard,     emoji: '💳', from: '#0EA5E9', to: '#7DD3FC' },
   { path: '/reminders', label: 'Promemoria',    desc: 'Notifiche WA',       icon: Bell,           emoji: '🔔', from: '#F97316', to: '#FDBA74' },
   { path: '/uscite',    label: 'Uscite',        desc: 'Registro spese',     icon: ArrowDownCircle,emoji: '📤', from: '#EF4444', to: '#FCA5A5' },
@@ -492,7 +492,7 @@ export default function Dashboard() {
                   <p className="font-bold text-green-800 text-sm">{whatsappPending.total} Messaggi WhatsApp da inviare</p>
                   <div className="flex items-center flex-wrap gap-2 mt-0.5">
                     {whatsappPending.reminders > 0 && <span className="text-xs text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded-full">{whatsappPending.reminders} promemoria</span>}
-                    {whatsappPending.colors > 0 && <span className="text-xs text-purple-600 font-semibold bg-purple-50 px-2 py-0.5 rounded-full">{whatsappPending.colors} colore</span>}
+                    {whatsappPending.colors > 0 && <span className="text-xs text-[#8A6D3B] font-semibold bg-[#D4AF7A]/15 px-2 py-0.5 rounded-full">{whatsappPending.colors} colore</span>}
                     {whatsappPending.inactive > 0 && <span className="text-xs text-orange-600 font-semibold bg-orange-50 px-2 py-0.5 rounded-full">{whatsappPending.inactive} inattivi</span>}
                   </div>
                 </div>
@@ -652,7 +652,7 @@ export default function Dashboard() {
           {[
             { title: "Appuntamenti Oggi", value: stats?.today_appointments_count || 0,    icon: Calendar,   from: '#E8477C', to: '#F49AB3', suffix: '',  path: '/appointments' },
             { title: "Clienti Totali",    value: stats?.total_clients || 0,                icon: Users,      from: '#2EC4B6', to: '#5EDECF', suffix: '',  path: '/clients' },
-            { title: "Prossimi 7 Giorni", value: stats?.upcoming_appointments?.length || 0, icon: Zap,       from: '#8B5CF6', to: '#C4B5FD', suffix: '',  path: '/week' },
+            { title: "Prossimi 7 Giorni", value: stats?.upcoming_appointments?.length || 0, icon: Zap,       from: '#B8860B', to: '#E9C46A', suffix: '',  path: '/week' },
           ].map((s, i) => (
             <button
               key={i}
@@ -936,15 +936,15 @@ export default function Dashboard() {
                 className="rounded-2xl overflow-hidden shadow-md"
                 style={{
                   background: 'var(--admin-content-bg)',
-                  border: '1px solid color-mix(in srgb, #A855F7 18%, transparent)',
+                  border: '1px solid color-mix(in srgb, #D4AF7A 18%, transparent)',
                 }}
               >
-                <div className="flex items-center gap-2.5 px-5 py-4" style={{ borderBottom: '1px solid color-mix(in srgb, #A855F7 12%, transparent)' }}>
-                  <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center">
-                    <Sparkles className="w-4 h-4 text-purple-500" />
+                <div className="flex items-center gap-2.5 px-5 py-4" style={{ borderBottom: '1px solid color-mix(in srgb, #D4AF7A 12%, transparent)' }}>
+                  <div className="w-8 h-8 rounded-xl bg-[#D4AF7A]/15 flex items-center justify-center">
+                    <Sparkles className="w-4 h-4 text-[#B8860B]" />
                   </div>
                   <h2 className="font-display text-lg font-bold" style={{ color: 'var(--admin-content-text)' }}>Scadenze Colore</h2>
-                  <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-bold ml-auto">
+                  <span className="text-xs bg-[#D4AF7A]/15 text-[#8A6D3B] px-2 py-0.5 rounded-full font-bold ml-auto">
                     {colorExpiry.filter(c => !c.already_sent).length} da contattare
                   </span>
                 </div>
@@ -960,13 +960,13 @@ export default function Dashboard() {
                       <div className="space-y-3">
                         {thisWeek.length > 0 && (
                           <div>
-                            <p className="text-[10px] font-black text-purple-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                              <span className="w-2 h-2 rounded-full bg-purple-500 inline-block" />
+                            <p className="text-[10px] font-black text-[#8A6D3B] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-[#B8860B] inline-block" />
                               Questa settimana ({thisWeek.length})
                             </p>
                             <div className="space-y-1.5">
                               {thisWeek.slice(0,4).map((c,i) => (
-                                <div key={i} className={`flex items-center gap-2 px-3 py-2 rounded-xl ${c.already_sent ? 'bg-gray-50 opacity-60' : 'bg-purple-50 border border-purple-100'}`}>
+                                <div key={i} className={`flex items-center gap-2 px-3 py-2 rounded-xl ${c.already_sent ? 'bg-gray-50 opacity-60' : 'bg-[#D4AF7A]/10 border border-[#D4AF7A]/25'}`}>
                                   <ClientAvatar name={c.client_name} size="xs" />
                                   <span className="text-sm font-semibold flex-1 truncate" style={{ color: 'var(--admin-content-text)' }}>{c.client_name}</span>
                                   {c.already_sent && <span className="text-[10px] text-gray-400">inviato ✓</span>}
@@ -998,7 +998,7 @@ export default function Dashboard() {
                         )}
                         <button
                           onClick={() => navigate('/reminders')}
-                          className="w-full text-xs font-bold text-purple-600 hover:text-purple-800 text-center transition-colors hover:underline pt-1"
+                          className="w-full text-xs font-bold text-[#B8860B] hover:text-[#8A6D3B] text-center transition-colors hover:underline pt-1"
                         >
                           Gestisci tutti i promemoria colore →
                         </button>

@@ -25,7 +25,7 @@ import {
 } from 'recharts';
 import { toast } from 'sonner';
 
-const COLORS = ['#C8617A', '#789F8A', '#E9C46A', '#0EA5E9', '#A855F7', '#F97316', '#10B981', '#6366F1'];
+const COLORS = ['#C8617A', '#789F8A', '#E9C46A', '#0EA5E9', '#D4AF7A', '#F97316', '#10B981', '#6366F1'];
 
 const DAY_OPTIONS = [
   { label: '1 mese', days: 30 },
@@ -487,7 +487,7 @@ export default function StatsPage() {
                     label="Tasso fidelizzazione"
                     value={`${clientStats?.active_clients > 0 ? Math.round((clientStats.returning_clients / clientStats.active_clients) * 100) : 0}%`}
                     sub={`${clientStats?.returning_clients || 0} clienti con >1 visita`}
-                    icon={TrendingUp} color="#A855F7"
+                    icon={TrendingUp} color="#D4AF7A"
                   />
                 </div>
 

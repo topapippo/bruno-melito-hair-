@@ -314,7 +314,7 @@ export default function PrepaidCardsPage() {
   };
 
   const getCardTypeColor = (type) => {
-    return type === 'subscription' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700';
+    return type === 'subscription' ? 'bg-[#C8617A]/15 text-[#C8617A]' : 'bg-blue-100 text-blue-700';
   };
 
   return (

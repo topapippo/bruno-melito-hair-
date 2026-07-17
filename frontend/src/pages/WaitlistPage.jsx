@@ -169,7 +169,7 @@ export default function WaitlistPage() {
                       </span>
                     )}
                     {item.service_names && (
-                      <span className="text-xs bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full">{item.service_names}</span>
+                      <span className="text-xs bg-[#D4AF7A]/10 text-[#8A6D3B] px-2 py-0.5 rounded-full">{item.service_names}</span>
                     )}
                     {item.notes && (
                       <span className="text-xs bg-gray-50 text-gray-500 px-2 py-0.5 rounded-full">{item.notes}</span>

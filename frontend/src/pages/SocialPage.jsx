@@ -48,7 +48,7 @@ function SuggestionCard({ s, onPublish, onDelete }) {
       <div className="p-5 flex-1 flex flex-col justify-between">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase font-black bg-purple-200 border-2 border-black px-2 py-0.5 rounded-full">{s.type}</span>
+            <span className="text-[10px] uppercase font-black bg-[#D4AF7A]/40 border-2 border-black px-2 py-0.5 rounded-full">{s.type}</span>
             <button onClick={() => onDelete(s.id)} className="text-gray-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
           </div>
           <h4 className="font-black text-lg uppercase">{s.title}</h4>
@@ -63,7 +63,7 @@ function SuggestionCard({ s, onPublish, onDelete }) {
         </div>
         <button
           onClick={() => onPublish({ ...s, text, image_url: imageUrl })}
-          className="mt-4 w-full bg-black text-white font-black py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-purple-600 active:scale-95 transition-all"
+          className="mt-4 w-full bg-black text-white font-black py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-[#C8617A] active:scale-95 transition-all"
         >
           <Send className="w-5 h-5" /> PUBBLICA SUI SOCIAL
         </button>
@@ -83,7 +83,7 @@ function HistoryTab() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-purple-600 w-10 h-10" /></div>;
+  if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-[#C8617A] w-10 h-10" /></div>;
   if (history.length === 0) return <div className="text-center py-20 text-gray-400 font-bold">Nessun post pubblicato finora.</div>;
 
   return (
@@ -172,7 +172,7 @@ function WingmanTab({ configured }) {
       </div>
 
       {loading
-        ? <div className="flex justify-center py-20"><Loader2 className="animate-spin text-purple-600 w-10 h-10" /></div>
+        ? <div className="flex justify-center py-20"><Loader2 className="animate-spin text-[#C8617A] w-10 h-10" /></div>
         : suggestions.map(s => (
             <SuggestionCard
               key={s.id}

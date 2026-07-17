@@ -195,9 +195,12 @@ async def get_appointments(date: Optional[str] = None, month: Optional[str] = No
     res = await db.appointments.find(query, {"_id": 0}).sort([("date", 1), ("time", 1)]).to_list(5000)
     return [AppointmentResponse(**a) for a in res]
 
+ALLOWED_APPOINTMENT_UPDATE_FIELDS = {"date", "time", "operator_id", "service_ids", "notes", "promo_id", "card_id"}
+
+
 @router.put("/appointments/{appointment_id}", response_model=AppointmentResponse)
 async def update_appointment(appointment_id: str, data: dict, current_user: dict = Depends(get_current_user)):
-    update = {k: v for k, v in data.items() if v is not None}
+    update = {k: v for k, v in data.items() if k in ALLOWED_APPOINTMENT_UPDATE_FIELDS and v is not None}
     if "service_ids" in update:
         services = await db.services.find({"id": {"$in": update["service_ids"]}, "user_id": current_user["id"]}).to_list(100)
         update["services"] = [{"id": s["id"], "name": s["name"], "duration": s["duration"], "price": s["price"]} for s in services]
