@@ -72,7 +72,7 @@ export function ServicesSection({ servicesRef, landingServiceGroups, cardTemplat
       <div className="max-w-6xl mx-auto px-4">
         <AnimatedSection>
           <div className="w-full text-center mb-16">
-            <p className="font-bold text-xs tracking-[0.4em] uppercase mb-4 text-purple-400">✂️ Menu dei Trattamenti</p>
+            <p className="font-bold text-xs tracking-[0.4em] uppercase mb-4 text-[#D4AF7A]">✂️ Menu dei Trattamenti</p>
             <h2 className="text-4xl sm:text-6xl font-black text-white" style={{ fontFamily: T.fontDisplay }}>Cosa Facciamo</h2>
           </div>
         </AnimatedSection>
@@ -95,14 +95,14 @@ export function ServicesSection({ servicesRef, landingServiceGroups, cardTemplat
                   {isOpen && (
                     <div className="mt-2 rounded-3xl overflow-hidden border border-white/5 bg-white/5 p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 animate-in slide-in-from-top-4 duration-300">
                         {catServices.map((service) => (
-                          <TiltCard key={service.id} className="flex items-center justify-between p-4 rounded-2xl bg-zinc-900/50 border border-white/5 hover:border-purple-500/30 transition-colors">
+                          <TiltCard key={service.id} className="flex items-center justify-between p-4 rounded-2xl bg-zinc-900/50 border border-white/5 hover:border-[#D4AF7A]/30 transition-colors">
                             <div className="min-w-0 flex-1">
                               <p className="font-bold text-base text-white">{service.name}</p>
                               {service.duration > 0 && <p className="text-[10px] font-bold text-white/30 uppercase mt-1 tracking-widest">⏱ {service.duration} min</p>}
                             </div>
                             <div className="flex items-center gap-4 ml-4">
-                              {service.price > 0 && <span className="font-black text-base text-purple-400">€{service.price}</span>}
-                              <button onClick={() => bookService ? bookService(service.id) : setShowBooking(true)} className="service-prenota-btn text-[10px] font-black px-4 py-2 rounded-xl bg-white text-black hover:bg-purple-600 hover:text-white transition-all uppercase">Prenota</button>
+                              {service.price > 0 && <span className="font-black text-base text-[#D4AF7A]">€{service.price}</span>}
+                              <button onClick={() => bookService ? bookService(service.id) : setShowBooking(true)} className="service-prenota-btn text-[10px] font-black px-4 py-2 rounded-xl bg-white text-black hover:bg-[#C8617A] hover:text-white transition-all uppercase">Prenota</button>
                             </div>
                           </TiltCard>
                         ))}
@@ -124,7 +124,7 @@ export function SalonSection({ salonPhotos, T }) {
       <div className="max-w-7xl mx-auto px-4 text-center">
         <AnimatedSection>
           <div className="mb-16">
-            <p className="font-bold text-xs tracking-[0.4em] uppercase mb-4 text-purple-400">Atmosfera</p>
+            <p className="font-bold text-xs tracking-[0.4em] uppercase mb-4 text-[#D4AF7A]">Atmosfera</p>
             <h2 className="text-4xl sm:text-6xl font-black text-white" style={{ fontFamily: T.fontDisplay }}>Il Nostro Salone</h2>
           </div>
         </AnimatedSection>
@@ -169,13 +169,13 @@ export function AboutSection({ config, salonPhotos, T }) {
           <div className="lg:col-span-7">
             <AnimatedSection delay={0.2}>
               <div className="max-w-2xl">
-                <p className="text-[10px] font-black tracking-[0.6em] uppercase mb-8 text-purple-400">La Nostra Storia</p>
+                <p className="text-[10px] font-black tracking-[0.6em] uppercase mb-8 text-[#D4AF7A]">La Nostra Storia</p>
                 <h2 className="text-4xl sm:text-7xl font-black mb-10 text-white leading-[0.9] uppercase italic" style={{ fontFamily: T.fontDisplay }}>
                   {config.about_title || 'Dal 1983 con Passione'}<br />
                   <span className="text-transparent" style={{ WebkitTextStroke: '1px rgba(255,255,255,0.4)' }}>E Stile</span>
                 </h2>
                 <div className="space-y-8">
-                  <p className="text-xl sm:text-2xl text-white/80 font-medium leading-relaxed italic border-l-4 border-purple-600 pl-8 py-2" style={{ fontFamily: T.fontDisplay }}>
+                  <p className="text-xl sm:text-2xl text-white/80 font-medium leading-relaxed italic border-l-4 border-[#C8617A] pl-8 py-2" style={{ fontFamily: T.fontDisplay }}>
                     {config.about_text || 'Oltre 40 anni di eccellenza nell’hair styling d’alta moda.'}
                   </p>
                   <p className="text-white/40 text-base leading-relaxed pl-9">
@@ -183,9 +183,9 @@ export function AboutSection({ config, salonPhotos, T }) {
                   </p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-16 pl-9">
-                   <div className="group flex flex-col gap-4 p-8 rounded-[2.5rem] bg-white/5 border border-white/10 hover:bg-purple-600 transition-all duration-500 cursor-default">
-                      <div className="w-12 h-12 rounded-2xl bg-purple-500/20 flex items-center justify-center group-hover:bg-white transition-colors">
-                         <CheckCircle className="text-purple-400 group-hover:text-purple-600" />
+                   <div className="group flex flex-col gap-4 p-8 rounded-[2.5rem] bg-white/5 border border-white/10 hover:bg-[#C8617A] transition-all duration-500 cursor-default">
+                      <div className="w-12 h-12 rounded-2xl bg-[#D4AF7A]/20 flex items-center justify-center group-hover:bg-white transition-colors">
+                         <CheckCircle className="text-[#D4AF7A] group-hover:text-[#C8617A]" />
                       </div>
                       <h3 className="text-white font-black uppercase text-xs tracking-widest">Artigianato</h3>
                       <p className="text-white/30 text-xs font-bold leading-tight group-hover:text-white/80">Tagli sartoriali eseguiti con precisione assoluta.</p>
@@ -327,20 +327,20 @@ export function ReviewsSection({ reviews, T, config }) {
   return (
     <section className="py-24 sm:py-32 overflow-hidden" style={{ background: '#050508' }}>
       <div className="max-w-6xl mx-auto px-4 text-center mb-16">
-        <p className="font-bold text-xs tracking-[0.4em] uppercase mb-4 text-purple-400">Feedback</p>
+        <p className="font-bold text-xs tracking-[0.4em] uppercase mb-4 text-[#D4AF7A]">Feedback</p>
         <h2 className="text-4xl sm:text-6xl font-black text-white" style={{ fontFamily: T.fontDisplay }}>Cosa Dicono di Noi</h2>
       </div>
       <div className="flex gap-8 px-6 overflow-x-auto pb-12 custom-scrollbar no-scrollbar">
         {reviews.map((r, i) => (
           <div key={i} className="w-96 shrink-0 rounded-[3rem] p-10 bg-zinc-900 border border-white/5 shadow-2xl flex flex-col justify-between">
              <div>
-                <div className="flex gap-1.5 mb-6 text-purple-400">
+                <div className="flex gap-1.5 mb-6 text-[#D4AF7A]">
                    {[1,2,3,4,5].map(s => <Star key={s} size={18} fill="currentColor" />)}
                 </div>
                 <p className="text-white/80 text-lg italic mb-10 leading-relaxed font-medium">"{r.text}"</p>
              </div>
              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-purple-600 flex items-center justify-center font-black text-white text-xl">{(r.name || 'C')[0]}</div>
+                <div className="w-12 h-12 rounded-2xl bg-[#C8617A] flex items-center justify-center font-black text-white text-xl">{(r.name || 'C')[0]}</div>
                 <div>
                    <p className="text-white font-black text-base uppercase tracking-tight">{r.name}</p>
                    <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Cliente Verificato</p>
@@ -382,7 +382,7 @@ export function GallerySection({ config, hairstylePhotos, setShowBooking, T }) {
             opacity: 1;
           }
         `}</style>
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-purple-600/5 blur-[120px] rounded-full pointer-events-none" />
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#C8617A]/5 blur-[120px] rounded-full pointer-events-none" />
         <div className="max-w-7xl mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
@@ -391,7 +391,7 @@ export function GallerySection({ config, hairstylePhotos, setShowBooking, T }) {
             transition={{ duration: 0.8, ease: _SITE_EASE }}
             className="mb-20"
           >
-            <p className="text-[10px] font-black tracking-[0.5em] uppercase mb-6 text-purple-400">Editorial Portfolio</p>
+            <p className="text-[10px] font-black tracking-[0.5em] uppercase mb-6 text-[#D4AF7A]">Editorial Portfolio</p>
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-8">
               <h2
                 className="font-black text-white uppercase italic"
@@ -408,7 +408,7 @@ export function GallerySection({ config, hairstylePhotos, setShowBooking, T }) {
                 <p className="text-white/40 text-sm leading-relaxed mb-6 font-medium italic">
                   "La bellezza è l’unica forma di ribellione che ci è rimasta."
                 </p>
-                <div className="h-px w-full bg-gradient-to-r from-purple-500/50 to-transparent" />
+                <div className="h-px w-full bg-gradient-to-r from-[#D4AF7A]/50 to-transparent" />
               </div>
             </div>
           </motion.div>
@@ -422,7 +422,7 @@ export function GallerySection({ config, hairstylePhotos, setShowBooking, T }) {
                 viewport={{ once: true, margin: '-40px' }}
                 transition={{ duration: 0.8, ease: _SITE_EASE, delay: idx * 0.05 }}
                 onClick={() => item.file_type !== 'video' && setLightboxIdx(imagePhotos.indexOf(item))}
-                className="group relative overflow-hidden rounded-[2.5rem] bg-zinc-900 border border-white/10 cursor-zoom-in shadow-2xl transition-all duration-500 hover:border-purple-500/50 break-inside-avoid"
+                className="group relative overflow-hidden rounded-[2.5rem] bg-zinc-900 border border-white/10 cursor-zoom-in shadow-2xl transition-all duration-500 hover:border-[#D4AF7A]/50 break-inside-avoid"
               >
                 {item.file_type === 'video' ? (
                   <video
@@ -472,7 +472,7 @@ export function TeamSection({ operators, T, setShowBooking }) {
   return (
     <section className="py-24 sm:py-32 relative" style={{ background: '#050508' }}>
       <div className="max-w-6xl mx-auto px-4 text-center">
-        <p className="font-bold text-xs tracking-[0.4em] uppercase mb-4 text-purple-400">Staff</p>
+        <p className="font-bold text-xs tracking-[0.4em] uppercase mb-4 text-[#D4AF7A]">Staff</p>
         <h2 className="text-4xl sm:text-6xl font-black text-white mb-20" style={{ fontFamily: T.fontDisplay }}>Il Nostro Team</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-12">
           {operators.filter(o => o.active !== false).map((op) => (
@@ -509,7 +509,7 @@ export function WelcomeBanner({ T, setShowBooking }) {
   if (!visible) return null;
 
   return (
-    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-2rem)] max-w-2xl bg-purple-600 rounded-[2rem] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center gap-6 border border-white/20 text-white">
+    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-2rem)] max-w-2xl bg-[#C8617A] rounded-[2rem] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center gap-6 border border-white/20 text-white">
       <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center shrink-0 text-3xl">🎁</div>
       <div className="flex-1">
          <p className="text-white font-black text-lg uppercase tracking-tight italic">Prima volta da noi?</p>
@@ -545,7 +545,7 @@ export function GiftCardSection({ T, config, setShowBooking }) {
         .gift-cta:active { transform: translateY(-1px) scale(0.99); }
       `}</style>
       <div className="max-w-5xl mx-auto px-4">
-        <div className="rounded-[4rem] bg-gradient-to-br from-purple-700 to-blue-800 p-12 sm:p-24 text-center text-white shadow-[0_30px_60px_rgba(0,0,0,0.4)] relative overflow-hidden group">
+        <div className="rounded-[4rem] bg-gradient-to-br from-[#C8617A] to-[#1A0A10] p-12 sm:p-24 text-center text-white shadow-[0_30px_60px_rgba(0,0,0,0.4)] relative overflow-hidden group">
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20 group-hover:scale-110 transition-transform duration-1000" />
           <h2 className="text-5xl sm:text-8xl font-black mb-8 uppercase leading-tight italic tracking-tighter" style={{ fontFamily: T.fontDisplay }}>Regala<br/>Bellezza</h2>
           <p className="text-xl text-white/70 mb-14 max-w-2xl mx-auto font-medium leading-relaxed">Sorprendi chi ami con un'esperienza di lusso firmata Bruno Melito.</p>
@@ -569,12 +569,12 @@ export function ContactSection({ contactRef, config, hours, phones, setShowBooki
     <section ref={contactRef} className="py-24 sm:py-32 relative" style={{ background: '#050508' }}>
       <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-20 text-white">
          <div>
-            <p className="font-bold text-xs tracking-[0.4em] uppercase mb-6 text-purple-400">Location</p>
+            <p className="font-bold text-xs tracking-[0.4em] uppercase mb-6 text-[#D4AF7A]">Location</p>
             <h2 className="text-5xl sm:text-7xl font-black mb-12 uppercase italic" style={{ fontFamily: T.fontDisplay }}>Vieni a<br/>Trovarci</h2>
             <div className="space-y-10">
                <div className="flex gap-8 group">
-                  <div className="w-16 h-16 rounded-2xl bg-purple-600/10 flex items-center justify-center shrink-0 border border-purple-600/20 group-hover:bg-purple-600 group-hover:text-white transition-colors duration-500">
-                     <MapPin size={32} className="text-purple-500 group-hover:text-white transition-colors" />
+                  <div className="w-16 h-16 rounded-2xl bg-[#C8617A]/10 flex items-center justify-center shrink-0 border border-[#C8617A]/20 group-hover:bg-[#C8617A] group-hover:text-white transition-colors duration-500">
+                     <MapPin size={32} className="text-[#D4AF7A] group-hover:text-white transition-colors" />
                   </div>
                   <div>
                      <p className="font-black text-xl uppercase tracking-tight italic">Indirizzo</p>
@@ -582,8 +582,8 @@ export function ContactSection({ contactRef, config, hours, phones, setShowBooki
                   </div>
                </div>
                <div className="flex gap-8 group">
-                  <div className="w-16 h-16 rounded-2xl bg-purple-600/10 flex items-center justify-center shrink-0 border border-purple-600/20 group-hover:bg-purple-600 group-hover:text-white transition-colors duration-500">
-                     <Phone size={32} className="text-purple-500 group-hover:text-white transition-colors" />
+                  <div className="w-16 h-16 rounded-2xl bg-[#C8617A]/10 flex items-center justify-center shrink-0 border border-[#C8617A]/20 group-hover:bg-[#C8617A] group-hover:text-white transition-colors duration-500">
+                     <Phone size={32} className="text-[#D4AF7A] group-hover:text-white transition-colors" />
                   </div>
                   <div>
                      <p className="font-black text-xl uppercase tracking-tight italic">Telefono</p>
@@ -595,10 +595,10 @@ export function ContactSection({ contactRef, config, hours, phones, setShowBooki
             </div>
          </div>
          <div className="bg-zinc-900 rounded-[4rem] p-12 sm:p-20 border border-white/5 flex flex-col justify-center text-center shadow-[0_40px_80px_rgba(0,0,0,0.5)] relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-purple-600/5 blur-[100px] rounded-full" />
+            <div className="absolute top-0 right-0 w-64 h-64 bg-[#C8617A]/5 blur-[100px] rounded-full" />
             <h3 className="text-4xl sm:text-5xl font-black mb-8 uppercase italic leading-tight tracking-tighter">Pronto per il<br/>Cambiamento?</h3>
             <p className="text-white/40 mb-12 text-lg font-medium">La tua bellezza merita il meglio assoluto. Prenota ora il tuo trattamento esclusivo.</p>
-            <button onClick={() => setShowBooking(true)} className="bg-white text-black py-8 rounded-[2.5rem] font-black text-2xl uppercase tracking-[0.2em] hover:bg-purple-600 hover:text-white transition-all active:scale-95 shadow-2xl relative z-10">
+            <button onClick={() => setShowBooking(true)} className="bg-white text-black py-8 rounded-[2.5rem] font-black text-2xl uppercase tracking-[0.2em] hover:bg-[#C8617A] hover:text-white transition-all active:scale-95 shadow-2xl relative z-10">
                Prenota Online
             </button>
             <div className="mt-12 flex justify-center gap-10 relative z-10">
@@ -622,7 +622,7 @@ export function QRCodeSection({ T, config }) {
     <section className="py-24 sm:py-32 relative" style={{ background: '#0a0a0f' }}>
       <div className="max-w-xl mx-auto px-4 text-center">
         <AnimatedSection>
-          <p className="font-bold text-[10px] tracking-[0.5em] uppercase mb-4 text-purple-400">Prenota ovunque sei</p>
+          <p className="font-bold text-[10px] tracking-[0.5em] uppercase mb-4 text-[#D4AF7A]">Prenota ovunque sei</p>
           <h2 className="text-4xl sm:text-5xl font-black text-white mb-4 italic uppercase" style={{ fontFamily: T.fontDisplay }}>
             Scansiona e Prenota
           </h2>

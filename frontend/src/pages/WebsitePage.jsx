@@ -99,6 +99,23 @@ export default function WebsitePage() {
   const [appointmentId, setAppointmentId] = useState(null);
   const [upsellingSuggestions, setUpsellingSuggestions] = useState([]);
   const [bookingWaSent, setBookingWaSent] = useState(false);
+  const [cursorPos, setCursorPos] = useState({ x: -100, y: -100 });
+  const [isHovering, setIsHovering] = useState(false);
+
+  useEffect(() => {
+    const moveCursor = (e) => setCursorPos({ x: e.clientX, y: e.clientY });
+    const handleMouseOver = (e) => {
+      if (e.target.closest('button, a, [role="button"]')) setIsHovering(true);
+      else setIsHovering(false);
+    };
+
+    window.addEventListener('mousemove', moveCursor);
+    window.addEventListener('mouseover', handleMouseOver);
+    return () => {
+      window.removeEventListener('mousemove', moveCursor);
+      window.removeEventListener('mouseover', handleMouseOver);
+    };
+  }, []);
 
   // Booking form data
   const [formData, setFormData] = useState({
@@ -918,6 +935,20 @@ export default function WebsitePage() {
           }}
         />
       )}
+
+      {/* Cursore personalizzato Desktop */}
+      <div
+        className="hidden sm:block fixed pointer-events-none z-[9999] rounded-full mix-blend-difference"
+        style={{
+          left: cursorPos.x,
+          top: cursorPos.y,
+          width: isHovering ? '40px' : '12px',
+          height: isHovering ? '40px' : '12px',
+          backgroundColor: '#D4AF7A',
+          transform: 'translate(-50%, -50%)',
+          transition: 'width 0.2s, height 0.2s, background-color 0.2s'
+        }}
+      />
     </div>
   );
 }
