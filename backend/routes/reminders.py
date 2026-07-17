@@ -752,8 +752,8 @@ async def send_no_show_reminder(appointment_id: str, current_user: dict = Depend
 
     result = await send_automatic_message(
         phone,
-        template_name=None,
-        template_vars=None,
+        template_name="no_show_recupero",
+        template_vars=[first_name],
         fallback_text=fallback_msg,
         user=current_user
     )
