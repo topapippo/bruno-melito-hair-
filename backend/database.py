@@ -6,7 +6,7 @@ import gridfs
 import os
 
 ROOT_DIR = Path(__file__).parent
-load_dotenv(ROOT_DIR / '.env', override=True)
+load_dotenv(ROOT_DIR / '.env')  # non override: le env vars già impostate (Render, CI, conftest test) vincono sempre sul file locale
 
 mongo_url = os.environ.get('MONGO_URL')
 if not mongo_url:

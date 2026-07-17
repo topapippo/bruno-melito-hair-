@@ -194,7 +194,7 @@ async def get_revenue_stats(start_date: str, end_date: str, current_user: dict =
     # Ricavi reali: da payments (checkout contanti + vendite abbonamento, esclude consumi carta prepagata)
     payments = await db.payments.find(
         {"user_id": current_user["id"], "date": {"$gte": start_date, "$lte": end_date}},
-        {"_id": 0}
+        {"_id": 0, "date": 1, "total_paid": 1, "services": 1, "payment_method": 1}
     ).to_list(10000)
     daily_revenue = {}
     for p in payments:
@@ -215,13 +215,13 @@ async def get_revenue_stats(start_date: str, end_date: str, current_user: dict =
     appointments = await db.appointments.find(
         {"user_id": current_user["id"], "date": {"$gte": start_date, "$lte": end_date},
          "status": "completed", "payment_method": {"$ne": "prepaid"}},
-        {"_id": 0}
+        {"_id": 0, "client_id": 1, "client_name": 1, "total_price": 1}
     ).to_list(10000)
     # Aggiunge anche gli appuntamenti senza payment_method (vecchi record pre-abbonamento)
     appointments_no_method = await db.appointments.find(
         {"user_id": current_user["id"], "date": {"$gte": start_date, "$lte": end_date},
          "status": "completed", "payment_method": {"$exists": False}},
-        {"_id": 0}
+        {"_id": 0, "client_id": 1, "client_name": 1, "total_price": 1}
     ).to_list(10000)
     all_cash_appointments = appointments + appointments_no_method
     # Fascia oraria (tutti gli appuntamenti del periodo, non solo completati)
@@ -422,7 +422,7 @@ async def export_stats_pdf(start_date: str, end_date: str, current_user: dict = 
     # Ricavi reali da payments
     payments = await db.payments.find(
         {"user_id": current_user["id"], "date": {"$gte": start_date, "$lte": end_date}},
-        {"_id": 0}
+        {"_id": 0, "total_paid": 1, "services": 1}
     ).to_list(10000)
     total_revenue = sum(p.get("total_paid", 0) for p in payments)
     service_stats = {}
@@ -433,18 +433,14 @@ async def export_stats_pdf(start_date: str, end_date: str, current_user: dict = 
                 service_stats[name] = {"count": 0, "revenue": 0}
             service_stats[name]["count"] += 1
             service_stats[name]["revenue"] += svc.get("price", 0)
-    # Appuntamenti completati non prepagati (esclude consumi carta)
-    appointments = await db.appointments.find(
+    # Appuntamenti completati non prepagati (esclude consumi carta) — solo conteggio, niente documenti in memoria
+    total_appointments = await db.appointments.count_documents(
         {"user_id": current_user["id"], "date": {"$gte": start_date, "$lte": end_date},
-         "status": "completed", "payment_method": {"$ne": "prepaid"}},
-        {"_id": 0}
-    ).to_list(10000)
-    appointments_no_method = await db.appointments.find(
+         "status": "completed", "payment_method": {"$ne": "prepaid"}}
+    ) + await db.appointments.count_documents(
         {"user_id": current_user["id"], "date": {"$gte": start_date, "$lte": end_date},
-         "status": "completed", "payment_method": {"$exists": False}},
-        {"_id": 0}
-    ).to_list(10000)
-    total_appointments = len(appointments) + len(appointments_no_method)
+         "status": "completed", "payment_method": {"$exists": False}}
+    )
     lines = [
         f"REPORT STATISTICHE - {current_user['salon_name']}", f"Periodo: {start_date} - {end_date}", "",
         "=" * 50, "RIEPILOGO", "=" * 50,
