@@ -909,8 +909,14 @@ export default function WebsitePage() {
         <div className="hidden sm:block fixed bottom-8 left-1/2 -translate-x-1/2 z-40">
           <button
             onClick={() => setShowBooking(true)}
-            className="relative flex items-center gap-2.5 px-7 py-3.5 rounded-full text-white font-black text-sm hover:scale-110 transition-all duration-300"
-            style={{ background: `linear-gradient(135deg, ${T.primary}, ${T.accent})`, boxShadow: `0 8px 32px ${T.primary}55` }}
+            className="relative flex items-center gap-2.5 px-7 py-3.5 rounded-full text-white font-black text-sm transition-all duration-300"
+            style={{
+              background: 'linear-gradient(135deg, #C8617A, #A0404F)',
+              boxShadow: '0 10px 25px rgba(200,97,122,0.4), inset 0 -3px 5px rgba(0,0,0,0.1), inset 0 3px 5px rgba(255,255,255,0.2)',
+              transition: 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)'
+            }}
+            onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+            onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
             data-testid="floating-book-btn"
           >
             <Scissors className="w-4 h-4" />
