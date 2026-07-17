@@ -133,6 +133,73 @@ function BackupButtons() {
   );
 }
 
+function CalendarSyncCard() {
+  const [feedUrl, setFeedUrl] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [resetting, setResetting] = useState(false);
+
+  const buildUrl = (feedPath) => `${process.env.REACT_APP_BACKEND_URL}${feedPath}`;
+
+  const loadLink = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get(`${API}/calendar/link`);
+      setFeedUrl(buildUrl(res.data.feed_path));
+    } catch {
+      toast.error('Errore nel generare il link calendario');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetLink = async () => {
+    if (!window.confirm('Il link attuale smetterà di funzionare. Continuare?')) return;
+    setResetting(true);
+    try {
+      const res = await api.post(`${API}/calendar/link/reset`);
+      setFeedUrl(buildUrl(res.data.feed_path));
+      toast.success('Nuovo link generato');
+    } catch {
+      toast.error('Errore nel rigenerare il link');
+    } finally {
+      setResetting(false);
+    }
+  };
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(feedUrl);
+      toast.success('Link copiato!');
+    } catch {
+      toast.error('Impossibile copiare il link');
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm text-[#7C5C4A]">
+        Genera un link da inserire una sola volta come "calendario da URL" su Google Calendar o iPhone: da quel momento ogni appuntamento apparirà automaticamente sul telefono.
+      </p>
+      {feedUrl ? (
+        <div className="flex flex-wrap gap-2">
+          <Input readOnly value={feedUrl} className="flex-1 min-w-[220px] font-mono text-xs" aria-label="Link feed calendario" />
+          <Button type="button" onClick={copyLink} variant="outline" className="border-[#C8617A] text-[#C8617A] hover:bg-[#C8617A]/10" aria-label="Copia link calendario">
+            Copia
+          </Button>
+          <Button type="button" onClick={resetLink} disabled={resetting} variant="outline" className="border-red-400 text-red-600 hover:bg-red-50" aria-label="Rigenera link calendario">
+            {resetting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Rigenera link'}
+          </Button>
+        </div>
+      ) : (
+        <Button type="button" onClick={loadLink} disabled={loading} className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] text-white font-bold">
+          {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CalendarDays className="w-4 h-4 mr-2" />}
+          Genera link calendario
+        </Button>
+      )}
+    </div>
+  );
+}
+
 
 const ADMIN_FONTS = [
   'Cormorant Garamond', 'Playfair Display', 'Montserrat', 'Poppins', 'Inter',
@@ -890,6 +957,19 @@ export default function SettingsPage() {
                 )}
               </div>
 
+            </CardContent>
+          </Card>
+
+          {/* Sincronizzazione calendario */}
+          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+            <CardHeader>
+              <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
+                <CalendarDays className="w-5 h-5 text-[#C8617A]" />
+                Sincronizza Calendario
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <CalendarSyncCard />
             </CardContent>
           </Card>
 

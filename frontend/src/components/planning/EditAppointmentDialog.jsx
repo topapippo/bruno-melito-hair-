@@ -15,7 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import {
   Loader2, User, CreditCard, Banknote, Euro, CheckCircle, Check,
-  Star, Gift, Ticket, Plus, Trash2, Edit3, X, Smartphone, AlertTriangle, Clock, History, ChevronDown,
+  Star, Gift, Ticket, Plus, Trash2, Edit3, X, Smartphone, AlertTriangle, Clock, History, ChevronDown, UserX,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getCategoryInfo, groupServicesByCategory } from '../../lib/categories';
@@ -61,6 +61,7 @@ export default function EditAppointmentDialog({
 }) {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [markingNoShow, setMarkingNoShow] = useState(false);
   const [editDate, setEditDate] = useState('');
   const [openCats, setOpenCats] = useState({});
   const [formData, setFormData] = useState({ service_ids: [], operator_id: '', time: '', notes: '' });
@@ -467,6 +468,18 @@ export default function EditAppointmentDialog({
       onClose(); onSuccess?.();
     } catch (err) { toast.error(err.response?.data?.detail || 'Errore'); }
     finally { setDeleting(false); }
+  };
+
+  const handleNoShow = async () => {
+    if (!appointment || !window.confirm('Segnare il cliente come non presentato e inviare un messaggio di recupero?')) return;
+    setMarkingNoShow(true);
+    try {
+      const res = await api.post(`${API}/reminders/no-show/${appointment.id}/send`);
+      if (res.data?.success) toast.success(res.data.message || 'Messaggio di recupero inviato!');
+      else toast.error(res.data?.error || 'Segnato come no-show, ma il messaggio non è partito.');
+      onSuccess?.(); onClose();
+    } catch (err) { toast.error(err.response?.data?.detail || 'Errore nel segnare il no-show'); }
+    finally { setMarkingNoShow(false); }
   };
 
   const handleSettleSospeso = async (sospesoId, method) => {
@@ -1146,9 +1159,14 @@ export default function EditAppointmentDialog({
                 );
               })()}
               <div className="flex gap-2">
-                <Button type="button" variant="destructive" onClick={handleDelete} disabled={deleting} className="mr-auto">
+                <Button type="button" variant="destructive" onClick={handleDelete} disabled={deleting} className="mr-auto" aria-label="Elimina appuntamento">
                   {deleting?<Loader2 className="w-4 h-4 animate-spin"/>:<><Trash2 className="w-4 h-4 mr-1"/>Elimina</>}
                 </Button>
+                {!['completed','no_show','cancelled'].includes(activeStatus) && (
+                  <Button type="button" variant="outline" onClick={handleNoShow} disabled={markingNoShow} className="border-[#C8617A] text-[#C8617A] hover:bg-[#C8617A]/10" aria-label="Segna cliente non presentato e invia messaggio di recupero">
+                    {markingNoShow?<Loader2 className="w-4 h-4 animate-spin"/>:<><UserX className="w-4 h-4 mr-1"/>Non presentato</>}
+                  </Button>
+                )}
                 {activeStatus!=='completed' && (
                   <Button type="button" onClick={()=>saveAppointment(true)} disabled={saving} className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-4">
                     {saving?<Loader2 className="w-4 h-4 animate-spin"/>:'Vai in Cassa'}

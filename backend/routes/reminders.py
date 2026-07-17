@@ -724,6 +724,58 @@ async def send_followup_message(appointment_id: str, current_user: dict = Depend
         )
 
 
+# ── No-show ────────────────────────────────────────────────────────────────
+
+@router.post("/reminders/no-show/{appointment_id}/send")
+async def send_no_show_reminder(appointment_id: str, current_user: dict = Depends(get_current_user)):
+    """Segna l'appuntamento come no-show e invia un messaggio gentile di recupero."""
+    apt = await db.appointments.find_one({"id": appointment_id, "user_id": current_user["id"]}, {"_id": 0})
+    if not apt:
+        raise HTTPException(status_code=404, detail="Appuntamento non trovato")
+
+    await db.appointments.update_one(
+        {"id": appointment_id, "user_id": current_user["id"]},
+        {"$set": {"status": "no_show"}}
+    )
+
+    phone = apt.get("client_phone", "")
+    if not phone:
+        return {"success": False, "error": "Cliente senza numero di telefono, appuntamento segnato come no-show"}
+
+    first_name = (apt.get("client_name") or "Cliente").split()[0]
+    fallback_msg = (
+        f"Ciao {first_name}! 👋 "
+        f"Ci siamo accorti che non sei riuscita a passare oggi per il tuo appuntamento. 😔\n\n"
+        f"Nessun problema, succede a tutti! Ti aspettiamo per rimettere a posto i tuoi capelli. 💇‍♀️\n\n"
+        f"Prenota quando vuoi qui: https://brunomelitohair.it/prenota"
+    )
+
+    result = await send_automatic_message(
+        phone,
+        template_name=None,
+        template_vars=None,
+        fallback_text=fallback_msg,
+        user=current_user
+    )
+
+    await db.communication_logs.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": current_user["id"],
+        "phone": phone,
+        "type": "no_show",
+        "appointment_id": appointment_id,
+        "message": fallback_msg,
+        "sent": bool(result.get("sent")),
+        "provider": result.get("method", "unknown"),
+        "error": result.get("error"),
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    })
+
+    if result.get("sent"):
+        return {"success": True, "message": "Messaggio di recupero inviato!"}
+    return {"success": False, "error": result.get("error", "Invio fallito. Il cliente non ha scritto nelle ultime 24h?")}
+
+
 # ── Upsell intelligente ────────────────────────────────────────────────────
 
 @router.post("/reminders/upsell/{appointment_id}")

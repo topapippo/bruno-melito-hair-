@@ -18,6 +18,8 @@ from routes.waitlist import router as waitlist_router
 from routes.social import router as social_router
 from routes.website_trends import router as website_trends_router
 from routes.settings import router as settings_router
+from routes.calendar import router as calendar_router
+from routes.webhooks import router as webhooks_router
 
 all_routers = [
     auth_router,
@@ -40,4 +42,6 @@ all_routers = [
     social_router,
     website_trends_router,
     settings_router,
+    calendar_router,
+    webhooks_router,
 ]
