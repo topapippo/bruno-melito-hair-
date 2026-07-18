@@ -26,7 +26,7 @@ const DAY_OPTIONS = [
 ];
 
 const DEFAULT_TEMPLATE = (name, days) =>
-  `Ciao ${name}! Ci manchi! Sono passati ${days ?? ''} giorni dalla tua ultima visita da Bruno Melito Hair. Per il tuo bentornato hai uno sconto del 10% sulla prossima visita. Prenota qui: https://brunomelitohair.it`;
+  `Ciao ${name}! Ci manchi! Sono passati ${days ?? ''} giorni dalla tua ultima visita da Bruno Melito Hair. Per il tuo bentornato ti omaggeremo di un trattamento idratante sulla prossima visita. Prenota qui: https://brunomelitohair.it`;
 
 function DayBadge({ days }) {
   if (days == null)
