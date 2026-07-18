@@ -60,6 +60,9 @@ export default function RemindersPage() {
   const [birthdayClients, setBirthdayClients] = useState([]);
   const [markingSentId, setMarkingSentId] = useState(null);
   const [birthdayDays, setBirthdayDays] = useState(7);
+  const [inactiveClients, setInactiveClients] = useState([]);
+  const [inactiveDays, setInactiveDays] = useState(30);
+  const [inactiveSendingId, setInactiveSendingId] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -69,6 +72,27 @@ export default function RemindersPage() {
   useEffect(() => {
     api.get(`${API}/reminders/birthdays?days=${birthdayDays}`).then(r => setBirthdayClients(r.data || [])).catch(() => {});
   }, [birthdayDays]);
+
+  useEffect(() => {
+    api.get(`${API}/clients/dormant`, { params: { days: inactiveDays } }).then(r => setInactiveClients(r.data || [])).catch(() => {});
+  }, [inactiveDays]);
+
+  const sendInactiveRecall = async (client) => {
+    if (!client.phone) { toast.error('Numero mancante'); return; }
+    setInactiveSendingId(client.id);
+    const msg = `Ciao ${client.name}! Ci manchi! Sono passati ${client.days_absent ?? ''} giorni dalla tua ultima visita da Bruno Melito Hair. Per il tuo bentornato ti omaggeremo di un trattamento idratante sulla prossima visita. Prenota qui: https://brunomelitohair.it`;
+    const ok = await sendWhatsAppDirect(client.phone, msg, {
+      templateName: 'richiamo_clienti',
+      templateVars: [client.name, String(client.days_absent ?? '')],
+    });
+    if (ok) {
+      try {
+        await api.post(`${API}/reminders/inactive/${client.id}/mark-sent`);
+        setInactiveClients(prev => prev.map(c => c.id === client.id ? { ...c, already_recalled: true } : c));
+      } catch {}
+    }
+    setInactiveSendingId(null);
+  };
 
   const fetchData = async () => {
     try {
@@ -753,6 +777,100 @@ export default function RemindersPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Inactive Clients (30/60/90 days) */}
+        <Card className="border-[#F0E6DC]/30">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <CardTitle className="text-lg font-bold text-[#2D1B14] flex items-center gap-2">
+                <UserX className="w-5 h-5 text-orange-500" />
+                Clienti Inattivi
+                {inactiveClients.length > 0 && (
+                  <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-semibold">
+                    {inactiveClients.filter(c => !c.already_recalled).length} da richiamare
+                  </span>
+                )}
+              </CardTitle>
+              <div className="flex gap-1.5">
+                {[30, 60, 90].map(d => (
+                  <button
+                    key={d}
+                    onClick={() => setInactiveDays(d)}
+                    className={`px-2.5 py-1 text-xs rounded-full border transition-colors ${
+                      inactiveDays === d
+                        ? 'bg-orange-500 text-white border-orange-500 font-semibold'
+                        : 'border-[#F0E6DC] text-[#2D1B14] hover:bg-[#FAF7F2]'
+                    }`}
+                  >
+                    {d}gg
+                  </button>
+                ))}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {inactiveClients.length === 0 ? (
+              <p className="text-sm text-[#7C5C4A] text-center py-6">Nessun cliente assente da almeno {inactiveDays} giorni</p>
+            ) : (
+              <div className="space-y-3">
+                {inactiveClients.map((client) => (
+                  <div key={client.id}
+                    className={`p-4 rounded-xl border-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
+                      client.already_recalled ? 'border-green-200 bg-green-50' : 'border-orange-200 bg-orange-50'
+                    }`}>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold text-[#2D1B14] truncate">{client.name}</p>
+                        {client.already_recalled && (
+                          <span className="text-xs bg-green-200 text-green-800 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                            <Check className="w-3 h-3" /> Richiamato
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 text-sm mt-1 flex-wrap">
+                        <span className="text-orange-700 font-semibold flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5" /> {client.days_absent} giorni fa
+                        </span>
+                        {client.phone && (
+                          <span className="text-[#7C5C4A] flex items-center gap-1">
+                            <Phone className="w-3.5 h-3.5" /> {client.phone}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {client.already_recalled ? (
+                        <Button variant="outline" size="sm"
+                          onClick={async () => {
+                            try {
+                              await api.delete(`${API}/reminders/inactive/${client.id}/reset`);
+                              setInactiveClients(prev => prev.map(c => c.id === client.id ? { ...c, already_recalled: false } : c));
+                              toast.success('Annullato');
+                            } catch { toast.error('Errore'); }
+                          }}
+                          className="border-red-300 text-red-600 hover:bg-red-50">
+                          <XCircle className="w-4 h-4 mr-1" /> Annulla
+                        </Button>
+                      ) : (
+                        <Button
+                          onClick={() => sendInactiveRecall(client)}
+                          disabled={!client.phone || inactiveSendingId === client.id}
+                          className="bg-orange-500 hover:bg-orange-600 text-white font-bold">
+                          {inactiveSendingId === client.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                          ) : (
+                            <MessageSquare className="w-4 h-4 mr-2" />
+                          )}
+                          Richiama
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Birthday Reminders */}
         <Card className="border-[#F0E6DC]/30">
