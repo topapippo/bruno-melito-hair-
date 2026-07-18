@@ -72,12 +72,18 @@ async def send_whatsapp_template(phone: str, template_name: str, variables: list
         rjson = resp.json()
         if resp.status_code == 200:
             return {"sent": True, "method": "meta_template", "data": rjson}
-        
-        # Fallback it_IT se it fallisce
+
+        original_error = rjson.get("error", {}).get("message", "Errore API")
+        # Fallback it_IT se it fallisce — ma se anche il retry fallisce, mostra l'errore
+        # ORIGINALE: il retry con lingua diversa fallisce sempre con "non esiste nella
+        # traduzione" quando il template ha solo la variante "it", mascherando la vera causa.
         if lang == "it" and (resp.status_code == 400 or resp.status_code == 404):
-            return await send_whatsapp_template(phone, template_name, variables, lang="it_IT")
-            
-        return {"sent": False, "error": rjson.get("error", {}).get("message", "Errore API"), "code": resp.status_code, "data": rjson}
+            retry = await send_whatsapp_template(phone, template_name, variables, lang="it_IT")
+            if retry.get("sent"):
+                return retry
+            return {"sent": False, "error": original_error, "code": resp.status_code, "data": rjson}
+
+        return {"sent": False, "error": original_error, "code": resp.status_code, "data": rjson}
     except Exception as e:
         return {"sent": False, "error": str(e)}
 
