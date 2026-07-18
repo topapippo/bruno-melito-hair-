@@ -203,7 +203,9 @@ export default function StatsPage() {
     return dormantClients.filter(c => c.name.toLowerCase().includes(q) || c.phone?.includes(q));
   }, [dormantClients, dormantSearch]);
 
-  const dormantWithPhone = dormantFiltered.filter(c => c.phone);
+  // Esclude i clienti "mai venuti" (days_absent null): il template richiamo_clienti
+  // richiede il numero di giorni come variabile — vuoto causa errore Meta #131008.
+  const dormantWithPhone = dormantFiltered.filter(c => c.phone && c.days_absent != null);
 
   const openDormantDialog = (client) => {
     setDormantDialogClient(client);
@@ -1037,7 +1039,7 @@ export default function StatsPage() {
                             )}
                           </div>
                         </div>
-                        {client.phone ? (
+                        {client.phone && client.days_absent != null ? (
                           <Button
                             onClick={() => openDormantDialog(client)}
                             size="sm"
@@ -1052,7 +1054,9 @@ export default function StatsPage() {
                             {dormantSentIds.has(client.id) ? 'Inviato' : 'Invita'}
                           </Button>
                         ) : (
-                          <span className="text-xs text-[#7C5C4A] flex-shrink-0 pt-1">Senza telefono</span>
+                          <span className="text-xs text-[#7C5C4A] flex-shrink-0 pt-1">
+                            {client.phone ? 'Nessuna visita registrata' : 'Senza telefono'}
+                          </span>
                         )}
                       </div>
                     </CardContent>

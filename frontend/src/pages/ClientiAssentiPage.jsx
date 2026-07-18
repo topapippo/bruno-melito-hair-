@@ -86,7 +86,9 @@ export default function ClientiAssentiPage() {
     return clients.filter(c => c.name.toLowerCase().includes(q) || c.phone?.includes(q));
   }, [clients, search]);
 
-  const withPhone = filtered.filter(c => c.phone);
+  // Esclude i clienti "mai venuti" (days_absent null): il template richiamo_clienti
+  // richiede il numero di giorni come variabile — vuoto causa errore Meta #131008.
+  const withPhone = filtered.filter(c => c.phone && c.days_absent != null);
 
   const openDialog = (client) => {
     setDialogClient(client);
@@ -306,7 +308,7 @@ export default function ClientiAssentiPage() {
                     </div>
 
                     {/* Azione WA */}
-                    {client.phone ? (
+                    {client.phone && client.days_absent != null ? (
                       sentIds.has(client.id) ? (
                         <div className="flex items-center gap-1.5 flex-shrink-0">
                           <Button size="sm" disabled className="bg-emerald-100 text-emerald-700 border border-emerald-200">
@@ -335,7 +337,9 @@ export default function ClientiAssentiPage() {
                         </Button>
                       )
                     ) : (
-                      <span className="text-xs text-[#7C5C4A] flex-shrink-0 pt-1">Senza telefono</span>
+                      <span className="text-xs text-[#7C5C4A] flex-shrink-0 pt-1">
+                        {client.phone ? 'Nessuna visita registrata' : 'Senza telefono'}
+                      </span>
                     )}
                   </div>
                 </CardContent>
