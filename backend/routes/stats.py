@@ -809,13 +809,13 @@ async def get_morning_briefing(current_user: dict = Depends(get_current_user)):
 
     birthday_clients = []
     clients_with_bday = await db.clients.find(
-        {"user_id": uid, "birthday": {"$exists": True, "$ne": None, "$ne": ""}},
+        {"user_id": uid, "birthday": {"$nin": [None, ""]}},
         {"_id": 0, "name": 1, "phone": 1, "birthday": 1}
     ).to_list(5000)
 
     today_date = datetime.now(timezone.utc).date()
     for c in clients_with_bday:
-        bday = c.get("birthday", "")
+        bday = c.get("birthday") or ""
         try:
             if len(bday) == 5 and bday[2] == '-':
                 month, day = int(bday[:2]), int(bday[3:])
