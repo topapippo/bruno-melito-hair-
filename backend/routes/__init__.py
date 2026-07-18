@@ -20,6 +20,8 @@ from routes.website_trends import router as website_trends_router
 from routes.settings import router as settings_router
 from routes.calendar import router as calendar_router
 from routes.webhooks import router as webhooks_router
+from routes.messages import router as messages_router
+from routes.marketing import router as marketing_router
 
 all_routers = [
     auth_router,
@@ -44,4 +46,6 @@ all_routers = [
     settings_router,
     calendar_router,
     webhooks_router,
+    messages_router,
+    marketing_router,
 ]

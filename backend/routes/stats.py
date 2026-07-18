@@ -790,3 +790,48 @@ async def delete_payment(payment_id: str, current_user: dict = Depends(get_curre
     return {"success": True}
 
 
+@router.get("/stats/morning-briefing")
+async def get_morning_briefing(current_user: dict = Depends(get_current_user)):
+    """Raccoglie i task pendenti per la giornata di oggi (appuntamenti da confermare, card in scadenza, compleanni)."""
+    uid = current_user["id"]
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    seven_days_later = (datetime.now(timezone.utc) + timedelta(days=7)).strftime("%Y-%m-%d")
+
+    unconfirmed_apts = await db.appointments.find(
+        {"user_id": uid, "date": today, "status": {"$ne": "cancelled"}, "confirmation_status": {"$ne": "confirmed"}, "source": "online"},
+        {"_id": 0, "client_name": 1, "time": 1, "services": 1}
+    ).sort("time", 1).to_list(20)
+
+    expiring_cards = await db.cards.find(
+        {"user_id": uid, "active": True, "valid_until": {"$gte": today, "$lte": seven_days_later}},
+        {"_id": 0, "client_name": 1, "name": 1, "valid_until": 1}
+    ).to_list(20)
+
+    birthday_clients = []
+    clients_with_bday = await db.clients.find(
+        {"user_id": uid, "birthday": {"$exists": True, "$ne": None, "$ne": ""}},
+        {"_id": 0, "name": 1, "phone": 1, "birthday": 1}
+    ).to_list(5000)
+
+    today_date = datetime.now(timezone.utc).date()
+    for c in clients_with_bday:
+        bday = c.get("birthday", "")
+        try:
+            if len(bday) == 5 and bday[2] == '-':
+                month, day = int(bday[:2]), int(bday[3:])
+                bday_this_year = today_date.replace(month=month, day=day)
+                if 0 <= (bday_this_year - today_date).days <= 7:
+                    birthday_clients.append({"name": c.get("name"), "phone": c.get("phone"), "date": bday})
+        except (ValueError, KeyError):
+            continue
+
+    return {
+        "unconfirmed_appointments": unconfirmed_apts,
+        "unconfirmed_count": len(unconfirmed_apts),
+        "expiring_cards": expiring_cards,
+        "expiring_cards_count": len(expiring_cards),
+        "upcoming_birthdays": birthday_clients,
+        "birthdays_count": len(birthday_clients)
+    }
+
+
