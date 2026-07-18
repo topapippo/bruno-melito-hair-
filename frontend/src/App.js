@@ -37,6 +37,8 @@ const SocialPage            = lazy(() => import("./pages/SocialPage"));
 const ServiceDetailPage     = lazy(() => import("./pages/ServiceDetailPage"));
 const MessageLogsPage       = lazy(() => import("./pages/MessageLogsPage"));
 const SellAbbonamentoPage   = lazy(() => import("./pages/SellAbbonamentoPage"));
+const MessagesPage          = lazy(() => import("./pages/MessagesPage"));
+const MarketingPage         = lazy(() => import("./pages/MarketingPage"));
 
 function PageLoader() {
   return (
@@ -366,6 +368,26 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <MessageLogsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* MESSAGGI (inbox chat WhatsApp) */}
+          <Route
+            path="/messaggi"
+            element={
+              <ProtectedRoute>
+                <MessagesPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* MARKETING (campagne WhatsApp) */}
+          <Route
+            path="/marketing"
+            element={
+              <ProtectedRoute>
+                <MarketingPage />
               </ProtectedRoute>
             }
           />

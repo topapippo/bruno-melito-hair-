@@ -7,7 +7,8 @@ import {
   LayoutDashboard, Calendar, CalendarDays, Users, Scissors,
   UserCircle, BarChart3, Settings, LogOut, Menu, CreditCard,
   Euro, Database, Bell, Globe, ArrowDownCircle, Gift,
-  Sparkles, ClockArrowUp, ChevronLeft, ChevronRight, ChevronDown, Share2, MessageSquare, ShoppingBag
+  Sparkles, ClockArrowUp, ChevronLeft, ChevronRight, ChevronDown, Share2, MessageSquare, ShoppingBag,
+  MessageCircle, Megaphone
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
@@ -28,6 +29,7 @@ const navGroups = [
       { path: '/vendi-abbonamento', label: 'Vendi Abbonamento', icon: ShoppingBag },
       { path: '/cards',       label: 'Card / Abbonamenti', icon: CreditCard },
       { path: '/reminders',   label: 'Promemoria',         icon: Bell },
+      { path: '/messaggi',     label: 'Messaggi',           icon: MessageCircle },
       { path: '/log-messaggi', label: 'Log Messaggi',      icon: MessageSquare },
       { path: '/promozioni',  label: 'Promozioni',         icon: Gift },
       { path: '/waitlist',    label: "Lista d'attesa",     icon: ClockArrowUp },
@@ -51,6 +53,7 @@ const navGroups = [
       { path: '/operators',     label: 'Operatori',     icon: UserCircle },
       { path: '/gestione-sito', label: 'Sito Web',      icon: Globe },
       { path: '/social',        label: 'Social Media',  icon: Share2 },
+      { path: '/marketing',     label: 'Campagne',      icon: Megaphone },
       { path: '/backup',        label: 'Backup',        icon: Database },
       { path: '/settings',      label: 'Impostazioni',  icon: Settings },
     ],

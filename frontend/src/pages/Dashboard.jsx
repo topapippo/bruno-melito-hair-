@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import api, { API } from '../lib/api';
 import { sendWA } from '../lib/sendWA';
 import Layout from '../components/Layout';
+import DashboardMorningBriefing from '../components/DashboardMorningBriefing';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -390,6 +391,8 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
+        <DashboardMorningBriefing />
 
         {/* ══════════════════════════════════════════════════════════════
             AZIONI RAPIDE
