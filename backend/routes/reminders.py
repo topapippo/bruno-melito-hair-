@@ -155,19 +155,31 @@ async def reset_color_reminder(client_id: str, current_user: dict = Depends(get_
 
 # ============== MESSAGE TEMPLATES ==============
 
+# Testi allineati alla wording esatta dei template Meta approvati (usati come fallback
+# quando l'invio via template Meta fallisce, quindi devono coincidere con ciò che il
+# cliente riceve davvero). Chiave = template_type, tranne "Conferma Prenotazione" che
+# non ha un template_type dedicato tra le opzioni della UI ed è quindi individuato per nome.
+_META_ALIGNED_BY_TYPE = {
+    "appointment": "Ciao {nome} ! Ti ricordiamo il tuo appuntamento da Bruno Melito Hair per il giorno {data} alle ore {ora}. A presto! ✂️✨",
+    "recall": "Ciao {nome}! Ci manchi! Sono passati {giorni} giorni dalla tua ultima visita da Bruno Melito Hair. Per il tuo bentornato ti omaggeremo di un trattamento idratante sulla prossima visita. Prenota qui: https://brunomelitohair.it",
+    "color_expiry": "Ciao {nome}! Il tuo colore ha bisogno di un ritocco: sono passati più di 30 giorni dall'ultimo trattamento ed è il momento perfetto per tornare a splendere. Prenota qui: https://brunomelitohair.it/prenota",
+}
+_META_ALIGNED_CONFERMA = "Ciao {nome}! La tua prenotazione per il giorno {data} alle ore {ora} è confermata. Non vediamo l'ora di vederti in salone! ✨"
+
+
 @router.get("/reminders/templates")
 async def get_message_templates(current_user: dict = Depends(get_current_user)):
     templates = await db.message_templates.find({"user_id": current_user["id"]}, {"_id": 0, "user_id": 0}).to_list(50)
     if not templates:
         defaults = [
             {"id": str(uuid.uuid4()), "user_id": current_user["id"], "name": "Promemoria Appuntamento",
-             "text": "Ciao {nome}! Ti ricordiamo il tuo appuntamento domani alle {ora} presso Bruno Melito Hair. Servizi: {servizi}. Ti aspettiamo!",
+             "text": _META_ALIGNED_BY_TYPE["appointment"],
              "template_type": "appointment", "created_at": datetime.now(timezone.utc).isoformat()},
             {"id": str(uuid.uuid4()), "user_id": current_user["id"], "name": "Richiamo Cliente Inattivo",
-             "text": "Ciao {nome}! Sono passati {giorni} giorni dalla tua ultima visita presso Bruno Melito Hair. Torna a trovarci, ti aspettiamo!",
+             "text": _META_ALIGNED_BY_TYPE["recall"],
              "template_type": "recall", "created_at": datetime.now(timezone.utc).isoformat()},
             {"id": str(uuid.uuid4()), "user_id": current_user["id"], "name": "Scadenza Colore",
-             "text": "Ciao {nome}! Sono passati {giorni} giorni dal tuo ultimo colore. E' il momento di rinfrescare il look! Prenota da Bruno Melito Hair.",
+             "text": _META_ALIGNED_BY_TYPE["color_expiry"],
              "template_type": "color_expiry", "created_at": datetime.now(timezone.utc).isoformat()},
             {"id": str(uuid.uuid4()), "user_id": current_user["id"], "name": "Ringraziamento Post-Incasso",
              "text": "Ciao {nome}! Grazie per essere venuto da Bruno Melito Hair.\n\nTi aspettiamo presto per il tuo prossimo appuntamento!\n\nA presto!",
@@ -189,6 +201,15 @@ async def get_message_templates(current_user: dict = Depends(get_current_user)):
             }
             await db.message_templates.insert_one(thank_you)
             templates.append({k: v for k, v in thank_you.items() if k not in ("_id", "user_id")})
+
+    # Migrazione automatica: allinea i testi già salvati alla wording esatta dei template
+    # Meta approvati, così l'anteprima e l'eventuale fallback coincidono con ciò che riceve il cliente.
+    for t in templates:
+        aligned = _META_ALIGNED_CONFERMA if t.get("name") == "Conferma Prenotazione" else _META_ALIGNED_BY_TYPE.get(t.get("template_type"))
+        if aligned and t.get("text") != aligned:
+            await db.message_templates.update_one({"id": t["id"], "user_id": current_user["id"]}, {"$set": {"text": aligned}})
+            t["text"] = aligned
+
     return templates
 
 
