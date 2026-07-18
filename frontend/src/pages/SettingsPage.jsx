@@ -1261,6 +1261,14 @@ export default function SettingsPage() {
                 {templatesList.data && (
                   <div className="mt-2 space-y-1 max-h-72 overflow-auto">
                     <p className="text-xs font-semibold text-[#2D1B14]">{templatesList.data.count} template trovati ({templatesList.data.approved?.length || 0} approvati)</p>
+                    {templatesList.data.phone_belongs_to_this_waba === false && (
+                      <div className="p-2 rounded border text-xs bg-red-50 border-red-300 text-red-800 font-medium">
+                        ❌ Il numero di invio (Phone Number ID {templatesList.data.sending_phone_id}) NON appartiene a questo WhatsApp Business Account — i template qui sopra non sono utilizzabili per l'invio da questo numero, anche se "approvati". Verifica WHATSAPP_BUSINESS_ACCOUNT_ID su Render.
+                      </div>
+                    )}
+                    {templatesList.data.phone_belongs_to_this_waba === true && (
+                      <div className="p-2 rounded border text-xs bg-green-50 border-green-300 text-green-800">✅ Numero di invio verificato: appartiene a questo WABA.</div>
+                    )}
                     {templatesList.data.all?.map((t, i) => (
                       <div key={i} className={`p-2 rounded border text-xs ${t.status === 'APPROVED' ? 'bg-green-50 border-green-200' : t.status === 'REJECTED' ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'}`}>
                         <div className="flex justify-between items-center">

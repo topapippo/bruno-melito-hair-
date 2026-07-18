@@ -706,7 +706,24 @@ async def list_cloud_api_templates(current_user: dict = Depends(get_current_user
                 "param_count": body_component.get("text", "").count("{{"),
             })
         templates.sort(key=lambda x: (x["status"] != "APPROVED", x["name"]))
-        return {"ok": True, "count": len(templates), "approved": [t for t in templates if t["status"] == "APPROVED"], "all": templates}
+
+        # Verifica che il numero usato per l'invio appartenga davvero a questo WABA —
+        # se no, i template qui elencati come "approvati" non sono utilizzabili per l'invio
+        # (causa nota di errore #132001 nonostante il template esista ed è approvato).
+        from utils import WA_PHONE_NUMBER_ID
+        phone_match = None
+        try:
+            pr = await _asyncio.to_thread(_req.get, f"https://graph.facebook.com/v21.0/{waba_id}/phone_numbers",
+                                           headers=headers, timeout=15)
+            prj = pr.json()
+            if pr.status_code == 200:
+                waba_phone_ids = [p.get("id") for p in prj.get("data", [])]
+                phone_match = WA_PHONE_NUMBER_ID in waba_phone_ids
+        except Exception:
+            pass
+
+        return {"ok": True, "count": len(templates), "approved": [t for t in templates if t["status"] == "APPROVED"],
+                "all": templates, "sending_phone_id": WA_PHONE_NUMBER_ID, "phone_belongs_to_this_waba": phone_match}
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
