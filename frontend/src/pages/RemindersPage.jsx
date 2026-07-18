@@ -116,7 +116,10 @@ export default function RemindersPage() {
       .replace('{operatore}', '')
       .replace('{data}', fmtDate(autoCheck.tomorrow_date || ''));
 
-    const sentBatch = await sendWhatsAppDirect(nextApt.client_phone, msg);
+    const sentBatch = await sendWhatsAppDirect(nextApt.client_phone, msg, {
+      templateName: 'promemoria_appuntamento',
+      templateVars: [nextApt.client_name || '', fmtDate(autoCheck.tomorrow_date || ''), nextApt.time || ''],
+    });
     if (sentBatch) {
       try {
         await api.post(`${API}/reminders/appointment/${nextApt.id}/mark-sent`);
@@ -138,7 +141,10 @@ export default function RemindersPage() {
       .replace('{servizi}', apt.services?.map(s => s.name).join(', ') || '')
       .replace('{operatore}', apt.operator_name || '')
       .replace('{data}', fmtDate(apt.date || ''));
-    const sent = await sendWhatsAppDirect(apt.client_phone, msg);
+    const sent = await sendWhatsAppDirect(apt.client_phone, msg, {
+      templateName: 'promemoria_appuntamento',
+      templateVars: [apt.client_name || '', fmtDate(apt.date || ''), apt.time || ''],
+    });
     if (sent) {
       try {
         await api.post(`${API}/reminders/appointment/${apt.id}/mark-sent`);
@@ -200,7 +206,7 @@ export default function RemindersPage() {
 
   const sendMessage = async () => {
     if (!msgTarget) return;
-    const { data } = msgTarget;
+    const { type, data } = msgTarget;
     const phone = data.client_phone;
 
     if (!phone) {
@@ -208,7 +214,10 @@ export default function RemindersPage() {
       return;
     }
 
-    const sent = await sendWhatsAppDirect(phone, msgText, {});
+    const opts = type === 'appointment'
+      ? { templateName: 'promemoria_appuntamento', templateVars: [data.client_name || '', fmtDate(data.date || ''), data.time || ''] }
+      : {};
+    const sent = await sendWhatsAppDirect(phone, msgText, opts);
 
     setSendingId(data.id);
     if (sent) {

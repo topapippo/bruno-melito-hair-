@@ -161,10 +161,10 @@ async def get_message_templates(current_user: dict = Depends(get_current_user)):
     if not templates:
         defaults = [
             {"id": str(uuid.uuid4()), "user_id": current_user["id"], "name": "Promemoria Appuntamento",
-             "text": "Ciao {nome}! Ti ricordiamo il tuo appuntamento domani alle {ora} presso MBHS SALON. Servizi: {servizi}. Ti aspettiamo!",
+             "text": "Ciao {nome}! Ti ricordiamo il tuo appuntamento domani alle {ora} presso Bruno Melito Hair. Servizi: {servizi}. Ti aspettiamo!",
              "template_type": "appointment", "created_at": datetime.now(timezone.utc).isoformat()},
             {"id": str(uuid.uuid4()), "user_id": current_user["id"], "name": "Richiamo Cliente Inattivo",
-             "text": "Ciao {nome}! Sono passati {giorni} giorni dalla tua ultima visita presso MBHS SALON. Torna a trovarci, ti aspettiamo!",
+             "text": "Ciao {nome}! Sono passati {giorni} giorni dalla tua ultima visita presso Bruno Melito Hair. Torna a trovarci, ti aspettiamo!",
              "template_type": "recall", "created_at": datetime.now(timezone.utc).isoformat()},
             {"id": str(uuid.uuid4()), "user_id": current_user["id"], "name": "Scadenza Colore",
              "text": "Ciao {nome}! Sono passati {giorni} giorni dal tuo ultimo colore. E' il momento di rinfrescare il look! Prenota da Bruno Melito Hair.",
