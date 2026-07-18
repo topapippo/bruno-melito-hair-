@@ -80,11 +80,15 @@ export default function RemindersPage() {
   const sendInactiveRecall = async (client) => {
     if (!client.phone) { toast.error('Numero mancante'); return; }
     setInactiveSendingId(client.id);
-    const msg = `Ciao ${client.name}! Ci manchi! Sono passati ${client.days_absent ?? ''} giorni dalla tua ultima visita da Bruno Melito Hair. Per il tuo bentornato ti omaggeremo di un trattamento idratante sulla prossima visita. Prenota qui: https://brunomelitohair.it`;
-    const ok = await sendWhatsAppDirect(client.phone, msg, {
-      templateName: 'richiamo_clienti',
-      templateVars: [client.name, String(client.days_absent ?? '')],
-    });
+    // Clienti senza storico (days_absent null) non possono ricevere richiamo_clienti
+    // (variabile "giorni" vuota → errore Meta #131008): usano invito_primo_appuntamento.
+    const isNeverVisited = client.days_absent == null;
+    const msg = isNeverVisited
+      ? `Ciao ${client.name}! ✨ Da Bruno Melito Hair ti aspettano trattamenti su misura per valorizzare il tuo stile: colore, taglio, styling e percorsi di bellezza pensati per te. Regalati un momento speciale — prenota il tuo appuntamento qui: https://brunomelitohair.it`
+      : `Ciao ${client.name}! Ci manchi! Sono passati ${client.days_absent ?? ''} giorni dalla tua ultima visita da Bruno Melito Hair. Per il tuo bentornato ti omaggeremo di un trattamento idratante sulla prossima visita. Prenota qui: https://brunomelitohair.it`;
+    const ok = await sendWhatsAppDirect(client.phone, msg, isNeverVisited
+      ? { templateName: 'invito_primo_appuntamento', templateVars: [client.name] }
+      : { templateName: 'richiamo_clienti', templateVars: [client.name, String(client.days_absent ?? '')] });
     if (ok) {
       try {
         await api.post(`${API}/reminders/inactive/${client.id}/mark-sent`);
@@ -787,7 +791,7 @@ export default function RemindersPage() {
                 Clienti Inattivi
                 {inactiveClients.length > 0 && (
                   <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-semibold">
-                    {inactiveClients.filter(c => !c.already_recalled && c.days_absent != null).length} da richiamare
+                    {inactiveClients.filter(c => !c.already_recalled).length} da richiamare
                   </span>
                 )}
               </CardTitle>
@@ -852,7 +856,7 @@ export default function RemindersPage() {
                           className="border-red-300 text-red-600 hover:bg-red-50">
                           <XCircle className="w-4 h-4 mr-1" /> Annulla
                         </Button>
-                      ) : client.phone && client.days_absent != null ? (
+                      ) : client.phone ? (
                         <Button
                           onClick={() => sendInactiveRecall(client)}
                           disabled={inactiveSendingId === client.id}
@@ -865,9 +869,7 @@ export default function RemindersPage() {
                           Richiama
                         </Button>
                       ) : (
-                        <span className="text-xs text-[#7C5C4A] flex-shrink-0">
-                          {client.phone ? 'Nessuna visita registrata' : 'Senza telefono'}
-                        </span>
+                        <span className="text-xs text-[#7C5C4A] flex-shrink-0">Senza telefono</span>
                       )}
                     </div>
                   </div>

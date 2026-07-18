@@ -38,6 +38,15 @@ const DAY_OPTIONS = [
 const DEFAULT_TEMPLATE = (name, days) =>
   `Ciao ${name}! Ci manchi! Sono passati ${days ?? ''} giorni dalla tua ultima visita da Bruno Melito Hair. Per il tuo bentornato ti omaggeremo di un trattamento idratante sulla prossima visita. Prenota qui: https://brunomelitohair.it`;
 
+const INVITE_TEMPLATE = (name) =>
+  `Ciao ${name}! ✨ Da Bruno Melito Hair ti aspettano trattamenti su misura per valorizzare il tuo stile: colore, taglio, styling e percorsi di bellezza pensati per te. Regalati un momento speciale — prenota il tuo appuntamento qui: https://brunomelitohair.it`;
+
+// Clienti senza storico (days_absent null) non possono ricevere richiamo_clienti
+// (variabile "giorni" vuota → errore Meta #131008): usano invito_primo_appuntamento (1 var).
+const templateFor = (client) => client.days_absent == null
+  ? { name: 'invito_primo_appuntamento', vars: [client.name], text: INVITE_TEMPLATE(client.name) }
+  : { name: 'richiamo_clienti', vars: [client.name, String(client.days_absent ?? '')], text: DEFAULT_TEMPLATE(client.name, client.days_absent) };
+
 function DayBadge({ days }) {
   if (days == null)
     return <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">Mai venuta</span>;
@@ -203,22 +212,21 @@ export default function StatsPage() {
     return dormantClients.filter(c => c.name.toLowerCase().includes(q) || c.phone?.includes(q));
   }, [dormantClients, dormantSearch]);
 
-  // Esclude i clienti "mai venuti" (days_absent null): il template richiamo_clienti
-  // richiede il numero di giorni come variabile — vuoto causa errore Meta #131008.
-  const dormantWithPhone = dormantFiltered.filter(c => c.phone && c.days_absent != null);
+  const dormantWithPhone = dormantFiltered.filter(c => c.phone);
 
   const openDormantDialog = (client) => {
     setDormantDialogClient(client);
-    setDormantMsgText(DEFAULT_TEMPLATE(client.name, client.days_absent));
+    setDormantMsgText(templateFor(client).text);
   };
 
   const handleDormantSend = async () => {
     if (!dormantDialogClient?.phone) return;
     setDormantSending(true);
+    const tmpl = templateFor(dormantDialogClient);
     const ok = await sendWA(dormantDialogClient.phone, dormantMsgText, {
       successMsg: `✅ Invito inviato a ${dormantDialogClient.name}!`,
-      templateName: 'richiamo_clienti',
-      templateVars: [dormantDialogClient.name, String(dormantDialogClient.days_absent ?? '')],
+      templateName: tmpl.name,
+      templateVars: tmpl.vars,
     });
     if (ok) setDormantSentIds(prev => new Set([...prev, dormantDialogClient.id]));
     setDormantSending(false);
@@ -232,10 +240,8 @@ export default function StatsPage() {
     setDormantBulkSending(true);
     let sent = 0;
     for (const c of targets) {
-      const ok = await sendWA(c.phone, DEFAULT_TEMPLATE(c.name, c.days_absent), {
-        templateName: 'richiamo_clienti',
-        templateVars: [c.name, String(c.days_absent ?? '')],
-      });
+      const tmpl = templateFor(c);
+      const ok = await sendWA(c.phone, tmpl.text, { templateName: tmpl.name, templateVars: tmpl.vars });
       if (ok) { sent++; setDormantSentIds(prev => new Set([...prev, c.id])); }
       await new Promise(r => setTimeout(r, 600));
     }
@@ -1039,7 +1045,7 @@ export default function StatsPage() {
                             )}
                           </div>
                         </div>
-                        {client.phone && client.days_absent != null ? (
+                        {client.phone ? (
                           <Button
                             onClick={() => openDormantDialog(client)}
                             size="sm"
@@ -1054,9 +1060,7 @@ export default function StatsPage() {
                             {dormantSentIds.has(client.id) ? 'Inviato' : 'Invita'}
                           </Button>
                         ) : (
-                          <span className="text-xs text-[#7C5C4A] flex-shrink-0 pt-1">
-                            {client.phone ? 'Nessuna visita registrata' : 'Senza telefono'}
-                          </span>
+                          <span className="text-xs text-[#7C5C4A] flex-shrink-0 pt-1">Senza telefono</span>
                         )}
                       </div>
                     </CardContent>
@@ -1085,7 +1089,7 @@ export default function StatsPage() {
                 rows={6}
                 className="border-[#F0E6DC] resize-none text-sm bg-[#FDF8F5]"
               />
-              <p className="text-xs text-[#7C5C4A]">Template Meta approvato "richiamo_clienti" — il testo non è personalizzabile, viene inviato così com'è approvato da Meta.</p>
+              <p className="text-xs text-[#7C5C4A]">Template Meta approvato "{dormantDialogClient ? templateFor(dormantDialogClient).name : ''}" — il testo non è personalizzabile, viene inviato così com'è approvato da Meta.</p>
             </div>
             <DialogFooter className="gap-2">
               <Button variant="outline" onClick={() => setDormantDialogClient(null)} className="border-[#F0E6DC]">

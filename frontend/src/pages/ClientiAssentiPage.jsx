@@ -28,6 +28,15 @@ const DAY_OPTIONS = [
 const DEFAULT_TEMPLATE = (name, days) =>
   `Ciao ${name}! Ci manchi! Sono passati ${days ?? ''} giorni dalla tua ultima visita da Bruno Melito Hair. Per il tuo bentornato ti omaggeremo di un trattamento idratante sulla prossima visita. Prenota qui: https://brunomelitohair.it`;
 
+const INVITE_TEMPLATE = (name) =>
+  `Ciao ${name}! ✨ Da Bruno Melito Hair ti aspettano trattamenti su misura per valorizzare il tuo stile: colore, taglio, styling e percorsi di bellezza pensati per te. Regalati un momento speciale — prenota il tuo appuntamento qui: https://brunomelitohair.it`;
+
+// Clienti senza storico (days_absent null) non possono ricevere richiamo_clienti
+// (variabile "giorni" vuota → errore Meta #131008): usano invito_primo_appuntamento (1 var).
+const templateFor = (client) => client.days_absent == null
+  ? { name: 'invito_primo_appuntamento', vars: [client.name], text: INVITE_TEMPLATE(client.name) }
+  : { name: 'richiamo_clienti', vars: [client.name, String(client.days_absent ?? '')], text: DEFAULT_TEMPLATE(client.name, client.days_absent) };
+
 function DayBadge({ days }) {
   if (days == null)
     return <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">Mai venuta</span>;
@@ -86,22 +95,21 @@ export default function ClientiAssentiPage() {
     return clients.filter(c => c.name.toLowerCase().includes(q) || c.phone?.includes(q));
   }, [clients, search]);
 
-  // Esclude i clienti "mai venuti" (days_absent null): il template richiamo_clienti
-  // richiede il numero di giorni come variabile — vuoto causa errore Meta #131008.
-  const withPhone = filtered.filter(c => c.phone && c.days_absent != null);
+  const withPhone = filtered.filter(c => c.phone);
 
   const openDialog = (client) => {
     setDialogClient(client);
-    setMsgText(DEFAULT_TEMPLATE(client.name, client.days_absent));
+    setMsgText(templateFor(client).text);
   };
 
   const handleSend = async () => {
     if (!dialogClient?.phone) return;
     setSending(true);
+    const tmpl = templateFor(dialogClient);
     const ok = await sendWA(dialogClient.phone, msgText, {
       successMsg: `✅ Invito inviato a ${dialogClient.name}!`,
-      templateName: 'richiamo_clienti',
-      templateVars: [dialogClient.name, String(dialogClient.days_absent ?? '')],
+      templateName: tmpl.name,
+      templateVars: tmpl.vars,
     });
     if (ok) {
       setSentIds(prev => new Set([...prev, dialogClient.id]));
@@ -118,10 +126,8 @@ export default function ClientiAssentiPage() {
     setBulkSending(true);
     let sent = 0;
     for (const c of targets) {
-      const ok = await sendWA(c.phone, DEFAULT_TEMPLATE(c.name, c.days_absent), {
-        templateName: 'richiamo_clienti',
-        templateVars: [c.name, String(c.days_absent ?? '')],
-      });
+      const tmpl = templateFor(c);
+      const ok = await sendWA(c.phone, tmpl.text, { templateName: tmpl.name, templateVars: tmpl.vars });
       if (ok) {
         sent++;
         setSentIds(prev => new Set([...prev, c.id]));
@@ -308,7 +314,7 @@ export default function ClientiAssentiPage() {
                     </div>
 
                     {/* Azione WA */}
-                    {client.phone && client.days_absent != null ? (
+                    {client.phone ? (
                       sentIds.has(client.id) ? (
                         <div className="flex items-center gap-1.5 flex-shrink-0">
                           <Button size="sm" disabled className="bg-emerald-100 text-emerald-700 border border-emerald-200">
@@ -337,9 +343,7 @@ export default function ClientiAssentiPage() {
                         </Button>
                       )
                     ) : (
-                      <span className="text-xs text-[#7C5C4A] flex-shrink-0 pt-1">
-                        {client.phone ? 'Nessuna visita registrata' : 'Senza telefono'}
-                      </span>
+                      <span className="text-xs text-[#7C5C4A] flex-shrink-0 pt-1">Senza telefono</span>
                     )}
                   </div>
                 </CardContent>
@@ -368,7 +372,7 @@ export default function ClientiAssentiPage() {
               rows={6}
               className="border-[#F0E6DC] resize-none text-sm bg-[#FDF8F5]"
             />
-            <p className="text-xs text-[#7C5C4A]">Template Meta approvato "richiamo_clienti" — il testo non è personalizzabile, viene inviato così com'è approvato da Meta.</p>
+            <p className="text-xs text-[#7C5C4A]">Template Meta approvato "{dialogClient ? templateFor(dialogClient).name : ''}" — il testo non è personalizzabile, viene inviato così com'è approvato da Meta.</p>
           </div>
 
           <DialogFooter className="gap-2">
