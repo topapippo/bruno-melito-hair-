@@ -748,7 +748,7 @@ async def test_cloud_api_send_template(data: dict, current_user: dict = Depends(
                 "message": f"✅ Template '{template_name}' inviato! Message ID: {result.get('message_id', 'ok')}"}
     return {"ok": False,
             "message": f"Errore template: {result.get('error')} (code={result.get('code')})",
-            "details": result.get("details")}
+            "raw": result.get("data")}
 
 
 # ============== RICERCA GLOBALE ==============
