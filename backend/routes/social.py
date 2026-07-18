@@ -353,8 +353,10 @@ async def get_daily_suggestions(
     for rank, pool_idx in enumerate(raw):
         suggestion_id = hashlib.md5(f"{user_id}:{today}:{offset}:{rank}".encode()).hexdigest()[:16]
         saved = await db.wingman_suggestions.find_one({"id": suggestion_id, "user_id": user_id}, {"_id": 0})
-        if saved:
-            result.append({k: v for k, v in saved.items() if k != "_id"})
+        if saved and saved.get("deleted"):
+            continue
+        elif saved:
+            result.append({**_POST_POOL[pool_idx], **{k: v for k, v in saved.items() if k != "_id"}})
         else:
             result.append({**_POST_POOL[pool_idx], "id": suggestion_id, "daily_date": today, "offset": offset})
 
@@ -374,8 +376,10 @@ async def get_wingman_suggestions(current_user: dict = Depends(get_current_user)
     for rank, pool_idx in enumerate(raw):
         suggestion_id = hashlib.md5(f"{user_id}:{today}:0:{rank}".encode()).hexdigest()[:16]
         saved = await db.wingman_suggestions.find_one({"id": suggestion_id, "user_id": user_id}, {"_id": 0})
-        if saved:
-            result.append({k: v for k, v in saved.items() if k != "_id"})
+        if saved and saved.get("deleted"):
+            continue
+        elif saved:
+            result.append({**_POST_POOL[pool_idx], **{k: v for k, v in saved.items() if k != "_id"}})
         else:
             result.append({**_POST_POOL[pool_idx], "id": suggestion_id, "daily_date": today, "offset": 0})
 
@@ -402,8 +406,10 @@ async def refresh_suggestions(current_user: dict = Depends(get_current_user)):
     for rank, pool_idx in enumerate(raw):
         suggestion_id = hashlib.md5(f"{user_id}:{today}:{offset}:{rank}".encode()).hexdigest()[:16]
         saved = await db.wingman_suggestions.find_one({"id": suggestion_id, "user_id": user_id}, {"_id": 0})
-        if saved:
-            result.append({k: v for k, v in saved.items() if k != "_id"})
+        if saved and saved.get("deleted"):
+            continue
+        elif saved:
+            result.append({**_POST_POOL[pool_idx], **{k: v for k, v in saved.items() if k != "_id"}})
         else:
             result.append({**_POST_POOL[pool_idx], "id": suggestion_id, "daily_date": today, "offset": offset})
 
@@ -424,7 +430,11 @@ async def update_suggestion(suggestion_id: str, data: dict, current_user: dict =
 
 @router.delete("/social/wingman-suggestions/{suggestion_id}")
 async def delete_suggestion(suggestion_id: str, current_user: dict = Depends(get_current_user)):
-    await db.wingman_suggestions.delete_one({"id": suggestion_id, "user_id": current_user["id"]})
+    await db.wingman_suggestions.update_one(
+        {"id": suggestion_id, "user_id": current_user["id"]},
+        {"$set": {"id": suggestion_id, "user_id": current_user["id"], "deleted": True}},
+        upsert=True
+    )
     return {"ok": True}
 
 @router.get("/social/config")
