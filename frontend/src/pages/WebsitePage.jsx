@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import api, { API } from '../lib/api';
 import { getMediaUrl } from '../lib/mediaUrl';
 import { Button } from '@/components/ui/button';
-import { Scissors, ChevronDown, MapPin, Phone, CalendarDays, Printer, Download, X, MessageCircle } from 'lucide-react';
+import { Scissors, MapPin, Phone, CalendarDays, Printer, Download, X, MessageCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -24,59 +24,19 @@ import {
 } from '../components/website/sections/LandingSections';
 
 
-// Count-up animato con IntersectionObserver
-function CountUp({ to, duration = 1800, decimals = 0 }) {
-  const [count, setCount] = useState(0);
-  const ref = useRef(null);
-  const started = useRef(false);
-  useEffect(() => {
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting && !started.current) {
-        started.current = true;
-        const steps = Math.round(duration / 16);
-        let step = 0;
-        const timer = setInterval(() => {
-          step++;
-          const progress = step / steps;
-          const ease = 1 - Math.pow(1 - progress, 3);
-          const val = ease * to;
-          setCount(decimals ? parseFloat(val.toFixed(decimals)) : Math.floor(val));
-          if (step >= steps) { setCount(to); clearInterval(timer); }
-        }, 16);
-      }
-    }, { threshold: 0.4 });
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, [to, duration, decimals]);
-  return <span ref={ref}>{decimals ? count.toFixed(decimals) : count}</span>;
-}
-
-// #10 — Typewriter effect: cicla frasi nel hero
-function Typewriter({ phrases, color }) {
-  const [idx, setIdx] = useState(0);
-  const [text, setText] = useState('');
-  const [deleting, setDeleting] = useState(false);
-  useEffect(() => {
-    const current = phrases[idx];
-    if (!deleting && text === current) {
-      const t = setTimeout(() => setDeleting(true), 2400);
-      return () => clearTimeout(t);
-    }
-    if (deleting && text === '') {
-      setDeleting(false);
-      setIdx(p => (p + 1) % phrases.length);
-      return;
-    }
-    const t = setTimeout(() => {
-      setText(p => deleting ? p.slice(0, -1) : current.slice(0, p.length + 1));
-    }, deleting ? 35 : 75);
-    return () => clearTimeout(t);
-  }, [text, deleting, idx, phrases]);
+// Helper per le animazioni on-scroll eleganti
+function LuxSection({ children, className = "", ...props }) {
   return (
-    <span>
-      {text}
-      <span className="inline-block w-0.5 h-[0.9em] ml-0.5 align-middle animate-pulse rounded-sm" style={{ backgroundColor: color }} />
-    </span>
+    <motion.section
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-100px" }}
+      transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+      className={className}
+      {...props}
+    >
+      {children}
+    </motion.section>
   );
 }
 
@@ -449,14 +409,14 @@ export default function WebsitePage() {
         .float-med { animation: float 4s ease-in-out infinite 1s; }
         .pulse-glow { animation: pulseGlow 3s ease-in-out infinite; }
         .hero-cta-primary {
-          background: linear-gradient(110deg, #D4AF7A 0%, #FDF8F5 45%, #D4AF7A 60%, #D4AF7A 100%) !important;
+          background: linear-gradient(110deg, #C8617A 0%, #D4AF7A 100%) !important;
           background-size: 200% auto !important;
-          animation: heroShimmer 3s linear infinite;
+          animation: heroShimmer 4s linear infinite;
           transition: transform 0.3s, box-shadow 0.3s;
-          color: #1A0A10 !important;
-          text-shadow: 0 1px 1px rgba(255,255,255,0.3);
+          color: #FFFFFF !important;
+          box-shadow: 0 10px 30px rgba(200, 97, 122, 0.25);
         }
-        .hero-cta-primary:hover { transform: scale(1.05) translateY(-3px) !important; box-shadow: 0 16px 40px rgba(212, 175, 122, 0.4) !important; }
+        .hero-cta-primary:hover { transform: translateY(-2px) scale(1.03) !important; box-shadow: 0 15px 40px rgba(200, 97, 122, 0.35) !important; }
         @keyframes textReveal {
           from { opacity: 0; transform: translateY(100%); }
           to { opacity: 1; transform: translateY(0); }
@@ -474,12 +434,12 @@ export default function WebsitePage() {
       `}</style>
 
       {/* NAVBAR */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navScrolled ? 'bg-white shadow-md border-b border-gray-200' : 'bg-transparent border-b border-white/10'}`}>
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navScrolled ? 'bg-white shadow-md border-b border-gray-200' : 'bg-[#FDF8F5]/80 backdrop-blur-sm border-b border-[#1A0A10]/10'}`}>
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src="/logo.png?v=4" alt={config.salon_name} className="w-10 h-10 rounded-lg" />
-            <span className={`font-black text-sm sm:text-base tracking-tight transition-colors duration-300 ${navScrolled ? '' : 'text-white'}`}
-              style={navScrolled ? { color: T.text } : {}}>
+            <span className="font-black text-sm sm:text-base tracking-tight transition-colors duration-300"
+              style={{ color: navScrolled ? T.text : '#1A0A10' }}>
               {config.salon_name || 'BRUNO MELITO HAIR'}
             </span>
           </div>
@@ -488,21 +448,21 @@ export default function WebsitePage() {
               <button
                 onClick={() => { setShowServices(true); setTimeout(() => scrollTo(servicesRef), 100); }}
                 className="transition-colors font-semibold"
-                style={{ color: navScrolled ? '#64748B' : 'rgba(255,255,255,0.75)' }}
+                style={{ color: navScrolled ? '#64748B' : 'rgba(26,10,16,0.65)' }}
                 onMouseEnter={e => { e.currentTarget.style.color = T.primary; }}
-                onMouseLeave={e => { e.currentTarget.style.color = navScrolled ? '#64748B' : 'rgba(255,255,255,0.75)'; }}
+                onMouseLeave={e => { e.currentTarget.style.color = navScrolled ? '#64748B' : 'rgba(26,10,16,0.65)'; }}
               >Servizi</button>
               <button
                 onClick={() => scrollTo(contactRef)}
                 className="transition-colors font-semibold"
-                style={{ color: navScrolled ? '#64748B' : 'rgba(255,255,255,0.75)' }}
+                style={{ color: navScrolled ? '#64748B' : 'rgba(26,10,16,0.65)' }}
                 onMouseEnter={e => { e.currentTarget.style.color = T.primary; }}
-                onMouseLeave={e => { e.currentTarget.style.color = navScrolled ? '#64748B' : 'rgba(255,255,255,0.75)'; }}
+                onMouseLeave={e => { e.currentTarget.style.color = navScrolled ? '#64748B' : 'rgba(26,10,16,0.65)'; }}
               >Contatti</button>
-              <div className={`flex items-center gap-3 border-l pl-4 ${navScrolled ? 'border-gray-300' : 'border-white/20'}`}>
+              <div className={`flex items-center gap-3 border-l pl-4 ${navScrolled ? 'border-gray-300' : 'border-[#1A0A10]/15'}`}>
                 {SOCIAL_LINKS.map((link, i) => (
                   <a key={i} href={link.url} target="_blank" rel="noopener noreferrer"
-                    className={`transition-colors ${navScrolled ? `text-[#B89A7A] ${link.color}` : 'text-white/50 hover:text-white'}`}
+                    className={`transition-colors ${navScrolled ? `text-[#B89A7A] ${link.color}` : 'text-[#1A0A10]/50 hover:text-[#1A0A10]'}`}
                     title={link.label}>
                     <link.icon className="w-4 h-4" />
                   </a>
@@ -510,18 +470,18 @@ export default function WebsitePage() {
               </div>
             </div>
             <Button asChild variant="outline"
-              className={`border-none rounded-lg px-2.5 py-1.5 sm:px-3 sm:py-2 ${navScrolled ? 'bg-gray-100 hover:bg-gray-200' : 'bg-white/10 hover:bg-white/20'}`}
+              className={`border-none rounded-lg px-2.5 py-1.5 sm:px-3 sm:py-2 ${navScrolled ? 'bg-gray-100 hover:bg-gray-200' : 'bg-[#1A0A10]/5 hover:bg-[#1A0A10]/10'}`}
               data-testid="admin-link" title="Area Riservata">
-              <a href="/login" className={`flex items-center gap-1.5 transition-colors ${navScrolled ? 'text-[#64748B] hover:text-[#0EA5E9]' : 'text-white/60 hover:text-white'}`}>
+              <a href="/login" className={`flex items-center gap-1.5 transition-colors ${navScrolled ? 'text-[#64748B] hover:text-[#0EA5E9]' : 'text-[#1A0A10]/60 hover:text-[#1A0A10]'}`}>
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
                 <span className="text-xs font-bold hidden xs:inline sm:inline">Accedi</span>
               </a>
             </Button>
             <button onClick={() => setShowMyAppts(true)}
-              className={`flex flex-col items-center transition-colors px-2 py-1 ${navScrolled ? 'text-amber-600 hover:text-amber-700' : 'text-white/60 hover:text-white'}`}
+              className={`flex flex-col items-center transition-colors px-2 py-1 ${navScrolled ? 'text-amber-600 hover:text-amber-700' : 'text-[#1A0A10]/60 hover:text-[#1A0A10]'}`}
               data-testid="my-appointments-btn" title="Inserisci il tuo numero di telefono per vedere le tue prenotazioni">
               <span className="flex items-center gap-1 font-bold text-[10px] sm:text-sm"><CalendarDays className="w-3 h-3 sm:w-4 sm:h-4" />I Miei Appuntamenti</span>
-              <span className={`text-[7px] sm:text-[9px] font-normal sm:hidden ${navScrolled ? 'text-amber-400' : 'text-white/40'}`}>Verifica prenotazione</span>
+              <span className={`text-[7px] sm:text-[9px] font-normal sm:hidden ${navScrolled ? 'text-amber-400' : 'text-[#1A0A10]/40'}`}>Verifica prenotazione</span>
             </button>
             <Button
               onClick={() => setShowBooking(true)}
@@ -535,147 +495,92 @@ export default function WebsitePage() {
       </nav>
 
       {/* MOBILE NAV STRIP — visible only on small screens */}
-      <div className={`sm:hidden fixed top-[60px] left-0 right-0 z-40 flex items-center justify-center gap-6 border-b py-1.5 px-4 transition-all duration-300 ${navScrolled ? 'bg-white/90 backdrop-blur-md border-gray-200/50 shadow-sm' : 'bg-transparent border-white/10'}`}>
+      <div className={`sm:hidden fixed top-[60px] left-0 right-0 z-40 flex items-center justify-center gap-6 border-b py-1.5 px-4 transition-all duration-300 ${navScrolled ? 'bg-white/90 backdrop-blur-md border-gray-200/50 shadow-sm' : 'bg-[#FDF8F5]/80 backdrop-blur-sm border-[#1A0A10]/10'}`}>
         <button
           onClick={() => { setShowServices(true); setTimeout(() => scrollTo(servicesRef), 100); }}
           className="text-xs font-bold transition-colors"
-          style={{ color: navScrolled ? T.primary : 'rgba(255,255,255,0.75)' }}
+          style={{ color: navScrolled ? T.primary : 'rgba(26,10,16,0.65)' }}
         >Servizi</button>
-        <span className={`text-sm ${navScrolled ? 'text-gray-300' : 'text-white/20'}`}>|</span>
+        <span className={`text-sm ${navScrolled ? 'text-gray-300' : 'text-[#1A0A10]/20'}`}>|</span>
         <button
           onClick={() => scrollTo(contactRef)}
           className="text-xs font-bold transition-colors"
-          style={{ color: navScrolled ? T.primary : 'rgba(255,255,255,0.75)' }}
+          style={{ color: navScrolled ? T.primary : 'rgba(26,10,16,0.65)' }}
         >Contatti</button>
       </div>
 
-      {/* HERO */}
-      <section className="relative min-h-screen flex items-center pt-24 md:pt-16 overflow-hidden">
-        {config.hero_image ? (
-          <>
-            <div className="absolute inset-0">
-              <img src={getMediaUrl(config.hero_image)} alt="" className="w-full h-full object-cover" />
+      {/* HERO - LIGHT LUXURY STYLE */}
+      <section className="relative min-h-screen flex items-center pt-24 md:pt-16 overflow-hidden bg-[#FDF8F5]">
+        {/* Sfondo con texture sottile e glow dorato */}
+        <div className="absolute inset-0 opacity-60" style={{ background: 'radial-gradient(ellipse at 70% 20%, rgba(212,175,122,0.15) 0%, transparent 50%), radial-gradient(ellipse at 20% 80%, rgba(200,97,122,0.08) 0%, transparent 50%)' }} />
+
+        <div className="relative w-full max-w-7xl mx-auto px-6 sm:px-12 py-20 grid md:grid-cols-2 gap-12 items-center z-10">
+
+          {/* Colonna Testo */}
+          <div className="text-center md:text-left">
+            <div className="hero-animate hero-d1 mb-8">
+              <span className="inline-block text-[10px] font-black tracking-[0.4em] uppercase text-[#D4AF7A] border-b border-[#D4AF7A]/40 pb-1">
+                {config.year_founded ? `Hair Stylist dal ${config.year_founded}` : (config.subtitle || 'Solo per Appuntamento')}
+              </span>
             </div>
-            <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80" />
-          </>
-        ) : (
-          <>
-            <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, color-mix(in srgb, ${T.primary} 40%, #000) 0%, #08000F 45%, color-mix(in srgb, ${T.accent} 30%, #000010) 100%)` }} />
-            <div className="absolute inset-0 opacity-40" style={{ background: 'radial-gradient(ellipse at 20% 50%, rgba(168,85,247,0.35) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(6,182,212,0.25) 0%, transparent 55%)' }} />
-          </>
-        )}
-        <div className="absolute top-24 left-[8%] w-96 h-96 rounded-full opacity-25 blur-3xl float-slow" style={{ backgroundColor: T.primary }} />
-        <div className="absolute bottom-16 right-[12%] w-72 h-72 rounded-full opacity-20 blur-3xl float-med" style={{ backgroundColor: T.accent }} />
-        <div className="absolute top-[35%] left-[38%] w-56 h-56 rounded-full opacity-15 blur-3xl" style={{ backgroundColor: '#8B5CF6', animation: 'float 9s ease-in-out infinite 3s' }} />
-        <div className="relative w-full px-6 sm:px-14 py-20 sm:py-24">
-          {/* Titolo editoriale gigante */}
-          <div className="hero-animate hero-d1 mb-10 text-center">
-            <h1 className="font-black" style={{ fontFamily: "'Playfair Display', serif", lineHeight: 0.85 }}>
-              <span className="reveal-mask block">
-                <span className="reveal-text block text-white" style={{ fontSize: 'clamp(3.5rem, 14vw, 11rem)', letterSpacing: '-0.04em' }}>
-                  BRUNO
-                </span>
-              </span>
-              <span className="reveal-mask block">
-                <span className="reveal-text block" style={{
-                    fontSize: 'clamp(3.5rem, 14vw, 11rem)',
-                    letterSpacing: '-0.04em',
-                    WebkitTextStroke: '1.5px rgba(212, 175, 122, 0.8)',
-                    color: 'transparent',
-                    animationDelay: '0.5s'
-                }}>
-                  MELITO
-                </span>
-              </span>
-              <span className="block text-white/40 mt-4" style={{ fontSize: 'clamp(0.9rem, 3vw, 2.5rem)', letterSpacing: '0.35em', fontWeight: 400, fontFamily: "'DM Sans', sans-serif" }}>HAIR STUDIO</span>
+
+            <h1 className="font-black text-[#1A0A10] mb-6" style={{ fontFamily: "'Playfair Display', serif", lineHeight: 0.9 }}>
+              <span className="block hero-animate hero-d2" style={{ fontSize: 'clamp(3.5rem, 10vw, 7rem)', letterSpacing: '-0.03em' }}>Bruno</span>
+              <span className="block hero-animate hero-d3 italic font-normal text-[#C8617A]" style={{ fontSize: 'clamp(3.5rem, 10vw, 7rem)', letterSpacing: '-0.02em' }}>Melito</span>
             </h1>
-          </div>
-          <div className="text-center max-w-xl mx-auto">
-            <div className="hero-animate hero-d3">
-              <div className="inline-block backdrop-blur-sm text-xs font-bold px-5 py-2.5 rounded-full border mb-6" style={{ backgroundColor: `${T.primary}20`, color: T.primary, borderColor: `${T.primary}40` }}>
-                {config.subtitle || 'SOLO PER APPUNTAMENTO'}
-              </div>
-            </div>
 
-            {/* #10 — Typewriter: specializzazioni */}
-            <p className="text-sm text-white/40 mb-2 hero-animate hero-d3">
-              Specializzati in{' '}
-              <span className="font-bold" style={{ color: T.accent }}>
-                <Typewriter
-                  phrases={['Taglio & Styling', 'Colorazione', 'Trattamenti', 'Piega & Volumi']}
-                  color={T.accent}
-                />
-              </span>
+            <p className="text-base md:text-lg text-[#2D1B14]/70 max-w-md mx-auto md:mx-0 mb-10 leading-relaxed hero-animate hero-d4">
+              {config.hero_description || "L'eccellenza dell'hair styling a Santa Maria Capua Vetere. Trattamenti premium, colore senza ammoniaca e stile personalizzato."}
             </p>
 
-            {/* #1 — Disponibilità online */}
-            <div className="flex justify-center mb-8 hero-animate hero-d4">
-              <div className="flex items-center gap-2 bg-emerald-500/15 border border-emerald-500/30 rounded-full px-4 py-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-                <span className="text-emerald-300 text-xs font-semibold">Prenota online 24/7 · Conferma immediata</span>
-              </div>
-            </div>
-
-            <p className="text-base sm:text-lg text-white/60 max-w-lg mx-auto mb-10 leading-relaxed hero-animate hero-d4">
-              {config.hero_description || ''}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center mb-10 hero-animate hero-d5">
-              <button onClick={() => setShowBooking(true)} className="hero-cta-primary font-black text-base px-10 py-7 rounded-2xl shadow-lg" data-testid="website-hero-book-btn">
-                <Scissors className="w-5 h-5 mr-2 inline" /> PRENOTA ORA
+            <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start mb-8 hero-animate hero-d5">
+              <button onClick={() => setShowBooking(true)} className="hero-cta-primary text-white font-bold text-sm px-10 py-4 rounded-full tracking-wider uppercase" data-testid="website-hero-book-btn">
+                Prenota Ora
               </button>
-              <Button onClick={openWhatsApp} className="bg-[#25D366] hover:bg-[#20BD5A] text-white font-black text-base px-10 py-7 rounded-2xl shadow-lg shadow-green-400/20 hover:shadow-xl hover:scale-105 transition-all duration-300" data-testid="website-hero-whatsapp-btn">
-                <MessageCircle className="w-5 h-5 mr-2" /> WHATSAPP
+              <Button onClick={openWhatsApp} className="bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold text-sm px-8 py-4 rounded-full tracking-wider uppercase" data-testid="website-hero-whatsapp-btn">
+                <MessageCircle className="w-4 h-4 mr-2" /> WhatsApp
               </Button>
-              <Button onClick={() => { setShowServices(true); setTimeout(() => scrollTo(servicesRef), 100); }} variant="outline" style={{ borderColor: `${T.primary}40`, color: T.primary }} className="hover:opacity-80 font-bold text-base px-10 py-7 rounded-2xl backdrop-blur-sm hover:scale-105 transition-all duration-300">
-                Scopri i Servizi <ChevronDown className="w-4 h-4 ml-2" />
+              <Button onClick={() => { setShowServices(true); setTimeout(() => scrollTo(servicesRef), 100); }} variant="ghost" className="text-[#2D1B14] hover:bg-[#F0E6DC] font-bold text-sm px-8 py-4 rounded-full tracking-wider uppercase">
+                Scopri i Servizi
               </Button>
             </div>
-            <div className="flex flex-col sm:flex-row gap-4 text-sm justify-center hero-animate hero-d5">
+
+            <div className="flex flex-col sm:flex-row gap-4 text-sm justify-center md:justify-start hero-animate hero-d5">
               {phones.map((p, i) => (
-                <a key={i} href={`tel:${p.replace(/\s/g, '')}`} className="flex items-center gap-2 text-white/50 hover:text-white transition-colors duration-300 justify-center group">
+                <a key={i} href={`tel:${p.replace(/\s/g, '')}`} className="flex items-center gap-2 text-[#2D1B14]/60 hover:text-[#C8617A] transition-colors duration-300 justify-center md:justify-start group">
                   <Phone className="w-4 h-4 group-hover:scale-110 transition-transform" /> {p}
                 </a>
               ))}
               {config.address && (
-                <a href={config.maps_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-white/50 hover:text-white transition-colors duration-300 justify-center group">
+                <a href={config.maps_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[#2D1B14]/60 hover:text-[#C8617A] transition-colors duration-300 justify-center md:justify-start group">
                   <MapPin className="w-4 h-4 group-hover:scale-110 transition-transform" /> {config.address}
                 </a>
               )}
             </div>
+          </div>
 
-            {/* ── Contatori animati ── */}
-            <div className="mt-14 pt-10 border-t border-white/10 grid grid-cols-2 sm:grid-cols-4 gap-5 hero-animate hero-d5">
-              {[
-                { value: 500, suffix: '+', label: 'Clienti Soddisfatti', icon: '👥', color: T.primary },
-                { value: config.years_experience || 10, suffix: '+', label: 'Anni di Esperienza', icon: '🏆', color: '#F59E0B' },
-                { value: bookingServices.length || 20, suffix: '', label: 'Servizi Disponibili', icon: '✂️', color: T.accent },
-                { value: 5.0, suffix: '', label: 'Stelle su Google', icon: '⭐', color: '#22D3EE', decimals: 1 },
-              ].map((c, i) => (
-                <div key={i} className="text-center group">
-                  <div className="mx-auto mb-3 w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-lg" style={{ background: `linear-gradient(135deg, ${c.color}35, ${c.color}15)`, border: `1px solid ${c.color}50` }}>
-                    {c.icon}
-                  </div>
-                  <p className="text-4xl sm:text-5xl font-black leading-none" style={{ fontFamily: T.fontDisplay, color: c.color }}>
-                    <CountUp to={c.value} decimals={c.decimals || 0} />{c.suffix}
-                  </p>
-                  <p className="text-xs text-white/45 mt-2 font-semibold uppercase tracking-widest">{c.label}</p>
-                </div>
-              ))}
-            </div>
+          {/* Colonna Immagine */}
+          <div className="hero-animate hero-d4 relative hidden md:block">
+            <div className="absolute -inset-4 rounded-[3rem] bg-gradient-to-tr from-[#C8617A]/10 to-[#D4AF7A]/20 blur-2xl"></div>
+            {config.hero_image ? (
+              <img
+                src={getMediaUrl(config.hero_image)}
+                alt="Bruno Melito Hair Stylist"
+                className="relative rounded-[2.5rem] shadow-2xl object-cover w-full h-[600px]"
+                style={{ maskImage: 'linear-gradient(to bottom, black 80%, transparent 100%)' }}
+              />
+            ) : (
+              <div className="relative rounded-[2.5rem] shadow-2xl bg-white h-[600px] flex items-center justify-center">
+                <Scissors className="w-24 h-24 text-[#E8D5C8]" />
+              </div>
+            )}
           </div>
-          {config.years_experience && (
-            <div className="absolute right-4 sm:right-8 bottom-20 sm:bottom-32 bg-white/80 backdrop-blur-xl border border-white/50 rounded-3xl p-5 text-center hidden md:block shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-500 float-slow">
-              <p className="text-4xl font-black" style={{ color: T.primary }}>{config.years_experience}</p>
-              <p className="text-xs text-[#64748B] font-semibold">Anni di<br />Esperienza</p>
-              {config.year_founded && <p className="text-[10px] text-[#94A3B8] mt-1">Dal {config.year_founded}</p>}
-            </div>
-          )}
         </div>
+
+        {/* Freccia Scroll */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 hidden sm:flex flex-col items-center gap-2 hero-animate hero-d5">
-          <span className="text-white/30 text-xs font-semibold tracking-widest uppercase">Scorri</span>
-          <div className="w-6 h-10 rounded-full border-2 border-white/20 flex items-start justify-center p-1.5">
-            <div className="w-1.5 h-3 bg-white/40 rounded-full" style={{ animation: 'float 2s ease-in-out infinite' }} />
-          </div>
+          <span className="text-[#9C7060] text-[10px] font-semibold tracking-[0.3em] uppercase">Scorri</span>
+          <div className="w-px h-12 bg-gradient-to-b from-[#9C7060]/50 to-transparent"></div>
         </div>
       </section>
 
@@ -683,7 +588,7 @@ export default function WebsitePage() {
       {hairstylePhotos.length > 0 && <HeroGalleryStrip photos={hairstylePhotos} T={T} />}
 
       {/* ─── COME FUNZIONA — 3 tocchi per prenotare ─── */}
-      <section className="py-20 sm:py-24 relative overflow-hidden" style={{ background: '#0d0d16' }}>
+      <LuxSection className="py-20 sm:py-24 relative overflow-hidden" style={{ background: '#0d0d16' }}>
         <div className="absolute top-0 left-0 right-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${T.primary}60, ${T.accent}60, transparent)` }} />
         <div className="max-w-5xl mx-auto px-4">
           <AnimatedSection>
@@ -742,7 +647,7 @@ export default function WebsitePage() {
             </div>
           </AnimatedSection>
         </div>
-      </section>
+      </LuxSection>
 
       {/* Sezioni dinamiche — con foto "sparse" interlacciate tra alcune sezioni */}
       {(() => {
@@ -765,7 +670,7 @@ export default function WebsitePage() {
       })()}
 
       {/* QR CODE SECTION */}
-      <section className="py-16 sm:py-20 bg-gradient-to-b from-white/40 to-white/80" data-testid="qr-code-section">
+      <LuxSection className="py-16 sm:py-20 bg-gradient-to-b from-white/40 to-white/80" data-testid="qr-code-section">
         <div className="max-w-4xl mx-auto px-4">
           <div className="text-center mb-8">
             <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Prenota Subito</p>
@@ -844,7 +749,7 @@ export default function WebsitePage() {
             </div>
           </div>
         </div>
-      </section>
+      </LuxSection>
 
       {/* FOOTER */}
       <footer className="py-12 relative" style={{ backgroundColor: `${T.text}`, color: '#fff' }}>
