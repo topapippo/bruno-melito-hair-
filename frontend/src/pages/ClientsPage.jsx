@@ -29,7 +29,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Users, Plus, Search, Phone, Mail, Edit2, Trash2, Loader2, History, MessageSquare, Upload, FileSpreadsheet, Euro, AlertTriangle, Scissors, Cake, UserX, ShieldCheck } from 'lucide-react';
+import { Users, Plus, Search, Phone, Mail, Edit2, Trash2, Loader2, History, MessageSquare, Upload, FileSpreadsheet, Euro, AlertTriangle, Scissors, Cake, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import PageHeader from '../components/PageHeader';
 import ClientAvatar from '../components/ClientAvatar';
@@ -314,14 +314,6 @@ export default function ClientsPage() {
             >
               <ShieldCheck className="w-4 h-4 mr-2" />
               Verifica dati
-            </Button>
-            <Button
-              onClick={() => navigate('/clienti-assenti')}
-              variant="outline"
-              className="border-[#F0E6DC] text-[#C8617A] hover:bg-[#FFF0F3]"
-            >
-              <UserX className="w-4 h-4 mr-2" />
-              Clienti Assenti
             </Button>
             <Button
               onClick={() => fileInputRef.current?.click()}
