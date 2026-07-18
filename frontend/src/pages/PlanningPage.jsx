@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import api, { API } from '../lib/api';
 import { sendWA } from '../lib/sendWA';
 import Layout from '../components/Layout';
@@ -21,7 +21,7 @@ import NewAppointmentDialog from '../components/planning/NewAppointmentDialog';
 import EditAppointmentDialog from '../components/planning/EditAppointmentDialog';
 import RecurringDialog from '../components/planning/RecurringDialog';
 import BlockSlotDialog from '../components/planning/BlockSlotDialog';
-import { OnlineBookingBanner, ReminderBanner, ExpensesBanner, LastServiceBanner } from '../components/planning/PlanningBanners';
+import { OnlineBookingBanner, ReminderBanner, ExpensesBanner, LastServiceBanner, IncomingMessageBanner } from '../components/planning/PlanningBanners';
 import PlanningSearch from '../components/planning/PlanningSearch';
 import ErrorBoundary from '../components/ErrorBoundary';
 import AppointmentDetailPanel from '../components/planning/AppointmentDetailPanel';
@@ -31,6 +31,7 @@ const TIME_SLOTS = generateTimeSlots();
 
 export default function PlanningPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   // Core data
   const [appointments, setAppointments] = useState([]);
@@ -74,6 +75,7 @@ export default function PlanningPage() {
   const [autoReminderPending, setAutoReminderPending] = useState(0);
   const [upcomingExpenses, setUpcomingExpenses] = useState([]);
   const [newOnlineBookings, setNewOnlineBookings] = useState([]);
+  const [newIncomingMessages, setNewIncomingMessages] = useState([]);
   const [sendingConfirmId, setSendingConfirmId] = useState(null);
   const [pendingReminderApts, setPendingReminderApts] = useState([]);
   const [sendingReminders, setSendingReminders] = useState(false);
@@ -164,6 +166,10 @@ export default function PlanningPage() {
         }
         seenBookingIdsRef.current = new Set(newIds);
         setNewOnlineBookings(unseen);
+      } catch { /* silent */ }
+      try {
+        const msgRes = await api.get(`${API}/notifications/new-messages`);
+        setNewIncomingMessages(msgRes.data.filter(m => !m.seen_at));
       } catch { /* silent */ }
     };
     checkNewBookings();
@@ -346,6 +352,27 @@ export default function PlanningPage() {
       await api.post(`${API}/notifications/mark-seen`, { appointment_ids: ids });
       setNewOnlineBookings([]);
     } catch { /* silent */ }
+  };
+
+  // --- Incoming WhatsApp replies ---
+  const dismissIncomingMessage = async (msgId) => {
+    try {
+      await api.post(`${API}/notifications/mark-seen`, { message_ids: [msgId] });
+      setNewIncomingMessages(prev => prev.filter(m => m.id !== msgId));
+    } catch { /* silent */ }
+  };
+
+  const dismissAllIncomingMessages = async () => {
+    try {
+      const ids = newIncomingMessages.map(m => m.id);
+      await api.post(`${API}/notifications/mark-seen`, { message_ids: ids });
+      setNewIncomingMessages([]);
+    } catch { /* silent */ }
+  };
+
+  const openIncomingMessage = (msg) => {
+    dismissIncomingMessage(msg.id);
+    navigate('/messaggi');
   };
 
   const goToBookingDate = (booking) => {
@@ -655,6 +682,16 @@ export default function PlanningPage() {
               goToBookingDate={goToBookingDate}
               onSendConfirmation={sendConfirmation}
               sendingConfirmId={sendingConfirmId}
+            />
+          </div>
+        )}
+        {newIncomingMessages.length > 0 && (
+          <div className="pulse-heartbeat rounded-xl">
+            <IncomingMessageBanner
+              newIncomingMessages={newIncomingMessages}
+              dismissIncomingMessage={dismissIncomingMessage}
+              dismissAllIncomingMessages={dismissAllIncomingMessages}
+              onOpenMessage={openIncomingMessage}
             />
           </div>
         )}

@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { fmtDate } from '../../lib/dateUtils';
-import { CalendarDays, Bell, Euro, X, AlertTriangle, Loader2 } from 'lucide-react';
+import { CalendarDays, Bell, Euro, X, AlertTriangle, Loader2, MessageCircle } from 'lucide-react';
 
 export function OnlineBookingBanner({ newOnlineBookings, dismissOnlineBooking, dismissAllOnlineBookings, goToBookingDate, onSendConfirmation, sendingConfirmId }) {
   if (newOnlineBookings.length === 0) return null;
@@ -57,6 +57,49 @@ export function OnlineBookingBanner({ newOnlineBookings, dismissOnlineBooking, d
           ))}
           {newOnlineBookings.length > 3 && (
             <p className="text-xs text-emerald-600 text-center font-medium">+{newOnlineBookings.length - 3} altre prenotazioni</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function IncomingMessageBanner({ newIncomingMessages, dismissIncomingMessage, dismissAllIncomingMessages, onOpenMessage }) {
+  if (newIncomingMessages.length === 0) return null;
+  return (
+    <div className="relative overflow-hidden rounded-xl border-2 border-sky-400 bg-gradient-to-r from-sky-50 via-blue-50 to-cyan-50 shadow-lg animate-pulse-slow" data-testid="new-message-banner">
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-sky-400 via-blue-400 to-cyan-400" />
+      <div className="p-4">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <MessageCircle className="w-6 h-6 text-sky-600" />
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center">
+                {newIncomingMessages.length}
+              </span>
+            </div>
+            <span className="font-black text-sky-800 text-sm">
+              {newIncomingMessages.length === 1 ? 'Nuova risposta ricevuta!' : `${newIncomingMessages.length} nuove risposte ricevute!`}
+            </span>
+          </div>
+          <Button variant="ghost" size="sm" onClick={dismissAllIncomingMessages} className="text-xs text-sky-600 hover:bg-sky-100 h-7" data-testid="dismiss-all-messages-btn">
+            Segna tutte lette
+          </Button>
+        </div>
+        <div className="space-y-2">
+          {newIncomingMessages.slice(0, 3).map(msg => (
+            <div key={msg.id} className="flex items-center gap-3 bg-white/80 rounded-xl p-2.5 border border-sky-200 hover:shadow-md transition-shadow cursor-pointer" onClick={() => onOpenMessage(msg)} data-testid={`new-message-${msg.id}`}>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-sm text-sky-900 truncate">{msg.client_name || msg.phone}</p>
+                <p className="text-xs text-sky-700 truncate">{msg.message}</p>
+              </div>
+              <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); dismissIncomingMessage(msg.id); }} className="h-7 w-7 shrink-0 text-sky-500 hover:bg-sky-100" data-testid={`dismiss-message-${msg.id}`}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          ))}
+          {newIncomingMessages.length > 3 && (
+            <p className="text-xs text-sky-600 text-center font-medium">+{newIncomingMessages.length - 3} altri messaggi</p>
           )}
         </div>
       </div>
