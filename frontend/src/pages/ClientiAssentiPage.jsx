@@ -98,7 +98,7 @@ export default function ClientiAssentiPage() {
     setSending(true);
     const ok = await sendWA(dialogClient.phone, msgText, {
       successMsg: `✅ Invito inviato a ${dialogClient.name}!`,
-      templateName: 'richiamo_clienti',
+      templateName: 'richiamo_inattivo',
       templateVars: [dialogClient.name, String(dialogClient.days_absent ?? '')],
     });
     if (ok) {
@@ -117,7 +117,7 @@ export default function ClientiAssentiPage() {
     let sent = 0;
     for (const c of targets) {
       const ok = await sendWA(c.phone, DEFAULT_TEMPLATE(c.name, c.days_absent), {
-        templateName: 'richiamo_clienti',
+        templateName: 'richiamo_inattivo',
         templateVars: [c.name, String(c.days_absent ?? '')],
       });
       if (ok) {
@@ -364,7 +364,7 @@ export default function ClientiAssentiPage() {
               rows={6}
               className="border-[#F0E6DC] resize-none text-sm bg-[#FDF8F5]"
             />
-            <p className="text-xs text-[#7C5C4A]">Template Meta approvato "richiamo_clienti" — il testo non è personalizzabile, viene inviato così com'è approvato da Meta.</p>
+            <p className="text-xs text-[#7C5C4A]">Template Meta approvato "richiamo_inattivo" — il testo non è personalizzabile, viene inviato così com'è approvato da Meta.</p>
           </div>
 
           <DialogFooter className="gap-2">
