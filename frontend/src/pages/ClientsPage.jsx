@@ -52,6 +52,9 @@ export default function ClientsPage() {
   const [importing, setImporting] = useState(false);
   const [importPreview, setImportPreview] = useState([]);
   const fileInputRef = useRef(null);
+  const [waDialogClient, setWaDialogClient] = useState(null);
+  const [waMsgText, setWaMsgText] = useState('');
+  const [waSending, setWaSending] = useState(false);
   const [integrityOpen, setIntegrityOpen] = useState(false);
   const [integrityData, setIntegrityData] = useState(null);
   const [checkingIntegrity, setCheckingIntegrity] = useState(false);
@@ -154,10 +157,20 @@ export default function ClientsPage() {
   };
 
   // WhatsApp
-  const openWhatsApp = async (client) => {
+  const openWhatsApp = (client) => {
     if (!client.phone) { toast.error('Il cliente non ha un numero di telefono'); return; }
-    const msg = `Ciao ${client.name || client.client_name || ''}!`;
-    await sendWA(client.phone, msg, { successMsg: `✅ Messaggio inviato a ${client.name || 'cliente'}!` });
+    setWaDialogClient(client);
+    setWaMsgText(`Ciao ${client.name || client.client_name || ''}!`);
+  };
+
+  const sendWhatsAppMessage = async () => {
+    if (!waDialogClient?.phone || !waMsgText.trim()) return;
+    setWaSending(true);
+    const ok = await sendWA(waDialogClient.phone, waMsgText, {
+      successMsg: `✅ Messaggio inviato a ${waDialogClient.name || 'cliente'}!`,
+    });
+    setWaSending(false);
+    if (ok) setWaDialogClient(null);
   };
 
   // Excel Import Functions
@@ -589,6 +602,42 @@ export default function ClientsPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* WhatsApp Message Dialog */}
+        <Dialog open={!!waDialogClient} onOpenChange={(o) => !o && setWaDialogClient(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="font-display text-xl text-[#2D1B14]">
+                Messaggio per {waDialogClient?.name}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <p className="text-sm text-[#7C5C4A]">
+                Messaggio WhatsApp a <strong>{waDialogClient?.phone}</strong>
+              </p>
+              <Textarea
+                value={waMsgText}
+                onChange={e => setWaMsgText(e.target.value)}
+                rows={6}
+                className="border-[#F0E6DC] resize-none text-sm"
+              />
+              <p className="text-xs text-[#7C5C4A]">Funziona solo se il cliente ha scritto nelle ultime 24h, altrimenti serve un template approvato.</p>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setWaDialogClient(null)} className="border-[#F0E6DC]">
+                Annulla
+              </Button>
+              <Button
+                onClick={sendWhatsAppMessage}
+                disabled={waSending || !waMsgText.trim()}
+                className="bg-[#25D366] hover:bg-[#128C7E] text-white"
+              >
+                <MessageSquare className="w-4 h-4 mr-2" />
+                {waSending ? 'Invio...' : 'Invia WhatsApp'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Import Excel Dialog */}
         <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
