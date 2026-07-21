@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import List, Optional
 import re
 
@@ -386,13 +386,26 @@ class PublicBookingRequest(BaseModel):
 
 # ============== CHECKOUT ==============
 
+class PaymentSplitItem(BaseModel):
+    method: str  # cash, pos, sospeso, prepaid
+    amount: float = Field(ge=0)
+
+class CheckoutServiceItem(BaseModel):
+    id: Optional[str] = None
+    name: str
+    price: float = Field(ge=0)
+    quantity: int = Field(default=1, gt=0)
+    duration: int = Field(default=0, ge=0)
+
 class CheckoutData(BaseModel):
-    payment_method: str  # cash, pos, sospeso, prepaid
+    payment_method: str = "mixed"  # cash, pos, sospeso, prepaid, mixed (se ci sono split)
     discount_type: Optional[str] = "none"
     discount_value: Optional[float] = 0
-    total_paid: float
+    total_paid: float = Field(ge=0)
     card_id: Optional[str] = None
     loyalty_points_used: Optional[int] = 0
     promo_id: Optional[str] = None
     promo_free_service: Optional[str] = None
     note: Optional[str] = None
+    payment_splits: Optional[List[PaymentSplitItem]] = None
+    custom_services: Optional[List[CheckoutServiceItem]] = None

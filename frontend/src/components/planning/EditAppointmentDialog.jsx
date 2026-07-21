@@ -83,6 +83,9 @@ export default function EditAppointmentDialog({
   const [eligiblePromos, setEligiblePromos] = useState([]);
   const [selectedPromo, setSelectedPromo] = useState(null);
   const [customPrices, setCustomPrices] = useState({});
+  const [customQty, setCustomQty] = useState({});
+  const [splitMode, setSplitMode] = useState(false);
+  const [splitPayments, setSplitPayments] = useState([{ method: 'cash', amount: '' }, { method: 'pos', amount: '' }]);
   const [clientSospesi, setClientSospesi] = useState([]);
   const [sospesiTotal, setSospesiTotal] = useState(0);
   const [showSospesiPopup, setShowSospesiPopup] = useState(false);
@@ -261,7 +264,30 @@ export default function EditAppointmentDialog({
   const editTotalDuration = computedSvcList.reduce((sum, s) => sum + (s.duration || 0), 0);
 
   const calculateSubtotal = () =>
-    computedSvcList.reduce((sum, s, i) => sum + (customPrices[`${s.id}_${i}`] ?? s.price ?? 0), 0);
+    computedSvcList.reduce((sum, s, i) => {
+      const key = `${s.id}_${i}`;
+      const price = customPrices[key] ?? s.price ?? 0;
+      const qty = customQty[key] ?? 1;
+      return sum + price * qty;
+    }, 0);
+
+  const hasCustomServices = () =>
+    computedSvcList.some((s, i) => {
+      const key = `${s.id}_${i}`;
+      return customPrices[key] !== undefined || (customQty[key] !== undefined && customQty[key] !== 1);
+    });
+
+  const buildCustomServicesPayload = () =>
+    computedSvcList.map((s, i) => {
+      const key = `${s.id}_${i}`;
+      return {
+        id: s.id || null,
+        name: s.name || '',
+        price: customPrices[key] ?? s.price ?? 0,
+        quantity: customQty[key] ?? 1,
+        duration: s.duration || 0,
+      };
+    });
 
   const calculateDiscount = () => {
     const sub = calculateSubtotal();
@@ -321,6 +347,9 @@ export default function EditAppointmentDialog({
     setSelectedCardId('');
     setSelectedPromo(null);
     setCustomPrices({});
+    setCustomQty({});
+    setSplitMode(false);
+    setSplitPayments([{ method: 'cash', amount: '' }, { method: 'pos', amount: '' }]);
     setEligiblePromos([]);
     setShowCreateSubscription(false);
     setNewSubscriptionForm({ name: '', total_services: '', total_value: '' });
@@ -414,6 +443,7 @@ export default function EditAppointmentDialog({
         totalPaid: finalAmount,
         cardId,
         note: `Incasso ${method}${overridePrice ? ' per vendita abbonamento' : ''}`,
+        customServices: hasCustomServices() ? buildCustomServicesPayload() : null,
       });
 
       const cardData = data?.card;
@@ -432,6 +462,33 @@ export default function EditAppointmentDialog({
       } else {
         toast.success('Incasso completato con successo!');
       }
+      resetCheckout();
+      onClose();
+      onSuccess?.();
+    } catch (err) {
+      toast.error(extractErrorMessage(err));
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleSplitCheckout = async () => {
+    const apt = localAppointment || appointment;
+    if (!apt || !splitValid) return;
+    setProcessing(true);
+    try {
+      await checkoutAppointment(apt.id, {
+        paymentMethod: 'mixed',
+        discountType,
+        discountValue,
+        totalPaid: splitTotalEntered,
+        paymentSplits: splitPayments
+          .filter(p => (parseFloat(p.amount) || 0) > 0)
+          .map(p => ({ method: p.method, amount: parseFloat(p.amount) || 0 })),
+        customServices: hasCustomServices() ? buildCustomServicesPayload() : null,
+        note: 'Pagamento diviso',
+      });
+      toast.success('Pagamento diviso registrato con successo!');
       resetCheckout();
       onClose();
       onSuccess?.();
@@ -499,6 +556,9 @@ export default function EditAppointmentDialog({
 
   // --- Computed UI values ---
   const totalAfterDiscount = Math.max(0, calculateSubtotal() - calculateDiscount());
+  const splitTotalEntered = splitPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+  const splitValid = splitPayments.filter(p => (parseFloat(p.amount) || 0) > 0).length >= 2
+    && Math.abs(splitTotalEntered - totalAfterDiscount) < 0.01;
   const displayTotal = selectedCard?.card_type === 'subscription' ? 0 : totalAfterDiscount;
   const prepaidLabel = selectedCard
     ? selectedCardIsSubscription
@@ -800,24 +860,34 @@ export default function EditAppointmentDialog({
                         const key = `${s.id}_${i}`;
                         const base = s.price ?? 0;
                         const cur = customPrices[key] ?? base;
+                        const qty = customQty[key] ?? 1;
                         const modified = customPrices[key] !== undefined && Math.abs(customPrices[key] - base) > 0.001;
+                        const qtyModified = qty !== 1;
                         return (
-                          <div key={key} className={`flex items-center gap-2 px-3 py-2.5 ${modified?'bg-amber-50':''}`}>
-                            <span className="flex-1 text-sm text-gray-700 truncate">{s.name||`Servizio ${i+1}`}</span>
+                          <div key={key} className={`flex items-center gap-2 px-3 py-2.5 flex-wrap ${modified||qtyModified?'bg-amber-50':''}`}>
+                            <span className="flex-1 text-sm text-gray-700 truncate min-w-[80px]">{s.name||`Servizio ${i+1}`}</span>
                             <div className="flex items-center gap-1 shrink-0">
-                              <button type="button" className="w-7 h-7 rounded-lg border-2 border-gray-300 flex items-center justify-center font-bold text-lg leading-none hover:border-red-400 hover:text-red-600"
+                              <span className="text-[10px] text-gray-400 uppercase font-semibold mr-0.5">Qtà</span>
+                              <button type="button" aria-label="Diminuisci quantità" className="w-7 h-7 rounded-lg border-2 border-gray-300 flex items-center justify-center font-bold text-lg leading-none hover:border-red-400 hover:text-red-600"
+                                onClick={()=>setCustomQty(p=>({...p,[key]:Math.max(1,(p[key]??1)-1)}))}>−</button>
+                              <span className={`w-8 text-center font-bold text-sm ${qtyModified?'text-amber-700':'text-gray-700'}`}>{qty}</span>
+                              <button type="button" aria-label="Aumenta quantità" className="w-7 h-7 rounded-lg border-2 border-gray-300 flex items-center justify-center font-bold text-lg leading-none hover:border-green-500 hover:text-green-600"
+                                onClick={()=>setCustomQty(p=>({...p,[key]:(p[key]??1)+1}))}>+</button>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button type="button" aria-label="Diminuisci prezzo" className="w-7 h-7 rounded-lg border-2 border-gray-300 flex items-center justify-center font-bold text-lg leading-none hover:border-red-400 hover:text-red-600"
                                 onClick={()=>setCustomPrices(p=>({...p,[key]:Math.max(0,(p[key]??base)-0.5)}))}>−</button>
                               <div className="relative">
                                 <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm pointer-events-none">€</span>
-                                <Input type="number" min="0" step="0.50" value={cur}
+                                <Input type="number" min="0" step="0.50" value={cur} aria-label="Prezzo servizio"
                                   onChange={e=>{const v=parseFloat(e.target.value);setCustomPrices(p=>({...p,[key]:isNaN(v)?0:Math.max(0,v)}));}}
                                   className={`w-24 h-8 pl-6 text-right font-bold text-sm border-2 ${modified?'border-amber-400 bg-amber-50':'border-gray-200'}`}/>
                               </div>
-                              <button type="button" className="w-7 h-7 rounded-lg border-2 border-gray-300 flex items-center justify-center font-bold text-lg leading-none hover:border-green-500 hover:text-green-600"
+                              <button type="button" aria-label="Aumenta prezzo" className="w-7 h-7 rounded-lg border-2 border-gray-300 flex items-center justify-center font-bold text-lg leading-none hover:border-green-500 hover:text-green-600"
                                 onClick={()=>setCustomPrices(p=>({...p,[key]:(p[key]??base)+0.5}))}>+</button>
-                              {modified && (
-                                <button type="button" className="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-700"
-                                  onClick={()=>setCustomPrices(p=>{const n={...p};delete n[key];return n;})}>
+                              {(modified||qtyModified) && (
+                                <button type="button" aria-label="Ripristina servizio" className="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-700"
+                                  onClick={()=>{setCustomPrices(p=>{const n={...p};delete n[key];return n;});setCustomQty(p=>{const n={...p};delete n[key];return n;});}}>
                                   <X className="w-3.5 h-3.5"/>
                                 </button>
                               )}
@@ -1051,8 +1121,58 @@ export default function EditAppointmentDialog({
                   </div>
                 </div>
 
+                {/* ── 5b. PAGAMENTO DIVISO (split) ── */}
+                {paymentMethod !== 'sospeso' && !selectedCard && (
+                  <div className="rounded-xl border-2 border-gray-200 overflow-hidden">
+                    <button type="button" onClick={()=>setSplitMode(!splitMode)}
+                      className={`w-full flex items-center justify-between px-3 py-2.5 ${splitMode?'bg-blue-50':'bg-gray-50 hover:bg-gray-100'}`}>
+                      <span className={`font-bold text-sm ${splitMode?'text-blue-700':'text-gray-600'}`}>Dividi Pagamento</span>
+                      {splitMode && <Check className="w-4 h-4 text-blue-600"/>}
+                    </button>
+                    {splitMode && (
+                      <div className="border-t border-gray-100 px-3 py-3 bg-white space-y-2">
+                        {splitPayments.map((sp, idx) => (
+                          <div key={idx} className="flex items-center gap-2">
+                            <Select value={sp.method} onValueChange={v=>setSplitPayments(prev=>prev.map((p,pi)=>pi===idx?{...p,method:v}:p))}>
+                              <SelectTrigger className="w-28 h-9 border"><SelectValue/></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="cash">Contanti</SelectItem>
+                                <SelectItem value="pos">POS</SelectItem>
+                                <SelectItem value="sospeso">Sospeso</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <div className="relative flex-1">
+                              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm pointer-events-none">€</span>
+                              <Input type="number" min="0" step="0.50" value={sp.amount} placeholder="0.00" aria-label={`Importo ${sp.method}`}
+                                onChange={e=>setSplitPayments(prev=>prev.map((p,pi)=>pi===idx?{...p,amount:e.target.value}:p))}
+                                className="w-full h-9 pl-6 text-right font-bold text-sm border-2 border-gray-200"/>
+                            </div>
+                            {splitPayments.length > 2 && (
+                              <button type="button" aria-label="Rimuovi riga pagamento" className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-600"
+                                onClick={()=>setSplitPayments(prev=>prev.filter((_,pi)=>pi!==idx))}>
+                                <X className="w-4 h-4"/>
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                        <button type="button" onClick={()=>setSplitPayments(prev=>[...prev,{method:'cash',amount:''}])}
+                          className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                          <Plus className="w-3.5 h-3.5"/> Aggiungi metodo
+                        </button>
+                        <div className={`flex justify-between text-sm font-semibold pt-1.5 border-t ${splitValid?'text-green-700':'text-gray-500'}`}>
+                          <span>Inserito: €{splitTotalEntered.toFixed(2)} / €{totalAfterDiscount.toFixed(2)}</span>
+                        </div>
+                        <button type="button" onClick={handleSplitCheckout} disabled={!splitValid || processing}
+                          className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-95 disabled:opacity-50 text-white font-black py-3.5 rounded-2xl shadow-md transition-all">
+                          {processing ? <Loader2 className="w-5 h-5 animate-spin"/> : <>Conferma Pagamento Diviso</>}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* ── 6. TRE BOTTONI PAGAMENTO ── */}
-                {paymentMethod !== 'sospeso' && (
+                {paymentMethod !== 'sospeso' && !splitMode && (
                   <div className="grid grid-cols-3 gap-2">
                     {/* CONTANTI */}
                     <button type="button"

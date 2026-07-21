@@ -208,8 +208,9 @@ async def get_revenue_stats(start_date: str, end_date: str, current_user: dict =
             name = svc.get("name", "Altro")
             if name not in service_revenue:
                 service_revenue[name] = {"count": 0, "revenue": 0}
-            service_revenue[name]["count"] += 1
-            service_revenue[name]["revenue"] += svc.get("price", 0)
+            qty = svc.get("quantity", 1) or 1
+            service_revenue[name]["count"] += qty
+            service_revenue[name]["revenue"] += svc.get("price", 0) * qty
     # Operator breakdown da appuntamenti completati NON prepagati
     # (gli appuntamenti prepagati non generano nuovo cassa, ma il lavoro è stato svolto: contiamo solo il ricavo effettivo)
     appointments = await db.appointments.find(
@@ -431,8 +432,9 @@ async def export_stats_pdf(start_date: str, end_date: str, current_user: dict = 
             name = svc.get("name", "Altro")
             if name not in service_stats:
                 service_stats[name] = {"count": 0, "revenue": 0}
-            service_stats[name]["count"] += 1
-            service_stats[name]["revenue"] += svc.get("price", 0)
+            qty = svc.get("quantity", 1) or 1
+            service_stats[name]["count"] += qty
+            service_stats[name]["revenue"] += svc.get("price", 0) * qty
     # Appuntamenti completati non prepagati (esclude consumi carta) — solo conteggio, niente documenti in memoria
     total_appointments = await db.appointments.count_documents(
         {"user_id": current_user["id"], "date": {"$gte": start_date, "$lte": end_date},

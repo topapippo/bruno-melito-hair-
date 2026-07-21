@@ -8,6 +8,8 @@ export async function checkoutAppointment(appointmentId, {
   cardId = null,
   promoId = null,
   note = '',
+  paymentSplits = null,
+  customServices = null,
 } = {}) {
   const res = await api.post(`${API}/appointments/${appointmentId}/checkout`, {
     payment_method: paymentMethod,
@@ -17,6 +19,8 @@ export async function checkoutAppointment(appointmentId, {
     card_id: cardId,
     promo_id: promoId,
     note,
+    payment_splits: paymentSplits && paymentSplits.length > 1 ? paymentSplits : null,
+    custom_services: customServices,
   });
   return res.data;
 }
