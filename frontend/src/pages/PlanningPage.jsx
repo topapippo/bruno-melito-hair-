@@ -746,7 +746,7 @@ export default function PlanningPage() {
         <div className="flex flex-col gap-2 sm:gap-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
-              <h1 className="text-2xl sm:text-4xl font-black text-black leading-tight">Planning</h1>
+              <h1 className="font-display text-2xl sm:text-4xl font-black text-[#2D1B14] leading-tight">Planning</h1>
               <p className="text-[#C8617A] mt-0.5 font-bold text-xs sm:text-lg">
                 {format(selectedDate, "EEEE dd/MM/yy", { locale: it })}
                 {isToday(selectedDate) && (
