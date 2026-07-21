@@ -62,8 +62,8 @@ const navGroups = [
 
 const NEW_DEFAULTS = {
   primary:      '#C8617A',
-  sidebar_bg:   '#1A0A10',
-  sidebar_text: '#FAF0F2',
+  sidebar_bg:   '#FFFFFF',
+  sidebar_text: '#9C7060',
   accent:       '#D4AF7A',
   content_bg:   '#FDF8F5',
   content_text: '#2D1B14',
@@ -93,7 +93,8 @@ export default function Layout({ children }) {
       // Migra da qualsiasi palette precedente (vecchio rose o vecchio viola) ai nuovi brand colors
       const isOldTheme = stored && (
         (stored.primary === '#A855F7') ||
-        (['#C8617A', '#E8477C'].includes(stored.primary) && stored.sidebar_bg === '#FAF7F2')
+        (['#C8617A', '#E8477C'].includes(stored.primary) && stored.sidebar_bg === '#FAF7F2') ||
+        (stored.primary === '#C8617A' && stored.sidebar_bg === '#1A0A10')
       );
       if (isOldTheme) { localStorage.removeItem('adminTheme'); return NEW_DEFAULTS; }
       return stored || NEW_DEFAULTS;
@@ -179,7 +180,8 @@ export default function Layout({ children }) {
       const t = res.data?.admin_theme;
       if (t) {
         const isOldDB = t.primary === '#A855F7' ||
-          (['#C8617A', '#E8477C'].includes(t.primary) && t.sidebar_bg === '#FAF7F2');
+          (['#C8617A', '#E8477C'].includes(t.primary) && t.sidebar_bg === '#FAF7F2') ||
+          (t.primary === '#C8617A' && t.sidebar_bg === '#1A0A10');
         const merged = isOldDB ? { ...NEW_DEFAULTS } : { ...themeRef.current, ...t };
         setAdminTheme(merged);
         themeRef.current = merged;
@@ -227,10 +229,10 @@ export default function Layout({ children }) {
         title={mini ? item.label : undefined}
         className={`sidebar-nav-link group flex items-center gap-2.5 rounded-xl text-sm font-medium transition-all
           ${mini ? 'justify-center px-1.5 py-2.5' : 'px-2.5 py-2.5'}
-          ${isActive ? 'nav-active' : ''}`}
+          ${isActive ? 'nav-active border-l-[3px]' : 'border-l-[3px] border-transparent hover:bg-[#FDF8F5] hover:text-[#2D1B14]'}`}
         style={isActive
-          ? { background: `linear-gradient(135deg, ${t.primary}32, ${t.primary}16)`, color: t.primary, fontWeight: 700, boxShadow: `inset 4px 0 0 ${t.primary}, 0 2px 18px ${t.primary}1C` }
-          : { color: t.sidebar_text + 'AA' }
+          ? { background: `${t.primary}14`, color: t.primary, fontWeight: 700, borderLeftColor: t.primary }
+          : { color: t.sidebar_text }
         }
       >
         <div
@@ -270,16 +272,9 @@ export default function Layout({ children }) {
         className="flex flex-col h-full overflow-hidden relative"
         style={{ backgroundColor: t.sidebar_bg, fontFamily: `${t.font_body || 'DM Sans'}, sans-serif` }}
       >
-        {/* Ambient glow top-right */}
-        <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full pointer-events-none" style={{ background: `radial-gradient(circle, ${t.primary}40 0%, transparent 65%)`, filter: 'blur(28px)' }} />
-        {/* Accent glow bottom-left */}
-        <div className="absolute -bottom-20 -left-20 w-52 h-52 rounded-full pointer-events-none" style={{ background: `radial-gradient(circle, ${t.accent || '#D4AF7A'}28 0%, transparent 65%)`, filter: 'blur(22px)' }} />
-        {/* Top shimmer line */}
-        <div className="absolute top-0 left-0 right-0 h-[2px] pointer-events-none" style={{ background: `linear-gradient(90deg, transparent, ${t.primary}CC, transparent)` }} />
         {/* ── Header / Logo ── */}
         <div
-          className={`${mini ? 'p-3 justify-center' : 'p-4 justify-between'} flex items-center flex-shrink-0`}
-          style={{ borderBottom: `1px solid ${t.sidebar_text}14` }}
+          className={`${mini ? 'p-3 justify-center' : 'p-4 justify-between'} flex items-center flex-shrink-0 bg-white border-b border-[#F0E6DC]`}
         >
           {!mini && (
             <div className="flex items-center gap-3 min-w-0">
@@ -303,7 +298,7 @@ export default function Layout({ children }) {
               <div className="min-w-0">
                 <h1
                   className="font-bold text-sm leading-tight truncate tracking-wide"
-                  style={{ color: t.sidebar_text, fontFamily: `${t.font_display || 'Cormorant Garamond'}, serif` }}
+                  style={{ color: '#2D1B14', fontFamily: `${t.font_display || 'Cormorant Garamond'}, serif` }}
                 >
                   BRUNO MELITO
                 </h1>
@@ -436,7 +431,7 @@ export default function Layout({ children }) {
                   {user?.name?.[0]?.toUpperCase() || 'B'}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold truncate" style={{ color: t.sidebar_text }}>
+                  <p className="text-xs font-bold truncate" style={{ color: '#2D1B14' }}>
                     {user?.name || 'Bruno'}
                   </p>
                   <p className="text-[10px] truncate" style={{ color: t.sidebar_text + '55' }}>Amministratore</p>

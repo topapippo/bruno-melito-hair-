@@ -11,6 +11,7 @@ import { useAuth } from "./context/AuthContext";
 import LoginPage from "./pages/LoginPage";
 import WebsitePage from "./pages/WebsitePage";
 import ConfirmAppointmentPage from "./pages/ConfirmAppointmentPage";
+import ReceiptPage from "./pages/ReceiptPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import PlanningPage from "./pages/PlanningPage";
 import PWAInstallBanner from "./components/PWAInstallBanner";
@@ -297,6 +298,9 @@ export default function App() {
 
           {/* CONFERMA APPUNTAMENTO (pubblica, no auth) */}
           <Route path="/conferma/:token" element={<ConfirmAppointmentPage />} />
+
+          {/* RICEVUTA DIGITALE (pubblica, no auth) */}
+          <Route path="/ricevuta/:paymentId" element={<ReceiptPage />} />
 
           {/* SITO WEB PUBBLICO */}
           <Route path="/sito" element={<WebsitePage />} />

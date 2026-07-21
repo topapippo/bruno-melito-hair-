@@ -15,14 +15,13 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-async def _send_checkout_thank_you(phone: str, client_name: str, current_user: dict):
+async def _send_checkout_thank_you(phone: str, client_name: str, current_user: dict, payment_id: str = None):
     try:
         review_link = current_user.get("google_review_link") or "https://maps.app.goo.gl/8FdnYpnNyQcd78LQ7"
-        message = (
-            f"Ciao {client_name}! Grazie per essere venuta da Bruno Melito Hair. 💇\n\n"
-            f"Se ti è piaciuto, ci aiuteresti tantissimo lasciando una recensione qui:\n{review_link}\n\n"
-            f"A presto!"
-        )
+        message = f"Ciao {client_name}! Grazie per essere venuta da Bruno Melito Hair. 💇\n\n"
+        if payment_id:
+            message += f"Ecco la tua ricevuta digitale: https://brunomelitohair.it/ricevuta/{payment_id}\n\n"
+        message += f"Se ti è piaciuto, ci aiuteresti tantissimo lasciando una recensione qui:\n{review_link}\n\nA presto!"
         await send_automatic_message(phone, "ringraziamento_visita", [client_name], message, current_user)
     except Exception as e:
         logger.error(f"Errore invio ringraziamento checkout: {e}")
@@ -231,7 +230,7 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, backgrou
     if not phone and apt.get("client_id"):
         cl = await db.clients.find_one({"id": apt["client_id"], "user_id": current_user["id"]})
         if cl: phone = cl.get("phone")
-    if phone: background_tasks.add_task(_send_checkout_thank_you, phone, apt["client_name"], current_user)
+    if phone: background_tasks.add_task(_send_checkout_thank_you, phone, apt["client_name"], current_user, payments_to_insert[0]["id"])
     return {"status": "ok", "payment_id": payments_to_insert[0]["id"], "card": card_result}
 
 @router.get("/appointments", response_model=List[AppointmentResponse])

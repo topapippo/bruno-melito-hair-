@@ -164,6 +164,27 @@ async def get_public_admin_user():
         user = await db.users.find_one({}, proj)
     return user
 
+@router.get("/public/receipt/{payment_id}")
+async def get_public_receipt(payment_id: str):
+    user = await get_public_admin_user()
+    if not user:
+        raise HTTPException(status_code=404, detail="Ricevuta non trovata")
+
+    payment = await db.payments.find_one(
+        {"id": payment_id, "user_id": user["id"]}, {"_id": 0, "user_id": 0}
+    )
+    if not payment:
+        raise HTTPException(status_code=404, detail="Ricevuta non trovata")
+
+    return {
+        "client_name": payment.get("client_name", "Cliente"),
+        "services": payment.get("services", []),
+        "total_paid": payment.get("total_paid", 0),
+        "date": payment.get("date"),
+        "google_review_link": user.get("google_review_link", ""),
+    }
+
+
 DEFAULT_WEBSITE_CONFIG = {
     "salon_name": "BRUNO MELITO HAIR",
     "slogan": "Metti la testa a posto!!",
