@@ -22,7 +22,7 @@ async def _send_checkout_thank_you(phone: str, client_name: str, current_user: d
         if payment_id:
             message += f"Ecco la tua ricevuta digitale: https://brunomelitohair.it/ricevuta/{payment_id}\n\n"
         message += f"Se ti è piaciuto, ci aiuteresti tantissimo lasciando una recensione qui:\n{review_link}\n\nA presto!"
-        await send_automatic_message(phone, "ringraziamento_visita", [client_name], message, current_user, button_param=payment_id)
+        await send_automatic_message(phone, "ringraziamento_e_ricevuta", [client_name], message, current_user, button_param=payment_id)
     except Exception as e:
         logger.error(f"Errore invio ringraziamento checkout: {e}")
 
