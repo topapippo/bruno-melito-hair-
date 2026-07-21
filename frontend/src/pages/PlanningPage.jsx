@@ -332,8 +332,16 @@ export default function PlanningPage() {
 
   const filteredColumns = selectedOperatorId ? operators.filter((op) => op.id === selectedOperatorId) : operators;
 
+  const refreshClients = async () => {
+    try {
+      const res = await api.get(`${API}/clients`);
+      setClients(res.data);
+    } catch { /* silenzioso */ }
+  };
+
   const refreshAll = () => {
     fetchData();
+    refreshClients();
     if (viewMode === 'week') fetchWeekData();
     if (viewMode === 'month') fetchMonthData();
   };
