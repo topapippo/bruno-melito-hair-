@@ -54,17 +54,24 @@ async def _log_communication(user_id: str, channel: str, phone: str, message: st
     except Exception as e:
         logger.error(f"Errore logging comunicazione: {e}")
 
-async def send_whatsapp_template(phone: str, template_name: str, variables: list = None, lang: str = "it") -> dict:
+async def send_whatsapp_template(phone: str, template_name: str, variables: list = None, lang: str = "it", button_param: str = None) -> dict:
     if not WA_TOKEN: return {"sent": False, "error": "Token Meta non configurato"}
     phone_clean = normalize_phone_wa(phone)
     url = f"https://graph.facebook.com/v21.0/{WA_PHONE_NUMBER_ID}/messages"
     headers = {"Authorization": f"Bearer {WA_TOKEN}", "Content-Type": "application/json"}
-    
+
+    components = [{"type": "body", "parameters": [{"type": "text", "text": str(v)} for v in (variables or [])]}]
+    if button_param:
+        components.append({
+            "type": "button", "sub_type": "url", "index": 0,
+            "parameters": [{"type": "text", "text": str(button_param)}]
+        })
+
     payload = {
         "messaging_product": "whatsapp", "to": phone_clean, "type": "template",
         "template": {
             "name": template_name, "language": {"code": lang},
-            "components": [{"type": "body", "parameters": [{"type": "text", "text": str(v)} for v in (variables or [])]}]
+            "components": components
         }
     }
     try:
@@ -78,7 +85,7 @@ async def send_whatsapp_template(phone: str, template_name: str, variables: list
         # ORIGINALE: il retry con lingua diversa fallisce sempre con "non esiste nella
         # traduzione" quando il template ha solo la variante "it", mascherando la vera causa.
         if lang == "it" and (resp.status_code == 400 or resp.status_code == 404):
-            retry = await send_whatsapp_template(phone, template_name, variables, lang="it_IT")
+            retry = await send_whatsapp_template(phone, template_name, variables, lang="it_IT", button_param=button_param)
             if retry.get("sent"):
                 return retry
             return {"sent": False, "error": original_error, "code": resp.status_code, "data": rjson}
@@ -117,14 +124,14 @@ async def _send_twilio_sms(phone: str, message: str) -> dict:
     except Exception as e:
         return {"sent": False, "error": str(e)}
 
-async def send_automatic_message(phone: str, template_name: str = None, template_vars: list = None, fallback_text: str = None, user: dict = None) -> dict:
+async def send_automatic_message(phone: str, template_name: str = None, template_vars: list = None, fallback_text: str = None, user: dict = None, button_param: str = None) -> dict:
     """Invia via Meta Cloud API: prima template (se fornito), poi testo libero."""
     if not phone: return {"sent": False, "error": "Telefono mancante"}
     if not WA_TOKEN: return {"sent": False, "error": "WHATSAPP_TOKEN non configurato"}
 
     # 1. Meta Template
     if template_name:
-        res = await send_whatsapp_template(phone, template_name, template_vars)
+        res = await send_whatsapp_template(phone, template_name, template_vars, button_param=button_param)
         if res.get("sent"):
             await _log_communication((user or {}).get("id", "system"), "whatsapp", phone, f"Template: {template_name}", res)
             return res
