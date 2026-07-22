@@ -48,6 +48,16 @@ export default function ReceiptPage() {
             ))}
           </div>
 
+          {data.discount_value > 0 && (
+            <div className="flex justify-between text-sm text-[#C8617A] mb-3 italic border-t border-[#F0E6DC] pt-3">
+              <span>Sconto applicato {data.discount_type === 'percent' ? `(${data.discount_value}%)` : ''}</span>
+              <span>- €{(data.discount_type === 'percent'
+                ? ((data.services || []).reduce((acc, s) => acc + (s.price || 0), 0) * (data.discount_value / 100))
+                : data.discount_value
+              ).toFixed(2)}</span>
+            </div>
+          )}
+
           <div className="flex justify-between font-black text-lg text-[#2D1B14] mb-8 border-t border-[#F0E6DC] pt-4">
             <span>Totale Pagato</span>
             <span>€{(data.total_paid || 0).toFixed(2)}</span>

@@ -182,6 +182,8 @@ async def get_public_receipt(payment_id: str):
         "total_paid": payment.get("total_paid", 0),
         "date": payment.get("date"),
         "google_review_link": user.get("google_review_link", ""),
+        "discount_type": payment.get("discount_type", "none"),
+        "discount_value": payment.get("discount_value", 0),
     }
 
 
