@@ -521,7 +521,7 @@ export default function WebsitePage() {
           playsInline
           className="absolute inset-0 w-full h-full object-cover"
         >
-          <source src="https://res.cloudinary.com/dabpscxvz/video/upload/v1784710679/hero-video_hezmdf.mp4" type="video/mp4" />
+          <source src="https://res.cloudinary.com/dabpscxvz/video/upload/v1784728707/hero-video_hezmdf.mp4" type="video/mp4" />
         </video>
 
         {/* Overlay scuro elegante per leggibilità */}
