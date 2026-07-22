@@ -21,8 +21,8 @@ export function HeroGalleryStrip({ photos, T }) {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
-  // Selezioniamo max 5 foto (solo immagini: lo strip le mostra come <img>)
-  const displayPhotos = photos.filter(p => p.file_type !== 'video').slice(0, 5);
+  // Selezioniamo max 5 elementi (foto o video)
+  const displayPhotos = photos.filter(p => p && (p.image_url || p.url || p.path)).slice(0, 5);
   if (displayPhotos.length === 0) return null;
   
   const containerVariants = {
@@ -49,8 +49,8 @@ export function HeroGalleryStrip({ photos, T }) {
   return (
     <section className="py-20 sm:py-28 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #0a0a0f 0%, #050508 100%)' }}>
       {/* Animated background blobs */}
-      <div className="absolute top-0 left-0 w-96 h-96 bg-purple-600/5 blur-[120px] rounded-full pointer-events-none animate-pulse" />
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-600/5 blur-[120px] rounded-full pointer-events-none animate-pulse" style={{ animationDelay: '1s' }} />
+      <div className="absolute top-0 left-0 w-96 h-96 bg-[#C8617A]/5 blur-[120px] rounded-full pointer-events-none animate-pulse" />
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-[#D4AF7A]/5 blur-[120px] rounded-full pointer-events-none animate-pulse" style={{ animationDelay: '1s' }} />
 
       <div className="max-w-7xl mx-auto px-4 relative z-10">
         {/* Header */}
@@ -61,7 +61,7 @@ export function HeroGalleryStrip({ photos, T }) {
           transition={{ duration: 0.7, ease: _EASE }}
           className="text-center mb-16"
         >
-          <p className="text-xs font-black tracking-[0.4em] uppercase mb-4 text-purple-400">
+          <p className="text-xs font-black tracking-[0.4em] uppercase mb-4 text-[#D4AF7A]">
             ✨ ESCLUSIVO
           </p>
           <h2 className="text-3xl sm:text-5xl font-black text-white" style={{ fontFamily: T.fontDisplay }}>
@@ -85,6 +85,8 @@ export function HeroGalleryStrip({ photos, T }) {
             const isTall = idx === 1;
             const rowSpan = isTall ? 'lg:row-span-2' : '';
             const colSpan = isWide ? 'lg:col-span-2' : '';
+            const rawUrl = photo.image_url || photo.url || photo.path || '';
+            const isVideo = photo.file_type === 'video' || /\.(mp4|webm|mov)(\?|$)/i.test(rawUrl);
 
             return (
               <motion.div
@@ -103,11 +105,23 @@ export function HeroGalleryStrip({ photos, T }) {
                   }}
                   transition={{ duration: 0.3, ease: 'easeOut' }}
                 >
-                  <img
-                    src={getMediaUrl(photo.image_url)}
-                    alt="Gallery"
-                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
-                  />
+                  {isVideo ? (
+                    <video
+                      src={getMediaUrl(rawUrl)}
+                      className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      preload="metadata"
+                    />
+                  ) : (
+                    <img
+                      src={getMediaUrl(rawUrl)}
+                      alt="Gallery"
+                      className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                    />
+                  )}
 
                   {/* Mirror/Reflection Effect */}
                   <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-white/5 pointer-events-none" />
@@ -119,7 +133,7 @@ export function HeroGalleryStrip({ photos, T }) {
                 {/* Glow effect on hover */}
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
                   style={{
-                    boxShadow: 'inset 0 0 40px rgba(168, 85, 247, 0.3), 0 0 60px rgba(168, 85, 247, 0.2)',
+                    boxShadow: 'inset 0 0 40px rgba(200, 97, 122, 0.3), 0 0 60px rgba(212, 175, 122, 0.25)',
                     borderRadius: '2.5rem',
                   }}
                 />
@@ -130,7 +144,7 @@ export function HeroGalleryStrip({ photos, T }) {
                 </div>
 
                 {/* Border glow */}
-                <div className="absolute inset-0 rounded-[2.5rem] border-2 border-purple-500/0 group-hover:border-purple-500/50 transition-all duration-500" />
+                <div className="absolute inset-0 rounded-[2.5rem] border-2 border-[#C8617A]/0 group-hover:border-[#C8617A]/50 transition-all duration-500" />
               </motion.div>
             );
           })}
@@ -150,7 +164,7 @@ export function HeroGalleryStrip({ photos, T }) {
             whileTap={{ scale: 0.98 }}
             className="px-12 py-4 rounded-full font-black uppercase text-sm tracking-[0.2em] relative overflow-hidden group shadow-2xl"
             style={{
-              background: 'linear-gradient(135deg, #a855f7, #7c3aed)',
+              background: 'linear-gradient(135deg, #C8617A, #D4AF7A)',
               color: 'white',
             }}
           >

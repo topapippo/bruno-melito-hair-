@@ -45,6 +45,15 @@ function ParallaxPhoto({ photo, className }) {
   );
 }
 
+const SPAN_PATTERNS = [
+  "col-span-2 row-span-2",
+  "col-span-1 row-span-1",
+  "col-span-1 row-span-2",
+  "col-span-2 row-span-1",
+  "col-span-1 row-span-1",
+  "col-span-1 row-span-1",
+];
+
 export default function MasonryGallery({ photos }) {
   if (!photos || photos.length === 0) return null;
   const valid = photos.filter(p => p && (p.image_url || p.url || p.path));
@@ -64,12 +73,13 @@ export default function MasonryGallery({ photos }) {
         </motion.div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 auto-rows-[200px] md:auto-rows-[300px]">
-          {valid[0] && <ParallaxPhoto photo={valid[0]} className="col-span-2 row-span-2" />}
-          {valid[1] && <ParallaxPhoto photo={valid[1]} className="col-span-1 row-span-1" />}
-          {valid[2] && <ParallaxPhoto photo={valid[2]} className="col-span-1 row-span-2" />}
-          {valid[3] && <ParallaxPhoto photo={valid[3]} className="col-span-2 row-span-1" />}
-          {valid[4] && <ParallaxPhoto photo={valid[4]} className="col-span-1 row-span-1" />}
-          {valid[5] && <ParallaxPhoto photo={valid[5]} className="col-span-1 row-span-1" />}
+          {valid.map((photo, idx) => (
+            <ParallaxPhoto
+              key={photo.id || idx}
+              photo={photo}
+              className={SPAN_PATTERNS[idx % SPAN_PATTERNS.length]}
+            />
+          ))}
         </div>
       </div>
     </section>
