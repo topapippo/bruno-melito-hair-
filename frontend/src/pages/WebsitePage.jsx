@@ -509,78 +509,53 @@ export default function WebsitePage() {
         >Contatti</button>
       </div>
 
-      {/* HERO - LIGHT LUXURY STYLE */}
-      <section className="relative min-h-screen flex items-center pt-24 md:pt-16 overflow-hidden bg-[#FDF8F5]">
-        {/* Sfondo con texture sottile e glow dorato */}
-        <div className="absolute inset-0 opacity-60" style={{ background: 'radial-gradient(ellipse at 70% 20%, rgba(212,175,122,0.15) 0%, transparent 50%), radial-gradient(ellipse at 20% 80%, rgba(200,97,122,0.08) 0%, transparent 50%)' }} />
+      {/* HERO - CINEMATIC VIDEO EXPERIENCE */}
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-black">
+        {/* Sfondo Video */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source src="https://res.cloudinary.com/dabpscxvz/video/upload/v1784710679/hero-video_hezmdf.mp4" type="video/mp4" />
+        </video>
 
-        <div className="relative w-full max-w-7xl mx-auto px-6 sm:px-12 py-20 grid md:grid-cols-2 gap-12 items-center z-10">
+        {/* Overlay scuro elegante per leggibilità */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/80"></div>
 
-          {/* Colonna Testo */}
-          <div className="text-center md:text-left">
-            <div className="hero-animate hero-d1 mb-8">
-              <span className="inline-block text-[10px] font-black tracking-[0.4em] uppercase text-[#D4AF7A] border-b border-[#D4AF7A]/40 pb-1">
-                {config.year_founded ? `Hair Stylist dal ${config.year_founded}` : (config.subtitle || 'Solo per Appuntamento')}
-              </span>
-            </div>
-
-            <h1 className="font-black text-[#1A0A10] mb-6" style={{ fontFamily: "'Playfair Display', serif", lineHeight: 0.9 }}>
-              <span className="block hero-animate hero-d2" style={{ fontSize: 'clamp(3.5rem, 10vw, 7rem)', letterSpacing: '-0.03em' }}>Bruno</span>
-              <span className="block hero-animate hero-d3 italic font-normal text-[#C8617A]" style={{ fontSize: 'clamp(3.5rem, 10vw, 7rem)', letterSpacing: '-0.02em' }}>Melito</span>
-            </h1>
-
-            <p className="text-base md:text-lg text-[#2D1B14]/70 max-w-md mx-auto md:mx-0 mb-10 leading-relaxed hero-animate hero-d4">
-              {config.hero_description || "L'eccellenza dell'hair styling a Santa Maria Capua Vetere. Trattamenti premium, colore senza ammoniaca e stile personalizzato."}
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start mb-8 hero-animate hero-d5">
-              <button onClick={() => setShowBooking(true)} className="hero-cta-primary text-white font-bold text-sm px-10 py-4 rounded-full tracking-wider uppercase" data-testid="website-hero-book-btn">
-                Prenota Ora
-              </button>
-              <Button onClick={openWhatsApp} className="bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold text-sm px-8 py-4 rounded-full tracking-wider uppercase" data-testid="website-hero-whatsapp-btn">
-                <MessageCircle className="w-4 h-4 mr-2" /> WhatsApp
-              </Button>
-              <Button onClick={() => { setShowServices(true); setTimeout(() => scrollTo(servicesRef), 100); }} variant="ghost" className="text-[#2D1B14] hover:bg-[#F0E6DC] font-bold text-sm px-8 py-4 rounded-full tracking-wider uppercase">
-                Scopri i Servizi
-              </Button>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-4 text-sm justify-center md:justify-start hero-animate hero-d5">
-              {phones.map((p, i) => (
-                <a key={i} href={`tel:${p.replace(/\s/g, '')}`} className="flex items-center gap-2 text-[#2D1B14]/60 hover:text-[#C8617A] transition-colors duration-300 justify-center md:justify-start group">
-                  <Phone className="w-4 h-4 group-hover:scale-110 transition-transform" /> {p}
-                </a>
-              ))}
-              {config.address && (
-                <a href={config.maps_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[#2D1B14]/60 hover:text-[#C8617A] transition-colors duration-300 justify-center md:justify-start group">
-                  <MapPin className="w-4 h-4 group-hover:scale-110 transition-transform" /> {config.address}
-                </a>
-              )}
-            </div>
+        {/* Contenuto Testo Centrato */}
+        <div className="relative z-10 text-center text-white px-6 py-20 max-w-4xl mx-auto">
+          <div className="hero-animate hero-d1 mb-8">
+            <span className="inline-block text-[10px] font-black tracking-[0.4em] uppercase text-[#D4AF7A] border-b border-[#D4AF7A]/40 pb-1">
+              {config.year_founded ? `Hair Stylist dal ${config.year_founded}` : (config.subtitle || 'Solo per Appuntamento')}
+            </span>
           </div>
 
-          {/* Colonna Immagine */}
-          <div className="hero-animate hero-d4 relative hidden md:block">
-            <div className="absolute -inset-4 rounded-[3rem] bg-gradient-to-tr from-[#C8617A]/10 to-[#D4AF7A]/20 blur-2xl"></div>
-            {config.hero_image ? (
-              <img
-                src={getMediaUrl(config.hero_image)}
-                alt="Bruno Melito Hair Stylist"
-                className="relative rounded-[2.5rem] shadow-2xl object-cover w-full h-[600px]"
-                style={{ maskImage: 'linear-gradient(to bottom, black 80%, transparent 100%)' }}
-              />
-            ) : (
-              <div className="relative rounded-[2.5rem] shadow-2xl bg-white h-[600px] flex items-center justify-center">
-                <Scissors className="w-24 h-24 text-[#E8D5C8]" />
-              </div>
-            )}
+          <h1 className="font-black mb-6" style={{ fontFamily: "'Playfair Display', serif", lineHeight: 0.9 }}>
+            <span className="block hero-animate hero-d2" style={{ fontSize: 'clamp(3.5rem, 12vw, 9rem)', letterSpacing: '-0.03em' }}>Bruno</span>
+            <span className="block hero-animate hero-d3 italic font-normal text-[#C8617A]" style={{ fontSize: 'clamp(3.5rem, 12vw, 9rem)', letterSpacing: '-0.02em' }}>Melito</span>
+          </h1>
+
+          <p className="text-base md:text-lg text-white/80 max-w-xl mx-auto mb-10 leading-relaxed hero-animate hero-d4">
+            {config.hero_description || "L'eccellenza dell'hair styling a Santa Maria Capua Vetere. Trattamenti premium, colore senza ammoniaca e stile personalizzato."}
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center hero-animate hero-d5">
+            <button onClick={() => setShowBooking(true)} className="hero-cta-primary text-white font-bold text-sm px-12 py-4 rounded-full tracking-wider uppercase shadow-2xl" data-testid="website-hero-book-btn">
+              Prenota Ora
+            </button>
+            <Button onClick={() => scrollTo(servicesRef)} variant="ghost" className="text-white border border-white/30 hover:bg-white/10 font-bold text-sm px-8 py-4 rounded-full tracking-wider uppercase">
+              Scopri i Servizi
+            </Button>
           </div>
         </div>
 
         {/* Freccia Scroll */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 hidden sm:flex flex-col items-center gap-2 hero-animate hero-d5">
-          <span className="text-[#9C7060] text-[10px] font-semibold tracking-[0.3em] uppercase">Scorri</span>
-          <div className="w-px h-12 bg-gradient-to-b from-[#9C7060]/50 to-transparent"></div>
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 hidden sm:flex flex-col items-center gap-2 hero-animate hero-d5 z-10">
+          <span className="text-white/50 text-[10px] font-semibold tracking-[0.3em] uppercase">Scorri</span>
+          <div className="w-px h-12 bg-gradient-to-b from-white/50 to-transparent"></div>
         </div>
       </section>
 
