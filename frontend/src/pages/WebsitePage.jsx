@@ -15,10 +15,12 @@ import BookingSuccess from '../components/website/BookingSuccess';
 import MyAppointmentsModal from '../components/website/MyAppointmentsModal';
 import TrendGallery from '../components/website/TrendGallery';
 import { HeroGalleryStrip } from '../components/website/sections/HeroGalleryStrip';
+import MasonryGallery from '../components/website/sections/MasonryGallery';
+import CinematicInterlude from '../components/website/sections/CinematicInterlude';
 import {
   AnimatedSection,
   ServicesSection, SalonSection, AboutSection, PromotionsSection,
-  ReviewsSection, GallerySection, ContactSection,
+  ReviewsSection, ContactSection,
   TransformationsSection, TeamSection, WelcomeBanner, GiftCardSection,
   PhotoInterlude,
 } from '../components/website/sections/LandingSections';
@@ -379,7 +381,7 @@ export default function WebsitePage() {
       case 'team':
         return operators.filter(o => o.active !== false).length > 0 ? <TeamSection key="team" operators={operators} T={T} setShowBooking={setShowBooking} /> : null;
       case 'gallery':
-        return hairstylePhotos.length > 0 ? <GallerySection key="gallery" config={config} hairstylePhotos={hairstylePhotos} setShowBooking={setShowBooking} T={T} /> : null;
+        return hairstylePhotos.length > 0 ? <MasonryGallery key="gallery" photos={hairstylePhotos} /> : null;
       case 'trend_gallery':
         return <TrendGallery key="trend_gallery" setShowBooking={setShowBooking} />;
       case 'gift_card':
@@ -635,6 +637,15 @@ export default function WebsitePage() {
           const sec = renderSection(id);
           if (!sec) return;
           out.push(sec);
+          if (id === 'services' && salonPhotos.length > 0) {
+            out.push(
+              <CinematicInterlude
+                key="cinematic-interlude"
+                image={salonPhotos[0]?.image_url || ''}
+                quote="Uno spazio dedicato al tuo benessere, dove la tradizione incontra l'innovazione."
+              />
+            );
+          }
           if (hairstylePhotos.length > 0 && afterSections.has(id)) {
             const photo = hairstylePhotos[photoCount % hairstylePhotos.length];
             out.push(<PhotoInterlude key={`interlude-${id}`} photo={photo} index={photoCount} T={T} />);
