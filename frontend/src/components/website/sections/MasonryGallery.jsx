@@ -4,6 +4,7 @@ import { getMediaUrl } from '../../../lib/mediaUrl';
 
 function ParallaxPhoto({ photo, className }) {
   const ref = useRef(null);
+  const videoRef = useRef(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
   const y = useTransform(scrollYProgress, [0, 1], ["-10%", "10%"]);
 
@@ -18,17 +19,19 @@ function ParallaxPhoto({ photo, className }) {
     <motion.div
       ref={ref}
       className={`relative overflow-hidden rounded-2xl shadow-lg group ${className}`}
+      onMouseEnter={() => videoRef.current?.play()}
+      onMouseLeave={() => videoRef.current?.pause()}
     >
       {isVideo ? (
         <motion.video
+          ref={videoRef}
           src={mediaUrl}
           style={{ y, scale: 1.2 }}
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-          autoPlay
           muted
           loop
           playsInline
-          preload="metadata"
+          preload="none"
         />
       ) : (
         <motion.img
