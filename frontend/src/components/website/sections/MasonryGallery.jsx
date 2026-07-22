@@ -1,24 +1,45 @@
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useRef } from 'react';
+import { getMediaUrl } from '../../../lib/mediaUrl';
 
 function ParallaxPhoto({ photo, className }) {
   const ref = useRef(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
-  const y = useTransform(scrollYProgress, [0, 1], ["-15%", "15%"]);
+  const y = useTransform(scrollYProgress, [0, 1], ["-10%", "10%"]);
+
+  const rawUrl = photo.image_url || photo.url || photo.path || '';
+  const mediaUrl = getMediaUrl(rawUrl);
+  const label = photo.label || photo.tag || 'Il nostro lavoro';
+  const isVideo = photo.file_type === 'video' || /\.(mp4|webm|mov)(\?|$)/i.test(rawUrl);
+
+  if (!mediaUrl) return null;
 
   return (
     <motion.div
       ref={ref}
       className={`relative overflow-hidden rounded-2xl shadow-lg group ${className}`}
     >
-      <motion.img
-        src={photo.image_url}
-        alt={photo.label || 'Bruno Melito Hair'}
-        style={{ y, scale: 1.2 }}
-        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-      />
+      {isVideo ? (
+        <motion.video
+          src={mediaUrl}
+          style={{ y, scale: 1.2 }}
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+        />
+      ) : (
+        <motion.img
+          src={mediaUrl}
+          alt={label}
+          style={{ y, scale: 1.2 }}
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+        />
+      )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
-        <h3 className="text-white font-bold text-xl" style={{ fontFamily: "'Playfair Display', serif" }}>{photo.label || 'Il nostro lavoro'}</h3>
+        <h3 className="text-white font-bold text-xl" style={{ fontFamily: "'Playfair Display', serif" }}>{label}</h3>
       </div>
     </motion.div>
   );
@@ -26,6 +47,8 @@ function ParallaxPhoto({ photo, className }) {
 
 export default function MasonryGallery({ photos }) {
   if (!photos || photos.length === 0) return null;
+  const valid = photos.filter(p => p && (p.image_url || p.url || p.path));
+  if (valid.length === 0) return null;
 
   return (
     <section className="py-24 bg-[#FDF8F5] overflow-hidden">
@@ -41,12 +64,12 @@ export default function MasonryGallery({ photos }) {
         </motion.div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 auto-rows-[200px] md:auto-rows-[300px]">
-          {photos[0] && <ParallaxPhoto photo={photos[0]} className="col-span-2 row-span-2" />}
-          {photos[1] && <ParallaxPhoto photo={photos[1]} className="col-span-1 row-span-1" />}
-          {photos[2] && <ParallaxPhoto photo={photos[2]} className="col-span-1 row-span-2" />}
-          {photos[3] && <ParallaxPhoto photo={photos[3]} className="col-span-2 row-span-1" />}
-          {photos[4] && <ParallaxPhoto photo={photos[4]} className="col-span-1 row-span-1" />}
-          {photos[5] && <ParallaxPhoto photo={photos[5]} className="col-span-1 row-span-1" />}
+          {valid[0] && <ParallaxPhoto photo={valid[0]} className="col-span-2 row-span-2" />}
+          {valid[1] && <ParallaxPhoto photo={valid[1]} className="col-span-1 row-span-1" />}
+          {valid[2] && <ParallaxPhoto photo={valid[2]} className="col-span-1 row-span-2" />}
+          {valid[3] && <ParallaxPhoto photo={valid[3]} className="col-span-2 row-span-1" />}
+          {valid[4] && <ParallaxPhoto photo={valid[4]} className="col-span-1 row-span-1" />}
+          {valid[5] && <ParallaxPhoto photo={valid[5]} className="col-span-1 row-span-1" />}
         </div>
       </div>
     </section>

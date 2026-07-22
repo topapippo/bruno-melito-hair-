@@ -138,7 +138,7 @@ export default function WebsitePage() {
   const reviews = siteData?.reviews || [];
   const gallery = siteData?.gallery || [];
   const salonPhotos = gallery.filter(g => g.section === 'salon');
-  const hairstylePhotos = gallery.filter(g => g.section === 'gallery');
+  const hairstylePhotos = gallery.filter(g => g.section === 'gallery' || !g.section);
 
   // SEO: title + meta tags dinamici + Dati Strutturati (JSON-LD)
   useEffect(() => {
