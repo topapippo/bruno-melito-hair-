@@ -89,8 +89,15 @@ export function HeroGalleryStrip({ photos, T }) {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
-  // Selezioniamo max 5 elementi (foto o video)
-  const displayPhotos = photos.filter(p => p && (p.image_url || p.url || p.path)).slice(0, 5);
+  // Selezioniamo max 5 elementi, garantendo che ci siano alcuni video dalla gallery
+  const validItems = photos.filter(p => p && (p.image_url || p.url || p.path));
+  const isVideoItem = (p) => {
+    const url = p.image_url || p.url || p.path || '';
+    return p.file_type === 'video' || /\.(mp4|webm|mov)(\?|$)/i.test(url);
+  };
+  const videoItems = validItems.filter(isVideoItem);
+  const photoItems = validItems.filter(p => !isVideoItem(p));
+  const displayPhotos = [...videoItems.slice(0, 2), ...photoItems].slice(0, 5);
   if (displayPhotos.length === 0) return null;
   
   const containerVariants = {
