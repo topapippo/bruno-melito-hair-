@@ -530,7 +530,8 @@ async def get_website_config(current_user: dict = Depends(get_current_user)):
 async def update_website_config(data: dict, current_user: dict = Depends(get_current_user)):
     await db.website_config.update_one({"user_id": current_user["id"]}, {"$set": data}, upsert=True)
     invalidate_website_cache()
-    return {"status": "ok"}
+    config = await db.website_config.find_one({"user_id": current_user["id"]}, {"_id": 0})
+    return {**DEFAULT_WEBSITE_CONFIG, **(config or {})}
 
 @router.get("/website/reviews")
 async def get_website_reviews(current_user: dict = Depends(get_current_user)):
