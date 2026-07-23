@@ -372,7 +372,7 @@ class PublicBookingRequest(BaseModel):
         if digits < 8 or digits > 15:
             raise ValueError('Numero di telefono non valido')
         import re as _re
-        if not _re.match(r'^[\d\s\+\-\(\)]+$', v):
+        if not _re.match(r'^[\d\s\+\-\.\/\(\)]+$', v):
             raise ValueError('Numero di telefono contiene caratteri non validi')
         return v
 
