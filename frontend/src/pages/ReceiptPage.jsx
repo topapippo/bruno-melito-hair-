@@ -70,16 +70,17 @@ export default function ReceiptPage() {
             ))}
           </div>
 
-          {/* Box Sconto Festoso con Pulse */}
+          {/* Box Sconto — evidente ma sobrio */}
           {discountAmount > 0 && (
-            <div className="my-5 p-4 bg-emerald-50 border-2 border-emerald-400 rounded-2xl text-center animate-pulse shadow-sm">
-              <div className="flex items-center justify-center gap-2 text-emerald-600 font-black text-lg">
+            <div className="my-5 p-4 bg-emerald-50 border-2 border-emerald-300 rounded-2xl flex items-center justify-between">
+              <div className="flex items-center gap-2 text-emerald-700 font-bold">
                 <Tag className="w-5 h-5" />
-                🎉 EVVIVA! HAI RISPARMIATO €{discountAmount.toFixed(2)}! 🎉
+                <span>
+                  Sconto applicato
+                  {data.discount_type === 'percent' ? ` (${data.discount_value}%)` : ''}
+                </span>
               </div>
-              <p className="text-emerald-500 text-xs mt-1 font-bold">
-                Sconto {data.discount_type === 'percent' ? `${data.discount_value}%` : 'fisso'} applicato
-              </p>
+              <span className="text-emerald-700 font-black text-lg">- €{discountAmount.toFixed(2)}</span>
             </div>
           )}
 
