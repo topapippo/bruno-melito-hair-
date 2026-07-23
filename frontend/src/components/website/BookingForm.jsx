@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api, { API } from '../../lib/api';
+import api, { API, getErrorMessage } from '../../lib/api';
 import { fmtDate } from '../../lib/dateUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -112,7 +112,7 @@ export default function BookingForm({
         setConflictData(err.response.data.detail);
         toast.error('Orario occupato! Scegli un operatore disponibile o un orario alternativo.');
       } else {
-        toast.error(err.response?.data?.detail || 'Errore nella prenotazione');
+        toast.error(getErrorMessage(err, 'Errore nella prenotazione'));
       }
     } finally { setSubmitting(false); }
   };

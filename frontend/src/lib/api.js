@@ -48,3 +48,17 @@ export default api;
 export { API_BASE };
 // Alias conveniente: import { API } from '../lib/api' invece di ridefinirlo in ogni pagina
 export const API = API_BASE;
+
+// Estrae un messaggio leggibile da un errore axios. Necessario perché su 422
+// FastAPI/Pydantic restituisce `detail` come lista di oggetti {type, loc, msg, ...}
+// invece di una stringa: passarla direttamente a toast.error() crasha React
+// (Error #31 "Objects are not valid as a React child") e fa apparire la pagina bianca.
+export function getErrorMessage(err, fallback = 'Errore') {
+  const detail = err?.response?.data?.detail;
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail)) {
+    const msgs = detail.map(d => d?.msg).filter(Boolean);
+    if (msgs.length) return msgs.join(', ').replace(/^Value error,\s*/i, '');
+  }
+  return fallback;
+}

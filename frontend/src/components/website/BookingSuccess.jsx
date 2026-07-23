@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import api, { API } from '../../lib/api';
+import api, { API, getErrorMessage } from '../../lib/api';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Clock, Gift } from 'lucide-react';
 import { format } from 'date-fns';
@@ -35,7 +35,7 @@ export default function BookingSuccess({
       setAddedUpsells(prev => [...prev, service.id]);
       setUpsellingSuggestions(prev => prev.filter(s => s.id !== service.id));
       toast.success(`${service.name} aggiunto con ${service.discount_percent}% di sconto!`);
-    } catch (err) { toast.error(err.response?.data?.detail || 'Errore'); }
+    } catch (err) { toast.error(getErrorMessage(err)); }
     finally { setAddingUpsell(null); }
   };
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import api, { API } from '../../lib/api';
+import api, { API, getErrorMessage } from '../../lib/api';
 import { Button } from '@/components/ui/button';
 import { Clock, CalendarDays, X, Pencil, Trash2, Search, RotateCcw } from 'lucide-react';
 import { format } from 'date-fns';
@@ -34,7 +34,7 @@ export default function MyAppointmentsModal({ onClose, onRebook }) {
       await api.delete(`${API}/public/appointments/${apptId}?phone=${encodeURIComponent(lookupPhone)}`);
       toast.success('Appuntamento annullato');
       lookupMyAppointments();
-    } catch (err) { toast.error(err.response?.data?.detail || 'Errore'); }
+    } catch (err) { toast.error(getErrorMessage(err)); }
     finally { setCancellingId(null); }
   };
 
@@ -46,7 +46,7 @@ export default function MyAppointmentsModal({ onClose, onRebook }) {
       toast.success('Appuntamento modificato');
       setEditingAppt(null);
       lookupMyAppointments();
-    } catch (err) { toast.error(err.response?.data?.detail || 'Errore nella modifica'); }
+    } catch (err) { toast.error(getErrorMessage(err, 'Errore nella modifica')); }
     finally { setSavingId(null); }
   };
 
