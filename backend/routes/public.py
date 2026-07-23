@@ -264,7 +264,7 @@ async def create_public_booking(request: Request, data: PublicBookingRequest, ba
                 bh, bm = int(data.time.split(":")[0]), int(data.time.split(":")[1])
                 book_min = bh * 60 + bm
                 in_range = any(
-                    int(oh) * 60 + int(om) <= book_min < int(ch) * 60 + int(cm)
+                    int(oh) * 60 + int(om) <= book_min < (int(ch) * 60 + int(cm) - 30)
                     for oh, om, ch, cm in ranges
                 )
                 if not in_range:

@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Settings, Save, Loader2, Clock, Building2, User, Lock, Palette, Type, RotateCcw, Plus, Trash2, Check, Download, Share2, FileText, ChevronLeft, ChevronRight, CalendarDays, X } from 'lucide-react';
+import { Settings, Save, Loader2, Clock, Building2, User, Lock, Unlock, Palette, Type, RotateCcw, Plus, Trash2, Check, Download, Share2, FileText, ChevronLeft, ChevronRight, CalendarDays, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 
@@ -234,6 +234,7 @@ const DAYS = [
 ];
 
 const DAY_OF_WEEK_MAP = { 'lunedì': 1, 'martedì': 2, 'mercoledì': 3, 'giovedì': 4, 'venerdì': 5, 'sabato': 6, 'domenica': 0 };
+const MONTH_NAMES = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
 
 export default function SettingsPage() {
   const { updateUser } = useAuth();
@@ -249,7 +250,7 @@ export default function SettingsPage() {
   });
   const [savingTheme, setSavingTheme] = useState(false);
   const [blockedSlots, setBlockedSlots] = useState([]);
-  const [newBlock, setNewBlock] = useState({ type: 'recurring', day_of_week: 'lunedì', date: '', start_time: '13:00', end_time: '14:00', reason: '' });
+  const [newBlock, setNewBlock] = useState({ type: 'recurring', day_of_week: 'lunedì', date: '', day_of_month: 1, month_of_year: 1, start_time: '13:00', end_time: '14:00', reason: '' });
   const [savingBlock, setSavingBlock] = useState(false);
   // Calendario blocco
   const today = new Date();
@@ -417,7 +418,7 @@ export default function SettingsPage() {
       await api.post(`${API}/blocked-slots`, newBlock);
       toast.success('Blocco orario aggiunto!');
       fetchBlockedSlots();
-      setNewBlock({ type: 'recurring', day_of_week: 'lunedì', date: '', start_time: '13:00', end_time: '14:00', reason: '' });
+      setNewBlock({ type: 'recurring', day_of_week: 'lunedì', date: '', day_of_month: 1, month_of_year: 1, start_time: '13:00', end_time: '14:00', reason: '' });
     } catch (err) { toast.error(err.response?.data?.detail || 'Errore'); }
     finally { setSavingBlock(false); }
   };
@@ -958,6 +959,95 @@ export default function SettingsPage() {
                 )}
               </div>
 
+            </CardContent>
+          </Card>
+
+          {/* Blocco Orari Ricorrenti */}
+          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+            <CardHeader>
+              <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
+                <Lock className="w-5 h-5 text-red-500" />
+                Blocca Orari Ricorrenti
+              </CardTitle>
+              <p className="text-sm text-[#7C5C4A] mt-1">Blocca una fascia oraria che si ripete (es. pausa pranzo), come i Giorni Lavorativi qui sopra — vale sia sul Planning che sulle prenotazioni online.</p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-wrap items-end gap-3">
+                <div>
+                  <Label className="text-xs font-semibold">Tipo</Label>
+                  <select value={newBlock.type} onChange={e => setNewBlock(b => ({ ...b, type: e.target.value }))}
+                    className="w-full p-2 border rounded-lg text-sm h-9">
+                    <option value="recurring">Ogni settimana</option>
+                    <option value="daily">Ogni giorno</option>
+                    <option value="monthly">Ogni mese</option>
+                    <option value="yearly">Ogni anno</option>
+                  </select>
+                </div>
+                {newBlock.type === 'recurring' && (
+                  <div>
+                    <Label className="text-xs font-semibold">Giorno</Label>
+                    <select value={newBlock.day_of_week} onChange={e => setNewBlock(b => ({ ...b, day_of_week: e.target.value }))}
+                      className="w-full p-2 border rounded-lg text-sm h-9">
+                      {DAYS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+                    </select>
+                  </div>
+                )}
+                {(newBlock.type === 'monthly' || newBlock.type === 'yearly') && (
+                  <div>
+                    <Label className="text-xs font-semibold">Giorno del mese</Label>
+                    <Input type="number" min={1} max={31} value={newBlock.day_of_month}
+                      onChange={e => setNewBlock(b => ({ ...b, day_of_month: parseInt(e.target.value) || 1 }))}
+                      className="w-20 h-9" />
+                  </div>
+                )}
+                {newBlock.type === 'yearly' && (
+                  <div>
+                    <Label className="text-xs font-semibold">Mese</Label>
+                    <select value={newBlock.month_of_year} onChange={e => setNewBlock(b => ({ ...b, month_of_year: parseInt(e.target.value) }))}
+                      className="w-full p-2 border rounded-lg text-sm h-9">
+                      {MONTH_NAMES.map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
+                    </select>
+                  </div>
+                )}
+                <div>
+                  <Label className="text-xs font-semibold">Da</Label>
+                  <Input type="time" value={newBlock.start_time} onChange={e => setNewBlock(b => ({ ...b, start_time: e.target.value }))} className="w-28 h-9" />
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold">A</Label>
+                  <Input type="time" value={newBlock.end_time} onChange={e => setNewBlock(b => ({ ...b, end_time: e.target.value }))} className="w-28 h-9" />
+                </div>
+                <div className="flex-1 min-w-[160px]">
+                  <Label className="text-xs font-semibold">Motivo (opzionale)</Label>
+                  <Input placeholder="es. Pausa pranzo" value={newBlock.reason} onChange={e => setNewBlock(b => ({ ...b, reason: e.target.value }))} className="h-9" />
+                </div>
+                <Button onClick={addBlockedSlot} disabled={savingBlock} className="bg-red-500 hover:bg-red-600 text-white h-9">
+                  {savingBlock ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Lock className="w-4 h-4 mr-1" />} Blocca
+                </Button>
+              </div>
+
+              <div className="space-y-1.5">
+                {blockedSlots.filter(s => s.type !== 'one-time').length === 0 && (
+                  <p className="text-sm text-[#7C5C4A]">Nessun orario ricorrente bloccato.</p>
+                )}
+                {blockedSlots.filter(s => s.type !== 'one-time').map(s => (
+                  <div key={s.id} className="flex items-center justify-between gap-2 bg-[#FAF7F2] border border-[#F0E6DC] rounded-lg px-3 py-2">
+                    <div className="text-sm">
+                      <span className="font-bold text-[#2D1B14]">{s.start_time}–{s.end_time}</span>
+                      <span className="text-[#7C5C4A] ml-2">
+                        {s.type === 'recurring' && `ogni ${s.day_of_week}`}
+                        {s.type === 'daily' && 'ogni giorno'}
+                        {s.type === 'monthly' && `ogni mese il ${s.day_of_month}`}
+                        {s.type === 'yearly' && `ogni anno il ${s.day_of_month}/${s.month_of_year}`}
+                      </span>
+                      {s.reason && <span className="text-[#7C5C4A] italic ml-2">— {s.reason}</span>}
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => deleteBlockedSlot(s.id)} className="text-red-500 hover:bg-red-100 h-7 px-2 text-xs font-bold shrink-0">
+                      <Unlock className="w-3.5 h-3.5 mr-1" /> Sblocca
+                    </Button>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
 
