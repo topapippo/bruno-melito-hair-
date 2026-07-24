@@ -40,6 +40,7 @@ const MessageLogsPage       = lazy(() => import("./pages/MessageLogsPage"));
 const SellAbbonamentoPage   = lazy(() => import("./pages/SellAbbonamentoPage"));
 const MessagesPage          = lazy(() => import("./pages/MessagesPage"));
 const MarketingPage         = lazy(() => import("./pages/MarketingPage"));
+const InventoryPage         = lazy(() => import("./pages/InventoryPage"));
 
 function PageLoader() {
   return (
@@ -324,6 +325,16 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <ExpensesPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* MAGAZZINO */}
+          <Route
+            path="/magazzino"
+            element={
+              <ProtectedRoute>
+                <InventoryPage />
               </ProtectedRoute>
             }
           />

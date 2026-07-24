@@ -8,7 +8,7 @@ import {
   UserCircle, BarChart3, Settings, LogOut, Menu, CreditCard,
   Euro, Database, Bell, Globe, ArrowDownCircle, Gift,
   Sparkles, ClockArrowUp, ChevronLeft, ChevronRight, ChevronDown, Share2, MessageSquare, ShoppingBag,
-  MessageCircle, Megaphone
+  MessageCircle, Megaphone, Package
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
@@ -50,6 +50,7 @@ const navGroups = [
     emoji: '⚙️',
     items: [
       { path: '/services',      label: 'Servizi',       icon: Scissors },
+      { path: '/magazzino',     label: 'Magazzino',     icon: Package },
       { path: '/operators',     label: 'Operatori',     icon: UserCircle },
       { path: '/gestione-sito', label: 'Sito Web',      icon: Globe },
       { path: '/social',        label: 'Social Media',  icon: Share2 },
