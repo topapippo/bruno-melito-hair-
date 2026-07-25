@@ -524,17 +524,8 @@ export default function NewAppointmentDialog({
                     POS
                   </Button>
                 </div>
-                <p className="text-[10px] text-gray-400 text-center">Per sospeso o pagamento con abbonamento/tessera, usa "Salva e vai alla cassa"</p>
+                <p className="text-[10px] text-gray-400 text-center">Per sospeso, abbonamento o tessera: salva l'appuntamento, poi cliccalo nel planning per andare in cassa</p>
               </div>
-            )}
-            
-            {formData.service_ids.length > 0 && (
-              <Button type="button" disabled={saving || isDayClosed || availableSlots.length === 0}
-                onClick={() => handleSubmit(null, null, true)}
-                className="w-full h-11 bg-[#C8617A] hover:bg-[#B14F66] text-white font-bold text-sm shadow-lg gap-2">
-                {saving && checkoutMethod === null ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
-                SALVA E VAI ALLA CASSA (vendi abbonamento)
-              </Button>
             )}
 
             <Button type="submit" disabled={saving || isDayClosed || availableSlots.length === 0}
