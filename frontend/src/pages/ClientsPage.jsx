@@ -604,13 +604,13 @@ export default function ClientsPage() {
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                   <Palette className="w-4 h-4 text-[#C8617A]" />
-                  Codice Colore (scarico magazzino)
+                  Codice Colore (scarico magazzino — più codici separati da virgola)
                 </Label>
                 <Input
                   type="text"
                   value={formData.current_color_code}
                   onChange={(e) => setFormData({ ...formData, current_color_code: e.target.value })}
-                  placeholder="Es. 7.0 — deve corrispondere al nome del prodotto in Magazzino"
+                  placeholder="Es. 7.0, 6.3 — ogni codice = nome prodotto in Magazzino"
                   data-testid="client-color-code-input"
                   className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
                 />

@@ -252,24 +252,27 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, backgrou
                 svc_name = db_svc.get("name", "servizio")
                 category = (db_svc.get("category") or "").lower()
                 if "colore" in category:
-                    color_code = ((client_doc or {}).get("current_color_code") or "").strip()
-                    if not color_code:
+                    raw_codes = ((client_doc or {}).get("current_color_code") or "").strip()
+                    if not raw_codes:
                         inventory_log["warnings"].append(f"{svc_name}: cliente senza Codice Colore")
                         continue
-                    # match nome prodotto case-insensitive + spazi ignorati
-                    inv_prod = await db.inventory.find_one({
-                        "user_id": current_user["id"],
-                        "name": {"$regex": f"^\\s*{re.escape(color_code)}\\s*$", "$options": "i"},
-                    })
-                    if not inv_prod:
-                        inventory_log["warnings"].append(f"{svc_name}: nessun prodotto magazzino chiamato «{color_code}»")
-                        continue
-                    dec = abs(inv_prod.get("dose_size", 1.0)) * qty
-                    await db.inventory.update_one(
-                        {"id": inv_prod["id"], "user_id": current_user["id"]},
-                        {"$inc": {"total_stock": -dec}}
-                    )
-                    inventory_log["deducted"].append(f"{inv_prod['name']} −{dec:g}")
+                    # supporta più colori: separati da virgola, +, /, ; o a capo
+                    color_codes = [c.strip() for c in re.split(r"[,;+/\n]+", raw_codes) if c.strip()]
+                    for color_code in color_codes:
+                        # match nome prodotto case-insensitive + spazi ignorati
+                        inv_prod = await db.inventory.find_one({
+                            "user_id": current_user["id"],
+                            "name": {"$regex": f"^\\s*{re.escape(color_code)}\\s*$", "$options": "i"},
+                        })
+                        if not inv_prod:
+                            inventory_log["warnings"].append(f"{svc_name}: nessun prodotto magazzino chiamato «{color_code}»")
+                            continue
+                        dec = abs(inv_prod.get("dose_size", 1.0)) * qty
+                        await db.inventory.update_one(
+                            {"id": inv_prod["id"], "user_id": current_user["id"]},
+                            {"$inc": {"total_stock": -dec}}
+                        )
+                        inventory_log["deducted"].append(f"{inv_prod['name']} −{dec:g}")
                 elif db_svc.get("linked_inventory_id"):
                     inv_prod = await db.inventory.find_one({"id": db_svc["linked_inventory_id"], "user_id": current_user["id"]})
                     if not inv_prod:
