@@ -1260,6 +1260,9 @@ export default function EditAppointmentDialog({
               <Button type="button" variant="outline" size="sm" onClick={resetCheckout} className="ml-auto border-[#C8617A] text-[#C8617A]">
                 ← Modifica appuntamento
               </Button>
+              <Button type="button" size="sm" onClick={()=>saveAppointment(false)} disabled={saving} className="bg-amber-500 hover:bg-amber-600 text-white font-bold">
+                {saving?<Loader2 className="w-4 h-4 animate-spin"/>:<><Edit3 className="w-3.5 h-3.5 mr-1"/>Salva modifiche</>}
+              </Button>
             </div>
           ) : (
             <div className="shrink-0 px-5 py-3 bg-white border-t-2 border-[#F0E6DC] shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
