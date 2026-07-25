@@ -29,7 +29,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Users, Plus, Search, Phone, Mail, Edit2, Trash2, Loader2, History, MessageSquare, Upload, FileSpreadsheet, Euro, AlertTriangle, Scissors, Cake, ShieldCheck } from 'lucide-react';
+import { Users, Plus, Search, Phone, Mail, Edit2, Trash2, Loader2, History, MessageSquare, Upload, FileSpreadsheet, Euro, AlertTriangle, Scissors, Cake, ShieldCheck, Palette } from 'lucide-react';
 import { toast } from 'sonner';
 import PageHeader from '../components/PageHeader';
 import ClientAvatar from '../components/ClientAvatar';
@@ -40,6 +40,7 @@ export default function ClientsPage() {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [colorOnly, setColorOnly] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
@@ -294,11 +295,14 @@ export default function ClientsPage() {
     }
   };
 
-  const filteredClients = clients.filter(client =>
-    client.name.toLowerCase().includes(search.toLowerCase()) ||
-    client.phone.includes(search) ||
-    client.email.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredClients = clients.filter(client => {
+    const matchesSearch =
+      client.name.toLowerCase().includes(search.toLowerCase()) ||
+      client.phone.includes(search) ||
+      client.email.toLowerCase().includes(search.toLowerCase());
+    const matchesColor = !colorOnly || (client.hair_notes && client.hair_notes.trim() !== '');
+    return matchesSearch && matchesColor;
+  });
 
   return (
     <Layout>
@@ -348,17 +352,33 @@ export default function ClientsPage() {
           </div>
         </div>
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#7C5C4A]" />
-          <Input
-            type="search"
-            placeholder="Cerca cliente per nome, telefono o email..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            data-testid="search-clients-input"
-            className="pl-10 bg-white border-[#E8D5C8] focus:border-[#C8617A] h-12"
-          />
+        {/* Search + filtro colore */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#7C5C4A]" />
+            <Input
+              type="search"
+              placeholder="Cerca cliente per nome, telefono o email..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              data-testid="search-clients-input"
+              className="pl-10 bg-white border-[#E8D5C8] focus:border-[#C8617A] h-12"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => setColorOnly(!colorOnly)}
+            aria-pressed={colorOnly}
+            data-testid="filter-color-btn"
+            className={`flex items-center justify-center gap-2 px-5 h-12 rounded-xl font-bold text-sm transition-all border shrink-0 ${
+              colorOnly
+                ? 'bg-[#C8617A] text-white border-[#C8617A] shadow-md'
+                : 'bg-white text-[#7C5C4A] border-[#E8D5C8] hover:bg-[#FDF8F5]'
+            }`}
+          >
+            <Palette className="w-4 h-4" />
+            Solo Colore
+          </button>
         </div>
 
         {/* Clients Grid */}
