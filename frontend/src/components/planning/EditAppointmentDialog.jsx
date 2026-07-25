@@ -289,6 +289,13 @@ export default function EditAppointmentDialog({
       };
     });
 
+  const notifyInventory = (data) => {
+    const inv = data?.inventory;
+    if (!inv) return;
+    if (inv.deducted?.length) toast.success(`Magazzino scaricato: ${inv.deducted.join(', ')}`);
+    (inv.warnings || []).forEach(w => toast.warning(`Magazzino: ${w}`));
+  };
+
   const calculateDiscount = () => {
     const sub = calculateSubtotal();
     if (discountType === 'none' || !discountValue) return 0;
@@ -389,7 +396,7 @@ export default function EditAppointmentDialog({
       const newCardId = sellRes.data.card_id;
 
       // 2. Scala l'appuntamento corrente dal nuovo abbonamento (totale 0, prepaid)
-      await checkoutAppointment(apt.id, {
+      const subData = await checkoutAppointment(apt.id, {
         paymentMethod: 'prepaid',
         totalPaid: 0,
         cardId: newCardId,
@@ -398,6 +405,7 @@ export default function EditAppointmentDialog({
       const totalSvc = parseInt(newSubscriptionForm.total_services);
       const remaining = Math.max(0, totalSvc - 1);
       toast.success(`Abbonamento venduto (€${subscriptionPrice.toFixed(2)} ${payMethod === 'pos' ? 'POS' : 'contanti'}) e servizio scalato. Restanti: ${remaining}/${totalSvc}.`);
+      notifyInventory(subData);
 
       resetCheckout();
       onClose();
@@ -462,6 +470,7 @@ export default function EditAppointmentDialog({
       } else {
         toast.success('Incasso completato con successo!');
       }
+      notifyInventory(data);
       resetCheckout();
       onClose();
       onSuccess?.();
@@ -477,7 +486,7 @@ export default function EditAppointmentDialog({
     if (!apt || !splitValid) return;
     setProcessing(true);
     try {
-      await checkoutAppointment(apt.id, {
+      const splitData = await checkoutAppointment(apt.id, {
         paymentMethod: 'mixed',
         discountType,
         discountValue,
@@ -489,6 +498,7 @@ export default function EditAppointmentDialog({
         note: 'Pagamento diviso',
       });
       toast.success('Pagamento diviso registrato con successo!');
+      notifyInventory(splitData);
       resetCheckout();
       onClose();
       onSuccess?.();
