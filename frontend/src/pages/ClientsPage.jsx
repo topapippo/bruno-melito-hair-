@@ -29,7 +29,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Users, Plus, Search, Phone, Mail, Edit2, Trash2, Loader2, History, MessageSquare, Upload, FileSpreadsheet, Euro, AlertTriangle, Scissors, Cake, ShieldCheck, Palette } from 'lucide-react';
+import { Users, Plus, Search, Phone, Mail, Edit2, Trash2, Loader2, History, MessageSquare, Upload, FileSpreadsheet, Euro, AlertTriangle, Scissors, Cake, ShieldCheck, Palette, ArrowDownAZ } from 'lucide-react';
 import { toast } from 'sonner';
 import PageHeader from '../components/PageHeader';
 import ClientAvatar from '../components/ClientAvatar';
@@ -41,6 +41,7 @@ export default function ClientsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [colorOnly, setColorOnly] = useState(false);
+  const [sortBy, setSortBy] = useState('nome'); // 'nome' | 'cognome'
   const [dialogOpen, setDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
@@ -302,6 +303,13 @@ export default function ClientsPage() {
       client.email.toLowerCase().includes(search.toLowerCase());
     const matchesColor = !colorOnly || (client.hair_notes && client.hair_notes.trim() !== '');
     return matchesSearch && matchesColor;
+  }).sort((a, b) => {
+    const key = (name) => {
+      const parts = (name || '').trim().split(/\s+/);
+      // 'cognome' = ultima parola; 'nome' = prima parola
+      return (sortBy === 'cognome' ? parts[parts.length - 1] : parts[0] || '').toLowerCase();
+    };
+    return key(a.name).localeCompare(key(b.name), 'it');
   });
 
   return (
@@ -378,6 +386,16 @@ export default function ClientsPage() {
           >
             <Palette className="w-4 h-4" />
             Solo Colore
+          </button>
+          <button
+            type="button"
+            onClick={() => setSortBy(sortBy === 'nome' ? 'cognome' : 'nome')}
+            data-testid="sort-name-btn"
+            title="Cambia ordinamento alfabetico"
+            className="flex items-center justify-center gap-2 px-5 h-12 rounded-xl font-bold text-sm transition-all border shrink-0 bg-white text-[#7C5C4A] border-[#E8D5C8] hover:bg-[#FDF8F5]"
+          >
+            <ArrowDownAZ className="w-4 h-4" />
+            {sortBy === 'nome' ? 'Ordina: Nome' : 'Ordina: Cognome'}
           </button>
         </div>
 
