@@ -475,6 +475,12 @@ export default function ClientsPage() {
                         <p className="text-[#7C5C4A] text-xs italic">{client.hair_notes.substring(0, 80)}{client.hair_notes.length > 80 ? '...' : ''}</p>
                       </div>
                     )}
+                    {client.current_color_code && (
+                      <div className="flex items-center gap-2 text-[#7C5C4A]">
+                        <Palette className="w-4 h-4 text-[#C8617A]" />
+                        <span className="text-xs">Colore: <strong>{client.current_color_code}</strong></span>
+                      </div>
+                    )}
                     {client.birthday && (
                       <div className="flex items-center gap-2 text-[#7C5C4A]">
                         <Cake className="w-4 h-4 text-pink-400" />
@@ -847,6 +853,16 @@ export default function ClientsPage() {
                       <Scissors className="w-3.5 h-3.5" /> Note Capelli / Colore
                     </p>
                     <p className="text-sm text-[#5C3040]">{clientHistory.client.hair_notes}</p>
+                  </div>
+                )}
+
+                {/* Codice Colore */}
+                {clientHistory.client.current_color_code && (
+                  <div className="p-3 bg-[#FAF0F5] border border-[#E8C8D4] rounded-xl">
+                    <p className="text-xs font-bold text-[#C8617A] flex items-center gap-1 mb-1">
+                      <Palette className="w-3.5 h-3.5" /> Codice Colore
+                    </p>
+                    <p className="text-sm text-[#5C3040]">{clientHistory.client.current_color_code}</p>
                   </div>
                 )}
 
