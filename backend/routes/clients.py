@@ -84,6 +84,7 @@ async def create_client(data: ClientCreate, current_user: dict = Depends(get_cur
         "id": client_id, "user_id": current_user["id"],
         "name": data.name, "phone": data.phone or "",
         "email": data.email or "", "hair_notes": data.hair_notes or "",
+        "current_color_code": data.current_color_code or "",
         "birthday": data.birthday or None,
         "total_visits": 0, "created_at": datetime.now(timezone.utc).isoformat()
     }

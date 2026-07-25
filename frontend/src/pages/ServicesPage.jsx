@@ -45,6 +45,7 @@ const COLOR_PRESETS = [
 
 export default function ServicesPage() {
   const [services, setServices] = useState([]);
+  const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -58,11 +59,22 @@ export default function ServicesPage() {
     duration: 30,
     price: 0,
     color: '#0EA5E9',
+    linked_inventory_id: '',
   });
 
   useEffect(() => {
     fetchServices();
+    fetchInventory();
   }, []);
+
+  const fetchInventory = async () => {
+    try {
+      const res = await api.get(`${API}/inventory`);
+      setInventory(res.data || []);
+    } catch (err) {
+      // magazzino opzionale: silenzioso
+    }
+  };
 
   const fetchServices = async () => {
     try {
@@ -94,7 +106,7 @@ export default function ServicesPage() {
       }
       setDialogOpen(false);
       setEditingService(null);
-      setFormData({ name: '', category: 'taglio', duration: 30, price: 0 });
+      setFormData({ name: '', category: 'taglio', duration: 30, price: 0, color: '#0EA5E9', linked_inventory_id: '' });
       fetchServices();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Errore nel salvataggio');
@@ -111,6 +123,7 @@ export default function ServicesPage() {
       duration: service.duration,
       price: service.price,
       color: service.color || CATEGORIES.find(c => c.value === service.category)?.color || '#0EA5E9',
+      linked_inventory_id: service.linked_inventory_id || '',
     });
     setDialogOpen(true);
   };
@@ -130,7 +143,7 @@ export default function ServicesPage() {
 
   const openNewDialog = () => {
     setEditingService(null);
-    setFormData({ name: '', category: 'taglio', duration: 30, price: 0 });
+    setFormData({ name: '', category: 'taglio', duration: 30, price: 0, color: '#0EA5E9', linked_inventory_id: '' });
     setDialogOpen(true);
   };
 
@@ -354,6 +367,28 @@ export default function ServicesPage() {
                   ))}
                 </div>
               </div>
+              {formData.category !== 'colore' && (
+                <div className="space-y-2">
+                  <Label>Prodotto Magazzino collegato</Label>
+                  <Select
+                    value={formData.linked_inventory_id || '__none__'}
+                    onValueChange={(val) => setFormData({ ...formData, linked_inventory_id: val === '__none__' ? '' : val })}
+                  >
+                    <SelectTrigger data-testid="service-inventory-select">
+                      <SelectValue placeholder="Nessuno" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">— Nessuno —</SelectItem>
+                      {inventory.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name} ({p.total_stock} disp.)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-[#9C7060]">Alla cassa scala 1 dose dal magazzino. I Colori usano invece il "Codice Colore" del cliente.</p>
+                </div>
+              )}
               <DialogFooter>
                 <Button
                   type="submit"

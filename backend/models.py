@@ -78,6 +78,7 @@ class ClientCreate(BaseModel):
     phone: Optional[str] = ""
     email: Optional[str] = ""
     hair_notes: Optional[str] = ""
+    current_color_code: Optional[str] = ""   # codice nuance colore (= nome prodotto in magazzino)
     birthday: Optional[str] = None   # formato MM-DD (es. "03-15")
 
 class ClientResponse(BaseModel):
@@ -86,6 +87,7 @@ class ClientResponse(BaseModel):
     phone: Optional[str] = ""
     email: Optional[str] = ""
     hair_notes: Optional[str] = ""
+    current_color_code: Optional[str] = ""
     birthday: Optional[str] = None
     created_at: str
     total_visits: int = 0
@@ -95,6 +97,7 @@ class ClientUpdate(BaseModel):
     phone: Optional[str] = None
     email: Optional[str] = None
     hair_notes: Optional[str] = None
+    current_color_code: Optional[str] = None
     birthday: Optional[str] = None
 
 class ClientBulkImport(BaseModel):
@@ -109,6 +112,7 @@ class ServiceCreate(BaseModel):
     duration: int
     price: float
     color: Optional[str] = None
+    linked_inventory_id: Optional[str] = None   # prodotto magazzino scalato al checkout
     sort_order: Optional[int] = None
 
 class ServiceResponse(BaseModel):
@@ -118,6 +122,7 @@ class ServiceResponse(BaseModel):
     duration: int
     price: float
     color: Optional[str] = None
+    linked_inventory_id: Optional[str] = None
     sort_order: Optional[int] = None
     created_at: str
 
@@ -127,6 +132,7 @@ class ServiceUpdate(BaseModel):
     duration: Optional[int] = None
     price: Optional[float] = None
     color: Optional[str] = None
+    linked_inventory_id: Optional[str] = None
     sort_order: Optional[int] = None
 
 

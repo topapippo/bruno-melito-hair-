@@ -67,6 +67,7 @@ export default function ClientsPage() {
     phone: '',
     email: '',
     hair_notes: '',
+    current_color_code: '',
     birthday: '',
   });
 
@@ -104,7 +105,7 @@ export default function ClientsPage() {
       }
       setDialogOpen(false);
       setEditingClient(null);
-      setFormData({ name: '', phone: '', email: '', hair_notes: '', birthday: '' });
+      setFormData({ name: '', phone: '', email: '', hair_notes: '', current_color_code: '', birthday: '' });
       fetchClients();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Errore nel salvataggio');
@@ -120,6 +121,7 @@ export default function ClientsPage() {
       phone: client.phone,
       email: client.email,
       hair_notes: client.hair_notes || '',
+      current_color_code: client.current_color_code || '',
       birthday: client.birthday || '',
     });
     setDialogOpen(true);
@@ -140,7 +142,7 @@ export default function ClientsPage() {
 
   const openNewDialog = () => {
     setEditingClient(null);
-    setFormData({ name: '', phone: '', email: '', hair_notes: '', birthday: '' });
+    setFormData({ name: '', phone: '', email: '', hair_notes: '', current_color_code: '', birthday: '' });
     setDialogOpen(true);
   };
 
@@ -591,6 +593,20 @@ export default function ClientsPage() {
                   placeholder="Es. tinta 7.3 + ossigeno 20vol, frangia laterale, non tagliare sopra le orecchie..."
                   data-testid="client-notes-input"
                   className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A] min-h-[90px] text-sm"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Palette className="w-4 h-4 text-[#C8617A]" />
+                  Codice Colore (scarico magazzino)
+                </Label>
+                <Input
+                  type="text"
+                  value={formData.current_color_code}
+                  onChange={(e) => setFormData({ ...formData, current_color_code: e.target.value })}
+                  placeholder="Es. 7.0 — deve corrispondere al nome del prodotto in Magazzino"
+                  data-testid="client-color-code-input"
+                  className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
                 />
               </div>
               <div className="space-y-2">
