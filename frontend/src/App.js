@@ -13,10 +13,10 @@ import WebsitePage from "./pages/WebsitePage";
 import ConfirmAppointmentPage from "./pages/ConfirmAppointmentPage";
 import ReceiptPage from "./pages/ReceiptPage";
 import PrivacyPage from "./pages/PrivacyPage";
-import PlanningPage from "./pages/PlanningPage";
 import PWAInstallBanner from "./components/PWAInstallBanner";
 
 // Pagine admin — lazy load: non vengono scaricate finché non servono
+const PlanningPage     = lazy(() => import("./pages/PlanningPage"));
 const Dashboard        = lazy(() => import("./pages/Dashboard"));
 const StatsPage        = lazy(() => import("./pages/StatsPage"));
 const ClientsPage      = lazy(() => import("./pages/ClientsPage"));
