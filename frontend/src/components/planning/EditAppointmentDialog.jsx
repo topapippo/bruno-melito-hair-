@@ -84,6 +84,7 @@ export default function EditAppointmentDialog({
   const [selectedPromo, setSelectedPromo] = useState(null);
   const [customPrices, setCustomPrices] = useState({});
   const [customQty, setCustomQty] = useState({});
+  const [extraServiceIds, setExtraServiceIds] = useState([]);
   const [splitMode, setSplitMode] = useState(false);
   const [splitPayments, setSplitPayments] = useState([{ method: 'cash', amount: '' }, { method: 'pos', amount: '' }]);
   const [clientSospesi, setClientSospesi] = useState([]);
@@ -186,6 +187,7 @@ export default function EditAppointmentDialog({
       setSelectedPromo(null);
       setEligiblePromos([]);
       setCustomPrices({});
+      setExtraServiceIds([]);
       setClientCards([]);
       setOpenCats({});
     }
@@ -289,6 +291,24 @@ export default function EditAppointmentDialog({
       };
     });
 
+  const addExtraService = (serviceId) => {
+    if (!serviceId || formData.service_ids.includes(serviceId)) return;
+    const svc = (services || []).find(s => s.id === serviceId);
+    if (!svc) return;
+    const key = `${serviceId}_${formData.service_ids.length}`;
+    setFormData(prev => ({ ...prev, service_ids: [...prev.service_ids, serviceId] }));
+    setCustomPrices(prev => ({ ...prev, [key]: svc.price ?? 0 }));
+    setExtraServiceIds(prev => [...prev, serviceId]);
+    setOpenCats(prev => ({ ...prev, _svc: true }));
+  };
+
+  const removeExtraService = (serviceId, key) => {
+    setFormData(prev => ({ ...prev, service_ids: prev.service_ids.filter(id => id !== serviceId) }));
+    setExtraServiceIds(prev => prev.filter(id => id !== serviceId));
+    setCustomPrices(p => { const n = { ...p }; delete n[key]; return n; });
+    setCustomQty(p => { const n = { ...p }; delete n[key]; return n; });
+  };
+
   const notifyInventory = (data) => {
     const inv = data?.inventory;
     if (!inv) return;
@@ -355,6 +375,7 @@ export default function EditAppointmentDialog({
     setSelectedPromo(null);
     setCustomPrices({});
     setCustomQty({});
+    setExtraServiceIds([]);
     setSplitMode(false);
     setSplitPayments([{ method: 'cash', amount: '' }, { method: 'pos', amount: '' }]);
     setEligiblePromos([]);
@@ -865,46 +886,64 @@ export default function EditAppointmentDialog({
                     </div>
                   </button>
                   {openCats['_svc'] && (
-                    <div className="border-t border-gray-100 divide-y divide-gray-50">
-                      {computedSvcList.map((s, i) => {
-                        const key = `${s.id}_${i}`;
-                        const base = s.price ?? 0;
-                        const cur = customPrices[key] ?? base;
-                        const qty = customQty[key] ?? 1;
-                        const modified = customPrices[key] !== undefined && Math.abs(customPrices[key] - base) > 0.001;
-                        const qtyModified = qty !== 1;
-                        return (
-                          <div key={key} className={`flex items-center gap-2 px-3 py-2.5 flex-wrap ${modified||qtyModified?'bg-amber-50':''}`}>
-                            <span className="flex-1 text-sm text-gray-700 truncate min-w-[80px]">{s.name||`Servizio ${i+1}`}</span>
-                            <div className="flex items-center gap-1 shrink-0">
-                              <span className="text-[10px] text-gray-400 uppercase font-semibold mr-0.5">Qtà</span>
-                              <button type="button" aria-label="Diminuisci quantità" className="w-7 h-7 rounded-lg border-2 border-gray-300 flex items-center justify-center font-bold text-lg leading-none hover:border-red-400 hover:text-red-600"
-                                onClick={()=>setCustomQty(p=>({...p,[key]:Math.max(1,(p[key]??1)-1)}))}>−</button>
-                              <span className={`w-8 text-center font-bold text-sm ${qtyModified?'text-amber-700':'text-gray-700'}`}>{qty}</span>
-                              <button type="button" aria-label="Aumenta quantità" className="w-7 h-7 rounded-lg border-2 border-gray-300 flex items-center justify-center font-bold text-lg leading-none hover:border-green-500 hover:text-green-600"
-                                onClick={()=>setCustomQty(p=>({...p,[key]:(p[key]??1)+1}))}>+</button>
-                            </div>
-                            <div className="flex items-center gap-1 shrink-0">
-                              <button type="button" aria-label="Diminuisci prezzo" className="w-7 h-7 rounded-lg border-2 border-gray-300 flex items-center justify-center font-bold text-lg leading-none hover:border-red-400 hover:text-red-600"
-                                onClick={()=>setCustomPrices(p=>({...p,[key]:Math.max(0,(p[key]??base)-0.5)}))}>−</button>
-                              <div className="relative">
-                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm pointer-events-none">€</span>
-                                <Input type="number" min="0" step="0.50" value={cur} aria-label="Prezzo servizio"
-                                  onChange={e=>{const v=parseFloat(e.target.value);setCustomPrices(p=>({...p,[key]:isNaN(v)?0:Math.max(0,v)}));}}
-                                  className={`w-24 h-8 pl-6 text-right font-bold text-sm border-2 ${modified?'border-amber-400 bg-amber-50':'border-gray-200'}`}/>
+                    <div className="border-t border-gray-100">
+                      <div className="divide-y divide-gray-50">
+                        {computedSvcList.map((s, i) => {
+                          const key = `${s.id}_${i}`;
+                          const base = s.price ?? 0;
+                          const cur = customPrices[key] ?? base;
+                          const qty = customQty[key] ?? 1;
+                          const isExtra = extraServiceIds.includes(s.id);
+                          const modified = customPrices[key] !== undefined && Math.abs(customPrices[key] - base) > 0.001;
+                          const qtyModified = qty !== 1;
+                          return (
+                            <div key={key} className={`flex items-center gap-2 px-3 py-2.5 flex-wrap ${modified||qtyModified||isExtra?'bg-amber-50':''}`}>
+                              <span className="flex-1 text-sm text-gray-700 truncate min-w-[80px]">
+                                {s.name||`Servizio ${i+1}`}
+                                {isExtra && <span className="ml-1.5 text-[9px] font-black text-[#C8617A] uppercase align-middle">extra</span>}
+                              </span>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <span className="text-[10px] text-gray-400 uppercase font-semibold mr-0.5">Qtà</span>
+                                <button type="button" aria-label="Diminuisci quantità" className="w-7 h-7 rounded-lg border-2 border-gray-300 flex items-center justify-center font-bold text-lg leading-none hover:border-red-400 hover:text-red-600"
+                                  onClick={()=>setCustomQty(p=>({...p,[key]:Math.max(1,(p[key]??1)-1)}))}>−</button>
+                                <span className={`w-8 text-center font-bold text-sm ${qtyModified?'text-amber-700':'text-gray-700'}`}>{qty}</span>
+                                <button type="button" aria-label="Aumenta quantità" className="w-7 h-7 rounded-lg border-2 border-gray-300 flex items-center justify-center font-bold text-lg leading-none hover:border-green-500 hover:text-green-600"
+                                  onClick={()=>setCustomQty(p=>({...p,[key]:(p[key]??1)+1}))}>+</button>
                               </div>
-                              <button type="button" aria-label="Aumenta prezzo" className="w-7 h-7 rounded-lg border-2 border-gray-300 flex items-center justify-center font-bold text-lg leading-none hover:border-green-500 hover:text-green-600"
-                                onClick={()=>setCustomPrices(p=>({...p,[key]:(p[key]??base)+0.5}))}>+</button>
-                              {(modified||qtyModified) && (
-                                <button type="button" aria-label="Ripristina servizio" className="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-700"
-                                  onClick={()=>{setCustomPrices(p=>{const n={...p};delete n[key];return n;});setCustomQty(p=>{const n={...p};delete n[key];return n;});}}>
-                                  <X className="w-3.5 h-3.5"/>
-                                </button>
-                              )}
+                              <div className="flex items-center gap-1 shrink-0">
+                                <button type="button" aria-label="Diminuisci prezzo" className="w-7 h-7 rounded-lg border-2 border-gray-300 flex items-center justify-center font-bold text-lg leading-none hover:border-red-400 hover:text-red-600"
+                                  onClick={()=>setCustomPrices(p=>({...p,[key]:Math.max(0,(p[key]??base)-0.5)}))}>−</button>
+                                <div className="relative">
+                                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm pointer-events-none">€</span>
+                                  <Input type="number" min="0" step="0.50" value={cur} aria-label="Prezzo servizio"
+                                    onChange={e=>{const v=parseFloat(e.target.value);setCustomPrices(p=>({...p,[key]:isNaN(v)?0:Math.max(0,v)}));}}
+                                    className={`w-24 h-8 pl-6 text-right font-bold text-sm border-2 ${modified?'border-amber-400 bg-amber-50':'border-gray-200'}`}/>
+                                </div>
+                                <button type="button" aria-label="Aumenta prezzo" className="w-7 h-7 rounded-lg border-2 border-gray-300 flex items-center justify-center font-bold text-lg leading-none hover:border-green-500 hover:text-green-600"
+                                  onClick={()=>setCustomPrices(p=>({...p,[key]:(p[key]??base)+0.5}))}>+</button>
+                                {(modified||qtyModified||isExtra) && (
+                                  <button type="button" aria-label={isExtra?'Rimuovi servizio extra':'Ripristina servizio'} className="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-700"
+                                    onClick={()=> isExtra ? removeExtraService(s.id, key) : (()=>{setCustomPrices(p=>{const n={...p};delete n[key];return n;});setCustomQty(p=>{const n={...p};delete n[key];return n;});})()}>
+                                    <X className="w-3.5 h-3.5"/>
+                                  </button>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
+                      <div className="p-2.5 bg-gray-50/50">
+                        <Select value="" onValueChange={addExtraService}>
+                          <SelectTrigger className="h-9 border-2 border-dashed border-gray-300 text-sm text-gray-500">
+                            <SelectValue placeholder="+ Aggiungi servizio extra..." />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-[240px]">
+                            {services.filter(sv => !formData.service_ids.includes(sv.id)).map(sv => (
+                              <SelectItem key={sv.id} value={sv.id}>{sv.name} — €{sv.price}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   )}
                 </div>
