@@ -19,6 +19,7 @@ class InventoryCreate(BaseModel):
     total_stock: float = 0
     dose_size: float = 1
     low_stock_threshold: float = 5
+    sale_price: Optional[float] = 0.0
     notes: Optional[str] = ""
 
 
@@ -28,6 +29,7 @@ class InventoryUpdate(BaseModel):
     total_stock: Optional[float] = None
     dose_size: Optional[float] = None
     low_stock_threshold: Optional[float] = None
+    sale_price: Optional[float] = None
     notes: Optional[str] = None
 
 
@@ -74,6 +76,7 @@ async def create_inventory(data: InventoryCreate, current_user: dict = Depends(g
         "total_stock": float(data.total_stock or 0),
         "dose_size": float(data.dose_size or 1),
         "low_stock_threshold": float(data.low_stock_threshold or 0),
+        "sale_price": float(data.sale_price or 0),
         "notes": data.notes or "",
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
