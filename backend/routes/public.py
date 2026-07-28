@@ -214,7 +214,7 @@ async def public_get_website():
         db.services.find(uid_filter, {"_id": 0}).sort("order", 1).to_list(100),
         db.card_templates.find({**uid_filter, "is_deleted": {"$ne": True}}, {"_id": 0}).to_list(100),
         db.operators.find(uid_filter, {"_id": 0, "user_id": 0}).to_list(50),
-        db.promotions.find({"active": True}, {"_id": 0, "user_id": 0}).to_list(20),
+        db.promotions.find({**uid_filter, "active": True}, {"_id": 0, "user_id": 0}).to_list(20),
         get_loyalty_rewards(uid or ""),
     )
 

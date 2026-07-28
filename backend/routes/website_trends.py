@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from auth import get_current_user
+from routes.public import get_public_admin_user
 from database import db
 import uuid
 import requests
@@ -192,8 +193,9 @@ async def get_trends_daily():
     """Endpoint pubblico — restituisce 5 trend ruotati automaticamente ogni giorno."""
     today = date.today().isoformat()
 
-    # Recupera tutti i trend disponibili (qualsiasi utente, ordinati per order)
-    all_trends = await db.website_trends.find({}, {"_id": 0}).sort("order", 1).to_list(50)
+    admin_user = await get_public_admin_user()
+    uid_filter = {"user_id": admin_user["id"]} if admin_user else {}
+    all_trends = await db.website_trends.find(uid_filter, {"_id": 0}).sort("order", 1).to_list(50)
 
     if not all_trends:
         # Nessun trend nel DB: usa i default hardcoded direttamente
@@ -212,7 +214,9 @@ async def get_trends_daily():
 @router.get("/website-trends/public")
 async def get_trends_public():
     """Endpoint pubblico — restituisce tutti i trend (usato dall'admin per anteprima)."""
-    trends = await db.website_trends.find({}, {"_id": 0}).sort("order", 1).to_list(50)
+    admin_user = await get_public_admin_user()
+    uid_filter = {"user_id": admin_user["id"]} if admin_user else {}
+    trends = await db.website_trends.find(uid_filter, {"_id": 0}).sort("order", 1).to_list(50)
     return trends
 
 
