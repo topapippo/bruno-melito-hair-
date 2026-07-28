@@ -8,9 +8,10 @@ import {
   UserCircle, BarChart3, Settings, LogOut, Menu, CreditCard,
   Euro, Database, Bell, Globe, ArrowDownCircle, Gift,
   Sparkles, ClockArrowUp, ChevronLeft, ChevronRight, ChevronDown, Share2, MessageSquare, ShoppingBag,
-  MessageCircle, Megaphone, Package
+  MessageCircle, Megaphone, Package, Search
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import CommandPalette from './CommandPalette';
 
 const navGroups = [
   {
@@ -78,6 +79,7 @@ export default function Layout({ children }) {
   const navigate = useNavigate();
 
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(
     () => localStorage.getItem('sidebarCollapsed') === 'true'
   );
@@ -125,6 +127,17 @@ export default function Layout({ children }) {
   useEffect(() => {
     const tick = setInterval(() => setCurrentTime(new Date()), 30000);
     return () => clearInterval(tick);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsPaletteOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   useEffect(() => {
@@ -405,6 +418,14 @@ export default function Layout({ children }) {
         >
           {!mini && (
             <>
+              <button
+                onClick={() => setIsPaletteOpen(true)}
+                className="w-full flex items-center gap-3 p-3 mb-2 rounded-xl text-xs font-medium transition-colors"
+                style={{ color: t.sidebar_text + 'AA', background: `${t.primary}10` }}
+              >
+                <Search className="w-4 h-4" /> Ricerca Rapida
+                <span className="ml-auto text-[9px] font-black opacity-50">Ctrl K</span>
+              </button>
               {/* Day progress */}
               {todayApptCount > 0 && (
                 <div className="mb-2 rounded-xl px-2.5 py-2" style={{ background: `${t.primary}10`, border: `1px solid ${t.primary}18` }}>
@@ -595,6 +616,8 @@ export default function Layout({ children }) {
           </button>
         </div>
       </nav>
+
+      <CommandPalette isOpen={isPaletteOpen} onClose={() => setIsPaletteOpen(false)} />
     </div>
   );
 }
