@@ -15,7 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import {
   Loader2, User, CreditCard, Banknote, Euro, CheckCircle, Check,
-  Star, Gift, Ticket, Plus, Trash2, Edit3, X, Smartphone, AlertTriangle, Clock, History, ChevronDown, UserX,
+  Star, Gift, Ticket, Plus, Trash2, Edit3, X, Smartphone, AlertTriangle, Clock, History, ChevronDown, UserX, Package,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getCategoryInfo, groupServicesByCategory } from '../../lib/categories';
@@ -85,6 +85,8 @@ export default function EditAppointmentDialog({
   const [customPrices, setCustomPrices] = useState({});
   const [customQty, setCustomQty] = useState({});
   const [extraServiceIds, setExtraServiceIds] = useState([]);
+  const [retailProducts, setRetailProducts] = useState([]);
+  const [retailItems, setRetailItems] = useState([]);
   const [splitMode, setSplitMode] = useState(false);
   const [splitPayments, setSplitPayments] = useState([{ method: 'cash', amount: '' }, { method: 'pos', amount: '' }]);
   const [clientSospesi, setClientSospesi] = useState([]);
@@ -188,6 +190,7 @@ export default function EditAppointmentDialog({
       setEligiblePromos([]);
       setCustomPrices({});
       setExtraServiceIds([]);
+      setRetailItems([]);
       setClientCards([]);
       setOpenCats({});
     }
@@ -309,6 +312,36 @@ export default function EditAppointmentDialog({
     setCustomQty(p => { const n = { ...p }; delete n[key]; return n; });
   };
 
+  const calculateRetailTotal = () =>
+    retailItems.reduce((sum, it) => sum + (it.sale_price || 0) * it.quantity, 0);
+
+  const addRetailItem = (productId) => {
+    if (!productId) return;
+    const prod = retailProducts.find(p => p.id === productId);
+    if (!prod) return;
+    setRetailItems(prev => {
+      const existing = prev.find(it => it.product_id === productId);
+      if (existing) {
+        return prev.map(it => it.product_id === productId ? { ...it, quantity: it.quantity + 1 } : it);
+      }
+      return [...prev, { product_id: prod.id, name: prod.name, sale_price: prod.sale_price || 0, quantity: 1 }];
+    });
+    setOpenCats(prev => ({ ...prev, _retail: true }));
+  };
+
+  const updateRetailQty = (productId, delta) => {
+    setRetailItems(prev => prev.map(it =>
+      it.product_id === productId ? { ...it, quantity: Math.max(1, it.quantity + delta) } : it
+    ));
+  };
+
+  const removeRetailItem = (productId) => {
+    setRetailItems(prev => prev.filter(it => it.product_id !== productId));
+  };
+
+  const buildRetailItemsPayload = () =>
+    retailItems.map(it => ({ product_id: it.product_id, quantity: it.quantity }));
+
   const notifyInventory = (data) => {
     const inv = data?.inventory;
     if (!inv) return;
@@ -328,15 +361,19 @@ export default function EditAppointmentDialog({
     const resolvedId = cardIdOverride !== undefined ? cardIdOverride : (paymentMethod === 'prepaid' ? selectedCardId : null);
     if (resolvedId) {
       const c = clientCards.find(x => x.id === resolvedId);
-      if (c?.card_type === 'subscription') return 0;
+      if (c?.card_type === 'subscription') return calculateRetailTotal();
     }
-    return Math.max(0, calculateSubtotal() - calculateDiscount());
+    return Math.max(0, calculateSubtotal() - calculateDiscount()) + calculateRetailTotal();
   };
 
   const _enterCheckout = (apt, cards) => {
     setCheckoutMode(true);
     // Open services + cards sections by default
     setOpenCats(prev => ({ ...prev, _svc: true, _cards: (cards || []).length > 0 }));
+
+    api.get(`${API}/inventory?category=rivendita`)
+      .then(res => setRetailProducts(res.data || []))
+      .catch(() => setRetailProducts([]));
 
     const clientId = apt?.client_id;
     if (clientId) {
@@ -376,6 +413,7 @@ export default function EditAppointmentDialog({
     setCustomPrices({});
     setCustomQty({});
     setExtraServiceIds([]);
+    setRetailItems([]);
     setSplitMode(false);
     setSplitPayments([{ method: 'cash', amount: '' }, { method: 'pos', amount: '' }]);
     setEligiblePromos([]);
@@ -419,8 +457,9 @@ export default function EditAppointmentDialog({
       // 2. Scala l'appuntamento corrente dal nuovo abbonamento (totale 0, prepaid)
       const subData = await checkoutAppointment(apt.id, {
         paymentMethod: 'prepaid',
-        totalPaid: 0,
+        totalPaid: calculateRetailTotal(),
         cardId: newCardId,
+        retailItems: retailItems.length ? buildRetailItemsPayload() : null,
       });
 
       const totalSvc = parseInt(newSubscriptionForm.total_services);
@@ -460,7 +499,7 @@ export default function EditAppointmentDialog({
     } else {
       const card = cardId ? clientCards.find(c => c.id === cardId) : null;
       const isSub = card?.card_type === 'subscription';
-      finalAmount = isSub ? 0 : Math.max(0, calculateSubtotal() - calculateDiscount());
+      finalAmount = (isSub ? 0 : Math.max(0, calculateSubtotal() - calculateDiscount())) + calculateRetailTotal();
     }
 
     setProcessing(true);
@@ -473,6 +512,7 @@ export default function EditAppointmentDialog({
         cardId,
         note: `Incasso ${method}${overridePrice ? ' per vendita abbonamento' : ''}`,
         customServices: hasCustomServices() ? buildCustomServicesPayload() : null,
+        retailItems: retailItems.length ? buildRetailItemsPayload() : null,
       });
 
       const cardData = data?.card;
@@ -516,6 +556,7 @@ export default function EditAppointmentDialog({
           .filter(p => (parseFloat(p.amount) || 0) > 0)
           .map(p => ({ method: p.method, amount: parseFloat(p.amount) || 0 })),
         customServices: hasCustomServices() ? buildCustomServicesPayload() : null,
+        retailItems: retailItems.length ? buildRetailItemsPayload() : null,
         note: 'Pagamento diviso',
       });
       toast.success('Pagamento diviso registrato con successo!');
@@ -586,11 +627,11 @@ export default function EditAppointmentDialog({
   if (!appointment) return null;
 
   // --- Computed UI values ---
-  const totalAfterDiscount = Math.max(0, calculateSubtotal() - calculateDiscount());
+  const totalAfterDiscount = Math.max(0, calculateSubtotal() - calculateDiscount()) + calculateRetailTotal();
   const splitTotalEntered = splitPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
   const splitValid = splitPayments.filter(p => (parseFloat(p.amount) || 0) > 0).length >= 2
     && Math.abs(splitTotalEntered - totalAfterDiscount) < 0.01;
-  const displayTotal = selectedCard?.card_type === 'subscription' ? 0 : totalAfterDiscount;
+  const displayTotal = selectedCard?.card_type === 'subscription' ? calculateRetailTotal() : totalAfterDiscount;
   const prepaidLabel = selectedCard
     ? selectedCardIsSubscription
       ? (() => { const left = selectedCard.total_services ? selectedCard.total_services - (selectedCard.used_services || 0) : null; return `${selectedCard.name}${left !== null ? ` — ${left} servizi rimasti` : ''}`; })()
@@ -948,6 +989,65 @@ export default function EditAppointmentDialog({
                   )}
                 </div>
 
+                {/* ── 1a. RIVENDITA (prodotti da magazzino) ── */}
+                <div className="rounded-xl border-2 border-gray-200 overflow-hidden">
+                  <button type="button" onClick={()=>toggleCat('_retail')}
+                    className="w-full flex items-center justify-between px-3 py-3 bg-white hover:bg-gray-50">
+                    <div className="flex items-center gap-2">
+                      <Package className="w-4 h-4 text-gray-500"/>
+                      <span className="font-bold text-sm text-gray-800">Rivendita</span>
+                      <span className="text-xs text-gray-400">({retailItems.length})</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-black text-green-700 text-base">€{calculateRetailTotal().toFixed(2)}</span>
+                      <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${openCats['_retail']?'rotate-180':''}`}/>
+                    </div>
+                  </button>
+                  {openCats['_retail'] && (
+                    <div className="border-t border-gray-100">
+                      {retailItems.length > 0 && (
+                        <div className="divide-y divide-gray-50">
+                          {retailItems.map(it => (
+                            <div key={it.product_id} className="flex items-center gap-2 px-3 py-2.5 flex-wrap">
+                              <span className="flex-1 text-sm text-gray-700 truncate min-w-[80px]">{it.name}</span>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <span className="text-[10px] text-gray-400 uppercase font-semibold mr-0.5">Qtà</span>
+                                <button type="button" aria-label="Diminuisci quantità" className="w-7 h-7 rounded-lg border-2 border-gray-300 flex items-center justify-center font-bold text-lg leading-none hover:border-red-400 hover:text-red-600"
+                                  onClick={()=>updateRetailQty(it.product_id, -1)}>−</button>
+                                <span className="w-8 text-center font-bold text-sm text-gray-700">{it.quantity}</span>
+                                <button type="button" aria-label="Aumenta quantità" className="w-7 h-7 rounded-lg border-2 border-gray-300 flex items-center justify-center font-bold text-lg leading-none hover:border-green-500 hover:text-green-600"
+                                  onClick={()=>updateRetailQty(it.product_id, 1)}>+</button>
+                              </div>
+                              <span className="w-16 text-right font-bold text-sm text-gray-700 shrink-0">€{(it.sale_price * it.quantity).toFixed(2)}</span>
+                              <button type="button" aria-label="Rimuovi prodotto" className="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-700 shrink-0"
+                                onClick={()=>removeRetailItem(it.product_id)}>
+                                <X className="w-3.5 h-3.5"/>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="p-2.5 bg-gray-50/50">
+                        <Select value="" onValueChange={addRetailItem}>
+                          <SelectTrigger className="h-9 border-2 border-dashed border-gray-300 text-sm text-gray-500">
+                            <SelectValue placeholder="+ Aggiungi prodotto rivendita..." />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-[240px]">
+                            {retailProducts.length === 0 && (
+                              <div className="px-2 py-1.5 text-xs text-gray-400">Nessun prodotto rivendita in magazzino</div>
+                            )}
+                            {retailProducts.map(p => (
+                              <SelectItem key={p.id} value={p.id}>
+                                {p.name} — €{(p.sale_price || 0).toFixed(2)} ({p.total_stock ?? 0} in stock)
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 {/* ── 1b. CREA NUOVO ABBONAMENTO ── */}
                 <div className="rounded-xl border-2 border-blue-200 overflow-hidden">
                   <button type="button" onClick={()=>setShowCreateSubscription(!showCreateSubscription)}
@@ -1151,6 +1251,7 @@ export default function EditAppointmentDialog({
                 {/* ── 5. RIEPILOGO ── */}
                 <div className="bg-white border-2 border-green-200 rounded-xl px-4 py-3 space-y-1.5">
                   <div className="flex justify-between text-sm text-gray-600"><span>Servizi:</span><span className="font-semibold">€{calculateSubtotal().toFixed(2)}</span></div>
+                  {retailItems.length > 0 && <div className="flex justify-between text-sm text-gray-600"><span>Rivendita:</span><span className="font-semibold">€{calculateRetailTotal().toFixed(2)}</span></div>}
                   {selectedPromo && <div className="flex justify-between text-sm text-pink-600"><span className="flex items-center gap-1"><Gift className="w-3.5 h-3.5"/>Omaggio:</span><span className="font-semibold">{selectedPromo.free_service_name}</span></div>}
                   {discountType!=='none' && calculateDiscount()>0 && <div className="flex justify-between text-sm text-red-500"><span>Sconto:</span><span className="font-semibold">-€{calculateDiscount().toFixed(2)}</span></div>}
                   {selectedCard && (
@@ -1262,7 +1363,7 @@ export default function EditAppointmentDialog({
                       <span className="text-base leading-tight">
                         {selectedCard
                           ? selectedCardIsSubscription
-                            ? '€0'
+                            ? `€${calculateRetailTotal().toFixed(2)}`
                             : `€${totalAfterDiscount.toFixed(2)}`
                           : '--'
                         }
