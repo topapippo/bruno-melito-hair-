@@ -524,7 +524,10 @@ export default function NewAppointmentDialog({
                     POS
                   </Button>
                 </div>
-                <p className="text-[10px] text-gray-400 text-center">Per sospeso, abbonamento o tessera: salva l'appuntamento, poi cliccalo nel planning per andare in cassa</p>
+                <Button type="button" disabled={saving} onClick={() => handleSubmit(null, null, true)}
+                  className="w-full h-9 bg-[#C8617A] hover:bg-[#B14F66] text-white font-bold text-xs gap-1.5">
+                  {saving && !checkoutMethod ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'VAI IN CASSA COMPLETA (sospeso, abbonamento, tessera...)'}
+                </Button>
               </div>
             )}
 

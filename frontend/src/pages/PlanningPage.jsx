@@ -533,6 +533,12 @@ export default function PlanningPage() {
     setEditDialogOpen(true);
   };
 
+  // Appuntamento appena creato dal walk-in dialog -> apre subito la cassa, senza chiudere/riaprire
+  const handleNewAppointmentCheckout = (apt) => {
+    setNewDialogOpen(false);
+    openEditDialogForCheckout(apt);
+  };
+
   const openRecurringDialog = (apt) => {
     setRecurringAppointment(apt);
     setRecurringDialogOpen(true);
@@ -1039,6 +1045,7 @@ export default function PlanningPage() {
           services={services}
           cardTemplates={cardTemplates}
           onSuccess={refreshAll}
+          onSaveAndCheckout={handleNewAppointmentCheckout}
         />
 
         <ErrorBoundary>
