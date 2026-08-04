@@ -1,0 +1,227 @@
+import { useState, useEffect } from 'react';
+import api from '../lib/api';
+import { getErrorMessage } from '../lib/api';
+import Layout from '../components/Layout';
+import { Package, Plus, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+
+const CATEGORIES = [
+  { value: 'trattamento', label: 'Trattamenti' },
+  { value: 'colore', label: 'Colore' },
+  { value: 'permanente', label: 'Permanente / Ondulazione / Stiratura' },
+  { value: 'rivendita', label: 'Rivendita & Varie' },
+];
+
+const emptyProduct = {
+  name: '',
+  category: 'trattamento',
+  total_stock: 0,
+  dose_size: 1,
+  low_stock_threshold: 5,
+  sale_price: 0,
+};
+
+export default function InventoryPage() {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [newProduct, setNewProduct] = useState(emptyProduct);
+
+  const loadProducts = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/inventory');
+      setProducts(res.data || []);
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Errore nel caricamento del magazzino'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  const categories = CATEGORIES.reduce((acc, c) => {
+    acc[c.value] = {
+      label: c.label,
+      items: products.filter((p) => p.category === c.value),
+    };
+    return acc;
+  }, {});
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!newProduct.name.trim()) {
+      toast.error('Inserisci il nome del prodotto');
+      return;
+    }
+    setSaving(true);
+    try {
+      await api.post('/inventory', {
+        ...newProduct,
+        total_stock: Number(newProduct.total_stock) || 0,
+        dose_size: Number(newProduct.dose_size) || 1,
+        low_stock_threshold: Number(newProduct.low_stock_threshold) || 0,
+        sale_price: Number(newProduct.sale_price) || 0,
+      });
+      toast.success('Prodotto aggiunto');
+      setNewProduct(emptyProduct);
+      setShowForm(false);
+      loadProducts();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Errore nel salvataggio'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Eliminare questo prodotto dal magazzino?')) return;
+    try {
+      await api.delete(`/inventory/${id}`);
+      setProducts((prev) => prev.filter((p) => p.id !== id));
+      toast.success('Prodotto eliminato');
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Errore nell'eliminazione"));
+    }
+  };
+
+  const handleRestock = async (id, currentStock) => {
+    const input = window.prompt('Quante unità vuoi aggiungere al magazzino?', '10');
+    if (input === null) return;
+    const amount = parseFloat(input.replace(',', '.'));
+    if (isNaN(amount) || amount <= 0) {
+      toast.error('Inserisci una quantità valida');
+      return;
+    }
+    try {
+      const res = await api.post(`/inventory/${id}/restock`, { amount });
+      setProducts((prev) => prev.map((p) => (p.id === id ? res.data : p)));
+      toast.success(`Rifornito: +${amount}`);
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Errore nel rifornimento'));
+    }
+  };
+
+  return (
+    <Layout>
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-black text-[#2D1B14] flex items-center gap-2" style={{ fontFamily: "'Playfair Display', serif" }}>
+              <Package className="w-7 h-7 text-[#C8617A]" /> Magazzino
+            </h1>
+            <p className="text-sm text-[#9C7060] mt-1">Gestisci colori, trattamenti e prodotti in rivendita</p>
+          </div>
+          <button
+            onClick={() => setShowForm((s) => !s)}
+            className="flex items-center gap-2 bg-[#C8617A] text-white font-bold px-4 py-2.5 rounded-xl hover:bg-[#b5566d] transition-colors shadow-sm"
+          >
+            <Plus className="w-4 h-4" /> Aggiungi Prodotto
+          </button>
+        </div>
+
+        {showForm && (
+          <form onSubmit={handleSubmit} className="bg-white border border-[#F0E6DC] rounded-2xl p-6 shadow-sm mb-10 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-2">
+              <label className="text-xs font-bold text-[#9C7060] uppercase">Nome prodotto (es. 7.0, Maschera Curativa)</label>
+              <input type="text" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} className="w-full mt-1 border border-[#F0E6DC] rounded-lg p-2 focus:border-[#C8617A] outline-none" />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-[#9C7060] uppercase">Categoria</label>
+              <select value={newProduct.category} onChange={e => setNewProduct({...newProduct, category: e.target.value})} className="w-full mt-1 border border-[#F0E6DC] rounded-lg p-2 focus:border-[#C8617A] outline-none bg-white">
+                {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-bold text-[#9C7060] uppercase">Soglia scorta bassa (allarme)</label>
+              <input type="number" step="0.1" value={newProduct.low_stock_threshold} onChange={e => setNewProduct({...newProduct, low_stock_threshold: parseFloat(e.target.value)})} className="w-full mt-1 border border-[#F0E6DC] rounded-lg p-2 focus:border-[#C8617A] outline-none" />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-[#9C7060] uppercase">Quantità Totale (es. 50 tubi)</label>
+              <input type="number" step="0.1" value={newProduct.total_stock} onChange={e => setNewProduct({...newProduct, total_stock: parseFloat(e.target.value)})} className="w-full mt-1 border border-[#F0E6DC] rounded-lg p-2 focus:border-[#C8617A] outline-none" />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-[#9C7060] uppercase">Dose per uso (es. 1 tubo = 1)</label>
+              <input type="number" step="0.1" value={newProduct.dose_size} onChange={e => setNewProduct({...newProduct, dose_size: parseFloat(e.target.value)})} className="w-full mt-1 border border-[#F0E6DC] rounded-lg p-2 focus:border-[#C8617A] outline-none" />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-[#9C7060] uppercase">Prezzo Vendita Rivendita (€)</label>
+              <input type="number" step="0.1" value={newProduct.sale_price} onChange={e => setNewProduct({...newProduct, sale_price: parseFloat(e.target.value) || 0})} className="w-full mt-1 border border-[#F0E6DC] rounded-lg p-2 focus:border-[#C8617A] outline-none" />
+            </div>
+            <button type="submit" disabled={saving} className="md:col-span-3 bg-[#2D1B14] text-white font-bold py-3 rounded-xl hover:bg-black transition-colors disabled:opacity-60">{saving ? 'Salvataggio…' : 'Salva Prodotto'}</button>
+          </form>
+        )}
+
+        {!loading && (() => {
+          const lowStockItems = products.filter(p => p.total_stock <= p.low_stock_threshold);
+          return lowStockItems.length > 0 && (
+            <div className="mb-8 p-5 bg-amber-50 border-2 border-amber-300 rounded-2xl">
+              <h3 className="font-black text-amber-700 flex items-center gap-2 mb-3">
+                <AlertTriangle className="w-5 h-5" /> Prodotti Sotto Scorta ({lowStockItems.length})
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {lowStockItems.map(p => (
+                  <span key={p.id} className="bg-white px-3 py-1 rounded-lg text-sm text-amber-800 font-bold border border-amber-200">
+                    {p.name} ({p.total_stock} rimasti)
+                  </span>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
+        {loading ? <div className="flex justify-center py-20"><Loader2 className="animate-spin text-[#C8617A] w-10 h-10" /></div> : (
+          <div className="space-y-10">
+            {Object.values(categories).map(cat => (
+              cat.items.length > 0 && (
+                <div key={cat.label}>
+                  <h2 className="text-xl font-black text-[#2D1B14] mb-4 border-b border-[#F0E6DC] pb-2" style={{fontFamily: "'Playfair Display', serif"}}>{cat.label}</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {cat.items.map(p => {
+                      const isLow = p.total_stock <= p.low_stock_threshold;
+                      return (
+                        <div key={p.id} className={`bg-white border rounded-2xl p-5 shadow-sm transition-all ${isLow ? 'border-amber-300 bg-amber-50/50' : 'border-[#F0E6DC]'}`}>
+                          <div className="flex justify-between items-start mb-2">
+                            <h3 className="font-bold text-[#2D1B14]">{p.name}</h3>
+                            <button onClick={() => handleDelete(p.id)} className="text-[#9C7060] hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                          </div>
+                          {p.sale_price > 0 && (
+                            <p className="text-sm text-[#2D1B14] font-bold mb-2">€{p.sale_price.toFixed(2)}</p>
+                          )}
+                          <div className="flex justify-between items-end">
+                            <div>
+                              <p className={`text-3xl font-black ${isLow ? 'text-amber-600' : 'text-[#C8617A]'}`}>{p.total_stock}</p>
+                              <p className="text-xs text-[#9C7060]">dosi/pezzi disponibili</p>
+                            </div>
+                            <button onClick={() => handleRestock(p.id, p.total_stock)} className="text-xs font-bold text-[#C8617A] border border-[#C8617A] px-3 py-1.5 rounded-lg hover:bg-[#FDF8F5]">
+                              Rifornisci
+                            </button>
+                          </div>
+                          {isLow && (
+                            <div className="mt-3 flex items-center gap-1 text-amber-600 text-xs font-bold">
+                              <AlertTriangle className="w-3 h-3" /> Scorta bassa
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )
+            ))}
+            {!products.length && (
+              <div className="text-center py-20 text-[#9C7060]">
+                <Package className="w-12 h-12 mx-auto mb-3 opacity-40" />
+                <p>Nessun prodotto in magazzino. Aggiungi il primo con il pulsante in alto.</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </Layout>
+  );
+}

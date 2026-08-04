@@ -1,0 +1,114 @@
+{
+  "summary": "Iteration 45: Verified CRITICAL BUG FIX for admin New Appointment dialog time slot generation. The fix changes regex from single match to global match to capture ALL time ranges in split schedule hours config. All features tested and working correctly.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": [
+    "=== LOGIN FLOW ===",
+    "1. Login page loads with Accedi/Registrati tabs - PASS",
+    "2. Login with admin@brunomelito.it / mbhs637104 - PASS",
+    "3. Redirects to Planning page after login - PASS",
+    "",
+    "=== PLANNING PAGE (Day View) ===",
+    "4. Planning page loads with day view - PASS",
+    "5. '+ Nuovo' button opens New Appointment dialog - PASS",
+    "6. Date input shows today's date (2026-04-01) - PASS",
+    "7. Time slots for today: 10 slots (16:30-18:45) - PASS (past times filtered)",
+    "8. Afternoon slots (14:00+) showing correctly - PASS (FIX VERIFIED)",
+    "",
+    "=== PLANNING PAGE (Week View) ===",
+    "9. 'Settimana' tab switches to week view - PASS",
+    "10. Week view shows appointments for the week - PASS",
+    "",
+    "=== NEW APPOINTMENT DIALOG - TIME SLOTS ===",
+    "11. Today (Wednesday): 10 afternoon slots available - PASS",
+    "12. Tuesday (open day): 40 slots (16 morning + 24 afternoon) - PASS",
+    "13. Morning slots (08:00-12:45): 16 slots - PASS",
+    "14. Afternoon slots (13:00-18:45): 24 slots - PASS",
+    "",
+    "=== CLOSED DAY HANDLING ===",
+    "15. Monday (2026-03-30) shows 'Lunedi e giorno di chiusura!' warning - PASS",
+    "16. Monday save button shows 'Giorno chiuso' and is disabled - PASS",
+    "17. Sunday (2026-04-05) shows 'Domenica e giorno di chiusura!' warning - PASS",
+    "18. Sunday save button shows 'Giorno chiuso' and is disabled - PASS",
+    "",
+    "=== FULL APPOINTMENT CREATION FLOW ===",
+    "19. 'Occasionale' client button works - PASS",
+    "20. STYLING category expands to show services - PASS",
+    "21. Service selection (Taglio Donna €10) works - PASS",
+    "22. 'Salva Appuntamento' button is NOT disabled when all fields filled - PASS",
+    "23. Appointment creation succeeds with 'Appuntamento creato!' toast - PASS",
+    "",
+    "=== WEEKLY VIEW PAGE (/week) ===",
+    "24. Weekly View page loads via sidebar 'Settimana' link - PASS",
+    "25. Shows 15 appointments across the week - PASS",
+    "26. Clicking empty slot opens New Appointment dialog - PASS",
+    "27. Time slots in Weekly View dialog: 44 slots with 20 afternoon - PASS",
+    "28. 'Salva Appuntamento' button is NOT disabled - PASS"
+  ],
+  "failed_tests": [],
+  "test_report_links": [
+    "/app/test_reports/iteration_45.json"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "NewAppointmentDialog.jsx line 50: Regex pattern /(\d{1,2})[.:](\d{2})\s*[-–]\s*(\d{1,2})[.:](\d{2})/g with 'g' flag correctly matches ALL time ranges",
+    "NewAppointmentDialog.jsx line 54: while loop with rangePattern.exec() iterates through all matches for split schedules like '08:00 - 13:00---14:00 - 19:00'",
+    "NewAppointmentDialog.jsx line 42-47: Case-insensitive day key lookup handles both 'lunedì' and 'lunedi' formats",
+    "NewAppointmentDialog.jsx line 721: Save button correctly disabled when isDayClosed or availableSlots.length === 0",
+    "WeeklyView.jsx line 283: Uses same NewAppointmentDialog component, so fix applies to both Planning and Weekly views"
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "N/A (frontend-focused testing)",
+    "frontend": "100% (28/28 tests passed)"
+  },
+  "test_credentials": {
+    "admin_email": "admin@brunomelito.it",
+    "admin_password": "mbhs637104"
+  },
+  "seed_data_creation": "Created test appointment: Cliente Occasionale, Taglio Donna, 2026-04-07 09:00",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 45 verified the CRITICAL BUG FIX for admin New Appointment dialog time slot generation. The fix changes regex from single match to global match to capture ALL time ranges in split schedule hours config. Both Planning page (day/week views) and Weekly View page (/week) use the same NewAppointmentDialog component, so the fix applies to both. Closed days (Monday/Sunday) correctly show warning and disable save button. Full appointment creation flow works end-to-end.",
+  "features_verified": {
+    "time_slot_generation_fix": {
+      "status": "VERIFIED WORKING",
+      "details": "Regex with global flag captures all time ranges in split schedules like '08:00 - 13:00---14:00 - 19:00'"
+    },
+    "afternoon_slots": {
+      "status": "VERIFIED WORKING",
+      "details": "Afternoon slots (14:00-18:45) now appear correctly in New Appointment dialog"
+    },
+    "closed_day_warning": {
+      "status": "VERIFIED WORKING",
+      "details": "Monday shows 'Lunedi e giorno di chiusura!', Sunday shows 'Domenica e giorno di chiusura!'"
+    },
+    "save_button_state": {
+      "status": "VERIFIED WORKING",
+      "details": "'Salva Appuntamento' button is NOT disabled when all fields are filled. Shows 'Giorno chiuso' on closed days."
+    },
+    "full_appointment_creation": {
+      "status": "VERIFIED WORKING",
+      "details": "Complete flow: Occasionale client -> Select service -> Save -> 'Appuntamento creato!' toast"
+    },
+    "weekly_view_integration": {
+      "status": "VERIFIED WORKING",
+      "details": "Weekly View (/week) uses same NewAppointmentDialog, fix applies there too"
+    }
+  },
+  "bug_fix_verification": {
+    "original_bug": "New Appointment dialog 'Salva Appuntamento' button appeared disabled because getFilteredSlots only captured FIRST time range from split schedule hours",
+    "fix_applied": "Changed regex from single match to global match (added 'g' flag) and used while loop with exec() to capture ALL time ranges",
+    "verification_result": "PASS - Both morning and afternoon slots now appear, save button is enabled when all fields filled",
+    "files_fixed": [
+      "/app/frontend/src/components/planning/NewAppointmentDialog.jsx - getFilteredSlots function (line ~35-67)"
+    ]
+  }
+}

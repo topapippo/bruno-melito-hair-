@@ -1,0 +1,548 @@
+from fastapi import APIRouter, HTTPException, Depends
+from typing import List, Optional
+from datetime import datetime, timezone, timedelta, date as ddate
+from urllib.parse import quote
+import uuid
+import re
+import logging
+import asyncio
+
+from database import db
+from auth import get_current_user
+from models import ClientCreate, ClientResponse, ClientUpdate, ClientBulkImport
+from utils import normalize_phone_wa, visit_done_filter, visit_is_done
+
+logger = logging.getLogger(__name__)
+router = APIRouter()
+
+
+def _normalize_phone(phone: str) -> str:
+    if not phone:
+        return ""
+    digits = re.sub(r'\D', '', phone)
+    if digits.startswith('0039'):
+        digits = digits[4:]
+    elif digits.startswith('39') and len(digits) > 10:
+        digits = digits[2:]
+    if digits.startswith('0') and len(digits) > 9:
+        digits = digits[1:]
+    return digits
+
+
+def _normalize_client(doc: dict) -> dict:
+    doc.pop("sms_reminder", None)
+    doc.pop("send_sms_reminders", None)
+    doc.pop("_id", None)
+    doc.pop("user_id", None)
+    return doc
+
+
+@router.post("/clients/import")
+async def import_clients_bulk(data: ClientBulkImport, current_user: dict = Depends(get_current_user)):
+    imported = 0
+    skipped = 0
+    # Carica tutti i clienti esistenti per normalizzare i duplicati in modo efficiente
+    existing_clients = await db.clients.find(
+        {"user_id": current_user["id"]}, {"_id": 0, "name": 1, "phone": 1}
+    ).to_list(10000)
+    existing_names = {c["name"].lower() for c in existing_clients}
+    existing_phones_norm = {_normalize_phone(c.get("phone", "")) for c in existing_clients if c.get("phone")}
+
+    for client_data in data.clients:
+        name = client_data.get("name", "").strip()
+        if not name:
+            skipped += 1
+            continue
+        incoming_phone = client_data.get("phone") or ""
+        incoming_phone_norm = _normalize_phone(incoming_phone)
+        # Salta se esiste già per nome (case-insensitive) o per telefono normalizzato
+        if name.lower() in existing_names:
+            skipped += 1
+            continue
+        if incoming_phone_norm and incoming_phone_norm in existing_phones_norm:
+            skipped += 1
+            continue
+        client_doc = {
+            "id": str(uuid.uuid4()), "user_id": current_user["id"],
+            "name": name, "phone": incoming_phone,
+            "email": client_data.get("email") or "", "hair_notes": client_data.get("hair_notes") or client_data.get("notes") or "",
+            "total_visits": 0, "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.clients.insert_one(client_doc)
+        existing_names.add(name.lower())
+        if incoming_phone_norm:
+            existing_phones_norm.add(incoming_phone_norm)
+        imported += 1
+    logger.info(f"Importazione clienti: {imported} importati, {skipped} saltati per utente {current_user['id']}")
+    return {"imported": imported, "skipped": skipped, "total": imported + skipped}
+
+
+@router.post("/clients", response_model=ClientResponse)
+async def create_client(data: ClientCreate, current_user: dict = Depends(get_current_user)):
+    client_id = str(uuid.uuid4())
+    client_doc = {
+        "id": client_id, "user_id": current_user["id"],
+        "name": data.name, "phone": data.phone or "",
+        "email": data.email or "", "hair_notes": data.hair_notes or "",
+        "current_color_code": data.current_color_code or "",
+        "birthday": data.birthday or None,
+        "total_visits": 0, "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    try:
+        await db.clients.insert_one(client_doc)
+    except Exception as e:
+        if "duplicate key" in str(e).lower() or "E11000" in str(e):
+            raise HTTPException(status_code=400, detail=f"Esiste già un cliente con il nome '{data.name}'")
+        logger.error(f"Errore creazione cliente: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nel salvataggio: {str(e)}")
+    return ClientResponse(**_normalize_client(dict(client_doc)))
+
+
+@router.get("/clients", response_model=List[ClientResponse])
+async def get_clients(current_user: dict = Depends(get_current_user)):
+    docs = await db.clients.find(
+        {"user_id": current_user["id"]}, {"_id": 0}
+    ).sort("name", 1).to_list(1000)
+    return [ClientResponse(**_normalize_client(d)) for d in docs]
+
+
+
+@router.get("/clients/search/appointments")
+async def search_client_appointments(query: str, current_user: dict = Depends(get_current_user)):
+    clients = await db.clients.find(
+        {"user_id": current_user["id"], "name": {"$regex": query, "$options": "i"}},
+        {"_id": 0}
+    ).to_list(20)
+    if not clients:
+        return {"clients": [], "appointments": []}
+    client_ids = [c["id"] for c in clients]
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    appointments = await db.appointments.find(
+        {"user_id": current_user["id"], "client_id": {"$in": client_ids},
+         "date": {"$gte": today}, "status": {"$ne": "cancelled"}},
+        {"_id": 0, "user_id": 0}
+    ).sort([("date", 1), ("time", 1)]).to_list(50)
+    return {
+        "clients": [{"id": c["id"], "name": c["name"], "phone": c.get("phone", "")} for c in clients],
+        "appointments": appointments
+    }
+
+
+@router.get("/clients/dormant")
+async def get_dormant_clients(days: int = 30, current_user: dict = Depends(get_current_user)):
+    """Clienti che non vengono da almeno `days` giorni, con storico servizi e suggerimenti."""
+    uid = current_user["id"]
+    cutoff = (ddate.today() - timedelta(days=days)).isoformat()
+    today_str = ddate.today().isoformat()
+
+    # Filtro ultimi 3 anni per evitare OOM — per un salone ~25k appuntamenti al massimo
+    three_years_ago = (ddate.today() - timedelta(days=1095)).isoformat()
+    all_clients, all_appointments, services_catalog, recent_recalls = await asyncio.gather(
+        db.clients.find({"user_id": uid}, {"_id": 0, "id": 1, "name": 1, "phone": 1, "hair_notes": 1}).to_list(5000),
+        db.appointments.find(
+            {"user_id": uid, "status": {"$ne": "cancelled"}, "date": {"$gte": three_years_ago}},
+            {"_id": 0, "client_id": 1, "client_name": 1, "date": 1, "services": 1, "status": 1}
+        ).to_list(30000),
+        db.services.find({"user_id": uid}, {"_id": 0, "name": 1, "category": 1}).to_list(500),
+        db.reminders_sent.find(
+            {"user_id": uid, "type": "inactive_recall",
+             "sent_at": {"$gte": (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()}},
+            {"_id": 0}
+        ).to_list(500),
+    )
+    recently_recalled_ids = {r.get("client_id") for r in recent_recalls}
+
+    all_service_names = [s["name"] for s in services_catalog]
+
+    # Aggrega per NOME normalizzato della RUBRICA (risolvendo il client_id al nome
+    # del documento cliente). Così un appuntamento conta per la cliente sia se è
+    # finito su un duplicato/orfano (stesso nome) sia se sull'appuntamento il nome
+    # è scritto diverso da quello in rubrica (es. "roby" vs "Roberta").
+    id_to_name = {c["id"]: (c.get("name") or "").strip().lower() for c in all_clients}
+    service_popularity: dict = {}
+    client_data: dict = {}  # chiave = nome normalizzato
+    for apt in all_appointments:
+        cid = apt.get("client_id", "")
+        if not cid or cid == "generic":
+            continue
+        # nome canonico dal documento cliente; fallback al nome sull'appuntamento (orfani)
+        key = id_to_name.get(cid) or (apt.get("client_name") or "").strip().lower()
+        if not key:
+            continue
+        d = apt.get("date", "")
+        if key not in client_data:
+            client_data[key] = {"last_date": "0000-00-00", "service_counts": {}}
+        if d > client_data[key]["last_date"]:
+            client_data[key]["last_date"] = d
+        if visit_is_done(apt, today_str):
+            for svc in apt.get("services", []):
+                name = svc.get("name", "")
+                if name:
+                    client_data[key]["service_counts"][name] = client_data[key]["service_counts"].get(name, 0) + 1
+                    service_popularity[name] = service_popularity.get(name, 0) + 1
+
+    dormant = []
+    for client in all_clients:
+        cid = client["id"]
+        cd = client_data.get(client["name"].strip().lower(), {})
+        last_date = cd.get("last_date", "0000-00-00")
+
+        if last_date == "0000-00-00":
+            days_absent = None
+            last_visit = None
+        elif last_date >= cutoff:
+            continue
+        else:
+            ld = ddate.fromisoformat(last_date)
+            days_absent = (ddate.today() - ld).days
+            last_visit = last_date
+
+        svc_counts = cd.get("service_counts", {})
+        top_services = sorted(svc_counts.items(), key=lambda x: -x[1])[:4]
+        never_done = sorted(
+            [s for s in all_service_names if s not in svc_counts],
+            key=lambda x: -service_popularity.get(x, 0)
+        )[:4]
+
+        dormant.append({
+            "id": cid,
+            "name": client["name"],
+            "phone": client.get("phone") or "",
+            "hair_notes": client.get("hair_notes") or "",
+            "days_absent": days_absent,
+            "last_visit": last_visit,
+            "top_services": [{"name": s[0], "count": s[1]} for s in top_services],
+            "never_done": never_done,
+            "total_visits": sum(svc_counts.values()),
+            "already_recalled": cid in recently_recalled_ids,
+        })
+
+    dormant.sort(key=lambda x: -(x["days_absent"] or 99999))
+    return dormant
+
+
+@router.get("/clients/integrity-check")
+async def integrity_check(current_user: dict = Depends(get_current_user)):
+    """Trova appuntamenti orfani (client_id senza documento cliente) e clienti duplicate."""
+    uid = current_user["id"]
+
+    # Tutti i client_id usati negli appuntamenti
+    apt_client_ids = await db.appointments.distinct("client_id", {"user_id": uid})
+    apt_client_ids = [cid for cid in apt_client_ids if cid and cid not in ("generic", "")]
+
+    # Client_id che esistono davvero come documenti
+    existing = await db.clients.find(
+        {"user_id": uid, "id": {"$in": apt_client_ids}}, {"_id": 0, "id": 1}
+    ).to_list(2000)
+    existing_ids = {c["id"] for c in existing}
+    orphan_ids = [cid for cid in apt_client_ids if cid not in existing_ids]
+
+    # Per ogni orfano: info sull'appuntamento più recente + eventuale cliente con stesso nome
+    orphans = []
+    for oid in orphan_ids:
+        last_apt = await db.appointments.find_one(
+            {"client_id": oid, "user_id": uid},
+            {"_id": 0, "client_name": 1, "date": 1},
+            sort=[("date", -1)]
+        )
+        if not last_apt:
+            continue
+        apt_count = await db.appointments.count_documents({"client_id": oid, "user_id": uid})
+        name = last_apt.get("client_name", "").strip()
+        candidate = None
+        if name:
+            found = await db.clients.find_one(
+                {"user_id": uid, "name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}},
+                {"_id": 0, "id": 1, "name": 1, "phone": 1}
+            )
+            if found:
+                candidate = found
+        orphans.append({
+            "orphan_client_id": oid,
+            "client_name": name,
+            "appointments_count": apt_count,
+            "last_appointment_date": last_apt.get("date", ""),
+            "suggested_client": candidate,
+        })
+
+    # Clienti duplicate (stesso nome normalizzato, id diversi)
+    all_clients = await db.clients.find(
+        {"user_id": uid}, {"_id": 0, "id": 1, "name": 1, "phone": 1, "created_at": 1}
+    ).to_list(5000)
+    name_map: dict = {}
+    for c in all_clients:
+        key = c["name"].strip().lower()
+        name_map.setdefault(key, []).append(c)
+    duplicates = [
+        {"name": v[0]["name"], "clients": v}
+        for v in name_map.values() if len(v) > 1
+    ]
+
+    return {
+        "orphan_appointments": orphans,
+        "duplicate_clients": duplicates,
+        "total_issues": len(orphans) + len(duplicates),
+    }
+
+
+async def _merge_client_data(uid: str, source_id: str, target_id: str, target_name: str, target_phone: str) -> tuple:
+    """Sposta appointments/payments/reminders/promo_usage da source a target, elimina source.
+    Ritorna (apt_moved, pay_moved)."""
+    apt_res = await db.appointments.update_many(
+        {"client_id": source_id, "user_id": uid},
+        {"$set": {"client_id": target_id, "client_name": target_name, "client_phone": target_phone}}
+    )
+    pay_res = await db.payments.update_many(
+        {"client_id": source_id, "user_id": uid}, {"$set": {"client_id": target_id}}
+    )
+    await db.reminders_sent.update_many({"client_id": source_id, "user_id": uid}, {"$set": {"client_id": target_id}})
+    await db.promo_usage.update_many({"client_id": source_id, "user_id": uid}, {"$set": {"client_id": target_id}})
+    await db.clients.delete_one({"id": source_id, "user_id": uid})
+    return apt_res.modified_count, pay_res.modified_count
+
+
+@router.post("/clients/{source_id}/merge-into/{target_id}")
+async def merge_clients(source_id: str, target_id: str, current_user: dict = Depends(get_current_user)):
+    """Sposta tutti gli appuntamenti e pagamenti da source a target, poi elimina source."""
+    uid = current_user["id"]
+    target = await db.clients.find_one({"id": target_id, "user_id": uid}, {"_id": 0})
+    if not target:
+        raise HTTPException(status_code=404, detail="Cliente destinazione non trovato")
+
+    apt_moved, pay_moved = await _merge_client_data(uid, source_id, target_id, target["name"], target.get("phone", ""))
+    logger.info(f"Merge {source_id} → {target_id}: {apt_moved} apt, {pay_moved} pay")
+    return {"success": True, "appointments_moved": apt_moved, "payments_moved": pay_moved}
+
+
+@router.post("/clients/merge-duplicates")
+async def merge_duplicate_clients(current_user: dict = Depends(get_current_user)):
+    """Unisce automaticamente i clienti duplicati con lo STESSO nome (normalizzato
+    lower+trim). Per ogni gruppo sceglie come destinazione il documento con telefono
+    e più vecchio, sposta lì appuntamenti/pagamenti/promo/richiami ed elimina gli altri.
+    Non tocca persone con nomi diversi (familiari con stesso telefono restano separati)."""
+    uid = current_user["id"]
+    all_clients = await db.clients.find({"user_id": uid}, {"_id": 0}).to_list(5000)
+
+    groups: dict = {}
+    for c in all_clients:
+        key = (c.get("name") or "").strip().lower()
+        if not key:
+            continue
+        groups.setdefault(key, []).append(c)
+
+    groups_merged = 0
+    clients_removed = 0
+    appointments_moved = 0
+
+    for key, members in groups.items():
+        if len(members) < 2:
+            continue
+        # Destinazione: preferisci chi ha telefono, poi il più vecchio (created_at minore)
+        members.sort(key=lambda c: (0 if c.get("phone") else 1, c.get("created_at") or ""))
+        target = members[0]
+        target_id = target["id"]
+        target_phone = target.get("phone", "")
+
+        for src in members[1:]:
+            src_id = src["id"]
+            if src_id == target_id:
+                continue
+            apt_count, _ = await _merge_client_data(uid, src_id, target_id, target["name"], target_phone)
+            appointments_moved += apt_count
+            # Se la destinazione non aveva telefono ma il duplicato sì, recuperalo
+            if not target_phone and src.get("phone"):
+                await db.clients.update_one({"id": target_id, "user_id": uid}, {"$set": {"phone": src["phone"]}})
+                target_phone = src["phone"]
+            clients_removed += 1
+        groups_merged += 1
+
+    logger.info(f"Merge duplicati utente {uid}: {groups_merged} gruppi, {clients_removed} clienti rimossi, {appointments_moved} appuntamenti spostati")
+    return {
+        "success": True,
+        "groups_merged": groups_merged,
+        "clients_removed": clients_removed,
+        "appointments_moved": appointments_moved,
+    }
+
+
+@router.get("/clients/{client_id}", response_model=ClientResponse)
+async def get_client(client_id: str, current_user: dict = Depends(get_current_user)):
+    client = await db.clients.find_one({"id": client_id, "user_id": current_user["id"]}, {"_id": 0})
+    if not client:
+        raise HTTPException(status_code=404, detail="Cliente non trovato")
+    return ClientResponse(**_normalize_client(client))
+
+
+@router.put("/clients/{client_id}", response_model=ClientResponse)
+async def update_client(client_id: str, data: ClientUpdate, current_user: dict = Depends(get_current_user)):
+    update_data = {k: v for k, v in data.model_dump().items() if v is not None or k == "birthday"}
+    if not update_data:
+        raise HTTPException(status_code=400, detail="Nessun dato da aggiornare")
+    try:
+        result = await db.clients.update_one(
+            {"id": client_id, "user_id": current_user["id"]}, {"$set": update_data}
+        )
+    except Exception as e:
+        if "duplicate key" in str(e).lower() or "E11000" in str(e):
+            raise HTTPException(status_code=400, detail="Esiste già un cliente con questo nome")
+        raise HTTPException(status_code=500, detail=f"Errore aggiornamento: {str(e)}")
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Cliente non trovato")
+    updated = await db.clients.find_one({"id": client_id}, {"_id": 0})
+    return ClientResponse(**_normalize_client(updated))
+
+
+@router.get("/clients/{client_id}/history")
+async def get_client_history(client_id: str, current_user: dict = Depends(get_current_user)):
+    """Restituisce lo storico completo di un cliente: appuntamenti sincronizzati con i pagamenti."""
+    client = await db.clients.find_one({"id": client_id, "user_id": current_user["id"]}, {"_id": 0})
+    if not client:
+        raise HTTPException(status_code=404, detail="Cliente non trovato")
+
+    # Pagamenti (source of truth per importi e metodi)
+    payments_raw = await db.payments.find(
+        {"client_id": client_id, "user_id": current_user["id"]},
+        {"_id": 0, "user_id": 0}
+    ).sort("date", -1).to_list(100)
+
+    # Mappa appointment_id → payment per cross-reference
+    payment_by_apt: dict = {}
+    for pay in payments_raw:
+        apt_id = pay.get("appointment_id")
+        if apt_id:
+            payment_by_apt[apt_id] = pay
+
+    payments = [
+        {
+            "id": pay.get("id", ""),
+            "date": pay.get("date", ""),
+            "total_paid": pay.get("total_paid", 0),
+            "payment_method": pay.get("payment_method", ""),
+            "services": pay.get("services", []),
+        }
+        for pay in payments_raw
+    ]
+
+    total_spent = sum(p.get("total_paid", 0) for p in payments_raw)
+
+    # Appuntamenti (ultimo anno, ordinati per data decrescente)
+    one_year_ago = (datetime.now(timezone.utc) - timedelta(days=365)).strftime("%Y-%m-%d")
+    appointments_raw = await db.appointments.find(
+        {"client_id": client_id, "user_id": current_user["id"], "date": {"$gte": one_year_ago}},
+        {"_id": 0, "user_id": 0}
+    ).sort("date", -1).to_list(50)
+
+    appointments = []
+    for apt in appointments_raw:
+        apt_id = apt.get("id", "")
+        linked_pay = payment_by_apt.get(apt_id)
+        appointments.append({
+            "id": apt_id,
+            "date": apt.get("date", ""),
+            "time": apt.get("time", ""),
+            "services": apt.get("services", []),
+            "operator_name": apt.get("operator_name", ""),
+            "status": apt.get("status", ""),
+            "paid": apt.get("paid", False),
+            # Usa i dati reali del pagamento se disponibili
+            "amount_paid": linked_pay.get("total_paid", apt.get("amount_paid", 0)) if linked_pay else apt.get("amount_paid", 0),
+            "payment_method": linked_pay.get("payment_method", apt.get("payment_method", "")) if linked_pay else apt.get("payment_method", ""),
+            "payment_id": linked_pay.get("id", "") if linked_pay else "",
+        })
+
+    # Ultima visita (effettuata = completed o data passata, non cancellata)
+    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    last_completed = await db.appointments.find_one(
+        {"client_id": client_id, "user_id": current_user["id"], **visit_done_filter(today_str)},
+        {"_id": 0, "date": 1}, sort=[("date", -1)]
+    )
+    last_visit = last_completed.get("date", "") if last_completed else ""
+
+    # Premi promo attivi
+    active_rewards_raw = await db.promotions.find(
+        {"user_id": current_user["id"]}, {"_id": 0, "id": 1, "name": 1, "free_service_name": 1}
+    ).to_list(20)
+    promo_usage = await db.promo_usage.find(
+        {"client_id": client_id, "user_id": current_user["id"]}, {"_id": 0, "promo_id": 1, "free_service": 1}
+    ).to_list(20)
+    used_promo_ids = {u["promo_id"] for u in promo_usage}
+    active_rewards = [
+        {"reward_name": p.get("free_service_name") or p.get("name")}
+        for p in active_rewards_raw if p["id"] in used_promo_ids
+    ]
+
+    # Servizio preferito (più frequente tra tutti gli appuntamenti)
+    all_apts_for_stats = await db.appointments.find(
+        {"client_id": client_id, "user_id": current_user["id"], "status": {"$ne": "cancelled"}},
+        {"_id": 0, "date": 1, "services": 1}
+    ).sort("date", 1).to_list(500)
+
+    svc_count: dict = {}
+    for apt in all_apts_for_stats:
+        for svc in apt.get("services", []):
+            name = svc.get("name", "")
+            if name:
+                svc_count[name] = svc_count.get(name, 0) + 1
+    favorite_service = max(svc_count, key=svc_count.get) if svc_count else None
+
+    # Frequenza media tra visite (giorni)
+    visit_dates = sorted([a["date"] for a in all_apts_for_stats if a.get("date")])
+    avg_frequency_days = None
+    if len(visit_dates) >= 2:
+        gaps = [(ddate.fromisoformat(visit_dates[i+1]) - ddate.fromisoformat(visit_dates[i])).days
+                for i in range(len(visit_dates) - 1)]
+        avg_frequency_days = round(sum(gaps) / len(gaps))
+
+    # Prossimo appuntamento
+    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    next_apt_raw = await db.appointments.find_one(
+        {"client_id": client_id, "user_id": current_user["id"],
+         "date": {"$gte": today_str}, "status": {"$ne": "cancelled"}},
+        {"_id": 0, "date": 1, "time": 1, "services": 1},
+        sort=[("date", 1), ("time", 1)]
+    )
+    next_appointment = None
+    if next_apt_raw:
+        next_appointment = {
+            "date": next_apt_raw["date"],
+            "time": next_apt_raw["time"],
+            "services": [s.get("name", "") for s in next_apt_raw.get("services", [])]
+        }
+
+    return {
+        "client": {"id": client.get("id"), "name": client.get("name"), "phone": client.get("phone", ""), "hair_notes": client.get("hair_notes", "")},
+        "total_visits": client.get("total_visits", 0),
+        "total_spent": total_spent,
+        "active_rewards": active_rewards,
+        "last_visit": last_visit,
+        "favorite_service": favorite_service,
+        "avg_frequency_days": avg_frequency_days,
+        "next_appointment": next_appointment,
+        "appointments": appointments,
+        "payments": payments,
+    }
+
+
+@router.get("/clients/{client_id}/whatsapp")
+async def get_client_whatsapp(client_id: str, current_user: dict = Depends(get_current_user)):
+    """Genera un link WhatsApp per contattare il cliente."""
+    client = await db.clients.find_one({"id": client_id, "user_id": current_user["id"]}, {"_id": 0})
+    if not client:
+        raise HTTPException(status_code=404, detail="Cliente non trovato")
+    phone = client.get("phone", "")
+    if not phone:
+        raise HTTPException(status_code=400, detail="Il cliente non ha un numero di telefono")
+    clean = normalize_phone_wa(phone)
+    greeting = quote(f"Ciao {client.get('name', '')}!")
+    return {"url": f"https://wa.me/{clean}?text={greeting}"}
+
+
+@router.delete("/clients/{client_id}")
+async def delete_client(client_id: str, current_user: dict = Depends(get_current_user)):
+    result = await db.clients.delete_one({"id": client_id, "user_id": current_user["id"]})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Cliente non trovato")
+    logger.info(f"Cliente {client_id} eliminato da utente {current_user['id']}")
+    return {"message": "Cliente eliminato"}
+
+

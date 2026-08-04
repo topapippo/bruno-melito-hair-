@@ -1,0 +1,107 @@
+{
+  "summary": "Iteration 23: Tested unified codebase after symlink migration. All backend APIs working (15/15 tests passed). Fixed critical bug in WebsiteAdminPage.jsx that caused runtime error 'Cannot read properties of null (reading salon_name)'. Root cause: page was using raw axios instead of api instance with auth interceptor, causing 403 errors.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": [
+    "BACKEND API TESTS (15/15 passed):",
+    "1. /api/public/website returns config, services, card_templates, loyalty - PASS",
+    "2. /api/public/services returns 21 services with categories - PASS",
+    "3. /api/public/operators returns 2 operators - PASS",
+    "4. /api/push/vapid-key returns public key - PASS",
+    "5. Admin login with correct credentials - PASS",
+    "6. Admin login with wrong password returns 401 - PASS",
+    "7. /api/auth/me returns user info with token - PASS",
+    "8. /api/appointments returns appointments list - PASS",
+    "9. /api/appointments with date range (weekly) - PASS",
+    "10. /api/operators (admin) returns operators - PASS",
+    "11. /api/services (admin) returns services - PASS",
+    "12. /api/clients (admin) returns clients - PASS",
+    "13. Booking conflict returns 409 with alternatives - PASS",
+    "14. Card templates structure validation - PASS",
+    "15. /api/website/config (admin) returns config - PASS",
+    "",
+    "FRONTEND UI TESTS:",
+    "16. Public website landing page loads with salon branding - PASS",
+    "17. PRENOTA ORA button visible and clickable - PASS",
+    "18. Booking form opens with services grouped by category - PASS",
+    "19. Categories found: ABBONAMENTO, ALTRO, COLORE, MODELLANTI, PIEGA, STYLING, TRATTAMENTO - PASS",
+    "20. Promozioni & Card section visible (7 promos) - PASS",
+    "21. Abbonamenti & Card section visible (6 cards) - PASS",
+    "22. Booking flow Step 1 -> Step 2 -> Step 3 works - PASS",
+    "23. Admin login works - PASS",
+    "24. Admin Planning page loads with time slots - PASS",
+    "25. Admin Settimana (Weekly) page shows 7 days Mon-Sun - PASS",
+    "26. Admin Gestione Sito page loads and can edit config - PASS (after fix)"
+  ],
+  "failed_tests": [],
+  "bugs_fixed": [
+    {
+      "file": "/app/mbhs/frontend/src/pages/WebsiteAdminPage.jsx",
+      "issue": "Runtime error: Cannot read properties of null (reading 'salon_name')",
+      "root_cause": "Page was importing raw 'axios' instead of 'api' instance from '../lib/api.js'. The api instance has auth interceptor that adds Bearer token. Without it, /api/website/config returned 403 Forbidden, config remained null, and accessing config.salon_name crashed.",
+      "fix": "1. Changed import from 'axios' to 'api' from '../lib/api.js'. 2. Updated all API calls to use relative paths (api.get('/website/config') instead of axios.get(`${API}/website/config`)). 3. Added null check for config to show graceful error message instead of crash."
+    }
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_iteration23.py",
+    "/app/test_reports/pytest/pytest_iteration23.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "WebsiteAdminPage.jsx was using raw axios without auth interceptor - FIXED",
+    "Other admin pages should be checked to ensure they use the api instance from lib/api.js",
+    "The unified codebase (symlinks) is working correctly"
+  ],
+  "updated_files": [
+    "/app/mbhs/frontend/src/pages/WebsiteAdminPage.jsx"
+  ],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "100%"
+  },
+  "test_credentials": {
+    "admin_email": "admin@brunomelito.it",
+    "admin_password": "admin123"
+  },
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 23 verified unified codebase working. Fixed WebsiteAdminPage.jsx auth bug. All features tested: public website, booking form with categories/cards/promos, admin login, Planning, Settimana (7 days), Gestione Sito. Backend APIs all working. Card templates (6) and promos (7) display correctly in booking form.",
+  "verified_features": {
+    "unified_codebase": {
+      "status": "WORKING",
+      "symlinks": "/app/frontend -> /app/mbhs/frontend, /app/backend -> /app/mbhs/backend"
+    },
+    "public_website": {
+      "landing_page": "WORKING - salon branding visible",
+      "prenota_ora_button": "WORKING",
+      "booking_form": "WORKING - 3 steps"
+    },
+    "booking_form_features": {
+      "services_by_category": "WORKING - 7 categories",
+      "card_templates": "WORKING - 6 cards displayed",
+      "promozioni": "WORKING - 7 promos displayed",
+      "conflict_resolution": "WORKING - 409 with alternatives"
+    },
+    "admin_pages": {
+      "login": "WORKING",
+      "planning": "WORKING",
+      "settimana": "WORKING - 7 days Mon-Sun",
+      "gestione_sito": "WORKING (after fix)"
+    },
+    "backend_apis": {
+      "public_website": "WORKING",
+      "push_vapid_key": "WORKING",
+      "auth": "WORKING",
+      "appointments": "WORKING",
+      "website_config": "WORKING"
+    }
+  }
+}

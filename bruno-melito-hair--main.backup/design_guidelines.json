@@ -1,0 +1,137 @@
+{
+  "identity": {
+    "name": "E1 - The Anti-AI Designer",
+    "tone": "Elegant, Professional, Fashion-Forward, Organized",
+    "principles": [
+      "Fusion: Vogue Magazine meets SaaS Efficiency",
+      "Emotion: Calmness and Confidence",
+      "Content: Data should look beautiful, not just functional",
+      "Contrast: Soft backgrounds with sharp, high-contrast typography"
+    ]
+  },
+  "visual_system": {
+    "theme_mode": "light",
+    "colors": {
+      "palette_name": "Rose & Stone (Organic Luxury)",
+      "primary": {
+        "hex": "#C58970",
+        "name": "Antique Rose",
+        "usage": "Primary Buttons, Active States, Key Accents"
+      },
+      "secondary": {
+        "hex": "#E6CCB2",
+        "name": "Soft Sand",
+        "usage": "Secondary backgrounds, subtle highlights"
+      },
+      "background": {
+        "hex": "#FAFAF9",
+        "name": "Stone 50",
+        "usage": "App Background (Not pure white)"
+      },
+      "surface": {
+        "hex": "#FFFFFF",
+        "name": "Pure White",
+        "usage": "Cards, Modals, Sidebar"
+      },
+      "text": {
+        "primary": "#44403C",
+        "secondary": "#78716C",
+        "accent": "#C58970"
+      },
+      "status": {
+        "success": "#789F8A",
+        "warning": "#E9C46A",
+        "error": "#E76F51"
+      }
+    },
+    "typography": {
+      "font_family_headings": "Playfair Display, serif",
+      "font_family_body": "Manrope, sans-serif",
+      "scale": {
+        "h1": "text-4xl md:text-5xl font-medium tracking-tight",
+        "h2": "text-3xl font-medium tracking-tight",
+        "h3": "text-2xl font-medium",
+        "body": "text-base leading-relaxed",
+        "small": "text-sm text-muted-foreground"
+      },
+      "installation": "Import 'Playfair Display' and 'Manrope' from Google Fonts in index.css"
+    },
+    "spacing": {
+      "container_padding": "p-6 md:p-8 lg:p-12",
+      "element_gap": "gap-6",
+      "border_radius": "rounded-xl"
+    },
+    "shadows": {
+      "card": "shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)]",
+      "hover": "shadow-[0_10px_40px_-10px_rgba(197,137,112,0.3)]"
+    }
+  },
+  "layout_strategies": {
+    "dashboard": {
+      "type": "Bento Grid",
+      "grid_cols": "grid-cols-1 md:grid-cols-4 lg:grid-cols-12",
+      "gap": "gap-6",
+      "areas": {
+        "stats": "col-span-full lg:col-span-12 grid grid-cols-2 md:grid-cols-4 gap-4",
+        "appointments": "col-span-full lg:col-span-8 row-span-2",
+        "quick_actions": "col-span-full md:col-span-2 lg:col-span-4",
+        "revenue_chart": "col-span-full md:col-span-2 lg:col-span-4"
+      }
+    },
+    "calendar": {
+      "style": "Clean Vertical List (Things 3 Style)",
+      "desktop_view": "Grid without heavy borders",
+      "mobile_view": "Vertical Agenda Stream",
+      "current_time_indicator": "Soft gradient line"
+    }
+  },
+  "components": {
+    "buttons": {
+      "style": "pill-shaped or rounded-lg",
+      "primary": "bg-[#C58970] hover:bg-[#B07860] text-white shadow-lg shadow-[#C58970]/20 transition-all active:scale-95",
+      "secondary": "bg-[#FAFAF9] text-[#44403C] border border-[#E6CCB2] hover:bg-[#F5F5F4]"
+    },
+    "cards": {
+      "style": "bg-white border border-[#E6CCB2]/30 rounded-xl",
+      "hover": "hover:border-[#C58970]/30 transition-colors duration-300"
+    },
+    "inputs": {
+      "style": "bg-[#FAFAF9] border-transparent focus:border-[#C58970] focus:ring-1 focus:ring-[#C58970] rounded-lg h-12"
+    },
+    "sidebar": {
+      "style": "bg-white border-r border-[#E6CCB2]/30 w-64 hidden md:flex flex-col h-screen fixed left-0 top-0",
+      "link_active": "bg-[#FAF5F2] text-[#C58970] font-medium border-r-2 border-[#C58970]",
+      "link_inactive": "text-[#78716C] hover:text-[#44403C] hover:bg-[#FAFAF9]"
+    }
+  },
+  "assets": {
+    "images": {
+      "login_bg": "https://images.unsplash.com/photo-1762343040706-b74ea936c1c0?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA4Mzl8MHwxfHNlYXJjaHwyfHx3b21hbiUyMGZhc2hpb24lMjBoYWlyc3R5bGUlMjBwb3J0cmFpdCUyMGVsZWdhbnR8ZW58MHx8fHwxNzcxOTA2MTA4fDA&ixlib=rb-4.1.0&q=85",
+      "dashboard_hero": "https://images.unsplash.com/photo-1744095407400-aa337918bbb1?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODF8MHwxfHNlYXJjaHwzfHxtb2Rlcm4lMjBoYWlyJTIwc2Fsb24lMjBpbnRlcmlvciUyMGJyaWdodHxlbnwwfHx8fDE3NzE5MDYxMDd8MA&ixlib=rb-4.1.0&q=85",
+      "placeholder_user": "https://images.unsplash.com/photo-1760264550811-91b2b668cc58?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA4Mzl8MHwxfHNlYXJjaHwxfHx3b21hbiUyMGZhc2hpb24lMjBoYWlyc3R5bGUlMjBwb3J0cmFpdCUyMGVsZWdhbnR8ZW58MHx8fHwxNzcxOTA2MTA4fDA&ixlib=rb-4.1.0&q=85",
+      "salon_interior": "https://images.pexels.com/photos/7195811/pexels-photo-7195811.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    },
+    "icons": {
+      "library": "lucide-react",
+      "style": "Stroke width 1.5px (Elegant)"
+    }
+  },
+  "instructions_to_main_agent": {
+    "step_1": "Install 'Playfair Display' and 'Manrope' fonts via Google Fonts import in index.css",
+    "step_2": "Update tailwind.config.js with the 'Rose & Stone' color palette.",
+    "step_3": "Create a 'Layout' component that handles the Sidebar and Main Content Area responsiveness.",
+    "step_4": "Build the 'Dashboard' using the Bento Grid strategy defined above.",
+    "step_5": "Implement 'AppointmentsPage' with a clean, vertical list view logic.",
+    "step_6": "Ensure all interactive elements have data-testid for testing."
+  },
+  "universal_guidelines": [
+    "NEVER use default blue for links or buttons.",
+    "Use generous padding. 'Airy' is the keyword.",
+    "Text contrast must be WCAG AA compliant (4.5:1).",
+    "Use skeleton loaders for data fetching states.",
+    "Micro-interactions: Add subtle hover lifts to cards (-translate-y-1).",
+    "All forms must use Shadcn 'Form' component pattern.",
+    "Do NOT center text in the main content area; align left for readability.",
+    "Use 'sonner' for toast notifications."
+  ]
+}

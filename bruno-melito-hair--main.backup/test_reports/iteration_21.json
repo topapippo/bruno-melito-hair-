@@ -1,0 +1,96 @@
+{
+  "summary": "Iteration 21: Push Notifications and Abbonamenti Grid Layout Testing - All features verified working. Push notification endpoints (VAPID key, subscribe, send-reminders) all functional. Abbonamenti & Card section in public booking modal displays 6 items in 2-column grid with correct prices (€60, €40, €75, €65, €50, €100). Card selection works with purple border highlight. Admin Planning page working correctly after refactoring.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": [
+    "PUSH NOTIFICATION API TESTS (5/5 passed):",
+    "1. GET /api/push/vapid-key returns public key - PASS",
+    "2. POST /api/push/subscribe creates subscription - PASS",
+    "3. POST /api/push/subscribe duplicate returns already_subscribed - PASS",
+    "4. POST /api/push/send-reminders works (sent 0, failed 2 for test subscriptions) - PASS",
+    "5. DELETE /api/push/unsubscribe removes subscription - PASS",
+    "",
+    "CARD TEMPLATES API TESTS (4/4 passed):",
+    "6. GET /api/public/website returns card_templates array - PASS",
+    "7. Card templates count is 6 - PASS",
+    "8. Card templates have expected prices (€60, €40, €75, €65, €50, €100) - PASS",
+    "9. Card templates have required fields (id, name, total_value) - PASS",
+    "",
+    "SERVICES ORDER TESTS (2/2 passed):",
+    "10. Services sorted by sort_order ascending - PASS",
+    "11. Services count > 0 (21 services) - PASS",
+    "",
+    "ADMIN API TESTS (2/2 passed):",
+    "12. GET /api/appointments works for admin - PASS",
+    "13. GET /api/operators works for admin - PASS",
+    "",
+    "FRONTEND UI TESTS:",
+    "14. Public booking modal opens correctly - PASS",
+    "15. Abbonamenti & Card accordion at TOP of modal - PASS",
+    "16. 6 card templates displayed in 2-column grid - PASS",
+    "17. All 6 prices visible (€60, €40, €75, €65, €50, €100) - PASS",
+    "18. Card selection highlights with purple border - PASS",
+    "19. Selected card badge appears when card selected - PASS",
+    "20. Admin Planning page loads correctly - PASS",
+    "21. Planning page shows appointment grid with operators - PASS",
+    "22. Planning page has Nuovo button, view controls (Giorno/Settimana/Mese) - PASS",
+    "23. Service worker (sw-push.js) accessible at /sw-push.js - PASS"
+  ],
+  "failed_tests": [],
+  "test_report_links": [
+    "/app/backend/tests/test_push_and_booking.py",
+    "/app/test_reports/pytest/pytest_iteration21.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Push notification implementation is complete with VAPID keys configured in backend/.env",
+    "Service worker (sw-push.js) properly handles push events and notification clicks",
+    "Frontend pushNotifications.js utility correctly registers service worker and subscribes to push",
+    "BookingModal.jsx correctly displays card templates in 2-column grid (lines 381-419)",
+    "Card templates use purple color scheme (#A855F7) matching admin layout"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_push_and_booking.py"
+  ],
+  "success_rate": {
+    "backend": "100% (13/13 tests passed)",
+    "frontend": "100% (all UI tests passed)"
+  },
+  "test_credentials": {
+    "admin_email": "admin@brunomelito.it",
+    "admin_password": "admin123"
+  },
+  "seed_data_creation": "Test push subscription created and cleaned up",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 21 verified: Push notifications fully implemented (VAPID keys, service worker, backend scheduler). Abbonamenti section in public booking modal now matches admin layout with 2-column grid. All 6 card templates display with correct prices. Card selection works with purple highlight. Admin Planning page working correctly. No issues found.",
+  "verified_features": {
+    "push_notifications": {
+      "vapid_key_endpoint": "GET /api/push/vapid-key returns public key",
+      "subscribe_endpoint": "POST /api/push/subscribe creates/updates subscription",
+      "unsubscribe_endpoint": "DELETE /api/push/unsubscribe removes subscription",
+      "send_reminders_endpoint": "POST /api/push/send-reminders sends notifications for upcoming appointments",
+      "service_worker": "sw-push.js handles push events and notification clicks",
+      "frontend_utility": "pushNotifications.js registers SW and subscribes after booking"
+    },
+    "abbonamenti_grid_layout": {
+      "location": "At TOP of public booking modal (before Promozioni)",
+      "layout": "2-column grid (sm:grid-cols-2)",
+      "items_count": 6,
+      "prices": ["€60", "€40", "€75", "€65", "€50", "€100"],
+      "selection": "Purple border highlight when selected",
+      "badge": "Selected card badge appears below accordion"
+    },
+    "admin_planning_page": {
+      "status": "Working correctly after refactoring",
+      "features": ["Appointment grid", "Operators columns", "Nuovo button", "View controls"]
+    }
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "summary": "Iteration 34: Tested upselling on WebsitePage and Gestione Sito save functionality. All features working correctly. /prenota redirects to /sito, upselling suggestions appear after booking with 15% discount, add-service API works, and Gestione Sito save works for all tabs (General, Upselling, Layout, Aspetto, Orari & Contatti).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": [
+    "BACKEND API TESTS (17/17 passed):",
+    "1. /prenota returns 200 (React handles redirect) - PASS",
+    "2. /sito returns 200 - PASS",
+    "3. GET /api/public/upselling returns suggestions for trigger service - PASS",
+    "4. Upselling discount is 15% - PASS",
+    "5. POST /api/public/appointments/{id}/add-service success - PASS",
+    "6. Add service with wrong phone returns 403 - PASS",
+    "7. GET /api/website/config returns config with upselling fields - PASS",
+    "8. Save General tab config persists - PASS",
+    "9. Save Upselling tab config persists - PASS",
+    "10. Save Layout tab (section_order) persists - PASS",
+    "11. Save Aspetto tab (colors/fonts) persists - PASS",
+    "12. Save Orari & Contatti tab persists - PASS",
+    "13. Upselling rules have correct structure - PASS",
+    "14. Public services available - PASS",
+    "15. Public operators available - PASS",
+    "16. Public website data endpoint works - PASS",
+    "17. Booking creates appointment with appointment_id - PASS",
+    "",
+    "FRONTEND UI TESTS:",
+    "1. /prenota redirects to /sito - PASS (URL changes to /sito)",
+    "2. Website landing page loads with BRUNO MELITO HAIR - PASS",
+    "3. Booking flow step 1 (service selection) - PASS",
+    "4. Booking flow step 2 (date/time selection) - PASS",
+    "5. Booking flow step 3 (client details) - PASS",
+    "6. Booking submission successful - PASS",
+    "7. Upselling suggestions visible after booking - PASS (2 items: Maschera curativa €2.55, Ki Power BI/fasico €17)",
+    "8. Add upsell service button works - PASS (toast: 'Maschera curativa aggiunto con 15% di sconto!')",
+    "9. '1 servizio aggiunto al tuo appuntamento!' confirmation - PASS",
+    "10. Gestione Sito page loads - PASS",
+    "11. General tab save works - PASS",
+    "12. Upselling tab visible with discount input (15%) - PASS",
+    "13. Layout tab visible with section order list - PASS",
+    "14. Aspetto tab visible with theme presets - PASS",
+    "15. Orari & Contatti tab visible - PASS",
+    "16. Save button works and shows 'Configurazione salvata!' toast - PASS",
+    "17. Page reloads successfully after save - PASS"
+  ],
+  "failed_tests": [],
+  "test_report_links": [
+    "/app/backend/tests/test_iteration34_upselling_gestione.py",
+    "/app/test_reports/pytest/pytest_iteration34.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "WebsitePage.jsx: Upselling implementation is correct - Lines 459-465 define upselling states, Lines 608-645 handle booking with upselling fetch, Lines 629-645 implement addUpsellService function, Lines 668-730 render success page with upselling UI",
+    "App.js: Line 220 correctly redirects /prenota to /sito using <Navigate to='/sito' replace />",
+    "WebsiteAdminPage.jsx: saveConfig function (Lines 68-76) correctly calls PUT /api/website/config and updates state",
+    "public.py: Lines 329-360 implement GET /api/public/upselling with correct discount calculation, Lines 363-409 implement POST /api/public/appointments/{id}/add-service with phone verification"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration34_upselling_gestione.py"
+  ],
+  "success_rate": {
+    "backend": "100% (17/17 tests passed)",
+    "frontend": "100% (17/17 UI checks passed)"
+  },
+  "test_credentials": {
+    "admin_email": "admin@brunomelito.it",
+    "admin_password": "mbhs637104"
+  },
+  "seed_data_creation": "Created test appointments with TEST_ prefix for upselling tests",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 34 verified: 1) /prenota redirects to /sito (BookingPage.jsx deleted, Navigate redirect in App.js). 2) Upselling works end-to-end: booking with Taglio Donna triggers suggestions for Maschera curativa and Ki Power BI/fasico with 15% discount. 3) Add-service API works with phone verification. 4) Gestione Sito save works for all tabs (General, Upselling, Layout, Aspetto, Orari & Contatti). Upselling rule exists: trigger='01 Taglio Donna' (id: 7188fb89-2029-449a-8c09-a322104355bc), suggests='10 Laminazione - Ki Power' and '08 Maschera curativa'.",
+  "features_verified": {
+    "prenota_redirect": {
+      "status": "VERIFIED WORKING",
+      "details": "/prenota redirects to /sito via <Navigate to='/sito' replace /> in App.js line 220"
+    },
+    "upselling_on_success_page": {
+      "status": "VERIFIED WORKING",
+      "details": "After booking with Taglio Donna, upselling suggestions appear with 15% discount. UI shows 'Completa il tuo look!' section with Aggiungi buttons."
+    },
+    "upselling_add_service": {
+      "status": "VERIFIED WORKING",
+      "details": "Clicking Aggiungi calls POST /api/public/appointments/{id}/add-service, shows success toast, and updates appointment"
+    },
+    "upselling_api": {
+      "status": "VERIFIED WORKING",
+      "details": "GET /api/public/upselling?service_ids={ids} returns suggestions with discounted_price and discount_percent (15%)"
+    },
+    "gestione_sito_save": {
+      "status": "VERIFIED WORKING",
+      "tabs_tested": ["General", "Upselling", "Layout", "Aspetto", "Orari & Contatti"],
+      "details": "All tabs save correctly via PUT /api/website/config. Toast shows 'Configurazione salvata!'"
+    }
+  }
+}

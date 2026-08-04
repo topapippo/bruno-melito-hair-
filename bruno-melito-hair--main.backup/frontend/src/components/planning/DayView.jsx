@@ -1,0 +1,278 @@
+import { Card, CardContent } from '@/components/ui/card';
+import { Clock, Repeat, MessageCircle, Euro, Info } from 'lucide-react';
+import { addDays, subDays } from 'date-fns';
+import { getAppointmentColor, getServiceColors, buildServiceLookups } from '../../lib/categories';
+import ClientAvatar from '../ClientAvatar';
+
+export default function DayView({
+  clients = [],
+  columns,
+  // columns has { id, name, color } for each operator
+  scrollRef,
+  TIME_SLOTS,
+  blockedSlots,
+  unavailableSlots = new Set(),
+  selectedDate,
+  setSelectedDate,
+  highlightedClientId,
+  onSlotClick,
+  onSlotRightClick,
+  isSlotOccupied,
+  getOperatorAppointments,
+  getAppointmentStyle,
+  openEditDialog,
+  openRecurringDialog,
+  onSendWhatsApp,
+  onQuickCheckout,
+  dragOverSlot,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  touchStartRef,
+  services,
+  onViewDetail,
+}) {
+  const { svcById, svcByName } = buildServiceLookups(services);
+
+  // Compute overlaps per operator
+  const toMin = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+  const computeOverlaps = (apts) => {
+    if (!apts.length) return {};
+    const sorted = [...apts].sort((a, b) => a.time.localeCompare(b.time));
+    // Greedy interval graph coloring: assign each apt to the first free column
+    const colEnds = [];
+    const assigned = {};
+    for (const apt of sorted) {
+      const start = toMin(apt.time);
+      const end = start + (apt.total_duration || 15);
+      let colIdx = colEnds.findIndex(e => e <= start);
+      if (colIdx === -1) { colIdx = colEnds.length; colEnds.push(end); }
+      else colEnds[colIdx] = end;
+      assigned[apt.id] = { colIdx, start, end };
+    }
+    const result = {};
+    for (const apt of sorted) {
+      const { start, end, colIdx } = assigned[apt.id];
+      const overlapping = sorted.filter(b => {
+        const bs = toMin(b.time); const be = bs + (b.total_duration || 15);
+        return bs < end && be > start;
+      });
+      if (overlapping.length > 1) result[apt.id] = { total: overlapping.length, index: colIdx };
+    }
+    return result;
+  };
+
+  return (
+    <Card className="bg-white border-[#F0E6DC]/30 shadow-sm overflow-hidden">
+      <CardContent className="p-0">
+        {/* Header with operator names */}
+        <div className="flex border-b-2 border-[#C8617A]/40 bg-gradient-to-r from-[#C8617A]/10 to-[#E2E8F0]/20 sticky top-0 z-10">
+          <div className="w-12 sm:w-16 flex-shrink-0 p-1 sm:p-2 border-r-2 border-[#C8617A]/30">
+            <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-[#C8617A] mx-auto" />
+          </div>
+          {columns.map((col) => (
+            <div
+              key={col.id || 'unassigned'}
+              className="flex-1 min-w-[100px] sm:min-w-[150px] p-2 sm:p-3 border-r-2 border-[#C8617A]/30 last:border-r-0"
+            >
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-4 h-4 rounded-full flex-shrink-0 shadow-sm"
+                  style={{ backgroundColor: col.color }}
+                />
+                <span className="font-bold text-[#2D1B14] text-sm truncate">
+                  {col.name}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Time slots grid */}
+        <div
+          ref={scrollRef}
+          className="overflow-auto"
+          style={{ maxHeight: 'calc(100vh - 280px)' }}
+          onTouchStart={(e) => { touchStartRef.current = e.touches[0].clientX; }}
+          onTouchEnd={(e) => {
+            if (!touchStartRef.current) return;
+            const diff = e.changedTouches[0].clientX - touchStartRef.current;
+            if (Math.abs(diff) > 80) {
+              if (diff > 0) setSelectedDate(subDays(selectedDate, 1));
+              else setSelectedDate(addDays(selectedDate, 1));
+            }
+            touchStartRef.current = null;
+          }}
+        >
+          <div className="flex relative">
+            {/* Time column */}
+            <div className="w-12 sm:w-16 flex-shrink-0 bg-gradient-to-b from-[#F8FAFC] to-white">
+              {TIME_SLOTS.map((time) => (
+                <div
+                  key={time}
+                  className={`h-[48px] flex items-start justify-center pt-0.5 border-b border-[#F0E6DC]/30 ${
+                    time.endsWith(':00') ? 'font-bold text-[10px] sm:text-sm text-[#2D1B14] bg-[#E2E8F0]/20' : 'text-[9px] sm:text-xs text-[#7C5C4A]'
+                  }`}
+                >
+                  {time}
+                </div>
+              ))}
+            </div>
+
+            {/* Operator columns */}
+            {columns.map((col) => {
+              const colAppointments = getOperatorAppointments(col.id);
+
+              return (
+                <div
+                  key={col.id || 'unassigned'}
+                  className="flex-1 min-w-[100px] sm:min-w-[150px] relative border-r border-[#F0E6DC]/20 last:border-r-0"
+                >
+                  {/* Time slot backgrounds */}
+                  {TIME_SLOTS.map((time) => {
+                    const isBlocked = blockedSlots.includes(time);
+                    const isUnavailable = unavailableSlots.has(time);
+                    const isOccupied = isSlotOccupied(time, col.id);
+                    const isClickable = !isOccupied && !isBlocked;
+                    return (
+                      <div
+                        key={time}
+                        onClick={() => onSlotClick(time, col.id)}
+                        onContextMenu={(e) => onSlotRightClick(e, time)}
+                        onDragOver={(e) => !isUnavailable && onDragOver(e, time, col.id)}
+                        onDragLeave={onDragLeave}
+                        onDrop={(e) => !isUnavailable && onDrop(e, time, col.id)}
+                        className={`h-[48px] border-b border-[#F0E6DC]/20 transition-colors ${
+                          isBlocked
+                            ? 'bg-red-100/80 cursor-not-allowed'
+                            : isUnavailable
+                            ? 'bg-gray-100/80 cursor-not-allowed'
+                            : time.endsWith(':00') ? 'bg-white' : 'bg-[#FAF7F2]/50'
+                        } ${
+                          dragOverSlot === `${time}-${col.id}` ? 'bg-[#C8617A]/30 ring-2 ring-[#C8617A] ring-inset' : ''
+                        } ${
+                          isClickable && !isUnavailable
+                            ? 'hover:bg-[#C8617A]/20 cursor-pointer'
+                            : ''
+                        }`}
+                      >
+                        {isBlocked && col.id === columns[0]?.id && (
+                          <div className="h-full flex items-center px-2">
+                            <span className="text-[10px] text-red-400 font-bold uppercase tracking-wider">Bloccato</span>
+                          </div>
+                        )}
+                        {isUnavailable && !isBlocked && col.id === columns[0]?.id && (
+                          <div className="h-full flex items-center px-2">
+                            <span className="text-[10px] text-gray-400 uppercase tracking-wider">—</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {/* Appointments overlay */}
+                  {(() => {
+                    const colApts = colAppointments;
+                    const overlapMap = computeOverlaps(colApts);
+                    return colApts.map((apt) => {
+                    const style = getAppointmentStyle(apt);
+                    const overlapInfo = overlapMap[apt.id] || null;
+                    if (overlapInfo) {
+                      const w = 100 / overlapInfo.total;
+                      style.width = `${w - 2}%`;
+                      style.left = `${overlapInfo.index * w + 1}%`;
+                      style.right = 'auto';
+                    }
+                    const isHighlighted = highlightedClientId && apt.client_id === highlightedClientId;
+                    const svcColors = getServiceColors(apt, svcById, svcByName);
+                    const isCancelled = apt.status === 'cancelled';
+                    const totalDuration = apt.services.reduce((sum, s) => sum + (s.duration || 15), 0) || 1;
+                    const operatorColor = col.color || '#64748B';
+                    return (
+                      <div
+                        key={apt.id}
+                        data-testid={`planning-apt-${apt.id}`}
+                        draggable="true"
+                        onDragStart={(e) => onDragStart(e, apt)}
+                        onDragEnd={onDragEnd}
+                        onClick={() => openEditDialog(apt)}
+                        className={`absolute rounded-xl overflow-hidden shadow-lg cursor-grab active:cursor-grabbing hover:scale-[1.02] hover:shadow-xl transition-all flex flex-col ${
+                          isHighlighted ? 'ring-4 ring-yellow-400 ring-offset-2 z-20' : ''
+                        }`}
+                        style={{
+                          ...style,
+                          ...(overlapInfo ? {} : { left: '4px', right: '4px' }),
+                          ...(apt.status === 'completed' ? { opacity: 0.65 } : {}),
+                          borderLeft: `4px solid ${operatorColor}`,
+                        }}
+                        title={`Clicca per modificare - ${apt.client_name}`}
+                      >
+                        {/* Riga nome cliente */}
+                        <div className="flex items-center justify-between px-1 bg-[#2D1B14]/90 text-white flex-shrink-0 gap-1" style={{ height: '22px' }}>
+                          <ClientAvatar name={apt.client_name} size="xs" />
+                          <span className="font-bold text-[13px] leading-none truncate flex-1">
+                            {apt.status === 'completed' && '✓ '}{apt.client_name}
+                          </span>
+                          {apt.card_last_service && <span title="Ultimo servizio abbonamento!" className="text-orange-300 text-[11px] flex-shrink-0">⚠️</span>}
+                          {apt.services?.some(s => s.upselling) && <span title="Contiene servizio scontato upselling" className="text-emerald-300 text-[11px] flex-shrink-0">🎁</span>}
+                          <div className="flex items-center gap-0.5 flex-shrink-0">
+                            {apt.confirmation_status === 'confirmed' && <span title="Confermato" className="text-green-400 text-[10px]">✓</span>}
+                            {apt.confirmation_status === 'cancelled_by_client' && <span title="Disdetto" className="text-red-400 text-[10px]">✕</span>}
+                            {apt.confirmation_status === 'pending' && <span title="In attesa" className="text-yellow-300 text-[10px]">⏳</span>}
+                            {apt.status !== 'completed' && apt.status !== 'cancelled' && onQuickCheckout && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); onQuickCheckout(apt); }}
+                                className="p-0.5 rounded hover:bg-emerald-500/60"
+                                title="Vai in cassa"
+                                data-testid={`quick-checkout-btn-${apt.id}`}
+                              >
+                                <Euro className="w-3 h-3 text-emerald-300" />
+                              </button>
+                            )}
+                            {apt.client_phone && onSendWhatsApp && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); onSendWhatsApp(apt); }}
+                                className="p-0.5 rounded hover:bg-green-500/60"
+                                title="Invia WhatsApp"
+                                data-testid={`wa-btn-${apt.id}`}
+                              >
+                                <MessageCircle className="w-3 h-3 text-green-300" />
+                              </button>
+                            )}
+                            <button onClick={(e) => { e.stopPropagation(); openRecurringDialog(apt); }} className="p-0.5 rounded hover:bg-white/20" title="Ripeti" data-testid={`repeat-btn-${apt.id}`}>
+                              <Repeat className="w-3 h-3" />
+                            </button>
+                            {onViewDetail && (
+                              <button onClick={(e) => { e.stopPropagation(); onViewDetail(apt); }} className="p-0.5 rounded hover:bg-white/20" title="Dettagli" data-testid={`detail-btn-${apt.id}`}>
+                                <Info className="w-3 h-3 text-sky-300" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        {/* Una riga colorata per ogni servizio */}
+                        <div className="flex flex-col flex-1 min-h-0" data-testid={`apt-colors-${apt.id}`}>
+                          {apt.services.map((s, i) => {
+                            const color = isCancelled ? '#EF4444' : (svcColors[i] || '#64748B');
+                            return (
+                              <div key={i} className="flex items-center px-2 flex-1 min-h-0 border-t border-white/10" style={{ backgroundColor: color }}>
+                                <span className="text-white font-bold text-[13px] truncate drop-shadow-sm flex-1">{s.name}</span>
+                                <span className="text-white/80 text-[10px] flex-shrink-0 ml-1">{s.duration || 15}&apos;</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  });
+                  })()}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

@@ -1,0 +1,185 @@
+from fastapi import APIRouter, HTTPException, Depends
+from pydantic import BaseModel
+from database import db
+from auth import get_current_user
+from datetime import datetime, timezone, timedelta
+import os
+import json
+
+router = APIRouter()
+
+VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY", "")
+VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY", "")
+VAPID_CLAIMS_EMAIL = os.environ.get("VAPID_CLAIMS_EMAIL", "admin@brunomelito.it")
+
+
+class PushSubscription(BaseModel):
+    endpoint: str
+    keys: dict
+
+
+def _build_vapid_pem() -> str:
+    """Ricostruisce la chiave PEM privata VAPID dal valore base64 dell'env var."""
+    lines = ["-----BEGIN PRIVATE KEY-----"]
+    for i in range(0, len(VAPID_PRIVATE_KEY), 64):
+        lines.append(VAPID_PRIVATE_KEY[i:i+64])
+    lines.append("-----END PRIVATE KEY-----")
+    return "\n".join(lines)
+
+
+@router.get("/push/vapid-key")
+async def get_vapid_key():
+    return {"public_key": VAPID_PUBLIC_KEY}
+
+
+@router.post("/push/subscribe")
+async def subscribe_push(sub: PushSubscription, current_user: dict = Depends(get_current_user)):
+    existing = await db.push_subscriptions.find_one(
+        {"endpoint": sub.endpoint}, {"_id": 0}
+    )
+    if existing:
+        await db.push_subscriptions.update_one(
+            {"endpoint": sub.endpoint},
+            {"$set": {"user_id": current_user["id"], "active": True}}
+        )
+        return {"status": "already_subscribed"}
+
+    await db.push_subscriptions.insert_one({
+        "endpoint": sub.endpoint,
+        "keys": sub.keys,
+        "user_id": current_user["id"],
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "active": True,
+    })
+    return {"status": "subscribed"}
+
+
+@router.delete("/push/unsubscribe")
+async def unsubscribe_push(sub: PushSubscription, current_user: dict = Depends(get_current_user)):
+    await db.push_subscriptions.delete_one({"endpoint": sub.endpoint, "user_id": current_user["id"]})
+    return {"status": "unsubscribed"}
+
+
+@router.post("/push/send-reminders")
+async def send_push_reminders():
+    return await _send_push_reminders_core()
+
+
+async def send_push_to_all(title: str, body: str, url: str = "/", icon: str = "/icons/icon-192x192.png"):
+    """Invia una notifica push a tutte le subscription attive."""
+    try:
+        from pywebpush import webpush
+    except ImportError:
+        return {"sent": 0, "error": "pywebpush not installed"}
+
+    if not VAPID_PRIVATE_KEY or not VAPID_PUBLIC_KEY:
+        return {"sent": 0, "error": "VAPID keys not configured"}
+
+    subscriptions = await db.push_subscriptions.find({"active": True}, {"_id": 0}).to_list(500)
+    if not subscriptions:
+        return {"sent": 0, "message": "No push subscriptions"}
+
+    private_pem = _build_vapid_pem()
+
+    payload = json.dumps({"title": title, "body": body, "icon": icon, "url": url})
+    sent = 0
+    for sub in subscriptions:
+        try:
+            webpush(
+                subscription_info={"endpoint": sub["endpoint"], "keys": sub["keys"]},
+                data=payload,
+                vapid_private_key=private_pem,
+                vapid_claims={"sub": f"mailto:{VAPID_CLAIMS_EMAIL}"},
+            )
+            sent += 1
+        except Exception as e:
+            if "410" in str(e) or "404" in str(e):
+                await db.push_subscriptions.update_one(
+                    {"endpoint": sub["endpoint"]}, {"$set": {"active": False}}
+                )
+    return {"sent": sent}
+
+
+async def _send_push_reminders_core():
+    """Core logic for sending push reminders, callable from scheduler."""
+    try:
+        from pywebpush import webpush
+    except ImportError:
+        return {"sent": 0, "error": "pywebpush not installed"}
+
+    if not VAPID_PRIVATE_KEY or not VAPID_PUBLIC_KEY:
+        return {"sent": 0, "error": "VAPID keys not configured"}
+
+    now = datetime.now(timezone.utc)
+    tomorrow = now + timedelta(hours=24)
+    today_str = now.strftime("%Y-%m-%d")
+    tomorrow_str = tomorrow.strftime("%Y-%m-%d")
+
+    appointments = await db.appointments.find({
+        "date": {"$in": [today_str, tomorrow_str]},
+        "status": {"$nin": ["cancelled", "completed"]},
+        "push_reminded": {"$ne": True},
+    }, {"_id": 0}).to_list(200)
+
+    if not appointments:
+        return {"sent": 0, "message": "No appointments to remind"}
+
+    subscriptions = await db.push_subscriptions.find(
+        {"active": True}, {"_id": 0}
+    ).to_list(500)
+
+    if not subscriptions:
+        return {"sent": 0, "message": "No push subscriptions"}
+
+    subs_by_user = {}
+    for sub in subscriptions:
+        subs_by_user.setdefault(sub.get("user_id"), []).append(sub)
+
+    sent = 0
+    failed = 0
+
+    private_pem = _build_vapid_pem()
+
+    for apt in appointments:
+        user_subs = subs_by_user.get(apt.get("user_id"), [])
+        if not user_subs:
+            continue
+
+        client_name = apt.get("client_name", "Cliente")
+        apt_date = apt.get("date", "")
+        apt_time = apt.get("time", "")
+        services_names = ", ".join([s.get("name", "") for s in apt.get("services", [])])
+
+        payload = json.dumps({
+            "title": "Promemoria Appuntamento",
+            "body": f"{client_name}, ricordati del tuo appuntamento {apt_date} alle {apt_time}. Servizi: {services_names}",
+            "icon": "/favicon.ico",
+            "url": "/",
+        })
+
+        for sub in user_subs:
+            try:
+                webpush(
+                    subscription_info={
+                        "endpoint": sub["endpoint"],
+                        "keys": sub["keys"],
+                    },
+                    data=payload,
+                    vapid_private_key=private_pem,
+                    vapid_claims={"sub": f"mailto:{VAPID_CLAIMS_EMAIL}"},
+                )
+                sent += 1
+            except Exception as e:
+                failed += 1
+                if "410" in str(e) or "404" in str(e):
+                    await db.push_subscriptions.update_one(
+                        {"endpoint": sub["endpoint"]},
+                        {"$set": {"active": False}}
+                    )
+
+        await db.appointments.update_one(
+            {"id": apt["id"]},
+            {"$set": {"push_reminded": True}}
+        )
+
+    return {"sent": sent, "failed": failed, "appointments": len(appointments)}

@@ -1,0 +1,107 @@
+{
+  "summary": "Iteration 26: Tested the redesigned 'Aspetto' (Appearance) tab in the CMS admin page (/gestione-sito). All features working correctly: 10 pre-configured theme presets, 4 color pickers (primary/accent/background/text), 2 font selectors (display/body), and live preview panel that updates in real-time. Theme changes are saved to database and applied to public site (/sito) via CSS variables.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Aspetto Tab - Font Selectors",
+        "issues": ["Console warning: 'In HTML, <span> cannot be a child of <select>' - React hydration warning from dev tools, not affecting functionality"]
+      },
+      {
+        "screen": "Public Site /sito - Salon Photos",
+        "issues": ["Some WhatsApp images returning 404 - not related to Aspetto tab, likely missing uploaded files"]
+      }
+    ]
+  },
+  "passed_tests": [
+    "FRONTEND UI TESTS (all passed):",
+    "1. Login with admin@brunomelito.it / mbhs637104 - PASS",
+    "2. Navigate to /gestione-sito CMS page - PASS",
+    "3. Click 'Aspetto' tab - loads correctly - PASS",
+    "4. Theme presets section found with data-testid='theme-presets' - PASS",
+    "5. Found 10 theme preset buttons (data-testid='theme-preset-0' to 'theme-preset-9') - PASS",
+    "6. Live preview panel found with data-testid='live-preview-panel' - PASS",
+    "7. Primary color input found (data-testid='config-primary-color') - PASS",
+    "8. Accent color input found (data-testid='config-accent-color') - PASS",
+    "9. Background color input found (data-testid='config-bg-color') - PASS",
+    "10. Text color input found (data-testid='config-text-color') - PASS",
+    "11. Font display selector found (data-testid='config-font-display') - PASS",
+    "12. Font body selector found (data-testid='config-font-body') - PASS",
+    "13. Click 'Blu Moderno' theme preset - colors update in inputs - PASS",
+    "14. Primary color changed from #ff3366 to #2563EB after clicking theme - PASS",
+    "15. Click 'Oro & Nero' theme preset - colors update again - PASS",
+    "16. Primary color changed to #D4A847 after clicking Oro & Nero - PASS",
+    "17. Manual color change (fill #FF5733) - works - PASS",
+    "18. Font display dropdown change to Montserrat - works - PASS",
+    "19. Click 'Salva Modifiche' button - PASS",
+    "20. Success toast 'Configurazione salvata!' appears - PASS",
+    "21. 'Anteprima Sito' button found with correct href to /sito - PASS",
+    "22. Navigate to /sito - public site loads - PASS",
+    "23. CSS variables applied to public site - PASS",
+    "24. Primary color #FF5733 applied to PRENOTA ORA button - PASS",
+    "25. Click 'Rosa Classico' theme preset - colors update - PASS",
+    "26. Save and verify on public site - theme applied correctly - PASS",
+    "27. Public site CSS variables: primary=#E91E63, accent=#FF9800, bg=#FFF8F0, text=#1e293b - PASS"
+  ],
+  "failed_tests": [],
+  "test_report_links": [
+    "/app/test_reports/iteration_26.json"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Aspetto tab implementation is complete and well-structured",
+    "All 10 theme presets have proper data-testid attributes for testing",
+    "Live preview panel updates in real-time when colors/fonts change",
+    "Color pickers use both native color input and text input for flexibility",
+    "Font selectors use standard HTML select elements with FONT_OPTIONS array",
+    "Theme changes are persisted via PUT /api/website/config endpoint",
+    "Public site correctly reads theme from config and applies via CSS variables",
+    "Minor: Console hydration warning about <span> in <select> - cosmetic issue from React dev tools"
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "N/A (frontend only testing)",
+    "frontend": "100%"
+  },
+  "test_credentials": {
+    "admin_email": "admin@brunomelito.it",
+    "admin_password": "mbhs637104"
+  },
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 26 verified the redesigned Aspetto tab in /gestione-sito. The tab includes: 10 theme presets (Elegante Scuro, Rosa Classico, Blu Moderno, Oro & Nero, Verde Natura, Viola Lusso, Corallo, Minimal Bianco, Teal Fresco, Borgogna), 4 color pickers (primary, accent, background, text), 2 font selectors (display, body), and a live preview panel. All features work correctly. Theme changes are saved and applied to the public site /sito via CSS variables.",
+  "verified_features": {
+    "aspetto_tab": {
+      "status": "WORKING",
+      "theme_presets": {
+        "count": 10,
+        "names": ["Elegante Scuro", "Rosa Classico", "Blu Moderno", "Oro & Nero", "Verde Natura", "Viola Lusso", "Corallo", "Minimal Bianco", "Teal Fresco", "Borgogna"],
+        "data_testid": "theme-preset-{0-9}"
+      },
+      "color_pickers": {
+        "primary": "data-testid='config-primary-color'",
+        "accent": "data-testid='config-accent-color'",
+        "background": "data-testid='config-bg-color'",
+        "text": "data-testid='config-text-color'"
+      },
+      "font_selectors": {
+        "display": "data-testid='config-font-display'",
+        "body": "data-testid='config-font-body'"
+      },
+      "live_preview": "data-testid='live-preview-panel'",
+      "save_button": "data-testid='save-config-btn'",
+      "preview_button": "data-testid='preview-site-btn'"
+    },
+    "public_site_theming": {
+      "status": "WORKING",
+      "css_variables": ["--theme-primary", "--theme-accent", "--theme-bg", "--theme-text", "--theme-font-display", "--theme-font-body"],
+      "applied_to": "data-testid='website-landing'"
+    }
+  }
+}

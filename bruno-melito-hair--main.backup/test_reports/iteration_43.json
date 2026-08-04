@@ -1,0 +1,105 @@
+{
+  "summary": "Iteration 43: Tested NEW features - Payment methods (Contanti/POS/Sospeso), Sospeso popup on client appointments, and Promo collapsible button in public booking form. All features verified working.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/public/promotions", "issue": "Returns 404 - endpoint should be /api/public/promotions/all", "priority": "LOW"}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": [
+    "=== BACKEND API TESTS (9/10 passed) ===",
+    "1. Login with admin@brunomelito.it - PASS",
+    "2. GET /api/sospesi/client/{client_id} - PASS: Returns sospesi list and total",
+    "3. GET /api/sospesi/client/{invalid_id} - PASS: Returns empty list",
+    "4. POST /api/sospesi/{id}/settle/cash - PASS: Returns 404 for non-existent",
+    "5. POST /api/appointments/{id}/checkout with cash - PASS",
+    "6. POST /api/appointments/{id}/checkout with pos - PASS",
+    "7. POST /api/appointments/{id}/checkout with sospeso - PASS: Creates sospeso record",
+    "8. POST /api/sospesi/{id}/settle/cash - PASS: Settles sospeso and removes from list",
+    "9. GET /api/public/website - PASS",
+    "10. GET /api/public/services - PASS",
+    "",
+    "=== FRONTEND UI TESTS ===",
+    "11. Login flow - PASS: Redirects to dashboard",
+    "12. Planning page loads - PASS: Shows appointments",
+    "13. Click appointment opens Edit dialog - PASS: data-testid='planning-apt-{id}' works",
+    "14. INCASSA button visible - PASS: data-testid='open-checkout-btn'",
+    "15. Checkout mode shows 3 payment buttons - PASS:",
+    "    - Contanti (data-testid='payment-method-cash')",
+    "    - POS (data-testid='payment-method-pos')",
+    "    - Sospeso (data-testid='payment-method-sospeso')",
+    "16. Sospeso warning appears - PASS: 'Attenzione - Il pagamento verra registrato come sospeso'",
+    "17. Contanti selection works - PASS",
+    "18. POS selection works - PASS: Button highlighted blue",
+    "",
+    "=== PUBLIC BOOKING PAGE (/sito) ===",
+    "19. Website landing page loads - PASS",
+    "20. PRENOTA ORA opens booking form - PASS",
+    "21. Promo category as collapsible button - PASS: 'Promozioni Attive' with chevron icon",
+    "22. Promo button expands on click - PASS: Shows 7 promo items",
+    "23. Select promo shows SELEZIONATO badge - PASS",
+    "24. Deselect promo removes badge - PASS"
+  ],
+  "failed_tests": [
+    "GET /api/public/promotions - 404 (minor - correct endpoint is /api/public/promotions/all)"
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_sospesi_checkout.py",
+    "/app/test_reports/pytest/pytest_iteration43.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "EditAppointmentDialog.jsx: Payment method buttons (Contanti/POS/Sospeso) correctly implemented with data-testid attributes",
+    "EditAppointmentDialog.jsx: Sospeso warning message displays correctly when sospeso payment method selected",
+    "EditAppointmentDialog.jsx: Sospeso popup (data-testid='sospeso-popup') shows when client has unsettled sospesi with settle buttons",
+    "WebsitePage.jsx: Promo category implemented as collapsible button (like Card & Abbonamenti) with amber background",
+    "appointments.py: Checkout with sospeso correctly creates record in sospesi collection",
+    "appointments.py: Sospesi API endpoints working correctly (GET client sospesi, POST settle)"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_sospesi_checkout.py"
+  ],
+  "success_rate": {
+    "backend": "90% (9/10 tests passed)",
+    "frontend": "100% (14/14 tests passed)"
+  },
+  "test_credentials": {
+    "admin_email": "admin@brunomelito.it",
+    "admin_password": "mbhs637104"
+  },
+  "seed_data_creation": "None - used existing data",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 43 verified NEW features: 1) Payment methods in checkout (Contanti/POS/Sospeso) with warning for sospeso, 2) Sospeso popup appears when opening appointment for client with unsettled sospesi, 3) Promo category in public booking form is now a collapsible button like Card & Abbonamenti. Backend sospesi collection is working. API auth uses 'access_token' field from login response.",
+  "features_verified": {
+    "payment_methods_checkout": {
+      "status": "VERIFIED WORKING",
+      "details": "3 payment buttons (Contanti/POS/Sospeso) in checkout mode with proper data-testid attributes"
+    },
+    "sospeso_warning": {
+      "status": "VERIFIED WORKING",
+      "details": "Warning message appears when Sospeso payment method selected"
+    },
+    "sospeso_api": {
+      "status": "VERIFIED WORKING",
+      "details": "GET /api/sospesi/client/{id} returns list, POST /api/sospesi/{id}/settle/{method} settles"
+    },
+    "checkout_creates_sospeso": {
+      "status": "VERIFIED WORKING",
+      "details": "Checkout with payment_method='sospeso' creates record in sospesi collection"
+    },
+    "promo_collapsible_button": {
+      "status": "VERIFIED WORKING",
+      "details": "Promozioni Attive shows as collapsible button with chevron, expands to show promo items"
+    },
+    "promo_selection": {
+      "status": "VERIFIED WORKING",
+      "details": "Selecting promo shows SELEZIONATO badge, deselecting removes it"
+    }
+  }
+}
