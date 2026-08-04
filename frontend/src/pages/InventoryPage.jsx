@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../lib/api';
 import { getErrorMessage } from '../lib/api';
 import Layout from '../components/Layout';
-import { Package, Plus, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
+import { Package, Plus, Trash2, AlertTriangle, Loader2, Edit2, X, Check } from 'lucide-react';
 import { toast } from 'sonner';
 
 const CATEGORIES = [
@@ -27,6 +27,11 @@ export default function InventoryPage() {
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [newProduct, setNewProduct] = useState(emptyProduct);
+
+  // ── NUOVO: stato modifica ──
+  const [editingId, setEditingId] = useState(null);
+  const [editData, setEditData] = useState({});
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const loadProducts = async () => {
     setLoading(true);
@@ -103,6 +108,44 @@ export default function InventoryPage() {
       toast.success(`Rifornito: +${amount}`);
     } catch (err) {
       toast.error(getErrorMessage(err, 'Errore nel rifornimento'));
+    }
+  };
+
+  // ── NUOVO: apri modifica ──
+  const startEdit = (p) => {
+    setEditingId(p.id);
+    setEditData({
+      name: p.name,
+      category: p.category,
+      total_stock: p.total_stock,
+      dose_size: p.dose_size,
+      low_stock_threshold: p.low_stock_threshold,
+      sale_price: p.sale_price || 0,
+    });
+  };
+
+  // ── NUOVO: salva modifica ──
+  const saveEdit = async (id) => {
+    if (!editData.name.trim()) {
+      toast.error('Il nome non può essere vuoto');
+      return;
+    }
+    setSavingEdit(true);
+    try {
+      const res = await api.put(`/inventory/${id}`, {
+        ...editData,
+        total_stock: Number(editData.total_stock) || 0,
+        dose_size: Number(editData.dose_size) || 1,
+        low_stock_threshold: Number(editData.low_stock_threshold) || 0,
+        sale_price: Number(editData.sale_price) || 0,
+      });
+      setProducts((prev) => prev.map((p) => (p.id === id ? res.data : p)));
+      toast.success('Prodotto aggiornato');
+      setEditingId(null);
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Errore nel salvataggio'));
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -183,28 +226,95 @@ export default function InventoryPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {cat.items.map(p => {
                       const isLow = p.total_stock <= p.low_stock_threshold;
+                      const isEditing = editingId === p.id;
+
                       return (
                         <div key={p.id} className={`bg-white border rounded-2xl p-5 shadow-sm transition-all ${isLow ? 'border-amber-300 bg-amber-50/50' : 'border-[#F0E6DC]'}`}>
-                          <div className="flex justify-between items-start mb-2">
-                            <h3 className="font-bold text-[#2D1B14]">{p.name}</h3>
-                            <button onClick={() => handleDelete(p.id)} className="text-[#9C7060] hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
-                          </div>
-                          {p.sale_price > 0 && (
-                            <p className="text-sm text-[#2D1B14] font-bold mb-2">€{p.sale_price.toFixed(2)}</p>
-                          )}
-                          <div className="flex justify-between items-end">
-                            <div>
-                              <p className={`text-3xl font-black ${isLow ? 'text-amber-600' : 'text-[#C8617A]'}`}>{p.total_stock}</p>
-                              <p className="text-xs text-[#9C7060]">dosi/pezzi disponibili</p>
+
+                          {/* ── MODALITÀ MODIFICA ── */}
+                          {isEditing ? (
+                            <div className="space-y-2">
+                              <input
+                                type="text"
+                                value={editData.name}
+                                onChange={e => setEditData({...editData, name: e.target.value})}
+                                className="w-full border border-[#C8617A] rounded-lg p-1.5 text-sm font-bold outline-none"
+                                placeholder="Nome prodotto"
+                              />
+                              <select
+                                value={editData.category}
+                                onChange={e => setEditData({...editData, category: e.target.value})}
+                                className="w-full border border-[#F0E6DC] rounded-lg p-1.5 text-xs outline-none bg-white"
+                              >
+                                {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                              </select>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <label className="text-[10px] font-bold text-[#9C7060] uppercase">Scorta</label>
+                                  <input type="number" step="0.1" value={editData.total_stock} onChange={e => setEditData({...editData, total_stock: e.target.value})} className="w-full border border-[#F0E6DC] rounded-lg p-1.5 text-sm outline-none" />
+                                </div>
+                                <div>
+                                  <label className="text-[10px] font-bold text-[#9C7060] uppercase">Dose</label>
+                                  <input type="number" step="0.1" value={editData.dose_size} onChange={e => setEditData({...editData, dose_size: e.target.value})} className="w-full border border-[#F0E6DC] rounded-lg p-1.5 text-sm outline-none" />
+                                </div>
+                                <div>
+                                  <label className="text-[10px] font-bold text-[#9C7060] uppercase">Soglia allarme</label>
+                                  <input type="number" step="0.1" value={editData.low_stock_threshold} onChange={e => setEditData({...editData, low_stock_threshold: e.target.value})} className="w-full border border-[#F0E6DC] rounded-lg p-1.5 text-sm outline-none" />
+                                </div>
+                                <div>
+                                  <label className="text-[10px] font-bold text-[#9C7060] uppercase">Prezzo €</label>
+                                  <input type="number" step="0.01" value={editData.sale_price} onChange={e => setEditData({...editData, sale_price: e.target.value})} className="w-full border border-[#F0E6DC] rounded-lg p-1.5 text-sm outline-none" />
+                                </div>
+                              </div>
+                              <div className="flex gap-2 pt-1">
+                                <button
+                                  onClick={() => saveEdit(p.id)}
+                                  disabled={savingEdit}
+                                  className="flex-1 flex items-center justify-center gap-1 bg-[#C8617A] text-white text-xs font-bold py-2 rounded-lg hover:bg-[#b5566d] disabled:opacity-60"
+                                >
+                                  {savingEdit ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                                  Salva
+                                </button>
+                                <button
+                                  onClick={() => setEditingId(null)}
+                                  className="flex-1 flex items-center justify-center gap-1 border border-[#F0E6DC] text-[#9C7060] text-xs font-bold py-2 rounded-lg hover:bg-[#FDF8F5]"
+                                >
+                                  <X className="w-3 h-3" /> Annulla
+                                </button>
+                              </div>
                             </div>
-                            <button onClick={() => handleRestock(p.id, p.total_stock)} className="text-xs font-bold text-[#C8617A] border border-[#C8617A] px-3 py-1.5 rounded-lg hover:bg-[#FDF8F5]">
-                              Rifornisci
-                            </button>
-                          </div>
-                          {isLow && (
-                            <div className="mt-3 flex items-center gap-1 text-amber-600 text-xs font-bold">
-                              <AlertTriangle className="w-3 h-3" /> Scorta bassa
-                            </div>
+                          ) : (
+                            /* ── MODALITÀ VISUALIZZAZIONE ── */
+                            <>
+                              <div className="flex justify-between items-start mb-2">
+                                <h3 className="font-bold text-[#2D1B14]">{p.name}</h3>
+                                <div className="flex gap-1">
+                                  <button onClick={() => startEdit(p)} className="text-[#9C7060] hover:text-[#C8617A]" title="Modifica">
+                                    <Edit2 className="w-4 h-4" />
+                                  </button>
+                                  <button onClick={() => handleDelete(p.id)} className="text-[#9C7060] hover:text-red-500" title="Elimina">
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </div>
+                              {p.sale_price > 0 && (
+                                <p className="text-sm text-[#2D1B14] font-bold mb-2">€{p.sale_price.toFixed(2)}</p>
+                              )}
+                              <div className="flex justify-between items-end">
+                                <div>
+                                  <p className={`text-3xl font-black ${isLow ? 'text-amber-600' : 'text-[#C8617A]'}`}>{p.total_stock}</p>
+                                  <p className="text-xs text-[#9C7060]">dosi/pezzi disponibili</p>
+                                </div>
+                                <button onClick={() => handleRestock(p.id, p.total_stock)} className="text-xs font-bold text-[#C8617A] border border-[#C8617A] px-3 py-1.5 rounded-lg hover:bg-[#FDF8F5]">
+                                  Rifornisci
+                                </button>
+                              </div>
+                              {isLow && (
+                                <div className="mt-3 flex items-center gap-1 text-amber-600 text-xs font-bold">
+                                  <AlertTriangle className="w-3 h-3" /> Scorta bassa
+                                </div>
+                              )}
+                            </>
                           )}
                         </div>
                       );
