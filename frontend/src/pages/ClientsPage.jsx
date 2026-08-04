@@ -61,7 +61,12 @@ export default function ClientsPage() {
   const [integrityData, setIntegrityData] = useState(null);
   const [checkingIntegrity, setCheckingIntegrity] = useState(false);
   const [mergingId, setMergingId] = useState(null);
-  
+
+  const [inventoryColors, setInventoryColors] = useState([]);
+  const [colorSuggestions, setColorSuggestions] = useState([]);
+  const [showColorDropdown, setShowColorDropdown] = useState(false);
+  const colorInputRef = useRef(null);
+
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -73,6 +78,22 @@ export default function ClientsPage() {
 
   useEffect(() => {
     fetchClients();
+  }, []);
+
+  useEffect(() => {
+    const fetchInventoryColors = async () => {
+      try {
+        const res = await api.get(`${API}/inventory`);
+        const colors = (res.data || [])
+          .map(p => p.name)
+          .filter(Boolean)
+          .sort((a, b) => a.localeCompare(b, 'it', { numeric: true }));
+        setInventoryColors(colors);
+      } catch {
+        // silenzioso — magazzino opzionale
+      }
+    };
+    fetchInventoryColors();
   }, []);
 
   const fetchClients = async () => {
@@ -125,6 +146,32 @@ export default function ClientsPage() {
       birthday: client.birthday || '',
     });
     setDialogOpen(true);
+  };
+
+  const handleColorCodeChange = (value) => {
+    setFormData({ ...formData, current_color_code: value });
+    const parts = value.split(',');
+    const lastPart = parts[parts.length - 1].trim();
+    if (lastPart.length === 0) {
+      setColorSuggestions([]);
+      setShowColorDropdown(false);
+      return;
+    }
+    const matches = inventoryColors.filter(c =>
+      c.toLowerCase().startsWith(lastPart.toLowerCase()) && c !== lastPart
+    );
+    setColorSuggestions(matches.slice(0, 8));
+    setShowColorDropdown(matches.length > 0);
+  };
+
+  const handleColorSelect = (color) => {
+    const parts = formData.current_color_code.split(',');
+    parts[parts.length - 1] = ' ' + color;
+    const newValue = parts.join(',').replace(/^,\s*/, '').trim();
+    setFormData({ ...formData, current_color_code: newValue + ', ' });
+    setShowColorDropdown(false);
+    setColorSuggestions([]);
+    setTimeout(() => colorInputRef.current?.focus(), 50);
   };
 
   const handleDelete = async () => {
@@ -606,14 +653,39 @@ export default function ClientsPage() {
                   <Palette className="w-4 h-4 text-[#C8617A]" />
                   Codice Colore (scarico magazzino — più codici separati da virgola)
                 </Label>
-                <Input
-                  type="text"
-                  value={formData.current_color_code}
-                  onChange={(e) => setFormData({ ...formData, current_color_code: e.target.value })}
-                  placeholder="Es. 7.0, 6.3 — ogni codice = nome prodotto in Magazzino"
-                  data-testid="client-color-code-input"
-                  className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
-                />
+                <div className="relative">
+                  <Input
+                    ref={colorInputRef}
+                    type="text"
+                    value={formData.current_color_code}
+                    onChange={(e) => handleColorCodeChange(e.target.value)}
+                    onBlur={() => setTimeout(() => setShowColorDropdown(false), 150)}
+                    onFocus={() => handleColorCodeChange(formData.current_color_code)}
+                    placeholder="Es. 7.0, 6.3 — ogni codice = nome prodotto in Magazzino"
+                    data-testid="client-color-code-input"
+                    className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
+                  />
+                  {showColorDropdown && colorSuggestions.length > 0 && (
+                    <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-white border border-[#E8D5C8] rounded-xl shadow-lg overflow-hidden">
+                      {colorSuggestions.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          onMouseDown={() => handleColorSelect(color)}
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-[#FAF0F5] flex items-center gap-2 text-[#2D1B14] transition-colors"
+                        >
+                          <Palette className="w-3.5 h-3.5 text-[#C8617A] shrink-0" />
+                          <span className="font-medium">{color}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {inventoryColors.length > 0 && (
+                    <p className="text-xs text-[#9C7060] mt-1">
+                      💡 Digita per vedere i colori disponibili in magazzino ({inventoryColors.length} disponibili)
+                    </p>
+                  )}
+                </div>
               </div>
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
