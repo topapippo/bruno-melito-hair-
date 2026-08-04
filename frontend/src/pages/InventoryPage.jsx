@@ -33,6 +33,9 @@ export default function InventoryPage() {
   const [editData, setEditData] = useState({});
   const [savingEdit, setSavingEdit] = useState(false);
 
+  // ── NUOVO: stato report scorta ──
+  const [showStockReport, setShowStockReport] = useState(false);
+
   const loadProducts = async () => {
     setLoading(true);
     try {
@@ -159,12 +162,20 @@ export default function InventoryPage() {
             </h1>
             <p className="text-sm text-[#9C7060] mt-1">Gestisci colori, trattamenti e prodotti in rivendita</p>
           </div>
-          <button
-            onClick={() => setShowForm((s) => !s)}
-            className="flex items-center gap-2 bg-[#C8617A] text-white font-bold px-4 py-2.5 rounded-xl hover:bg-[#b5566d] transition-colors shadow-sm"
-          >
-            <Plus className="w-4 h-4" /> Aggiungi Prodotto
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowStockReport(true)}
+              className="flex items-center gap-2 bg-[#D4AF7A] text-[#1A0A10] font-bold px-4 py-2.5 rounded-xl hover:bg-[#c59a5f] transition-colors shadow-sm"
+            >
+              <AlertTriangle className="w-4 h-4" /> Report Scorta
+            </button>
+            <button
+              onClick={() => setShowForm((s) => !s)}
+              className="flex items-center gap-2 bg-[#C8617A] text-white font-bold px-4 py-2.5 rounded-xl hover:bg-[#b5566d] transition-colors shadow-sm"
+            >
+              <Plus className="w-4 h-4" /> Aggiungi Prodotto
+            </button>
+          </div>
         </div>
 
         {showForm && (
@@ -216,6 +227,106 @@ export default function InventoryPage() {
             </div>
           );
         })()}
+
+        {showStockReport && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto">
+              <div className="sticky top-0 bg-white border-b border-[#F0E6DC] px-6 py-4 flex justify-between items-center">
+                <h2 className="text-2xl font-black text-[#2D1B14]" style={{ fontFamily: "'Playfair Display', serif" }}>
+                  Report Scorta
+                </h2>
+                <button
+                  onClick={() => setShowStockReport(false)}
+                  className="text-[#9C7060] hover:text-[#2D1B14]"
+                  title="Chiudi"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-8">
+                {/* ── PRODOTTI SOTTO SCORTA ── */}
+                {(() => {
+                  const lowStockItems = products.filter(p => p.total_stock <= p.low_stock_threshold);
+                  return (
+                    <div>
+                      <h3 className="text-lg font-black text-amber-700 flex items-center gap-2 mb-3">
+                        <AlertTriangle className="w-5 h-5" /> Prodotti Sotto Scorta ({lowStockItems.length})
+                      </h3>
+                      {lowStockItems.length === 0 ? (
+                        <p className="text-sm text-[#9C7060]">Tutti i prodotti hanno scorta sufficiente.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {lowStockItems.map(p => (
+                            <div key={p.id} className="flex justify-between items-center bg-amber-50 border border-amber-200 rounded-lg p-3">
+                              <div>
+                                <p className="font-bold text-amber-800">{p.name}</p>
+                                <p className="text-xs text-amber-600">Categoria: {CATEGORIES.find(c => c.value === p.category)?.label}</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-2xl font-black text-amber-600">{p.total_stock}</p>
+                                <p className="text-xs text-amber-600">Soglia: {p.low_stock_threshold}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* ── CLASSIFICA COLORI PER SCORTA ── */}
+                {(() => {
+                  const colors = products
+                    .filter(p => p.category === 'colore')
+                    .sort((a, b) => a.total_stock - b.total_stock);
+
+                  return (
+                    <div>
+                      <h3 className="text-lg font-black text-[#2D1B14] flex items-center gap-2 mb-3">
+                        🎨 Classifica Colori (per scorta rimanente)
+                      </h3>
+                      {colors.length === 0 ? (
+                        <p className="text-sm text-[#9C7060]">Nessun colore in magazzino.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {colors.map((p, idx) => {
+                            const isLow = p.total_stock <= p.low_stock_threshold;
+                            const maxStock = Math.max(...colors.map(c => c.total_stock));
+                            const percentage = maxStock > 0 ? (p.total_stock / maxStock) * 100 : 0;
+                            return (
+                              <div key={p.id} className={`rounded-lg p-3 ${isLow ? 'bg-amber-50 border border-amber-200' : 'bg-[#FDF8F5] border border-[#F0E6DC]'}`}>
+                                <div className="flex justify-between items-center mb-2">
+                                  <div>
+                                    <p className="font-bold text-[#2D1B14]">
+                                      {idx + 1}. {p.name}
+                                    </p>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className={`text-lg font-black ${isLow ? 'text-amber-600' : 'text-[#C8617A]'}`}>
+                                      {p.total_stock}
+                                    </p>
+                                    {isLow && <p className="text-xs text-amber-600">⚠️ Sotto soglia</p>}
+                                  </div>
+                                </div>
+                                <div className="w-full bg-[#F0E6DC] rounded-full h-2">
+                                  <div
+                                    className={`h-2 rounded-full transition-all ${isLow ? 'bg-amber-500' : 'bg-[#C8617A]'}`}
+                                    style={{ width: `${percentage}%` }}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
+        )}
 
         {loading ? <div className="flex justify-center py-20"><Loader2 className="animate-spin text-[#C8617A] w-10 h-10" /></div> : (
           <div className="space-y-10">
