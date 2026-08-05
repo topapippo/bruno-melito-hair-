@@ -73,7 +73,7 @@ function ServiceChip({ label, variant = 'done' }) {
 
 const PAYMENT_LABELS = {
   cash: 'Contanti', pos: 'POS / Carta', prepaid: 'Abbonamento',
-  sospeso: 'Sospeso', loyalty: 'Fedeltà',
+  loyalty: 'Fedeltà',
 };
 
 const CATEGORY_LABELS = {
