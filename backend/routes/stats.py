@@ -273,9 +273,9 @@ async def get_revenue_stats(start_date: str, end_date: str, current_user: dict =
         payment_methods_map[pm]["count"] += 1
         payment_methods_map[pm]["total"] += p.get("total_paid", 0)
 
-    # Conteggio sospesi dalla collection sospesi (non da payments)
+    # Conteggio sospesi dalla collection sospesi (non da payments) - solo pending
     sospesi_list = await db.sospesi.find(
-        {"user_id": current_user["id"], "created_at": {"$gte": start_date, "$lte": end_date + "T23:59:59.999Z"}},
+        {"user_id": current_user["id"], "status": "pending", "created_at": {"$gte": start_date, "$lte": end_date + "T23:59:59.999Z"}},
         {"_id": 0, "amount": 1}
     ).to_list(1000)
     if sospesi_list:

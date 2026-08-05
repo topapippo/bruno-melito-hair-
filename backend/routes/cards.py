@@ -425,10 +425,15 @@ async def mark_card_notified(card_id: str, notification_type: str = "whatsapp", 
 # ============== SOSPESI (Suspended Payments) ==============
 
 @router.get("/sospesi")
-async def get_all_sospesi(current_user: dict = Depends(get_current_user)):
-    """Get all suspended payments for current user"""
+async def get_all_sospesi(current_user: dict = Depends(get_current_user), start_date: str = None, end_date: str = None):
+    """Get all suspended payments (pending only) for current user. Optionally filter by date range."""
+    query = {"user_id": current_user["id"], "status": "pending"}
+
+    if start_date and end_date:
+        query["created_at"] = {"$gte": start_date, "$lte": end_date + "T23:59:59.999Z"}
+
     sospesi_list = await db.sospesi.find(
-        {"user_id": current_user["id"]},
+        query,
         {"_id": 0}
     ).sort("created_at", -1).to_list(1000)
 
@@ -443,9 +448,9 @@ async def get_all_sospesi(current_user: dict = Depends(get_current_user)):
 
 @router.get("/sospesi/client/{client_id}")
 async def get_client_sospesi(client_id: str, current_user: dict = Depends(get_current_user)):
-    """Get suspended payments for a specific client"""
+    """Get suspended payments (pending only) for a specific client"""
     sospesi_list = await db.sospesi.find(
-        {"user_id": current_user["id"], "client_id": client_id},
+        {"user_id": current_user["id"], "client_id": client_id, "status": "pending"},
         {"_id": 0}
     ).sort("created_at", -1).to_list(1000)
 
