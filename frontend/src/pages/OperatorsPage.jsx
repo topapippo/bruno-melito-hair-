@@ -27,6 +27,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Users, Plus, Edit2, Trash2, Loader2, UserCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { COLORS as BRAND_COLORS } from '../lib/brandColors';
 
 
 const COLORS = [
@@ -166,14 +167,29 @@ export default function OperatorsPage() {
         ) : operators.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 stagger-fast">
             {operators.map((operator) => (
-              <Card
+              <div
                 key={operator.id}
                 data-testid={`operator-card-${operator.id}`}
-                className={`bg-white border-[#F0E6DC]/30 hover:border-[#C8617A]/30 transition-all duration-300 hover:-translate-y-1 shadow-sm ${
+                onMouseEnter={e => {
+                  e.currentTarget.style.boxShadow = `0 16px 48px rgba(200,97,122,0.3), inset 0 1px 0 rgba(255,255,255,0.3)`;
+                  e.currentTarget.style.transform = 'scale(1.03) translateY(-4px)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.boxShadow = `0 8px 24px rgba(200,97,122,0.2)`;
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+                className={`transition-all duration-300 rounded-2xl ${
                   !operator.active ? 'opacity-60' : ''
                 }`}
+                style={{
+                  background: `linear-gradient(135deg, #FFFFFF 0%, ${BRAND_COLORS.bgLight} 100%)`,
+                  border: `1px solid ${BRAND_COLORS.borderLight}`,
+                  boxShadow: `0 8px 24px rgba(200,97,122,0.2)`,
+                  padding: '20px',
+                }}
               >
-                <CardContent className="p-5">
+                <Card className="border-0 bg-transparent shadow-none">
+                <CardContent className="p-0">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div 
@@ -233,7 +249,8 @@ export default function OperatorsPage() {
                     </div>
                   </div>
                 </CardContent>
-              </Card>
+                </Card>
+              </div>
             ))}
           </div>
         ) : (

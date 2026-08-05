@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { COLORS as BRAND_COLORS } from '../lib/brandColors';
 
 
 const RULE_TYPES = [
@@ -202,9 +203,28 @@ export default function PromotionsPage() {
               const ruleInfo = getRuleInfo(promo.rule_type);
               const RuleIcon = ruleInfo.icon;
               return (
-                <Card key={promo.id}
-                  className={`border-2 transition-all ${promo.active ? 'border-[#F0E6DC] bg-white' : 'border-gray-200 bg-gray-50 opacity-60'}`}
-                  data-testid={`promo-${promo.id}`}>
+                <div key={promo.id}
+                  data-testid={`promo-${promo.id}`}
+                  onMouseEnter={e => {
+                    if (promo.active) {
+                      e.currentTarget.style.boxShadow = `0 16px 48px rgba(200,97,122,0.3), inset 0 1px 0 rgba(255,255,255,0.3)`;
+                      e.currentTarget.style.transform = 'scale(1.02) translateY(-3px)';
+                    }
+                  }}
+                  onMouseLeave={e => {
+                    if (promo.active) {
+                      e.currentTarget.style.boxShadow = `0 8px 24px rgba(200,97,122,0.15)`;
+                      e.currentTarget.style.transform = 'scale(1)';
+                    }
+                  }}
+                  className={`rounded-2xl transition-all ${promo.active ? '' : 'opacity-60'}`}
+                  style={{
+                    background: promo.active ? `linear-gradient(135deg, #FFFFFF 0%, ${BRAND_COLORS.bgLight} 100%)` : '#F3F4F6',
+                    border: promo.active ? `2px solid ${BRAND_COLORS.borderLight}` : '2px solid #E5E7EB',
+                    boxShadow: promo.active ? `0 8px 24px rgba(200,97,122,0.15)` : 'none',
+                  }}
+                >
+                  <Card className="border-0 bg-transparent shadow-none rounded-2xl">
                   <CardContent className="p-5">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
@@ -254,7 +274,8 @@ export default function PromotionsPage() {
                       </div>
                     </div>
                   </CardContent>
-                </Card>
+                  </Card>
+                </div>
               );
             })}
           </div>
