@@ -24,6 +24,7 @@ import {
   PieChart, Pie, Cell, AreaChart, Area
 } from 'recharts';
 import { toast } from 'sonner';
+import { COLORS as BRAND_COLORS } from '../lib/brandColors';
 
 const COLORS = ['#C8617A', '#789F8A', '#E9C46A', '#0EA5E9', '#D4AF7A', '#F97316', '#10B981', '#6366F1'];
 
@@ -89,7 +90,23 @@ const EXPENSE_CAT_LABELS = {
 
 function KpiCard({ label, value, sub, icon: Icon, color, trend }) {
   return (
-    <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+    <div
+      onMouseEnter={e => {
+        e.currentTarget.style.boxShadow = `0 12px 32px rgba(200,97,122,0.25), inset 0 1px 0 rgba(255,255,255,0.3)`;
+        e.currentTarget.style.transform = 'scale(1.04) translateY(-3px)';
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.boxShadow = `0 4px 12px rgba(200,97,122,0.1)`;
+        e.currentTarget.style.transform = 'scale(1)';
+      }}
+      className="transition-all duration-300 rounded-xl"
+      style={{
+        background: `linear-gradient(135deg, #FFFFFF 0%, ${BRAND_COLORS.bgLight} 100%)`,
+        border: `1px solid ${BRAND_COLORS.borderLight}`,
+        boxShadow: `0 4px 12px rgba(200,97,122,0.1)`,
+      }}
+    >
+    <Card className="bg-transparent border-0 shadow-none">
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
@@ -111,6 +128,7 @@ function KpiCard({ label, value, sub, icon: Icon, color, trend }) {
         </div>
       </CardContent>
     </Card>
+    </div>
   );
 }
 
@@ -358,7 +376,23 @@ export default function StatsPage() {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                  <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+                  <div
+                    onMouseEnter={e => {
+                      e.currentTarget.style.boxShadow = `0 16px 48px rgba(212,175,122,0.3), inset 0 1px 0 rgba(255,255,255,0.3)`;
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.boxShadow = `0 4px 12px rgba(212,175,122,0.15)`;
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                    className="transition-all duration-300 rounded-xl"
+                    style={{
+                      background: `linear-gradient(135deg, #FFFFFF 0%, ${BRAND_COLORS.bgLight} 100%)`,
+                      border: `1px solid ${BRAND_COLORS.borderLight}`,
+                      boxShadow: `0 4px 12px rgba(212,175,122,0.15)`,
+                    }}
+                  >
+                  <Card className="bg-transparent border-0 shadow-none">
                     <CardHeader className="pb-2">
                       <CardTitle className="font-display text-lg text-[#2D1B14]">Andamento Incassi</CardTitle>
                     </CardHeader>
@@ -382,8 +416,25 @@ export default function StatsPage() {
                       ) : <EmptyChart />}
                     </CardContent>
                   </Card>
+                  </div>
 
-                  <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+                  <div
+                    onMouseEnter={e => {
+                      e.currentTarget.style.boxShadow = `0 16px 48px rgba(212,175,122,0.3), inset 0 1px 0 rgba(255,255,255,0.3)`;
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.boxShadow = `0 4px 12px rgba(212,175,122,0.15)`;
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                    className="transition-all duration-300 rounded-xl"
+                    style={{
+                      background: `linear-gradient(135deg, #FFFFFF 0%, ${BRAND_COLORS.bgLight} 100%)`,
+                      border: `1px solid ${BRAND_COLORS.borderLight}`,
+                      boxShadow: `0 4px 12px rgba(212,175,122,0.15)`,
+                    }}
+                  >
+                  <Card className="bg-transparent border-0 shadow-none">
                     <CardHeader className="pb-2">
                       <CardTitle className="font-display text-lg text-[#2D1B14]">Top Servizi</CardTitle>
                     </CardHeader>
@@ -414,10 +465,27 @@ export default function StatsPage() {
                       ) : <EmptyChart />}
                     </CardContent>
                   </Card>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                  <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+                  <div
+                    onMouseEnter={e => {
+                      e.currentTarget.style.boxShadow = `0 16px 48px rgba(200,97,122,0.3), inset 0 1px 0 rgba(255,255,255,0.3)`;
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.boxShadow = `0 4px 12px rgba(200,97,122,0.15)`;
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                    className="transition-all duration-300 rounded-xl"
+                    style={{
+                      background: `linear-gradient(135deg, #FFFFFF 0%, ${BRAND_COLORS.bgLight} 100%)`,
+                      border: `1px solid ${BRAND_COLORS.borderLight}`,
+                      boxShadow: `0 4px 12px rgba(200,97,122,0.15)`,
+                    }}
+                  >
+                  <Card className="bg-transparent border-0 shadow-none">
                     <CardHeader className="pb-2">
                       <CardTitle className="font-display text-base text-[#2D1B14] flex items-center gap-2">
                         <Star className="w-4 h-4 text-[#C8617A]" /> Top Clienti
@@ -436,8 +504,25 @@ export default function StatsPage() {
                       </div>
                     </CardContent>
                   </Card>
+                  </div>
 
-                  <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+                  <div
+                    onMouseEnter={e => {
+                      e.currentTarget.style.boxShadow = `0 16px 48px rgba(212,175,122,0.3), inset 0 1px 0 rgba(255,255,255,0.3)`;
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.boxShadow = `0 4px 12px rgba(212,175,122,0.15)`;
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                    className="transition-all duration-300 rounded-xl"
+                    style={{
+                      background: `linear-gradient(135deg, #FFFFFF 0%, ${BRAND_COLORS.bgLight} 100%)`,
+                      border: `1px solid ${BRAND_COLORS.borderLight}`,
+                      boxShadow: `0 4px 12px rgba(212,175,122,0.15)`,
+                    }}
+                  >
+                  <Card className="bg-transparent border-0 shadow-none">
                     <CardHeader className="pb-2">
                       <CardTitle className="font-display text-base text-[#2D1B14] flex items-center gap-2">
                         <CreditCard className="w-4 h-4 text-[#789F8A]" /> Metodi Pagamento
@@ -459,8 +544,25 @@ export default function StatsPage() {
                       ) : <EmptyChart height={80} />}
                     </CardContent>
                   </Card>
+                  </div>
 
-                  <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+                  <div
+                    onMouseEnter={e => {
+                      e.currentTarget.style.boxShadow = `0 16px 48px rgba(212,175,122,0.3), inset 0 1px 0 rgba(255,255,255,0.3)`;
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.boxShadow = `0 4px 12px rgba(212,175,122,0.15)`;
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                    className="transition-all duration-300 rounded-xl"
+                    style={{
+                      background: `linear-gradient(135deg, #FFFFFF 0%, ${BRAND_COLORS.bgLight} 100%)`,
+                      border: `1px solid ${BRAND_COLORS.borderLight}`,
+                      boxShadow: `0 4px 12px rgba(212,175,122,0.15)`,
+                    }}
+                  >
+                  <Card className="bg-transparent border-0 shadow-none">
                     <CardHeader className="pb-2">
                       <CardTitle className="font-display text-base text-[#2D1B14] flex items-center gap-2">
                         <Receipt className="w-4 h-4 text-[#E9C46A]" /> Uscite per Categoria
@@ -481,6 +583,7 @@ export default function StatsPage() {
                       </div>
                     </CardContent>
                   </Card>
+                  </div>
                 </div>
               </>
             )}
