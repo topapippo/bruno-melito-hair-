@@ -921,13 +921,13 @@ export default function EditAppointmentDialog({
                     </div>
                   </div>
                 ) : (
-                  <div className="pt-4 border-t-2 flex items-center justify-between transition-all" style={{borderColor: COLORS.borderLight}}>
-                    <div>
+                  <div className="pt-4 border-t-2 space-y-3 transition-all" style={{borderColor: COLORS.borderLight}}>
+                    <div className="flex items-baseline gap-2">
                       <p className="text-sm font-semibold" style={{color: COLORS.textDark}}>Totale</p>
-                      <p className="text-2xl font-black" style={{color: COLORS.rose}}>€{calculateSubtotal().toFixed(2)}</p>
+                      <p className="text-3xl font-black" style={{color: COLORS.rose}}>€{calculateSubtotal().toFixed(2)}</p>
                     </div>
-                    <Button type="button" onClick={()=>openCheckoutMode()} className="text-white font-bold px-8 py-3 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 shadow-md hover:shadow-lg" style={{backgroundColor: COLORS.rose, boxShadow: `0 4px 12px rgba(200, 97, 122, 0.25)`}}>
-                      <Euro className="w-4 h-4 mr-2"/>INCASSA
+                    <Button type="button" onClick={()=>openCheckoutMode()} className="w-full text-white font-black px-8 py-4 rounded-2xl transition-all duration-200 hover:scale-105 active:scale-95 text-lg flex items-center justify-center gap-2" style={{background: `linear-gradient(135deg, ${COLORS.rose} 0%, #b04f67 100%)`, boxShadow: `0 8px 24px rgba(200, 97, 122, 0.35)`}}>
+                      <Euro className="w-5 h-5"/>INCASSA
                     </Button>
                   </div>
                 )}
@@ -1358,33 +1358,49 @@ export default function EditAppointmentDialog({
 
                 {/* ── 6. TRE BOTTONI PAGAMENTO ── */}
                 {paymentMethod !== 'sospeso' && !splitMode && (
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-3 gap-4">
                     {/* CONTANTI */}
                     <button type="button"
                       onClick={()=>handleCheckout('cash', null)}
                       disabled={processing}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.boxShadow = `0 12px 32px rgba(16, 185, 129, 0.4), inset 0 1px 0 rgba(255,255,255,0.2)`;
+                        e.currentTarget.style.transform = 'scale(1.05) translateY(-2px)';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.boxShadow = `0 8px 20px rgba(16, 185, 129, 0.35)`;
+                        e.currentTarget.style.transform = 'scale(1)';
+                      }}
                       style={{
                         background: `linear-gradient(135deg, ${COLORS.success} 0%, #059669 100%)`,
-                        boxShadow: `0 6px 16px rgba(16, 185, 129, 0.3)`,
+                        boxShadow: `0 8px 20px rgba(16, 185, 129, 0.35)`,
                       }}
-                      className="flex flex-col items-center gap-1.5 text-white font-black rounded-2xl py-4 shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-60 hover:shadow-xl">
-                      <Banknote className="w-6 h-6"/>
-                      <span className="text-xs font-bold uppercase">Contanti</span>
-                      <span className="text-lg leading-tight font-black">€{totalAfterDiscount.toFixed(2)}</span>
+                      className="flex flex-col items-center gap-2 text-white font-black rounded-2xl py-5 transition-all duration-200 active:scale-95 disabled:opacity-50">
+                      <Banknote className="w-7 h-7"/>
+                      <span className="text-xs font-bold uppercase tracking-wide">Contanti</span>
+                      <span className="text-xl leading-tight font-black">€{totalAfterDiscount.toFixed(2)}</span>
                     </button>
 
                     {/* POS */}
                     <button type="button"
                       onClick={()=>handleCheckout('pos', null)}
                       disabled={processing}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.boxShadow = `0 12px 32px rgba(59, 130, 246, 0.4), inset 0 1px 0 rgba(255,255,255,0.2)`;
+                        e.currentTarget.style.transform = 'scale(1.05) translateY(-2px)';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.boxShadow = `0 8px 20px rgba(59, 130, 246, 0.35)`;
+                        e.currentTarget.style.transform = 'scale(1)';
+                      }}
                       style={{
                         background: `linear-gradient(135deg, ${COLORS.info} 0%, #2563eb 100%)`,
-                        boxShadow: `0 6px 16px rgba(59, 130, 246, 0.3)`,
+                        boxShadow: `0 8px 20px rgba(59, 130, 246, 0.35)`,
                       }}
-                      className="flex flex-col items-center gap-1.5 text-white font-black rounded-2xl py-4 shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-60 hover:shadow-xl">
-                      <Smartphone className="w-6 h-6"/>
-                      <span className="text-xs font-bold uppercase">POS</span>
-                      <span className="text-lg leading-tight font-black">€{totalAfterDiscount.toFixed(2)}</span>
+                      className="flex flex-col items-center gap-2 text-white font-black rounded-2xl py-5 transition-all duration-200 active:scale-95 disabled:opacity-50">
+                      <Smartphone className="w-7 h-7"/>
+                      <span className="text-xs font-bold uppercase tracking-wide">POS</span>
+                      <span className="text-xl leading-tight font-black">€{totalAfterDiscount.toFixed(2)}</span>
                     </button>
 
                     {/* ABBONAMENTO / CARD */}
@@ -1394,20 +1410,32 @@ export default function EditAppointmentDialog({
                         handleCheckout('prepaid', selectedCardId);
                       }}
                       disabled={processing}
+                      onMouseEnter={e => {
+                        if (selectedCard) {
+                          e.currentTarget.style.boxShadow = `0 12px 32px rgba(200, 97, 122, 0.4), inset 0 1px 0 rgba(255,255,255,0.2)`;
+                          e.currentTarget.style.transform = 'scale(1.05) translateY(-2px)';
+                        }
+                      }}
+                      onMouseLeave={e => {
+                        if (selectedCard) {
+                          e.currentTarget.style.boxShadow = `0 8px 20px rgba(200, 97, 122, 0.35)`;
+                          e.currentTarget.style.transform = 'scale(1)';
+                        }
+                      }}
                       style={selectedCard ? {
                         background: `linear-gradient(135deg, ${COLORS.rose} 0%, #b04f67 100%)`,
-                        boxShadow: `0 6px 16px rgba(200, 97, 122, 0.3)`,
+                        boxShadow: `0 8px 20px rgba(200, 97, 122, 0.35)`,
                       } : {
                         background: `linear-gradient(135deg, #d1d5db 0%, #9ca3af 100%)`,
                         boxShadow: `0 2px 8px rgba(0, 0, 0, 0.08)`,
                         color: '#6b7280'
                       }}
-                      className={`flex flex-col items-center gap-1.5 font-black rounded-2xl py-4 shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-60 ${selectedCard ? 'text-white hover:shadow-xl' : 'hover:shadow-md'}`}>
-                      <Ticket className="w-6 h-6"/>
-                      <span className="text-xs font-bold uppercase truncate px-1 w-full text-center">
+                      className={`flex flex-col items-center gap-2 font-black rounded-2xl py-5 transition-all duration-200 active:scale-95 disabled:opacity-50 ${selectedCard ? 'text-white' : ''}`}>
+                      <Ticket className="w-7 h-7"/>
+                      <span className="text-xs font-bold uppercase tracking-wide truncate px-1 w-full text-center">
                         {selectedCard ? (selectedCardIsSubscription ? 'Scala Abb.' : selectedCard.name.split(' ')[0]) : 'Card/Abb.'}
                       </span>
-                      <span className="text-lg leading-tight font-black">
+                      <span className="text-xl leading-tight font-black">
                         {selectedCard
                           ? selectedCardIsSubscription
                             ? `€${calculateRetailTotal().toFixed(2)}`
