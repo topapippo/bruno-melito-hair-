@@ -35,6 +35,7 @@ import {
 import { Scissors, Plus, Clock, Euro, Edit2, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { CATEGORIES, CATEGORY_ORDER, getCategoryInfo } from '../lib/categories';
+import { COLORS } from '../lib/brandColors';
 
 
 const COLOR_PRESETS = [
@@ -215,12 +216,28 @@ export default function ServicesPage() {
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 stagger-fast">
                     {categoryServices.map((service) => (
-                      <Card
+                      <div
                         key={service.id}
                         data-testid={`service-card-${service.id}`}
-                        className="bg-white border-[#F0E6DC]/30 hover:border-[#C8617A]/30 transition-all duration-300 hover:-translate-y-1"
+                        onMouseEnter={e => {
+                          e.currentTarget.style.boxShadow = `0 16px 48px rgba(212,175,122,0.4), inset 0 1px 0 rgba(255,255,255,0.3)`;
+                          e.currentTarget.style.transform = 'scale(1.03) translateY(-4px)';
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.boxShadow = `0 8px 24px rgba(212,175,122,0.25)`;
+                          e.currentTarget.style.transform = 'scale(1)';
+                        }}
+                        className="transition-all duration-300"
+                        style={{
+                          background: `linear-gradient(135deg, #FEFBF5 0%, ${COLORS.bgLight} 100%)`,
+                          border: `1px solid ${COLORS.borderLight}`,
+                          borderRadius: '16px',
+                          padding: '20px',
+                          boxShadow: `0 8px 24px rgba(212,175,122,0.25)`,
+                        }}
                       >
-                        <CardContent className="p-5">
+                        <Card className="border-0 bg-transparent shadow-none">
+                        <CardContent className="p-0">
                           <div className="flex items-start justify-between">
                             <div className="flex items-start gap-3">
                               <div className="w-3 h-3 rounded-full mt-2 shrink-0" style={{ backgroundColor: service.color || category.color }} />
@@ -259,7 +276,8 @@ export default function ServicesPage() {
                             </div>
                           </div>
                         </CardContent>
-                      </Card>
+                        </Card>
+                      </div>
                     ))}
                   </div>
                 </div>

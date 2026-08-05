@@ -53,6 +53,7 @@ import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { COLORS } from '../lib/brandColors';
 
 
 export default function PrepaidCardsPage() {
@@ -396,8 +397,21 @@ export default function PrepaidCardsPage() {
                 {cardTemplates.map((tmpl) => (
                   <div
                     key={tmpl.id}
-                    className="p-4 rounded-xl border-2 border-[#F0E6DC] bg-[#FAF7F2] hover:border-[#C8617A] transition-colors group"
                     data-testid={`package-${tmpl.id}`}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.boxShadow = `0 12px 36px rgba(200,97,122,0.3), inset 0 1px 0 rgba(255,255,255,0.4)`;
+                      e.currentTarget.style.transform = 'translateY(-3px) scale(1.02)';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.boxShadow = `0 6px 16px rgba(200,97,122,0.15)`;
+                      e.currentTarget.style.transform = 'scale(1)';
+                    }}
+                    className="p-4 rounded-xl transition-all duration-300 group"
+                    style={{
+                      background: `linear-gradient(135deg, rgba(200,97,122,0.08) 0%, rgba(212,175,122,0.06) 100%)`,
+                      border: `2px solid ${COLORS.borderLight}`,
+                      boxShadow: `0 6px 16px rgba(200,97,122,0.15)`,
+                    }}
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div>
@@ -475,11 +489,23 @@ export default function PrepaidCardsPage() {
         ) : (
           <div className="space-y-4">
             {filteredCards.map((card) => (
-              <Card
+              <div
                 key={card.id}
-                className={`bg-white border-[#F0E6DC]/30 overflow-hidden ${!card.active ? 'opacity-60' : ''}`}
                 data-testid={`card-${card.id}`}
+                onMouseEnter={e => {
+                  e.currentTarget.style.boxShadow = `0 12px 40px rgba(200,97,122,0.25), inset 0 1px 0 rgba(255,255,255,0.2)`;
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.boxShadow = `0 6px 20px rgba(200,97,122,0.12)`;
+                }}
+                className={`overflow-hidden rounded-2xl transition-all duration-300 ${!card.active ? 'opacity-60' : ''}`}
+                style={{
+                  background: `linear-gradient(135deg, #FFFFFF 0%, ${COLORS.bgLight} 100%)`,
+                  border: `1px solid ${COLORS.borderLight}`,
+                  boxShadow: `0 6px 20px rgba(200,97,122,0.12)`,
+                }}
               >
+                <Card className="border-0 bg-transparent shadow-none">
                 <CardContent className="p-0">
                   {/* Card Header */}
                   <div
@@ -612,7 +638,8 @@ export default function PrepaidCardsPage() {
                     </div>
                   )}
                 </CardContent>
-              </Card>
+                </Card>
+              </div>
             ))}
           </div>
         )}

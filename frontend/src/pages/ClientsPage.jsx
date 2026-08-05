@@ -33,6 +33,7 @@ import { Users, Plus, Search, Phone, Mail, Edit2, Trash2, Loader2, History, Mess
 import { toast } from 'sonner';
 import PageHeader from '../components/PageHeader';
 import ClientAvatar from '../components/ClientAvatar';
+import { COLORS } from '../lib/brandColors';
 
 
 export default function ClientsPage() {
@@ -458,12 +459,28 @@ export default function ClientsPage() {
         ) : filteredClients.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 stagger-fast">
             {filteredClients.map((client) => (
-              <Card
+              <div
                 key={client.id}
                 data-testid={`client-card-${client.id}`}
-                className="bg-white border-[#F0E6DC] hover:border-[#C8617A]/30 transition-all duration-300 hover:-translate-y-1 shadow-sm"
+                onMouseEnter={e => {
+                  e.currentTarget.style.boxShadow = `0 16px 48px rgba(200,97,122,0.35), inset 0 1px 0 rgba(255,255,255,0.3)`;
+                  e.currentTarget.style.transform = 'scale(1.03) translateY(-4px)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.boxShadow = `0 8px 24px rgba(200,97,122,0.2)`;
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+                className="transition-all duration-300"
+                style={{
+                  background: `linear-gradient(135deg, #FAF0F5 0%, ${COLORS.bgLight} 100%)`,
+                  border: `1px solid ${COLORS.borderLight}`,
+                  borderRadius: '16px',
+                  boxShadow: `0 8px 24px rgba(200,97,122,0.2)`,
+                  padding: '20px',
+                }}
               >
-                <CardContent className="p-5">
+                <Card className="border-0 bg-transparent shadow-none">
+                <CardContent className="p-0">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <ClientAvatar name={client.name} size="lg" />
@@ -559,7 +576,8 @@ export default function ClientsPage() {
                     )}
                   </div>
                 </CardContent>
-              </Card>
+                </Card>
+              </div>
             ))}
           </div>
         ) : (
