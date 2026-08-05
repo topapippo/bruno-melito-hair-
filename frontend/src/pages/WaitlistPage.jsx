@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api, { API } from '../lib/api';
 import { sendWA } from '../lib/sendWA';
 import Layout from '../components/Layout';
+import { COLORS } from '../lib/brandColors';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -149,7 +150,23 @@ export default function WaitlistPage() {
         ) : (
           <div className="space-y-3 stagger-fast">
             {items.map((item, idx) => (
-              <div key={item.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-start gap-4 hover:shadow-md transition-shadow">
+              <div
+                key={item.id}
+                onMouseEnter={e => {
+                  e.currentTarget.style.boxShadow = `0 16px 48px rgba(212,175,122,0.35), inset 0 1px 0 rgba(255,255,255,0.3)`;
+                  e.currentTarget.style.transform = 'scale(1.02) translateY(-2px)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.boxShadow = `0 4px 12px rgba(212,175,122,0.15)`;
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+                className="rounded-2xl p-4 flex items-start gap-4 transition-all duration-300"
+                style={{
+                  background: `linear-gradient(135deg, #FFFFFF 0%, ${COLORS.bgLight} 100%)`,
+                  border: `1px solid ${COLORS.borderLight}`,
+                  boxShadow: `0 4px 12px rgba(212,175,122,0.15)`,
+                }}
+              >
                 {/* Posizione */}
                 <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
                   <span className="text-amber-600 font-bold text-sm">{idx + 1}</span>
