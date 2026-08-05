@@ -20,6 +20,7 @@ import {
 import { toast } from 'sonner';
 import { getCategoryInfo, groupServicesByCategory } from '../../lib/categories';
 import { ALL_SLOTS, DAY_MAP } from '../../lib/timeSlots';
+import { COLORS } from '../../lib/brandColors';
 
 
 const getFilteredSlots = (dateStr, hoursConfig, blockedSlots = []) => {
@@ -689,10 +690,10 @@ export default function EditAppointmentDialog({
                         <p className="text-xs text-red-500">{fmtDate(s.date)}{s.services?.length > 0 ? ` - ${s.services.join(', ')}` : ''}</p>
                       </div>
                       <div className="flex gap-1.5">
-                        <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white text-xs h-8 px-3" onClick={() => handleSettleSospeso(s.id, 'cash')} disabled={settlingId === s.id}>
+                        <Button size="sm" className="text-white text-xs h-8 px-3" style={{backgroundColor: COLORS.success}} onClick={() => handleSettleSospeso(s.id, 'cash')} disabled={settlingId === s.id}>
                           {settlingId === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Banknote className="w-3 h-3 mr-1" />Cash</>}
                         </Button>
-                        <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white text-xs h-8 px-3" onClick={() => handleSettleSospeso(s.id, 'pos')} disabled={settlingId === s.id}>
+                        <Button size="sm" className="text-white text-xs h-8 px-3" style={{backgroundColor: COLORS.info}} onClick={() => handleSettleSospeso(s.id, 'pos')} disabled={settlingId === s.id}>
                           {settlingId === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Smartphone className="w-3 h-3 mr-1" />POS</>}
                         </Button>
                       </div>
@@ -710,40 +711,40 @@ export default function EditAppointmentDialog({
 
             {/* ─── CLIENT INFO ─── */}
             {selectedClientInfo && (
-              <div className="p-3 bg-[#FEF3C7] border-2 border-[#F59E0B] rounded-xl">
+              <div style={{backgroundColor: COLORS.goldLighter}} className={`p-3 border-2 border-[${COLORS.gold}] rounded-xl`}>
                 <div className="flex items-start gap-2">
-                  <User className="w-4 h-4 text-[#F59E0B] shrink-0 mt-0.5" />
+                  <User style={{color: COLORS.gold}} className="w-4 h-4 shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm text-[#92400E]">{selectedClientInfo.name}</p>
-                    {selectedClientInfo.phone && <p className="text-xs text-[#92400E]">Tel: {selectedClientInfo.phone}</p>}
-                    {selectedClientInfo.hair_notes && <p className="text-xs text-[#92400E] mt-0.5 italic truncate">{selectedClientInfo.hair_notes}</p>}
+                    <p className="font-bold text-sm" style={{color: COLORS.textDark}}>{selectedClientInfo.name}</p>
+                    {selectedClientInfo.phone && <p className="text-xs" style={{color: COLORS.textMuted}}>Tel: {selectedClientInfo.phone}</p>}
+                    {selectedClientInfo.hair_notes && <p className="text-xs mt-0.5 italic truncate" style={{color: COLORS.textMuted}}>{selectedClientInfo.hair_notes}</p>}
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    <Button type="button" variant="outline" size="sm" className="h-7 text-xs border-[#F59E0B] text-[#92400E]" onClick={() => editingClient ? setEditingClient(false) : openClientEdit()}>
+                    <Button type="button" variant="outline" size="sm" className="h-7 text-xs" style={{borderColor: COLORS.gold, color: COLORS.gold}} onClick={() => editingClient ? setEditingClient(false) : openClientEdit()}>
                       {editingClient ? <X className="w-3 h-3" /> : <><Edit3 className="w-3 h-3 mr-1" />Modifica</>}
                     </Button>
-                    <Button type="button" variant="outline" size="sm" className="h-7 text-xs border-[#F59E0B] text-[#92400E]" onClick={() => showHistory ? setShowHistory(false) : loadClientHistory(selectedClientInfo?.id)} disabled={loadingHistory}>
+                    <Button type="button" variant="outline" size="sm" className="h-7 text-xs" style={{borderColor: COLORS.gold, color: COLORS.gold}} onClick={() => showHistory ? setShowHistory(false) : loadClientHistory(selectedClientInfo?.id)} disabled={loadingHistory}>
                       {loadingHistory ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <History className="w-3 h-3 mr-1" />}Storico
                     </Button>
                     <ManualWAButton phone={selectedClientInfo.phone} name={selectedClientInfo.name} date={fmtDate(appointment.date)} time={appointment.time} services={appointment.services} />
                   </div>
                 </div>
                 {editingClient && (
-                  <div className="mt-3 pt-3 border-t border-[#F59E0B]/30 space-y-2">
+                  <div className="mt-3 pt-3 space-y-2" style={{borderTop: `1px solid ${COLORS.gold}40`}}>
                     <div className="grid grid-cols-2 gap-2">
-                      <div><Label className="text-xs text-[#92400E]">Nome</Label><Input className="h-7 text-xs" value={clientFormData.name||''} onChange={e=>setClientFormData(p=>({...p,name:e.target.value}))} /></div>
-                      <div><Label className="text-xs text-[#92400E]">Telefono</Label><Input className="h-7 text-xs" value={clientFormData.phone||''} onChange={e=>setClientFormData(p=>({...p,phone:e.target.value}))} /></div>
-                      <div><Label className="text-xs text-[#92400E]">Email</Label><Input className="h-7 text-xs" value={clientFormData.email||''} onChange={e=>setClientFormData(p=>({...p,email:e.target.value}))} /></div>
-                      <div><Label className="text-xs text-[#92400E]">Compleanno</Label><Input className="h-7 text-xs" type="date" value={clientFormData.birthday||''} onChange={e=>setClientFormData(p=>({...p,birthday:e.target.value}))} /></div>
+                      <div><Label className="text-xs" style={{color: COLORS.textDark}}>Nome</Label><Input className="h-7 text-xs" value={clientFormData.name||''} onChange={e=>setClientFormData(p=>({...p,name:e.target.value}))} /></div>
+                      <div><Label className="text-xs" style={{color: COLORS.textDark}}>Telefono</Label><Input className="h-7 text-xs" value={clientFormData.phone||''} onChange={e=>setClientFormData(p=>({...p,phone:e.target.value}))} /></div>
+                      <div><Label className="text-xs" style={{color: COLORS.textDark}}>Email</Label><Input className="h-7 text-xs" value={clientFormData.email||''} onChange={e=>setClientFormData(p=>({...p,email:e.target.value}))} /></div>
+                      <div><Label className="text-xs" style={{color: COLORS.textDark}}>Compleanno</Label><Input className="h-7 text-xs" type="date" value={clientFormData.birthday||''} onChange={e=>setClientFormData(p=>({...p,birthday:e.target.value}))} /></div>
                     </div>
-                    <div><Label className="text-xs text-[#92400E]">Note Colore / Capelli</Label><Textarea className="text-xs min-h-[60px] resize-none" value={clientFormData.hair_notes||''} onChange={e=>setClientFormData(p=>({...p,hair_notes:e.target.value}))} /></div>
-                    <Button type="button" size="sm" className="w-full h-7 text-xs bg-[#F59E0B] hover:bg-[#D97706] text-white" onClick={saveClientChanges} disabled={savingClient}>
+                    <div><Label className="text-xs" style={{color: COLORS.textDark}}>Note Colore / Capelli</Label><Textarea className="text-xs min-h-[60px] resize-none" value={clientFormData.hair_notes||''} onChange={e=>setClientFormData(p=>({...p,hair_notes:e.target.value}))} /></div>
+                    <Button type="button" size="sm" className="w-full h-7 text-xs text-white" style={{backgroundColor: COLORS.gold}} onClick={saveClientChanges} disabled={savingClient}>
                       {savingClient && <Loader2 className="w-3 h-3 animate-spin mr-1" />}Salva modifiche cliente
                     </Button>
                   </div>
                 )}
                 {showHistory && clientHistory && (
-                  <div className="mt-3 pt-3 border-t border-[#F59E0B]/30 space-y-2 max-h-48 overflow-y-auto">
+                  <div className="mt-3 pt-3 space-y-2 max-h-48 overflow-y-auto" style={{borderTop: `1px solid ${COLORS.gold}40`}}>
                     <div className="flex gap-4 text-xs text-[#92400E] font-medium">
                       <span>Visite: {clientHistory.total_visits||0}</span>
                       <span>Speso: €{(clientHistory.total_spent||0).toFixed(2)}</span>
@@ -917,12 +918,12 @@ export default function EditAppointmentDialog({
                     </div>
                   </div>
                 ) : (
-                  <div className="pt-4 border-t-2 border-[#F0E6DC] flex items-center justify-between">
+                  <div className="pt-4 border-t-2 flex items-center justify-between" style={{borderColor: COLORS.borderLight}}>
                     <div>
-                      <p className="text-sm font-semibold text-[#2D1B14]">Totale</p>
-                      <p className="text-2xl font-black text-[#C8617A]">€{calculateSubtotal().toFixed(2)}</p>
+                      <p className="text-sm font-semibold" style={{color: COLORS.textDark}}>Totale</p>
+                      <p className="text-2xl font-black" style={{color: COLORS.rose}}>€{calculateSubtotal().toFixed(2)}</p>
                     </div>
-                    <Button type="button" onClick={()=>openCheckoutMode()} className="bg-green-600 hover:bg-green-700 text-white font-bold px-6">
+                    <Button type="button" onClick={()=>openCheckoutMode()} className="text-white font-bold px-6" style={{backgroundColor: COLORS.rose}} onMouseEnter={e=>e.target.style.opacity='0.9'} onMouseLeave={e=>e.target.style.opacity='1'}>
                       <Euro className="w-4 h-4 mr-2"/>INCASSA
                     </Button>
                   </div>
@@ -934,11 +935,11 @@ export default function EditAppointmentDialog({
             {checkoutMode && (
               <div className="space-y-3">
                 {autoCheckout && (
-                  <div className="p-3 bg-blue-50 border-l-4 border-blue-400 rounded text-sm text-blue-800 flex items-start gap-2">
-                    <Info className="w-4 h-4 mt-0.5 shrink-0 text-blue-600"/>
+                  <div className="p-3 border-l-4 rounded text-sm flex items-start gap-2" style={{backgroundColor: COLORS.infoLight, borderColor: COLORS.info, color: COLORS.info}}>
+                    <Info className="w-4 h-4 mt-0.5 shrink-0" style={{color: COLORS.info}}/>
                     <div>
-                      <p className="font-semibold">Modifica pure i servizi prima di incassare!</p>
-                      <p className="text-xs text-blue-700 mt-0.5">Aggiungi/rimuovi servizi, cambia prezzi e quantità, poi incassa senza chiudere.</p>
+                      <p className="font-semibold" style={{color: COLORS.info}}>Modifica pure i servizi prima di incassare!</p>
+                      <p className="text-xs mt-0.5" style={{color: COLORS.info}}>Aggiungi/rimuovi servizi, cambia prezzi e quantità, poi incassa senza chiudere.</p>
                     </div>
                   </div>
                 )}
@@ -1140,7 +1141,7 @@ export default function EditAppointmentDialog({
                           </button>
                         </div>
                       </div>
-                      <Button type="button" onClick={handleCreateAndCheckoutSubscription} disabled={creatingSubscription} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold h-9 text-sm">
+                      <Button type="button" onClick={handleCreateAndCheckoutSubscription} disabled={creatingSubscription} className="w-full text-white font-bold h-9 text-sm" style={{backgroundColor: COLORS.rose}}>
                         {creatingSubscription?<><Loader2 className="w-3 h-3 animate-spin mr-1"/>Creando...</>:<><Plus className="w-4 h-4 mr-1"/>Vendi e scala servizio</>}
                       </Button>
                     </div>
@@ -1359,7 +1360,7 @@ export default function EditAppointmentDialog({
                     <button type="button"
                       onClick={()=>handleCheckout('cash', null)}
                       disabled={processing}
-                      className="flex flex-col items-center gap-1 bg-green-600 hover:bg-green-700 active:scale-95 disabled:opacity-60 text-white font-black rounded-2xl py-4 shadow-md transition-all">
+                      className="flex flex-col items-center gap-1 text-white font-semibold" style={{backgroundColor: COLORS.success, opacity: 1}} onMouseEnter={e=>e.target.style.opacity='0.9'} onMouseLeave={e=>e.target.style.opacity='1'} className=" active:scale-95 disabled:opacity-60 text-white font-black rounded-2xl py-4 shadow-md transition-all">
                       <Banknote className="w-6 h-6"/>
                       <span className="text-xs">Contanti</span>
                       <span className="text-base leading-tight">€{totalAfterDiscount.toFixed(2)}</span>
@@ -1463,21 +1464,21 @@ export default function EditAppointmentDialog({
                 );
               })()}
               <div className="flex gap-2">
-                <Button type="button" variant="destructive" onClick={handleDelete} disabled={deleting} className="mr-auto" aria-label="Elimina appuntamento">
+                <Button type="button" onClick={handleDelete} disabled={deleting} className="mr-auto text-white font-bold" style={{backgroundColor: COLORS.error}} aria-label="Elimina appuntamento">
                   {deleting?<Loader2 className="w-4 h-4 animate-spin"/>:<><Trash2 className="w-4 h-4 mr-1"/>Elimina</>}
                 </Button>
                 {!['completed','no_show','cancelled'].includes(activeStatus) && (
-                  <Button type="button" variant="outline" onClick={handleNoShow} disabled={markingNoShow} className="border-[#C8617A] text-[#C8617A] hover:bg-[#C8617A]/10" aria-label="Segna cliente non presentato e invia messaggio di recupero">
+                  <Button type="button" variant="outline" onClick={handleNoShow} disabled={markingNoShow} style={{borderColor: COLORS.rose, color: COLORS.rose}} aria-label="Segna cliente non presentato e invia messaggio di recupero">
                     {markingNoShow?<Loader2 className="w-4 h-4 animate-spin"/>:<><UserX className="w-4 h-4 mr-1"/>Non presentato</>}
                   </Button>
                 )}
                 {activeStatus!=='completed' && (
-                  <Button type="button" onClick={()=>saveAppointment(true)} disabled={saving} className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-4">
+                  <Button type="button" onClick={()=>saveAppointment(true)} disabled={saving} className="text-white font-bold px-4" style={{backgroundColor: COLORS.gold}}>
                     {saving?<Loader2 className="w-4 h-4 animate-spin"/>:'Vai in Cassa'}
                   </Button>
                 )}
-                <Button type="button" variant="outline" onClick={()=>{resetCheckout();onClose();}} className="border-[#F0E6DC]">Annulla</Button>
-                <Button type="submit" disabled={saving} className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] text-white font-bold">
+                <Button type="button" variant="outline" onClick={()=>{resetCheckout();onClose();}} style={{borderColor: COLORS.borderLight}}>Annulla</Button>
+                <Button type="submit" disabled={saving} className="text-white font-bold" style={{backgroundColor: COLORS.rose}}>
                   {saving?<Loader2 className="w-4 h-4 animate-spin"/>:<><Edit3 className="w-4 h-4 mr-1"/>Salva</>}
                 </Button>
               </div>
