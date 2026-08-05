@@ -368,8 +368,8 @@ export default function EditAppointmentDialog({
 
   const _enterCheckout = (apt, cards) => {
     setCheckoutMode(true);
-    // Open services + cards sections by default
-    setOpenCats(prev => ({ ...prev, _svc: true, _cards: (cards || []).length > 0 }));
+    // Open services + cards + options sections by default for easy modification
+    setOpenCats(prev => ({ ...prev, _svc: true, _cards: (cards || []).length > 0, _opts: true }));
 
     api.get(`${API}/inventory?category=rivendita`)
       .then(res => setRetailProducts(res.data || []))
@@ -435,6 +435,8 @@ export default function EditAppointmentDialog({
     }
     setCreatingSubscription(true);
     try {
+      // Auto-save service modifications before subscription checkout
+      await saveAppointment(false);
       const subscriptionPrice = parseFloat(newSubscriptionForm.total_value);
       const subscriptionName = newSubscriptionForm.name || `Abbonamento ${newSubscriptionForm.total_services} servizi`;
       const payMethod = newSubscriptionPayMethod === 'pos' ? 'pos' : 'cash';
@@ -479,6 +481,14 @@ export default function EditAppointmentDialog({
   const handleCheckout = async (overrideMethod = null, overrideCardId = null, overridePrice = null) => {
     const apt = localAppointment || appointment;
     if (!apt) return;
+
+    // Auto-save service modifications before checkout
+    try {
+      await saveAppointment(false);
+    } catch (err) {
+      toast.error('Impossibile salvare le modifiche ai servizi');
+      return;
+    }
 
     const method = overrideMethod || paymentMethod;
     const cardId = overrideCardId || (method === 'prepaid' ? selectedCardId : null);
@@ -543,7 +553,17 @@ export default function EditAppointmentDialog({
   const handleSplitCheckout = async () => {
     const apt = localAppointment || appointment;
     if (!apt || !splitValid) return;
+
     setProcessing(true);
+    // Auto-save service modifications before checkout
+    try {
+      await saveAppointment(false);
+    } catch (err) {
+      console.error('Errore nel salvataggio modifiche:', err);
+      toast.error('Impossibile salvare le modifiche ai servizi');
+      setProcessing(false);
+      return;
+    }
     try {
       const splitData = await checkoutAppointment(apt.id, {
         paymentMethod: 'mixed',
@@ -913,6 +933,15 @@ export default function EditAppointmentDialog({
             {/* ═════════════════ CHECKOUT MODE ═════════════════ */}
             {checkoutMode && (
               <div className="space-y-3">
+                {autoCheckout && (
+                  <div className="p-3 bg-blue-50 border-l-4 border-blue-400 rounded text-sm text-blue-800 flex items-start gap-2">
+                    <Info className="w-4 h-4 mt-0.5 shrink-0 text-blue-600"/>
+                    <div>
+                      <p className="font-semibold">Modifica pure i servizi prima di incassare!</p>
+                      <p className="text-xs text-blue-700 mt-0.5">Aggiungi/rimuovi servizi, cambia prezzi e quantità, poi incassa senza chiudere.</p>
+                    </div>
+                  </div>
+                )}
 
                 {/* ── 1. SERVIZI (collassabile, aperto di default) ── */}
                 <div className="rounded-xl border-2 border-gray-200 overflow-hidden">
