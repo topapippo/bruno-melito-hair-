@@ -685,7 +685,9 @@ export default function PlanningPage() {
   // --- Render ---
   return (
     <Layout>
-      <div className="space-y-4" data-testid="planning-page">
+      <div className="flex gap-4 min-h-screen" data-testid="planning-page">
+        {/* Colonna sinistra: Planning */}
+        <div className="flex-1 space-y-4 overflow-y-auto pr-4">
         {/* Banners */}
         {newOnlineBookings.length > 0 && (
           <div className="pulse-heartbeat rounded-xl">
@@ -1136,6 +1138,8 @@ export default function PlanningPage() {
             onCheckout={openEditDialogForCheckout}
           />
         )}
+        </div>
+
 
       </div>
     </Layout>

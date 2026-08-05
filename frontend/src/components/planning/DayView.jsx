@@ -204,8 +204,8 @@ export default function DayView({
                         style={{
                           ...style,
                           ...(overlapInfo ? {} : { left: '4px', right: '4px' }),
-                          ...(apt.status === 'completed' ? { opacity: 0.65 } : {}),
-                          borderLeft: `4px solid ${operatorColor}`,
+                          ...(apt.paid ? { opacity: 0.5 } : apt.status === 'completed' ? { opacity: 0.65 } : {}),
+                          borderLeft: `4px solid ${apt.paid ? '#10B981' : operatorColor}`,
                         }}
                         title={`Clicca per modificare - ${apt.client_name}`}
                       >
@@ -213,7 +213,7 @@ export default function DayView({
                         <div className="flex items-center justify-between px-1 bg-[#2D1B14]/90 text-white flex-shrink-0 gap-1" style={{ height: '22px' }}>
                           <ClientAvatar name={apt.client_name} size="xs" />
                           <span className="font-bold text-[13px] leading-none truncate flex-1">
-                            {apt.status === 'completed' && '✓ '}{apt.client_name}
+                            {apt.paid && '✅ '}{apt.status === 'completed' && '✓ '}{apt.client_name}
                           </span>
                           {apt.card_last_service && <span title="Ultimo servizio abbonamento!" className="text-orange-300 text-[11px] flex-shrink-0">⚠️</span>}
                           {apt.services?.some(s => s.upselling) && <span title="Contiene servizio scontato upselling" className="text-emerald-300 text-[11px] flex-shrink-0">🎁</span>}
