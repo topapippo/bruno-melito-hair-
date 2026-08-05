@@ -711,7 +711,10 @@ export default function EditAppointmentDialog({
 
             {/* ─── CLIENT INFO ─── */}
             {selectedClientInfo && (
-              <div style={{backgroundColor: COLORS.goldLighter}} className={`p-3 border-2 border-[${COLORS.gold}] rounded-xl`}>
+              <div style={{
+                background: `linear-gradient(135deg, ${COLORS.goldLighter} 0%, ${COLORS.bgLight} 100%)`,
+                boxShadow: `0 4px 12px rgba(212, 175, 122, 0.15)`,
+              }} className={`p-4 border-2 rounded-xl transition-all duration-300`} style={{borderColor: COLORS.gold}}>
                 <div className="flex items-start gap-2">
                   <User style={{color: COLORS.gold}} className="w-4 h-4 shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0">
@@ -720,44 +723,44 @@ export default function EditAppointmentDialog({
                     {selectedClientInfo.hair_notes && <p className="text-xs mt-0.5 italic truncate" style={{color: COLORS.textMuted}}>{selectedClientInfo.hair_notes}</p>}
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    <Button type="button" variant="outline" size="sm" className="h-7 text-xs" style={{borderColor: COLORS.gold, color: COLORS.gold}} onClick={() => editingClient ? setEditingClient(false) : openClientEdit()}>
+                    <Button type="button" variant="outline" size="sm" className="h-7 text-xs transition-all duration-200 hover:scale-105" style={{borderColor: COLORS.gold, color: COLORS.gold}} onClick={() => editingClient ? setEditingClient(false) : openClientEdit()}>
                       {editingClient ? <X className="w-3 h-3" /> : <><Edit3 className="w-3 h-3 mr-1" />Modifica</>}
                     </Button>
-                    <Button type="button" variant="outline" size="sm" className="h-7 text-xs" style={{borderColor: COLORS.gold, color: COLORS.gold}} onClick={() => showHistory ? setShowHistory(false) : loadClientHistory(selectedClientInfo?.id)} disabled={loadingHistory}>
+                    <Button type="button" variant="outline" size="sm" className="h-7 text-xs transition-all duration-200 hover:scale-105" style={{borderColor: COLORS.gold, color: COLORS.gold}} onClick={() => showHistory ? setShowHistory(false) : loadClientHistory(selectedClientInfo?.id)} disabled={loadingHistory}>
                       {loadingHistory ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <History className="w-3 h-3 mr-1" />}Storico
                     </Button>
                     <ManualWAButton phone={selectedClientInfo.phone} name={selectedClientInfo.name} date={fmtDate(appointment.date)} time={appointment.time} services={appointment.services} />
                   </div>
                 </div>
                 {editingClient && (
-                  <div className="mt-3 pt-3 space-y-2" style={{borderTop: `1px solid ${COLORS.gold}40`}}>
+                  <div className="mt-3 pt-3 space-y-2 animate-in fade-in-50 duration-200" style={{borderTop: `2px solid ${COLORS.gold}30`}}>
                     <div className="grid grid-cols-2 gap-2">
-                      <div><Label className="text-xs" style={{color: COLORS.textDark}}>Nome</Label><Input className="h-7 text-xs" value={clientFormData.name||''} onChange={e=>setClientFormData(p=>({...p,name:e.target.value}))} /></div>
-                      <div><Label className="text-xs" style={{color: COLORS.textDark}}>Telefono</Label><Input className="h-7 text-xs" value={clientFormData.phone||''} onChange={e=>setClientFormData(p=>({...p,phone:e.target.value}))} /></div>
-                      <div><Label className="text-xs" style={{color: COLORS.textDark}}>Email</Label><Input className="h-7 text-xs" value={clientFormData.email||''} onChange={e=>setClientFormData(p=>({...p,email:e.target.value}))} /></div>
-                      <div><Label className="text-xs" style={{color: COLORS.textDark}}>Compleanno</Label><Input className="h-7 text-xs" type="date" value={clientFormData.birthday||''} onChange={e=>setClientFormData(p=>({...p,birthday:e.target.value}))} /></div>
+                      <div><Label className="text-xs" style={{color: COLORS.textDark}}>Nome</Label><Input className="h-7 text-xs border-2 transition-all focus:shadow-md" style={{borderColor: COLORS.borderLight}} value={clientFormData.name||''} onChange={e=>setClientFormData(p=>({...p,name:e.target.value}))} /></div>
+                      <div><Label className="text-xs" style={{color: COLORS.textDark}}>Telefono</Label><Input className="h-7 text-xs border-2 transition-all focus:shadow-md" style={{borderColor: COLORS.borderLight}} value={clientFormData.phone||''} onChange={e=>setClientFormData(p=>({...p,phone:e.target.value}))} /></div>
+                      <div><Label className="text-xs" style={{color: COLORS.textDark}}>Email</Label><Input className="h-7 text-xs border-2 transition-all focus:shadow-md" style={{borderColor: COLORS.borderLight}} value={clientFormData.email||''} onChange={e=>setClientFormData(p=>({...p,email:e.target.value}))} /></div>
+                      <div><Label className="text-xs" style={{color: COLORS.textDark}}>Compleanno</Label><Input className="h-7 text-xs border-2 transition-all focus:shadow-md" style={{borderColor: COLORS.borderLight}} type="date" value={clientFormData.birthday||''} onChange={e=>setClientFormData(p=>({...p,birthday:e.target.value}))} /></div>
                     </div>
-                    <div><Label className="text-xs" style={{color: COLORS.textDark}}>Note Colore / Capelli</Label><Textarea className="text-xs min-h-[60px] resize-none" value={clientFormData.hair_notes||''} onChange={e=>setClientFormData(p=>({...p,hair_notes:e.target.value}))} /></div>
-                    <Button type="button" size="sm" className="w-full h-7 text-xs text-white" style={{backgroundColor: COLORS.gold}} onClick={saveClientChanges} disabled={savingClient}>
+                    <div><Label className="text-xs" style={{color: COLORS.textDark}}>Note Colore / Capelli</Label><Textarea className="text-xs min-h-[60px] resize-none border-2 transition-all focus:shadow-md" style={{borderColor: COLORS.borderLight}} value={clientFormData.hair_notes||''} onChange={e=>setClientFormData(p=>({...p,hair_notes:e.target.value}))} /></div>
+                    <Button type="button" size="sm" className="w-full h-7 text-xs text-white font-bold transition-all duration-200 hover:scale-105 active:scale-95" style={{background: `linear-gradient(135deg, ${COLORS.gold} 0%, #c49a6f 100%)`, boxShadow: `0 2px 8px rgba(212, 175, 122, 0.15)`}} onClick={saveClientChanges} disabled={savingClient}>
                       {savingClient && <Loader2 className="w-3 h-3 animate-spin mr-1" />}Salva modifiche cliente
                     </Button>
                   </div>
                 )}
                 {showHistory && clientHistory && (
-                  <div className="mt-3 pt-3 space-y-2 max-h-48 overflow-y-auto" style={{borderTop: `1px solid ${COLORS.gold}40`}}>
-                    <div className="flex gap-4 text-xs text-[#92400E] font-medium">
-                      <span>Visite: {clientHistory.total_visits||0}</span>
-                      <span>Speso: €{(clientHistory.total_spent||0).toFixed(2)}</span>
-                      {clientHistory.last_visit && <span>Ultima: {clientHistory.last_visit}</span>}
+                  <div className="mt-3 pt-3 space-y-2 max-h-48 overflow-y-auto animate-in fade-in-50 duration-200" style={{borderTop: `2px solid ${COLORS.gold}30`}}>
+                    <div className="flex gap-4 text-xs font-bold p-2 rounded-lg" style={{background: `${COLORS.goldLighter}80`}}>
+                      <span style={{color: COLORS.textDark}}>📊 Visite: {clientHistory.total_visits||0}</span>
+                      <span style={{color: COLORS.rose}}>€ {(clientHistory.total_spent||0).toFixed(2)}</span>
+                      {clientHistory.last_visit && <span style={{color: COLORS.textMuted}}>Ultima: {clientHistory.last_visit}</span>}
                     </div>
                     {(clientHistory.appointments||[]).map((a,i)=>(
-                      <div key={i} className="flex gap-2 bg-white/60 rounded-lg px-2 py-1.5 text-xs">
-                        <Clock className="w-3 h-3 text-[#92400E] shrink-0 mt-0.5"/>
-                        <span className="font-bold text-[#92400E] w-20 shrink-0">{fmtDate(a.date)}</span>
-                        <span className="text-[#92400E] w-12 shrink-0">{a.time}</span>
-                        <span className="text-[#92400E] flex-1 truncate">{(a.services||[]).map(s=>s.name).join(', ')}</span>
-                        {a.status==='completed' && <span className="text-emerald-600 font-bold">€{(a.amount_paid||0).toFixed(0)}</span>}
-                        {a.status!=='completed' && <span className={`text-xs px-1 rounded ${a.status==='cancelled'?'bg-red-100 text-red-600':'bg-blue-100 text-blue-600'}`}>{a.status==='cancelled'?'Ann.':a.status}</span>}
+                      <div key={i} className="flex gap-2 rounded-lg px-3 py-2 text-xs border-l-3 transition-all hover:shadow-sm" style={{background: `${COLORS.bgLight}60`, borderLeftColor: a.status==='completed' ? COLORS.success : a.status==='cancelled' ? COLORS.error : COLORS.info}}>
+                        <Clock className="w-3 h-3 shrink-0 mt-0.5" style={{color: COLORS.textMuted}}/>
+                        <span className="font-bold w-20 shrink-0" style={{color: COLORS.textDark}}>{fmtDate(a.date)}</span>
+                        <span style={{color: COLORS.textMuted}} className="w-12 shrink-0">{a.time}</span>
+                        <span style={{color: COLORS.textDark}} className="flex-1 truncate font-medium">{(a.services||[]).map(s=>s.name).join(', ')}</span>
+                        {a.status==='completed' && <span className="font-bold" style={{color: COLORS.success}}>€{(a.amount_paid||0).toFixed(0)}</span>}
+                        {a.status!=='completed' && <span className={`text-xs px-2 py-0.5 rounded font-bold ${a.status==='cancelled'?'bg-red-100 text-red-600':'bg-blue-100 text-blue-600'}`}>{a.status==='cancelled'?'Ann.':a.status}</span>}
                       </div>
                     ))}
                   </div>
@@ -918,12 +921,12 @@ export default function EditAppointmentDialog({
                     </div>
                   </div>
                 ) : (
-                  <div className="pt-4 border-t-2 flex items-center justify-between" style={{borderColor: COLORS.borderLight}}>
+                  <div className="pt-4 border-t-2 flex items-center justify-between transition-all" style={{borderColor: COLORS.borderLight}}>
                     <div>
                       <p className="text-sm font-semibold" style={{color: COLORS.textDark}}>Totale</p>
                       <p className="text-2xl font-black" style={{color: COLORS.rose}}>€{calculateSubtotal().toFixed(2)}</p>
                     </div>
-                    <Button type="button" onClick={()=>openCheckoutMode()} className="text-white font-bold px-6" style={{backgroundColor: COLORS.rose}} onMouseEnter={e=>e.target.style.opacity='0.9'} onMouseLeave={e=>e.target.style.opacity='1'}>
+                    <Button type="button" onClick={()=>openCheckoutMode()} className="text-white font-bold px-8 py-3 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 shadow-md hover:shadow-lg" style={{backgroundColor: COLORS.rose, boxShadow: `0 4px 12px rgba(200, 97, 122, 0.25)`}}>
                       <Euro className="w-4 h-4 mr-2"/>INCASSA
                     </Button>
                   </div>
@@ -945,9 +948,9 @@ export default function EditAppointmentDialog({
                 )}
 
                 {/* ── 1. SERVIZI (collassabile, aperto di default) ── */}
-                <div className="rounded-xl border-2 overflow-hidden" style={{borderColor: COLORS.borderLight}}>
+                <div className="rounded-xl border-2 overflow-hidden transition-all" style={{borderColor: COLORS.borderLight, boxShadow: `0 2px 8px rgba(0, 0, 0, 0.05)`}}>
                   <button type="button" onClick={()=>toggleCat('_svc')}
-                    className="w-full flex items-center justify-between px-3 py-3 bg-white" style={{backgroundColor: COLORS.bg}}>
+                    className="w-full flex items-center justify-between px-4 py-3 transition-all hover:bg-gray-50" style={{backgroundColor: COLORS.bg}}>
                     <div className="flex items-center gap-2">
                       <Edit3 className="w-4 h-4" style={{color: COLORS.textMuted}}/>
                       <span className="font-bold text-sm" style={{color: COLORS.textDark}}>Servizi</span>
@@ -955,7 +958,7 @@ export default function EditAppointmentDialog({
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="font-black text-base" style={{color: COLORS.rose}}>€{calculateSubtotal().toFixed(2)}</span>
-                      <ChevronDown className={`w-4 h-4 transition-transform ${openCats['_svc']?'rotate-180':''}`} style={{color: COLORS.textMuted}}/>
+                      <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${openCats['_svc']?'rotate-180':''}`} style={{color: COLORS.textMuted}}/>
                     </div>
                   </button>
                   {openCats['_svc'] && (
@@ -1355,25 +1358,33 @@ export default function EditAppointmentDialog({
 
                 {/* ── 6. TRE BOTTONI PAGAMENTO ── */}
                 {paymentMethod !== 'sospeso' && !splitMode && (
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-3 gap-3">
                     {/* CONTANTI */}
                     <button type="button"
                       onClick={()=>handleCheckout('cash', null)}
                       disabled={processing}
-                      className="flex flex-col items-center gap-1 text-white font-semibold" style={{backgroundColor: COLORS.success, opacity: 1}} onMouseEnter={e=>e.target.style.opacity='0.9'} onMouseLeave={e=>e.target.style.opacity='1'} className=" active:scale-95 disabled:opacity-60 text-white font-black rounded-2xl py-4 shadow-md transition-all">
+                      style={{
+                        background: `linear-gradient(135deg, ${COLORS.success} 0%, #059669 100%)`,
+                        boxShadow: `0 6px 16px rgba(16, 185, 129, 0.3)`,
+                      }}
+                      className="flex flex-col items-center gap-1.5 text-white font-black rounded-2xl py-4 shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-60 hover:shadow-xl">
                       <Banknote className="w-6 h-6"/>
-                      <span className="text-xs">Contanti</span>
-                      <span className="text-base leading-tight">€{totalAfterDiscount.toFixed(2)}</span>
+                      <span className="text-xs font-bold uppercase">Contanti</span>
+                      <span className="text-lg leading-tight font-black">€{totalAfterDiscount.toFixed(2)}</span>
                     </button>
 
                     {/* POS */}
                     <button type="button"
                       onClick={()=>handleCheckout('pos', null)}
                       disabled={processing}
-                      className="flex flex-col items-center gap-1 bg-blue-600 hover:bg-blue-700 active:scale-95 disabled:opacity-60 text-white font-black rounded-2xl py-4 shadow-md transition-all">
+                      style={{
+                        background: `linear-gradient(135deg, ${COLORS.info} 0%, #2563eb 100%)`,
+                        boxShadow: `0 6px 16px rgba(59, 130, 246, 0.3)`,
+                      }}
+                      className="flex flex-col items-center gap-1.5 text-white font-black rounded-2xl py-4 shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-60 hover:shadow-xl">
                       <Smartphone className="w-6 h-6"/>
-                      <span className="text-xs">POS</span>
-                      <span className="text-base leading-tight">€{totalAfterDiscount.toFixed(2)}</span>
+                      <span className="text-xs font-bold uppercase">POS</span>
+                      <span className="text-lg leading-tight font-black">€{totalAfterDiscount.toFixed(2)}</span>
                     </button>
 
                     {/* ABBONAMENTO / CARD */}
@@ -1383,16 +1394,20 @@ export default function EditAppointmentDialog({
                         handleCheckout('prepaid', selectedCardId);
                       }}
                       disabled={processing}
-                      className={`flex flex-col items-center gap-1 active:scale-95 disabled:opacity-60 font-black rounded-2xl py-4 shadow-md transition-all ${
-                        selectedCard
-                          ? 'bg-[#C8617A] hover:bg-[#b04f67] text-white'
-                          : 'bg-gray-200 hover:bg-gray-300 text-gray-600'
-                      }`}>
+                      style={selectedCard ? {
+                        background: `linear-gradient(135deg, ${COLORS.rose} 0%, #b04f67 100%)`,
+                        boxShadow: `0 6px 16px rgba(200, 97, 122, 0.3)`,
+                      } : {
+                        background: `linear-gradient(135deg, #d1d5db 0%, #9ca3af 100%)`,
+                        boxShadow: `0 2px 8px rgba(0, 0, 0, 0.08)`,
+                        color: '#6b7280'
+                      }}
+                      className={`flex flex-col items-center gap-1.5 font-black rounded-2xl py-4 shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-60 ${selectedCard ? 'text-white hover:shadow-xl' : 'hover:shadow-md'}`}>
                       <Ticket className="w-6 h-6"/>
-                      <span className="text-xs truncate px-1 w-full text-center">
+                      <span className="text-xs font-bold uppercase truncate px-1 w-full text-center">
                         {selectedCard ? (selectedCardIsSubscription ? 'Scala Abb.' : selectedCard.name.split(' ')[0]) : 'Card/Abb.'}
                       </span>
-                      <span className="text-base leading-tight">
+                      <span className="text-lg leading-tight font-black">
                         {selectedCard
                           ? selectedCardIsSubscription
                             ? `€${calculateRetailTotal().toFixed(2)}`
@@ -1464,21 +1479,21 @@ export default function EditAppointmentDialog({
                 );
               })()}
               <div className="flex gap-2">
-                <Button type="button" onClick={handleDelete} disabled={deleting} className="mr-auto text-white font-bold" style={{backgroundColor: COLORS.error}} aria-label="Elimina appuntamento">
+                <Button type="button" onClick={handleDelete} disabled={deleting} className="mr-auto text-white font-bold transition-all duration-200 hover:scale-105 active:scale-95" style={{backgroundColor: COLORS.error, boxShadow: `0 4px 12px rgba(220, 38, 38, 0.2)`}} aria-label="Elimina appuntamento">
                   {deleting?<Loader2 className="w-4 h-4 animate-spin"/>:<><Trash2 className="w-4 h-4 mr-1"/>Elimina</>}
                 </Button>
                 {!['completed','no_show','cancelled'].includes(activeStatus) && (
-                  <Button type="button" variant="outline" onClick={handleNoShow} disabled={markingNoShow} style={{borderColor: COLORS.rose, color: COLORS.rose}} aria-label="Segna cliente non presentato e invia messaggio di recupero">
+                  <Button type="button" variant="outline" onClick={handleNoShow} disabled={markingNoShow} className="transition-all duration-200 hover:scale-105 active:scale-95" style={{borderColor: COLORS.rose, color: COLORS.rose}} aria-label="Segna cliente non presentato e invia messaggio di recupero">
                     {markingNoShow?<Loader2 className="w-4 h-4 animate-spin"/>:<><UserX className="w-4 h-4 mr-1"/>Non presentato</>}
                   </Button>
                 )}
                 {activeStatus!=='completed' && (
-                  <Button type="button" onClick={()=>saveAppointment(true)} disabled={saving} className="text-white font-bold px-4" style={{backgroundColor: COLORS.gold}}>
+                  <Button type="button" onClick={()=>saveAppointment(true)} disabled={saving} className="text-white font-bold px-6 transition-all duration-200 hover:scale-105 active:scale-95" style={{background: `linear-gradient(135deg, ${COLORS.gold} 0%, #c49a6f 100%)`, boxShadow: `0 4px 12px rgba(212, 175, 122, 0.2)`}}>
                     {saving?<Loader2 className="w-4 h-4 animate-spin"/>:'Vai in Cassa'}
                   </Button>
                 )}
-                <Button type="button" variant="outline" onClick={()=>{resetCheckout();onClose();}} style={{borderColor: COLORS.borderLight}}>Annulla</Button>
-                <Button type="submit" disabled={saving} className="text-white font-bold" style={{backgroundColor: COLORS.rose}}>
+                <Button type="button" variant="outline" onClick={()=>{resetCheckout();onClose();}} className="transition-all duration-200 hover:scale-105 active:scale-95" style={{borderColor: COLORS.borderLight}}>Annulla</Button>
+                <Button type="submit" disabled={saving} className="text-white font-bold transition-all duration-200 hover:scale-105 active:scale-95" style={{background: `linear-gradient(135deg, ${COLORS.rose} 0%, #b04f67 100%)`, boxShadow: `0 4px 12px rgba(200, 97, 122, 0.2)`}}>
                   {saving?<Loader2 className="w-4 h-4 animate-spin"/>:<><Edit3 className="w-4 h-4 mr-1"/>Salva</>}
                 </Button>
               </div>
