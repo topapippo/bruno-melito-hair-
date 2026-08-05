@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../lib/api';
 import { getErrorMessage } from '../lib/api';
 import Layout from '../components/Layout';
+import { COLORS } from '../lib/brandColors';
 import { Package, Plus, Trash2, AlertTriangle, Loader2, Edit2, X, Check, ChevronDown, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -288,7 +289,27 @@ export default function InventoryPage() {
                           const isEditing = editingId === p.id;
 
                           return (
-                            <div key={p.id} className={`bg-white border rounded-2xl p-5 shadow-sm transition-all ${isLow ? 'border-amber-300 bg-amber-50/50' : 'border-[#F0E6DC]'}`}>
+                            <div
+                              key={p.id}
+                              onMouseEnter={e => {
+                                e.currentTarget.style.boxShadow = `0 16px 48px rgba(212,175,122,0.35), inset 0 1px 0 rgba(255,255,255,0.3)`;
+                                e.currentTarget.style.transform = 'scale(1.03) translateY(-4px)';
+                              }}
+                              onMouseLeave={e => {
+                                e.currentTarget.style.boxShadow = `0 8px 24px rgba(212,175,122,0.2)`;
+                                e.currentTarget.style.transform = 'scale(1)';
+                              }}
+                              className="transition-all duration-300 rounded-2xl"
+                              style={{
+                                background: isLow
+                                  ? `linear-gradient(135deg, #FEF3E2 0%, #FFF8F0 100%)`
+                                  : `linear-gradient(135deg, #FFFFFF 0%, ${COLORS.bgLight} 100%)`,
+                                border: `1px solid ${isLow ? '#FDD5B1' : COLORS.borderLight}`,
+                                boxShadow: `0 8px 24px rgba(212,175,122,0.2)`,
+                                padding: '20px',
+                              }}
+                            >
+                            <div className={`bg-transparent border-0 rounded-2xl p-5 shadow-none transition-all`}>
                               {isEditing ? (
                                 <div className="space-y-2">
                                   <input
@@ -372,6 +393,7 @@ export default function InventoryPage() {
                                   )}
                                 </>
                               )}
+                            </div>
                             </div>
                           );
                         })}
