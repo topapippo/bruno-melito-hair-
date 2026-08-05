@@ -61,7 +61,6 @@ async def create_inventory(data: InventoryCreate, current_user: dict = Depends(g
         raise HTTPException(status_code=400, detail="Il nome del prodotto è obbligatorio")
     if data.category not in VALID_CATEGORIES:
         raise HTTPException(status_code=400, detail="Categoria non valida")
-    # Evita duplicati per lo stesso utente (case-insensitive)
     existing = await db.inventory.find_one({
         "user_id": current_user["id"],
         "name": {"$regex": f"^{name}$", "$options": "i"},
@@ -120,3 +119,70 @@ async def delete_inventory(product_id: str, current_user: dict = Depends(get_cur
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Prodotto non trovato")
     return {"success": True}
+
+
+@router.get("/inventory/report")
+async def get_inventory_report(
+    month: Optional[str] = None,   # formato YYYY-MM, default mese corrente
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Report mensile magazzino:
+    - Colori più consumati (da inventory_usage)
+    - Prodotti sotto scorta oggi
+    """
+    now = datetime.now(timezone.utc)
+    if month:
+        try:
+            y, m = map(int, month.split("-"))
+        except Exception:
+            raise HTTPException(status_code=400, detail="Formato mese non valido (YYYY-MM)")
+    else:
+        y, m = now.year, now.month
+
+    month_str = f"{y:04d}-{m:02d}"
+    date_from = f"{month_str}-01"
+    # ultimo giorno del mese
+    from calendar import monthrange
+    last_day = monthrange(y, m)[1]
+    date_to = f"{month_str}-{last_day:02d}"
+
+    # 1. Consumi dal log
+    usage_docs = await db.inventory_usage.find(
+        {
+            "user_id": current_user["id"],
+            "date": {"$gte": date_from, "$lte": date_to},
+        },
+        {"_id": 0, "user_id": 0}
+    ).to_list(10000)
+
+    # Aggrega per prodotto
+    usage_map = {}
+    for u in usage_docs:
+        pid = u.get("product_name") or u.get("product_id", "?")
+        usage_map[pid] = usage_map.get(pid, 0) + float(u.get("quantity", 0))
+
+    top_consumed = sorted(
+        [{"name": k, "quantity": round(v, 2)} for k, v in usage_map.items()],
+        key=lambda x: x["quantity"],
+        reverse=True
+    )[:10]
+
+    # 2. Prodotti sotto scorta oggi
+    all_products = await db.inventory.find(
+        {"user_id": current_user["id"]},
+        {"_id": 0, "user_id": 0}
+    ).to_list(5000)
+
+    low_stock = [
+        {"name": p["name"], "total_stock": p["total_stock"], "low_stock_threshold": p["low_stock_threshold"]}
+        for p in all_products
+        if p.get("total_stock", 0) <= p.get("low_stock_threshold", 0)
+    ]
+
+    return {
+        "month": month_str,
+        "top_consumed": top_consumed,
+        "low_stock": low_stock,
+        "total_usage_records": len(usage_docs),
+    }

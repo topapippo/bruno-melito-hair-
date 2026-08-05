@@ -46,7 +46,7 @@ async def create_appointment(data: AppointmentCreate, current_user: dict = Depen
     else: raise HTTPException(status_code=400, detail="Dati cliente mancanti")
 
     services_list = await db.services.find({"id": {"$in": data.service_ids}, "user_id": current_user["id"]}).to_list(100)
-    
+
     operator_name = None
     operator_color = None
     if data.operator_id:
@@ -88,7 +88,7 @@ async def create_appointment(data: AppointmentCreate, current_user: dict = Depen
         date_it = f"{d_p[2]}/{d_p[1]}/{d_p[0]}" if len(d_p) == 3 else data.date
         if client_phone:
             # Usa template di conferma per aumentare la probabilità di consegna
-            asyncio.create_task(send_automatic_message(client_phone, "conferma_prenotazione", [client_name, date_it, data.time], f"Ciao {client_name}! ✅ Prenotazione confermata per il {date_it} alle {data.time}.", current_user))
+            asyncio.create_task(send_automatic_message(client_phone, "conferma_prenotazione", [client_name, date_it, data.time], f"Ciao {client_name}! ✓ Prenotazione confermata per il {date_it} alle {data.time}.", current_user))
     except Exception:
         pass
 
@@ -116,7 +116,7 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, backgrou
                 "id": str(uuid.uuid4()),
                 "amount": amount_to_deduct,
                 "appointment_id": appointment_id,
-                "description": f"Servizio scalato — {apt.get('client_name', '')}",
+                "description": f"Servizio scalato – {apt.get('client_name', '')}",
                 "date": datetime.now(timezone.utc).isoformat()
             }
             if card_type_used == "subscription":
@@ -247,8 +247,9 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, backgrou
     await db.payments.insert_many(payments_to_insert)
     await db.appointments.update_one({"id": appointment_id, "user_id": current_user["id"]}, {"$set": {"status": "completed", "paid": True, "payment_method": final_payment_method}})
 
-    # SCARICO MAGAZZINO AUTOMATICO — legge categoria e prodotto collegato dai servizi originali
+    # SCARICO MAGAZZINO AUTOMATICO – legge categoria e prodotto collegato dai servizi originali
     # inventory_log: cosa è stato scaricato e cosa no (mostrato in cassa per diagnosi)
+    # inventory_usage: log storico permanente di ogni scarico, usato dal report mensile
     inventory_log = {"deducted": [], "warnings": []}
     try:
         service_list = apt.get("services", [])
@@ -293,6 +294,14 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, backgrou
                             {"$inc": {"total_stock": -dec}}
                         )
                         inventory_log["deducted"].append(f"{inv_prod['name']} −{dec:g}")
+                        await db.inventory_usage.insert_one({
+                            "id": str(uuid.uuid4()), "user_id": current_user["id"],
+                            "product_id": inv_prod["id"], "product_name": inv_prod["name"],
+                            "quantity": dec, "category": "colore",
+                            "appointment_id": appointment_id,
+                            "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                        })
                 elif db_svc.get("linked_inventory_id"):
                     inv_prod = await db.inventory.find_one({"id": db_svc["linked_inventory_id"], "user_id": current_user["id"]})
                     if not inv_prod:
@@ -305,6 +314,14 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, backgrou
                         {"$inc": {"total_stock": -dec}}
                     )
                     inventory_log["deducted"].append(f"{inv_prod['name']} −{dec:g}")
+                    await db.inventory_usage.insert_one({
+                        "id": str(uuid.uuid4()), "user_id": current_user["id"],
+                        "product_id": inv_prod["id"], "product_name": inv_prod["name"],
+                        "quantity": dec, "category": category or "altro",
+                        "appointment_id": appointment_id,
+                        "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    })
                 elif category in ("trattamento", "permanente", "rivendita"):
                     inventory_log["warnings"].append(f"{svc_name}: nessun prodotto magazzino collegato al servizio")
 
@@ -315,6 +332,14 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, backgrou
                 {"$inc": {"total_stock": -line["quantity"]}}
             )
             inventory_log["deducted"].append(f"{line['name']} −{line['quantity']:g}")
+            await db.inventory_usage.insert_one({
+                "id": str(uuid.uuid4()), "user_id": current_user["id"],
+                "product_id": line["product_id"], "product_name": line["name"],
+                "quantity": line["quantity"], "category": "rivendita",
+                "appointment_id": appointment_id,
+                "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            })
     except Exception as e:
         logger.error(f"Errore scarico magazzino checkout {appointment_id}: {e}")
 
