@@ -273,6 +273,19 @@ async def get_revenue_stats(start_date: str, end_date: str, current_user: dict =
         payment_methods_map[pm]["count"] += 1
         payment_methods_map[pm]["total"] += p.get("total_paid", 0)
 
+    # Conteggio sospesi dalla collection sospesi (non da payments)
+    sospesi_list = await db.sospesi.find(
+        {"user_id": current_user["id"], "created_at": {"$gte": start_date, "$lte": end_date + "T23:59:59.999Z"}},
+        {"_id": 0, "amount": 1}
+    ).to_list(1000)
+    if sospesi_list:
+        sospesi_total = sum(s.get("amount", 0) for s in sospesi_list)
+        payment_methods_map["sospeso"] = {
+            "method": "sospeso",
+            "count": len(sospesi_list),
+            "total": sospesi_total
+        }
+
     # Breakdown per categoria — mappa nome servizio → categoria dalla collection services
     all_services_list = await db.services.find({"user_id": current_user["id"]}, {"_id": 0, "name": 1, "category": 1}).to_list(500)
     name_to_cat = {s["name"]: s.get("category", "altro") for s in all_services_list}

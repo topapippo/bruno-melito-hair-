@@ -244,7 +244,35 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, backgrou
             "note": data.note,
         })
 
-    await db.payments.insert_many(payments_to_insert)
+    # Gestione sospesi: se il metodo di pagamento è "sospeso", crea un record in db.sospesi
+    # invece di inserire in db.payments
+    sospesi_to_insert = []
+    payments_to_insert_final = []
+
+    for payment in payments_to_insert:
+        if payment["payment_method"] == "sospeso":
+            sospeso_doc = {
+                "id": str(uuid.uuid4()),
+                "user_id": current_user["id"],
+                "appointment_id": appointment_id,
+                "client_id": payment["client_id"],
+                "client_name": payment["client_name"],
+                "amount": payment["total_paid"],
+                "services": payment["services"],
+                "retail_items": payment.get("retail_items", []),
+                "notes": payment.get("note", ""),
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "status": "pending"
+            }
+            sospesi_to_insert.append(sospeso_doc)
+        else:
+            payments_to_insert_final.append(payment)
+
+    if payments_to_insert_final:
+        await db.payments.insert_many(payments_to_insert_final)
+    if sospesi_to_insert:
+        await db.sospesi.insert_many(sospesi_to_insert)
+
     await db.appointments.update_one({"id": appointment_id, "user_id": current_user["id"]}, {"$set": {"status": "completed", "paid": True, "payment_method": final_payment_method}})
 
     # SCARICO MAGAZZINO AUTOMATICO – legge categoria e prodotto collegato dai servizi originali

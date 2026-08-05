@@ -410,14 +410,84 @@ async def mark_card_notified(card_id: str, notification_type: str = "whatsapp", 
         "sent_at": datetime.now(timezone.utc).isoformat(),
         "sent_by": current_user["id"]
     }
-    
+
     result = await db.cards.update_one(
         {"id": card_id, "user_id": current_user["id"]},
         {"$push": {"notifications": notification}}
     )
-    
+
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Card non trovata")
-    
+
     return {"success": True, "notification": notification}
+
+
+# ============== SOSPESI (Suspended Payments) ==============
+
+@router.get("/sospesi")
+async def get_all_sospesi(current_user: dict = Depends(get_current_user)):
+    """Get all suspended payments for current user"""
+    sospesi_list = await db.sospesi.find(
+        {"user_id": current_user["id"]},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(1000)
+
+    total = sum(s.get("amount", 0) for s in sospesi_list)
+
+    return {
+        "sospesi": sospesi_list,
+        "total": total,
+        "count": len(sospesi_list)
+    }
+
+
+@router.get("/sospesi/client/{client_id}")
+async def get_client_sospesi(client_id: str, current_user: dict = Depends(get_current_user)):
+    """Get suspended payments for a specific client"""
+    sospesi_list = await db.sospesi.find(
+        {"user_id": current_user["id"], "client_id": client_id},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(1000)
+
+    total = sum(s.get("amount", 0) for s in sospesi_list)
+
+    return {
+        "sospesi": sospesi_list,
+        "total": total,
+        "count": len(sospesi_list)
+    }
+
+
+@router.post("/sospesi/{sospeso_id}/settle/{method}")
+async def settle_sospeso(sospeso_id: str, method: str, current_user: dict = Depends(get_current_user)):
+    """Settle a suspended payment by converting it to a real payment"""
+    sospeso = await db.sospesi.find_one(
+        {"id": sospeso_id, "user_id": current_user["id"]},
+        {"_id": 0}
+    )
+
+    if not sospeso:
+        raise HTTPException(status_code=404, detail="Sospeso non trovato")
+
+    # Create a real payment record
+    payment_doc = {
+        "id": str(uuid.uuid4()),
+        "user_id": current_user["id"],
+        "client_id": sospeso.get("client_id"),
+        "client_name": sospeso.get("client_name", ""),
+        "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+        "time": datetime.now(timezone.utc).strftime("%H:%M"),
+        "total_paid": sospeso.get("amount", 0),
+        "original_amount": sospeso.get("amount", 0),
+        "payment_method": method,
+        "services": sospeso.get("services", []),
+        "appointment_id": sospeso.get("appointment_id"),
+        "notes": f"Saldo sospeso dal {sospeso.get('created_at', '')}",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+
+    await db.payments.insert_one(payment_doc)
+    await db.sospesi.delete_one({"id": sospeso_id})
+
+    return {"success": True, "payment_id": payment_doc["id"]}
 
