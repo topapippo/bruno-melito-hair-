@@ -86,6 +86,8 @@ export default function PlanningPage() {
   const [newDialogInitial, setNewDialogInitial] = useState({ date: '', time: '', operatorId: '' });
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState(null);
+  const [checkoutDrawerOpen, setCheckoutDrawerOpen] = useState(false);
+  const [checkoutDrawerApt, setCheckoutDrawerApt] = useState(null);
   const [recurringDialogOpen, setRecurringDialogOpen] = useState(false);
   const [recurringAppointment, setRecurringAppointment] = useState(null);
   const [lastServiceAlerts, setLastServiceAlerts] = useState([]);
@@ -528,9 +530,9 @@ export default function PlanningPage() {
   };
 
   const openEditDialogForCheckout = (apt) => {
-    setEditingAppointment(apt);
-    setEditInCheckout(true);
-    setEditDialogOpen(true);
+    // Apri il checkout drawer (sidebar persistente)
+    setCheckoutDrawerApt(apt);
+    setCheckoutDrawerOpen(true);
   };
 
   // Appuntamento appena creato dal walk-in dialog -> apre subito la cassa, senza chiudere/riaprire
@@ -1065,6 +1067,28 @@ export default function PlanningPage() {
             onThankYou={setThankYouData}
           />
         </ErrorBoundary>
+
+        {/* CHECKOUT DIALOG - STAYS OPEN FOR NEXT APPOINTMENT */}
+        {checkoutDrawerOpen && checkoutDrawerApt && (
+          <EditAppointmentDialog
+            open={checkoutDrawerOpen}
+            onClose={() => { setCheckoutDrawerOpen(false); setCheckoutDrawerApt(null); }}
+            appointment={checkoutDrawerApt}
+            autoCheckout={true}
+            keepOpenAfterCheckout={true}
+            operators={operators}
+            clients={clients}
+            services={services}
+            cardTemplates={cardTemplates}
+            onSuccess={() => {
+              refreshAll();
+              // Dopo checkout, deseleziona per permettere la selezione del prossimo
+              setCheckoutDrawerApt(null);
+            }}
+            onLastServiceAlert={(data) => setLastServiceAlerts(prev => [...prev, data])}
+            onThankYou={setThankYouData}
+          />
+        )}
 
         <RecurringDialog
           open={recurringDialogOpen}

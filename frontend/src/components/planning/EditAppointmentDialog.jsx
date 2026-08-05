@@ -57,7 +57,7 @@ const getFilteredSlots = (dateStr, hoursConfig, blockedSlots = []) => {
 
 export default function EditAppointmentDialog({
   open, onClose, appointment, operators, clients, services, cardTemplates = [], onSuccess,
-  onLastServiceAlert, onThankYou, autoCheckout = false,
+  onLastServiceAlert, onThankYou, autoCheckout = false, keepOpenAfterCheckout = false,
 }) {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -467,8 +467,7 @@ export default function EditAppointmentDialog({
       toast.success(`Abbonamento venduto (€${subscriptionPrice.toFixed(2)} ${payMethod === 'pos' ? 'POS' : 'contanti'}) e servizio scalato. Restanti: ${remaining}/${totalSvc}.`);
       notifyInventory(subData);
 
-      resetCheckout();
-      onClose();
+      closeAfterCheckout();
       onSuccess?.();
     } catch (err) {
       toast.error(extractErrorMessage(err, 'Errore vendita abbonamento'));
@@ -532,8 +531,7 @@ export default function EditAppointmentDialog({
         toast.success('Incasso completato con successo!');
       }
       notifyInventory(data);
-      resetCheckout();
-      onClose();
+      closeAfterCheckout();
       onSuccess?.();
     } catch (err) {
       toast.error(extractErrorMessage(err));
@@ -561,8 +559,7 @@ export default function EditAppointmentDialog({
       });
       toast.success('Pagamento diviso registrato con successo!');
       notifyInventory(splitData);
-      resetCheckout();
-      onClose();
+      closeAfterCheckout();
       onSuccess?.();
     } catch (err) {
       toast.error(extractErrorMessage(err));
@@ -623,6 +620,11 @@ export default function EditAppointmentDialog({
   };
 
   const toggleCat = key => setOpenCats(prev => ({ ...prev, [key]: !prev[key] }));
+
+  const closeAfterCheckout = () => {
+    resetCheckout();
+    if (!keepOpenAfterCheckout) onClose();
+  };
 
   if (!appointment) return null;
 
