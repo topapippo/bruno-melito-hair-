@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { format, startOfMonth, endOfMonth, addMonths } from 'date-fns';
 import api, { API } from '../lib/api';
 import Layout from '../components/Layout';
+import { COLORS } from '../lib/brandColors';
 import PageHeader from '../components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -340,9 +341,23 @@ export default function ExpensesPage() {
               const isDueSoon = !exp.paid && !isOverdue && exp.due_date <= new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
 
               return (
-                <Card
+                <div
                   key={exp.id}
-                  className={`bg-white border-2 transition-all ${
+                  onMouseEnter={e => {
+                    e.currentTarget.style.boxShadow = `0 16px 48px rgba(200,97,122,0.3), inset 0 1px 0 rgba(255,255,255,0.3)`;
+                    e.currentTarget.style.transform = 'scale(1.01) translateY(-2px)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.boxShadow = `0 4px 12px rgba(200,97,122,0.15)`;
+                    e.currentTarget.style.transform = 'scale(1)';
+                  }}
+                  className="transition-all duration-300 rounded-lg"
+                  style={{
+                    boxShadow: `0 4px 12px rgba(200,97,122,0.15)`,
+                  }}
+                >
+                <Card
+                  className={`bg-white border-2 transition-all shadow-none rounded-lg ${
                     isOverdue ? 'border-red-300 bg-red-50/50' :
                     isDueSoon ? 'border-orange-200 bg-orange-50/30' :
                     exp.paid ? 'border-green-200 bg-green-50/30 opacity-70' :
@@ -429,6 +444,7 @@ export default function ExpensesPage() {
                     </div>
                   </CardContent>
                 </Card>
+                </div>
               );
             })}
           </div>
