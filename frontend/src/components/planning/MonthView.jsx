@@ -47,8 +47,10 @@ export default function MonthView({
                       {dayApts.length}
                     </span>
                     {dayApts.slice(0, 2).map(apt => (
-                      <p key={apt.id} className="text-[10px] text-[#64748B] truncate mt-0.5">
-                        {apt.time} {apt.client_name}
+                      <p key={apt.id}
+                        onClick={() => onEditAppointment?.(apt)}
+                        className={`text-[10px] truncate mt-0.5 cursor-pointer hover:underline transition-colors ${apt.paid ? 'text-green-600 font-semibold' : 'text-[#64748B]'}`}>
+                        {apt.paid && '✅ '}{apt.time} {apt.client_name}
                       </p>
                     ))}
                     {dayApts.length > 2 && <p className="text-[10px] text-[#94A3B8]">+{dayApts.length - 2} altri</p>}

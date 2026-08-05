@@ -219,13 +219,13 @@ export default function WeekView({
                           onDragEnd={handleDragEnd}
                           onClick={(e) => { e.stopPropagation(); onEditAppointment?.(apt); }}
                           className={`absolute rounded-lg overflow-hidden cursor-grab active:cursor-grabbing hover:shadow-lg transition-all text-xs shadow-sm z-10 flex flex-col ${isDragging ? 'opacity-40' : ''}`}
-                          style={{ ...style, ...(overlapInfo ? {} : { left: '2px', right: '2px' }) }}
+                          style={{ ...style, ...(overlapInfo ? {} : { left: '2px', right: '2px' }), ...(apt.paid ? { opacity: 0.5, borderLeft: '3px solid #10B981' } : {}), borderLeft: apt.paid ? '3px solid #10B981' : '' }}
                           title={`${apt.time} - ${apt.client_name}${opName ? ` (${opName})` : ''}\nTrascina per spostare`}
                           data-testid={`week-apt-${apt.id}`}>
                           {/* Header */}
                           <div className="flex items-start justify-between px-1 bg-[#2D1B14]/90 text-white flex-shrink-0" style={{ minHeight: '18px' }}>
                             <div className="flex-1 min-w-0">
-                              <span className="font-bold text-[10px] truncate block">{apt.time} {apt.client_name}</span>
+                              <span className="font-bold text-[10px] truncate block">{apt.paid && '✅ '}{apt.time} {apt.client_name}</span>
                             </div>
                             <div className="flex-shrink-0">
                               {apt.confirmation_status === 'confirmed' && <span className="text-green-400 text-[9px]">✓</span>}
