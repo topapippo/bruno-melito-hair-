@@ -314,7 +314,7 @@ function ScheduledPostsTab() {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <p className="text-xs font-black text-gray-500 mb-1">
-                    📅 {post.schedule_day.toUpperCase()} · 09:00 · {post.status.toUpperCase()}
+                    📅 {(post.schedule_day || 'N/A').toUpperCase()} · 09:00 · {(post.status || 'DRAFT').toUpperCase()}
                   </p>
                   <p className="text-sm font-medium text-gray-800 line-clamp-2">{post.caption}</p>
                   <div className="mt-2 flex gap-1">
