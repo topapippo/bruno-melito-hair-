@@ -420,3 +420,23 @@ class CheckoutData(BaseModel):
     payment_splits: Optional[List[PaymentSplitItem]] = None
     custom_services: Optional[List[CheckoutServiceItem]] = None
     retail_items: Optional[List[RetailItemCheckout]] = None
+
+
+# ============== SOCIAL POSTS ==============
+
+class SocialPostCreate(BaseModel):
+    caption: str
+    image_urls: List[str] = []
+    platforms: List[str]  # ["instagram", "tiktok", "facebook"]
+    schedule_day: str  # "martedi", "giovedi", "sabato"
+
+class SocialPostResponse(BaseModel):
+    id: str
+    caption: str
+    image_urls: List[str]
+    platforms: List[str]
+    schedule_day: str
+    status: str  # "draft", "scheduled", "published"
+    published_at: Optional[str] = None
+    created_at: str
+    updated_at: str

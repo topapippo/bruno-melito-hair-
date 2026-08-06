@@ -10,6 +10,7 @@ import traceback
 
 from database import client as mongo_client, db
 from routes import all_routers
+from scheduler import run_scheduler
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,13 @@ async def lifespan(app: FastAPI):
         asyncio.create_task(public_get_website())
     except Exception as e:
         logger.warning(f"Warm-up cache sito pubblico non avviato: {e}")
+
+    # Avvia lo scheduler per i post social programmati
+    try:
+        asyncio.create_task(run_scheduler())
+        logger.info("Social posts scheduler avviato")
+    except Exception as e:
+        logger.warning(f"Social posts scheduler non avviato: {e}")
 
     # Migrazione una tantum: rimuove l'account "preview" residuo melitobruno@gmail.com.
     # La produzione usa admin@brunomelito.it. SICUREZZA: si ferma se l'account possiede

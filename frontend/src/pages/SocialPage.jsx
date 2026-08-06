@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { Share2, History, Loader2, Send, Trash2, Edit3, Camera, ChevronRight, Calendar, RefreshCw } from 'lucide-react';
 import Layout from '../components/Layout';
-import api from '../lib/api';
+import api, { getErrorMessage } from '../lib/api';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 
@@ -186,6 +186,168 @@ function WingmanTab({ configured }) {
   );
 }
 
+function ScheduledPostsTab() {
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [formData, setFormData] = useState({ caption: '', image_urls: [], platforms: [], schedule_day: 'martedi' });
+
+  useEffect(() => { load(); }, []);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/social/posts');
+      setPosts(res.data);
+    } catch { toast.error('Errore nel caricamento'); } finally { setLoading(false); }
+  };
+
+  const handleCreate = async () => {
+    if (!formData.caption.trim()) { toast.error('Scrivi il caption'); return; }
+    if (formData.platforms.length === 0) { toast.error('Seleziona almeno una piattaforma'); return; }
+    try {
+      await api.post('/social/posts', formData);
+      toast.success('Post creato!');
+      setFormData({ caption: '', image_urls: [], platforms: [], schedule_day: 'martedi' });
+      setShowForm(false);
+      load();
+    } catch { toast.error('Errore'); }
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm('Elimina questo post?')) return;
+    try {
+      await api.delete(`/social/posts/${id}`);
+      toast.success('Post eliminato');
+      load();
+    } catch { toast.error('Errore'); }
+  };
+
+  const handlePublishNow = async (id) => {
+    try {
+      await api.post(`/social/posts/${id}/publish`);
+      toast.success('Post pubblicato!');
+      load();
+    } catch (e) { toast.error(getErrorMessage(e)); }
+  };
+
+  const days = ['lunedi', 'martedi', 'mercoledi', 'giovedi', 'venerdi', 'sabato', 'domenica'];
+
+  if (loading && !showForm) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-[#C8617A] w-10 h-10" /></div>;
+
+  return (
+    <div className="space-y-6">
+      <button
+        onClick={() => setShowForm(!showForm)}
+        className="w-full bg-[#C8617A] text-white font-black py-3 rounded-xl hover:bg-[#A84C61] transition-all"
+      >
+        + Nuovo Post Programmato
+      </button>
+
+      {showForm && (
+        <div className="bg-white border-2 border-black rounded-2xl p-6 space-y-4">
+          <textarea
+            className="w-full border-2 border-black rounded-lg p-3 text-sm font-medium resize-none"
+            rows={4}
+            placeholder="Scrivi il caption..."
+            value={formData.caption}
+            onChange={(e) => setFormData({...formData, caption: e.target.value})}
+          />
+
+          <div>
+            <label className="block text-xs font-black mb-2">Giorno programmazione (ore 9:00)</label>
+            <select
+              className="w-full border-2 border-black rounded-lg p-2 font-bold"
+              value={formData.schedule_day}
+              onChange={(e) => setFormData({...formData, schedule_day: e.target.value})}
+            >
+              {days.map(d => <option key={d} value={d}>{d.charAt(0).toUpperCase() + d.slice(1)}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-black mb-2">Piattaforme</label>
+            <div className="flex gap-2">
+              {['instagram', 'tiktok', 'facebook'].map(p => (
+                <label key={p} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.platforms.includes(p)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setFormData({...formData, platforms: [...formData.platforms, p]});
+                      } else {
+                        setFormData({...formData, platforms: formData.platforms.filter(x => x !== p)});
+                      }
+                    }}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-sm font-bold capitalize">{p}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={handleCreate}
+              className="flex-1 bg-black text-white font-black py-2 rounded-lg hover:bg-gray-800"
+            >
+              Salva
+            </button>
+            <button
+              onClick={() => setShowForm(false)}
+              className="flex-1 bg-gray-200 font-black py-2 rounded-lg hover:bg-gray-300"
+            >
+              Annulla
+            </button>
+          </div>
+        </div>
+      )}
+
+      {posts.length === 0 ? (
+        <div className="text-center py-20 text-gray-400 font-bold">Nessun post programmato.</div>
+      ) : (
+        <div className="space-y-4">
+          {posts.map(post => (
+            <div key={post.id} className="bg-white border-2 border-gray-200 rounded-2xl p-4 space-y-3">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-black text-gray-500 mb-1">
+                    📅 {post.schedule_day.toUpperCase()} · 09:00 · {post.status.toUpperCase()}
+                  </p>
+                  <p className="text-sm font-medium text-gray-800 line-clamp-2">{post.caption}</p>
+                  <div className="mt-2 flex gap-1">
+                    {post.platforms.map(p => (
+                      <span key={p} className="text-xs font-bold bg-[#C8617A] text-white px-2 py-0.5 rounded-full capitalize">{p}</span>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-2 ml-2">
+                  <button
+                    onClick={() => handlePublishNow(post.id)}
+                    className="text-xs font-black bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600"
+                    title="Pubblica subito"
+                  >
+                    ✓
+                  </button>
+                  <button
+                    onClick={() => handleDelete(post.id)}
+                    className="text-xs font-black bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
+                    title="Elimina"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function SocialPage() {
   const [activeTab, setActiveTab] = useState('wingman');
   const [config, setConfig] = useState(null);
@@ -197,21 +359,27 @@ export default function SocialPage() {
         <h1 className="text-4xl font-black uppercase italic mb-8 flex items-center gap-3">
           <Share2 className="w-8 h-8" /> Social Studio
         </h1>
-        <div className="flex bg-gray-100 rounded-2xl p-1 mb-8">
+        <div className="flex bg-gray-100 rounded-2xl p-1 mb-8 overflow-x-auto">
           <button
             onClick={() => setActiveTab('wingman')}
-            className={`flex-1 py-3 rounded-xl text-sm font-black uppercase transition-all ${activeTab === 'wingman' ? 'bg-black text-white shadow-lg' : 'text-gray-500'}`}
+            className={`flex-1 py-3 rounded-xl text-xs sm:text-sm font-black uppercase transition-all whitespace-nowrap ${activeTab === 'wingman' ? 'bg-black text-white shadow-lg' : 'text-gray-500'}`}
           >
             Post del Giorno
           </button>
           <button
+            onClick={() => setActiveTab('scheduled')}
+            className={`flex-1 py-3 rounded-xl text-xs sm:text-sm font-black uppercase transition-all whitespace-nowrap ${activeTab === 'scheduled' ? 'bg-black text-white shadow-lg' : 'text-gray-500'}`}
+          >
+            Programmati
+          </button>
+          <button
             onClick={() => setActiveTab('history')}
-            className={`flex-1 py-3 rounded-xl text-sm font-black uppercase transition-all ${activeTab === 'history' ? 'bg-black text-white shadow-lg' : 'text-gray-500'}`}
+            className={`flex-1 py-3 rounded-xl text-xs sm:text-sm font-black uppercase transition-all whitespace-nowrap ${activeTab === 'history' ? 'bg-black text-white shadow-lg' : 'text-gray-500'}`}
           >
             Storico
           </button>
         </div>
-        {activeTab === 'wingman' ? <WingmanTab configured={config?.configured} /> : <HistoryTab />}
+        {activeTab === 'wingman' ? <WingmanTab configured={config?.configured} /> : activeTab === 'scheduled' ? <ScheduledPostsTab /> : <HistoryTab />}
       </div>
     </Layout>
   );

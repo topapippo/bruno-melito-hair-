@@ -503,3 +503,69 @@ async def upload_image(file: UploadFile = File(...), current_user: dict = Depend
         return {"url": data["data"]["url"]}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Errore caricamento immagine: {str(e)}")
+
+
+# ============== SCHEDULED SOCIAL POSTS ==============
+
+@router.post("/social/posts")
+async def create_social_post(data: dict, current_user: dict = Depends(get_current_user)):
+    post = {
+        "id": str(uuid.uuid4()),
+        "user_id": current_user["id"],
+        "caption": data.get("caption", ""),
+        "image_urls": data.get("image_urls", []),
+        "platforms": data.get("platforms", []),
+        "schedule_day": data.get("schedule_day"),
+        "status": "scheduled",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.social_posts.insert_one(post)
+    return {k: v for k, v in post.items() if k != "_id"}
+
+@router.get("/social/posts")
+async def get_social_posts(current_user: dict = Depends(get_current_user)):
+    posts = await db.social_posts.find({"user_id": current_user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return posts
+
+@router.put("/social/posts/{post_id}")
+async def update_social_post(post_id: str, data: dict, current_user: dict = Depends(get_current_user)):
+    update = {k: v for k, v in data.items() if k in ["caption", "image_urls", "platforms", "schedule_day"]}
+    update["updated_at"] = datetime.now(timezone.utc).isoformat()
+    await db.social_posts.update_one({"id": post_id, "user_id": current_user["id"]}, {"$set": update})
+    post = await db.social_posts.find_one({"id": post_id, "user_id": current_user["id"]}, {"_id": 0})
+    return post
+
+@router.delete("/social/posts/{post_id}")
+async def delete_social_post(post_id: str, current_user: dict = Depends(get_current_user)):
+    await db.social_posts.delete_one({"id": post_id, "user_id": current_user["id"]})
+    return {"ok": True}
+
+@router.post("/social/posts/{post_id}/publish")
+async def publish_social_post_now(post_id: str, current_user: dict = Depends(get_current_user)):
+    post = await db.social_posts.find_one({"id": post_id, "user_id": current_user["id"]})
+    if not post:
+        raise HTTPException(status_code=404, detail="Post non trovato")
+
+    url = current_user.get("make_webhook_url")
+    if not url:
+        raise HTTPException(status_code=400, detail="Configura il Webhook")
+
+    payload = {
+        "caption": post.get("caption", ""),
+        "text": post.get("caption", ""),
+        "message": post.get("caption", ""),
+        "image_urls": post.get("image_urls", []),
+        "platforms": post.get("platforms", []),
+    }
+
+    try:
+        requests.post(url, json=payload, timeout=10)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Errore nell'invio ai social")
+
+    await db.social_posts.update_one(
+        {"id": post_id, "user_id": current_user["id"]},
+        {"$set": {"status": "published", "published_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    return {"success": True}
