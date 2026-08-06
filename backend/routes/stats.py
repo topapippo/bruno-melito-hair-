@@ -53,7 +53,6 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
         yearly_agg,
         upcoming,
         today_revenue,
-        sospeso_payments,
         waitlist_count,
     ) = await asyncio.gather(
         db.appointments.find({"user_id": uid, "date": today, "status": {"$ne": "cancelled"}}, {"_id": 0, "user_id": 0}).sort("time", 1).to_list(100),
@@ -68,13 +67,10 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
         ]).to_list(1),
         db.appointments.find({"user_id": uid, "date": {"$gte": today, "$lte": next_week}, "status": "scheduled"}, {"_id": 0, "user_id": 0}).sort([("date", 1), ("time", 1)]).to_list(10),
         sum_payments(uid, today, today),
-        db.payments.find({"user_id": uid, "payment_method": "sospeso"}, {"_id": 0, "total_paid": 1}).to_list(1000),
         db.waitlist.count_documents({"user_id": uid, "status": "waiting"}),
     )
 
     yearly_revenue = yearly_agg[0]["total"] if yearly_agg else 0
-    sospeso_count = len(sospeso_payments)
-    sospeso_total = sum(p.get("total_paid", 0) for p in sospeso_payments)
 
     now_time = now_utc.strftime("%H:%M")
     in_2h_time = (now_utc + timedelta(hours=2)).strftime("%H:%M")
@@ -106,7 +102,6 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
         "monthly_target": current_user.get("monthly_target", 0) or 0,
         "yearly_revenue": yearly_revenue, "yearly_appointments": yearly_appointments_count,
         "upcoming_appointments": upcoming,
-        "sospeso_count": sospeso_count, "sospeso_total": sospeso_total,
         "next_2h": next_2h, "free_slots": free_slots,
         "waitlist_count": waitlist_count,
     }
@@ -149,14 +144,6 @@ async def get_daily_summary(date: Optional[str] = None, current_user: dict = Dep
         pm = apt.get("payment_method", "non specificato")
         payment_methods[pm] = payment_methods.get(pm, 0) + 1
 
-    # Sospesi del giorno: importo totale degli appuntamenti pagati come sospeso
-    sospeso_payments_today = await db.payments.find(
-        {"user_id": current_user["id"], "date": target_date, "payment_method": "sospeso"},
-        {"_id": 0, "total_paid": 1, "original_amount": 1}
-    ).to_list(200)
-    sospeso_amount = round(sum(p.get("original_amount", p.get("total_paid", 0)) for p in sospeso_payments_today), 2)
-    sospeso_count = len(sospeso_payments_today)
-
     # Uscite scadenti nel giorno selezionato (non pagate)
     expenses_due = await db.expenses.find(
         {"user_id": current_user["id"], "due_date": target_date, "paid": False},
@@ -184,8 +171,6 @@ async def get_daily_summary(date: Optional[str] = None, current_user: dict = Dep
         "expenses_overdue": expenses_overdue,
         "total_expenses_due": total_expenses_due,
         "net_earnings": round(total_earnings - total_expenses_due, 2),
-        "sospeso_amount": sospeso_amount,
-        "sospeso_count": sospeso_count,
     }
 
 

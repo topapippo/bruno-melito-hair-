@@ -540,34 +540,7 @@ export default function Dashboard() {
         {/* ══════════════════════════════════════════════════════════════
             METRICHE SMART (4 card con barra colore top)
         ══════════════════════════════════════════════════════════════ */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 stagger-fast">
-          {/* Sospesi */}
-          <button
-            onClick={() => navigate('/incassi', { state: { tab: 'sospesi' } })}
-            className="rounded-2xl overflow-hidden text-left transition-all hover:shadow-lg hover:-translate-y-1 flex flex-col"
-            style={{
-              background: (stats?.sospeso_count > 0) ? 'linear-gradient(135deg, #FEF2F2, #FFF5F5)' : 'var(--admin-content-bg)',
-              border: (stats?.sospeso_count > 0) ? '1px solid #FECACA' : '1px solid color-mix(in srgb, var(--admin-content-text) 10%, transparent)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-            }}
-          >
-            <div className="h-1 w-full" style={{ background: stats?.sospeso_count > 0 ? 'linear-gradient(90deg, #EF4444, #FCA5A5)' : 'color-mix(in srgb, var(--admin-content-text) 8%, transparent)' }} />
-            <div className="p-4">
-              <div className="flex items-center gap-2 mb-2.5">
-                <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${stats?.sospeso_count > 0 ? 'bg-red-100' : 'bg-gray-100'}`}>
-                  <AlertCircle className={`w-3.5 h-3.5 ${stats?.sospeso_count > 0 ? 'text-red-500 heartbeat' : 'text-gray-300'}`} />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 40%, transparent)' }}>Sospesi</span>
-              </div>
-              <p className={`text-2xl font-black count-up ${stats?.sospeso_count > 0 ? 'text-red-600' : ''}`} style={!stats?.sospeso_count ? { color: 'color-mix(in srgb, var(--admin-content-text) 18%, transparent)' } : {}}>
-                {stats?.sospeso_count > 0 ? `€${(stats.sospeso_total || 0).toFixed(0)}` : '—'}
-              </p>
-              <p className="text-[11px] mt-0.5" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 40%, transparent)' }}>
-                {stats?.sospeso_count > 0 ? `${stats.sospeso_count} da incassare` : 'Tutto incassato ✓'}
-              </p>
-            </div>
-          </button>
-
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 stagger-fast">
           {/* Slot liberi */}
           <button
             onClick={() => navigate('/')}
