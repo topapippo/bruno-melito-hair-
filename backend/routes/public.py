@@ -699,3 +699,20 @@ async def website_serve_file(file_id: str, request: Request):
         "Cache-Control": "public, max-age=31536000, immutable",
     }
     return Response(content=data, media_type=content_type or ct, headers=headers)
+
+
+# ============== PUBLIC AVAILABILITY ENDPOINT ==============
+
+@router.get("/public/appointments")
+async def get_public_appointments(start_date: Optional[str] = None, end_date: Optional[str] = None):
+    """Endpoint pubblico per visualizzare disponibilità (non richiede autenticazione)"""
+    user = await get_public_admin_user()
+    if not user:
+        raise HTTPException(status_code=404, detail="Configurazione salone non trovata")
+
+    query = {"user_id": user["id"]}
+    if start_date and end_date:
+        query["date"] = {"$gte": start_date, "$lte": end_date}
+
+    apts = await db.appointments.find(query, {"_id": 0}).sort([("date", 1), ("time", 1)]).to_list(500)
+    return apts

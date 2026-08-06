@@ -379,10 +379,18 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, backgrou
     return {"status": "ok", "payment_id": payments_to_insert[0]["id"], "card": card_result, "inventory": inventory_log}
 
 @router.get("/appointments", response_model=List[AppointmentResponse])
-async def get_appointments(date: Optional[str] = None, month: Optional[str] = None, current_user: dict = Depends(get_current_user)):
+async def get_appointments(
+    date: Optional[str] = None,
+    month: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
     query = {"user_id": current_user["id"]}
     if date:
         query["date"] = date
+    elif start_date and end_date:
+        query["date"] = {"$gte": start_date, "$lte": end_date}
     elif month:  # formato YYYY-MM
         try:
             y, m = map(int, month.split('-'))
