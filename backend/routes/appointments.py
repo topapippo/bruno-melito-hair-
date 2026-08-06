@@ -428,7 +428,10 @@ async def create_recurring_appointments(
         raise HTTPException(status_code=404, detail="Appuntamento non trovato")
 
     from datetime import datetime as dt
-    base_date = dt.strptime(apt["date"], "%d/%m/%Y")
+    try:
+        base_date = dt.strptime(apt["date"], "%d/%m/%y")
+    except ValueError:
+        base_date = dt.strptime(apt["date"], "%d/%m/%Y")
     created_count = 0
 
     for i in range(1, repeat_count + 1):
