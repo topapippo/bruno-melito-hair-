@@ -526,7 +526,16 @@ async def create_social_post(data: dict, current_user: dict = Depends(get_curren
 @router.get("/social/posts")
 async def get_social_posts(current_user: dict = Depends(get_current_user)):
     posts = await db.social_posts.find({"user_id": current_user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(100)
-    return posts
+    # Assicura che ogni post abbia i campi obbligatori con default
+    return [
+        {
+            **p,
+            "status": p.get("status", "draft"),
+            "platforms": p.get("platforms", []),
+            "image_urls": p.get("image_urls", []),
+        }
+        for p in posts
+    ]
 
 @router.put("/social/posts/{post_id}")
 async def update_social_post(post_id: str, data: dict, current_user: dict = Depends(get_current_user)):

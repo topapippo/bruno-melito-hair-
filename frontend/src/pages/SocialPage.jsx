@@ -318,7 +318,7 @@ function ScheduledPostsTab() {
                   </p>
                   <p className="text-sm font-medium text-gray-800 line-clamp-2">{post.caption}</p>
                   <div className="mt-2 flex gap-1">
-                    {post.platforms.map(p => (
+                    {(post.platforms || []).map(p => (
                       <span key={p} className="text-xs font-bold bg-[#C8617A] text-white px-2 py-0.5 rounded-full capitalize">{p}</span>
                     ))}
                   </div>
