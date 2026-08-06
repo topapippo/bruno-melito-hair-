@@ -190,6 +190,7 @@ function ScheduledPostsTab() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [selectedPost, setSelectedPost] = useState(null);
   const [formData, setFormData] = useState({ caption: '', image_urls: [], platforms: [], schedule_day: 'martedi' });
 
   useEffect(() => { load(); }, []);
@@ -325,6 +326,13 @@ function ScheduledPostsTab() {
                 </div>
                 <div className="flex gap-2 ml-2">
                   <button
+                    onClick={() => setSelectedPost(post)}
+                    className="text-xs font-black bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+                    title="Visualizza"
+                  >
+                    👁
+                  </button>
+                  <button
                     onClick={() => handlePublishNow(post.id)}
                     className="text-xs font-black bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600"
                     title="Pubblica subito"
@@ -342,6 +350,87 @@ function ScheduledPostsTab() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {selectedPost && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,0.3)]">
+            <div className="p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-black text-xl uppercase">Anteprima Post</h3>
+                <button
+                  onClick={() => setSelectedPost(null)}
+                  className="text-gray-500 hover:text-black text-2xl"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-3 border-t-2 border-gray-200 pt-4">
+                <div>
+                  <p className="text-xs font-black text-gray-500 mb-1">Giorno e ora</p>
+                  <p className="font-bold">📅 {(selectedPost.schedule_day || 'N/A').toUpperCase()} · 09:00</p>
+                </div>
+
+                <div>
+                  <p className="text-xs font-black text-gray-500 mb-1">Stato</p>
+                  <span className="inline-block bg-gray-100 border-2 border-gray-300 px-3 py-1 rounded-full font-bold capitalize">
+                    {(selectedPost.status || 'DRAFT').toLowerCase()}
+                  </span>
+                </div>
+
+                <div>
+                  <p className="text-xs font-black text-gray-500 mb-2">Piattaforme</p>
+                  <div className="flex gap-2 flex-wrap">
+                    {(selectedPost.platforms || []).map(p => (
+                      <span key={p} className="bg-[#C8617A] text-white px-3 py-1 rounded-full font-bold capitalize text-sm">
+                        {p}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs font-black text-gray-500 mb-2">Caption</p>
+                  <div className="bg-gray-50 border-2 border-gray-200 rounded-lg p-4 whitespace-pre-wrap text-sm font-medium">
+                    {selectedPost.caption || '(nessun caption)'}
+                  </div>
+                </div>
+
+                {(selectedPost.image_urls || []).length > 0 && (
+                  <div>
+                    <p className="text-xs font-black text-gray-500 mb-2">Immagini ({selectedPost.image_urls.length})</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {selectedPost.image_urls.map((url, idx) => (
+                        <div key={idx} className="border-2 border-gray-200 rounded-lg overflow-hidden">
+                          <img src={url} alt={`Immagine ${idx + 1}`} className="w-full h-48 object-cover" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-2 pt-4 border-t-2 border-gray-200">
+                <button
+                  onClick={() => {
+                    handlePublishNow(selectedPost.id);
+                    setSelectedPost(null);
+                  }}
+                  className="flex-1 bg-green-500 text-white font-black py-2 rounded-lg hover:bg-green-600"
+                >
+                  ✓ Pubblica Subito
+                </button>
+                <button
+                  onClick={() => setSelectedPost(null)}
+                  className="flex-1 bg-gray-300 font-black py-2 rounded-lg hover:bg-gray-400"
+                >
+                  Chiudi
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
