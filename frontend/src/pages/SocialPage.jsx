@@ -289,6 +289,51 @@ function ScheduledPostsTab() {
             </div>
           </div>
 
+          <div>
+            <label className="block text-xs font-black mb-2">Foto (opzionale)</label>
+            <div className="flex gap-2 mb-3">
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={async (e) => {
+                  const files = e.target.files;
+                  if (!files) return;
+                  const newUrls = [...formData.image_urls];
+                  for (const file of files) {
+                    try {
+                      const form = new FormData();
+                      form.append('file', file);
+                      const { data } = await api.post('/social/upload-image', form, { headers: { 'Content-Type': 'multipart/form-data' } });
+                      newUrls.push(data.url);
+                    } catch {
+                      toast.error(`Errore caricamento ${file.name}`);
+                    }
+                  }
+                  setFormData({...formData, image_urls: newUrls});
+                  e.target.value = '';
+                }}
+                className="w-full border-2 border-black rounded-lg p-2 text-sm"
+              />
+            </div>
+            {formData.image_urls.length > 0 && (
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                {formData.image_urls.map((url, i) => (
+                  <div key={i} className="relative bg-gray-100 rounded-lg overflow-hidden h-24">
+                    <img src={url} alt="" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setFormData({...formData, image_urls: formData.image_urls.filter((_, idx) => idx !== i)})}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-black hover:bg-red-600"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="flex gap-2">
             <button
               onClick={handleCreate}
