@@ -249,8 +249,6 @@ export default function SettingsPage() {
     content_bg: '#F8F5F0', content_text: '#2D1B14'
   });
   const [savingTheme, setSavingTheme] = useState(false);
-  const [makeWebhookUrl, setMakeWebhookUrl] = useState('');
-  const [savingWebhook, setSavingWebhook] = useState(false);
   const [blockedSlots, setBlockedSlots] = useState([]);
   const [newBlock, setNewBlock] = useState({ type: 'recurring', day_of_week: 'lunedì', date: '', day_of_month: 1, month_of_year: 1, start_time: '13:00', end_time: '14:00', reason: '' });
   const [savingBlock, setSavingBlock] = useState(false);
@@ -299,15 +297,7 @@ export default function SettingsPage() {
   useEffect(() => {
     fetchSettings();
     fetchBlockedSlots();
-    fetchMakeWebhook();
   }, []);
-
-  const fetchMakeWebhook = async () => {
-    try {
-      const res = await api.get(`${API}/social/config`);
-      setMakeWebhookUrl(res.data.make_webhook_url || '');
-    } catch {}
-  };
 
   const fetchSettings = async () => {
     try {
@@ -569,18 +559,6 @@ export default function SettingsPage() {
         ? prev.working_days.filter(d => d !== day)
         : [...prev.working_days, day]
     }));
-  };
-
-  const saveMakeWebhook = async () => {
-    setSavingWebhook(true);
-    try {
-      await api.put(`${API}/social/config`, { make_webhook_url: makeWebhookUrl });
-      toast.success('Webhook Make salvato!');
-    } catch (err) {
-      toast.error(err.response?.data?.detail || 'Errore nel salvataggio');
-    } finally {
-      setSavingWebhook(false);
-    }
   };
 
   const handleChangePassword = async (e) => {
@@ -1408,51 +1386,6 @@ export default function SettingsPage() {
                 </>
               )}
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Make.com Webhook */}
-        <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
-          <CardHeader>
-            <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
-              <Share2 className="w-5 h-5 text-blue-600" />
-              Make.com — Pubblica su Facebook e Instagram
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-[#7C5C4A]">
-              Configura il webhook di Make.com per pubblicare automaticamente i post programmati su Facebook e Instagram.
-            </p>
-            <div className="space-y-2">
-              <Label className="text-[#2D1B14] font-semibold">Webhook URL</Label>
-              <Input
-                type="url"
-                value={makeWebhookUrl}
-                onChange={(e) => setMakeWebhookUrl(e.target.value)}
-                placeholder="https://hook.make.com/..."
-                className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
-              />
-              <p className="text-xs text-[#9C7060]">
-                Copia il webhook URL da Make.com (il tuo scenario di automazione Facebook/Instagram)
-              </p>
-            </div>
-            <Button
-              onClick={saveMakeWebhook}
-              disabled={savingWebhook}
-              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
-            >
-              {savingWebhook ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              ) : (
-                <Save className="w-4 h-4 mr-2" />
-              )}
-              Salva Webhook
-            </Button>
-            {makeWebhookUrl && (
-              <div className="p-3 rounded-lg bg-green-50 border border-green-200 text-sm text-green-800 font-medium">
-                ✅ Webhook configurato — puoi pubblicare i post su Facebook e Instagram
-              </div>
-            )}
           </CardContent>
         </Card>
 

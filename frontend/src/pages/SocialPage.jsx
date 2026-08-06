@@ -186,7 +186,7 @@ function WingmanTab({ configured }) {
   );
 }
 
-function ScheduledPostsTab() {
+function ScheduledPostsTab({ configured }) {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -225,6 +225,7 @@ function ScheduledPostsTab() {
   };
 
   const handlePublishNow = async (id) => {
+    if (!configured) { toast.error('Configura il Webhook nelle Impostazioni'); return; }
     try {
       await api.post(`/social/posts/${id}/publish`);
       toast.success('Post pubblicato!');
@@ -553,7 +554,7 @@ export default function SocialPage() {
             Storico
           </button>
         </div>
-        {activeTab === 'wingman' ? <WingmanTab configured={config?.configured} /> : activeTab === 'scheduled' ? <ScheduledPostsTab /> : <HistoryTab />}
+        {activeTab === 'wingman' ? <WingmanTab configured={config?.configured} /> : activeTab === 'scheduled' ? <ScheduledPostsTab configured={config?.configured} /> : <HistoryTab />}
       </div>
     </Layout>
   );
