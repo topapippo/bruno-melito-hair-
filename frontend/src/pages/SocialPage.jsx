@@ -448,13 +448,53 @@ function ScheduledPostsTab() {
                     <p className="text-xs font-black text-gray-500 mb-2">Immagini ({selectedPost.image_urls.length})</p>
                     <div className="grid grid-cols-2 gap-3">
                       {selectedPost.image_urls.map((url, idx) => (
-                        <div key={idx} className="border-2 border-gray-200 rounded-lg overflow-hidden">
+                        <div key={idx} className="border-2 border-gray-200 rounded-lg overflow-hidden relative group">
                           <img src={url} alt={`Immagine ${idx + 1}`} className="w-full h-48 object-cover" />
+                          <button
+                            onClick={async () => {
+                              const newUrls = selectedPost.image_urls.filter((_, i) => i !== idx);
+                              await api.put(`/social/posts/${selectedPost.id}`, { image_urls: newUrls });
+                              setSelectedPost({...selectedPost, image_urls: newUrls});
+                              toast.success('Foto rimossa');
+                            }}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-black opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            ✕
+                          </button>
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
+
+                <div>
+                  <p className="text-xs font-black text-gray-500 mb-2">Aggiungi foto</p>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const files = e.target.files;
+                      if (!files) return;
+                      const newUrls = [...(selectedPost.image_urls || [])];
+                      for (const file of files) {
+                        try {
+                          const form = new FormData();
+                          form.append('file', file);
+                          const { data } = await api.post('/social/upload-image', form, { headers: { 'Content-Type': 'multipart/form-data' } });
+                          newUrls.push(data.url);
+                        } catch {
+                          toast.error(`Errore caricamento ${file.name}`);
+                        }
+                      }
+                      await api.put(`/social/posts/${selectedPost.id}`, { image_urls: newUrls });
+                      setSelectedPost({...selectedPost, image_urls: newUrls});
+                      toast.success('Foto salvate!');
+                      e.target.value = '';
+                    }}
+                    className="w-full border-2 border-gray-300 rounded-lg p-2 text-sm"
+                  />
+                </div>
               </div>
 
               <div className="flex gap-2 pt-4 border-t-2 border-gray-200">
