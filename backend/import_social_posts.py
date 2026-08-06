@@ -6,7 +6,38 @@ Run: python import_social_posts.py
 import asyncio
 from datetime import datetime, timezone
 import uuid
-from database import db
+import os
+from motor.motor_asyncio import AsyncIOMotorClient
+
+# Leggi connection string da env vars o argomento
+import sys
+mongo_url = os.environ.get('MONGO_URL')
+db_name = os.environ.get('DB_NAME', 'bruno_melito_db')
+
+# Se passato come argomento, usa quello
+if len(sys.argv) > 1:
+    mongo_url = sys.argv[1]
+
+if not mongo_url:
+    # Prova a leggerlo da .env se esiste
+    from pathlib import Path
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).parent / '.env')
+    mongo_url = os.environ.get('MONGO_URL')
+
+if not mongo_url:
+    raise RuntimeError(
+        "MONGO_URL non trovata.\n\n"
+        "Opzione 1 - Passa come argomento:\n"
+        "  python import_social_posts.py 'mongodb+srv://user:pass@...'\n\n"
+        "Opzione 2 - Imposta variabile di ambiente:\n"
+        "  $env:MONGO_URL = 'mongodb+srv://user:pass@...'\n"
+        "  python import_social_posts.py"
+    )
+
+# Connetti a MongoDB
+client = AsyncIOMotorClient(mongo_url)
+db = client[db_name]
 
 POSTS_DATA = [
     {
