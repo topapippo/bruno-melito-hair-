@@ -9,11 +9,11 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import {
-  Users, Euro, Calendar, Clock, TrendingUp, Plus, ChevronRight,
+  Users, Euro, Calendar, TrendingUp, Plus, ChevronRight,
   Scissors, UserCheck, BarChart3,
   CreditCard, Gift, Bell, Download, Globe, Settings, AlertTriangle,
   MessageCircle, X, Sparkles, Heart, Star, ArrowDownCircle, FileBarChart, Cake,
-  ClockArrowUp, CheckCircle2, AlertCircle, Zap, ArrowUpRight, Target, TrendingDown, Flame,
+  CheckCircle2, AlertCircle, Zap, ArrowUpRight, Target, TrendingDown, Flame,
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -537,89 +537,6 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* ══════════════════════════════════════════════════════════════
-            METRICHE SMART (4 card con barra colore top)
-        ══════════════════════════════════════════════════════════════ */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 stagger-fast">
-          {/* Slot liberi */}
-          <button
-            onClick={() => navigate('/')}
-            className="rounded-2xl overflow-hidden text-left transition-all hover:shadow-lg hover:-translate-y-1 flex flex-col"
-            style={{
-              background: (stats?.free_slots || 0) > 0 ? 'linear-gradient(135deg, #F0FDF4, #FAFFFE)' : 'var(--admin-content-bg)',
-              border: (stats?.free_slots || 0) > 0 ? '1px solid #BBF7D0' : '1px solid color-mix(in srgb, var(--admin-content-text) 10%, transparent)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-            }}
-          >
-            <div className="h-1 w-full" style={{ background: (stats?.free_slots || 0) > 0 ? 'linear-gradient(90deg, #10B981, #6EE7B7)' : 'color-mix(in srgb, var(--admin-content-text) 8%, transparent)' }} />
-            <div className="p-4">
-              <div className="flex items-center gap-2 mb-2.5">
-                <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${(stats?.free_slots || 0) > 0 ? 'bg-green-100' : 'bg-gray-100'}`}>
-                  <CheckCircle2 className={`w-3.5 h-3.5 ${(stats?.free_slots || 0) > 0 ? 'text-green-500' : 'text-gray-300'}`} />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 40%, transparent)' }}>Slot Liberi</span>
-              </div>
-              <p className={`text-2xl font-black count-up ${(stats?.free_slots || 0) > 0 ? 'text-green-600' : ''}`} style={!(stats?.free_slots || 0) ? { color: 'color-mix(in srgb, var(--admin-content-text) 18%, transparent)' } : {}}>
-                {stats?.free_slots ?? '—'}
-              </p>
-              <p className="text-[11px] mt-0.5" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 40%, transparent)' }}>slot da 15 min</p>
-            </div>
-          </button>
-
-          {/* Prossime 2h */}
-          <button
-            onClick={() => navigate('/')}
-            className="rounded-2xl overflow-hidden text-left transition-all hover:shadow-lg hover:-translate-y-1 flex flex-col"
-            style={{
-              background: stats?.next_2h?.length > 0 ? 'linear-gradient(135deg, #EFF6FF, #F0F9FF)' : 'var(--admin-content-bg)',
-              border: stats?.next_2h?.length > 0 ? '1px solid #BFDBFE' : '1px solid color-mix(in srgb, var(--admin-content-text) 10%, transparent)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-            }}
-          >
-            <div className="h-1 w-full" style={{ background: stats?.next_2h?.length > 0 ? 'linear-gradient(90deg, #3B82F6, #93C5FD)' : 'color-mix(in srgb, var(--admin-content-text) 8%, transparent)' }} />
-            <div className="p-4">
-              <div className="flex items-center gap-2 mb-2.5">
-                <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${stats?.next_2h?.length > 0 ? 'bg-blue-100' : 'bg-gray-100'}`}>
-                  <Clock className={`w-3.5 h-3.5 ${stats?.next_2h?.length > 0 ? 'text-blue-500' : 'text-gray-300'}`} />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 40%, transparent)' }}>Prossime 2h</span>
-              </div>
-              <p className={`text-2xl font-black count-up ${stats?.next_2h?.length > 0 ? 'text-blue-600' : ''}`} style={!stats?.next_2h?.length ? { color: 'color-mix(in srgb, var(--admin-content-text) 18%, transparent)' } : {}}>
-                {stats?.next_2h?.length > 0 ? stats.next_2h.length : '—'}
-              </p>
-              <p className="text-[11px] mt-0.5 truncate" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 40%, transparent)' }}>
-                {stats?.next_2h?.length > 0 ? stats.next_2h.map(a => a.time).join(' · ') : 'nessuno'}
-              </p>
-            </div>
-          </button>
-
-          {/* Lista d'attesa */}
-          <button
-            onClick={() => navigate('/waitlist')}
-            className="rounded-2xl overflow-hidden text-left transition-all hover:shadow-lg hover:-translate-y-1 flex flex-col"
-            style={{
-              background: stats?.waitlist_count > 0 ? 'linear-gradient(135deg, #FFFBEB, #FFFBF0)' : 'var(--admin-content-bg)',
-              border: stats?.waitlist_count > 0 ? '1px solid #FCD34D88' : '1px solid color-mix(in srgb, var(--admin-content-text) 10%, transparent)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-            }}
-          >
-            <div className="h-1 w-full" style={{ background: stats?.waitlist_count > 0 ? 'linear-gradient(90deg, #F59E0B, #FCD34D)' : 'color-mix(in srgb, var(--admin-content-text) 8%, transparent)' }} />
-            <div className="p-4">
-              <div className="flex items-center gap-2 mb-2.5">
-                <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${stats?.waitlist_count > 0 ? 'bg-amber-100' : 'bg-gray-100'}`}>
-                  <ClockArrowUp className={`w-3.5 h-3.5 ${stats?.waitlist_count > 0 ? 'text-amber-500' : 'text-gray-300'}`} />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 40%, transparent)' }}>In Attesa</span>
-              </div>
-              <p className={`text-2xl font-black count-up ${stats?.waitlist_count > 0 ? 'text-amber-600' : ''}`} style={!stats?.waitlist_count ? { color: 'color-mix(in srgb, var(--admin-content-text) 18%, transparent)' } : {}}>
-                {stats?.waitlist_count > 0 ? stats.waitlist_count : '—'}
-              </p>
-              <p className="text-[11px] mt-0.5" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 40%, transparent)' }}>
-                {stats?.waitlist_count > 0 ? 'da contattare' : 'lista vuota'}
-              </p>
-            </div>
-          </button>
-        </div>
 
         {/* ══════════════════════════════════════════════════════════════
             KPI CARDS — 5 grandi card gradient
