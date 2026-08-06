@@ -412,3 +412,56 @@ async def update_appointment(appointment_id: str, data: dict, current_user: dict
 async def delete_appointment(appointment_id: str, current_user: dict = Depends(get_current_user)):
     await db.appointments.delete_one({"id": appointment_id, "user_id": current_user["id"]})
     return {"status": "ok"}
+
+@router.post("/appointments/recurring")
+async def create_recurring_appointments(
+    data: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    appointment_id = data.get("appointment_id")
+    repeat_count = data.get("repeat_count", 4)
+    repeat_weeks = data.get("repeat_weeks", 0)
+    repeat_months = data.get("repeat_months", 0)
+
+    apt = await db.appointments.find_one({"id": appointment_id, "user_id": current_user["id"]})
+    if not apt:
+        raise HTTPException(status_code=404, detail="Appuntamento non trovato")
+
+    from datetime import datetime as dt
+    base_date = dt.strptime(apt["date"], "%d/%m/%Y")
+    created_count = 0
+
+    for i in range(1, repeat_count + 1):
+        if repeat_weeks > 0:
+            new_date = base_date + timedelta(weeks=repeat_weeks * i)
+        else:
+            y, m = base_date.year, base_date.month
+            m += repeat_months * i
+            while m > 12:
+                y += 1
+                m -= 12
+            day = min(base_date.day, monthrange(y, m)[1])
+            new_date = base_date.replace(year=y, month=m, day=day)
+
+        new_apt = {
+            "id": str(uuid.uuid4()),
+            "user_id": current_user["id"],
+            "client_id": apt["client_id"],
+            "client_name": apt["client_name"],
+            "phone": apt.get("phone", ""),
+            "date": new_date.strftime("%d/%m/%Y"),
+            "time": apt["time"],
+            "services": apt["services"],
+            "total_duration": apt["total_duration"],
+            "total_price": apt["total_price"],
+            "operator_id": apt.get("operator_id"),
+            "operator_name": apt.get("operator_name"),
+            "notes": apt.get("notes", ""),
+            "status": "scheduled",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "paid": False
+        }
+        await db.appointments.insert_one(new_apt)
+        created_count += 1
+
+    return {"created": created_count}
