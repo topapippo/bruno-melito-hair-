@@ -538,43 +538,6 @@ export default function Dashboard() {
         )}
 
 
-        {/* ══════════════════════════════════════════════════════════════
-            KPI CARDS — 5 grandi card gradient
-        ══════════════════════════════════════════════════════════════ */}
-        <div className="grid grid-cols-3 gap-3 stagger-in">
-          {[
-            { title: "Appuntamenti Oggi", value: stats?.today_appointments_count || 0,    icon: Calendar,   from: '#E8477C', to: '#F49AB3', suffix: '',  path: '/appointments' },
-            { title: "Clienti Totali",    value: stats?.total_clients || 0,                icon: Users,      from: '#2EC4B6', to: '#5EDECF', suffix: '',  path: '/clients' },
-            { title: "Prossimi 7 Giorni", value: stats?.upcoming_appointments?.length || 0, icon: Zap,       from: '#B8860B', to: '#E9C46A', suffix: '',  path: '/week' },
-          ].map((s, i) => (
-            <button
-              key={i}
-              onClick={() => navigate(s.path)}
-              className="stat-hero-card rounded-2xl p-5 shadow-lg relative overflow-hidden text-left transition-all focus:outline-none group"
-              style={{ background: `linear-gradient(135deg, ${s.from}, ${s.to})` }}
-            >
-              {/* Blob decorativi */}
-              <div className="absolute -bottom-6 -right-6 w-32 h-32 rounded-full bg-white/10 transition-all duration-500 group-hover:scale-125" />
-              <div className="absolute -top-8 -left-8 w-24 h-24 rounded-full bg-white/5" />
-              <div className="absolute top-3 right-3 w-12 h-12 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center">
-                <s.icon className="w-6 h-6 text-white" strokeWidth={1.5} />
-              </div>
-
-              <div className="relative z-10">
-                <p className="text-[10px] text-white/70 font-black uppercase tracking-wider leading-tight pr-14">{s.title}</p>
-                <p className="text-3xl font-bold text-white mt-2.5 font-display">
-                  {s.prefix || ''}{s.value}
-                </p>
-                {s.sub && <p className="text-[11px] text-white/50 mt-1">{s.sub}</p>}
-              </div>
-
-              {/* Arrow on hover */}
-              <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-1 group-hover:translate-y-0">
-                <ChevronRight className="w-4 h-4 text-white/60" />
-              </div>
-            </button>
-          ))}
-        </div>
 
         {/* ══════════════════════════════════════════════════════════════
             MODULI — griglia colorata con tooltip desc
