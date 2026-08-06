@@ -533,6 +533,8 @@ async def get_social_posts(current_user: dict = Depends(get_current_user)):
             "status": p.get("status", "draft"),
             "platforms": p.get("platforms", []),
             "image_urls": p.get("image_urls", []),
+            "schedule_day": p.get("schedule_day", ""),
+            "caption": p.get("caption", ""),
         }
         for p in posts
     ]
