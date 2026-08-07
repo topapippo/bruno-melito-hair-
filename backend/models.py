@@ -234,6 +234,8 @@ class SettingsUpdate(BaseModel):
     auto_backup_enabled: Optional[bool] = None
     auto_backup_email: Optional[str] = None
     monthly_target: Optional[float] = None
+    make_webhook_url: Optional[str] = None
+    imgbb_api_key: Optional[str] = None
 
 
 # ============== PREPAID CARD ==============
