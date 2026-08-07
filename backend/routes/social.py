@@ -447,29 +447,47 @@ async def save_config(data: dict, current_user: dict = Depends(get_current_user)
 @router.post("/social/publish-via-make")
 async def publish_via_make(data: dict, current_user: dict = Depends(get_current_user)):
     url = current_user.get("make_webhook_url")
-    if not url: raise HTTPException(status_code=400, detail="Configura il Webhook")
+    if not url:
+        raise HTTPException(status_code=400, detail="Configura il Webhook nelle Impostazioni")
 
-    image_url = data.get("image_url", "")
-    if isinstance(image_url, list):
-        image_url = image_url[0] if image_url else ""
-
-    payload = {
-        "text": data.get("text") or "",
-        "message": data.get("text") or "",
-        "caption": data.get("text") or "",
-        "image_url": image_url,
-    }
     try:
-        resp = requests.post(url, json=payload, timeout=10)
-        resp.raise_for_status()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Errore Make.com: {str(e)}")
+        # 1. Isoliamo SOLO i dati strettamente necessari, scartando il resto
+        text = data.get("text") or data.get("message") or data.get("caption") or ""
+        image_url = data.get("image_url", "")
 
+        # Gestione se image_url fosse passato come lista per sbaglio
+        if isinstance(image_url, list):
+            image_url = image_url[0] if image_url else ""
+
+        # 2. Creiamo un payload perfettamente pulito
+        payload = {
+            "text": str(text),
+            "message": str(text),
+            "caption": str(text),
+            "image_url": str(image_url)
+        }
+
+        print(f"📤 Invio payload a Make.com: {payload}", flush=True)
+
+        # 3. Chiamata a Make.com con gestione errori dettagliata
+        resp = requests.post(url, json=payload, timeout=15)
+
+        if resp.status_code >= 400:
+            print(f"❌ Risposta negativa da Make.com: {resp.status_code} - {resp.text}", flush=True)
+            raise HTTPException(status_code=500, detail=f"Make.com ha rifiutato (Codice {resp.status_code}). Verifica lo scenario su Make.")
+
+    except HTTPException:
+        raise # Rilancia l'errore HTTP personalizzato
+    except Exception as e:
+        print(f"❌ ERRORE GENERICO publish_via_make: {str(e)}", flush=True)
+        raise HTTPException(status_code=500, detail=f"Errore interno: {str(e)}")
+
+    # 4. Salva nello storico
     history_doc = {
         "id": str(uuid.uuid4()),
         "user_id": current_user["id"],
         "text": payload["text"],
-        "image_url": data.get("image_url", ""),
+        "image_url": payload["image_url"],
         "published_at": datetime.now(timezone.utc).isoformat()
     }
     await db.social_history.insert_one(history_doc)
