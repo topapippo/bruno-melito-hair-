@@ -526,6 +526,8 @@ async def get_settings(current_user: dict = Depends(get_current_user)):
         "cloud_api_configured": bool(os.environ.get("WHATSAPP_TOKEN")),
         "cloud_api_phone_number_id": os.environ.get("WHATSAPP_PHONE_ID", ""),
         "monthly_target": current_user.get("monthly_target", 0) or 0,
+        "make_webhook_url": current_user.get("make_webhook_url", ""),
+        "imgbb_api_key": current_user.get("imgbb_api_key", ""),
     }
 
 
