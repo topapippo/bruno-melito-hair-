@@ -479,34 +479,50 @@ async def get_social_history(current_user: dict = Depends(get_current_user)):
 
 @router.post("/social/upload-image")
 async def upload_image(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
-    if not IMGBB_API_KEY:
-        raise HTTPException(status_code=500, detail="ImgBB API Key non configurata sul server (Render)")
+    """
+    Carica una foto su imgbb usando l'API key salvata nelle Impostazioni
+    """
     try:
-        from PIL import Image
-        contents = await file.read()
-        img = Image.open(io.BytesIO(contents))
-        width, height = img.size
-        new_side = min(width, height)
-        left = (width - new_side) / 2
-        top = (height - new_side) / 2
-        right = (width + new_side) / 2
-        bottom = (height + new_side) / 2
-        img = img.crop((left, top, right, bottom))
-        img = img.resize((1080, 1080), Image.Resampling.LANCZOS)
-        img_byte_arr = io.BytesIO()
-        fmt = img.format if img.format else "JPEG"
-        img.save(img_byte_arr, format=fmt)
-        encoded_image = base64.b64encode(img_byte_arr.getvalue()).decode("utf-8")
-        resp = requests.post("https://api.imgbb.com/1/upload", data={"key": IMGBB_API_KEY, "image": encoded_image}, timeout=30)
-        data = resp.json()
-        if not data.get("success"):
-            raise Exception(data.get("error", {}).get("message", "Upload fallito"))
-        return {"url": data["data"]["url"]}
+        # 🔴 LEGGI L'API KEY DALLE IMPOSTAZIONI DELL'UTENTE
+        settings = await db.settings.find_one({"user_id": current_user["id"]})
+        imgbb_api_key = settings.get("imgbb_api_key") if settings else None
+
+        if not imgbb_api_key:
+            print("❌ ERRORE: API key imgbb non configurata nelle Impostazioni", flush=True)
+            raise HTTPException(
+                status_code=400,
+                detail="API key imgbb non configurata. Vai in Impostazioni e incolla la tua API key di imgbb.com"
+            )
+
+        # Leggi il file
+        content = await file.read()
+
+        # Carica su imgbb
+        files = {"image": content}
+        data = {"key": imgbb_api_key}
+
+        print(f"📤 Upload a imgbb con API key: {imgbb_api_key[:10]}...", flush=True)
+
+        response = requests.post("https://api.imgbb.com/1/upload", files=files, data=data)
+        result = response.json()
+
+        print(f"✅ Risposta imgbb: {result}", flush=True)
+
+        if not result.get("success"):
+            error_msg = result.get("error", {}).get("message", "Upload fallito")
+            print(f"❌ Errore imgbb: {error_msg}", flush=True)
+            raise Exception(error_msg)
+
+        image_url = result["data"]["url"]
+        print(f"✅ Foto caricata: {image_url}", flush=True)
+
+        return {"success": True, "image_url": image_url}
+
+    except HTTPException:
+        raise
     except Exception as e:
-        import traceback
-        print(f"DEBUG UPLOAD ERROR: {str(e)}", flush=True)
-        print(f"TRACEBACK: {traceback.format_exc()}", flush=True)
-        raise HTTPException(status_code=500, detail=f"Errore caricamento immagine: {str(e)}")
+        print(f"❌ ERRORE upload_image: {str(e)}", flush=True)
+        raise HTTPException(status_code=500, detail=f"Errore caricamento foto: {str(e)}")
 
 
 # ============== SCHEDULED SOCIAL POSTS ==============
