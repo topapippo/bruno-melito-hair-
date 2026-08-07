@@ -484,8 +484,8 @@ async def upload_image(file: UploadFile = File(...), current_user: dict = Depend
     """
     try:
         # 🔴 LEGGI L'API KEY DALLE IMPOSTAZIONI DELL'UTENTE
-        settings = await db.settings.find_one({"user_id": current_user["id"]})
-        imgbb_api_key = settings.get("imgbb_api_key") if settings else None
+        user = await db.users.find_one({"id": current_user["id"]})
+        imgbb_api_key = user.get("imgbb_api_key") if user else None
 
         if not imgbb_api_key:
             print("❌ ERRORE: API key imgbb non configurata nelle Impostazioni", flush=True)
