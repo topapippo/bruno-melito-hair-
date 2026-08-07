@@ -566,21 +566,22 @@ async def publish_social_post_now(post_id: str, current_user: dict = Depends(get
     if not url:
         raise HTTPException(status_code=400, detail="Configura il Webhook")
 
+    caption = post.get("caption", "").strip()
+    if not caption:
+        raise HTTPException(status_code=400, detail="La caption del post è obbligatoria. Scrivi un messaggio prima di pubblicare.")
+
     payload = {
-        "caption": post.get("caption", ""),
-        "text": post.get("caption", ""),
-        "message": post.get("caption", ""),
+        "caption": caption,
+        "text": caption,
+        "message": caption,
         "image_urls": post.get("image_urls", []),
         "platforms": post.get("platforms", []),
     }
 
-    print(f"📤 Invio post a Make.com: {payload}", flush=True)
     try:
         resp = requests.post(url, json=payload, timeout=10)
-        print(f"✅ Risposta Make: {resp.status_code}", flush=True)
         resp.raise_for_status()
     except Exception as e:
-        print(f"❌ Errore webhook Make (publish post): {str(e)}", flush=True)
         raise HTTPException(status_code=500, detail=f"Errore Make.com: {str(e)}")
 
     await db.social_posts.update_one(
