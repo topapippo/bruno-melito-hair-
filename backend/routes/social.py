@@ -503,6 +503,9 @@ async def upload_image(file: UploadFile = File(...), current_user: dict = Depend
             raise Exception(data.get("error", {}).get("message", "Upload fallito"))
         return {"url": data["data"]["url"]}
     except Exception as e:
+        import traceback
+        print(f"DEBUG UPLOAD ERROR: {str(e)}", flush=True)
+        print(f"TRACEBACK: {traceback.format_exc()}", flush=True)
         raise HTTPException(status_code=500, detail=f"Errore caricamento immagine: {str(e)}")
 
 
