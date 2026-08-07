@@ -79,13 +79,13 @@ _POST_POOL = [
         "type": "balayage",
         "title": "Il Balayage che Stavi Cercando",
         "text": "Non esiste un balayage uguale all'altro. Il tuo viene dipinto a mano, centimetro per centimetro, per valorizzare la tua carnagione e il tuo taglio. 🎨\nNaturale, luminoso, TUO.\n\n💇‍♀️ Prenota la tua consulenza colore:\nhttps://brunomelitohair.it",
-        "image_url": "https://i.ibb.co/vvP7jZFb/b28028e3900d.jpg"
+        "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1715991234/sample.jpg"
     },
     {
         "type": "biondo",
         "title": "Biondo Burro",
         "text": "La nuance più calda e desiderata di questa stagione. 🧈✨\nUn biondo cremoso, luminoso e mai banale. Vieni a scoprire come lo realizziamo con le nostre tecniche di schiaritura dolce.\n\nTi aspettiamo! 👇\nhttps://brunomelitohair.it",
-        "image_url": "https://i.ibb.co/vvP7jZFb/b28028e3900d.jpg"
+        "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1715991234/sample.jpg"
     },
     {
         "type": "rame",
@@ -448,11 +448,16 @@ async def save_config(data: dict, current_user: dict = Depends(get_current_user)
 async def publish_via_make(data: dict, current_user: dict = Depends(get_current_user)):
     url = current_user.get("make_webhook_url")
     if not url: raise HTTPException(status_code=400, detail="Configura il Webhook")
+
+    image_url = data.get("image_url", "")
+    if isinstance(image_url, list):
+        image_url = image_url[0] if image_url else ""
+
     payload = {
-        **data,
-        "text": data.get("text") or data.get("message", ""),
-        "message": data.get("text") or data.get("message", ""),
-        "caption": data.get("text") or data.get("message", ""),
+        "text": data.get("text") or "",
+        "message": data.get("text") or "",
+        "caption": data.get("text") or "",
+        "image_url": image_url,
     }
     try:
         resp = requests.post(url, json=payload, timeout=10)
@@ -511,7 +516,11 @@ async def upload_image(file: UploadFile = File(...), current_user: dict = Depend
         if not image_url:
             raise Exception("URL immagine non ricevuto da Cloudinary")
 
-        print(f"✅ Foto caricata: {image_url}", flush=True)
+        fmt = result.get("format", "jpg")
+        if image_url and not image_url.lower().endswith(f'.{fmt}'):
+            image_url = f'{image_url}.{fmt}'
+
+        print(f"✅ Foto caricata (URL validato per Make): {image_url}", flush=True)
 
         return {"success": True, "image_url": image_url}
 
