@@ -13,8 +13,6 @@ from datetime import datetime, timezone, date
 
 router = APIRouter()
 
-IMGBB_API_KEY = os.environ.get("IMGBB_API_KEY")
-
 # Pool di 48 post pronti — la rotazione giornaliera ne mostra 5 al giorno,
 # cambiando automaticamente ogni mezzanotte senza ripetizioni per ~9 giorni.
 _POST_POOL = [
