@@ -245,6 +245,7 @@ export default function SettingsPage() {
   const [pwForm, setPwForm] = useState({ current_password: '', new_password: '', confirm_password: '' });
   const [makeWebhookUrl, setMakeWebhookUrl] = useState('');
   const [imgbbApiKey, setImgbbApiKey] = useState('');
+  const [savingImgbbApiKey, setSavingImgbbApiKey] = useState(false);
   const [savingMakeWebhook, setSavingMakeWebhook] = useState(false);
   const [adminTheme, setAdminTheme] = useState({
     primary: '#C8617A', sidebar_bg: '#FAF7F2', sidebar_text: '#2D1B14',
@@ -604,6 +605,18 @@ export default function SettingsPage() {
       toast.error(err.response?.data?.detail || 'Errore nel salvataggio webhook');
     } finally {
       setSavingMakeWebhook(false);
+    }
+  };
+
+  const saveImgbbApiKey = async () => {
+    setSavingImgbbApiKey(true);
+    try {
+      await api.put(`${API}/settings`, { imgbb_api_key: imgbbApiKey });
+      toast.success('API key Imgbb salvata!');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Errore nel salvataggio API key');
+    } finally {
+      setSavingImgbbApiKey(false);
     }
   };
 
@@ -1436,6 +1449,17 @@ export default function SettingsPage() {
                 Una volta salvata, le foto che carichi verranno salvate automaticamente su imgbb.
               </p>
             </div>
+            <Button
+              onClick={saveImgbbApiKey}
+              disabled={savingImgbbApiKey || !imgbbApiKey.trim()}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {savingImgbbApiKey ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Salvo...</>
+              ) : (
+                <><Save className="w-4 h-4 mr-2" /> Salva API Key</>
+              )}
+            </Button>
           </CardContent>
         </Card>
 
