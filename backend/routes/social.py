@@ -501,11 +501,10 @@ async def upload_image(file: UploadFile = File(...), current_user: dict = Depend
 
         # Carica su imgbb
         files = {"image": BytesIO(content)}
-        data = {"key": imgbb_api_key}
 
         print(f"📤 Upload a imgbb con API key: {imgbb_api_key[:10]}...", flush=True)
 
-        response = requests.post("https://api.imgbb.com/1/upload", files=files, data=data)
+        response = requests.post("https://api.imgbb.com/1/upload", files=files, params={"key": imgbb_api_key})
         result = response.json()
 
         print(f"✅ Risposta imgbb: {result}", flush=True)
