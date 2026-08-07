@@ -28,7 +28,7 @@ function SuggestionCard({ s, onPublish, onDelete }) {
     try {
       const form = new FormData(); form.append('file', file);
       const { data } = await api.post('/social/upload-image', form, { headers: { 'Content-Type': 'multipart/form-data' } });
-      setImageUrl(data.url); saveChange(text, data.url); toast.success('Foto salvata!');
+      setImageUrl(data.image_url); saveChange(text, data.image_url); toast.success('Foto salvata!');
     } catch { toast.error('Errore'); } finally { setUploading(false); }
   };
 
@@ -306,7 +306,7 @@ function ScheduledPostsTab({ configured }) {
                       const form = new FormData();
                       form.append('file', file);
                       const { data } = await api.post('/social/upload-image', form, { headers: { 'Content-Type': 'multipart/form-data' } });
-                      newUrls.push(data.url);
+                      newUrls.push(data.image_url);
                     } catch {
                       toast.error(`Errore caricamento ${file.name}`);
                     }
@@ -483,7 +483,7 @@ function ScheduledPostsTab({ configured }) {
                           const form = new FormData();
                           form.append('file', file);
                           const { data } = await api.post('/social/upload-image', form, { headers: { 'Content-Type': 'multipart/form-data' } });
-                          newUrls.push(data.url);
+                          newUrls.push(data.image_url);
                         } catch {
                           toast.error(`Errore caricamento ${file.name}`);
                         }
