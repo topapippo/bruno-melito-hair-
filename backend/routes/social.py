@@ -483,8 +483,6 @@ async def upload_image(file: UploadFile = File(...), current_user: dict = Depend
     Carica una foto su imgbb usando l'API key salvata nelle Impostazioni
     """
     try:
-        from io import BytesIO
-
         # 🔴 LEGGI L'API KEY DALLE IMPOSTAZIONI DELL'UTENTE
         user = await db.users.find_one({"id": current_user["id"]})
         imgbb_api_key = user.get("imgbb_api_key") if user else None
@@ -499,8 +497,8 @@ async def upload_image(file: UploadFile = File(...), current_user: dict = Depend
         # Leggi il file
         content = await file.read()
 
-        # Carica su imgbb
-        files = {"image": BytesIO(content)}
+        # Carica su imgbb (passa il file come tupla con nome)
+        files = {"image": ("photo.jpg", content)}
 
         print(f"📤 Upload a imgbb con API key: {imgbb_api_key[:10]}...", flush=True)
 
