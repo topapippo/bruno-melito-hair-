@@ -243,6 +243,8 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [changingPw, setChangingPw] = useState(false);
   const [pwForm, setPwForm] = useState({ current_password: '', new_password: '', confirm_password: '' });
+  const [makeWebhookUrl, setMakeWebhookUrl] = useState('');
+  const [savingMakeWebhook, setSavingMakeWebhook] = useState(false);
   const [adminTheme, setAdminTheme] = useState({
     primary: '#C8617A', sidebar_bg: '#FAF7F2', sidebar_text: '#2D1B14',
     accent: '#D4A847', font_display: 'Cormorant Garamond', font_body: 'Poppins',
@@ -305,6 +307,9 @@ export default function SettingsPage() {
       setSettings(res.data);
       if (res.data.admin_theme) setAdminTheme(res.data.admin_theme);
       if (res.data.cloud_api_configured) setCloudApiTest({ ok: true, message: '✅ WhatsApp Cloud API configurata e attiva' });
+
+      const configRes = await api.get(`${API}/social/config`);
+      setMakeWebhookUrl(configRes.data.make_webhook_url || '');
     } catch (err) {
       console.error('Error fetching settings:', err);
       toast.error('Errore nel caricamento delle impostazioni');
@@ -583,6 +588,18 @@ export default function SettingsPage() {
       toast.error(err.response?.data?.detail || 'Errore nel cambio password');
     } finally {
       setChangingPw(false);
+    }
+  };
+
+  const saveMakeWebhookUrl = async () => {
+    setSavingMakeWebhook(true);
+    try {
+      await api.put(`${API}/social/config`, { make_webhook_url: makeWebhookUrl });
+      toast.success('Webhook Make salvato!');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Errore nel salvataggio webhook');
+    } finally {
+      setSavingMakeWebhook(false);
     }
   };
 
@@ -1384,6 +1401,54 @@ export default function SettingsPage() {
                     <pre className="p-2 rounded bg-gray-900 text-gray-100 text-[10px] overflow-auto max-h-60 whitespace-pre-wrap">{JSON.stringify(cloudApiSendTest.result.raw, null, 2)}</pre>
                   )}
                 </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Make.com Webhook Configuration */}
+        <Card className="border-2 border-amber-200">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-[#2D1B14]">
+              <Share2 className="w-5 h-5 text-amber-600" />
+              Configura Make.com — Webhooks per Post Social
+            </CardTitle>
+            <p className="text-sm text-[#7C5C4A] mt-1">Incolla l'URL del webhook Make.com per permettere al gestionale di pubblicare post automaticamente su Instagram, Facebook e TikTok</p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-800">
+              Accedi a <strong>Make.com</strong> → Scenario di post social → Copia l'URL del webhook → Incollalo qui sotto
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[#2D1B14] font-semibold">Webhook URL Make.com</Label>
+              <Input
+                type="url"
+                placeholder="https://hook.make.com/..."
+                value={makeWebhookUrl}
+                onChange={(e) => setMakeWebhookUrl(e.target.value)}
+                className="font-mono text-xs"
+              />
+              <p className="text-xs text-[#7C5C4A]">
+                L'URL deve iniziare con <code className="bg-gray-100 px-1 rounded">https://hook.make.com/</code>
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={saveMakeWebhookUrl}
+                disabled={savingMakeWebhook || !makeWebhookUrl.trim()}
+                className="bg-amber-600 hover:bg-amber-700 text-white"
+              >
+                {savingMakeWebhook ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Salvo...</>
+                ) : (
+                  <><Save className="w-4 h-4 mr-2" /> Salva Webhook</>
+                )}
+              </Button>
+              {makeWebhookUrl && (
+                <div className="flex items-center gap-1 text-sm text-green-700 bg-green-50 px-3 py-2 rounded-lg border border-green-200">
+                  <Check className="w-4 h-4" />
+                  Configurato
+                </div>
               )}
             </div>
           </CardContent>
