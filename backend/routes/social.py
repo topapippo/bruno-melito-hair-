@@ -456,13 +456,10 @@ async def publish_via_make(data: dict, current_user: dict = Depends(get_current_
         "message": data.get("text") or data.get("message", ""),
         "caption": data.get("text") or data.get("message", ""),
     }
-    print(f"📤 Invio a Make.com: {payload}", flush=True)
     try:
         resp = requests.post(url, json=payload, timeout=10)
-        print(f"✅ Risposta Make: {resp.status_code}", flush=True)
         resp.raise_for_status()
     except Exception as e:
-        print(f"❌ Errore webhook Make (publish-via-make): {str(e)}", flush=True)
         raise HTTPException(status_code=500, detail=f"Errore Make.com: {str(e)}")
 
     history_doc = {
@@ -584,8 +581,20 @@ async def publish_social_post_now(post_id: str, current_user: dict = Depends(get
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Errore Make.com: {str(e)}")
 
+    published_at = datetime.now(timezone.utc).isoformat()
     await db.social_posts.update_one(
         {"id": post_id, "user_id": current_user["id"]},
-        {"$set": {"status": "published", "published_at": datetime.now(timezone.utc).isoformat()}}
+        {"$set": {"status": "published", "published_at": published_at}}
     )
+
+    history_doc = {
+        "id": str(uuid.uuid4()),
+        "user_id": current_user["id"],
+        "text": caption,
+        "image_urls": post.get("image_urls", []),
+        "platforms": post.get("platforms", []),
+        "published_at": published_at
+    }
+    await db.social_history.insert_one(history_doc)
+
     return {"success": True}
