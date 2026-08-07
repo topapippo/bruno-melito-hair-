@@ -480,39 +480,39 @@ async def get_social_history(current_user: dict = Depends(get_current_user)):
 @router.post("/social/upload-image")
 async def upload_image(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
     """
-    Carica una foto su imgbb usando l'API key salvata nelle Impostazioni
+    Carica una foto su Cloudinary
     """
     try:
-        # 🔴 LEGGI L'API KEY DALLE IMPOSTAZIONI DELL'UTENTE
-        user = await db.users.find_one({"id": current_user["id"]})
-        imgbb_api_key = user.get("imgbb_api_key") if user else None
+        import cloudinary
+        import cloudinary.uploader
+        import os
 
-        if not imgbb_api_key:
-            print("❌ ERRORE: API key imgbb non configurata nelle Impostazioni", flush=True)
+        cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME")
+        api_key = os.environ.get("CLOUDINARY_API_KEY")
+        api_secret = os.environ.get("CLOUDINARY_API_SECRET")
+
+        if not all([cloud_name, api_key, api_secret]):
+            print("❌ ERRORE: Cloudinary non configurato", flush=True)
             raise HTTPException(
                 status_code=400,
-                detail="API key imgbb non configurata. Vai in Impostazioni e incolla la tua API key di imgbb.com"
+                detail="Cloudinary non configurato. Contatta l'admin."
             )
+
+        cloudinary.config(cloud_name=cloud_name, api_key=api_key, api_secret=api_secret)
 
         # Leggi il file
         content = await file.read()
 
-        # Carica su imgbb (passa il file come tupla con nome)
-        files = {"image": ("photo.jpg", content)}
+        print(f"📤 Upload a Cloudinary...", flush=True)
 
-        print(f"📤 Upload a imgbb con API key: {imgbb_api_key[:10]}...", flush=True)
+        result = cloudinary.uploader.upload(content, resource_type="auto")
 
-        response = requests.post("https://api.imgbb.com/1/upload", files=files, params={"key": imgbb_api_key})
-        result = response.json()
+        print(f"✅ Risposta Cloudinary: {result}", flush=True)
 
-        print(f"✅ Risposta imgbb: {result}", flush=True)
+        image_url = result.get("secure_url")
+        if not image_url:
+            raise Exception("URL immagine non ricevuto da Cloudinary")
 
-        if not result.get("success"):
-            error_msg = result.get("error", {}).get("message", "Upload fallito")
-            print(f"❌ Errore imgbb: {error_msg}", flush=True)
-            raise Exception(error_msg)
-
-        image_url = result["data"]["url"]
         print(f"✅ Foto caricata: {image_url}", flush=True)
 
         return {"success": True, "image_url": image_url}
