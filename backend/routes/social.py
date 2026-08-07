@@ -456,8 +456,10 @@ async def publish_via_make(data: dict, current_user: dict = Depends(get_current_
         "message": data.get("text") or data.get("message", ""),
         "caption": data.get("text") or data.get("message", ""),
     }
+    print(f"📤 Invio a Make.com: {payload}", flush=True)
     try:
         resp = requests.post(url, json=payload, timeout=10)
+        print(f"✅ Risposta Make: {resp.status_code}", flush=True)
         resp.raise_for_status()
     except Exception as e:
         print(f"❌ Errore webhook Make (publish-via-make): {str(e)}", flush=True)
@@ -572,8 +574,10 @@ async def publish_social_post_now(post_id: str, current_user: dict = Depends(get
         "platforms": post.get("platforms", []),
     }
 
+    print(f"📤 Invio post a Make.com: {payload}", flush=True)
     try:
         resp = requests.post(url, json=payload, timeout=10)
+        print(f"✅ Risposta Make: {resp.status_code}", flush=True)
         resp.raise_for_status()
     except Exception as e:
         print(f"❌ Errore webhook Make (publish post): {str(e)}", flush=True)
