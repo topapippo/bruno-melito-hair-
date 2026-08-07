@@ -457,9 +457,11 @@ async def publish_via_make(data: dict, current_user: dict = Depends(get_current_
         "caption": data.get("text") or data.get("message", ""),
     }
     try:
-        requests.post(url, json=payload, timeout=10)
+        resp = requests.post(url, json=payload, timeout=10)
+        resp.raise_for_status()
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Errore nell'invio ai social")
+        print(f"❌ Errore webhook Make (publish-via-make): {str(e)}", flush=True)
+        raise HTTPException(status_code=500, detail=f"Errore Make.com: {str(e)}")
 
     history_doc = {
         "id": str(uuid.uuid4()),
@@ -571,9 +573,11 @@ async def publish_social_post_now(post_id: str, current_user: dict = Depends(get
     }
 
     try:
-        requests.post(url, json=payload, timeout=10)
+        resp = requests.post(url, json=payload, timeout=10)
+        resp.raise_for_status()
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Errore nell'invio ai social")
+        print(f"❌ Errore webhook Make (publish post): {str(e)}", flush=True)
+        raise HTTPException(status_code=500, detail=f"Errore Make.com: {str(e)}")
 
     await db.social_posts.update_one(
         {"id": post_id, "user_id": current_user["id"]},
