@@ -110,41 +110,23 @@ export function IncomingMessageBanner({ newIncomingMessages, dismissIncomingMess
 export function ReminderBanner({ pendingRemindersCount, inactiveClientsCount, autoReminderPending, onBatchSendAll, sendingAll }) {
   if (pendingRemindersCount === 0 && inactiveClientsCount === 0 && autoReminderPending === 0) return null;
   return (
-    <div
-      className="flex items-center gap-3 p-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl hover:shadow-md transition-shadow"
-      data-testid="reminder-banner"
-    >
-      <Bell className={`w-5 h-5 shrink-0 ${autoReminderPending > 0 ? 'text-green-500 animate-bounce' : 'text-amber-500'}`} />
-      <a href="/reminders" className="flex-1 text-sm min-w-0">
-        {autoReminderPending > 0 && (
-          <span className="font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full mr-2">
-            {autoReminderPending} promemoria da inviare ora!
-          </span>
-        )}
-        {pendingRemindersCount > 0 && autoReminderPending === 0 && (
-          <span className="font-bold text-[#2D1B14]">{pendingRemindersCount} promemoria domani</span>
-        )}
-        {inactiveClientsCount > 0 && (
-          <>
-            {(pendingRemindersCount > 0 || autoReminderPending > 0) && <span className="text-[#7C5C4A]"> · </span>}
-            <span className="font-bold text-orange-600">{inactiveClientsCount} clienti inattivi</span>
-          </>
-        )}
-      </a>
-      {autoReminderPending > 0 && onBatchSendAll ? (
-        <Button
-          size="sm"
-          onClick={onBatchSendAll}
-          disabled={sendingAll}
-          className="shrink-0 bg-green-600 hover:bg-green-700 text-white font-bold h-8 px-3 text-xs"
-          data-testid="batch-send-all-btn"
-        >
-          {sendingAll ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
-          Invia tutti
-        </Button>
-      ) : (
-        <a href="/reminders" className={`text-xs font-bold shrink-0 ${autoReminderPending > 0 ? 'text-green-600' : 'text-[#C8617A]'}`}>
-          {autoReminderPending > 0 ? 'Invia ora →' : 'Gestisci →'}
+    <div className="flex items-center gap-2 flex-wrap" data-testid="reminder-banner">
+      {autoReminderPending > 0 && (
+        <a href="/reminders" title={`${autoReminderPending} promemoria da inviare ora`} className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-100 border border-green-300 rounded-full text-[11px] font-black text-green-700 hover:bg-green-200 transition-colors cursor-pointer">
+          <Bell className="w-3.5 h-3.5 animate-bounce" />
+          {autoReminderPending}
+        </a>
+      )}
+      {pendingRemindersCount > 0 && autoReminderPending === 0 && (
+        <a href="/reminders" title={`${pendingRemindersCount} promemoria domani`} className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-100 border border-amber-300 rounded-full text-[11px] font-black text-amber-700 hover:bg-amber-200 transition-colors cursor-pointer">
+          <Bell className="w-3.5 h-3.5" />
+          {pendingRemindersCount}
+        </a>
+      )}
+      {inactiveClientsCount > 0 && (
+        <a href="/reminders" title={`${inactiveClientsCount} clienti inattivi`} className="inline-flex items-center gap-1 px-2.5 py-1 bg-orange-100 border border-orange-300 rounded-full text-[11px] font-black text-orange-700 hover:bg-orange-200 transition-colors cursor-pointer">
+          👥
+          {inactiveClientsCount}
         </a>
       )}
     </div>
@@ -154,36 +136,16 @@ export function ReminderBanner({ pendingRemindersCount, inactiveClientsCount, au
 export function LastServiceBanner({ lastServiceAlerts, onDismiss }) {
   if (!lastServiceAlerts || lastServiceAlerts.length === 0) return null;
   return (
-    <div className="relative overflow-hidden rounded-xl border-2 border-orange-400 bg-gradient-to-r from-orange-50 to-amber-50 shadow-lg" data-testid="last-service-banner">
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-orange-500" />
-            <span className="font-black text-orange-800 text-sm">Abbonamento in esaurimento!</span>
-          </div>
-          {onDismiss && (
-            <Button variant="ghost" size="sm" onClick={onDismiss} className="text-xs text-orange-600 hover:bg-orange-100 h-7">
-              Chiudi
-            </Button>
-          )}
-        </div>
-        <div className="space-y-2">
-          {lastServiceAlerts.map((alert, i) => (
-            <div key={i} className="bg-white/80 rounded-xl p-2.5 border border-orange-200">
-              <p className="font-bold text-sm text-orange-900">{alert.clientName}</p>
-              <p className="text-xs text-orange-700">"{alert.cardName}" — rimane <strong>1 solo servizio</strong>. Proponi il rinnovo!</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+    <a href="/abbonamenti" title={`${lastServiceAlerts.length} abbonamenti in esaurimento`} className="inline-flex items-center gap-1 px-2.5 py-1 bg-orange-100 border border-orange-300 rounded-full text-[11px] font-black text-orange-700 hover:bg-orange-200 transition-colors cursor-pointer" data-testid="last-service-banner">
+      <AlertTriangle className="w-3.5 h-3.5" />
+      {lastServiceAlerts.length}
+    </a>
   );
 }
 
 export function ExpensesBanner({ upcomingExpenses, selectedDate }) {
   if (upcomingExpenses.length === 0) return null;
 
-  // Uscite scadenti esattamente nel giorno aperto nel planning
   const dateStr = selectedDate
     ? (selectedDate instanceof Date
         ? selectedDate.toISOString().slice(0, 10)
@@ -194,56 +156,26 @@ export function ExpensesBanner({ upcomingExpenses, selectedDate }) {
     : [];
   const overdue = upcomingExpenses.filter(e => e.overdue);
   const upcoming = upcomingExpenses.filter(e => !e.overdue && e.due_date !== dateStr);
+  const totalDue = [...dueToday, ...overdue, ...upcoming].reduce((s, e) => s + e.amount, 0);
 
   return (
-    <div className="space-y-2" data-testid="expenses-banner">
-      {/* Uscite scadenti nel giorno visualizzato: card espansa */}
+    <div className="flex items-center gap-2 flex-wrap" data-testid="expenses-banner">
       {dueToday.length > 0 && (
-        <div className="rounded-xl border-2 border-orange-400 bg-gradient-to-r from-orange-50 to-amber-50 p-3">
-          <div className="flex items-center gap-2 mb-2">
-            <Euro className="w-4 h-4 text-orange-600 shrink-0" />
-            <span className="font-black text-orange-800 text-sm">
-              {dueToday.length === 1 ? '1 uscita in scadenza oggi' : `${dueToday.length} uscite in scadenza oggi`}
-            </span>
-            <a href="/uscite" className="ml-auto text-xs text-orange-600 font-bold hover:underline shrink-0">Gestisci →</a>
-          </div>
-          <div className="space-y-1.5">
-            {dueToday.map(e => (
-              <div key={e.id} className="flex items-center justify-between bg-white/80 rounded-lg px-3 py-2 border border-orange-200">
-                <div className="min-w-0">
-                  <p className="text-sm font-bold text-orange-900 truncate">{e.description}</p>
-                  <p className="text-xs text-orange-600">{e.category}{e.is_recurring ? ' · ricorrente' : ''}</p>
-                </div>
-                <span className="text-sm font-bold text-orange-700 shrink-0 ml-3">€{e.amount.toFixed(2)}</span>
-              </div>
-            ))}
-            <p className="text-xs text-orange-700 font-semibold text-right">
-              Totale: €{dueToday.reduce((s, e) => s + e.amount, 0).toFixed(2)}
-            </p>
-          </div>
-        </div>
+        <a href="/uscite" title={`${dueToday.length} uscite in scadenza oggi`} className="inline-flex items-center gap-1 px-2.5 py-1 bg-orange-100 border border-orange-300 rounded-full text-[11px] font-black text-orange-700 hover:bg-orange-200 transition-colors cursor-pointer">
+          <Euro className="w-3.5 h-3.5" />
+          {dueToday.length}
+        </a>
       )}
-
-      {/* Banner compatto per scadute + prossime */}
-      {(overdue.length > 0 || upcoming.length > 0) && (
-        <a
-          href="/uscite"
-          className="flex items-center gap-3 p-3 bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-xl hover:shadow-md transition-shadow"
-        >
-          <Euro className="w-5 h-5 text-red-500 shrink-0" />
-          <div className="flex-1 text-sm">
-            {overdue.length > 0 && (
-              <span className="font-bold text-red-600">{overdue.length} SCADUTE! </span>
-            )}
-            {overdue.length > 0 && upcoming.length > 0 && <span className="text-[#7C5C4A]"> · </span>}
-            {upcoming.length > 0 && (
-              <span className="font-bold text-orange-600">{upcoming.length} in scadenza (7 gg)</span>
-            )}
-            <span className="text-[#7C5C4A] ml-1">
-              — €{[...overdue, ...upcoming].reduce((s, e) => s + e.amount, 0).toFixed(2)}
-            </span>
-          </div>
-          <span className="text-xs text-red-500 font-bold shrink-0">Vedi →</span>
+      {overdue.length > 0 && (
+        <a href="/uscite" title={`${overdue.length} uscite scadute`} className="inline-flex items-center gap-1 px-2.5 py-1 bg-red-100 border border-red-300 rounded-full text-[11px] font-black text-red-700 hover:bg-red-200 transition-colors cursor-pointer animate-pulse">
+          ⚠️
+          {overdue.length}
+        </a>
+      )}
+      {upcoming.length > 0 && (
+        <a href="/uscite" title={`${upcoming.length} uscite in scadenza (7 gg)`} className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-100 border border-amber-300 rounded-full text-[11px] font-black text-amber-700 hover:bg-amber-200 transition-colors cursor-pointer">
+          📅
+          {upcoming.length}
         </a>
       )}
     </div>

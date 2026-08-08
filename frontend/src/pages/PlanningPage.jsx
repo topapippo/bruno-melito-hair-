@@ -713,18 +713,22 @@ export default function PlanningPage() {
             />
           </div>
         )}
-        <ReminderBanner
-          pendingRemindersCount={pendingRemindersCount}
-          inactiveClientsCount={inactiveClientsCount}
-          autoReminderPending={autoReminderPending}
-          onBatchSendAll={handleBatchSendReminders}
-          sendingAll={sendingReminders}
-        />
-        <ExpensesBanner upcomingExpenses={upcomingExpenses} selectedDate={selectedDate} />
-        <LastServiceBanner
-          lastServiceAlerts={lastServiceAlerts}
-          onDismiss={() => setLastServiceAlerts([])}
-        />
+
+        {/* Avvisi Compatti (Chip/Badge) */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <ReminderBanner
+            pendingRemindersCount={pendingRemindersCount}
+            inactiveClientsCount={inactiveClientsCount}
+            autoReminderPending={autoReminderPending}
+            onBatchSendAll={handleBatchSendReminders}
+            sendingAll={sendingReminders}
+          />
+          <ExpensesBanner upcomingExpenses={upcomingExpenses} selectedDate={selectedDate} />
+          <LastServiceBanner
+            lastServiceAlerts={lastServiceAlerts}
+            onDismiss={() => setLastServiceAlerts([])}
+          />
+        </div>
 
         {/* Banner giorno chiuso */}
         {dayClosureBlock && (
