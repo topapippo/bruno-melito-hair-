@@ -66,7 +66,7 @@ export default function TrendGallery({ setShowBooking }) {
   const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
-    api.get('/website-trends')
+    api.get('/website-trends/public')
       .then(r => setTrends(r.data?.length ? r.data : FALLBACK))
       .catch(() => setTrends(FALLBACK));
   }, []);
