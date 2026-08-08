@@ -775,20 +775,22 @@ export default function WebsitePage() {
         </div>
       </section>
 
+      {/* MESSAGGIO DI BENVENUTO DINAMICO */}
+      <section className="bg-[#FDF8F5] py-16 text-center">
+        <div className="max-w-2xl mx-auto px-4">
+          <h3 className="text-3xl md:text-4xl font-black text-[#2D1B14]" style={{ fontFamily: "'Playfair Display', serif" }}>
+            {greeting.greeting}! ✨
+          </h3>
+          <p className="text-[#9C7060] text-base mt-3 font-medium">
+            {greeting.message}
+          </p>
+        </div>
+      </section>
+
       {/* FOOTER */}
       <footer className="py-12 relative" style={{ backgroundColor: `${T.text}`, color: '#fff' }}>
         <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, transparent, ${T.primary}, ${T.accent}, transparent)` }} />
         <div className="max-w-6xl mx-auto px-4">
-          {/* MESSAGGIO DI BENVENUTO DINAMICO */}
-          <div className="text-center mb-8 pb-8 border-b border-white/10">
-            <h3 className="text-2xl md:text-3xl font-black text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
-              {greeting.greeting}! ✨
-            </h3>
-            <p className="text-white/50 text-sm mt-2 font-medium max-w-md mx-auto">
-              {greeting.message}
-            </p>
-          </div>
-
           <AnimatedSection>
             <div className="flex flex-col items-center gap-6">
               <img src="/logo.png?v=4" alt={config.salon_name} className="w-14 h-14 rounded-2xl border border-white/20 shadow-sm hover:scale-110 transition-transform duration-300" />
