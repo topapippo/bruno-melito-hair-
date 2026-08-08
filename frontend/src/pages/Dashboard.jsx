@@ -13,7 +13,7 @@ import {
   Scissors, UserCheck, BarChart3,
   CreditCard, Gift, Bell, Download, Globe, Settings, AlertTriangle,
   MessageCircle, X, Sparkles, Heart, Star, ArrowDownCircle, FileBarChart, Cake,
-  CheckCircle2, AlertCircle, Zap, ArrowUpRight, Target, TrendingDown, Flame,
+  CheckCircle2, AlertCircle, Zap, ArrowUpRight, Target, TrendingDown, Flame, Phone,
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -50,6 +50,10 @@ export default function Dashboard() {
   const [birthdayToday, setBirthdayToday] = useState([]);
   const [topClients, setTopClients] = useState([]);
   const [colorExpiry, setColorExpiry] = useState([]);
+  const [upcomingExpenses, setUpcomingExpenses] = useState([]);
+  const [lastServiceAlerts, setLastServiceAlerts] = useState([]);
+  const [inactiveClients, setInactiveClients] = useState([]);
+  const [autoReminder, setAutoReminder] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -59,6 +63,7 @@ export default function Dashboard() {
     fetchTomorrow();
     fetchBirthdays();
     fetchTopClients();
+    fetchAlertsData();
   }, []);
 
   const fetchBirthdays = async () => {
@@ -126,6 +131,22 @@ export default function Dashboard() {
     try {
       const res = await api.get(`${API}/stats/top-clients?limit=5`);
       setTopClients(res.data || []);
+    } catch {}
+  };
+
+  const fetchAlertsData = async () => {
+    try {
+      const [expenseRes, cardRes, inactiveRes, autoRes] = await Promise.all([
+        api.get(`${API}/uscite/upcoming`).catch(() => ({ data: [] })),
+        api.get(`${API}/cards/alerts`).catch(() => ({ data: { expiring: [], low_balance: [] } })),
+        api.get(`${API}/clients/dormant?days=60`).catch(() => ({ data: [] })),
+        api.get(`${API}/reminders/auto-check`).catch(() => ({ data: null })),
+      ]);
+      setUpcomingExpenses(expenseRes.data || []);
+      const alerts = cardRes.data.expiring || [];
+      setLastServiceAlerts(alerts.filter(a => a.services_left <= 1));
+      setInactiveClients(inactiveRes.data || []);
+      setAutoReminder(autoRes.data);
     } catch {}
   };
 
@@ -423,6 +444,115 @@ export default function Dashboard() {
             </button>
           ))}
         </div>
+
+        {/* ══════════════════════════════════════════════════════════════
+            AVVISI E REMINDERS — BRIEFING MATTINA
+        ══════════════════════════════════════════════════════════════ */}
+        {(autoReminder?.pending?.length > 0 || tomorrowApts.length > 0 || upcomingExpenses.length > 0 || lastServiceAlerts.length > 0 || inactiveClients.filter(c => !c.already_recalled).length > 0) && (
+          <div>
+            <div className="flex items-center gap-2.5 mb-3">
+              <div className="w-7 h-7 rounded-xl flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--admin-primary) 15%, transparent)' }}>
+                <Bell className="w-4 h-4" style={{ color: 'var(--admin-primary)' }} />
+              </div>
+              <h2 className="font-display text-xl font-bold" style={{ color: 'var(--admin-content-text)' }}>Avvisi e Reminders</h2>
+              <span className="text-xs font-semibold ml-auto hidden sm:block" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 35%, transparent)' }}>
+                Briefing mattina
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 stagger-fast">
+              {/* Promemoria Urgenti */}
+              {autoReminder?.pending?.length > 0 && (
+                <button
+                  onClick={() => navigate('/reminders')}
+                  className="gradient-border group flex flex-col items-start gap-3 p-4 rounded-2xl text-left transition-all hover:shadow-lg hover:-translate-y-0.5"
+                  style={{ background: 'var(--admin-content-bg)' }}
+                  title="Promemoria da inviare ora"
+                >
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 bg-green-100">
+                    <Bell className="w-5 h-5 text-green-600 animate-bounce" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-2xl font-black text-green-600">{autoReminder.pending.length}</p>
+                    <p className="text-sm font-semibold mt-1" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 60%, transparent)' }}>Promemoria Urgenti</p>
+                  </div>
+                </button>
+              )}
+
+              {/* Promemoria Domani */}
+              {tomorrowApts.length > 0 && (!autoReminder?.pending?.length || autoReminder.pending.length === 0) && (
+                <button
+                  onClick={() => navigate('/reminders')}
+                  className="gradient-border group flex flex-col items-start gap-3 p-4 rounded-2xl text-left transition-all hover:shadow-lg hover:-translate-y-0.5"
+                  style={{ background: 'var(--admin-content-bg)' }}
+                  title="Appuntamenti domani"
+                >
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 bg-amber-100">
+                    <Calendar className="w-5 h-5 text-amber-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-2xl font-black text-amber-600">{tomorrowApts.length}</p>
+                    <p className="text-sm font-semibold mt-1" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 60%, transparent)' }}>Domani</p>
+                  </div>
+                </button>
+              )}
+
+              {/* Uscite in Scadenza */}
+              {upcomingExpenses.filter(e => e.overdue || (new Date(e.due_date).toISOString().slice(0, 10) <= new Date().toISOString().slice(0, 10))).length > 0 && (
+                <button
+                  onClick={() => navigate('/uscite')}
+                  className="gradient-border group flex flex-col items-start gap-3 p-4 rounded-2xl text-left transition-all hover:shadow-lg hover:-translate-y-0.5"
+                  style={{ background: 'var(--admin-content-bg)' }}
+                  title="Uscite in scadenza"
+                >
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 bg-red-100">
+                    <Euro className="w-5 h-5 text-red-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-2xl font-black text-red-600">{upcomingExpenses.filter(e => e.overdue || (new Date(e.due_date).toISOString().slice(0, 10) <= new Date().toISOString().slice(0, 10))).length}</p>
+                    <p className="text-sm font-semibold mt-1" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 60%, transparent)' }}>Uscite Scadute</p>
+                  </div>
+                </button>
+              )}
+
+              {/* Abbonamenti in Esaurimento */}
+              {lastServiceAlerts.length > 0 && (
+                <button
+                  onClick={() => navigate('/abbonamenti')}
+                  className="gradient-border group flex flex-col items-start gap-3 p-4 rounded-2xl text-left transition-all hover:shadow-lg hover:-translate-y-0.5"
+                  style={{ background: 'var(--admin-content-bg)' }}
+                  title="Abbonamenti in esaurimento"
+                >
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 bg-amber-100">
+                    <AlertTriangle className="w-5 h-5 text-amber-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-2xl font-black text-amber-600">{lastServiceAlerts.length}</p>
+                    <p className="text-sm font-semibold mt-1" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 60%, transparent)' }}>Abbonamenti Esauriti</p>
+                  </div>
+                </button>
+              )}
+
+              {/* Clienti Inattivi */}
+              {inactiveClients.filter(c => !c.already_recalled).length > 0 && (
+                <button
+                  onClick={() => navigate('/reminders')}
+                  className="gradient-border group flex flex-col items-start gap-3 p-4 rounded-2xl text-left transition-all hover:shadow-lg hover:-translate-y-0.5"
+                  style={{ background: 'var(--admin-content-bg)' }}
+                  title="Clienti da contattare"
+                >
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 bg-orange-100">
+                    <Users className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-2xl font-black text-orange-600">{inactiveClients.filter(c => !c.already_recalled).length}</p>
+                    <p className="text-sm font-semibold mt-1" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 60%, transparent)' }}>Clienti Assenti</p>
+                  </div>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* ══════════════════════════════════════════════════════════════
             ALERT BANNERS

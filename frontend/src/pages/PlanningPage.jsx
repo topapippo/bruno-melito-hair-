@@ -21,7 +21,7 @@ import NewAppointmentDialog from '../components/planning/NewAppointmentDialog';
 import EditAppointmentDialog from '../components/planning/EditAppointmentDialog';
 import RecurringDialog from '../components/planning/RecurringDialog';
 import BlockSlotDialog from '../components/planning/BlockSlotDialog';
-import { OnlineBookingBanner, ReminderBanner, ExpensesBanner, LastServiceBanner, IncomingMessageBanner } from '../components/planning/PlanningBanners';
+import { OnlineBookingBanner, IncomingMessageBanner } from '../components/planning/PlanningBanners';
 import PlanningSearch from '../components/planning/PlanningSearch';
 import ErrorBoundary from '../components/ErrorBoundary';
 import AppointmentDetailPanel from '../components/planning/AppointmentDetailPanel';
@@ -70,15 +70,9 @@ export default function PlanningPage() {
   }, []);
 
   // Banners
-  const [pendingRemindersCount, setPendingRemindersCount] = useState(0);
-  const [inactiveClientsCount, setInactiveClientsCount] = useState(0);
-  const [autoReminderPending, setAutoReminderPending] = useState(0);
-  const [upcomingExpenses, setUpcomingExpenses] = useState([]);
   const [newOnlineBookings, setNewOnlineBookings] = useState([]);
   const [newIncomingMessages, setNewIncomingMessages] = useState([]);
   const [sendingConfirmId, setSendingConfirmId] = useState(null);
-  const [pendingReminderApts, setPendingReminderApts] = useState([]);
-  const [sendingReminders, setSendingReminders] = useState(false);
   const [editInCheckout, setEditInCheckout] = useState(false);
 
   // Dialogs
@@ -90,7 +84,6 @@ export default function PlanningPage() {
   const [checkoutDrawerApt, setCheckoutDrawerApt] = useState(null);
   const [recurringDialogOpen, setRecurringDialogOpen] = useState(false);
   const [recurringAppointment, setRecurringAppointment] = useState(null);
-  const [lastServiceAlerts, setLastServiceAlerts] = useState([]);
   const [blockDialogOpen, setBlockDialogOpen] = useState(false);
   const [blockInitialTime, setBlockInitialTime] = useState('');
   const [dayClosureBlock, setDayClosureBlock] = useState(null);
@@ -136,8 +129,6 @@ export default function PlanningPage() {
   // Static data (operators, clients, services) fetched once on mount
   useEffect(() => {
     fetchStaticData();
-    fetchReminderCounts();
-    fetchUpcomingExpenses();
   }, []);
 
   // Date-dependent data re-fetched on date change
@@ -271,27 +262,6 @@ export default function PlanningPage() {
     } catch { /* silenzioso */ }
   };
 
-  const fetchReminderCounts = async () => {
-    try {
-      const [remRes, inactRes, autoRes] = await Promise.all([
-        api.get(`${API}/reminders/tomorrow`),
-        api.get(`${API}/clients/dormant?days=60`),
-        api.get(`${API}/reminders/auto-check`)
-      ]);
-      setPendingRemindersCount(remRes.data.filter(r => !r.reminded).length);
-      setInactiveClientsCount(inactRes.data.filter(c => !c.already_recalled).length);
-      const pending = autoRes.data.pending || [];
-      setAutoReminderPending(pending.length);
-      setPendingReminderApts(pending);
-    } catch { /* silent */ }
-  };
-
-  const fetchUpcomingExpenses = async () => {
-    try {
-      const res = await api.get(`${API}/expenses/upcoming?days=7`);
-      setUpcomingExpenses(res.data);
-    } catch { /* silent */ }
-  };
 
   const fetchRangeAppointments = async (start, end, setter) => {
     const days = eachDayOfInterval({ start, end });
@@ -555,27 +525,6 @@ export default function PlanningPage() {
     await sendWA(phone, msg, { successMsg: '✅ Promemoria inviato!' });
   };
 
-  const handleBatchSendReminders = async () => {
-    if (pendingReminderApts.length === 0) return;
-    setSendingReminders(true);
-    const tomorrow = format(addDays(new Date(), 1), 'dd/MM/yy');
-    const withPhone = pendingReminderApts.filter(apt => apt.client_phone);
-    const results = await Promise.allSettled(
-      withPhone.map(apt => {
-        const services = (apt.services || []).map(s => s.name).join(', ');
-        const msg = `Ciao ${apt.client_name}! 👋 Ricordiamo il tuo appuntamento domani ${tomorrow} alle ${apt.time}${services ? ` per ${services}` : ''}. A presto! ✂️`;
-        return api.post(`${API}/whatsapp/send-direct`, { phone: apt.client_phone, message: msg }).then(() => apt.id);
-      })
-    );
-    const sentIds = results.filter(r => r.status === 'fulfilled').map(r => r.value);
-    if (sentIds.length > 0) {
-      await api.post(`${API}/reminders/batch-mark-sent`, { appointment_ids: sentIds }).catch(() => {});
-    }
-    toast.success(`✅ ${sentIds.length}/${withPhone.length} promemoria inviati!`);
-    setSendingReminders(false);
-    fetchReminderCounts();
-  };
-
   const shouldAutoCheckout = (apt) => {
     if (!apt || apt.status === 'completed' || apt.status === 'cancelled') return false;
     const today = format(new Date(), 'yyyy-MM-dd');
@@ -713,21 +662,6 @@ export default function PlanningPage() {
             />
           </div>
         )}
-
-        {/* Avvisi Compatti (Chip/Badge) */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <ReminderBanner
-            pendingRemindersCount={pendingRemindersCount}
-            autoReminderPending={autoReminderPending}
-            onBatchSendAll={handleBatchSendReminders}
-            sendingAll={sendingReminders}
-          />
-          <ExpensesBanner upcomingExpenses={upcomingExpenses} selectedDate={selectedDate} />
-          <LastServiceBanner
-            lastServiceAlerts={lastServiceAlerts}
-            onDismiss={() => setLastServiceAlerts([])}
-          />
-        </div>
 
         {/* Banner giorno chiuso */}
         {dayClosureBlock && (
