@@ -134,6 +134,16 @@ export default function WebsitePage() {
     return () => { clearTimeout(slowTimer); clearInterval(keepalive); };
   }, []);
 
+  const trackBookingClick = () => {
+    if (typeof window.gtag === 'function') {
+      window.gtag('event', 'click_prenota', {
+        'event_category': 'engagement',
+        'event_label': 'Apertura Modulo Prenotazione'
+      });
+    }
+    setShowBooking(true);
+  };
+
   const config = siteData?.config || {};
   const reviews = siteData?.reviews || [];
   const gallery = siteData?.gallery || [];
@@ -486,7 +496,7 @@ export default function WebsitePage() {
               <span className={`text-[7px] sm:text-[9px] font-normal sm:hidden ${navScrolled ? 'text-amber-400' : 'text-[#1A0A10]/40'}`}>Verifica prenotazione</span>
             </button>
             <Button
-              onClick={() => setShowBooking(true)}
+              onClick={trackBookingClick}
               style={{ backgroundColor: T.primary }}
               className={`text-white font-bold text-sm px-4 sm:px-6 hover:opacity-90 transition-all duration-300 ${navScrolled ? 'shadow-lg shadow-pink-400/30 scale-105' : ''}`}
               data-testid="website-book-btn">
@@ -545,7 +555,7 @@ export default function WebsitePage() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center hero-animate hero-d5">
-            <button onClick={() => setShowBooking(true)} className="hero-cta-primary text-white font-bold text-sm px-12 py-4 rounded-full tracking-wider uppercase shadow-2xl" data-testid="website-hero-book-btn">
+            <button onClick={trackBookingClick} className="hero-cta-primary text-white font-bold text-sm px-12 py-4 rounded-full tracking-wider uppercase shadow-2xl" data-testid="website-hero-book-btn">
               Prenota Ora
             </button>
             <Button onClick={() => scrollTo(servicesRef)} variant="ghost" className="text-white border border-white/30 hover:bg-white/10 font-bold text-sm px-8 py-4 rounded-full tracking-wider uppercase">
@@ -612,7 +622,7 @@ export default function WebsitePage() {
           </div>
           <AnimatedSection delay={0.5}>
             <div className="text-center mt-12">
-              <button onClick={() => setShowBooking(true)}
+              <button onClick={trackBookingClick}
                 className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl text-white font-black text-lg hover:scale-105 transition-all duration-300"
                 style={{ background: `linear-gradient(135deg, ${T.primary}, ${T.accent})`, boxShadow: `0 14px 40px ${T.primary}40` }}>
                 <Scissors className="w-5 h-5" />
@@ -797,7 +807,7 @@ export default function WebsitePage() {
           <MessageCircle className="w-5 h-5 shrink-0" />
           <span className="text-sm">WA</span>
         </a>
-        <Button onClick={() => setShowBooking(true)} style={{ backgroundColor: T.primary }} className="flex-1 text-white hover:opacity-90 font-black py-5 rounded-2xl shadow-lg" data-testid="website-mobile-book-btn">
+        <Button onClick={trackBookingClick} style={{ backgroundColor: T.primary }} className="flex-1 text-white hover:opacity-90 font-black py-5 rounded-2xl shadow-lg" data-testid="website-mobile-book-btn">
           <Scissors className="w-5 h-5 mr-2" /> PRENOTA ORA
         </Button>
       </div>
@@ -818,7 +828,7 @@ export default function WebsitePage() {
       {!heroVisible && (
         <div className="hidden sm:block fixed bottom-8 left-1/2 -translate-x-1/2 z-40">
           <button
-            onClick={() => setShowBooking(true)}
+            onClick={trackBookingClick}
             className="relative flex items-center gap-2.5 px-7 py-3.5 rounded-full text-white font-black text-sm transition-all duration-300"
             style={{
               background: 'linear-gradient(135deg, #C8617A, #A0404F)',
@@ -847,7 +857,7 @@ export default function WebsitePage() {
               client_name: client_name || prev.client_name,
               client_phone: client_phone || prev.client_phone,
             }));
-            setShowBooking(true);
+            trackBookingClick();
           }}
         />
       )}
