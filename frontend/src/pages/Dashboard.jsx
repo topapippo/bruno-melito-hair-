@@ -137,7 +137,7 @@ export default function Dashboard() {
   const fetchAlertsData = async () => {
     try {
       const [expenseRes, cardRes, inactiveRes, autoRes] = await Promise.all([
-        api.get(`${API}/uscite/upcoming`).catch(() => ({ data: [] })),
+        api.get(`${API}/expenses/upcoming`).catch(() => ({ data: [] })),
         api.get(`${API}/cards/alerts`).catch(() => ({ data: { expiring: [], low_balance: [] } })),
         api.get(`${API}/clients/dormant?days=60`).catch(() => ({ data: [] })),
         api.get(`${API}/reminders/auto-check`).catch(() => ({ data: null })),
