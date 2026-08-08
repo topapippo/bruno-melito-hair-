@@ -459,7 +459,12 @@ async def publish_via_make(data: dict, current_user: dict = Depends(get_current_
         if isinstance(image_url, list):
             image_url = image_url[0] if image_url else ""
 
-        # 2. Creiamo un payload perfettamente pulito
+        # Assicuriamoci che l'URL finisca con .jpg o .png per Make.com
+        if image_url and not image_url.lower().endswith(('.jpg', '.jpeg', '.png')):
+            if '?' not in image_url:
+                image_url += '.jpg'
+
+        # 2. Creiamo un payload perfettamente pulito (SOLO stringhe)
         payload = {
             "text": str(text),
             "message": str(text),
@@ -610,19 +615,37 @@ async def publish_social_post_now(post_id: str, current_user: dict = Depends(get
     if not caption:
         raise HTTPException(status_code=400, detail="La caption del post è obbligatoria. Scrivi un messaggio prima di pubblicare.")
 
+    # Pulizia e standardizzazione dell'immagine (accettiamo solo stringa)
+    image_urls = post.get("image_urls", [])
+    image_url = ""
+    if image_urls:
+        image_url = image_urls[0] if isinstance(image_urls, list) else image_urls
+
+    # Assicuriamoci che l'URL finisca con .jpg o .png per Make.com
+    if image_url and not image_url.lower().endswith(('.jpg', '.jpeg', '.png')):
+        if '?' not in image_url:
+            image_url += '.jpg'
+
+    # Payload con SOLO stringhe, nessun array
     payload = {
-        "caption": caption,
-        "text": caption,
-        "message": caption,
-        "image_urls": post.get("image_urls", []),
-        "platforms": post.get("platforms", []),
+        "caption": str(caption),
+        "text": str(caption),
+        "message": str(caption),
+        "image_url": str(image_url)
     }
 
+    print(f"📤 Invio post programmato a Make.com: {payload}", flush=True)
+
     try:
-        resp = requests.post(url, json=payload, timeout=10)
-        resp.raise_for_status()
+        resp = requests.post(url, json=payload, timeout=15)
+        if resp.status_code >= 400:
+            print(f"❌ Risposta negativa da Make.com: {resp.status_code} - {resp.text}", flush=True)
+            raise HTTPException(status_code=500, detail=f"Make.com ha rifiutato (Codice {resp.status_code}). Verifica lo scenario su Make.")
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Errore Make.com: {str(e)}")
+        print(f"❌ ERRORE GENERICO publish_social_post_now: {str(e)}", flush=True)
+        raise HTTPException(status_code=500, detail=f"Errore interno: {str(e)}")
 
     published_at = datetime.now(timezone.utc).isoformat()
     await db.social_posts.update_one(
@@ -634,8 +657,7 @@ async def publish_social_post_now(post_id: str, current_user: dict = Depends(get
         "id": str(uuid.uuid4()),
         "user_id": current_user["id"],
         "text": caption,
-        "image_urls": post.get("image_urls", []),
-        "platforms": post.get("platforms", []),
+        "image_url": image_url,
         "published_at": published_at
     }
     await db.social_history.insert_one(history_doc)

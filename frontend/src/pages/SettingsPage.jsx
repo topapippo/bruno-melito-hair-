@@ -244,8 +244,6 @@ export default function SettingsPage() {
   const [changingPw, setChangingPw] = useState(false);
   const [pwForm, setPwForm] = useState({ current_password: '', new_password: '', confirm_password: '' });
   const [makeWebhookUrl, setMakeWebhookUrl] = useState('');
-  const [imgbbApiKey, setImgbbApiKey] = useState('');
-  const [savingImgbbApiKey, setSavingImgbbApiKey] = useState(false);
   const [savingMakeWebhook, setSavingMakeWebhook] = useState(false);
   const [adminTheme, setAdminTheme] = useState({
     primary: '#C8617A', sidebar_bg: '#FAF7F2', sidebar_text: '#2D1B14',
@@ -312,7 +310,6 @@ export default function SettingsPage() {
 
       const configRes = await api.get(`${API}/social/config`);
       setMakeWebhookUrl(configRes.data.make_webhook_url || '');
-      if (res.data.imgbb_api_key) setImgbbApiKey(res.data.imgbb_api_key);
     } catch (err) {
       console.error('Error fetching settings:', err);
       toast.error('Errore nel caricamento delle impostazioni');
@@ -551,7 +548,6 @@ export default function SettingsPage() {
         auto_backup_email: settings.auto_backup_email,
         monthly_target: settings.monthly_target ? parseFloat(settings.monthly_target) : null,
         make_webhook_url: makeWebhookUrl,
-        imgbb_api_key: imgbbApiKey,
       });
       updateUser({ name: settings.name, salon_name: settings.salon_name });
       toast.success('Impostazioni salvate!');
@@ -608,17 +604,6 @@ export default function SettingsPage() {
     }
   };
 
-  const saveImgbbApiKey = async () => {
-    setSavingImgbbApiKey(true);
-    try {
-      await api.put(`${API}/settings`, { imgbb_api_key: imgbbApiKey });
-      toast.success('API key Imgbb salvata!');
-    } catch (err) {
-      toast.error(err.response?.data?.detail || 'Errore nel salvataggio API key');
-    } finally {
-      setSavingImgbbApiKey(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -1423,46 +1408,6 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Imgbb API Key per caricamento foto */}
-        <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
-          <CardHeader>
-            <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
-              <Image className="w-5 h-5 text-blue-500" />
-              Imgbb API Key — Caricamento Foto
-            </CardTitle>
-            <p className="text-sm text-[#7C5C4A] mt-1">Quando carichi foto nei post, vengono salvate su imgbb.com</p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-sm text-blue-800">
-              <b>Come ottenerla:</b> Vai su <a href="https://imgbb.com" target="_blank" rel="noopener noreferrer" className="underline font-semibold">imgbb.com</a> → Accedi → Impostazioni → Copia l'API key → Incolla qui sotto.
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[#2D1B14] font-semibold">Imgbb API Key</Label>
-              <Input
-                type="password"
-                value={imgbbApiKey}
-                onChange={(e) => setImgbbApiKey(e.target.value)}
-                placeholder="Incolla qui la tua API key di imgbb.com"
-                className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A] font-mono text-sm"
-              />
-              <p className="text-xs text-[#7C5C4A]">
-                Una volta salvata, le foto che carichi verranno salvate automaticamente su imgbb.
-              </p>
-            </div>
-            <Button
-              onClick={saveImgbbApiKey}
-              disabled={savingImgbbApiKey || !imgbbApiKey.trim()}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              {savingImgbbApiKey ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Salvo...</>
-              ) : (
-                <><Save className="w-4 h-4 mr-2" /> Salva API Key</>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-
         {/* Make.com Webhook Configuration */}
         <Card className="border-2 border-amber-200">
           <CardHeader>
@@ -1508,6 +1453,9 @@ export default function SettingsPage() {
                 </div>
               )}
             </div>
+            <p className="text-sm text-green-700 bg-green-50 p-3 rounded-lg border border-green-200">
+              ✅ Le immagini dei post vengono caricate automaticamente su Cloudinary.
+            </p>
           </CardContent>
         </Card>
 
