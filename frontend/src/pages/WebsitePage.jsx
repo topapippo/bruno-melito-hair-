@@ -548,6 +548,16 @@ export default function WebsitePage() {
 
         {/* Contenuto Testo Centrato */}
         <div className="relative z-10 text-center text-white px-6 py-20 max-w-4xl mx-auto">
+          {/* MESSAGGIO DI BENVENUTO DINAMICO - IN CIMA */}
+          <div className="mb-6 hero-animate hero-d1">
+            <p className="text-[#D4AF7A] text-base sm:text-lg font-black tracking-[0.2em] uppercase" style={{ fontFamily: "'Playfair Display', serif" }}>
+              {greeting.greeting}! ✨
+            </p>
+            <p className="text-white/70 text-xs sm:text-sm mt-2 italic max-w-sm mx-auto leading-relaxed">
+              {greeting.message}
+            </p>
+          </div>
+
           <div className="hero-animate hero-d1 mb-8">
             <span className="inline-block text-[10px] font-black tracking-[0.4em] uppercase text-[#D4AF7A] border-b border-[#D4AF7A]/40 pb-1">
               {config.year_founded ? `Hair Stylist dal ${config.year_founded}` : (config.subtitle || 'Solo per Appuntamento')}
@@ -570,16 +580,6 @@ export default function WebsitePage() {
             <Button onClick={() => scrollTo(servicesRef)} variant="ghost" className="text-white border border-white/30 hover:bg-white/10 font-bold text-sm px-8 py-4 rounded-full tracking-wider uppercase">
               Scopri i Servizi
             </Button>
-          </div>
-
-          {/* MESSAGGIO DI BENVENUTO DINAMICO */}
-          <div className="mt-8 text-center hero-animate hero-d5">
-            <p className="text-[#D4AF7A] text-lg font-black tracking-wider uppercase" style={{ fontFamily: "'Playfair Display', serif" }}>
-              {greeting.greeting}! ✨
-            </p>
-            <p className="text-white/60 text-sm mt-1 italic">
-              {greeting.message}
-            </p>
           </div>
         </div>
 
