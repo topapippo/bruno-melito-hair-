@@ -403,6 +403,15 @@ export default function WebsitePage() {
     }
   };
 
+  const getGreetingMessage = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return { greeting: "Buongiorno", message: "Inizia la giornata con un tocco di bellezza e stile." };
+    if (hour < 18) return { greeting: "Buon pomeriggio", message: "Prenditi una pausa per te stessa, ti aspettiamo in salone." };
+    return { greeting: "Buonasera", message: "Lasciati accogliere dal relax e dalle mani esperte del nostro team." };
+  };
+
+  const greeting = getGreetingMessage();
+
   return (
     <div className="min-h-screen text-white" style={{ ...themeStyle, backgroundColor: config.bg_color || '#0a0a0f', fontFamily: `var(--theme-font-body)` }} data-testid="website-landing">
       <WelcomeBanner T={T} setShowBooking={setShowBooking} />
@@ -770,6 +779,16 @@ export default function WebsitePage() {
       <footer className="py-12 relative" style={{ backgroundColor: `${T.text}`, color: '#fff' }}>
         <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, transparent, ${T.primary}, ${T.accent}, transparent)` }} />
         <div className="max-w-6xl mx-auto px-4">
+          {/* MESSAGGIO DI BENVENUTO DINAMICO */}
+          <div className="text-center mb-8 pb-8 border-b border-white/10">
+            <h3 className="text-2xl md:text-3xl font-black text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
+              {greeting.greeting}! ✨
+            </h3>
+            <p className="text-white/50 text-sm mt-2 font-medium max-w-md mx-auto">
+              {greeting.message}
+            </p>
+          </div>
+
           <AnimatedSection>
             <div className="flex flex-col items-center gap-6">
               <img src="/logo.png?v=4" alt={config.salon_name} className="w-14 h-14 rounded-2xl border border-white/20 shadow-sm hover:scale-110 transition-transform duration-300" />
