@@ -43,6 +43,61 @@ async def get_cards(client_id: Optional[str] = None, active_only: bool = True, c
     return await db.cards.find(query, {"_id": 0, "user_id": 0}).sort("created_at", -1).to_list(500)
 
 
+@router.get("/cards/alerts")
+async def get_card_alerts(current_user: dict = Depends(get_current_user)):
+    """Restituisce cards in scadenza o con servizi esauriti."""
+    cards = await db.cards.find(
+        {"user_id": current_user["id"], "active": True},
+        {"_id": 0, "user_id": 0}
+    ).to_list(500)
+
+    expiring = []
+    low_balance = []
+
+    for card in cards:
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+        # Subscriptions esaurite (services_left <= 1)
+        if card.get("total_services"):
+            services_left = card["total_services"] - card.get("used_services", 0)
+            if services_left <= 1:
+                expiring.append({
+                    **card,
+                    "services_left": services_left,
+                    "days_until_expiry": None,
+                    "percent_remaining": None
+                })
+
+        # Cards in scadenza (valid_until vicino)
+        if card.get("valid_until"):
+            valid_date = datetime.strptime(card["valid_until"], "%Y-%m-%d").date()
+            today_date = datetime.strptime(today, "%Y-%m-%d").date()
+            days_until = (valid_date - today_date).days
+            if 0 <= days_until <= 30:
+                expiring.append({
+                    **card,
+                    "days_until_expiry": days_until,
+                    "services_left": card.get("total_services") - card.get("used_services", 0) if card.get("total_services") else None,
+                    "percent_remaining": None
+                })
+
+        # Cards con credito basso
+        if card.get("remaining_value") is not None and card.get("total_value") is not None and card["total_value"] > 0:
+            percent = (card["remaining_value"] / card["total_value"]) * 100
+            if 0 < percent < 20:
+                low_balance.append({
+                    **card,
+                    "percent_remaining": int(percent),
+                    "days_until_expiry": None,
+                    "services_left": None
+                })
+
+    return {
+        "expiring": list({c["id"]: c for c in expiring}.values()),
+        "low_balance": list({c["id"]: c for c in low_balance}.values())
+    }
+
+
 @router.get("/cards/{card_id}", response_model=PrepaidCardResponse)
 async def get_card(card_id: str, current_user: dict = Depends(get_current_user)):
     card = await db.cards.find_one({"id": card_id, "user_id": current_user["id"]}, {"_id": 0, "user_id": 0})
@@ -490,61 +545,4 @@ async def settle_sospeso(sospeso_id: str, method: str, current_user: dict = Depe
     await db.sospesi.delete_one({"id": sospeso_id})
 
     return {"success": True, "payment_id": payment_doc["id"]}
-
-
-# ============== ALERTS ==============
-
-@router.get("/cards/alerts")
-async def get_card_alerts(current_user: dict = Depends(get_current_user)):
-    """Restituisce cards in scadenza o con servizi esauriti."""
-    cards = await db.cards.find(
-        {"user_id": current_user["id"], "active": True},
-        {"_id": 0, "user_id": 0}
-    ).to_list(500)
-
-    expiring = []
-    low_balance = []
-
-    for card in cards:
-        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-
-        # Subscriptions esaurite (services_left <= 1)
-        if card.get("total_services"):
-            services_left = card["total_services"] - card.get("used_services", 0)
-            if services_left <= 1:
-                expiring.append({
-                    **card,
-                    "services_left": services_left,
-                    "days_until_expiry": None,
-                    "percent_remaining": None
-                })
-
-        # Cards in scadenza (valid_until vicino)
-        if card.get("valid_until"):
-            valid_date = datetime.strptime(card["valid_until"], "%Y-%m-%d").date()
-            today_date = datetime.strptime(today, "%Y-%m-%d").date()
-            days_until = (valid_date - today_date).days
-            if 0 <= days_until <= 30:
-                expiring.append({
-                    **card,
-                    "days_until_expiry": days_until,
-                    "services_left": card.get("total_services") - card.get("used_services", 0) if card.get("total_services") else None,
-                    "percent_remaining": None
-                })
-
-        # Cards con credito basso
-        if card.get("remaining_value") is not None and card.get("total_value") is not None and card["total_value"] > 0:
-            percent = (card["remaining_value"] / card["total_value"]) * 100
-            if 0 < percent < 20:
-                low_balance.append({
-                    **card,
-                    "percent_remaining": int(percent),
-                    "days_until_expiry": None,
-                    "services_left": None
-                })
-
-    return {
-        "expiring": list({c["id"]: c for c in expiring}.values()),
-        "low_balance": list({c["id"]: c for c in low_balance}.values())
-    }
 
