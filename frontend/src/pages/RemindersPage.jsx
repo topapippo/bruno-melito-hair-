@@ -27,7 +27,8 @@ import {
 } from '@/components/ui/select';
 import {
   Bell, MessageSquare, Clock, UserX, Check, Phone, Calendar,
-  RotateCcw, Pencil, Trash2, Plus, FileText, Send, Loader2, XCircle, Palette, Edit3, Cake
+  RotateCcw, Pencil, Trash2, Plus, FileText, Send, Loader2, XCircle, Palette, Edit3, Cake,
+  Euro, AlertTriangle
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -63,6 +64,8 @@ export default function RemindersPage() {
   const [inactiveClients, setInactiveClients] = useState([]);
   const [inactiveDays, setInactiveDays] = useState(30);
   const [inactiveSendingId, setInactiveSendingId] = useState(null);
+  const [upcomingExpenses, setUpcomingExpenses] = useState([]);
+  const [lastServiceAlerts, setLastServiceAlerts] = useState([]);
 
   useEffect(() => {
     fetchData();
@@ -100,16 +103,21 @@ export default function RemindersPage() {
 
   const fetchData = async () => {
     try {
-      const [remRes, templRes, colorRes, birthRes] = await Promise.all([
+      const [remRes, templRes, colorRes, birthRes, expenseRes, cardRes] = await Promise.all([
         api.get(`${API}/reminders/tomorrow`),
         api.get(`${API}/reminders/templates`),
         api.get(`${API}/reminders/color-expiry`).catch(() => ({ data: [] })),
         api.get(`${API}/reminders/birthdays?days=${birthdayDays}`).catch(() => ({ data: [] })),
+        api.get(`${API}/uscite/upcoming`).catch(() => ({ data: [] })),
+        api.get(`${API}/cards/alerts`).catch(() => ({ data: { expiring: [], low_balance: [] } })),
       ]);
       setTomorrowReminders(remRes.data);
       setTemplates(templRes.data);
       setColorReminders(colorRes.data);
       setBirthdayClients(birthRes.data);
+      setUpcomingExpenses(expenseRes.data);
+      const alerts = cardRes.data.expiring || [];
+      setLastServiceAlerts(alerts.filter(a => a.services_left <= 1));
     } catch (err) {
       console.error(err);
       toast.error('Errore nel caricamento');
@@ -402,7 +410,7 @@ export default function RemindersPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 stagger-fast">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 stagger-fast">
           <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
             <CardContent className="p-5">
               <div className="flex items-center gap-3">
@@ -446,7 +454,43 @@ export default function RemindersPage() {
                 </div>
                 <div>
                   <p className="text-sm text-orange-700 font-semibold">Clienti Assenti</p>
-                  <p className="text-sm font-bold text-orange-600">Vai alla pagina dedicata →</p>
+                  <p className="text-sm font-bold text-orange-600">Vai alla pagina →</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card
+            onClick={() => navigate('/uscite')}
+            className="bg-gradient-to-br from-red-50 to-red-100 border-red-200 cursor-pointer hover:border-red-300 transition-colors"
+          >
+            <CardContent className="p-5">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-red-500 rounded-xl">
+                  <Euro className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm text-red-700 font-semibold">Uscite</p>
+                  <p className="text-2xl font-black text-red-600" data-testid="expenses-count">
+                    {upcomingExpenses.filter(e => e.overdue || e.due_date <= new Date().toISOString().slice(0, 10)).length}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card
+            onClick={() => navigate('/abbonamenti')}
+            className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200 cursor-pointer hover:border-amber-300 transition-colors"
+          >
+            <CardContent className="p-5">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-amber-500 rounded-xl">
+                  <AlertTriangle className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm text-amber-700 font-semibold">Abbonamenti</p>
+                  <p className="text-2xl font-black text-amber-600" data-testid="subscriptions-count">
+                    {lastServiceAlerts.length}
+                  </p>
                 </div>
               </div>
             </CardContent>

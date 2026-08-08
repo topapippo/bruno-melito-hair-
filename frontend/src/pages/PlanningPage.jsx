@@ -718,7 +718,6 @@ export default function PlanningPage() {
         <div className="flex items-center gap-2 flex-wrap">
           <ReminderBanner
             pendingRemindersCount={pendingRemindersCount}
-            inactiveClientsCount={inactiveClientsCount}
             autoReminderPending={autoReminderPending}
             onBatchSendAll={handleBatchSendReminders}
             sendingAll={sendingReminders}

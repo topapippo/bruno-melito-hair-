@@ -107,26 +107,20 @@ export function IncomingMessageBanner({ newIncomingMessages, dismissIncomingMess
   );
 }
 
-export function ReminderBanner({ pendingRemindersCount, inactiveClientsCount, autoReminderPending, onBatchSendAll, sendingAll }) {
-  if (pendingRemindersCount === 0 && inactiveClientsCount === 0 && autoReminderPending === 0) return null;
+export function ReminderBanner({ pendingRemindersCount, autoReminderPending, onBatchSendAll, sendingAll }) {
+  if (pendingRemindersCount === 0 && autoReminderPending === 0) return null;
   return (
     <div className="flex items-center gap-2 flex-wrap" data-testid="reminder-banner">
       {autoReminderPending > 0 && (
-        <a href="/reminders" title={`${autoReminderPending} promemoria da inviare ora`} className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-100 border border-green-300 rounded-full text-[11px] font-black text-green-700 hover:bg-green-200 transition-colors cursor-pointer">
-          <Bell className="w-3.5 h-3.5 animate-bounce" />
+        <a href="/reminders" title={`${autoReminderPending} promemoria da inviare ora`} className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-100 border border-green-300 rounded-full text-sm font-black text-green-700 hover:bg-green-200 transition-colors cursor-pointer">
+          <Bell className="w-4 h-4 animate-bounce" />
           {autoReminderPending}
         </a>
       )}
       {pendingRemindersCount > 0 && autoReminderPending === 0 && (
-        <a href="/reminders" title={`${pendingRemindersCount} promemoria domani`} className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-100 border border-amber-300 rounded-full text-[11px] font-black text-amber-700 hover:bg-amber-200 transition-colors cursor-pointer">
-          <Bell className="w-3.5 h-3.5" />
+        <a href="/reminders" title={`${pendingRemindersCount} promemoria domani`} className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-100 border border-amber-300 rounded-full text-sm font-black text-amber-700 hover:bg-amber-200 transition-colors cursor-pointer">
+          <Bell className="w-4 h-4" />
           {pendingRemindersCount}
-        </a>
-      )}
-      {inactiveClientsCount > 0 && (
-        <a href="/reminders" title={`${inactiveClientsCount} clienti inattivi`} className="inline-flex items-center gap-1 px-2.5 py-1 bg-orange-100 border border-orange-300 rounded-full text-[11px] font-black text-orange-700 hover:bg-orange-200 transition-colors cursor-pointer">
-          👥
-          {inactiveClientsCount}
         </a>
       )}
     </div>
