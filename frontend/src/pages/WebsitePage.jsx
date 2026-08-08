@@ -571,6 +571,16 @@ export default function WebsitePage() {
               Scopri i Servizi
             </Button>
           </div>
+
+          {/* MESSAGGIO DI BENVENUTO DINAMICO */}
+          <div className="mt-8 text-center hero-animate hero-d5">
+            <p className="text-[#D4AF7A] text-lg font-black tracking-wider uppercase" style={{ fontFamily: "'Playfair Display', serif" }}>
+              {greeting.greeting}! ✨
+            </p>
+            <p className="text-white/60 text-sm mt-1 italic">
+              {greeting.message}
+            </p>
+          </div>
         </div>
 
         {/* Freccia Scroll */}
@@ -772,18 +782,6 @@ export default function WebsitePage() {
 
           {/* Widget Elfsight */}
           <div className="elfsight-app-82ef4f53-b5f0-4b51-83b8-09a15644fdbc" data-elfsight-app-lazy></div>
-        </div>
-      </section>
-
-      {/* MESSAGGIO DI BENVENUTO DINAMICO */}
-      <section className="bg-[#FDF8F5] py-16 text-center">
-        <div className="max-w-2xl mx-auto px-4">
-          <h3 className="text-3xl md:text-4xl font-black text-[#2D1B14]" style={{ fontFamily: "'Playfair Display', serif" }}>
-            {greeting.greeting}! ✨
-          </h3>
-          <p className="text-[#9C7060] text-base mt-3 font-medium">
-            {greeting.message}
-          </p>
         </div>
       </section>
 
