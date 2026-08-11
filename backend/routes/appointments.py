@@ -275,101 +275,68 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, backgrou
 
     await db.appointments.update_one({"id": appointment_id, "user_id": current_user["id"]}, {"$set": {"status": "completed", "paid": True, "payment_method": final_payment_method}})
 
-    # SCARICO MAGAZZINO AUTOMATICO – legge categoria e prodotto collegato dai servizi originali
-    # inventory_log: cosa è stato scaricato e cosa no (mostrato in cassa per diagnosi)
-    # inventory_usage: log storico permanente di ogni scarico, usato dal report mensile
-    inventory_log = {"deducted": [], "warnings": []}
-    try:
-        service_list = apt.get("services", [])
-        service_ids = list({s.get("id") for s in service_list if s.get("id")})
-        if service_ids:
-            db_services = await db.services.find(
-                {"id": {"$in": service_ids}, "user_id": current_user["id"]}
-            ).to_list(100)
-            svc_map = {s["id"]: s for s in db_services}
-            client_doc = await db.clients.find_one(
-                {"id": apt.get("client_id"), "user_id": current_user["id"]}, {"_id": 0}
-            ) if apt.get("client_id") else None
-            for s in service_list:
-                db_svc = svc_map.get(s.get("id"))
-                if not db_svc:
-                    continue
-                try:
-                    qty = int(s.get("quantity", 1) or 1)
-                except (TypeError, ValueError):
-                    qty = 1
-                svc_name = db_svc.get("name", "servizio")
-                category = (db_svc.get("category") or "").lower()
-                if "colore" in category:
-                    raw_codes = ((client_doc or {}).get("current_color_code") or "").strip()
-                    if not raw_codes:
-                        inventory_log["warnings"].append(f"{svc_name}: cliente senza Codice Colore")
-                        continue
-                    # supporta più colori: separati da virgola, +, /, ; o a capo
-                    color_codes = [c.strip() for c in re.split(r"[,;+/\n]+", raw_codes) if c.strip()]
+    # SCARICO MAGAZZINO INTELLIGENTE
+
+    # A. Scarico manuale da modale cassa (Rivendita)
+    if data.retail_items:
+        for item in data.retail_items:
+            await db.inventory.update_one(
+                {"id": item.product_id, "user_id": current_user["id"]},
+                {"$inc": {"total_stock": -abs(item.quantity)}}
+            )
+    elif data.consumed_products:
+        # Retrocompatibilità
+        for item in data.consumed_products:
+            await db.inventory.update_one(
+                {"id": item.get("product_id"), "user_id": current_user["id"]},
+                {"$inc": {"total_stock": -abs(item.get("quantity", 1))}}
+            )
+
+    # B. Scarico Automatico basato sui servizi dell'appuntamento
+    service_ids = [s.get("id") for s in apt.get("services", []) if s.get("id")]
+    if service_ids:
+        db_services = await db.services.find(
+            {"id": {"$in": service_ids}, "user_id": current_user["id"]}
+        ).to_list(100)
+
+        client_doc = await db.clients.find_one(
+            {"id": apt.get("client_id"), "user_id": current_user["id"]},
+            {"_id": 0}
+        ) if apt.get("client_id") else None
+
+        for db_svc in db_services:
+            category = (db_svc.get("category") or "").lower()
+
+            # Se il servizio è un Colore, cerca la nuance nella scheda cliente
+            if "colore" in category:
+                if client_doc and client_doc.get("current_color_code"):
+                    # Split dei colori se ce n'è più di uno separati da virgola
+                    color_codes = [c.strip() for c in client_doc["current_color_code"].split(',') if c.strip()]
                     for color_code in color_codes:
-                        # match nome prodotto case-insensitive + spazi ignorati
-                        inv_prod = await db.inventory.find_one({
-                            "user_id": current_user["id"],
-                            "name": {"$regex": f"^\\s*{re.escape(color_code)}\\s*$", "$options": "i"},
-                        })
-                        if not inv_prod:
-                            inventory_log["warnings"].append(f"{svc_name}: nessun prodotto magazzino chiamato «{color_code}»")
-                            continue
-                        dec = abs(inv_prod.get("dose_size", 1.0)) * qty
-                        await db.inventory.update_one(
-                            {"id": inv_prod["id"], "user_id": current_user["id"]},
-                            {"$inc": {"total_stock": -dec}}
-                        )
-                        inventory_log["deducted"].append(f"{inv_prod['name']} −{dec:g}")
-                        await db.inventory_usage.insert_one({
-                            "id": str(uuid.uuid4()), "user_id": current_user["id"],
-                            "product_id": inv_prod["id"], "product_name": inv_prod["name"],
-                            "quantity": dec, "category": "colore",
-                            "appointment_id": appointment_id,
-                            "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
-                            "timestamp": datetime.now(timezone.utc).isoformat(),
-                        })
-                elif db_svc.get("linked_inventory_id"):
-                    inv_prod = await db.inventory.find_one({"id": db_svc["linked_inventory_id"], "user_id": current_user["id"]})
-                    if not inv_prod:
-                        inventory_log["warnings"].append(f"{svc_name}: prodotto collegato non trovato in magazzino")
-                        continue
-                    # Rivendita = 1 pezzo intero; altri = dose per uso
-                    dec = (1 if "rivendita" in category else abs(inv_prod.get("dose_size", 1.0))) * qty
+                        inv_prod = await db.inventory.find_one({"user_id": current_user["id"], "name": color_code})
+                        if inv_prod:
+                            await db.inventory.update_one(
+                                {"id": inv_prod["id"], "user_id": current_user["id"]},
+                                {"$inc": {"total_stock": -abs(inv_prod.get("dose_size", 1.0))}}
+                            )
+
+            # Se il servizio è un Trattamento/Permanente e ha un prodotto collegato
+            elif any(x in category for x in ["trattamento", "permanente", "stiratura"]) and db_svc.get("linked_inventory_id"):
+                inv_id = db_svc["linked_inventory_id"]
+                inv_prod = await db.inventory.find_one({"id": inv_id, "user_id": current_user["id"]})
+                if inv_prod:
                     await db.inventory.update_one(
                         {"id": inv_prod["id"], "user_id": current_user["id"]},
-                        {"$inc": {"total_stock": -dec}}
+                        {"$inc": {"total_stock": -abs(inv_prod.get("dose_size", 1.0))}}
                     )
-                    inventory_log["deducted"].append(f"{inv_prod['name']} −{dec:g}")
-                    await db.inventory_usage.insert_one({
-                        "id": str(uuid.uuid4()), "user_id": current_user["id"],
-                        "product_id": inv_prod["id"], "product_name": inv_prod["name"],
-                        "quantity": dec, "category": category or "altro",
-                        "appointment_id": appointment_id,
-                        "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
-                    })
-                elif category in ("trattamento", "permanente", "rivendita"):
-                    inventory_log["warnings"].append(f"{svc_name}: nessun prodotto magazzino collegato al servizio")
 
-        # Prodotti rivendita venduti direttamente in cassa
-        for line in retail_lines:
-            await db.inventory.update_one(
-                {"id": line["product_id"], "user_id": current_user["id"]},
-                {"$inc": {"total_stock": -line["quantity"]}}
-            )
-            inventory_log["deducted"].append(f"{line['name']} −{line['quantity']:g}")
-            await db.inventory_usage.insert_one({
-                "id": str(uuid.uuid4()), "user_id": current_user["id"],
-                "product_id": line["product_id"], "product_name": line["name"],
-                "quantity": line["quantity"], "category": "rivendita",
-                "appointment_id": appointment_id,
-                "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            })
-    except Exception as e:
-        logger.error(f"Errore scarico magazzino checkout {appointment_id}: {e}")
+            # Se è un prodotto di Rivendita (mappato nei servizi)
+            elif "rivendita" in category and db_svc.get("linked_inventory_id"):
+                inv_id = db_svc["linked_inventory_id"]
+                await db.inventory.update_one(
+                    {"id": inv_id, "user_id": current_user["id"]},
+                    {"$inc": {"total_stock": -1}}
+                )
 
     phone = apt.get("client_phone")
     if not phone and apt.get("client_id"):

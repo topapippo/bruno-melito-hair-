@@ -409,6 +409,10 @@ class RetailItemCheckout(BaseModel):
     product_id: str
     quantity: int = Field(default=1, gt=0)
 
+class RetailItem(BaseModel):
+    product_id: str
+    quantity: int
+
 class CheckoutData(BaseModel):
     payment_method: str = "mixed"  # cash, pos, sospeso, prepaid, mixed (se ci sono split)
     discount_type: Optional[str] = "none"
@@ -421,7 +425,8 @@ class CheckoutData(BaseModel):
     note: Optional[str] = None
     payment_splits: Optional[List[PaymentSplitItem]] = None
     custom_services: Optional[List[CheckoutServiceItem]] = None
-    retail_items: Optional[List[RetailItemCheckout]] = None
+    retail_items: Optional[List[RetailItem]] = None
+    consumed_products: Optional[List[dict]] = None
 
 
 # ============== SOCIAL POSTS ==============
