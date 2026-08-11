@@ -95,7 +95,7 @@ export default function WebsitePage() {
   const [showWelcome, setShowWelcome] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowWelcome(false), 3000);
+    const timer = setTimeout(() => setShowWelcome(false), 5000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -553,19 +553,19 @@ export default function WebsitePage() {
         {/* Overlay scuro elegante per leggibilità */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/80"></div>
 
-        {/* MESSAGGIO OVERLAY TEMPORANEO */}
+        {/* MESSAGGIO OVERLAY TEMPORANEO — GRANDE E LEGGIBILE */}
         {showWelcome && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.8 }}
-            className="absolute z-20 top-[15%] left-1/2 -translate-x-1/2 text-center backdrop-blur-md bg-black/40 px-8 py-4 rounded-2xl border border-white/10"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.6 }}
+            className="absolute z-20 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center backdrop-blur-lg bg-black/70 px-12 py-10 rounded-3xl border-2 border-[#D4AF7A]/60 w-[90%] max-w-2xl shadow-2xl"
           >
-            <p className="text-[#D4AF7A] text-lg font-black tracking-[0.2em] uppercase" style={{ fontFamily: "'Playfair Display', serif" }}>
+            <p className="text-[#D4AF7A] text-5xl sm:text-6xl font-black tracking-[0.15em] uppercase leading-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
               {greeting.greeting}! ✨
             </p>
-            <p className="text-white/80 text-sm mt-1 italic max-w-xs">
+            <p className="text-white/90 text-lg sm:text-xl mt-6 italic leading-relaxed font-light">
               {greeting.message}
             </p>
           </motion.div>
