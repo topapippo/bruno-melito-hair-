@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -1025,6 +1026,9 @@ export default function RemindersPage() {
                 <Send className="w-5 h-5 text-green-500" />
                 Invia Messaggio WhatsApp
               </DialogTitle>
+              <DialogDescription>
+                Seleziona un template e personalizza il messaggio prima di inviare
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 mt-2">
               {msgTarget && (
@@ -1086,6 +1090,9 @@ export default function RemindersPage() {
               <DialogTitle className="text-xl font-bold text-[#2D1B14]">
                 {editingTemplate ? 'Modifica Template' : 'Nuovo Template'}
               </DialogTitle>
+              <DialogDescription>
+                {editingTemplate ? 'Aggiorna il template per i messaggi WhatsApp' : 'Crea un nuovo template per messaggi WhatsApp automatici'}
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 mt-2">
               <div className="space-y-2">
