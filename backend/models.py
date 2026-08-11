@@ -425,7 +425,7 @@ class CheckoutData(BaseModel):
     note: Optional[str] = None
     payment_splits: Optional[List[PaymentSplitItem]] = None
     custom_services: Optional[List[CheckoutServiceItem]] = None
-    retail_items: Optional[List[RetailItem]] = None
+    retail_items: Optional[List[dict]] = None
     consumed_products: Optional[List[dict]] = None
 
 

@@ -277,19 +277,17 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, backgrou
 
     # SCARICO MAGAZZINO INTELLIGENTE
 
-    # A. Scarico manuale da modale cassa (Rivendita)
-    if data.retail_items:
-        for item in data.retail_items:
+    # A. Scarico manuale da modale cassa (Rivendita o consumati)
+    retail_items = getattr(data, 'retail_items', None) or []
+    consumed_products = getattr(data, 'consumed_products', None) or []
+
+    for item in retail_items + consumed_products:
+        prod_id = item.get("product_id")
+        qty = abs(item.get("quantity", 1))
+        if prod_id:
             await db.inventory.update_one(
-                {"id": item.product_id, "user_id": current_user["id"]},
-                {"$inc": {"total_stock": -abs(item.quantity)}}
-            )
-    elif data.consumed_products:
-        # Retrocompatibilità
-        for item in data.consumed_products:
-            await db.inventory.update_one(
-                {"id": item.product_id, "user_id": current_user["id"]},
-                {"$inc": {"total_stock": -abs(item.quantity)}}
+                {"id": prod_id, "user_id": current_user["id"]},
+                {"$inc": {"total_stock": -qty}}
             )
 
     # B. Scarico Automatico basato sui servizi dell'appuntamento
@@ -310,7 +308,8 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, backgrou
             # Se il servizio è un Colore, cerca la nuance nella scheda cliente
             if "colore" in category:
                 if client_doc and client_doc.get("current_color_code"):
-                    color_codes = [c.strip() for c in client_doc["current_color_code"].split(',') if c.strip()]
+                    # Split dei colori se ce n'è più di uno separati da virgola
+                    color_codes = [c.strip() for c in str(client_doc["current_color_code"]).split(',') if c.strip()]
                     for color_code in color_codes:
                         inv_prod = await db.inventory.find_one({"user_id": current_user["id"], "name": color_code})
                         if inv_prod:
