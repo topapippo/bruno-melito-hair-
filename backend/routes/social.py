@@ -472,19 +472,15 @@ async def publish_via_make(data: dict, current_user: dict = Depends(get_current_
             "image_url": str(image_url)
         }
 
-        print(f"📤 Invio payload a Make.com: {payload}", flush=True)
-
         # 3. Chiamata a Make.com con gestione errori dettagliata
         resp = requests.post(url, json=payload, timeout=15)
 
         if resp.status_code >= 400:
-            print(f"❌ Risposta negativa da Make.com: {resp.status_code} - {resp.text}", flush=True)
             raise HTTPException(status_code=500, detail=f"Make.com ha rifiutato (Codice {resp.status_code}). Verifica lo scenario su Make.")
 
     except HTTPException:
         raise # Rilancia l'errore HTTP personalizzato
     except Exception as e:
-        print(f"❌ ERRORE GENERICO publish_via_make: {str(e)}", flush=True)
         raise HTTPException(status_code=500, detail=f"Errore interno: {str(e)}")
 
     # 4. Salva nello storico
@@ -518,7 +514,6 @@ async def upload_image(file: UploadFile = File(...), current_user: dict = Depend
         api_secret = os.environ.get("CLOUDINARY_API_SECRET")
 
         if not all([cloud_name, api_key, api_secret]):
-            print("❌ ERRORE: Cloudinary non configurato", flush=True)
             raise HTTPException(
                 status_code=400,
                 detail="Cloudinary non configurato. Contatta l'admin."
@@ -529,11 +524,7 @@ async def upload_image(file: UploadFile = File(...), current_user: dict = Depend
         # Leggi il file
         content = await file.read()
 
-        print(f"📤 Upload a Cloudinary...", flush=True)
-
         result = cloudinary.uploader.upload(content, resource_type="auto")
-
-        print(f"✅ Risposta Cloudinary: {result}", flush=True)
 
         image_url = result.get("secure_url")
         if not image_url:
@@ -543,14 +534,11 @@ async def upload_image(file: UploadFile = File(...), current_user: dict = Depend
         if image_url and not image_url.lower().endswith(f'.{fmt}'):
             image_url = f'{image_url}.{fmt}'
 
-        print(f"✅ Foto caricata (URL validato per Make): {image_url}", flush=True)
-
         return {"success": True, "image_url": image_url}
 
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ ERRORE upload_image: {str(e)}", flush=True)
         raise HTTPException(status_code=500, detail=f"Errore caricamento foto: {str(e)}")
 
 
@@ -639,17 +627,13 @@ async def publish_social_post_now(post_id: str, current_user: dict = Depends(get
         "image_urls": image_urls
     }
 
-    print(f"📤 Invio post programmato a Make.com: {payload}", flush=True)
-
     try:
         resp = requests.post(url, json=payload, timeout=15)
         if resp.status_code >= 400:
-            print(f"❌ Risposta negativa da Make.com: {resp.status_code} - {resp.text}", flush=True)
             raise HTTPException(status_code=500, detail=f"Make.com ha rifiutato (Codice {resp.status_code}). Verifica lo scenario su Make.")
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ ERRORE GENERICO publish_social_post_now: {str(e)}", flush=True)
         raise HTTPException(status_code=500, detail=f"Errore interno: {str(e)}")
 
     published_at = datetime.now(timezone.utc).isoformat()
