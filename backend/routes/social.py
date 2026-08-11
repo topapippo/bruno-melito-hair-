@@ -464,13 +464,14 @@ async def publish_via_make(data: dict = Body(...), current_user: dict = Depends(
             if '?' not in image_url:
                 image_url += '.jpg'
 
-        # 2. Creiamo un payload perfettamente pulito (SOLO stringhe)
+        # 2. Creiamo un payload perfettamente pulito (SOLO stringhe, escludendo campi vuoti)
         payload = {
             "text": str(text),
             "message": str(text),
             "caption": str(text),
-            "image_url": str(image_url)
         }
+        if image_url:
+            payload["image_url"] = str(image_url)
 
         # 3. Chiamata a Make.com con gestione errori dettagliata
         resp = requests.post(url, json=payload, timeout=15)
@@ -623,9 +624,11 @@ async def publish_social_post_now(post_id: str, current_user: dict = Depends(get
         "text": text,
         "message": text,
         "caption": text,
-        "image_url": image_url,
-        "image_urls": image_urls
     }
+    if image_url:
+        payload["image_url"] = image_url
+    if image_urls:
+        payload["image_urls"] = image_urls
 
     try:
         resp = requests.post(url, json=payload, timeout=15)
