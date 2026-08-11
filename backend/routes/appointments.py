@@ -288,8 +288,8 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, backgrou
         # Retrocompatibilità
         for item in data.consumed_products:
             await db.inventory.update_one(
-                {"id": item.get("product_id"), "user_id": current_user["id"]},
-                {"$inc": {"total_stock": -abs(item.get("quantity", 1))}}
+                {"id": item.product_id, "user_id": current_user["id"]},
+                {"$inc": {"total_stock": -abs(item.quantity)}}
             )
 
     # B. Scarico Automatico basato sui servizi dell'appuntamento
@@ -310,7 +310,6 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, backgrou
             # Se il servizio è un Colore, cerca la nuance nella scheda cliente
             if "colore" in category:
                 if client_doc and client_doc.get("current_color_code"):
-                    # Split dei colori se ce n'è più di uno separati da virgola
                     color_codes = [c.strip() for c in client_doc["current_color_code"].split(',') if c.strip()]
                     for color_code in color_codes:
                         inv_prod = await db.inventory.find_one({"user_id": current_user["id"], "name": color_code})
