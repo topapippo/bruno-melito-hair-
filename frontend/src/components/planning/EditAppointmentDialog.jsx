@@ -112,6 +112,7 @@ export default function EditAppointmentDialog({
   });
   const [newSubscriptionPayMethod, setNewSubscriptionPayMethod] = useState('cash');
   const [subscriptionPriceBeingPaid, setSubscriptionPriceBeingPaid] = useState(null);
+  const [inventoryColors, setInventoryColors] = useState([]);
 
   const sortedServices = groupServicesByCategory(services);
 
@@ -132,6 +133,7 @@ export default function EditAppointmentDialog({
       email: selectedClientInfo.email || '',
       birthday: selectedClientInfo.birthday || '',
       hair_notes: selectedClientInfo.hair_notes || '',
+      current_color_code: selectedClientInfo.current_color_code || '',
     });
     setEditingClient(true);
     setShowHistory(false);
@@ -175,6 +177,15 @@ export default function EditAppointmentDialog({
     });
     const client = clients.find(c => c.id === appointment.client_id);
     setSelectedClientInfo(client || null);
+
+    // Carica colori magazzino
+    api.get(`${API}/inventory`).then(res => {
+      const colors = (res.data || [])
+        .filter(p => !p.category || p.category === 'colore' || p.category === 'color')
+        .map(p => p.name)
+        .filter(Boolean);
+      setInventoryColors(colors);
+    }).catch(() => {});
 
     if (isNew) {
       setEditingClient(false);
@@ -740,7 +751,14 @@ export default function EditAppointmentDialog({
                       <div><Label className="text-xs" style={{color: COLORS.textDark}}>Email</Label><Input className="h-7 text-xs border-2 transition-all focus:shadow-md" style={{borderColor: COLORS.borderLight}} value={clientFormData.email||''} onChange={e=>setClientFormData(p=>({...p,email:e.target.value}))} /></div>
                       <div><Label className="text-xs" style={{color: COLORS.textDark}}>Compleanno</Label><Input className="h-7 text-xs border-2 transition-all focus:shadow-md" style={{borderColor: COLORS.borderLight}} type="date" value={clientFormData.birthday||''} onChange={e=>setClientFormData(p=>({...p,birthday:e.target.value}))} /></div>
                     </div>
-                    <div><Label className="text-xs" style={{color: COLORS.textDark}}>Note Colore / Capelli</Label><Textarea className="text-xs min-h-[60px] resize-none border-2 transition-all focus:shadow-md" style={{borderColor: COLORS.borderLight}} value={clientFormData.hair_notes||''} onChange={e=>setClientFormData(p=>({...p,hair_notes:e.target.value}))} /></div>
+                    <div><Label className="text-xs" style={{color: COLORS.textDark}}>Note Capelli</Label><Textarea className="text-xs min-h-[60px] resize-none border-2 transition-all focus:shadow-md" style={{borderColor: COLORS.borderLight}} value={clientFormData.hair_notes||''} onChange={e=>setClientFormData(p=>({...p,hair_notes:e.target.value}))} /></div>
+                    <div>
+                      <Label className="text-xs" style={{color: COLORS.textDark}}>Codice Colore (Magazzino)</Label>
+                      <Input list="inventory-colors-list" className="h-7 text-xs border-2 transition-all focus:shadow-md" style={{borderColor: COLORS.borderLight}} value={clientFormData.current_color_code||''} onChange={e=>setClientFormData(p=>({...p,current_color_code:e.target.value}))} placeholder="Es. 7.0, 6.3" />
+                      <datalist id="inventory-colors-list">
+                        {inventoryColors.map(c => <option key={c} value={c} />)}
+                      </datalist>
+                    </div>
                     <Button type="button" size="sm" className="w-full h-7 text-xs text-white font-bold transition-all duration-200 hover:scale-105 active:scale-95" style={{background: `linear-gradient(135deg, ${COLORS.gold} 0%, #c49a6f 100%)`, boxShadow: `0 2px 8px rgba(212, 175, 122, 0.15)`}} onClick={saveClientChanges} disabled={savingClient}>
                       {savingClient && <Loader2 className="w-3 h-3 animate-spin mr-1" />}Salva modifiche cliente
                     </Button>

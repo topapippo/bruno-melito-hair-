@@ -656,7 +656,7 @@ export default function ClientsPage() {
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                   <Scissors className="w-4 h-4 text-[#C8617A]" />
-                  Note Capelli / Colore
+                  Note Capelli
                 </Label>
                 <Textarea
                   value={formData.hair_notes}

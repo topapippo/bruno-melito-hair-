@@ -560,12 +560,12 @@ export default function WebsitePage() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{ duration: 0.6 }}
-            className="absolute z-20 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center backdrop-blur-lg bg-black/70 px-12 py-10 rounded-3xl border-2 border-[#D4AF7A]/60 w-[90%] max-w-2xl shadow-2xl"
+            className="absolute z-20 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center backdrop-blur-lg bg-black/70 px-6 sm:px-8 md:px-12 py-6 sm:py-8 md:py-10 rounded-3xl border-2 border-[#D4AF7A]/60 w-[95%] sm:w-[90%] md:max-w-2xl shadow-2xl"
           >
-            <p className="text-[#D4AF7A] text-5xl sm:text-6xl font-black tracking-[0.15em] uppercase leading-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
+            <p className="text-[#D4AF7A] text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-[0.1em] sm:tracking-[0.15em] uppercase leading-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
               {greeting.greeting}! ✨
             </p>
-            <p className="text-white/90 text-lg sm:text-xl mt-6 italic leading-relaxed font-light">
+            <p className="text-white/90 text-sm sm:text-base md:text-lg lg:text-xl mt-4 sm:mt-6 italic leading-relaxed font-light">
               {greeting.message}
             </p>
           </motion.div>
