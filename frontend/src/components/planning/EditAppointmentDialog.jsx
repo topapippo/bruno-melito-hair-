@@ -784,7 +784,7 @@ export default function EditAppointmentDialog({
             )}
 
             {/* Codice Colore */}
-            {selectedClientInfo?.current_color_code && (
+            {selectedClientInfo?.current_color_code && !editingClient && (
               <div className="p-3 rounded-xl border-2 border-[#C8617A] bg-[#FAF0F5]">
                 <p className="text-xs font-bold text-[#C8617A] mb-1">🎨 Codice Colore — {selectedClientInfo.name}</p>
                 <p className="text-sm text-[#5C3040]">{selectedClientInfo.current_color_code}</p>
