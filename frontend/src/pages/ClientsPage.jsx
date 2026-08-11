@@ -72,7 +72,6 @@ export default function ClientsPage() {
     name: '',
     phone: '',
     email: '',
-    hair_notes: '',
     current_color_code: '',
     birthday: '',
   });
@@ -127,7 +126,7 @@ export default function ClientsPage() {
       }
       setDialogOpen(false);
       setEditingClient(null);
-      setFormData({ name: '', phone: '', email: '', hair_notes: '', current_color_code: '', birthday: '' });
+      setFormData({ name: '', phone: '', email: '', current_color_code: '', birthday: '' });
       fetchClients();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Errore nel salvataggio');
@@ -142,7 +141,6 @@ export default function ClientsPage() {
       name: client.name,
       phone: client.phone,
       email: client.email,
-      hair_notes: client.hair_notes || '',
       current_color_code: client.current_color_code || '',
       birthday: client.birthday || '',
     });
@@ -190,7 +188,7 @@ export default function ClientsPage() {
 
   const openNewDialog = () => {
     setEditingClient(null);
-    setFormData({ name: '', phone: '', email: '', hair_notes: '', current_color_code: '', birthday: '' });
+    setFormData({ name: '', phone: '', email: '', current_color_code: '', birthday: '' });
     setDialogOpen(true);
   };
 
@@ -302,7 +300,6 @@ export default function ClientsPage() {
           name: c.name,
           phone: c.phone || '',
           email: c.email || '',
-          hair_notes: c.notes || '',
         }))
       });
 
@@ -351,7 +348,7 @@ export default function ClientsPage() {
       client.name.toLowerCase().includes(search.toLowerCase()) ||
       client.phone.includes(search) ||
       client.email.toLowerCase().includes(search.toLowerCase());
-    const matchesColor = !colorOnly || (client.hair_notes && client.hair_notes.trim() !== '');
+    const matchesColor = !colorOnly || (client.current_color_code && client.current_color_code.trim() !== '');
     return matchesSearch && matchesColor;
   }).sort((a, b) => {
     const key = (name) => {
@@ -533,12 +530,6 @@ export default function ClientsPage() {
                         <span className="truncate">{client.email}</span>
                       </div>
                     )}
-                    {client.hair_notes && (
-                      <div className="flex items-start gap-1.5 mt-1.5 bg-[#FAF0F5] border border-[#E8C8D4] rounded-lg px-2 py-1.5">
-                        <Scissors className="w-3.5 h-3.5 text-[#C8617A] shrink-0 mt-0.5" />
-                        <p className="text-[#7C5C4A] text-xs italic">{client.hair_notes.substring(0, 80)}{client.hair_notes.length > 80 ? '...' : ''}</p>
-                      </div>
-                    )}
                     {client.current_color_code && (
                       <div className="flex items-center gap-2 text-[#7C5C4A]">
                         <Palette className="w-4 h-4 text-[#C8617A]" />
@@ -651,19 +642,6 @@ export default function ClientsPage() {
                   placeholder="email@esempio.it"
                   data-testid="client-email-input"
                   className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Scissors className="w-4 h-4 text-[#C8617A]" />
-                  Note Capelli
-                </Label>
-                <Textarea
-                  value={formData.hair_notes}
-                  onChange={(e) => setFormData({ ...formData, hair_notes: e.target.value })}
-                  placeholder="Es. tinta 7.3 + ossigeno 20vol, frangia laterale, non tagliare sopra le orecchie..."
-                  data-testid="client-notes-input"
-                  className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A] min-h-[90px] text-sm"
                 />
               </div>
               <div className="space-y-2">
@@ -935,16 +913,6 @@ export default function ClientsPage() {
                     </div>
                   )}
                 </div>
-
-                {/* Note Capelli */}
-                {clientHistory.client.hair_notes && (
-                  <div className="p-3 bg-[#FAF0F5] border border-[#E8C8D4] rounded-xl">
-                    <p className="text-xs font-bold text-[#C8617A] flex items-center gap-1 mb-1">
-                      <Scissors className="w-3.5 h-3.5" /> Note Capelli / Colore
-                    </p>
-                    <p className="text-sm text-[#5C3040]">{clientHistory.client.hair_notes}</p>
-                  </div>
-                )}
 
                 {/* Codice Colore */}
                 {clientHistory.client.current_color_code && (

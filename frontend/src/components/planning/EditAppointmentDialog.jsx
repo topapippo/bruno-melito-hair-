@@ -132,7 +132,6 @@ export default function EditAppointmentDialog({
       phone: selectedClientInfo.phone || '',
       email: selectedClientInfo.email || '',
       birthday: selectedClientInfo.birthday || '',
-      hair_notes: selectedClientInfo.hair_notes || '',
       current_color_code: selectedClientInfo.current_color_code || '',
     });
     setEditingClient(true);
@@ -731,7 +730,6 @@ export default function EditAppointmentDialog({
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-sm" style={{color: COLORS.textDark}}>{selectedClientInfo.name}</p>
                     {selectedClientInfo.phone && <p className="text-xs" style={{color: COLORS.textMuted}}>Tel: {selectedClientInfo.phone}</p>}
-                    {selectedClientInfo.hair_notes && <p className="text-xs mt-0.5 italic truncate" style={{color: COLORS.textMuted}}>{selectedClientInfo.hair_notes}</p>}
                   </div>
                   <div className="flex gap-1 shrink-0">
                     <Button type="button" variant="outline" size="sm" className="h-7 text-xs transition-all duration-200 hover:scale-105" style={{borderColor: COLORS.gold, color: COLORS.gold}} onClick={() => editingClient ? setEditingClient(false) : openClientEdit()}>
@@ -751,7 +749,6 @@ export default function EditAppointmentDialog({
                       <div><Label className="text-xs" style={{color: COLORS.textDark}}>Email</Label><Input className="h-7 text-xs border-2 transition-all focus:shadow-md" style={{borderColor: COLORS.borderLight}} value={clientFormData.email||''} onChange={e=>setClientFormData(p=>({...p,email:e.target.value}))} /></div>
                       <div><Label className="text-xs" style={{color: COLORS.textDark}}>Compleanno</Label><Input className="h-7 text-xs border-2 transition-all focus:shadow-md" style={{borderColor: COLORS.borderLight}} type="date" value={clientFormData.birthday||''} onChange={e=>setClientFormData(p=>({...p,birthday:e.target.value}))} /></div>
                     </div>
-                    <div><Label className="text-xs" style={{color: COLORS.textDark}}>Note Capelli</Label><Textarea className="text-xs min-h-[60px] resize-none border-2 transition-all focus:shadow-md" style={{borderColor: COLORS.borderLight}} value={clientFormData.hair_notes||''} onChange={e=>setClientFormData(p=>({...p,hair_notes:e.target.value}))} /></div>
                     <div>
                       <Label className="text-xs" style={{color: COLORS.textDark}}>Codice Colore (Magazzino)</Label>
                       <Input list="inventory-colors-list" className="h-7 text-xs border-2 transition-all focus:shadow-md" style={{borderColor: COLORS.borderLight}} value={clientFormData.current_color_code||''} onChange={e=>setClientFormData(p=>({...p,current_color_code:e.target.value}))} placeholder="Es. 7.0, 6.3" />
@@ -786,11 +783,11 @@ export default function EditAppointmentDialog({
               </div>
             )}
 
-            {/* Note colore */}
-            {formData.service_ids.some(id => services.find(s=>s.id===id)?.category==='colore') && selectedClientInfo?.hair_notes && (
+            {/* Codice Colore */}
+            {selectedClientInfo?.current_color_code && (
               <div className="p-3 rounded-xl border-2 border-[#C8617A] bg-[#FAF0F5]">
-                <p className="text-xs font-bold text-[#C8617A] mb-1">🎨 Note Colore — {selectedClientInfo.name}</p>
-                <p className="text-sm text-[#5C3040] whitespace-pre-line">{selectedClientInfo.hair_notes}</p>
+                <p className="text-xs font-bold text-[#C8617A] mb-1">🎨 Codice Colore — {selectedClientInfo.name}</p>
+                <p className="text-sm text-[#5C3040]">{selectedClientInfo.current_color_code}</p>
               </div>
             )}
 

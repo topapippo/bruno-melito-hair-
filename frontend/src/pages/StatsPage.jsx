@@ -1143,9 +1143,6 @@ export default function StatsPage() {
                                 ))}
                               </div>
                             )}
-                            {client.hair_notes && (
-                              <p className="text-xs text-[#7C5C4A] mt-1.5 italic truncate">Note: {client.hair_notes}</p>
-                            )}
                           </div>
                         </div>
                         {client.phone ? (
