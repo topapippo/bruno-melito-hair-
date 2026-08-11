@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query, Body
 from auth import get_current_user
 from database import db
 import requests
@@ -445,7 +445,7 @@ async def save_config(data: dict, current_user: dict = Depends(get_current_user)
     return {"ok": True}
 
 @router.post("/social/publish-via-make")
-async def publish_via_make(data: dict, current_user: dict = Depends(get_current_user)):
+async def publish_via_make(data: dict = Body(...), current_user: dict = Depends(get_current_user)):
     url = current_user.get("make_webhook_url")
     if not url:
         raise HTTPException(status_code=400, detail="Configura il Webhook nelle Impostazioni")
