@@ -424,7 +424,7 @@ class CheckoutData(BaseModel):
     promo_free_service: Optional[str] = None
     note: Optional[str] = None
     payment_splits: Optional[List[PaymentSplitItem]] = None
-    custom_services: Optional[List[CheckoutServiceItem]] = None
+    custom_services: Optional[List[dict]] = None
     retail_items: Optional[List[dict]] = None
     consumed_products: Optional[List[dict]] = None
 

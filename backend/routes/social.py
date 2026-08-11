@@ -466,7 +466,7 @@ async def publish_via_make(data: dict = Body(...), current_user: dict = Depends(
 
         # 2. Creiamo un payload perfettamente pulito con fallback immagine
         if not image_url:
-            image_url = "https://via.placeholder.com/1200x630/C8617A/FDF8F5?text=Bruno+Melito+Hair"
+            image_url = "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"
 
         payload = {
             "text": str(text),
@@ -622,9 +622,9 @@ async def publish_social_post_now(post_id: str, current_user: dict = Depends(get
     image_urls = post.get("image_urls", [])
     image_url = image_urls[0] if image_urls else ""
 
-    # Fallback: se non c'è foto, usa placeholder
+    # Fallback: se non c'è foto, usa Cloudinary
     if not image_url:
-        image_url = "https://via.placeholder.com/1200x630/C8617A/FDF8F5?text=Bruno+Melito+Hair"
+        image_url = "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"
 
     payload = {
         "text": text,
