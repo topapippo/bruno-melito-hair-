@@ -553,21 +553,23 @@ export default function WebsitePage() {
         {/* Overlay scuro elegante per leggibilità */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/80"></div>
 
-        {/* MESSAGGIO OVERLAY TEMPORANEO — GRANDE E LEGGIBILE */}
+        {/* MESSAGGIO OVERLAY TEMPORANEO — PIENO SCHERMO LEGGIBILE */}
         {showWelcome && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.6 }}
-            className="absolute z-20 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center backdrop-blur-lg bg-black/70 px-6 sm:px-8 md:px-12 py-6 sm:py-8 md:py-10 rounded-3xl border-2 border-[#D4AF7A]/60 w-[95%] sm:w-[90%] md:max-w-2xl shadow-2xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md"
           >
-            <p className="text-[#D4AF7A] text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-[0.1em] sm:tracking-[0.15em] uppercase leading-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
-              {greeting.greeting}! ✨
-            </p>
-            <p className="text-white/90 text-sm sm:text-base md:text-lg lg:text-xl mt-4 sm:mt-6 italic leading-relaxed font-light">
-              {greeting.message}
-            </p>
+            <div className="text-center px-6 py-8 sm:px-8 md:px-12 md:py-10 max-w-3xl mx-auto">
+              <p className="text-[#D4AF7A] text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-[0.1em] uppercase leading-tight mb-6 sm:mb-8" style={{ fontFamily: "'Playfair Display', serif" }}>
+                {greeting.greeting}! ✨
+              </p>
+              <p className="text-white text-xl sm:text-2xl md:text-3xl italic leading-relaxed font-light">
+                {greeting.message}
+              </p>
+            </div>
           </motion.div>
         )}
 
