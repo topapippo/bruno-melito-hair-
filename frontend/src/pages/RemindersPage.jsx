@@ -108,7 +108,7 @@ export default function RemindersPage() {
         api.get(`${API}/reminders/templates`),
         api.get(`${API}/reminders/color-expiry`).catch(() => ({ data: [] })),
         api.get(`${API}/reminders/birthdays?days=${birthdayDays}`).catch(() => ({ data: [] })),
-        api.get(`${API}/uscite/upcoming`).catch(() => ({ data: [] })),
+        api.get(`${API}/expenses/upcoming`).catch(() => ({ data: [] })),
         api.get(`${API}/cards/alerts`).catch(() => ({ data: { expiring: [], low_balance: [] } })),
       ]);
       setTomorrowReminders(remRes.data);

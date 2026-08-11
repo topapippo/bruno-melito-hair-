@@ -626,12 +626,17 @@ async def publish_social_post_now(post_id: str, current_user: dict = Depends(get
         if '?' not in image_url:
             image_url += '.jpg'
 
-    # Payload con SOLO stringhe, nessun array
+    # Isoliamo i dati
+    text = caption
+    image_urls = post.get("image_urls", [])
+    image_url = image_urls[0] if image_urls else ""
+
     payload = {
-        "caption": str(caption),
-        "text": str(caption),
-        "message": str(caption),
-        "image_url": str(image_url)
+        "text": text,
+        "message": text,
+        "caption": text,
+        "image_url": image_url,
+        "image_urls": image_urls
     }
 
     print(f"📤 Invio post programmato a Make.com: {payload}", flush=True)

@@ -32,6 +32,11 @@ async def get_promotions(current_user: dict = Depends(get_current_user)):
         {"user_id": current_user["id"]}, {"_id": 0, "user_id": 0}
     ).to_list(50)
 
+@router.get("/promotions/check/{client_id}")
+async def check_client_promotions(client_id: str, current_user: dict = Depends(get_current_user)):
+    promos = await db.promotions.find({"user_id": current_user["id"], "active": True}, {"_id": 0}).to_list(20)
+    return promos
+
 @router.delete("/promotions/{promo_id}")
 async def delete_promotion(promo_id: str, current_user: dict = Depends(get_current_user)):
     await db.promotions.delete_one({"id": promo_id, "user_id": current_user["id"]})

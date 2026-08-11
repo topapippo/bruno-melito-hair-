@@ -92,6 +92,13 @@ export default function WebsitePage() {
 
   const [navScrolled, setNavScrolled] = useState(false);
   const [heroVisible, setHeroVisible] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowWelcome(false), 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
   useEffect(() => {
     const onScroll = () => {
       setNavScrolled(window.scrollY > 80);
@@ -546,17 +553,26 @@ export default function WebsitePage() {
         {/* Overlay scuro elegante per leggibilità */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/80"></div>
 
-        {/* Contenuto Testo Centrato */}
-        <div className="relative z-10 text-center text-white px-6 py-20 max-w-4xl mx-auto">
-          {/* MESSAGGIO DI BENVENUTO DINAMICO - IN CIMA */}
-          <div className="mb-6 hero-animate hero-d1">
-            <p className="text-[#D4AF7A] text-base sm:text-lg font-black tracking-[0.2em] uppercase" style={{ fontFamily: "'Playfair Display', serif" }}>
+        {/* MESSAGGIO OVERLAY TEMPORANEO */}
+        {showWelcome && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8 }}
+            className="absolute z-20 top-[15%] left-1/2 -translate-x-1/2 text-center backdrop-blur-md bg-black/40 px-8 py-4 rounded-2xl border border-white/10"
+          >
+            <p className="text-[#D4AF7A] text-lg font-black tracking-[0.2em] uppercase" style={{ fontFamily: "'Playfair Display', serif" }}>
               {greeting.greeting}! ✨
             </p>
-            <p className="text-white/70 text-xs sm:text-sm mt-2 italic max-w-sm mx-auto leading-relaxed">
+            <p className="text-white/80 text-sm mt-1 italic max-w-xs">
               {greeting.message}
             </p>
-          </div>
+          </motion.div>
+        )}
+
+        {/* Contenuto Testo Centrato */}
+        <div className="relative z-10 text-center text-white px-6 py-20 max-w-4xl mx-auto">
 
           <div className="hero-animate hero-d1 mb-8">
             <span className="inline-block text-[10px] font-black tracking-[0.4em] uppercase text-[#D4AF7A] border-b border-[#D4AF7A]/40 pb-1">
