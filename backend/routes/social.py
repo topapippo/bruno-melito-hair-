@@ -464,14 +464,16 @@ async def publish_via_make(data: dict = Body(...), current_user: dict = Depends(
             if '?' not in image_url:
                 image_url += '.jpg'
 
-        # 2. Creiamo un payload perfettamente pulito (SOLO stringhe, escludendo campi vuoti)
+        # 2. Creiamo un payload perfettamente pulito con fallback immagine
+        if not image_url:
+            image_url = "https://via.placeholder.com/1200x630/C8617A/FDF8F5?text=Bruno+Melito+Hair"
+
         payload = {
             "text": str(text),
             "message": str(text),
             "caption": str(text),
+            "image_url": str(image_url)
         }
-        if image_url:
-            payload["image_url"] = str(image_url)
 
         # 3. Chiamata a Make.com con gestione errori dettagliata
         resp = requests.post(url, json=payload, timeout=15)
@@ -620,14 +622,17 @@ async def publish_social_post_now(post_id: str, current_user: dict = Depends(get
     image_urls = post.get("image_urls", [])
     image_url = image_urls[0] if image_urls else ""
 
+    # Fallback: se non c'è foto, usa placeholder
+    if not image_url:
+        image_url = "https://via.placeholder.com/1200x630/C8617A/FDF8F5?text=Bruno+Melito+Hair"
+
     payload = {
         "text": text,
         "message": text,
         "caption": text,
+        "image_url": image_url,
     }
-    if image_url:
-        payload["image_url"] = image_url
-    if image_urls:
+    if image_urls and image_urls[0]:
         payload["image_urls"] = image_urls
 
     try:
