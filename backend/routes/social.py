@@ -27,7 +27,7 @@ _POST_POOL = [
     {"type": "colore", "title": "Rame & Fuoco", "text": "Il rosso rame è il colore del momento. 🔥✨ Intensità, calore e carattere: è il colore che trasforma non solo i capelli, ma tutta la personalità. Osi il cambiamento?\n\n🍂 Prenota qui:\nhttps://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"},
     {"type": "upsell", "title": "Shampoo Giusto?", "text": "Hai cambiato colore ma usi ancora lo shampoo di prima? 🧴 Per mantenere il colore vivo più a lungo, serve uno shampoo specifico senza solfati! Passa in salone, ti consiglieremo quello perfetto per te.\n\n👉 Prenota:\nhttps://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"},
     {"type": "fedelta", "title": "Il Tuo Hair Stylist Ti Conosce", "text": "Non devi spiegare ogni volta come li vuoi. 🤝 Da noi, la tua storia capellare è importante. Sappiamo esattamente cosa ti piace e come farti sentire a tuo agio. Prenota il tuo appuntamento con chi ti conosce meglio!\n\n✨ https://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"},
-    {"type": "consiglio", "title": "Non Dimenticare Il Termoprotettore", "text": "Piastra, arricciacapelli, phon: li usi ogni giorno ma usi il termoprotettore? 🔥 Senza protezione termica le cuticole si aprono e i capelli perdono lucentezza. Un gesto semplice che cambia tutto!\n\n✨ Vieni a scoprire i migliori prodotti:\nhttps://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"},
+    {"type": "consiglio", "title": "Non dimenticare Il Termoprotettore", "text": "Piastra, arricciacapelli, phon: li usi ogni giorno ma usi il termoprotettore? 🔥 Senza protezione termica le cuticole si aprono e i capelli perdono lucentezza. Un gesto semplice che cambia tutto!\n\n✨ Vieni a scoprire i migliori prodotti:\nhttps://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"},
     {"type": "upsell", "title": "Taglia le Punte Ogni 8 Settimane", "text": "Se vuoi far crescere i capelli, devi tagliarli. Lo so, sembra un paradosso! ✂️😄 Ma eliminare le doppie punte ogni 6-8 settimane evita che la rottura risalga lungo il fusto. Capelli che crescono sani e lunghi!\n\n📅 Prenota il tuo appuntamento:\nhttps://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"}
 ]
 
@@ -170,3 +170,9 @@ async def upload_social_image(file: UploadFile = File(...), current_user: dict =
 @router.get("/social/config")
 async def get_social_config(current_user: dict = Depends(get_current_user)):
     return {"make_webhook_url": current_user.get("make_webhook_url", ""), "configured": bool(current_user.get("make_webhook_url"))}
+
+# FIX: Accetta sia PUT che POST per evitare l'errore "Method Not Allowed"
+@router.api_route("/social/config", methods=["PUT", "POST"])
+async def save_social_config(data: dict, current_user: dict = Depends(get_current_user)):
+    await db.users.update_one({"id": current_user["id"]}, {"$set": {"make_webhook_url": data.get("make_webhook_url", "")}})
+    return {"ok": True}
