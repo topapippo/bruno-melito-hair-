@@ -37,15 +37,13 @@ class SafeCheckoutData(CheckoutData):
 async def _send_checkout_thank_you(phone: str, client_name: str, current_user: dict, payment_id: str = None):
     try:
         review_link = current_user.get("google_review_link") or "https://maps.app.goo.gl/8FdnYpnNyQcd78LQ7"
-        
-        # Costruiamo il messaggio con il link DENTRO il testo (molto più affidabile)
         message = f"Ciao {client_name}! Grazie per essere venuta da Bruno Melito Hair. 💇\n\n"
         if payment_id:
-            message += f"Ecco la tua ricevuta digitale:\nhttps://brunomelitohair.it/ricevuta/{payment_id}\n\n"
+            message += f"Ecco la tua ricevuta digitale: https://brunomelitohair.it/ricevuta/{payment_id}\n\n"
         message += f"Se ti è piaciuto, ci aiuteresti tantissimo lasciando una recensione qui:\n{review_link}\n\nA presto!"
         
-        # Usiamo il template base senza button_param, passando il testo come fallback
-        await send_automatic_message(phone, "ringraziamento_e_ricevuta", [client_name], message, current_user)
+        # Passiamo il payment_id come button_param per far funzionare il template Meta
+        await send_automatic_message(phone, "ringraziamento_e_ricevuta", [client_name], message, current_user, button_param=payment_id)
     except Exception as e:
         logger.error(f"Errore invio ringraziamento checkout: {e}")
 
