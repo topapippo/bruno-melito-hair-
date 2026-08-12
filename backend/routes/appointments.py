@@ -6,6 +6,7 @@ import uuid
 import logging
 from datetime import datetime, timezone, timedelta
 from calendar import monthrange
+from pydantic import BaseModel
 from auth import get_current_user
 from database import db
 from models import AppointmentCreate, AppointmentResponse, CheckoutData
@@ -13,6 +14,24 @@ from utils import calculate_end_time, send_whatsapp, send_automatic_message, res
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+# Modelli aggiuntivi per sicurezza Cassa
+class PaymentSplitItem(BaseModel):
+    method: str
+    amount: float
+
+class CheckoutServiceItem(BaseModel):
+    id: Optional[str] = None
+    name: str
+    price: float
+    quantity: int = 1
+    duration: int = 0
+
+class SafeCheckoutData(CheckoutData):
+    payment_splits: Optional[List[PaymentSplitItem]] = None
+    custom_services: Optional[List[CheckoutServiceItem]] = None
+    retail_items: Optional[List[dict]] = None
+    consumed_products: Optional[List[dict]] = None
 
 
 async def _send_checkout_thank_you(phone: str, client_name: str, current_user: dict, payment_id: str = None):
@@ -39,7 +58,6 @@ async def create_appointment(data: AppointmentCreate, current_user: dict = Depen
             client_phone = client.get("phone", "")
         else: raise HTTPException(status_code=404, detail="Cliente non trovato")
     elif data.client_name:
-        # Find-or-create deduplicato per telefono normalizzato + nome esatto
         client_id, client_name, client_phone = await resolve_client(
             current_user["id"], data.client_name, data.client_phone
         )
@@ -55,7 +73,6 @@ async def create_appointment(data: AppointmentCreate, current_user: dict = Depen
             operator_name = op["name"]
             operator_color = op.get("color")
 
-    # Safe price and duration calculation
     total_duration = 0
     total_price = 0.0
     mapped_services = []
@@ -87,7 +104,6 @@ async def create_appointment(data: AppointmentCreate, current_user: dict = Depen
         d_p = data.date.split('-')
         date_it = f"{d_p[2]}/{d_p[1]}/{d_p[0]}" if len(d_p) == 3 else data.date
         if client_phone:
-            # Usa template di conferma per aumentare la probabilità di consegna
             asyncio.create_task(send_automatic_message(client_phone, "conferma_prenotazione", [client_name, date_it, data.time], f"Ciao {client_name}! ✓ Prenotazione confermata per il {date_it} alle {data.time}.", current_user))
     except Exception:
         pass
@@ -95,7 +111,7 @@ async def create_appointment(data: AppointmentCreate, current_user: dict = Depen
     return AppointmentResponse(**{k: v for k, v in doc.items() if k != "user_id"})
 
 @router.post("/appointments/{appointment_id}/checkout")
-async def checkout_appointment(appointment_id: str, data: CheckoutData, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
+async def checkout_appointment(appointment_id: str, data: SafeCheckoutData, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
     apt = await db.appointments.find_one({"id": appointment_id, "user_id": current_user["id"]}, {"_id": 0})
     if not apt: raise HTTPException(status_code=404, detail="Appuntamento non trovato")
 
@@ -149,10 +165,9 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, backgrou
                     "used_services": used,
                 }
 
-    # Prezzi/quantità modificati in cassa: sovrascrivono i servizi dell'appuntamento
     if data.custom_services:
         final_services = [
-            {"id": s.id, "name": s.name, "price": s.price, "quantity": s.quantity, "duration": s.duration}
+            {"id": s.get("id"), "name": s.get("name"), "price": s.get("price"), "quantity": s.get("quantity", 1), "duration": s.get("duration", 0)}
             for s in data.custom_services
         ]
         total_price_calc = sum(s["price"] * s["quantity"] for s in final_services)
@@ -166,25 +181,23 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, backgrou
     else:
         service_total = apt.get("total_price", 0.0)
 
-    # Prodotti rivendita venduti in cassa: prezzo/nome letti dal magazzino (mai dal client)
     retail_lines = []
     retail_total = 0.0
     if data.retail_items:
-        product_ids = [ri.product_id for ri in data.retail_items]
+        product_ids = [ri.get("product_id") for ri in data.retail_items]
         retail_products = await db.inventory.find(
             {"id": {"$in": product_ids}, "user_id": current_user["id"]}, {"_id": 0}
         ).to_list(200)
         prod_map = {p["id"]: p for p in retail_products}
         for ri in data.retail_items:
-            prod = prod_map.get(ri.product_id)
+            prod = prod_map.get(ri.get("product_id"))
             if not prod:
                 raise HTTPException(status_code=400, detail="Prodotto rivendita non trovato in magazzino")
             price = prod.get("sale_price") or 0.0
-            retail_lines.append({"product_id": prod["id"], "name": prod["name"], "quantity": ri.quantity, "price": price})
-            retail_total += price * ri.quantity
+            qty = ri.get("quantity", 1)
+            retail_lines.append({"product_id": prod["id"], "name": prod["name"], "quantity": qty, "price": price})
+            retail_total += price * qty
 
-    # Verifica server-side: l'incasso dichiarato deve corrispondere al totale servizi meno sconto
-    # (evita che un client malevolo/bug dichiari un incasso inferiore al valore reale erogato)
     if card_type_used != "subscription":
         discount_amount = 0.0
         if data.discount_type == "percent" and data.discount_value:
@@ -196,7 +209,6 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, backgrou
         if abs(declared_total - expected_total) > 0.02:
             raise HTTPException(status_code=400, detail="L'importo dichiarato non corrisponde al totale di servizi e prodotti")
 
-    # Subscription checkout: incasso già registrato alla vendita → €0
     final_payment_method = "split" if is_split else data.payment_method
 
     payments_to_insert = []
@@ -219,9 +231,7 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, backgrou
                 "note": data.note,
             })
     else:
-        # Il servizio può essere gratuito (abbonamento) ma i prodotti rivendita vanno sempre incassati
         total_paid_amount = retail_total if card_type_used == "subscription" else data.total_paid
-        # payment_type esplicito per classificazione precisa in ReportIncassi
         if card_type_used == "subscription":
             payment_type = "subscription_checkout"
         elif card_type_used == "prepaid":
@@ -244,15 +254,13 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, backgrou
             "note": data.note,
         })
 
-    # Gestione sospesi: se il metodo di pagamento è "sospeso", crea un record in db.sospesi
-    # invece di inserire in db.payments
     sospesi_to_insert = []
     payments_to_insert_final = []
 
     for payment in payments_to_insert:
         if payment["payment_method"] == "sospeso":
             sospeso_doc = {
-                "id": str(uuid.uuid4()),
+                "id": payment["id"],  # FIX: Usiamo lo stesso ID del pagamento per collegare la ricevuta
                 "user_id": current_user["id"],
                 "appointment_id": appointment_id,
                 "client_id": payment["client_id"],
@@ -276,8 +284,6 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, backgrou
     await db.appointments.update_one({"id": appointment_id, "user_id": current_user["id"]}, {"$set": {"status": "completed", "paid": True, "payment_method": final_payment_method}})
 
     # SCARICO MAGAZZINO INTELLIGENTE
-
-    # A. Scarico manuale da modale cassa (Rivendita o consumati)
     retail_items = getattr(data, 'retail_items', None) or []
     consumed_products = getattr(data, 'consumed_products', None) or []
 
@@ -290,7 +296,6 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, backgrou
                 {"$inc": {"total_stock": -qty}}
             )
 
-    # B. Scarico Automatico basato sui servizi dell'appuntamento
     service_ids = [s.get("id") for s in apt.get("services", []) if s.get("id")]
     if service_ids:
         db_services = await db.services.find(
@@ -305,10 +310,8 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, backgrou
         for db_svc in db_services:
             category = (db_svc.get("category") or "").lower()
 
-            # Se il servizio è un Colore, cerca la nuance nella scheda cliente
             if "colore" in category:
                 if client_doc and client_doc.get("current_color_code"):
-                    # Split dei colori se ce n'è più di uno separati da virgola
                     color_codes = [c.strip() for c in str(client_doc["current_color_code"]).split(',') if c.strip()]
                     for color_code in color_codes:
                         inv_prod = await db.inventory.find_one({"user_id": current_user["id"], "name": color_code})
@@ -318,7 +321,6 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, backgrou
                                 {"$inc": {"total_stock": -abs(inv_prod.get("dose_size", 1.0))}}
                             )
 
-            # Se il servizio è un Trattamento/Permanente e ha un prodotto collegato
             elif any(x in category for x in ["trattamento", "permanente", "stiratura"]) and db_svc.get("linked_inventory_id"):
                 inv_id = db_svc["linked_inventory_id"]
                 inv_prod = await db.inventory.find_one({"id": inv_id, "user_id": current_user["id"]})
@@ -328,7 +330,6 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, backgrou
                         {"$inc": {"total_stock": -abs(inv_prod.get("dose_size", 1.0))}}
                     )
 
-            # Se è un prodotto di Rivendita (mappato nei servizi)
             elif "rivendita" in category and db_svc.get("linked_inventory_id"):
                 inv_id = db_svc["linked_inventory_id"]
                 await db.inventory.update_one(
@@ -341,7 +342,9 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, backgrou
         cl = await db.clients.find_one({"id": apt["client_id"], "user_id": current_user["id"]})
         if cl: phone = cl.get("phone")
     if phone: background_tasks.add_task(_send_checkout_thank_you, phone, apt["client_name"], current_user, payments_to_insert[0]["id"])
-    return {"status": "ok", "payment_id": payments_to_insert[0]["id"], "card": card_result, "inventory": inventory_log}
+    
+    # FIX: Rimosso inventory_log che causava crash
+    return {"status": "ok", "payment_id": payments_to_insert[0]["id"], "card": card_result}
 
 @router.get("/appointments", response_model=List[AppointmentResponse])
 async def get_appointments(
@@ -356,7 +359,7 @@ async def get_appointments(
         query["date"] = date
     elif start_date and end_date:
         query["date"] = {"$gte": start_date, "$lte": end_date}
-    elif month:  # formato YYYY-MM
+    elif month:
         try:
             y, m = map(int, month.split('-'))
             last_day = monthrange(y, m)[1]
@@ -367,7 +370,6 @@ async def get_appointments(
     return [AppointmentResponse(**a) for a in res]
 
 ALLOWED_APPOINTMENT_UPDATE_FIELDS = {"date", "time", "operator_id", "service_ids", "notes", "promo_id", "card_id"}
-
 
 @router.put("/appointments/{appointment_id}", response_model=AppointmentResponse)
 async def update_appointment(appointment_id: str, data: dict, current_user: dict = Depends(get_current_user)):
