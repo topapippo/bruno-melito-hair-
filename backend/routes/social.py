@@ -12,27 +12,23 @@ import random
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-# Pool di post preimpostati (ne metto alcuni, tu puoi aggiungere i tuoi 48 qui sotto)
+# Pool di post preimpostati arricchito con frasi engagin
 _POST_POOL = [
-    {
-        "type": "estate",
-        "title": "S.O.S. Sole & Salsedine",
-        "text": "Il sole bacia i belli... ma mette a dura prova i capelli! ☀️🌊\nNon farti trovare impreparata: scopri i nostri trattamenti protettivi per un biondo che non vira e punte sempre idratate. Passa in salone per il tuo 'kit sopravvivenza' estivo!\n\n👇 Prenota qui:\n👉 https://brunomelitohair.it",
-        "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"
-    },
-    {
-        "type": "colore",
-        "title": "Il Balayage che Stavi Cercando",
-        "text": "Non esiste un balayage uguale all'altro. Il tuo viene dipinto a mano, centimetro per centimetro, per valorizzare la tua carnagione e il tuo taglio. 🎨\nNaturale, luminoso, TUO.\n\n💇‍♀️ Prenota la tua consulenza colore:\nhttps://brunomelitohair.it",
-        "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"
-    },
-    {
-        "type": "trattamento",
-        "title": "Keratina: Addio Crespo",
-        "text": "Se hai i capelli crespi, sai già quanto siano difficili da gestire ogni mattina. ⏱️😤\nIl trattamento alla keratina professionale li leviga, li nutre e li rende docili per mesi. Un'ora in salone, mesi di libertà!\n\n💇‍♀️ Prenota:\nhttps://brunomelitohair.it",
-        "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"
-    },
-    # ... Aggiungi qui gli altri 45 post del tuo pool ...
+    {"type": "colore", "title": "Il Balayage che Stavi Cercando", "text": "Non esiste un balayage uguale all'altro. Il tuo viene dipinto a mano, centimetro per centimetro, per valorizzare la tua carnazione. 🎨 Naturale, luminoso, TUO.\n\n💇‍♀️ Prenota la tua consulenza:\nhttps://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"},
+    {"type": "trattamento", "title": "Keratina: Addio Crespo", "text": "Se hai i capelli crespi, sai già quanto siano difficili da gestire ogni mattina. ⏱️😤 Il trattamento alla keratina professionale li leviga, li nutre e li rende docili per mesi. Un'ora in salone, mesi di libertà!\n\n💇‍♀️ Prenota:\nhttps://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"},
+    {"type": " taglio", "title": "Il Taglio Giusto Cambia Tutto", "text": "Un buon taglio non è solo una questione di centimetri. ✂️ È trovare la forma che valorizza il tuo viso, si adatta al tuo stile di vita e ti fa sentire te stessa ogni giorno. Vieni a raccontarci chi sei!\n\n👉 https://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"},
+    {"type": "motivazione", "title": "Hai Scelto Il Meglio", "text": "Non è solo un taglio o un colore. È tempo dedicato a te, lontano dallo stress. 🌸 Sappiamo che il tuo tempo è prezioso, per questo scegliamo solo i migliori prodotti professionali e le tecniche più aggiornate per te.\n\n✨ Prenota il tuo momento:\nhttps://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"},
+    {"type": "upsell", "title": "Hai Mai Provato Il Gloss?", "text": "Capelli spenti? Dagli una scarica di luce! 💎✨ Il nostro trattamento Gloss è il segreto per capelli che riflettono la luce come uno specchio. Perfetto per ridare vita al colore tra una tinta e l'altra.\n\nScoprilo qui 👇\nhttps://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"},
+    {"type": "upsell", "title": "Osi Il Cambiamento?", "text": "Sei pronta a scoprire una versione di te che non hai mai visto? 🦋 Lascia che i nostri esperti ti guidino in un restyling completo. Taglio, colore e stile su misura per la tua personalità.\n\n🔥 Prenota la tua metamorfosi:\nhttps://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"},
+    {"type": "fedelta", "title": "Grazie Per La Tua Fiducia", "text": "Le nostre clienti fisse lo sanno già: da noi si torna sempre volentieri! 💕 Un salone dove ti senti a casa, dove il tuo stile è conosciuto e valorizzato. Non hai ancora provato? Ti aspettiamo!\n\n✨ Unisciti a noi:\nhttps://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"},
+    {"type": "consiglio", "title": "Lavaggio Perfetto", "text": "Lo sapevi che lavare i capelli troppo spesso li indebolisce? 🚿 I capelli producono sebo naturale che li protegge. Lavali 2-3 volte a settimana e usa un buon balsamo. Lo dice sempre il tuo hair stylist!\n\n💇‍♀️ Per consigli personalizzati:\nhttps://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"},
+    {"type": "upsell", "title": "Prova Il Laminazione", "text": "Vuoi capelli più folti e lucidi senza cambiare colore? ✨ La laminazione sigilla la cuticola donando corpo e brillantezza estrema. Chiedi a noi se è adatta a te!\n\n👇 Prenota:\nhttps://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"},
+    {"type": "motivazione", "title": "Prenditi Cura Di Te", "text": "In un mondo che corre sempre, fermarsi un'ora per se stesse non è un lusso. È una necessità. 💆‍♀️ Vieni da noi: un caffè, una chiacchierata e capelli bellissimi. Ci vediamo presto!\n\n❤️ Prenota il tuo momento:\nhttps://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"},
+    {"type": "colore", "title": "Rame & Fuoco", "text": "Il rosso rame è il colore del momento. 🔥✨ Intensità, calore e carattere: è il colore che trasforma non solo i capelli, ma tutta la personalità. Osi il cambiamento?\n\n🍂 Prenota qui:\nhttps://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"},
+    {"type": "upsell", "title": "Shampoo Giusto?", "text": "Hai cambiato colore ma usi ancora lo shampoo di prima? 🧴 Per mantenere il colore vivo più a lungo, serve uno shampoo specifico senza solfati! Passa in salone, ti consiglieremo quello perfetto per te.\n\n👉 Prenota:\nhttps://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"},
+    {"type": "fedelta", "title": "Il Tuo Hair Stylist Ti Conosce", "text": "Non devi spiegare ogni volta come li vuoi. 🤝 Da noi, la tua storia capellare è importante. Sappiamo esattamente cosa ti piace e come farti sentire a tuo agio. Prenota il tuo appuntamento con chi ti conosce meglio!\n\n✨ https://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"},
+    {"type": "consiglio", "title": "Non Dimenticare Il Termoprotettore", "text": "Piastra, arricciacapelli, phon: li usi ogni giorno ma usi il termoprotettore? 🔥 Senza protezione termica le cuticole si aprono e i capelli perdono lucentezza. Un gesto semplice che cambia tutto!\n\n✨ Vieni a scoprire i migliori prodotti:\nhttps://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"},
+    {"type": "upsell", "title": "Taglia le Punte Ogni 8 Settimane", "text": "Se vuoi far crescere i capelli, devi tagliarli. Lo so, sembra un paradosso! ✂️😄 Ma eliminare le doppie punte ogni 6-8 settimane evita che la rottura risalga lungo il fusto. Capelli che crescono sani e lunghi!\n\n📅 Prenota il tuo appuntamento:\nhttps://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"}
 ]
 
 DAILY_PAGE_SIZE = 5
@@ -43,8 +39,6 @@ def _daily_order(user_id: str, today_str: str) -> list[int]:
     indices = list(range(len(_POST_POOL)))
     rng.shuffle(indices)
     return indices
-
-# ============== POST DEL GIORNO (PREIMPOSTATI) ==============
 
 @router.get("/social/daily-suggestions")
 async def get_daily_suggestions(offset: int = Query(default=0, ge=0), current_user: dict = Depends(get_current_user)):
@@ -73,6 +67,7 @@ async def update_suggestion(suggestion_id: str, data: dict, current_user: dict =
     update = {}
     if "text" in data: update["text"] = data["text"]
     if "image_url" in data: update["image_url"] = data["image_url"]
+    if "title" in data: update["title"] = data["title"]
     await db.wingman_suggestions.update_one(
         {"id": suggestion_id, "user_id": current_user["id"]},
         {"$set": {**update, "id": suggestion_id, "user_id": current_user["id"]}},
@@ -88,13 +83,12 @@ async def delete_suggestion(suggestion_id: str, current_user: dict = Depends(get
     )
     return {"ok": True}
 
-# ============== POST MANUALI (BOZZE) ==============
-
 @router.post("/social/posts")
 async def create_manual_post(data: dict, current_user: dict = Depends(get_current_user)):
     post_doc = {
         "id": str(uuid.uuid4()),
         "user_id": current_user["id"],
+        "title": data.get("title", "Post Manuale"),
         "text": data.get("text", ""),
         "image_url": data.get("image_url", ""),
         "status": "draft",
@@ -111,8 +105,6 @@ async def get_manual_posts(current_user: dict = Depends(get_current_user)):
 async def delete_manual_post(post_id: str, current_user: dict = Depends(get_current_user)):
     await db.social_posts.delete_one({"id": post_id, "user_id": current_user["id"]})
     return {"ok": True}
-
-# ============== PUBBLICAZIONE & UPLOAD ==============
 
 @router.post("/social/publish-via-make")
 async def publish_via_make(data: dict, current_user: dict = Depends(get_current_user)):
