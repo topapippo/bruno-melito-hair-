@@ -14,10 +14,11 @@ TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN')
 TWILIO_PHONE_NUMBER = os.environ.get('TWILIO_PHONE_NUMBER')
 twilio_client = None
 
-
 # --- CONFIGURAZIONI WHATSAPP CLOUD API ---
+# Rimosso il fallback hardcoded per sicurezza
 WA_PHONE_NUMBER_ID = os.environ.get('WHATSAPP_PHONE_ID', '')
 WA_TOKEN = os.environ.get('WHATSAPP_TOKEN', '')
+WA_FOOTER = "\n\nMessaggio automatico di cortesia di Bruno Melito Hair. Se hai bisogno di scriverci, rispondi al salone. Grazie!"
 
 def normalize_phone_wa(phone: str) -> str:
     """Restituisce il numero in formato 393XXXXXXXXX."""
@@ -59,12 +60,21 @@ async def send_whatsapp_template(phone: str, template_name: str, variables: list
     phone_clean = normalize_phone_wa(phone)
     url = f"https://graph.facebook.com/v21.0/{WA_PHONE_NUMBER_ID}/messages"
     headers = {"Authorization": f"Bearer {WA_TOKEN}", "Content-Type": "application/json"}
-
-    components = [{"type": "body", "parameters": [{"type": "text", "text": str(v)} for v in (variables or [])]}]
+    
+    components = []
+    if variables:
+        components.append({
+            "type": "body",
+            "parameters": [{"type": "text", "text": str(v)} for v in variables]
+        })
+    
+    # Pulsante URL Dinamico (fondamentale per la ricevuta)
     if button_param:
         components.append({
-            "type": "button", "sub_type": "url", "index": 0,
-            "parameters": [{"type": "text", "text": str(button_param)}]
+            "type": "button",
+            "sub_type": "url",
+            "index": 0,
+            "parameters": [{"type": "text", "text": button_param}]
         })
 
     payload = {
@@ -79,18 +89,12 @@ async def send_whatsapp_template(phone: str, template_name: str, variables: list
         rjson = resp.json()
         if resp.status_code == 200:
             return {"sent": True, "method": "meta_template", "data": rjson}
-
-        original_error = rjson.get("error", {}).get("message", "Errore API")
-        # Fallback it_IT se it fallisce — ma se anche il retry fallisce, mostra l'errore
-        # ORIGINALE: il retry con lingua diversa fallisce sempre con "non esiste nella
-        # traduzione" quando il template ha solo la variante "it", mascherando la vera causa.
+        
+        # Fallback it_IT se it fallisce
         if lang == "it" and (resp.status_code == 400 or resp.status_code == 404):
-            retry = await send_whatsapp_template(phone, template_name, variables, lang="it_IT", button_param=button_param)
-            if retry.get("sent"):
-                return retry
-            return {"sent": False, "error": original_error, "code": resp.status_code, "data": rjson}
-
-        return {"sent": False, "error": original_error, "code": resp.status_code, "data": rjson}
+            return await send_whatsapp_template(phone, template_name, variables, lang="it_IT", button_param=button_param)
+            
+        return {"sent": False, "error": rjson.get("error", {}).get("message", "Errore API"), "code": resp.status_code, "data": rjson}
     except Exception as e:
         return {"sent": False, "error": str(e)}
 
@@ -106,6 +110,31 @@ async def send_whatsapp_cloud(phone: str, message: str) -> dict:
     except Exception as e:
         return {"sent": False, "error": str(e)}
 
+async def _send_ultramsg(phone: str, message: str, user: dict) -> dict:
+    instance_id = (user or {}).get("ultramsg_instance_id")
+    token = (user or {}).get("ultramsg_token")
+    if not instance_id or not token: return {"sent": False, "error": "UltraMsg non configurato"}
+    try:
+        url = f"https://api.ultramsg.com/{instance_id}/messages/chat"
+        resp = await asyncio.to_thread(_req.post, url, data={"token": token, "to": normalize_phone_wa(phone) + "@c.us", "body": message}, timeout=15)
+        rjson = resp.json()
+        return {"sent": rjson.get("sent") == "true" or rjson.get("sent") == True, "method": "ultramsg", "data": rjson}
+    except Exception as e: return {"sent": False, "error": str(e)}
+
+async def _send_greenapi(phone: str, message: str, user: dict) -> dict:
+    id_instance = (user or {}).get("green_api_instance_id")
+    api_token = (user or {}).get("green_api_token")
+    if not id_instance or not api_token: return {"sent": False, "error": "Green API non configurata"}
+    try:
+        url = f"https://api.greenapi.com/waInstance{id_instance}/sendMessage/{api_token}"
+        resp = await asyncio.to_thread(_req.post, url, json={"chatId": normalize_phone_wa(phone) + "@c.us", "message": message}, timeout=15)
+        rjson = resp.json()
+        rstr = str(rjson)
+        quota_indicators = ["quota", "whitelist", "esauri", "esaurita", "Quota mensile"]
+        if any(ind.lower() in rstr.lower() for ind in quota_indicators):
+            return {"sent": False, "method": "greenapi", "data": rjson, "error": rstr, "quota_exhausted": True}
+        return {"sent": bool(rjson.get("idMessage")), "method": "greenapi", "data": rjson}
+    except Exception as e: return {"sent": False, "error": str(e)}
 
 async def _send_twilio_sms(phone: str, message: str) -> dict:
     """Fallback SMS via Twilio REST API se configurato."""
@@ -136,7 +165,7 @@ async def send_automatic_message(phone: str, template_name: str = None, template
             await _log_communication((user or {}).get("id", "system"), "whatsapp", phone, f"Template: {template_name}", res)
             return res
         logger.warning(f"Meta Template {template_name} fallito: {res.get('error')} — fallback testo libero")
-        # Se il template non esiste/fallisce, prova fallback_text (valido entro 24h)
+        # Se il template non esiste/fallisce, prova fallback_text (valido entro 24h del cliente)
         if not fallback_text:
             fail = {**res, "sent": False}
             await _log_communication((user or {}).get("id", "system"), "whatsapp", phone, f"Template: {template_name}", fail)
@@ -156,17 +185,12 @@ async def send_whatsapp(phone: str, message: str, user: dict = None) -> dict:
 async def resolve_client(user_id: str, name: str, phone: str = "") -> tuple:
     """Trova un cliente esistente (per NOME esatto case-insensitive, poi per
     TELEFONO normalizzato come fallback) o ne crea uno nuovo. Evita i duplicati
-    alla radice. Ritorna (client_id, nome_canonico, telefono_canonico): in caso di
-    match usa i valori del documento esistente, così storico/richiami raggruppano bene.
-
-    NB: il nome viene prima del telefono di proposito — i familiari spesso
-    condividono lo stesso numero (mamma che prenota per la figlia): col telefono
-    per primo si rischierebbe di unire persone diverse."""
+    alla radice. Ritorna (client_id, nome_canonico, telefono_canonico)."""
     from database import db
     name = (name or "").strip()
     phone = (phone or "").strip()
 
-    # 1. Match per nome esatto (case-insensitive) — causa principale dei duplicati
+    # 1. Match per nome esatto (case-insensitive)
     if name:
         existing = await db.clients.find_one(
             {"user_id": user_id, "name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}},
@@ -179,13 +203,14 @@ async def resolve_client(user_id: str, name: str, phone: str = "") -> tuple:
     if phone:
         norm = normalize_phone_wa(phone)
         if norm:
-            candidates = await db.clients.find(
-                {"user_id": user_id, "phone": {"$exists": True, "$ne": ""}},
+            # FIX OOM: Cerchiamo nel DB solo i clienti che finiscono con le stesse 9 cifre
+            suffix = norm[-9:] if len(norm) >= 9 else norm
+            candidate = await db.clients.find_one(
+                {"user_id": user_id, "phone": {"$regex": re.escape(suffix) + "$"}},
                 {"_id": 0, "id": 1, "name": 1, "phone": 1}
-            ).to_list(5000)
-            for c in candidates:
-                if normalize_phone_wa(c.get("phone", "")) == norm:
-                    return c["id"], c.get("name") or name, c.get("phone") or phone
+            )
+            if candidate:
+                return candidate["id"], candidate.get("name") or name, candidate.get("phone") or phone
 
     # 3. Nessun match → crea nuovo cliente
     cid = str(_uuid.uuid4())
@@ -195,29 +220,24 @@ async def resolve_client(user_id: str, name: str, phone: str = "") -> tuple:
     })
     return cid, name, phone
 
-
 def visit_done_filter(today_str: str) -> dict:
     """Filtro Mongo: un appuntamento conta come VISITA EFFETTUATA se non è
-    cancellato e o è già 'completed' (cassa fatta) o la sua data è passata
-    (effettuato ma senza checkout). Unifica storico cliente, richiami inattivi
-    e richiamo colore così concordano tutti sulla stessa definizione."""
+    cancellato e o è già 'completed' (cassa fatta) o la sua data è passata."""
     return {
         "status": {"$ne": "cancelled"},
         "$or": [{"status": "completed"}, {"date": {"$lte": today_str}}],
     }
 
-
 def visit_is_done(apt: dict, today_str: str) -> bool:
-    """Versione in-memory di visit_done_filter (per cicli su liste già caricate)."""
+    """Versione in-memory di visit_done_filter."""
     if apt.get("status") == "cancelled":
         return False
     return apt.get("status") == "completed" or (apt.get("date", "") <= today_str)
-
 
 def calculate_end_time(start_time: str, duration: int) -> str:
     try:
         h, m = map(int, start_time.split(':'))
         total = h * 60 + m + duration
         return f"{(total // 60) % 24:02d}:{total % 60:02d}"
-    except: return start_time
-
+    except (ValueError, TypeError):
+        return start_time
