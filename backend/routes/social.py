@@ -129,8 +129,8 @@ async def publish_via_make(data: dict, current_user: dict = Depends(get_current_
     
     # FIX 1: Se non c'è immagine, mettiamo un'immagine di default per non far crashare Make/IG
     if not image_url:
-        image_url = "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"
-    
+        image_url = https://res.cloudinary.com/dabpscxvz/image/upload/v1786688048/in35khfk7f7xboczt4uy.jpg
+
     # FIX 2 MAGICO: Forziamo Cloudinary a fare un crop quadrato 1:1 perfetto per Instagram
     # Inseriamo le istruzioni di trasformazione subito dopo "/upload/"
     if "res.cloudinary.com" in image_url and "/upload/" in image_url:
