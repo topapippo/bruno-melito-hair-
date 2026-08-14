@@ -12,7 +12,6 @@ import random
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-# Pool di post preimpostati arricchito con frasi engagin
 _POST_POOL = [
     {"type": "colore", "title": "Il Balayage che Stavi Cercando", "text": "Non esiste un balayage uguale all'altro. Il tuo viene dipinto a mano, centimetro per centimetro, per valorizzare la tua carnazione. 🎨 Naturale, luminoso, TUO.\n\n💇‍♀️ Prenota la tua consulenza:\nhttps://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"},
     {"type": "trattamento", "title": "Keratina: Addio Crespo", "text": "Se hai i capelli crespi, sai già quanto siano difficili da gestire ogni mattina. ⏱️😤 Il trattamento alla keratina professionale li leviga, li nutre e li rende docili per mesi. Un'ora in salone, mesi di libertà!\n\n💇‍♀️ Prenota:\nhttps://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"},
@@ -29,12 +28,10 @@ _POST_POOL = [
     {"type": "fedelta", "title": "Il Tuo Hair Stylist Ti Conosce", "text": "Non devi spiegare ogni volta come li vuoi. 🤝 Da noi, la tua storia capellare è importante. Sappiamo esattamente cosa ti piace e come farti sentire a tuo agio. Prenota il tuo appuntamento con chi ti conosce meglio!\n\n✨ https://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"},
     {"type": "consiglio", "title": "Non Dimenticare Il Termoprotettore", "text": "Piastra, arricciacapelli, phon: li usi ogni giorno ma usi il termoprotettore? 🔥 Senza protezione termica le cuticole si aprono e i capelli perdono lucentezza. Un gesto semplice che cambia tutto!\n\n✨ Vieni a scoprire i migliori prodotti:\nhttps://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"},
     {"type": "upsell", "title": "Taglia le Punte Ogni 8 Settimane", "text": "Se vuoi far crescere i capelli, devi tagliarli. Lo so, sembra un paradosso! ✂️😄 Ma eliminare le doppie punte ogni 6-8 settimane evita che la rottura risalga lungo il fusto. Capelli che crescono sani e lunghi!\n\n📅 Prenota il tuo appuntamento:\nhttps://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"},
-    
-    # --- NUOVI POST AGGIUNTI ---
     {"type": "motivazione", "title": "Il Tuo Tempo È Prezioso", "text": "In un mondo che corre sempre, fermarsi un'ora per se stesse non è un lusso, è una necessità. 💆‍♀️ Da Bruno Melito Hair, il tuo tempo è sacro: relax, cura e stile senza compromessi. Prenota il tuo momento di puro benessere.\n\n✨ https://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"},
     {"type": "consiglio", "title": "Acqua Calda o Tiepida?", "text": "Lo sapevi che l'acqua troppo calda secca il cuoio capelluto e opacizza il colore? 🚿 Prova a fare l'ultimo risciacquo con acqua tiepida-fresca: sigillerà le cuticole dei capelli donandoti una lucentezza incredibile!\n\n💡 Per altri consigli dei pro, vieni a trovarci:\nhttps://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"},
     {"type": "upsell", "title": "Hai Mai Provato La Ricostruzione?", "text": "Troppe piastre e colorazioni? I tuoi capelli chiedono aiuto! 🆘 La nostra ricostruzione professionale ripara i legami interni del capello, riportandolo alla sua forza originaria. Dona loro una nuova vita!\n\n💪 Prenota il trattamento:\nhttps://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"},
-    {"type": "colore", "title": "Biondo Cenere: Eleganza Pura", "text": "Il biondo cenere è la nuance più chic di sempre. 🤍 Freddo, sofisticato, elegante. Non passa mai di moda ed esalta ogni carnagione. Pronta a un cambio look di classe?\n\n✂️ Prenota la tua consulenza:\nhttps://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"},
+    {"type": "colore", "title": "Biondo Cenere: Eleganza Pura", "text": "Il biondo cenere è la nuance più chic di sempre. 🤍 Freddo, sofisticato, elegante. Non passa mai di moda ed esalta ogni carnazion. Pronta a un cambio look di classe?\n\n✂️ Prenota la tua consulenza:\nhttps://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"},
     {"type": "upsell", "title": "L'Importanza Del Touch-Up", "text": "Il segreto di un colore sempre perfetto non è solo la tinta, ma il ritocco! 🎨 Ricrescia invisibile, colore luminoso più a lungo. Non aspettare che sbiadisca del tutto, prenota il tuo touch-up!\n\n👇 https://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"},
     {"type": "consiglio", "title": "Pettini e Spazzole", "text": "Quando è stata l'ultima volta che hai pulito la tua spazzola? 🤔 Residui di prodotti e polvere si accumulano tra le setole. Lavala con acqua tiepida e shampoo una volta al mese: i tuoi capelli ti ringrazieranno!\n\n💇‍♀️ https://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"},
     {"type": "trattamento", "title": "Basta Effetto Paglia", "text": "Senti i capelli ruvidi al tatto? È l'effetto paglia! 🌾 Idratazione estrema in salone per domare la secchezza e riportare morbidezza. Un trattamento rigenerante che ti farà innamorare di nuovo dei tuoi capelli.\n\n💧 https://brunomelitohair.it", "image_url": "https://res.cloudinary.com/dabpscxvz/image/upload/v1786169388/h56ayni68xzw0wodrzrt.jpg"},
@@ -127,12 +124,11 @@ async def publish_via_make(data: dict, current_user: dict = Depends(get_current_
     text = data.get("text") or ""
     image_url = data.get("image_url") or ""
     
-    # FIX 1: Se non c'è immagine, mettiamo un'immagine di default per non far crashare Make/IG
+    # FIX 1: Usiamo la NUOVA immagine di default se manca
     if not image_url:
-        image_url = https://res.cloudinary.com/dabpscxvz/image/upload/v1786688048/in35khfk7f7xboczt4uy.jpg
-
-    # FIX 2 MAGICO: Forziamo Cloudinary a fare un crop quadrato 1:1 perfetto per Instagram
-    # Inseriamo le istruzioni di trasformazione subito dopo "/upload/"
+        image_url = "https://res.cloudinary.com/dabpscxvz/image/upload/v1786688048/in35khfk7f7xboczt4uy.jpg"
+    
+    # FIX 2: Forziamo Cloudinary a fare un crop quadrato 1:1 perfetto per Instagram
     if "res.cloudinary.com" in image_url and "/upload/" in image_url:
         parts = image_url.split("/upload/")
         if len(parts) == 2:
@@ -191,7 +187,6 @@ async def upload_social_image(file: UploadFile = File(...), current_user: dict =
 async def get_social_config(current_user: dict = Depends(get_current_user)):
     return {"make_webhook_url": current_user.get("make_webhook_url", ""), "configured": bool(current_user.get("make_webhook_url"))}
 
-# FIX: Accetta sia PUT che POST per evitare l'errore "Method Not Allowed"
 @router.api_route("/social/config", methods=["PUT", "POST"])
 async def save_social_config(data: dict, current_user: dict = Depends(get_current_user)):
     await db.users.update_one({"id": current_user["id"]}, {"$set": {"make_webhook_url": data.get("make_webhook_url", "")}})
