@@ -9,29 +9,22 @@ from calendar import monthrange
 from pydantic import BaseModel
 from auth import get_current_user
 from database import db
-from models import AppointmentCreate, AppointmentResponse, CheckoutData
+from models import AppointmentCreate, AppointmentResponse
 from utils import calculate_end_time, send_whatsapp, send_automatic_message, resolve_client
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-# Modelli aggiuntivi per sicurezza Cassa
-class PaymentSplitItem(BaseModel):
-    method: str
-    amount: float
-
-class CheckoutServiceItem(BaseModel):
-    id: Optional[str] = None
-    name: str
-    price: float
-    quantity: int = 1
-    duration: int = 0
-
-class SafeCheckoutData(CheckoutData):
-    payment_splits: Optional[List[PaymentSplitItem]] = None
-    custom_services: Optional[List[CheckoutServiceItem]] = None
+# Modello Cassa Sicuro e Semplice (per evitare errori 500)
+class SafeCheckoutData(BaseModel):
+    payment_method: Optional[str] = "cash"
+    discount_type: Optional[str] = "none"
+    discount_value: Optional[float] = 0
+    total_paid: float
+    card_id: Optional[str] = None
+    note: Optional[str] = None
+    custom_services: Optional[List[dict]] = None
     retail_items: Optional[List[dict]] = None
-    consumed_products: Optional[List[dict]] = None
 
 
 async def _send_checkout_thank_you(phone: str, client_name: str, current_user: dict, payment_id: str = None):
@@ -41,8 +34,6 @@ async def _send_checkout_thank_you(phone: str, client_name: str, current_user: d
         if payment_id:
             message += f"Ecco la tua ricevuta digitale: https://brunomelitohair.it/ricevuta/{payment_id}\n\n"
         message += f"Se ti è piaciuto, ci aiuteresti tantissimo lasciando una recensione qui:\n{review_link}\n\nA presto!"
-        
-        # Passiamo il payment_id come button_param per far funzionare il template Meta
         await send_automatic_message(phone, "ringraziamento_e_ricevuta", [client_name], message, current_user, button_param=payment_id)
     except Exception as e:
         logger.error(f"Errore invio ringraziamento checkout: {e}")
@@ -117,14 +108,11 @@ async def checkout_appointment(appointment_id: str, data: SafeCheckoutData, back
     apt = await db.appointments.find_one({"id": appointment_id, "user_id": current_user["id"]}, {"_id": 0})
     if not apt: raise HTTPException(status_code=404, detail="Appuntamento non trovato")
 
-    is_split = bool(data.payment_splits) and len(data.payment_splits) > 1
-    if is_split and data.card_id:
-        raise HTTPException(status_code=400, detail="Il pagamento diviso non supporta card/abbonamento")
-
     card_id = data.card_id
     card_result = None
     card_type_used = None
 
+    # 1. GESTIONE CARD/ABBONAMENTO (Semplificata)
     if card_id:
         card = await db.cards.find_one({"id": card_id, "user_id": current_user["id"]}, {"_id": 0})
         if card and card.get("active"):
@@ -158,138 +146,53 @@ async def checkout_appointment(appointment_id: str, data: SafeCheckoutData, back
                     is_exhausted = is_exhausted or used >= total_svc
                 if is_exhausted:
                     await db.cards.update_one({"id": card_id, "user_id": current_user["id"]}, {"$set": {"active": False}})
-                remaining_services = (total_svc - used) if total_svc else None
                 card_result = {
                     "card_id": card_id,
                     "card_active": not is_exhausted,
                     "remaining_value": remaining_val,
-                    "remaining_services": remaining_services,
                     "used_services": used,
                 }
 
+    # 2. GESTIONE SERVIZI MODIFICATI (Prezzi e Quantità)
     if data.custom_services:
         final_services = [
             {"id": s.get("id"), "name": s.get("name"), "price": s.get("price"), "quantity": s.get("quantity", 1), "duration": s.get("duration", 0)}
             for s in data.custom_services
         ]
-        total_price_calc = sum(s["price"] * s["quantity"] for s in final_services)
-        total_duration_calc = sum(s["duration"] * s["quantity"] for s in final_services)
         await db.appointments.update_one(
             {"id": appointment_id, "user_id": current_user["id"]},
-            {"$set": {"services": final_services, "total_price": total_price_calc, "total_duration": total_duration_calc}}
+            {"$set": {"services": final_services, "total_price": data.total_paid}}
         )
         apt["services"] = final_services
-        service_total = total_price_calc
-    else:
-        service_total = apt.get("total_price", 0.0)
 
-    retail_lines = []
-    retail_total = 0.0
-    if data.retail_items:
-        product_ids = [ri.get("product_id") for ri in data.retail_items]
-        retail_products = await db.inventory.find(
-            {"id": {"$in": product_ids}, "user_id": current_user["id"]}, {"_id": 0}
-        ).to_list(200)
-        prod_map = {p["id"]: p for p in retail_products}
-        for ri in data.retail_items:
-            prod = prod_map.get(ri.get("product_id"))
-            if not prod:
-                raise HTTPException(status_code=400, detail="Prodotto rivendita non trovato in magazzino")
-            price = prod.get("sale_price") or 0.0
-            qty = ri.get("quantity", 1)
-            retail_lines.append({"product_id": prod["id"], "name": prod["name"], "quantity": qty, "price": price})
-            retail_total += price * qty
+    # 3. REGISTRAZIONE PAGAMENTO (Semplice e diretta)
+    total_paid_amount = 0.0 if card_type_used == "subscription" else data.total_paid
+    payment_type = "subscription_checkout" if card_type_used == "subscription" else "prepaid_checkout" if card_type_used == "prepaid" else data.payment_method
 
-    if card_type_used != "subscription":
-        discount_amount = 0.0
-        if data.discount_type == "percent" and data.discount_value:
-            discount_amount = service_total * (data.discount_value / 100)
-        elif data.discount_type == "fixed" and data.discount_value:
-            discount_amount = data.discount_value
-        expected_total = max(0.0, service_total - discount_amount) + retail_total
-        declared_total = sum(s.amount for s in data.payment_splits) if is_split else data.total_paid
-        if abs(declared_total - expected_total) > 0.02:
-            raise HTTPException(status_code=400, detail="L'importo dichiarato non corrisponde al totale di servizi e prodotti")
+    payment_doc = {
+        "id": str(uuid.uuid4()), "user_id": current_user["id"], "appointment_id": appointment_id,
+        "client_id": apt["client_id"], "client_name": apt["client_name"],
+        "total_paid": total_paid_amount,
+        "payment_method": data.payment_method,
+        "payment_type": payment_type,
+        "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "services": apt["services"],
+        "card_id": card_id,
+        "discount_type": data.discount_type,
+        "discount_value": data.discount_value,
+        "note": data.note,
+    }
+    await db.payments.insert_one(payment_doc)
 
-    final_payment_method = "split" if is_split else data.payment_method
+    await db.appointments.update_one(
+        {"id": appointment_id, "user_id": current_user["id"]}, 
+        {"$set": {"status": "completed", "paid": True, "payment_method": data.payment_method}}
+    )
 
-    payments_to_insert = []
-    if is_split:
-        for split in data.payment_splits:
-            split_amount = 0.0 if card_type_used == "subscription" else split.amount
-            payments_to_insert.append({
-                "id": str(uuid.uuid4()), "user_id": current_user["id"], "appointment_id": appointment_id,
-                "client_id": apt["client_id"], "client_name": apt["client_name"],
-                "total_paid": split_amount,
-                "payment_method": split.method,
-                "payment_type": "split_payment",
-                "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "services": apt["services"],
-                "retail_items": retail_lines,
-                "card_id": card_id,
-                "discount_type": data.discount_type,
-                "discount_value": data.discount_value,
-                "note": data.note,
-            })
-    else:
-        total_paid_amount = retail_total if card_type_used == "subscription" else data.total_paid
-        if card_type_used == "subscription":
-            payment_type = "subscription_checkout"
-        elif card_type_used == "prepaid":
-            payment_type = "prepaid_checkout"
-        else:
-            payment_type = data.payment_method
-        payments_to_insert.append({
-            "id": str(uuid.uuid4()), "user_id": current_user["id"], "appointment_id": appointment_id,
-            "client_id": apt["client_id"], "client_name": apt["client_name"],
-            "total_paid": total_paid_amount,
-            "payment_method": data.payment_method,
-            "payment_type": payment_type,
-            "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "services": apt["services"],
-            "retail_items": retail_lines,
-            "card_id": card_id,
-            "discount_type": data.discount_type,
-            "discount_value": data.discount_value,
-            "note": data.note,
-        })
-
-    sospesi_to_insert = []
-    payments_to_insert_final = []
-
-    for payment in payments_to_insert:
-        if payment["payment_method"] == "sospeso":
-            sospeso_doc = {
-                "id": payment["id"],  # FIX: Usiamo lo stesso ID del pagamento per collegare la ricevuta
-                "user_id": current_user["id"],
-                "appointment_id": appointment_id,
-                "client_id": payment["client_id"],
-                "client_name": payment["client_name"],
-                "amount": payment["total_paid"],
-                "services": payment["services"],
-                "retail_items": payment.get("retail_items", []),
-                "notes": payment.get("note", ""),
-                "created_at": datetime.now(timezone.utc).isoformat(),
-                "status": "pending"
-            }
-            sospesi_to_insert.append(sospeso_doc)
-        else:
-            payments_to_insert_final.append(payment)
-
-    if payments_to_insert_final:
-        await db.payments.insert_many(payments_to_insert_final)
-    if sospesi_to_insert:
-        await db.sospesi.insert_many(sospesi_to_insert)
-
-    await db.appointments.update_one({"id": appointment_id, "user_id": current_user["id"]}, {"$set": {"status": "completed", "paid": True, "payment_method": final_payment_method}})
-
-    # SCARICO MAGAZZINO INTELLIGENTE
+    # 4. SCARICO MAGAZZINO INTELLIGENTE
     retail_items = getattr(data, 'retail_items', None) or []
-    consumed_products = getattr(data, 'consumed_products', None) or []
-
-    for item in retail_items + consumed_products:
+    for item in retail_items:
         prod_id = item.get("product_id")
         qty = abs(item.get("quantity", 1))
         if prod_id:
@@ -305,7 +208,7 @@ async def checkout_appointment(appointment_id: str, data: SafeCheckoutData, back
         ).to_list(100)
 
         client_doc = await db.clients.find_one(
-            {"id": apt.get("client_id"), "user_id": current_user["id"]},
+            {"id": apt.get("client_id"), "user_id": current_user["id"]}, 
             {"_id": 0}
         ) if apt.get("client_id") else None
 
@@ -332,21 +235,15 @@ async def checkout_appointment(appointment_id: str, data: SafeCheckoutData, back
                         {"$inc": {"total_stock": -abs(inv_prod.get("dose_size", 1.0))}}
                     )
 
-            elif "rivendita" in category and db_svc.get("linked_inventory_id"):
-                inv_id = db_svc["linked_inventory_id"]
-                await db.inventory.update_one(
-                    {"id": inv_id, "user_id": current_user["id"]},
-                    {"$inc": {"total_stock": -1}}
-                )
-
+    # 5. MESSAGGIO WHATSAPP RICEVUTA
     phone = apt.get("client_phone")
     if not phone and apt.get("client_id"):
         cl = await db.clients.find_one({"id": apt["client_id"], "user_id": current_user["id"]})
         if cl: phone = cl.get("phone")
-    if phone: background_tasks.add_task(_send_checkout_thank_you, phone, apt["client_name"], current_user, payments_to_insert[0]["id"])
+    if phone: 
+        background_tasks.add_task(_send_checkout_thank_you, phone, apt["client_name"], current_user, payment_doc["id"])
     
-    # FIX: Rimosso inventory_log che causava crash
-    return {"status": "ok", "payment_id": payments_to_insert[0]["id"], "card": card_result}
+    return {"status": "ok", "payment_id": payment_doc["id"], "card": card_result}
 
 @router.get("/appointments", response_model=List[AppointmentResponse])
 async def get_appointments(
