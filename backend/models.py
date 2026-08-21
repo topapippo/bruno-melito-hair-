@@ -414,19 +414,14 @@ class RetailItem(BaseModel):
     quantity: int
 
 class CheckoutData(BaseModel):
-    payment_method: str = "mixed"  # cash, pos, sospeso, prepaid, mixed (se ci sono split)
+    payment_method: Optional[str] = "cash"
     discount_type: Optional[str] = "none"
     discount_value: Optional[float] = 0
-    total_paid: float = Field(ge=0)
+    total_paid: float
     card_id: Optional[str] = None
-    loyalty_points_used: Optional[int] = 0
-    promo_id: Optional[str] = None
-    promo_free_service: Optional[str] = None
     note: Optional[str] = None
-    payment_splits: Optional[List[PaymentSplitItem]] = None
     custom_services: Optional[List[dict]] = None
     retail_items: Optional[List[dict]] = None
-    consumed_products: Optional[List[dict]] = None
 
 
 # ============== SOCIAL POSTS ==============
