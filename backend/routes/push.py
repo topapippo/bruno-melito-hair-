@@ -61,7 +61,7 @@ async def unsubscribe_push(sub: PushSubscription, current_user: dict = Depends(g
 
 
 @router.post("/push/send-reminders")
-async def send_push_reminders():
+async def send_push_reminders(current_user: dict = Depends(get_current_user)):
     return await _send_push_reminders_core()
 
 
