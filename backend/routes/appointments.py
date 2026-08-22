@@ -104,11 +104,15 @@ async def create_appointment(data: AppointmentCreate, current_user: dict = Depen
     return AppointmentResponse(**{k: v for k, v in doc.items() if k != "user_id"})
 
 @router.post("/appointments/{appointment_id}/checkout")
-async def checkout_appointment(appointment_id: str, data: SafeCheckoutData, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
+async def checkout_appointment(appointment_id: str, data: CheckoutData, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
     apt = await db.appointments.find_one({"id": appointment_id, "user_id": current_user["id"]}, {"_id": 0})
     if not apt: raise HTTPException(status_code=404, detail="Appuntamento non trovato")
 
-    # 0. GESTIONE SERVIZI MODIFICATI (Prezzi e Quantità) - Fatto prima della card così sa quanti servizi scaloare
+    card_id = data.card_id
+    card_result = None
+    card_type_used = None
+
+    # 1. GESTIONE SERVIZI MODIFICATI (Prezzi e Quantità)
     if data.custom_services:
         final_services = [
             {"id": s.get("id"), "name": s.get("name"), "price": s.get("price"), "quantity": s.get("quantity", 1), "duration": s.get("duration", 0)}
@@ -120,11 +124,7 @@ async def checkout_appointment(appointment_id: str, data: SafeCheckoutData, back
         )
         apt["services"] = final_services
 
-    card_id = data.card_id
-    card_result = None
-    card_type_used = None
-
-    # 1. GESTIONE CARD/ABBONAMENTO
+    # 2. GESTIONE CARD/ABBONAMENTO
     if card_id:
         card = await db.cards.find_one({"id": card_id, "user_id": current_user["id"]}, {"_id": 0})
         if card and card.get("active"):
@@ -138,7 +138,6 @@ async def checkout_appointment(appointment_id: str, data: SafeCheckoutData, back
                 "date": datetime.now(timezone.utc).isoformat()
             }
             if card_type_used == "subscription":
-                # Contiamo quanti servizi ci sono nell'appuntamento per scalarli tutti
                 services_count = len(apt.get("services", [])) or 1
                 updated_card = await db.cards.find_one_and_update(
                     {"id": card_id, "user_id": current_user["id"], "active": True},
@@ -146,7 +145,6 @@ async def checkout_appointment(appointment_id: str, data: SafeCheckoutData, back
                     return_document=True
                 )
             else:
-                # Prepagata: scala l'importo in euro
                 updated_card = await db.cards.find_one_and_update(
                     {"id": card_id, "user_id": current_user["id"], "active": True, "remaining_value": {"$gte": amount_to_deduct}},
                     {"$inc": {"remaining_value": -amount_to_deduct, "used_services": 1}, "$push": {"transactions": transaction}},
@@ -168,7 +166,7 @@ async def checkout_appointment(appointment_id: str, data: SafeCheckoutData, back
                     "used_services": used,
                 }
 
-    # 2. REGISTRAZIONE PAGAMENTO
+    # 3. REGISTRAZIONE PAGAMENTO
     total_paid_amount = 0.0 if card_type_used == "subscription" else data.total_paid
     payment_type = "subscription_checkout" if card_type_used == "subscription" else "prepaid_checkout" if card_type_used == "prepaid" else data.payment_method
 
@@ -193,7 +191,7 @@ async def checkout_appointment(appointment_id: str, data: SafeCheckoutData, back
         {"$set": {"status": "completed", "paid": True, "payment_method": data.payment_method}}
     )
 
-    # 3. SCARICO MAGAZZINO INTELLIGENTE
+    # 4. SCARICO MAGAZZINO
     retail_items = getattr(data, 'retail_items', None) or []
     for item in retail_items:
         prod_id = item.get("product_id")
@@ -238,7 +236,7 @@ async def checkout_appointment(appointment_id: str, data: SafeCheckoutData, back
                         {"$inc": {"total_stock": -abs(inv_prod.get("dose_size", 1.0))}}
                     )
 
-    # 4. MESSAGGIO WHATSAPP RICEVUTA
+    # 5. MESSAGGIO WHATSAPP
     phone = apt.get("client_phone")
     if not phone and apt.get("client_id"):
         cl = await db.clients.find_one({"id": apt["client_id"], "user_id": current_user["id"]})
@@ -247,7 +245,6 @@ async def checkout_appointment(appointment_id: str, data: SafeCheckoutData, back
         background_tasks.add_task(_send_checkout_thank_you, phone, apt["client_name"], current_user, payment_doc["id"])
     
     return {"status": "ok", "payment_id": payment_doc["id"], "card": card_result}
-
 @router.get("/appointments", response_model=List[AppointmentResponse])
 async def get_appointments(
     date: Optional[str] = None,
