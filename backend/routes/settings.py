@@ -1,95 +1,62 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, HTTPException, Depends
+from typing import Optional
+from datetime import datetime, timezone
+import os
+from database import db
 from auth import get_current_user
-from utils import WA_TOKEN, WA_PHONE_NUMBER_ID
-import asyncio
-import requests as _req
+from models import SettingsUpdate, UserResponse
+from utils import twilio_client, TWILIO_PHONE_NUMBER
 
 router = APIRouter()
 
+@router.put("/settings", response_model=UserResponse)
+async def update_settings(data: SettingsUpdate, current_user: dict = Depends(get_current_user)):
+    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    if not update_data:
+        raise HTTPException(status_code=400, detail="Nessun dato da aggiornare")
+    await db.users.update_one({"id": current_user["id"]}, {"$set": update_data})
+    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
+    return UserResponse(id=user["id"], email=user["email"], name=user["name"], salon_name=user["salon_name"], created_at=user["created_at"])
 
-@router.get("/settings/whatsapp-status")
-async def whatsapp_status(current_user: dict = Depends(get_current_user)):
-    """Verifica se il token Meta della WhatsApp Cloud API è ancora valido.
-    Risponde con OK/Error + dettagli del numero collegato.
-    """
-    if not WA_TOKEN:
-        return {
-            "ok": False,
-            "status": "not_configured",
-            "primary_provider": "cloud_api",
-            "error": "WHATSAPP_TOKEN non configurato",
-            "phone_id": WA_PHONE_NUMBER_ID,
-        }
-
-    try:
-        url = f"https://graph.facebook.com/v21.0/{WA_PHONE_NUMBER_ID}"
-        headers = {"Authorization": f"Bearer {WA_TOKEN}"}
-        resp = await asyncio.to_thread(_req.get, url, headers=headers, timeout=10)
-        rjson = {}
-        try:
-            rjson = resp.json()
-        except Exception:
-            pass
-
-        if resp.status_code == 200 and rjson.get("id"):
-            return {
-                "ok": True,
-                "status": "valid",
-                "primary_provider": "cloud_api",
-                "phone_id": rjson.get("id"),
-                "display_phone_number": rjson.get("display_phone_number", ""),
-                "verified_name": rjson.get("verified_name", ""),
-                "quality_rating": rjson.get("quality_rating", ""),
-            }
-
-        error = rjson.get("error", {})
-        return {
-            "ok": False,
-            "status": "invalid",
-            "primary_provider": "cloud_api",
-            "error": error.get("message") or resp.text[:200],
-            "code": error.get("code"),
-            "phone_id": WA_PHONE_NUMBER_ID,
-        }
-    except Exception as e:
-        return {
-            "ok": False,
-            "status": "error",
-            "primary_provider": "cloud_api",
-            "error": str(e),
-            "phone_id": WA_PHONE_NUMBER_ID,
-        }
-
-
-@router.get("/settings/social-status")
-async def social_status(current_user: dict = Depends(get_current_user)):
-    """Stato aggregato Facebook / Instagram / WhatsApp per la dashboard.
-    - Facebook/Instagram: OK se è configurato il webhook Make.com
-    - WhatsApp: OK se token Meta valido (chiamata graph.facebook.com)
-    """
-    make_url = current_user.get("make_webhook_url", "")
-    fb_ig_ok = bool(make_url)
-
-    wa_info = await whatsapp_status(current_user)
-
+@router.get("/settings")
+async def get_settings(current_user: dict = Depends(get_current_user)):
     return {
-        "facebook": {
-            "ok": fb_ig_ok,
-            "configured": fb_ig_ok,
-            "provider": "make.com",
-        },
-        "instagram": {
-            "ok": fb_ig_ok,
-            "configured": fb_ig_ok,
-            "provider": "make.com",
-        },
-        "whatsapp": {
-            "ok": wa_info.get("ok", False),
-            "status": wa_info.get("status"),
-            "display_number": wa_info.get("display_phone_number", ""),
-            "verified_name": wa_info.get("verified_name", ""),
-            "error": wa_info.get("error", ""),
-        },
+        "id": current_user["id"], "email": current_user["email"],
+        "name": current_user["name"], "salon_name": current_user["salon_name"],
+        "opening_time": current_user.get("opening_time", "09:00"),
+        "closing_time": current_user.get("closing_time", "19:00"),
+        "working_days": current_user.get("working_days", ["lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato"]),
+        "google_review_link": current_user.get("google_review_link", ""),
+        "monthly_target": current_user.get("monthly_target", 0) or 0,
+        "make_webhook_url": current_user.get("make_webhook_url", ""),
     }
 
+# ============== PAYMENTS ==============
 
+@router.get("/payments")
+async def get_payments(start: str = None, end: str = None, current_user: dict = Depends(get_current_user)):
+    query = {"user_id": current_user["id"]}
+    if start and end:
+        query["date"] = {"$gte": start[:10], "$lte": end[:10]}
+    return await db.payments.find(query, {"_id": 0}).sort("date", -1).to_list(1000)
+
+@router.put("/payments/{payment_id}")
+async def update_payment(payment_id: str, data: dict, current_user: dict = Depends(get_current_user)):
+    allowed = {"date", "payment_method", "total_paid", "client_name", "notes"}
+    update_data = {k: v for k, v in data.items() if k in allowed and v is not None}
+    if not update_data:
+        raise HTTPException(status_code=400, detail="Nessun dato valido da aggiornare")
+    result = await db.payments.update_one(
+        {"id": payment_id, "user_id": current_user["id"]}, {"$set": update_data}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Pagamento non trovato")
+    updated = await db.payments.find_one({"id": payment_id, "user_id": current_user["id"]}, {"_id": 0, "user_id": 0})
+    return updated
+
+@router.delete("/payments/{payment_id}")
+async def delete_payment(payment_id: str, current_user: dict = Depends(get_current_user)):
+    result = await db.payments.delete_one({"id": payment_id, "user_id": current_user["id"]})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Pagamento non trovato")
+    return {"success": True}
