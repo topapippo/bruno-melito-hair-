@@ -422,8 +422,10 @@ class CheckoutData(BaseModel):
     note: Optional[str] = None
     custom_services: Optional[List[dict]] = None
     retail_items: Optional[List[dict]] = None
-
-
+    payment_splits: Optional[List[dict]] = None
+    loyalty_points_used: Optional[int] = 0
+    promo_id: Optional[str] = None
+    promo_free_service: Optional[str] = None
 # ============== SOCIAL POSTS ==============
 
 class SocialPostCreate(BaseModel):
