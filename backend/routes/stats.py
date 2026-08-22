@@ -510,7 +510,11 @@ async def get_morning_briefing(current_user: dict = Depends(get_current_user)):
     
     today_date = now_it.date()
     for c in clients_with_bday:
-        bday = c.get("birthday", "")
+        bday = c.get("birthday")
+        # FIX: Se bday è None o non è una stringa, saltiamo questo cliente
+        if not bday or not isinstance(bday, str):
+            continue
+            
         try:
             if len(bday) == 5 and bday[2] == '-':
                 month, day = int(bday[:2]), int(bday[3:])
