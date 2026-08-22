@@ -557,7 +557,7 @@ async def update_website_review(review_id: str, data: dict, current_user: dict =
         {"$set": {"name": data.get("name"), "text": data.get("text"), "rating": data.get("rating", 5)}}
     )
     invalidate_website_cache()
-    return await db.website_reviews.find_one({"id": review_id}, {"_id": 0})
+    return await db.website_reviews.find_one({"id": review_id, "user_id": current_user["id"]}, {"_id": 0})
 
 
 @router.delete("/website/reviews/{review_id}")
@@ -596,7 +596,7 @@ async def update_website_gallery_item(item_id: str, data: dict, current_user: di
     if update_data:
         await db.website_gallery.update_one({"id": item_id, "user_id": current_user["id"]}, {"$set": update_data})
     invalidate_website_cache()
-    return await db.website_gallery.find_one({"id": item_id}, {"_id": 0})
+    return await db.website_gallery.find_one({"id": item_id, "user_id": current_user["id"]}, {"_id": 0})
 
 
 @router.delete("/website/gallery/{item_id}")
