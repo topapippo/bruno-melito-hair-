@@ -118,8 +118,9 @@ async def delete_manual_post(post_id: str, current_user: dict = Depends(get_curr
 @router.post("/social/publish-via-make")
 async def publish_via_make(data: dict, current_user: dict = Depends(get_current_user)):
     webhook_url = current_user.get("make_webhook_url")
-    if not webhook_url:
-        raise HTTPException(status_code=400, detail="Configura il Webhook nelle Impostazioni")
+    # FIX DI SICUREZZA (Anti-SSRF): Accettiamo solo link che iniziano con https://
+    if not webhook_url or not webhook_url.startswith('https://'):
+        raise HTTPException(status_code=400, detail="URL Webhook non valido. Configuralo nelle Impostazioni.")
     
     text = data.get("text") or ""
     image_url = data.get("image_url") or ""
