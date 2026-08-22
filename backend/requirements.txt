@@ -14,3 +14,4 @@ fpdf2==2.8.3
 cloudinary
 Pillow==10.4.0
 icalendar==6.1.0
+pywebpush==2.0.3
