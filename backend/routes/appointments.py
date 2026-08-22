@@ -104,7 +104,7 @@ async def create_appointment(data: AppointmentCreate, current_user: dict = Depen
     return AppointmentResponse(**{k: v for k, v in doc.items() if k != "user_id"})
 
 @router.post("/appointments/{appointment_id}/checkout")
-async def checkout_appointment(appointment_id: str, data: CheckoutData, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
+async def checkout_appointment(appointment_id: str, data: SafeCheckoutData, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
     apt = await db.appointments.find_one({"id": appointment_id, "user_id": current_user["id"]}, {"_id": 0})
     if not apt: raise HTTPException(status_code=404, detail="Appuntamento non trovato")
 
@@ -245,6 +245,7 @@ async def checkout_appointment(appointment_id: str, data: CheckoutData, backgrou
         background_tasks.add_task(_send_checkout_thank_you, phone, apt["client_name"], current_user, payment_doc["id"])
     
     return {"status": "ok", "payment_id": payment_doc["id"], "card": card_result}
+
 @router.get("/appointments", response_model=List[AppointmentResponse])
 async def get_appointments(
     date: Optional[str] = None,
