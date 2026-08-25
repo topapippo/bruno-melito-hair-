@@ -95,6 +95,12 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Indice clients.user_id non creato: {e}")
 
+    try:
+        await db.clients.create_index([("user_id", 1), ("name", 1)], unique=True)
+        logger.info("Indice creato/verificato: clients.user_id_1_name_1 (unique)")
+    except Exception as e:
+        logger.warning(f"Indice clients (user_id, name) unique non creato: {e}")
+
     yield
     # Shutdown
     mongo_client.close()
