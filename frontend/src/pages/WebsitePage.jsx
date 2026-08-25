@@ -14,6 +14,7 @@ import BookingForm from '../components/website/BookingForm';
 import BookingSuccess from '../components/website/BookingSuccess';
 import MyAppointmentsModal from '../components/website/MyAppointmentsModal';
 import TrendGallery from '../components/website/TrendGallery';
+import BackToPreviousSection from '../components/website/BackToPreviousSection';
 import { HeroGalleryStrip } from '../components/website/sections/HeroGalleryStrip';
 import MasonryGallery from '../components/website/sections/MasonryGallery';
 import CinematicInterlude from '../components/website/sections/CinematicInterlude';
@@ -898,6 +899,9 @@ export default function WebsitePage() {
           }}
         />
       )}
+
+      {/* BACK TO PREVIOUS SECTION BUTTON */}
+      <BackToPreviousSection />
 
       {/* Cursore personalizzato Desktop */}
       <div

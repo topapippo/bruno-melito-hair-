@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { ArrowUpRight, X } from 'lucide-react';
+import { ArrowUpRight, X, Play } from 'lucide-react';
 import api from '../../lib/api';
 import { getMediaUrl } from '../../lib/mediaUrl';
 import { format } from 'date-fns';
@@ -63,6 +63,8 @@ function isAutoTitle(title) {
 export default function TrendGallery({ setShowBooking }) {
   const [trends, setTrends] = useState([]);
   const [lightbox, setLightbox] = useState(null);
+  const [playingVideos, setPlayingVideos] = useState(new Set());
+  const videoRefs = useRef({});
   const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
@@ -78,6 +80,28 @@ export default function TrendGallery({ setShowBooking }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [lightbox]);
 
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const videoEl = entry.target;
+          if (entry.isIntersecting) {
+            videoEl.play().catch(() => {});
+          } else {
+            videoEl.pause();
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+
+    Object.values(videoRefs.current).forEach((ref) => {
+      if (ref) observer.observe(ref);
+    });
+
+    return () => observer.disconnect();
+  }, [trends]);
+
   const items = trends.length ? trends : FALLBACK;
 
   return (
@@ -89,14 +113,24 @@ export default function TrendGallery({ setShowBooking }) {
         .bento-card:hover .bento-desc, .bento-card:hover .bento-cta { opacity: 1; transform: translateY(0); }
         .bento-cta-line { transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1); transform-origin: left center; }
         .bento-card:hover .bento-cta-line { transform: scaleX(1.05); }
+        .bento-card .bento-video-overlay { opacity: 0; transition: opacity 0.4s ease; }
+        .bento-card:hover .bento-video-overlay { opacity: 1; }
         @media (max-width: 639px) {
           .bento-grid { grid-template-columns: 1fr !important; }
           .bento-card { grid-column: span 1 !important; grid-row: span 1 !important; min-height: 280px; }
+          .bento-card .bento-desc, .bento-card .bento-cta { opacity: 1 !important; transform: translateY(0) !important; }
+          .bento-card:hover .bento-img { transform: scale(1) rotate(0deg); filter: brightness(1) saturate(1); }
         }
         @media (min-width: 640px) and (max-width: 1023px) {
           .bento-grid { grid-template-columns: repeat(2, 1fr) !important; }
           .bento-card { grid-column: span 1 !important; }
           .bento-card.span-2 { grid-column: span 2 !important; }
+        }
+        @supports (hover: hover) and (pointer: fine) {
+          @media (hover: none) or (pointer: coarse) {
+            .bento-card:hover .bento-img { transform: scale(1) rotate(0deg) !important; filter: brightness(1) saturate(1) !important; }
+            .bento-card:hover .bento-cta-line { transform: scaleX(1) !important; }
+          }
         }
         @media (prefers-reduced-motion: reduce) {
           .bento-card .bento-img,
@@ -163,13 +197,19 @@ export default function TrendGallery({ setShowBooking }) {
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, amount: 0.15 }}
-                onClick={() => !isVideo && setLightbox({ img: mediaSrc, title: hasTitle ? t.title : '', desc: t.desc })}
+                onClick={() => {
+                  if (isVideo) {
+                    setLightbox({ type: 'video', src: mediaSrc, title: hasTitle ? t.title : '', desc: t.desc });
+                  } else {
+                    setLightbox({ type: 'image', src: mediaSrc, title: hasTitle ? t.title : '', desc: t.desc });
+                  }
+                }}
                 whileHover={prefersReducedMotion ? undefined : {
                   boxShadow: `0 0 70px ${glow}55, 0 0 140px ${glow}25, 0 12px 36px rgba(0,0,0,0.65)`,
                   borderColor: `${glow}80`,
                   y: -4,
                 }}
-                className={`bento-card group relative overflow-hidden rounded-3xl ${!isVideo ? 'cursor-zoom-in' : ''} ${spanClass}`}
+                className={`bento-card group relative overflow-hidden rounded-3xl cursor-pointer ${spanClass}`}
                 style={{
                   gridColumn: `span ${pattern.col}`,
                   gridRow: `span ${pattern.row}`,
@@ -179,11 +219,19 @@ export default function TrendGallery({ setShowBooking }) {
                 }}
               >
                 {isVideo ? (
-                  <video
-                    src={mediaSrc}
-                    className="bento-img absolute inset-0 w-full h-full object-cover"
-                    autoPlay muted loop playsInline preload="metadata"
-                  />
+                  <>
+                    <video
+                      ref={(el) => { videoRefs.current[t.id] = el; }}
+                      src={mediaSrc}
+                      className="bento-img absolute inset-0 w-full h-full object-cover"
+                      muted loop playsInline preload="metadata"
+                    />
+                    <div className="bento-video-overlay absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur">
+                        <Play className="w-7 h-7 text-white fill-white" />
+                      </div>
+                    </div>
+                  </>
                 ) : (
                   <img
                     src={mediaSrc}
@@ -278,22 +326,39 @@ export default function TrendGallery({ setShowBooking }) {
           >
             <button
               onClick={(e) => { e.stopPropagation(); setLightbox(null); }}
-              aria-label="Chiudi immagine"
+              aria-label="Chiudi"
               className="absolute top-4 right-4 z-10 w-11 h-11 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
             >
               <X className="w-6 h-6" />
             </button>
-            <motion.img
-              key={lightbox.img}
-              src={lightbox.img}
-              alt={lightbox.title || 'Immagine look'}
-              initial={{ scale: prefersReducedMotion ? 1 : 0.92, opacity: 0, filter: prefersReducedMotion ? 'none' : 'blur(12px)' }}
-              animate={{ scale: 1, opacity: 1, filter: 'blur(0px)' }}
-              exit={{ scale: prefersReducedMotion ? 1 : 0.92, opacity: 0 }}
-              transition={{ duration: prefersReducedMotion ? 0.1 : 0.45, ease: EASE }}
-              onClick={(e) => e.stopPropagation()}
-              className="max-w-[95vw] max-h-[90vh] object-contain rounded-2xl shadow-2xl"
-            />
+            {lightbox.type === 'video' ? (
+              <motion.video
+                key={lightbox.src}
+                src={lightbox.src}
+                initial={{ scale: prefersReducedMotion ? 1 : 0.92, opacity: 0, filter: prefersReducedMotion ? 'none' : 'blur(12px)' }}
+                animate={{ scale: 1, opacity: 1, filter: 'blur(0px)' }}
+                exit={{ scale: prefersReducedMotion ? 1 : 0.92, opacity: 0 }}
+                transition={{ duration: prefersReducedMotion ? 0.1 : 0.45, ease: EASE }}
+                onClick={(e) => e.stopPropagation()}
+                className="max-w-[95vw] max-h-[90vh] object-contain rounded-2xl shadow-2xl"
+                controls
+                autoPlay
+                muted
+                playsInline
+              />
+            ) : (
+              <motion.img
+                key={lightbox.src}
+                src={lightbox.src}
+                alt={lightbox.title || 'Immagine look'}
+                initial={{ scale: prefersReducedMotion ? 1 : 0.92, opacity: 0, filter: prefersReducedMotion ? 'none' : 'blur(12px)' }}
+                animate={{ scale: 1, opacity: 1, filter: 'blur(0px)' }}
+                exit={{ scale: prefersReducedMotion ? 1 : 0.92, opacity: 0 }}
+                transition={{ duration: prefersReducedMotion ? 0.1 : 0.45, ease: EASE }}
+                onClick={(e) => e.stopPropagation()}
+                className="max-w-[95vw] max-h-[90vh] object-contain rounded-2xl shadow-2xl"
+              />
+            )}
             {lightbox.title && (
               <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-center px-6 py-3 rounded-2xl bg-white/10 backdrop-blur">
                 <p className="text-white font-bold tracking-wide" style={{ fontFamily: "'Playfair Display', serif" }}>
