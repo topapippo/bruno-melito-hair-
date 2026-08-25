@@ -95,12 +95,18 @@ export default function TrendGallery({ setShowBooking }) {
       { threshold: 0.5 }
     );
 
-    Object.values(videoRefs.current).forEach((ref) => {
-      if (ref) observer.observe(ref);
-    });
+    // Osserva tutti i video ref con un delay per assicurare che i ref siano assegnati
+    const timer = setTimeout(() => {
+      Object.values(videoRefs.current).forEach((ref) => {
+        if (ref) observer.observe(ref);
+      });
+    }, 100);
 
-    return () => observer.disconnect();
-  }, [trends]);
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, [items.length]);
 
   const items = trends.length ? trends : FALLBACK;
 
@@ -126,11 +132,9 @@ export default function TrendGallery({ setShowBooking }) {
           .bento-card { grid-column: span 1 !important; }
           .bento-card.span-2 { grid-column: span 2 !important; }
         }
-        @supports (hover: hover) and (pointer: fine) {
-          @media (hover: none) or (pointer: coarse) {
-            .bento-card:hover .bento-img { transform: scale(1) rotate(0deg) !important; filter: brightness(1) saturate(1) !important; }
-            .bento-card:hover .bento-cta-line { transform: scaleX(1) !important; }
-          }
+        @media (hover: none), (pointer: coarse) {
+          .bento-card .bento-img { transform: scale(1) rotate(0deg) !important; filter: brightness(1) saturate(1) !important; }
+          .bento-card .bento-cta-line { transform: scaleX(1) !important; }
         }
         @media (prefers-reduced-motion: reduce) {
           .bento-card .bento-img,
