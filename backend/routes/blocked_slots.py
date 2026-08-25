@@ -11,10 +11,8 @@ PUBLIC_ADMIN_EMAIL = os.environ.get("PUBLIC_ADMIN_EMAIL", "admin@brunomelito.it"
 
 
 async def _get_salon_owner() -> Optional[dict]:
-    """Trova il titolare del salone tramite PUBLIC_ADMIN_EMAIL (fallback: primo utente)."""
+    """Trova il titolare del salone tramite PUBLIC_ADMIN_EMAIL."""
     user = await db.users.find_one({"email": PUBLIC_ADMIN_EMAIL}, {"_id": 0})
-    if not user:
-        user = await db.users.find_one({}, {"_id": 0})
     return user
 
 router = APIRouter()

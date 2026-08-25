@@ -160,8 +160,6 @@ async def warmup(background_tasks: BackgroundTasks):
 async def get_public_admin_user():
     proj = {"_id": 0, "password": 0}
     user = await db.users.find_one({"email": PUBLIC_ADMIN_EMAIL}, proj)
-    if not user:
-        user = await db.users.find_one({}, proj)
     return user
 
 @router.get("/public/receipt/{payment_id}")
