@@ -106,7 +106,7 @@ export default function TrendGallery({ setShowBooking }) {
       clearTimeout(timer);
       observer.disconnect();
     };
-  }, [items.length]);
+  }, [trends.length]);
 
   const items = trends.length ? trends : FALLBACK;
 
