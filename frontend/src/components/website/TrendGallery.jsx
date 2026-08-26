@@ -1,6 +1,6 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { ArrowUpRight, X, Play } from 'lucide-react';
+import { ArrowUpRight, X } from 'lucide-react';
 import api from '../../lib/api';
 import { getMediaUrl } from '../../lib/mediaUrl';
 import { format } from 'date-fns';
@@ -63,12 +63,11 @@ function isAutoTitle(title) {
 export default function TrendGallery({ setShowBooking }) {
   const [trends, setTrends] = useState([]);
   const [lightbox, setLightbox] = useState(null);
-  const [playingVideos, setPlayingVideos] = useState(new Set());
-  const videoRefs = useRef({});
   const prefersReducedMotion = useReducedMotion();
+  const videoNodeRefs = useRef({});
 
   useEffect(() => {
-    api.get('/website-trends')
+    api.get('/website-trends/public')
       .then(r => setTrends(r.data?.length ? r.data : FALLBACK))
       .catch(() => setTrends(FALLBACK));
   }, []);
@@ -80,61 +79,35 @@ export default function TrendGallery({ setShowBooking }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [lightbox]);
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          const videoEl = entry.target;
-          if (entry.isIntersecting) {
-            videoEl.play().catch(() => {});
-          } else {
-            videoEl.pause();
-          }
-        });
-      },
-      { threshold: 0.5 }
-    );
-
-    // Osserva tutti i video ref con un delay per assicurare che i ref siano assegnati
-    const timer = setTimeout(() => {
-      Object.values(videoRefs.current).forEach((ref) => {
-        if (ref) observer.observe(ref);
-      });
-    }, 100);
-
-    return () => {
-      clearTimeout(timer);
-      observer.disconnect();
-    };
-  }, [trends.length]);
-
   const items = trends.length ? trends : FALLBACK;
 
   return (
     <section className="py-24 px-4 sm:px-8 overflow-hidden" style={{ background: '#0a0a0f' }}>
       <style>{`
         .bento-card .bento-img { transition: transform 1.1s cubic-bezier(0.22, 1, 0.36, 1), filter 0.7s ease; will-change: transform; }
-        .bento-card:hover .bento-img { transform: scale(1.08) rotate(-1.2deg); filter: brightness(1.06) saturate(1.12); }
         .bento-card .bento-desc, .bento-card .bento-cta { opacity: 0; transform: translateY(10px); transition: opacity 0.5s ease, transform 0.5s ease; }
-        .bento-card:hover .bento-desc, .bento-card:hover .bento-cta { opacity: 1; transform: translateY(0); }
         .bento-cta-line { transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1); transform-origin: left center; }
-        .bento-card:hover .bento-cta-line { transform: scaleX(1.05); }
-        .bento-card .bento-video-overlay { opacity: 0; transition: opacity 0.4s ease; }
-        .bento-card:hover .bento-video-overlay { opacity: 1; }
+        /* Effetti hover solo su dispositivi con puntatore vero (mouse/trackpad).
+           Su touch (cellulare/tablet) queste regole :hover causavano un bug noto di
+           iOS/Android: il primo tap "attiva" l'hover invece del click, quindi foto e
+           video sembravano non aprirsi al primo tocco e serviva toccare due volte. */
+        @media (hover: hover) {
+          .bento-card:hover .bento-img { transform: scale(1.08) rotate(-1.2deg); filter: brightness(1.06) saturate(1.12); }
+          .bento-card:hover .bento-desc, .bento-card:hover .bento-cta { opacity: 1; transform: translateY(0); }
+          .bento-card:hover .bento-cta-line { transform: scaleX(1.05); }
+        }
+        /* Su touch, CTA e descrizione restano sempre visibili invece di dipendere dall'hover */
+        @media (hover: none) {
+          .bento-card .bento-desc, .bento-card .bento-cta { opacity: 1; transform: translateY(0); }
+        }
         @media (max-width: 639px) {
           .bento-grid { grid-template-columns: 1fr !important; }
           .bento-card { grid-column: span 1 !important; grid-row: span 1 !important; min-height: 280px; }
-          .bento-card .bento-desc, .bento-card .bento-cta { opacity: 1 !important; transform: translateY(0) !important; }
-          .bento-card:hover .bento-img { transform: scale(1) rotate(0deg); filter: brightness(1) saturate(1); }
         }
         @media (min-width: 640px) and (max-width: 1023px) {
           .bento-grid { grid-template-columns: repeat(2, 1fr) !important; }
           .bento-card { grid-column: span 1 !important; }
           .bento-card.span-2 { grid-column: span 2 !important; }
-        }
-        @media (hover: none), (pointer: coarse) {
-          .bento-card .bento-img { transform: scale(1) rotate(0deg) !important; filter: brightness(1) saturate(1) !important; }
-          .bento-card .bento-cta-line { transform: scaleX(1) !important; }
         }
         @media (prefers-reduced-motion: reduce) {
           .bento-card .bento-img,
@@ -201,19 +174,16 @@ export default function TrendGallery({ setShowBooking }) {
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, amount: 0.15 }}
-                onClick={() => {
-                  if (isVideo) {
-                    setLightbox({ type: 'video', src: mediaSrc, title: hasTitle ? t.title : '', desc: t.desc });
-                  } else {
-                    setLightbox({ type: 'image', src: mediaSrc, title: hasTitle ? t.title : '', desc: t.desc });
-                  }
+                onViewportEnter={() => {
+                  if (isVideo) videoNodeRefs.current[t.id]?.play?.().catch(() => {});
                 }}
+                onClick={() => setLightbox({ img: mediaSrc, title: hasTitle ? t.title : '', desc: t.desc, isVideo })}
                 whileHover={prefersReducedMotion ? undefined : {
                   boxShadow: `0 0 70px ${glow}55, 0 0 140px ${glow}25, 0 12px 36px rgba(0,0,0,0.65)`,
                   borderColor: `${glow}80`,
                   y: -4,
                 }}
-                className={`bento-card group relative overflow-hidden rounded-3xl cursor-pointer ${spanClass}`}
+                className={`bento-card group relative overflow-hidden rounded-3xl ${!isVideo ? 'cursor-zoom-in' : ''} ${spanClass}`}
                 style={{
                   gridColumn: `span ${pattern.col}`,
                   gridRow: `span ${pattern.row}`,
@@ -223,19 +193,12 @@ export default function TrendGallery({ setShowBooking }) {
                 }}
               >
                 {isVideo ? (
-                  <>
-                    <video
-                      ref={(el) => { videoRefs.current[t.id] = el; }}
-                      src={mediaSrc}
-                      className="bento-img absolute inset-0 w-full h-full object-cover"
-                      muted loop playsInline preload="metadata"
-                    />
-                    <div className="bento-video-overlay absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur">
-                        <Play className="w-7 h-7 text-white fill-white" />
-                      </div>
-                    </div>
-                  </>
+                  <video
+                    ref={(el) => { if (el) videoNodeRefs.current[t.id] = el; }}
+                    src={mediaSrc}
+                    className="bento-img absolute inset-0 w-full h-full object-cover"
+                    muted loop playsInline preload="metadata"
+                  />
                 ) : (
                   <img
                     src={mediaSrc}
@@ -330,30 +293,27 @@ export default function TrendGallery({ setShowBooking }) {
           >
             <button
               onClick={(e) => { e.stopPropagation(); setLightbox(null); }}
-              aria-label="Chiudi"
+              aria-label="Chiudi immagine"
               className="absolute top-4 right-4 z-10 w-11 h-11 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
             >
               <X className="w-6 h-6" />
             </button>
-            {lightbox.type === 'video' ? (
+            {lightbox.isVideo ? (
               <motion.video
-                key={lightbox.src}
-                src={lightbox.src}
+                key={lightbox.img}
+                src={lightbox.img}
+                controls autoPlay playsInline
                 initial={{ scale: prefersReducedMotion ? 1 : 0.92, opacity: 0, filter: prefersReducedMotion ? 'none' : 'blur(12px)' }}
                 animate={{ scale: 1, opacity: 1, filter: 'blur(0px)' }}
                 exit={{ scale: prefersReducedMotion ? 1 : 0.92, opacity: 0 }}
                 transition={{ duration: prefersReducedMotion ? 0.1 : 0.45, ease: EASE }}
                 onClick={(e) => e.stopPropagation()}
                 className="max-w-[95vw] max-h-[90vh] object-contain rounded-2xl shadow-2xl"
-                controls
-                autoPlay
-                muted
-                playsInline
               />
             ) : (
               <motion.img
-                key={lightbox.src}
-                src={lightbox.src}
+                key={lightbox.img}
+                src={lightbox.img}
                 alt={lightbox.title || 'Immagine look'}
                 initial={{ scale: prefersReducedMotion ? 1 : 0.92, opacity: 0, filter: prefersReducedMotion ? 'none' : 'blur(12px)' }}
                 animate={{ scale: 1, opacity: 1, filter: 'blur(0px)' }}
