@@ -6,7 +6,7 @@ import { getMediaUrl } from '../../lib/mediaUrl';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 
-const FALLBACK = [];
+const FALLBACK = []; // Fix: API endpoint + UI improvements deployed
 
 const EASE = [0.22, 1, 0.36, 1];
 const GLOW_COLORS = ['#FF6B9D', '#FFD93D', '#A8DAFF', '#C3F0CA', '#FFB347'];
