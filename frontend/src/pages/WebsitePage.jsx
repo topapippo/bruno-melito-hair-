@@ -353,21 +353,24 @@ export default function WebsitePage() {
   // BOOKING FORM
   if (showBooking) {
     return (
-      <BookingForm
-        config={config}
-        bookingServices={bookingServices}
-        operators={operators}
-        cardTemplates={cardTemplates}
-        publicPromos={publicPromos}
-        blockedSlots={blockedSlots}
-        setBlockedSlots={setBlockedSlots}
-        formData={formData}
-        setFormData={setFormData}
-        onBack={() => { setBookingInitialStep(1); setShowBooking(false); }}
-        onSuccess={handleBookingSuccess}
-        T={T}
-        initialStep={bookingInitialStep}
-      />
+      <>
+        <BookingForm
+          config={config}
+          bookingServices={bookingServices}
+          operators={operators}
+          cardTemplates={cardTemplates}
+          publicPromos={publicPromos}
+          blockedSlots={blockedSlots}
+          setBlockedSlots={setBlockedSlots}
+          formData={formData}
+          setFormData={setFormData}
+          onBack={() => { setBookingInitialStep(1); setShowBooking(false); }}
+          onSuccess={handleBookingSuccess}
+          T={T}
+          initialStep={bookingInitialStep}
+        />
+        <BackToPreviousSection />
+      </>
     );
   }
 

@@ -217,6 +217,8 @@ async def get_trends_public():
     admin_user = await get_public_admin_user()
     uid_filter = {"user_id": admin_user["id"]} if admin_user else {}
     trends = await db.website_trends.find(uid_filter, {"_id": 0}).sort("order", 1).to_list(50)
+    if not trends:
+        return _TREND_DEFAULTS
     return trends
 
 
