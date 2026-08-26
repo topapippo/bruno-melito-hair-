@@ -677,31 +677,13 @@ export default function WebsitePage() {
         </div>
       </LuxSection>
 
-      {/* Sezioni dinamiche — con foto "sparse" interlacciate tra alcune sezioni */}
+      {/* Sezioni dinamiche — foto sparse rimosse */}
       {(() => {
         const out = [];
-        let photoCount = 0;
-        // sezioni dopo le quali far comparire una foto della galleria
-        // (escluse gallery/trend_gallery che sono già fatte di foto)
-        const afterSections = new Set(['services', 'salon', 'about', 'promotions', 'reviews', 'team', 'gift_card', 'contact']);
         sectionOrder.forEach((id) => {
           const sec = renderSection(id);
           if (!sec) return;
           out.push(sec);
-          if (id === 'services' && salonPhotos.length > 0) {
-            out.push(
-              <CinematicInterlude
-                key="cinematic-interlude"
-                image={salonPhotos[0]?.image_url || ''}
-                quote="Uno spazio dedicato al tuo benessere, dove la tradizione incontra l'innovazione."
-              />
-            );
-          }
-          if (hairstylePhotos.length > 0 && afterSections.has(id)) {
-            const photo = hairstylePhotos[photoCount % hairstylePhotos.length];
-            out.push(<PhotoInterlude key={`interlude-${id}`} photo={photo} index={photoCount} T={T} />);
-            photoCount++;
-          }
         });
         return out;
       })()}

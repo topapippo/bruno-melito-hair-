@@ -237,7 +237,8 @@ export default function BookingForm({
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
           <button
             onClick={onBack}
-            className="w-9 h-9 rounded-xl hover:bg-gray-100 transition-colors text-gray-500 flex items-center justify-center flex-shrink-0"
+            className="w-10 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors text-gray-700 hover:text-gray-900 flex items-center justify-center flex-shrink-0 font-bold"
+            title="Torna indietro"
             data-testid="website-booking-back-btn"
           >
             <ArrowLeft className="w-5 h-5" />
