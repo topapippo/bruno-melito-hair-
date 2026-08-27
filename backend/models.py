@@ -114,6 +114,7 @@ class ServiceCreate(BaseModel):
     color: Optional[str] = None
     linked_inventory_id: Optional[str] = None   # prodotto magazzino scalato al checkout
     sort_order: Optional[int] = None
+    is_smart_offer: Optional[bool] = False
 
 class ServiceResponse(BaseModel):
     id: str
@@ -124,6 +125,7 @@ class ServiceResponse(BaseModel):
     color: Optional[str] = None
     linked_inventory_id: Optional[str] = None
     sort_order: Optional[int] = None
+    is_smart_offer: bool = False
     created_at: str
 
 class ServiceUpdate(BaseModel):
@@ -134,6 +136,7 @@ class ServiceUpdate(BaseModel):
     color: Optional[str] = None
     linked_inventory_id: Optional[str] = None
     sort_order: Optional[int] = None
+    is_smart_offer: Optional[bool] = None
 
 
 # ============== APPOINTMENT ==============

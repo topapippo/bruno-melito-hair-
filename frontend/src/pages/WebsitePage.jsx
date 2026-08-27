@@ -676,6 +676,31 @@ export default function WebsitePage() {
         </div>
       </LuxSection>
 
+      {/* SMART OFFERS SECTION */}
+      {bookingServices.filter(s => s.is_smart_offer).length > 0 && (
+        <LuxSection className="py-16 bg-gradient-to-r from-[#D4AF7A]/10 to-[#C8617A]/10">
+          <div className="max-w-5xl mx-auto px-4">
+            <div className="text-center mb-10">
+              <span className="text-xs font-black tracking-[0.3em] uppercase" style={{ color: '#D4AF7A' }}>Le Offerte Smart</span>
+              <h2 className="text-3xl md:text-4xl font-black text-[#2D1B14] mt-2" style={{ fontFamily: "'Playfair Display', serif" }}>Servizi Express a Prezzo Vantaggioso</h2>
+              <p className="text-sm text-[#9C7060] mt-2">Ideali per un cambio look rapido e accessibile. Prenota online in 1 minuto.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {bookingServices.filter(s => s.is_smart_offer).map(s => (
+                <div key={s.id} className="bg-white rounded-2xl p-6 shadow-md border border-[#D4AF7A]/30 text-center hover:-translate-y-1 transition-transform">
+                  <h3 className="font-bold text-lg text-[#2D1B14]">{s.name}</h3>
+                  <p className="text-xs text-[#9C7060] mt-1">{s.duration} minuti</p>
+                  <p className="text-2xl font-black text-[#C8617A] mt-3">€{s.price.toFixed(2)}</p>
+                  <button onClick={() => bookService(s.id)} className="mt-4 bg-[#C8617A] text-white text-xs font-bold px-6 py-2.5 rounded-full hover:bg-[#A0404F] transition-colors">
+                    Prenota Ora
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </LuxSection>
+      )}
+
       {/* Sezioni dinamiche — foto sparse rimosse */}
       {(() => {
         const out = [];

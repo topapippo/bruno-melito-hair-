@@ -61,6 +61,7 @@ export default function ServicesPage() {
     price: 0,
     color: '#0EA5E9',
     linked_inventory_id: '',
+    is_smart_offer: false,
   });
 
   useEffect(() => {
@@ -107,7 +108,7 @@ export default function ServicesPage() {
       }
       setDialogOpen(false);
       setEditingService(null);
-      setFormData({ name: '', category: 'taglio', duration: 30, price: 0, color: '#0EA5E9', linked_inventory_id: '' });
+      setFormData({ name: '', category: 'taglio', duration: 30, price: 0, color: '#0EA5E9', linked_inventory_id: '', is_smart_offer: false });
       fetchServices();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Errore nel salvataggio');
@@ -125,6 +126,7 @@ export default function ServicesPage() {
       price: service.price,
       color: service.color || CATEGORIES.find(c => c.value === service.category)?.color || '#0EA5E9',
       linked_inventory_id: service.linked_inventory_id || '',
+      is_smart_offer: service.is_smart_offer || false,
     });
     setDialogOpen(true);
   };
@@ -144,7 +146,7 @@ export default function ServicesPage() {
 
   const openNewDialog = () => {
     setEditingService(null);
-    setFormData({ name: '', category: 'taglio', duration: 30, price: 0, color: '#0EA5E9', linked_inventory_id: '' });
+    setFormData({ name: '', category: 'taglio', duration: 30, price: 0, color: '#0EA5E9', linked_inventory_id: '', is_smart_offer: false });
     setDialogOpen(true);
   };
 
@@ -384,6 +386,16 @@ export default function ServicesPage() {
                     />
                   ))}
                 </div>
+              </div>
+              <div className="flex items-center gap-2 pt-2">
+                <input
+                  type="checkbox"
+                  id="smart_offer"
+                  checked={formData.is_smart_offer}
+                  onChange={(e) => setFormData({ ...formData, is_smart_offer: e.target.checked })}
+                  className="w-4 h-4 accent-[#C8617A]"
+                />
+                <Label htmlFor="smart_offer" className="cursor-pointer">Offerta Smart (evidenziata sul sito)</Label>
               </div>
               {formData.category !== 'colore' && (
                 <div className="space-y-2">
