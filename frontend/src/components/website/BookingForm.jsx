@@ -236,7 +236,7 @@ export default function BookingForm({
       <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-lg border-b border-gray-100/80 shadow-sm">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
           <button
-            onClick={onBack}
+            onClick={() => (step > 1 ? goStep(step - 1) : onBack())}
             className="w-10 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors text-gray-700 hover:text-gray-900 flex items-center justify-center flex-shrink-0 font-bold"
             title="Torna indietro"
             data-testid="website-booking-back-btn"

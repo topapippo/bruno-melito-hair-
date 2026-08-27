@@ -369,7 +369,6 @@ export default function WebsitePage() {
           T={T}
           initialStep={bookingInitialStep}
         />
-        <BackToPreviousSection />
       </>
     );
   }

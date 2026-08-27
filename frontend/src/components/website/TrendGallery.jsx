@@ -79,7 +79,8 @@ export default function TrendGallery({ setShowBooking }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [lightbox]);
 
-  const items = trends.length ? trends : FALLBACK;
+  // Solo foto in galleria: i video richiedevano un click per partire, tolti per alleggerire la pagina
+  const items = (trends.length ? trends : FALLBACK).filter((t) => !isVideoItem(t));
 
   return (
     <section className="py-24 px-4 sm:px-8 overflow-hidden" style={{ background: '#0a0a0f' }}>
@@ -120,6 +121,32 @@ export default function TrendGallery({ setShowBooking }) {
       `}</style>
 
       <div className="max-w-6xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: prefersReducedMotion ? 0.2 : 0.85, ease: EASE }}
+          className="mb-14"
+        >
+          <p className="text-xs font-bold tracking-[0.4em] uppercase mb-5" style={{ color: 'rgba(255,255,255,0.65)' }}>
+            VOGUE 2026 — EDITORIAL LOOK BOOK &nbsp;·&nbsp; {format(new Date(), "d MMMM yyyy", { locale: it }).toUpperCase()}
+          </p>
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
+            <h2
+              className="font-black"
+              style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(3rem, 8vw, 6.5rem)', lineHeight: 0.88, color: 'white' }}
+            >
+              I Look
+              <br />
+              <span style={{ WebkitTextStroke: '2px rgba(255,255,255,0.55)', color: 'transparent' }}>
+                Autunno Inverno
+              </span>
+            </h2>
+            <p style={{ color: 'rgba(255,255,255,0.65)', maxWidth: '22rem', fontSize: '0.9rem', lineHeight: 1.75 }}>
+              Tendenze selezionate da <strong className="text-white">Bruno Melito</strong> — prenotale subito per portarle con te.
+            </p>
+          </div>
+        </motion.div>
 
         <div
           className="bento-grid"
