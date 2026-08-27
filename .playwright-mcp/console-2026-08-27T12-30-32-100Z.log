@@ -1,0 +1,25 @@
+[    6589ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/static/js/bundle.js:31500
+[   10474ms] [ERROR] Caricamento sito tentativo 1/3 fallito: AxiosError: Network Error
+    at XMLHttpRequest.handleError (http://localhost:3000/static/js/bundle.js:49642:19) @ http://localhost:3000/static/js/bundle.js:12195
+[   14787ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8000/api/public/website:0
+[   14802ms] [ERROR] Caricamento sito tentativo 1/3 fallito: AxiosError: Network Error
+    at XMLHttpRequest.handleError (http://localhost:3000/static/js/bundle.js:49642:19) @ http://localhost:3000/static/js/bundle.js:12195
+[   14802ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8000/api/public/website:0
+[   23691ms] [ERROR] Caricamento sito tentativo 2/3 fallito: AxiosError: Network Error
+    at XMLHttpRequest.handleError (http://localhost:3000/static/js/bundle.js:49642:19) @ http://localhost:3000/static/js/bundle.js:12195
+[   23692ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8000/api/public/website:0
+[   23954ms] [ERROR] Caricamento sito tentativo 2/3 fallito: AxiosError: Network Error
+    at XMLHttpRequest.handleError (http://localhost:3000/static/js/bundle.js:49642:19) @ http://localhost:3000/static/js/bundle.js:12195
+[   23956ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8000/api/public/website:0
+[   31146ms] [ERROR] Caricamento sito tentativo 3/3 fallito: AxiosError: Network Error
+    at XMLHttpRequest.handleError (http://localhost:3000/static/js/bundle.js:49642:19) @ http://localhost:3000/static/js/bundle.js:12195
+[   31147ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8000/api/public/website:0
+[   32014ms] [ERROR] Caricamento sito tentativo 3/3 fallito: AxiosError: Network Error
+    at XMLHttpRequest.handleError (http://localhost:3000/static/js/bundle.js:49642:19) @ http://localhost:3000/static/js/bundle.js:12195
+[   32015ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8000/api/public/website:0
+[   33697ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8000/api/website-trends/public:0
+[   35607ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8000/api/website-trends/public:0
+[   39013ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8000/api/public/blocked-all-day:0
+[   39014ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8000/api/public/blocked-slots/2026-08-27:0
+[   39323ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8000/api/public/blocked-all-day:0
+[   41392ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8000/api/public/blocked-slots/2026-08-27:0

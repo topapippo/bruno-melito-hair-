@@ -607,40 +607,43 @@ async def delete_website_gallery_item(item_id: str, current_user: dict = Depends
 def init_storage(): pass
 
 
-@router.post("/website/upload")
+@router.post('/website/upload')
 async def website_upload_file(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
-    ext = file.filename.split(".")[-1].lower() if "." in (file.filename or "") else "jpg"
-    image_exts = ("jpg", "jpeg", "png", "gif", "webp")
-    video_exts = ("mp4", "webm", "mov")
-    allowed = image_exts + video_exts
-    if ext not in allowed:
-        raise HTTPException(status_code=400, detail="Formato non supportato. Usa JPG, PNG, GIF, WebP, MP4, WebM o MOV.")
+    """Carica i file della galleria su Cloudinary per alleggerire Render."""
+    import cloudinary
+    import cloudinary.uploader
+    
+    try:
+        cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME")
+        api_key = os.environ.get("CLOUDINARY_API_KEY")
+        api_secret = os.environ.get("CLOUDINARY_API_SECRET")
+        
+        if not all([cloud_name, api_key, api_secret]):
+            raise HTTPException(status_code=500, detail="Cloudinary non configurato su Render")
+            
+        cloudinary.config(cloud_name=cloud_name, api_key=api_key, api_secret=api_secret)
+        
+        contents = await file.read()
+        result = cloudinary.uploader.upload(contents, resource_type="auto")
+        
+        image_url = result.get("secure_url", "")
+        fmt = result.get("format", "jpg")
+        if image_url and not image_url.lower().endswith(f'.{fmt}'):
+            image_url = f'{image_url}.{fmt}'
 
-    mime_map = {
-        "jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png",
-        "gif": "image/gif", "webp": "image/webp",
-        "mp4": "video/mp4", "webm": "video/webm", "mov": "video/quicktime"
-    }
-    file_type = "video" if ext in video_exts else "image"
-    max_size = 50 * 1024 * 1024 if file_type == "video" else 10 * 1024 * 1024
-
-    file_id = str(uuid.uuid4())
-    path = f"{APP_NAME}/uploads/{file_id}.{ext}"
-    data = await file.read()
-    if len(data) > max_size:
-        raise HTTPException(status_code=400, detail=f"File troppo grande. Max {'50MB' if file_type == 'video' else '10MB'}.")
-    # Scrittura in GridFS in threadpool: non blocca l'event loop su file grandi (video)
-    result = await run_in_threadpool(put_object, path, data, mime_map.get(ext, "application/octet-stream"))
-
-    doc = {
-        "id": file_id, "storage_path": result["path"], "original_filename": file.filename,
-        "content_type": mime_map.get(ext, "application/octet-stream"), "size": result.get("size", len(data)),
-        "file_type": file_type, "is_deleted": False, "user_id": current_user["id"],
-        "created_at": datetime.now(timezone.utc).isoformat()
-    }
-    await db.website_files.insert_one(doc)
-    return {"id": file_id, "path": result["path"], "url": f"/api/website/files/{file_id}", "file_type": file_type}
-
+        file_id = str(uuid.uuid4())
+        doc = {
+            "id": file_id, "storage_path": image_url, "original_filename": file.filename,
+            "content_type": result.get("format", "image/jpeg"), "size": result.get("bytes", 0),
+            "file_type": "image", "is_deleted": False, "user_id": current_user["id"],
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.website_files.insert_one(doc)
+        
+        # IMPORTANTE: Restituiamo l'URL di Cloudinary direttamente come 'path' e 'url'
+        return {"id": file_id, "path": image_url, "url": image_url, "file_type": "image"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Errore caricamento Cloudinary: {str(e)}")
 
 @router.get('/website/files/{file_id}')
 async def website_serve_file(file_id: str, request: Request):
