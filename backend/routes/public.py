@@ -609,41 +609,55 @@ def init_storage(): pass
 
 @router.post('/website/upload')
 async def website_upload_file(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
-    """Carica i file della galleria su Cloudinary per alleggerire Render."""
+    """Carica i file della galleria su Cloudinary per alleggerire Render.
+
+    Limite dimensione + compressione all'ingresso (transformation, non eager):
+    riduce peso su storage/banda per non sforare la quota free di Cloudinary.
+    """
     import cloudinary
     import cloudinary.uploader
-    
-    try:
-        cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME")
-        api_key = os.environ.get("CLOUDINARY_API_KEY")
-        api_secret = os.environ.get("CLOUDINARY_API_SECRET")
-        
-        if not all([cloud_name, api_key, api_secret]):
-            raise HTTPException(status_code=500, detail="Cloudinary non configurato su Render")
-            
-        cloudinary.config(cloud_name=cloud_name, api_key=api_key, api_secret=api_secret)
-        
-        contents = await file.read()
-        result = cloudinary.uploader.upload(contents, resource_type="auto")
-        
-        image_url = result.get("secure_url", "")
-        fmt = result.get("format", "jpg")
-        if image_url and not image_url.lower().endswith(f'.{fmt}'):
-            image_url = f'{image_url}.{fmt}'
 
-        file_id = str(uuid.uuid4())
-        doc = {
-            "id": file_id, "storage_path": image_url, "original_filename": file.filename,
-            "content_type": result.get("format", "image/jpeg"), "size": result.get("bytes", 0),
-            "file_type": "image", "is_deleted": False, "user_id": current_user["id"],
-            "created_at": datetime.now(timezone.utc).isoformat()
-        }
-        await db.website_files.insert_one(doc)
-        
-        # IMPORTANTE: Restituiamo l'URL di Cloudinary direttamente come 'path' e 'url'
-        return {"id": file_id, "path": image_url, "url": image_url, "file_type": "image"}
+    is_video = (file.content_type or "").startswith("video")
+    max_size = 50 * 1024 * 1024 if is_video else 10 * 1024 * 1024
+
+    contents = await file.read()
+    if len(contents) > max_size:
+        raise HTTPException(status_code=400, detail=f"File troppo grande. Max {'50MB' if is_video else '10MB'}.")
+
+    cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME")
+    api_key = os.environ.get("CLOUDINARY_API_KEY")
+    api_secret = os.environ.get("CLOUDINARY_API_SECRET")
+    if not all([cloud_name, api_key, api_secret]):
+        raise HTTPException(status_code=500, detail="Cloudinary non configurato su Render")
+
+    cloudinary.config(cloud_name=cloud_name, api_key=api_key, api_secret=api_secret)
+
+    try:
+        result = cloudinary.uploader.upload(
+            contents,
+            resource_type="auto",
+            transformation=[{"width": 1600, "height": 1600, "crop": "limit", "quality": "auto:good", "fetch_format": "auto"}],
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Errore caricamento Cloudinary: {str(e)}")
+
+    image_url = result.get("secure_url", "")
+    fmt = result.get("format", "jpg")
+    if image_url and not image_url.lower().endswith(f'.{fmt}'):
+        image_url = f'{image_url}.{fmt}'
+    file_type = result.get("resource_type", "video" if is_video else "image")
+
+    file_id = str(uuid.uuid4())
+    doc = {
+        "id": file_id, "storage_path": image_url, "original_filename": file.filename,
+        "content_type": result.get("format", "image/jpeg"), "size": result.get("bytes", 0),
+        "file_type": file_type, "is_deleted": False, "user_id": current_user["id"],
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.website_files.insert_one(doc)
+
+    # IMPORTANTE: Restituiamo l'URL di Cloudinary direttamente come 'path' e 'url'
+    return {"id": file_id, "path": image_url, "url": image_url, "file_type": file_type}
 
 @router.get('/website/files/{file_id}')
 async def website_serve_file(file_id: str, request: Request):
