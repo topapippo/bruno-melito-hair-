@@ -786,25 +786,21 @@ export default function WebsitePage() {
         </div>
       </LuxSection>
 
-      {/* SEZIONE INSTAGRAM */}
-      <section className="py-24 bg-[#FDF8F5] overflow-hidden">
+   
+      {/* SEZIONE INSTAGRAM LIVE (Juicer) */}
+      <section className="py-20 bg-[#FDF8F5]">
         <div className="max-w-7xl mx-auto px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-12"
-          >
+          <div className="text-center mb-10">
             <span className="text-xs font-black tracking-[0.3em] uppercase text-[#D4AF7A]">Social</span>
-            <h2 className="text-4xl md:text-5xl font-black text-[#2D1B14] mt-2" style={{fontFamily: "'Playfair Display', serif"}}>Seguici su Instagram</h2>
+            <h2 className="text-3xl md:text-4xl font-black text-[#2D1B14] mt-2" style={{fontFamily: "'Playfair Display', serif"}}>Seguici su Instagram</h2>
             <p className="text-sm text-[#9C7060] mt-2">@brunomelitohair</p>
-          </motion.div>
-
-          {/* Widget Elfsight */}
-          <div className="elfsight-app-82ef4f53-b5f0-4b51-83b8-09a15644fdbc" data-elfsight-app-lazy></div>
+          </div>
+          
+          {/* Widget Juicer - Iniettato come script per React */}
+          <div className="juicer-container" dangerouslySetInnerHTML={{ __html: '<script type="text/javascript" src="https://www.juicer.io/embed/brunomelitohair/embed-code.js" async defer></script>' }} />
+          
         </div>
       </section>
-
       {/* FOOTER */}
       <footer className="py-12 relative" style={{ backgroundColor: `${T.text}`, color: '#fff' }}>
         <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, transparent, ${T.primary}, ${T.accent}, transparent)` }} />
