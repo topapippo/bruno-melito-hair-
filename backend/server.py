@@ -8,14 +8,14 @@ import os
 import asyncio
 import traceback
 
-from database import client as mongo_client, db
+from database import client as mongo_client, sync_client, db
 from routes import all_routers
 from scheduler import run_scheduler
 
 logger = logging.getLogger(__name__)
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=os.environ.get("LOG_LEVEL", "INFO").upper(),
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
@@ -101,9 +101,22 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Indice clients (user_id, name) unique non creato: {e}")
 
+    try:
+        await db.login_attempts.create_index([("ip", 1), ("ts", 1)])
+        logger.info("Indice creato/verificato: login_attempts.ip_1_ts_1")
+    except Exception as e:
+        logger.warning(f"Indice login_attempts (ip, ts) non creato: {e}")
+
+    try:
+        await db.register_attempts.create_index([("ip", 1), ("ts", 1)])
+        logger.info("Indice creato/verificato: register_attempts.ip_1_ts_1")
+    except Exception as e:
+        logger.warning(f"Indice register_attempts (ip, ts) non creato: {e}")
+
     yield
     # Shutdown
     mongo_client.close()
+    sync_client.close()
 
 app = FastAPI(title="MBHS SALON API", lifespan=lifespan)
 
@@ -132,7 +145,7 @@ cors_origins = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
-    allow_origin_regex=r"https://.*\.onrender\.com", # Permetti tutti i sottodomini onrender
+    allow_origin_regex=r"https://bruno-melito-hair(-[a-z0-9]+)?\.onrender\.com", # solo i sottodomini di preview di questo progetto
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -140,7 +153,7 @@ app.add_middleware(
 
 # --- 3. GLOBAL EXCEPTION HANDLER (Prevents Network Error on 500) ---
 import re as _re
-_cors_origin_re = _re.compile(r"https://.*\.onrender\.com")
+_cors_origin_re = _re.compile(r"https://bruno-melito-hair(-[a-z0-9]+)?\.onrender\.com")
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):

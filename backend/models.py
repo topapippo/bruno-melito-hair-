@@ -18,6 +18,8 @@ class UserCreate(BaseModel):
     def password_min_length(cls, v):
         if len(v) < 8:
             raise ValueError('La password deve avere almeno 8 caratteri')
+        if not re.search(r'[a-zA-Z]', v) or not re.search(r'\d', v):
+            raise ValueError('La password deve contenere almeno una lettera e un numero')
         return v
 
 class UserLogin(BaseModel):
@@ -46,6 +48,8 @@ class ChangePasswordRequest(BaseModel):
     def new_password_min_length(cls, v):
         if len(v) < 8:
             raise ValueError('La nuova password deve avere almeno 8 caratteri')
+        if not re.search(r'[a-zA-Z]', v) or not re.search(r'\d', v):
+            raise ValueError('La nuova password deve contenere almeno una lettera e un numero')
         return v
 
 

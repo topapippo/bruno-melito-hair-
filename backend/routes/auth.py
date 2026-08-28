@@ -19,6 +19,16 @@ REGISTER_MAX_PER_DAY = 3
 REGISTER_WINDOW_SECONDS = 86400  # 24 ore
 
 
+def _get_client_ip(request: Request) -> str:
+    """Estrae l'IP reale del client. Render instrada le richieste dietro un proxy,
+    quindi request.client.host è l'IP del proxy: bisogna leggere X-Forwarded-For
+    (il primo valore della lista è il client originale)."""
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
 async def _check_rate_limit(collection, ip: str, max_attempts: int, window_seconds: int, error_message: str, cleanup: bool = False):
     """Blocca l'IP dopo troppi tentativi in una finestra temporale."""
     window_start = datetime.now(timezone.utc) - timedelta(seconds=window_seconds)
@@ -43,7 +53,7 @@ async def _check_rate_limit(collection, ip: str, max_attempts: int, window_secon
 # ── Register ──────────────────────────────────────────────────────────────────
 @router.post("/auth/register", response_model=TokenResponse)
 async def register(data: UserCreate, request: Request):
-    client_ip = request.client.host if request.client else "unknown"
+    client_ip = _get_client_ip(request)
     await _check_rate_limit(db.register_attempts, client_ip, REGISTER_MAX_PER_DAY, REGISTER_WINDOW_SECONDS, "Troppi account creati da questo indirizzo. Riprova domani.")
     existing = await db.users.find_one({"email": data.email}, {"_id": 0})
     if existing:
@@ -166,7 +176,7 @@ async def _repair_categories(user_id: str):
 # ── Login ─────────────────────────────────────────────────────────────────────
 @router.post("/auth/login", response_model=TokenResponse)
 async def login(data: UserLogin, request: Request, background_tasks: BackgroundTasks):
-    client_ip = request.client.host if request.client else "unknown"
+    client_ip = _get_client_ip(request)
     await _check_rate_limit(db.login_attempts, client_ip, LOGIN_MAX_ATTEMPTS, LOGIN_WINDOW_SECONDS, f"Troppi tentativi di login. Riprova tra {LOGIN_WINDOW_SECONDS // 60} minuti.", cleanup=True)
 
     user = await db.users.find_one({"email": data.email}, {"_id": 0})
