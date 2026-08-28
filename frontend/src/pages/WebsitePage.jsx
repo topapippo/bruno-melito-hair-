@@ -15,8 +15,6 @@ import BookingSuccess from '../components/website/BookingSuccess';
 import MyAppointmentsModal from '../components/website/MyAppointmentsModal';
 import TrendGallery from '../components/website/TrendGallery';
 import BackToPreviousSection from '../components/website/BackToPreviousSection';
-import { HeroGalleryStrip } from '../components/website/sections/HeroGalleryStrip';
-import MasonryGallery from '../components/website/sections/MasonryGallery';
 import CinematicInterlude from '../components/website/sections/CinematicInterlude';
 import {
   AnimatedSection,
@@ -156,7 +154,6 @@ export default function WebsitePage() {
   const reviews = siteData?.reviews || [];
   const gallery = siteData?.gallery || [];
   const salonPhotos = gallery.filter(g => g.section === 'salon');
-  const hairstylePhotos = gallery.filter(g => g.section === 'gallery' || !g.section);
 
   // SEO: title + meta tags dinamici + Dati Strutturati (JSON-LD)
   useEffect(() => {
@@ -379,7 +376,7 @@ export default function WebsitePage() {
   const landingServiceGroups = groupServicesByCategory(bookingServices);
 
   // Dynamic section ordering from CMS config
-  const defaultSectionOrder = ['services', 'team', 'salon', 'about', 'promotions', 'reviews', 'gallery', 'trend_gallery', 'gift_card', 'contact'];
+  const defaultSectionOrder = ['services', 'team', 'salon', 'about', 'promotions', 'reviews', 'trend_gallery', 'gift_card', 'contact'];
   const rawSectionOrder = config.section_order || defaultSectionOrder;
   const normalizedSectionOrder = [...new Set(rawSectionOrder.filter(id => defaultSectionOrder.includes(id)))];
   const sectionOrder = [...normalizedSectionOrder, ...defaultSectionOrder.filter(id => !normalizedSectionOrder.includes(id))];
@@ -400,8 +397,6 @@ export default function WebsitePage() {
         return reviews.length > 0 ? <ReviewsSection key="reviews" reviews={reviews} T={T} config={config} /> : null;
       case 'team':
         return operators.filter(o => o.active !== false).length > 0 ? <TeamSection key="team" operators={operators} T={T} setShowBooking={setShowBooking} /> : null;
-      case 'gallery':
-        return hairstylePhotos.length > 0 ? <MasonryGallery key="gallery" photos={hairstylePhotos} /> : null;
       case 'trend_gallery':
         return <TrendGallery key="trend_gallery" setShowBooking={setShowBooking} />;
       case 'gift_card':
@@ -610,9 +605,6 @@ export default function WebsitePage() {
           <div className="w-px h-12 bg-gradient-to-b from-white/50 to-transparent"></div>
         </div>
       </section>
-
-      {/* Hero Gallery Strip - Foto sparse con effetti parallax */}
-      {hairstylePhotos.length > 0 && <HeroGalleryStrip photos={hairstylePhotos} T={T} />}
 
       {/* ─── COME FUNZIONA — 3 tocchi per prenotare ─── */}
       <LuxSection className="py-20 sm:py-24 relative overflow-hidden" style={{ background: '#0d0d16' }}>

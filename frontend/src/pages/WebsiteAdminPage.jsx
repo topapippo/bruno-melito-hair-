@@ -217,6 +217,26 @@ export default function WebsiteAdminPage() {
     if (files.length === 0) return;
     setUploading(true);
     try {
+      if (section === 'gallery') {
+        // Reindirizzato: le foto vanno ora nella galleria unificata "I Look" (website_trends)
+        const imageFiles = files.filter(f => f.type.startsWith('image'));
+        if (imageFiles.length < files.length) {
+          toast.error('I video non sono più supportati qui: carica solo foto.');
+        }
+        const uploadToLook = async (file) => {
+          const form = new FormData();
+          form.append('file', file);
+          const { data } = await api.post('/website-trends/upload-image', form, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          });
+          const res = await api.post('/website-trends', { title: file.name.split('.')[0], img: data.url });
+          return res.data;
+        };
+        const newTrends = await Promise.all(imageFiles.map(uploadToLook));
+        setTrends(prev => [...prev, ...newTrends]);
+        if (newTrends.length > 0) toast.success(`${newTrends.length} foto aggiunte a "I Look"!`);
+        return;
+      }
       const uploadFile = async (file) => {
         const formData = new FormData();
         formData.append('file', file);
@@ -356,8 +376,7 @@ export default function WebsiteAdminPage() {
     { id: 'about',        label: 'Chi Siamo',       desc: 'Storia e punti di forza' },
     { id: 'promotions',   label: 'Promozioni',      desc: 'Offerte speciali attive' },
     { id: 'reviews',      label: 'Recensioni',      desc: 'Testimonianze dei clienti' },
-    { id: 'gallery',      label: 'Gallery Lavori',  desc: 'Portfolio acconciature' },
-    { id: 'trend_gallery', label: 'Trend 2026',     desc: 'Galleria look estate 2026 (Bixie, Butterfly, Biondo Burro)' },
+    { id: 'trend_gallery', label: 'Trend 2026',     desc: 'Galleria look estate 2026 — include anche le foto caricate da "Gallery Lavori"' },
     { id: 'gift_card',    label: 'Gift Card',       desc: 'Sezione gift card e regali' },
     { id: 'contact',      label: 'Contatti',        desc: 'Orari, indirizzo, telefono' },
   ];
@@ -903,17 +922,23 @@ export default function WebsiteAdminPage() {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>Gallery Lavori / Acconciature</CardTitle>
+                  <CardTitle>Gallery Lavori / Acconciature → confluisce in "I Look"</CardTitle>
                   <div className="relative">
-                    <input type="file" accept="image/*,video/mp4,video/webm,video/quicktime" multiple onChange={(e) => handleMediaUpload(e, 'gallery')} className="absolute inset-0 opacity-0 cursor-pointer z-10" disabled={uploading} />
+                    <input type="file" accept="image/*" multiple onChange={(e) => handleMediaUpload(e, 'gallery')} className="absolute inset-0 opacity-0 cursor-pointer z-10" disabled={uploading} />
                     <Button variant="outline" disabled={uploading}>
                       {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Upload className="w-4 h-4 mr-2" />}
-                      Carica Foto/Video
+                      Carica Foto
                     </Button>
                   </div>
                 </div>
+                <p className="text-xs text-gray-500 mt-2">Le foto caricate qui compaiono nella galleria pubblica "I Look" insieme ai trend. Solo foto, niente video.</p>
               </CardHeader>
               <CardContent>
+                {galleryPhotos.length > 0 && (
+                  <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
+                    Queste foto sono residue della vecchia gallery e non compaiono più sul sito pubblico. Puoi eliminarle per liberare spazio, oppure lasciarle qui.
+                  </p>
+                )}
                 {galleryPhotos.length === 0 ? (
                   <div className="text-center py-12 text-gray-500">
                     <Image className="w-12 h-12 mx-auto mb-3 text-gray-300" />
