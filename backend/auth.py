@@ -13,7 +13,7 @@ if not JWT_SECRET:
     sys.exit(1)
 
 JWT_ALGORITHM = "HS256"
-JWT_EXPIRATION_HOURS = 24
+JWT_EXPIRATION_HOURS = 12  # copre un'intera giornata lavorativa (8-20)
 
 security = HTTPBearer()
 

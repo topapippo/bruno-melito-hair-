@@ -145,21 +145,17 @@ cors_origins = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
-    allow_origin_regex=r"https://bruno-melito-hair(-[a-z0-9]+)?\.onrender\.com", # solo i sottodomini di preview di questo progetto
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # --- 3. GLOBAL EXCEPTION HANDLER (Prevents Network Error on 500) ---
-import re as _re
-_cors_origin_re = _re.compile(r"https://bruno-melito-hair(-[a-z0-9]+)?\.onrender\.com")
-
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"GLOBAL ERROR: {str(exc)}\n{traceback.format_exc()}")
     origin = request.headers.get("origin", "")
-    allowed = origin if (origin in cors_origins or _cors_origin_re.fullmatch(origin)) else ""
+    allowed = origin if origin in cors_origins else ""
     headers: dict = {"Access-Control-Allow-Credentials": "true"}
     if allowed:
         headers["Access-Control-Allow-Origin"] = allowed
