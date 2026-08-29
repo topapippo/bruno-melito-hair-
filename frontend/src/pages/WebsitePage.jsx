@@ -801,9 +801,6 @@ export default function WebsitePage() {
           
         </div>
       </section>
-          
-        </div>
-      </section>
       {/* FOOTER */}
       <footer className="py-12 relative" style={{ backgroundColor: `${T.text}`, color: '#fff' }}>
         <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, transparent, ${T.primary}, ${T.accent}, transparent)` }} />
