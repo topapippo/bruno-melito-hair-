@@ -29,9 +29,14 @@ def _upload_image_imgbb(content: bytes) -> str:
     img.save(buf, format="JPEG", quality=90)
     b64 = base64.b64encode(buf.getvalue()).decode()
     resp = requests.post("https://api.imgbb.com/1/upload", data={"key": _IMGBB_KEY, "image": b64}, timeout=30)
-    data = resp.json()
+    try:
+        data = resp.json()
+    except ValueError:
+        raise Exception(f"risposta non valida da imgbb (HTTP {resp.status_code}): {resp.text[:200]}")
     if not data.get("success"):
-        raise Exception("Upload fallito")
+        err = data.get("error", {})
+        msg = err.get("message") if isinstance(err, dict) else str(err)
+        raise Exception(msg or f"HTTP {resp.status_code}: {data}")
     return data["data"]["url"]
 
 
@@ -220,6 +225,32 @@ async def get_trends_public():
     if not trends:
         return _TREND_DEFAULTS
     return trends
+
+
+@router.post("/website-trends/migrate-from-gallery")
+async def migrate_gallery_to_trends(current_user: dict = Depends(get_current_user)):
+    """Una tantum: sposta le vecchie foto di 'Gallery Lavori' dentro 'I Look', senza ricaricarle (stesso URL già esistente)."""
+    old_items = await db.website_gallery.find({
+        "user_id": current_user["id"], "is_deleted": {"$ne": True},
+        "section": "gallery", "file_type": "image",
+    }).to_list(500)
+    existing_urls = {t["img"] for t in await db.website_trends.find(
+        {"user_id": current_user["id"]}, {"img": 1}
+    ).to_list(500)}
+    count = await db.website_trends.count_documents({"user_id": current_user["id"]})
+    migrated = 0
+    for it in old_items:
+        url = it.get("image_url", "")
+        if not url or url in existing_urls:
+            continue
+        await db.website_trends.insert_one({
+            "id": str(uuid.uuid4()), "user_id": current_user["id"],
+            "title": it.get("label") or "Look", "desc": "", "img": url,
+            "badge": "", "color_code": "", "order": count + migrated,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+        migrated += 1
+    return {"trovate": len(old_items), "migrate": migrated}
 
 
 @router.post("/website-trends")

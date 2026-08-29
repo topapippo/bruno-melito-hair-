@@ -46,6 +46,7 @@ export default function WebsiteAdminPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [migratingGallery, setMigratingGallery] = useState(false);
   const [reviewDialog, setReviewDialog] = useState(false);
   const [editReview, setEditReview] = useState(null);
   const [reviewForm, setReviewForm] = useState({ name: '', text: '', rating: 5 });
@@ -935,9 +936,30 @@ export default function WebsiteAdminPage() {
               </CardHeader>
               <CardContent>
                 {galleryPhotos.length > 0 && (
-                  <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
-                    Queste foto sono residue della vecchia gallery e non compaiono più sul sito pubblico. Puoi eliminarle per liberare spazio, oppure lasciarle qui.
-                  </p>
+                  <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4 flex items-center justify-between gap-3 flex-wrap">
+                    <span>Queste foto sono della vecchia gallery e non compaiono più sul sito pubblico.</span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={migratingGallery}
+                      onClick={async () => {
+                        setMigratingGallery(true);
+                        try {
+                          const { data } = await api.post('/website-trends/migrate-from-gallery');
+                          toast.success(`${data.migrate} foto spostate in "I Look" (su ${data.trovate} trovate)`);
+                          const t = await api.get('/website-trends');
+                          setTrends(t.data);
+                        } catch (err) {
+                          toast.error('Errore nella migrazione: ' + (err.response?.data?.detail || err.message));
+                        } finally {
+                          setMigratingGallery(false);
+                        }
+                      }}
+                    >
+                      {migratingGallery ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                      Sposta in "I Look"
+                    </Button>
+                  </div>
                 )}
                 {galleryPhotos.length === 0 ? (
                   <div className="text-center py-12 text-gray-500">
