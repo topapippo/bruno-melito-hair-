@@ -3,8 +3,6 @@ from auth import get_current_user
 from routes.public import get_public_admin_user
 from database import db
 import uuid
-import requests
-import base64
 import os
 import random
 import hashlib
@@ -12,12 +10,20 @@ from datetime import datetime, timezone, date
 
 router = APIRouter()
 
-_IMGBB_KEY = os.environ.get("IMGBB_API_KEY", "")
 
-
-def _upload_image_imgbb(content: bytes) -> str:
+def _upload_image_cloudinary(content: bytes) -> str:
+    import cloudinary
+    import cloudinary.uploader
     from PIL import Image
     import io
+
+    cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME")
+    api_key = os.environ.get("CLOUDINARY_API_KEY")
+    api_secret = os.environ.get("CLOUDINARY_API_SECRET")
+    if not all([cloud_name, api_key, api_secret]):
+        raise Exception("Cloudinary non configurato su Render")
+    cloudinary.config(cloud_name=cloud_name, api_key=api_key, api_secret=api_secret)
+
     img = Image.open(io.BytesIO(content))
     w, h = img.size
     side = min(w, h)
@@ -27,17 +33,12 @@ def _upload_image_imgbb(content: bytes) -> str:
         img = img.convert("RGB")
     buf = io.BytesIO()
     img.save(buf, format="JPEG", quality=90)
-    b64 = base64.b64encode(buf.getvalue()).decode()
-    resp = requests.post("https://api.imgbb.com/1/upload", data={"key": _IMGBB_KEY, "image": b64}, timeout=30)
+
     try:
-        data = resp.json()
-    except ValueError:
-        raise Exception(f"risposta non valida da imgbb (HTTP {resp.status_code}): {resp.text[:200]}")
-    if not data.get("success"):
-        err = data.get("error", {})
-        msg = err.get("message") if isinstance(err, dict) else str(err)
-        raise Exception(msg or f"HTTP {resp.status_code}: {data}")
-    return data["data"]["url"]
+        result = cloudinary.uploader.upload(buf.getvalue(), resource_type="image")
+    except Exception as e:
+        raise Exception(f"Cloudinary: {str(e)}")
+    return result.get("secure_url", "")
 
 
 # Pool di 14 trend — la rotazione giornaliera ne mostra 5 al giorno.
@@ -301,10 +302,8 @@ async def upload_trend_image(
     content = await file.read()
     if len(content) > 10 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="Immagine troppo grande (max 10 MB)")
-    if not _IMGBB_KEY:
-        raise HTTPException(status_code=500, detail="IMGBB_API_KEY non configurata")
     try:
-        url = _upload_image_imgbb(content)
+        url = _upload_image_cloudinary(content)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Errore upload: {str(e)}")
     return {"url": url}
