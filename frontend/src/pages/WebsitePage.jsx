@@ -787,7 +787,7 @@ export default function WebsitePage() {
       </LuxSection>
 
    
-      {/* SEZIONE INSTAGRAM LIVE (Juicer) */}
+           {/* SEZIONE INSTAGRAM LIVE (Juicer) */}
       <section className="py-20 bg-[#FDF8F5]">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-10">
@@ -796,8 +796,11 @@ export default function WebsitePage() {
             <p className="text-sm text-[#9C7060] mt-2">@brunomelitohair</p>
           </div>
           
-          {/* Widget Juicer - Iniettato come script per React */}
-          <div className="juicer-container" dangerouslySetInnerHTML={{ __html: '<script type="text/javascript" src="https://www.juicer.io/embed/brunomelitohair/embed-code.js" async defer></script>' }} />
+          {/* Widget Juicer Nativo */}
+          <ul className="juicer-feed" data-feed-id="brunomelitohair" data-columns="3" data-per="9"></ul>
+          
+        </div>
+      </section>
           
         </div>
       </section>
