@@ -18,7 +18,7 @@ import {
   Star, Gift, Ticket, Plus, Trash2, Edit3, X, Smartphone, AlertTriangle, Clock, History, ChevronDown, UserX, Package, Info,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { getCategoryInfo, groupServicesByCategory } from '../../lib/categories';
+import { getCategoryInfo, groupServicesByCategory, CATEGORY_ORDER } from '../../lib/categories';
 import { ALL_SLOTS, DAY_MAP } from '../../lib/timeSlots';
 import { COLORS } from '../../lib/brandColors';
 
@@ -313,7 +313,7 @@ export default function EditAppointmentDialog({
     setFormData(prev => ({ ...prev, service_ids: [...prev.service_ids, serviceId] }));
     setCustomPrices(prev => ({ ...prev, [key]: svc.price ?? 0 }));
     setExtraServiceIds(prev => [...prev, serviceId]);
-    setOpenCats(prev => ({ ...prev, _svc: true }));
+    setOpenCats(prev => ({ ...prev, [`_svc_${svc.category || 'altro'}`]: true }));
   };
 
   const removeExtraService = (serviceId, key) => {
@@ -673,7 +673,7 @@ export default function EditAppointmentDialog({
 
   return (
     <Dialog open={open} onOpenChange={v => { if (!v) { resetCheckout(); onClose(); } }}>
-      <DialogContent className="sm:max-w-[550px] max-h-[90vh] p-0 flex flex-col overflow-hidden">
+      <DialogContent className={`${checkoutMode ? 'sm:max-w-[720px]' : 'sm:max-w-[550px]'} max-h-[90vh] p-0 flex flex-col overflow-hidden`}>
         <DialogHeader className="px-5 pt-5 pb-3 shrink-0 border-b border-[#F0E6DC]">
           <DialogTitle className="font-display text-xl text-[#2D1B14]">
             {checkoutMode ? '💳 Incasso' : 'Modifica Appuntamento'}
@@ -962,81 +962,108 @@ export default function EditAppointmentDialog({
                   </div>
                 )}
 
-                {/* ── 1. SERVIZI (collassabile, aperto di default) ── */}
-                <div className="rounded-xl border-2 overflow-hidden transition-all" style={{borderColor: COLORS.borderLight, boxShadow: `0 2px 8px rgba(0, 0, 0, 0.05)`}}>
-                  <button type="button" onClick={()=>toggleCat('_svc')}
-                    className="w-full flex items-center justify-between px-4 py-3 transition-all hover:bg-gray-50" style={{backgroundColor: COLORS.bg}}>
-                    <div className="flex items-center gap-2">
-                      <Edit3 className="w-4 h-4" style={{color: COLORS.textMuted}}/>
-                      <span className="font-bold text-sm" style={{color: COLORS.textDark}}>Servizi</span>
-                      <span className="text-xs" style={{color: COLORS.textMuted}}>({computedSvcList.length})</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-black text-base" style={{color: COLORS.rose}}>€{calculateSubtotal().toFixed(2)}</span>
-                      <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${openCats['_svc']?'rotate-180':''}`} style={{color: COLORS.textMuted}}/>
-                    </div>
-                  </button>
-                  {openCats['_svc'] && (
-                    <div style={{borderTop: `1px solid ${COLORS.borderLight}`}}>
-                      <div style={{borderColor: COLORS.borderLight}} className="divide-y">
-                        {computedSvcList.map((s, i) => {
-                          const key = `${s.id}_${i}`;
-                          const base = s.price ?? 0;
-                          const cur = customPrices[key] ?? base;
-                          const qty = customQty[key] ?? 1;
-                          const isExtra = extraServiceIds.includes(s.id);
-                          const modified = customPrices[key] !== undefined && Math.abs(customPrices[key] - base) > 0.001;
-                          const qtyModified = qty !== 1;
-                          return (
-                            <div key={key} className="flex items-center gap-2 px-3 py-2.5 flex-wrap" style={{backgroundColor: modified||qtyModified||isExtra ? COLORS.roseLighter : COLORS.bg}}>
-                              <span className="flex-1 text-sm truncate min-w-[80px]" style={{color: COLORS.textDark}}>
-                                {s.name||`Servizio ${i+1}`}
-                                {isExtra && <span className="ml-1.5 text-[9px] font-black uppercase align-middle" style={{color: COLORS.rose}}>extra</span>}
-                              </span>
-                              <div className="flex items-center gap-1 shrink-0">
-                                <span className="text-[10px] uppercase font-semibold mr-0.5" style={{color: COLORS.textMuted}}>Qtà</span>
-                                <button type="button" aria-label="Diminuisci quantità" className="w-7 h-7 rounded-lg border-2 flex items-center justify-center font-bold text-lg leading-none" style={{borderColor: COLORS.borderLight}} onMouseEnter={e=>e.target.style.color=COLORS.error} onMouseLeave={e=>e.target.style.color='inherit'}
-                                  onClick={()=>setCustomQty(p=>({...p,[key]:Math.max(1,(p[key]??1)-1)}))}>−</button>
-                                <span className="w-8 text-center font-bold text-sm" style={{color: qtyModified ? COLORS.gold : COLORS.textDark}}>{qty}</span>
-                                <button type="button" aria-label="Aumenta quantità" className="w-7 h-7 rounded-lg border-2 flex items-center justify-center font-bold text-lg leading-none" style={{borderColor: COLORS.borderLight}} onMouseEnter={e=>e.target.style.color=COLORS.success} onMouseLeave={e=>e.target.style.color='inherit'}
-                                  onClick={()=>setCustomQty(p=>({...p,[key]:(p[key]??1)+1}))}>+</button>
-                              </div>
-                              <div className="flex items-center gap-1 shrink-0">
-                                <button type="button" aria-label="Diminuisci prezzo" className="w-7 h-7 rounded-lg border-2 flex items-center justify-center font-bold text-lg leading-none" style={{borderColor: COLORS.borderLight}} onMouseEnter={e=>e.target.style.color=COLORS.error} onMouseLeave={e=>e.target.style.color='inherit'}
-                                  onClick={()=>setCustomPrices(p=>({...p,[key]:Math.max(0,(p[key]??base)-0.5)}))}>−</button>
-                                <div className="relative">
-                                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm pointer-events-none" style={{color: COLORS.textMuted}}>€</span>
-                                  <Input type="number" min="0" step="0.50" value={cur} aria-label="Prezzo servizio"
-                                    onChange={e=>{const v=parseFloat(e.target.value);setCustomPrices(p=>({...p,[key]:isNaN(v)?0:Math.max(0,v)}));}}
-                                    className="w-24 h-8 pl-6 text-right font-bold text-sm border-2" style={{borderColor: modified ? COLORS.gold : COLORS.borderLight, backgroundColor: modified ? COLORS.goldLighter : COLORS.bg}}/>
-                                </div>
-                                <button type="button" aria-label="Aumenta prezzo" className="w-7 h-7 rounded-lg border-2 flex items-center justify-center font-bold text-lg leading-none" style={{borderColor: COLORS.borderLight}} onMouseEnter={e=>e.target.style.color=COLORS.success} onMouseLeave={e=>e.target.style.color='inherit'}
-                                  onClick={()=>setCustomPrices(p=>({...p,[key]:(p[key]??base)+0.5}))}>+</button>
-                                {(modified||qtyModified||isExtra) && (
-                                  <button type="button" aria-label={isExtra?'Rimuovi servizio extra':'Ripristina servizio'} className="w-6 h-6 flex items-center justify-center" style={{color: COLORS.textMuted}} onMouseEnter={e=>e.target.style.color=COLORS.textDark} onMouseLeave={e=>e.target.style.color=COLORS.textMuted}
-                                    onClick={()=> isExtra ? removeExtraService(s.id, key) : (()=>{setCustomPrices(p=>{const n={...p};delete n[key];return n;});setCustomQty(p=>{const n={...p};delete n[key];return n;});})()}>
-                                    <X className="w-3.5 h-3.5"/>
-                                  </button>
-                                )}
-                              </div>
+                {/* ── 1. SERVIZI, raggruppati per categoria — ogni categoria si apre/chiude da sola ── */}
+                {(() => {
+                  const byCat = {};
+                  computedSvcList.forEach((s, i) => {
+                    const cat = s.category || 'altro';
+                    (byCat[cat] = byCat[cat] || []).push({ s, i });
+                  });
+                  const orderedCats = CATEGORY_ORDER.filter(c => byCat[c]);
+                  Object.keys(byCat).forEach(c => { if (!orderedCats.includes(c)) orderedCats.push(c); });
+                  return orderedCats.map(cat => {
+                    const catInfo = getCategoryInfo(cat);
+                    const catKey = `_svc_${cat}`;
+                    const isOpen = openCats[catKey] !== false; // aperta di default, indipendente dalle altre
+                    const catItems = byCat[cat];
+                    const catSubtotal = catItems.reduce((sum, { s, i }) => {
+                      const key = `${s.id}_${i}`;
+                      const price = customPrices[key] ?? s.price ?? 0;
+                      const qty = customQty[key] ?? 1;
+                      return sum + price * qty;
+                    }, 0);
+                    return (
+                      <div key={catKey} className="rounded-xl border-2 overflow-hidden transition-all" style={{borderColor: COLORS.borderLight, boxShadow: `0 2px 8px rgba(0, 0, 0, 0.05)`}}>
+                        <button type="button" onClick={()=>toggleCat(catKey)}
+                          className="w-full flex items-center justify-between px-4 py-3 transition-all hover:bg-gray-50" style={{backgroundColor: COLORS.bg}}>
+                          <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{backgroundColor: catInfo.color}}/>
+                            <span className="font-bold text-sm" style={{color: COLORS.textDark}}>{catInfo.label}</span>
+                            <span className="text-xs" style={{color: COLORS.textMuted}}>({catItems.length})</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-black text-base" style={{color: COLORS.rose}}>€{catSubtotal.toFixed(2)}</span>
+                            <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen?'rotate-180':''}`} style={{color: COLORS.textMuted}}/>
+                          </div>
+                        </button>
+                        {isOpen && (
+                          <div style={{borderTop: `1px solid ${COLORS.borderLight}`}}>
+                            <div style={{borderColor: COLORS.borderLight}} className="divide-y">
+                              {catItems.map(({ s, i }) => {
+                                const key = `${s.id}_${i}`;
+                                const base = s.price ?? 0;
+                                const cur = customPrices[key] ?? base;
+                                const qty = customQty[key] ?? 1;
+                                const isExtra = extraServiceIds.includes(s.id);
+                                const modified = customPrices[key] !== undefined && Math.abs(customPrices[key] - base) > 0.001;
+                                const qtyModified = qty !== 1;
+                                return (
+                                  <div key={key} className="flex items-center gap-2 px-3 py-2.5 flex-wrap" style={{backgroundColor: modified||qtyModified||isExtra ? COLORS.roseLighter : COLORS.bg}}>
+                                    <span className="flex-1 text-sm truncate min-w-[80px]" style={{color: COLORS.textDark}}>
+                                      {s.name||`Servizio ${i+1}`}
+                                      {isExtra && <span className="ml-1.5 text-[9px] font-black uppercase align-middle" style={{color: COLORS.rose}}>extra</span>}
+                                    </span>
+                                    <div className="flex items-center gap-1 shrink-0">
+                                      <span className="text-[10px] uppercase font-semibold mr-0.5" style={{color: COLORS.textMuted}}>Qtà</span>
+                                      <button type="button" aria-label="Diminuisci quantità" className="w-7 h-7 rounded-lg border-2 flex items-center justify-center font-bold text-lg leading-none" style={{borderColor: COLORS.borderLight}} onMouseEnter={e=>e.target.style.color=COLORS.error} onMouseLeave={e=>e.target.style.color='inherit'}
+                                        onClick={()=>setCustomQty(p=>({...p,[key]:Math.max(1,(p[key]??1)-1)}))}>−</button>
+                                      <span className="w-8 text-center font-bold text-sm" style={{color: qtyModified ? COLORS.gold : COLORS.textDark}}>{qty}</span>
+                                      <button type="button" aria-label="Aumenta quantità" className="w-7 h-7 rounded-lg border-2 flex items-center justify-center font-bold text-lg leading-none" style={{borderColor: COLORS.borderLight}} onMouseEnter={e=>e.target.style.color=COLORS.success} onMouseLeave={e=>e.target.style.color='inherit'}
+                                        onClick={()=>setCustomQty(p=>({...p,[key]:(p[key]??1)+1}))}>+</button>
+                                    </div>
+                                    <div className="flex items-center gap-1 shrink-0">
+                                      <button type="button" aria-label="Diminuisci prezzo" className="w-7 h-7 rounded-lg border-2 flex items-center justify-center font-bold text-lg leading-none" style={{borderColor: COLORS.borderLight}} onMouseEnter={e=>e.target.style.color=COLORS.error} onMouseLeave={e=>e.target.style.color='inherit'}
+                                        onClick={()=>setCustomPrices(p=>({...p,[key]:Math.max(0,(p[key]??base)-0.5)}))}>−</button>
+                                      <div className="relative">
+                                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm pointer-events-none" style={{color: COLORS.textMuted}}>€</span>
+                                        <Input type="number" min="0" step="0.50" value={cur} aria-label="Prezzo servizio"
+                                          onChange={e=>{const v=parseFloat(e.target.value);setCustomPrices(p=>({...p,[key]:isNaN(v)?0:Math.max(0,v)}));}}
+                                          className="w-24 h-8 pl-6 text-right font-bold text-sm border-2" style={{borderColor: modified ? COLORS.gold : COLORS.borderLight, backgroundColor: modified ? COLORS.goldLighter : COLORS.bg}}/>
+                                      </div>
+                                      <button type="button" aria-label="Aumenta prezzo" className="w-7 h-7 rounded-lg border-2 flex items-center justify-center font-bold text-lg leading-none" style={{borderColor: COLORS.borderLight}} onMouseEnter={e=>e.target.style.color=COLORS.success} onMouseLeave={e=>e.target.style.color='inherit'}
+                                        onClick={()=>setCustomPrices(p=>({...p,[key]:(p[key]??base)+0.5}))}>+</button>
+                                      {(modified||qtyModified||isExtra) && (
+                                        <button type="button" aria-label={isExtra?'Rimuovi servizio extra':'Ripristina servizio'} className="w-6 h-6 flex items-center justify-center" style={{color: COLORS.textMuted}} onMouseEnter={e=>e.target.style.color=COLORS.textDark} onMouseLeave={e=>e.target.style.color=COLORS.textMuted}
+                                          onClick={()=> isExtra ? removeExtraService(s.id, key) : (()=>{setCustomPrices(p=>{const n={...p};delete n[key];return n;});setCustomQty(p=>{const n={...p};delete n[key];return n;});})()}>
+                                          <X className="w-3.5 h-3.5"/>
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
-                          );
-                        })}
+                          </div>
+                        )}
                       </div>
-                      <div className="p-2.5" style={{backgroundColor: `${COLORS.bgLight}40`}}>
-                        <Select value="" onValueChange={addExtraService}>
-                          <SelectTrigger className="h-9 border-2 border-dashed text-sm" style={{borderColor: COLORS.borderLight, color: COLORS.textMuted}}>
-                            <SelectValue placeholder="+ Aggiungi servizio extra..." />
-                          </SelectTrigger>
-                          <SelectContent className="max-h-[240px]">
-                            {services.filter(sv => !formData.service_ids.includes(sv.id)).map(sv => (
-                              <SelectItem key={sv.id} value={sv.id}>{sv.name} — €{sv.price}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  )}
+                    );
+                  });
+                })()}
+
+                {/* ── 1a. AGGIUNGI SERVIZIO EXTRA (comune a tutte le categorie) ── */}
+                <div className="rounded-xl overflow-hidden">
+                  <div className="p-2.5 rounded-xl border-2 border-dashed" style={{borderColor: COLORS.borderLight, backgroundColor: `${COLORS.bgLight}40`}}>
+                    <Select value="" onValueChange={addExtraService}>
+                      <SelectTrigger className="h-9 border-2 border-dashed text-sm" style={{borderColor: COLORS.borderLight, color: COLORS.textMuted}}>
+                        <SelectValue placeholder="+ Aggiungi servizio extra..." />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[240px]">
+                        {services.filter(sv => !formData.service_ids.includes(sv.id)).map(sv => (
+                          <SelectItem key={sv.id} value={sv.id}>{sv.name} — €{sv.price}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 {/* ── 1a. RIVENDITA (prodotti da magazzino) ── */}
