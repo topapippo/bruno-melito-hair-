@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
 import confetti from 'canvas-confetti';
-import { API } from '../lib/api';
+import api from '../lib/api';
 import { CheckCircle, Star, Loader2, Scissors, Tag } from 'lucide-react';
 
 export default function ReceiptPage() {
@@ -11,7 +10,7 @@ export default function ReceiptPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get(`${API}/public/receipt/${paymentId}`)
+    api.get(`/public/receipt/${paymentId}`)
       .then(res => setData(res.data))
       .catch(() => {})
       .finally(() => setLoading(false));

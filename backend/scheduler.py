@@ -1,10 +1,15 @@
 import asyncio
 import logging
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from database import db
 import requests
 
 logger = logging.getLogger(__name__)
+
+# Fuso orario italiano: gestisce automaticamente il passaggio ora legale/solare
+# (un offset fisso UTC+1 sbagliava di un'ora da fine marzo a fine ottobre)
+ROME_TZ = ZoneInfo("Europe/Rome")
 
 WEEKDAY_NAMES = {
     1: "martedi",
@@ -21,9 +26,9 @@ async def publish_scheduled_posts():
     Pubblica i post programmati per oggi alle 9:00 AM
     Eseguito ogni giorno dal task di background di Render
     """
-    now = datetime.now(timezone.utc)
-    current_hour = now.hour + 1  # UTC+1 per l'Italia
-    current_weekday = WEEKDAY_NAMES[now.weekday()]
+    now_rome = datetime.now(ROME_TZ)
+    current_hour = now_rome.hour
+    current_weekday = WEEKDAY_NAMES[now_rome.weekday()]
 
     # Pubblica solo alle 9 AM (ora italiana)
     if current_hour != 9:

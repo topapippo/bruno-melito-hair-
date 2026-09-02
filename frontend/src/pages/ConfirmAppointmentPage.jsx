@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
-import { API } from '../lib/api';
+import api, { getErrorMessage } from '../lib/api';
 
 export default function ConfirmAppointmentPage() {
   const { token } = useParams();
@@ -12,7 +11,7 @@ export default function ConfirmAppointmentPage() {
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
-    axios.get(`${API}/public/confirm-info/${token}`)
+    api.get(`/public/confirm-info/${token}`)
       .then(r => setInfo(r.data))
       .catch(() => setError('Link non valido o appuntamento non trovato.'))
       .finally(() => setLoading(false));
@@ -21,11 +20,11 @@ export default function ConfirmAppointmentPage() {
   const handleAction = async (action) => {
     setSending(true);
     try {
-      await axios.post(`${API}/public/confirm/${token}`, { action });
+      await api.post(`/public/confirm/${token}`, { action });
       setActionDone(action);
       setInfo(prev => ({ ...prev, confirmation_status: action === 'si' ? 'confirmed' : 'cancelled_by_client' }));
     } catch (e) {
-      setError(e.response?.data?.detail || 'Errore. Riprova più tardi.');
+      setError(getErrorMessage(e, 'Errore. Riprova più tardi.'));
     } finally {
       setSending(false);
     }

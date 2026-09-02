@@ -34,7 +34,7 @@ api.interceptors.response.use(
       localStorage.removeItem('token');
       // Non redirigere su pagine pubbliche (sito, booking) — evita loop su token scaduto
       const path = window.location.pathname;
-      const isPublic = path.startsWith('/sito') || path.startsWith('/booking');
+      const isPublic = path.startsWith('/sito') || path.startsWith('/booking') || path.startsWith('/conferma') || path.startsWith('/ricevuta');
       if (!isPublic && !path.includes('/login') && !isRedirecting) {
         isRedirecting = true;
         window.location.href = '/login?session=expired';
