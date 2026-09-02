@@ -64,6 +64,29 @@ async def receive_whatsapp_message(request: Request):
                             "timestamp": datetime.now(timezone.utc).isoformat()
                         })
                         logger.info(f"Messaggio WhatsApp ricevuto da {phone_from}")
+
+                    # Stato di consegna reale dei messaggi in uscita (Meta li manda su
+                    # questo stesso webhook, campo "statuses" — prima non venivano mai letti,
+                    # quindi ogni invio restava per sempre "sent" anche se poi falliva)
+                    for status_info in value.get("statuses", []):
+                        wamid = status_info.get("id")
+                        delivery_status = status_info.get("status")  # sent | delivered | read | failed
+                        if not (wamid and delivery_status):
+                            continue
+                        update_fields = {
+                            "delivery_status": delivery_status,
+                            "delivery_updated_at": datetime.now(timezone.utc).isoformat(),
+                        }
+                        errors = status_info.get("errors")
+                        if errors:
+                            update_fields["delivery_error"] = errors[0].get("title") or errors[0].get("message")
+                        await db.communication_logs.update_one(
+                            {"wa_message_id": wamid}, {"$set": update_fields}
+                        )
+                        if delivery_status == "failed":
+                            logger.warning(
+                                f"WhatsApp non consegnato a {status_info.get('recipient_id')}: {update_fields.get('delivery_error')}"
+                            )
     except Exception as e:
         logger.error(f"Errore processazione webhook WhatsApp: {e}")
 

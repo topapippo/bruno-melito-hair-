@@ -162,6 +162,84 @@ async def get_public_admin_user():
     user = await db.users.find_one({"email": PUBLIC_ADMIN_EMAIL}, proj)
     return user
 
+class ConfirmActionRequest(BaseModel):
+    action: str
+
+    @field_validator('action')
+    @classmethod
+    def validate_action(cls, v):
+        if v not in ("si", "no"):
+            raise ValueError("Azione non valida")
+        return v
+
+
+@router.get("/public/confirm-info/{token}")
+@limiter.limit("20/minute")
+async def get_confirm_info(request: Request, token: str):
+    """Dati dell'appuntamento per la pagina di conferma che il cliente apre dal link WhatsApp."""
+    user = await get_public_admin_user()
+    if not user:
+        raise HTTPException(status_code=404, detail="Appuntamento non trovato")
+
+    apt = await db.appointments.find_one(
+        {"confirmation_token": token, "user_id": user["id"]}, {"_id": 0}
+    )
+    if not apt:
+        raise HTTPException(status_code=404, detail="Appuntamento non trovato")
+
+    return {
+        "client_name": apt.get("client_name", "Cliente"),
+        "date": apt.get("date"),
+        "time": apt.get("time"),
+        "services": [s.get("name", "") if isinstance(s, dict) else str(s) for s in apt.get("services", [])],
+        "confirmation_status": apt.get("confirmation_status", "pending"),
+    }
+
+
+@router.post("/public/confirm/{token}")
+@limiter.limit("10/minute")
+async def confirm_appointment_by_client(request: Request, token: str, data: ConfirmActionRequest, background_tasks: BackgroundTasks):
+    """Registra la conferma o la disdetta scelta dal cliente sulla pagina /conferma/:token."""
+    user = await get_public_admin_user()
+    if not user:
+        raise HTTPException(status_code=404, detail="Appuntamento non trovato")
+
+    apt = await db.appointments.find_one(
+        {"confirmation_token": token, "user_id": user["id"]}, {"_id": 0}
+    )
+    if not apt:
+        raise HTTPException(status_code=404, detail="Appuntamento non trovato")
+
+    # Idempotente: se ha già risposto, restituisci lo stato esistente senza sovrascrivere
+    if apt.get("confirmation_status") in ("confirmed", "cancelled_by_client"):
+        return {"confirmation_status": apt["confirmation_status"]}
+
+    new_status = "confirmed" if data.action == "si" else "cancelled_by_client"
+    update = {"confirmation_status": new_status}
+    if data.action == "no":
+        update["status"] = "cancelled"
+        update["cancelled_at"] = datetime.now(timezone.utc).isoformat()
+        update["cancelled_by"] = "client"
+
+    await db.appointments.update_one(
+        {"confirmation_token": token, "user_id": user["id"]},
+        {"$set": update}
+    )
+
+    try:
+        d_p = apt["date"].split('-')
+        date_it = f"{d_p[2]}/{d_p[1]}/{d_p[0]}" if len(d_p) == 3 else apt["date"]
+        if data.action == "si":
+            msg = f"✅ CONFERMA ONLINE\n👤 {apt.get('client_name', 'N/D')}\n📅 {date_it} ⏰ {apt.get('time', '')}"
+        else:
+            msg = f"⚠️ DISDETTA ONLINE\n👤 {apt.get('client_name', 'N/D')}\n📅 {date_it} ⏰ {apt.get('time', '')}"
+        background_tasks.add_task(send_whatsapp, user.get("phone") or "3397833526", msg, user)
+    except Exception as e:
+        logger.error(f"Errore notifica conferma/disdetta cliente: {e}")
+
+    return {"confirmation_status": new_status}
+
+
 @router.get("/public/receipt/{payment_id}")
 async def get_public_receipt(payment_id: str):
     user = await get_public_admin_user()

@@ -30,9 +30,19 @@ def normalize_phone_wa(phone: str) -> str:
     return d
 
 async def _log_communication(user_id: str, channel: str, phone: str, message: str, result: dict):
-    """Registra l'esito della comunicazione nel database per lo storico/audit."""
+    """Registra l'esito della comunicazione nel database per lo storico/audit.
+    Salva anche l'id messaggio di Meta (wa_message_id): serve al webhook per
+    aggiornare questo stesso record quando arriva lo stato di consegna reale
+    (delivered/read/failed) — prima veniva registrato solo l'accettazione
+    iniziale (HTTP 200), non se il messaggio fosse arrivato davvero."""
     try:
         from database import db
+        data = result.get("data") or {}
+        wa_message_id = None
+        if isinstance(data, dict):
+            msgs = data.get("messages") or []
+            if msgs and isinstance(msgs[0], dict):
+                wa_message_id = msgs[0].get("id")
         log_entry = {
             "id": str(_uuid.uuid4()),
             "user_id": user_id,
@@ -43,6 +53,8 @@ async def _log_communication(user_id: str, channel: str, phone: str, message: st
             "method": result.get("method", "unknown"),
             "error": result.get("error"),
             "provider_response": str(result.get("data", ""))[:500],
+            "wa_message_id": wa_message_id,
+            "delivery_status": "accepted" if result.get("sent") else None,
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
         await db.communication_logs.insert_one(log_entry)
@@ -154,24 +166,24 @@ async def _send_twilio_sms(phone: str, message: str) -> dict:
         return {"sent": False, "error": str(e)}
 
 async def send_automatic_message(phone: str, template_name: str = None, template_vars: list = None, fallback_text: str = None, user: dict = None, button_param: str = None) -> dict:
-    """Invia via Meta Cloud API: prima template (se fornito), poi testo libero."""
+    """Invia via Meta Cloud API: se c'è un template lo usa e basta (NIENTE fallback
+    a testo libero se fallisce). Fuori dalla finestra 24h del cliente, il testo libero
+    risponde HTTP 200 senza consegnare davvero: è un falso positivo che faceva risultare
+    "inviato" nei log un messaggio mai arrivato. Stessa scelta già fatta in send-direct."""
     if not phone: return {"sent": False, "error": "Telefono mancante"}
     if not WA_TOKEN: return {"sent": False, "error": "WHATSAPP_TOKEN non configurato"}
 
-    # 1. Meta Template
+    # 1. Meta Template (nessun fallback silenzioso: un fallimento onesto è meglio
+    # di un "inviato" che poi non arriva)
     if template_name:
         res = await send_whatsapp_template(phone, template_name, template_vars, button_param=button_param)
-        if res.get("sent"):
-            await _log_communication((user or {}).get("id", "system"), "whatsapp", phone, f"Template: {template_name}", res)
-            return res
-        logger.warning(f"Meta Template {template_name} fallito: {res.get('error')} — fallback testo libero")
-        # Se il template non esiste/fallisce, prova fallback_text (valido entro 24h del cliente)
-        if not fallback_text:
-            fail = {**res, "sent": False}
-            await _log_communication((user or {}).get("id", "system"), "whatsapp", phone, f"Template: {template_name}", fail)
-            return fail
+        await _log_communication((user or {}).get("id", "system"), "whatsapp", phone, f"Template: {template_name}", res)
+        if not res.get("sent"):
+            logger.warning(f"Meta Template {template_name} fallito: {res.get('error')}")
+        return res
 
-    # 2. Meta testo libero (funziona solo nella finestra 24h del cliente)
+    # 2. Nessun template richiesto: testo libero diretto (va bene solo entro la
+    # finestra 24h del cliente, es. risposta manuale a un messaggio in entrata)
     msg = fallback_text or ""
     if not msg: return {"sent": False, "error": "Nessun testo da inviare"}
     res = await send_whatsapp_cloud(phone, msg)
