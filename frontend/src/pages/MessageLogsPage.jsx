@@ -28,6 +28,23 @@ function methodBadge(method) {
   return <Badge variant="outline" className={`${m.color} text-xs`}>{m.label}</Badge>;
 }
 
+// Esito reale del messaggio: `sent` dice solo se Meta l'ha accettato al momento
+// dell'invio; `delivery_status` (aggiornato dal webhook quando arriva la conferma
+// vera) dice se è arrivato davvero al cliente. Un messaggio "accettato" può poi
+// risultare "failed" — prima la pagina lo mostrava comunque come OK.
+function deliveryInfo(log) {
+  if (!log.sent) {
+    return { label: 'Fallito', color: 'bg-red-500', Icon: X, problem: true, detail: log.error };
+  }
+  if (log.delivery_status === 'failed') {
+    return { label: 'Non consegnato', color: 'bg-red-500', Icon: X, problem: true, detail: log.delivery_error };
+  }
+  if (log.delivery_status === 'delivered' || log.delivery_status === 'read') {
+    return { label: 'Consegnato', color: 'bg-green-600', Icon: Check, problem: false, detail: null };
+  }
+  return { label: 'Inviato (in attesa)', color: 'bg-amber-500', Icon: Clock, problem: false, detail: null };
+}
+
 function formatTimestamp(ts) {
   if (!ts) return '—';
   try {
@@ -65,8 +82,8 @@ export default function MessageLogsPage() {
     }
   };
 
-  const sentCount = logs.filter((l) => l.sent).length;
-  const failedCount = logs.length - sentCount;
+  const failedCount = logs.filter((l) => deliveryInfo(l).problem).length;
+  const sentCount = logs.length - failedCount;
 
   return (
     <Layout>
@@ -154,49 +171,46 @@ export default function MessageLogsPage() {
           <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
             <CardContent className="p-0">
               <div className="divide-y divide-[#F0E6DC]/60">
-                {logs.map((log) => (
-                  <div
-                    key={log.id}
-                    className={`p-4 ${log.sent ? '' : 'bg-red-50/40'}`}
-                    data-testid={`log-${log.id}`}
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {log.sent ? (
-                            <Badge className="bg-green-600 text-white text-xs flex items-center gap-1">
-                              <Check className="w-3 h-3" /> Inviato
+                {logs.map((log) => {
+                  const info = deliveryInfo(log);
+                  return (
+                    <div
+                      key={log.id}
+                      className={`p-4 ${info.problem ? 'bg-red-50/40' : ''}`}
+                      data-testid={`log-${log.id}`}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge className={`${info.color} text-white text-xs flex items-center gap-1`}>
+                              <info.Icon className="w-3 h-3" /> {info.label}
                             </Badge>
-                          ) : (
-                            <Badge className="bg-red-500 text-white text-xs flex items-center gap-1">
-                              <X className="w-3 h-3" /> Fallito
-                            </Badge>
+                            {methodBadge(log.method)}
+                            <span className="flex items-center gap-1 text-xs text-[#7C5C4A]">
+                              <Phone className="w-3 h-3" />
+                              {log.phone || '—'}
+                            </span>
+                          </div>
+                          {log.message && (
+                            <p className="text-sm text-[#2D1B14] mt-2 line-clamp-2 whitespace-pre-wrap break-words">
+                              {log.message}
+                            </p>
                           )}
-                          {methodBadge(log.method)}
-                          <span className="flex items-center gap-1 text-xs text-[#7C5C4A]">
-                            <Phone className="w-3 h-3" />
-                            {log.phone || '—'}
-                          </span>
+                          {info.problem && info.detail && (
+                            <p className="text-xs text-red-600 mt-1 flex items-start gap-1">
+                              <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
+                              <span className="break-words">{info.detail}</span>
+                            </p>
+                          )}
                         </div>
-                        {log.message && (
-                          <p className="text-sm text-[#2D1B14] mt-2 line-clamp-2 whitespace-pre-wrap break-words">
-                            {log.message}
-                          </p>
-                        )}
-                        {!log.sent && log.error && (
-                          <p className="text-xs text-red-600 mt-1 flex items-start gap-1">
-                            <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
-                            <span className="break-words">{log.error}</span>
-                          </p>
-                        )}
+                        <span className="flex items-center gap-1 text-xs text-[#94A3B8] shrink-0 whitespace-nowrap">
+                          <Clock className="w-3 h-3" />
+                          {formatTimestamp(log.timestamp)}
+                        </span>
                       </div>
-                      <span className="flex items-center gap-1 text-xs text-[#94A3B8] shrink-0 whitespace-nowrap">
-                        <Clock className="w-3 h-3" />
-                        {formatTimestamp(log.timestamp)}
-                      </span>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </CardContent>
           </Card>

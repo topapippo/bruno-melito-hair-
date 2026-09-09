@@ -930,6 +930,9 @@ async def get_communication_logs(
     limit = max(1, min(limit, 500))
     query = {"user_id": current_user["id"]}
     if only_failed:
-        query["sent"] = False
+        # "Fallito" include sia il rifiuto immediato di Meta (sent=False) sia l'invio
+        # accettato ma poi non consegnato (delivery_status=failed, aggiornato dal webhook
+        # quando arriva lo stato reale — vedi routes/webhooks.py)
+        query["$or"] = [{"sent": False}, {"delivery_status": "failed"}]
     logs = await db.communication_logs.find(query, {"_id": 0}).sort("timestamp", -1).to_list(limit)
     return {"logs": logs, "count": len(logs)}
