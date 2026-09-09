@@ -18,6 +18,7 @@ twilio_client = None
 # Rimosso il fallback hardcoded per sicurezza
 WA_PHONE_NUMBER_ID = os.environ.get('WHATSAPP_PHONE_ID', '')
 WA_TOKEN = os.environ.get('WHATSAPP_TOKEN', '')
+WA_BUSINESS_ACCOUNT_ID = os.environ.get('WHATSAPP_BUSINESS_ACCOUNT_ID', '')
 WA_FOOTER = "\n\nMessaggio automatico di cortesia di Bruno Melito Hair. Se hai bisogno di scriverci, rispondi al salone. Grazie!"
 
 def normalize_phone_wa(phone: str) -> str:

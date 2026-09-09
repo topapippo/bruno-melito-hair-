@@ -7,7 +7,7 @@ from auth import get_current_user
 from models import SettingsUpdate, UserResponse
 import asyncio
 import requests
-from utils import twilio_client, TWILIO_PHONE_NUMBER, WA_PHONE_NUMBER_ID, WA_TOKEN
+from utils import twilio_client, TWILIO_PHONE_NUMBER, WA_PHONE_NUMBER_ID, WA_TOKEN, WA_BUSINESS_ACCOUNT_ID
 
 router = APIRouter()
 
@@ -62,6 +62,70 @@ async def cloud_api_test(current_user: dict = Depends(get_current_user)):
         return {"ok": False, "message": data.get("error", {}).get("message", f"Errore Meta ({resp.status_code})")}
     except Exception as e:
         return {"ok": False, "message": f"Errore di connessione a Meta: {e}"}
+
+
+@router.get("/settings/cloud-api-templates")
+async def cloud_api_templates(current_user: dict = Depends(get_current_user)):
+    """Elenca i template WhatsApp registrati sul WhatsApp Business Account
+    (WABA) e verifica se il numero configurato per l'invio (WHATSAPP_PHONE_ID)
+    appartiene davvero a quel WABA. Un template puo' risultare "APPROVED" ma
+    inutilizzabile se il numero di invio e' su un WABA diverso da quello dove
+    e' stato creato — causa tipica dell'errore Meta #132001 "Template name
+    does not exist in the translation"."""
+    if not WA_TOKEN:
+        return {"ok": False, "error": "WHATSAPP_TOKEN non configurato su Render"}
+    if not WA_BUSINESS_ACCOUNT_ID:
+        return {"ok": False, "error": "WHATSAPP_BUSINESS_ACCOUNT_ID non configurato su Render — lo trovi su business.facebook.com → Impostazioni Business → Account WhatsApp, oppure nell'App Dashboard Meta → WhatsApp → Configurazione API"}
+    headers = {"Authorization": f"Bearer {WA_TOKEN}"}
+    try:
+        tpl_resp = await asyncio.to_thread(
+            requests.get,
+            f"https://graph.facebook.com/v21.0/{WA_BUSINESS_ACCOUNT_ID}/message_templates",
+            headers=headers,
+            params={"fields": "name,status,language,category,components", "limit": 200},
+            timeout=15,
+        )
+        tpl_data = tpl_resp.json()
+        if tpl_resp.status_code != 200:
+            return {"ok": False, "error": tpl_data.get("error", {}).get("message", f"Errore Meta ({tpl_resp.status_code})")}
+
+        all_templates = []
+        for t in tpl_data.get("data", []):
+            body = next((c for c in (t.get("components") or []) if c.get("type") == "BODY"), {})
+            body_text = body.get("text", "") or ""
+            all_templates.append({
+                "name": t.get("name"),
+                "status": t.get("status"),
+                "language": t.get("language"),
+                "category": t.get("category"),
+                "param_count": body_text.count("{{"),
+                "body_text": body_text,
+            })
+
+        # Il numero configurato per l'invio appartiene davvero a questo WABA?
+        phone_belongs = None
+        if WA_PHONE_NUMBER_ID:
+            ph_resp = await asyncio.to_thread(
+                requests.get,
+                f"https://graph.facebook.com/v21.0/{WA_BUSINESS_ACCOUNT_ID}/phone_numbers",
+                headers=headers,
+                params={"fields": "id"},
+                timeout=15,
+            )
+            if ph_resp.status_code == 200:
+                phone_ids = [p.get("id") for p in ph_resp.json().get("data", [])]
+                phone_belongs = WA_PHONE_NUMBER_ID in phone_ids
+
+        return {
+            "ok": True,
+            "count": len(all_templates),
+            "approved": [t for t in all_templates if t["status"] == "APPROVED"],
+            "all": all_templates,
+            "phone_belongs_to_this_waba": phone_belongs,
+            "sending_phone_id": WA_PHONE_NUMBER_ID,
+        }
+    except Exception as e:
+        return {"ok": False, "error": f"Errore di connessione a Meta: {e}"}
 
 # ============== PAYMENTS ==============
 
