@@ -84,7 +84,7 @@ export default function RemindersPage() {
   const sendInactiveRecall = async (client) => {
     if (!client.phone) { toast.error('Numero mancante'); return; }
     setInactiveSendingId(client.id);
-    // Clienti senza storico (days_absent null) non possono ricevere richiamo_clienti
+    // Clienti senza storico (days_absent null) non possono ricevere richiamo_inattivo
     // (variabile "giorni" vuota → errore Meta #131008): usano invito_primo_appuntamento.
     const isNeverVisited = client.days_absent == null;
     const msg = isNeverVisited
@@ -92,7 +92,7 @@ export default function RemindersPage() {
       : `Ciao ${client.name}! Ci manchi! Sono passati ${client.days_absent ?? ''} giorni dalla tua ultima visita da Bruno Melito Hair. Per il tuo bentornato ti omaggeremo di un trattamento idratante sulla prossima visita. Prenota qui: https://brunomelitohair.it`;
     const ok = await sendWhatsAppDirect(client.phone, msg, isNeverVisited
       ? { templateName: 'invito_primo_appuntamento', templateVars: [client.name] }
-      : { templateName: 'richiamo_clienti', templateVars: [client.name, String(client.days_absent ?? '')] });
+      : { templateName: 'richiamo_inattivo', templateVars: [client.name, String(client.days_absent ?? '')] });
     if (ok) {
       try {
         await api.post(`${API}/reminders/inactive/${client.id}/mark-sent`);

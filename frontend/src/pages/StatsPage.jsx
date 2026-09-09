@@ -42,11 +42,11 @@ const DEFAULT_TEMPLATE = (name, days) =>
 const INVITE_TEMPLATE = (name) =>
   `Ciao ${name}! ✨ Da Bruno Melito Hair ti aspettano trattamenti su misura per valorizzare il tuo stile: colore, taglio, styling e percorsi di bellezza pensati per te. Regalati un momento speciale — prenota il tuo appuntamento qui: https://brunomelitohair.it`;
 
-// Clienti senza storico (days_absent null) non possono ricevere richiamo_clienti
+// Clienti senza storico (days_absent null) non possono ricevere richiamo_inattivo
 // (variabile "giorni" vuota → errore Meta #131008): usano invito_primo_appuntamento (1 var).
 const templateFor = (client) => client.days_absent == null
   ? { name: 'invito_primo_appuntamento', vars: [client.name], text: INVITE_TEMPLATE(client.name) }
-  : { name: 'richiamo_clienti', vars: [client.name, String(client.days_absent ?? '')], text: DEFAULT_TEMPLATE(client.name, client.days_absent) };
+  : { name: 'richiamo_inattivo', vars: [client.name, String(client.days_absent ?? '')], text: DEFAULT_TEMPLATE(client.name, client.days_absent) };
 
 function DayBadge({ days }) {
   if (days == null)
