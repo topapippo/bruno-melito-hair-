@@ -5,7 +5,9 @@ import os
 from database import db
 from auth import get_current_user
 from models import SettingsUpdate, UserResponse
-from utils import twilio_client, TWILIO_PHONE_NUMBER
+import asyncio
+import requests
+from utils import twilio_client, TWILIO_PHONE_NUMBER, WA_PHONE_NUMBER_ID, WA_TOKEN
 
 router = APIRouter()
 
@@ -29,7 +31,37 @@ async def get_settings(current_user: dict = Depends(get_current_user)):
         "google_review_link": current_user.get("google_review_link", ""),
         "monthly_target": current_user.get("monthly_target", 0) or 0,
         "make_webhook_url": current_user.get("make_webhook_url", ""),
+        "cloud_api_configured": bool(WA_PHONE_NUMBER_ID and WA_TOKEN),
     }
+
+# ============== WHATSAPP CLOUD API (META) ==============
+
+@router.get("/settings/cloud-api-test")
+async def cloud_api_test(current_user: dict = Depends(get_current_user)):
+    """Verifica la connessione a Meta Graph API e restituisce l'ID del numero
+    WhatsApp attivo (quello configurato in WHATSAPP_PHONE_ID su Render), cosi'
+    da poterlo confrontare con l'elenco numeri su Meta Business Suite ed
+    eliminare eventuali ID inattivi/duplicati."""
+    if not WA_PHONE_NUMBER_ID or not WA_TOKEN:
+        return {"ok": False, "message": "WHATSAPP_PHONE_ID o WHATSAPP_TOKEN non configurati su Render"}
+    url = f"https://graph.facebook.com/v21.0/{WA_PHONE_NUMBER_ID}"
+    params = {"fields": "id,display_phone_number,verified_name,quality_rating"}
+    headers = {"Authorization": f"Bearer {WA_TOKEN}"}
+    try:
+        resp = await asyncio.to_thread(requests.get, url, headers=headers, params=params, timeout=15)
+        data = resp.json()
+        if resp.status_code == 200:
+            return {
+                "ok": True,
+                "message": f"✅ Connesso a Meta — {data.get('verified_name', '')} ({data.get('display_phone_number', '')}) · ID attivo: {data.get('id', '')} · Qualità: {data.get('quality_rating', 'n/d')}",
+                "id": data.get("id"),
+                "display_phone_number": data.get("display_phone_number"),
+                "verified_name": data.get("verified_name"),
+                "quality_rating": data.get("quality_rating"),
+            }
+        return {"ok": False, "message": data.get("error", {}).get("message", f"Errore Meta ({resp.status_code})")}
+    except Exception as e:
+        return {"ok": False, "message": f"Errore di connessione a Meta: {e}"}
 
 # ============== PAYMENTS ==============
 
