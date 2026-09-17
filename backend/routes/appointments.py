@@ -333,7 +333,7 @@ async def create_recurring_appointments(
             "client_id": apt["client_id"],
             "client_name": apt["client_name"],
             "client_phone": apt.get("client_phone", ""),
-            "date": new_date.strftime("%d/%m/%Y"),
+            "date": new_date.strftime("%Y-%m-%d"),
             "time": apt["time"],
             "service_ids": [s["id"] for s in apt["services"]],
             "services": apt["services"],
