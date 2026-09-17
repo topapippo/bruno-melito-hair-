@@ -279,6 +279,12 @@ async def update_appointment(appointment_id: str, data: dict, current_user: dict
         update["services"] = [{"id": s["id"], "name": s["name"], "duration": s["duration"], "price": s["price"]} for s in services]
         update["total_duration"] = sum(s["duration"] for s in services)
         update["total_price"] = sum(s["price"] for s in services)
+    if "time" in update or "total_duration" in update:
+        existing = await db.appointments.find_one({"id": appointment_id, "user_id": current_user["id"]}, {"_id": 0, "time": 1, "total_duration": 1})
+        if existing:
+            new_time = update.get("time", existing["time"])
+            new_duration = update.get("total_duration", existing["total_duration"])
+            update["end_time"] = calculate_end_time(new_time, new_duration)
     await db.appointments.update_one({"id": appointment_id, "user_id": current_user["id"]}, {"$set": update})
     res = await db.appointments.find_one({"id": appointment_id, "user_id": current_user["id"]}, {"_id": 0})
     return AppointmentResponse(**res)
