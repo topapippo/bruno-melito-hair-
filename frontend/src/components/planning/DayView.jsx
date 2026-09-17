@@ -1,8 +1,13 @@
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Clock, Repeat, MessageCircle, Euro, Info } from 'lucide-react';
-import { addDays, subDays } from 'date-fns';
+import { addDays, subDays, isToday } from 'date-fns';
 import { getAppointmentColor, getServiceColors, buildServiceLookups } from '../../lib/categories';
 import ClientAvatar from '../ClientAvatar';
+
+const GRID_START_HOUR = 8;
+const GRID_END_HOUR = 20;
+const PX_PER_MIN = 48 / 15;
 
 export default function DayView({
   clients = [],
@@ -36,6 +41,17 @@ export default function DayView({
 }) {
   const { svcById, svcByName } = buildServiceLookups(services);
 
+  // Linea "adesso" live sulla vista di oggi — aggiornata ogni minuto
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(id);
+  }, []);
+  const showNowLine = isToday(selectedDate)
+    && (now.getHours() > GRID_START_HOUR || (now.getHours() === GRID_START_HOUR))
+    && now.getHours() < GRID_END_HOUR;
+  const nowTop = ((now.getHours() - GRID_START_HOUR) * 60 + now.getMinutes()) * PX_PER_MIN;
+
   // Compute overlaps per operator
   const toMin = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
   const computeOverlaps = (apts) => {
@@ -65,23 +81,26 @@ export default function DayView({
   };
 
   return (
-    <Card className="bg-white border-[#F0E6DC]/30 shadow-sm overflow-hidden">
+    <Card className="bg-white border-[#F0E6DC]/40 rounded-3xl shadow-[0_10px_34px_-8px_rgba(200,97,122,0.18)] overflow-hidden">
       <CardContent className="p-0">
         {/* Header with operator names */}
         <div className="flex border-b-2 border-[#C8617A]/40 bg-gradient-to-r from-[#C8617A]/10 to-[#E2E8F0]/20 sticky top-0 z-10">
-          <div className="w-12 sm:w-16 flex-shrink-0 p-1 sm:p-2 border-r-2 border-[#C8617A]/30">
-            <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-[#C8617A] mx-auto" />
+          <div className="w-12 sm:w-16 flex-shrink-0 p-1 sm:p-2 border-r-2 border-[#C8617A]/30 flex items-center justify-center">
+            <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-[#C8617A]" />
           </div>
           {columns.map((col) => (
             <div
               key={col.id || 'unassigned'}
               className="flex-1 min-w-[100px] sm:min-w-[150px] p-2 sm:p-3 border-r-2 border-[#C8617A]/30 last:border-r-0"
+              style={{ background: `linear-gradient(180deg, ${col.color}22, transparent 70%)` }}
             >
               <div className="flex items-center gap-2">
                 <div
-                  className="w-4 h-4 rounded-full flex-shrink-0 shadow-sm"
+                  className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-white text-[11px] font-black shadow-md ring-2 ring-white"
                   style={{ backgroundColor: col.color }}
-                />
+                >
+                  {(col.name || '?').trim().charAt(0).toUpperCase()}
+                </div>
                 <span className="font-bold text-[#2D1B14] text-sm truncate">
                   {col.name}
                 </span>
@@ -107,6 +126,16 @@ export default function DayView({
           }}
         >
           <div className="flex relative">
+            {/* Linea "adesso" - attraversa tutte le colonne */}
+            {showNowLine && (
+              <div
+                className="absolute left-0 right-0 z-30 pointer-events-none flex items-center"
+                style={{ top: `${nowTop}px` }}
+              >
+                <div className="w-2 h-2 rounded-full bg-[#C8617A] shadow-[0_0_6px_rgba(200,97,122,0.8)] ml-1.5 sm:ml-2 flex-shrink-0" />
+                <div className="h-[2px] flex-1 bg-[#C8617A] shadow-[0_0_4px_rgba(200,97,122,0.6)]" />
+              </div>
+            )}
             {/* Time column */}
             <div className="w-12 sm:w-16 flex-shrink-0 bg-gradient-to-b from-[#F8FAFC] to-white">
               {TIME_SLOTS.map((time) => (
@@ -129,7 +158,13 @@ export default function DayView({
                 <div
                   key={col.id || 'unassigned'}
                   className="flex-1 min-w-[100px] sm:min-w-[150px] relative border-r border-[#F0E6DC]/20 last:border-r-0"
+                  style={{ backgroundColor: `${col.color}0A` }}
                 >
+                  {colAppointments.length === 0 && (
+                    <div className="absolute inset-0 flex items-start justify-center pt-16 pointer-events-none">
+                      <span className="text-[11px] text-[#B0A09A] font-medium italic">Nessun appuntamento</span>
+                    </div>
+                  )}
                   {/* Time slot backgrounds */}
                   {TIME_SLOTS.map((time) => {
                     const isBlocked = blockedSlots.includes(time);
@@ -198,7 +233,7 @@ export default function DayView({
                         onDragStart={(e) => onDragStart(e, apt)}
                         onDragEnd={onDragEnd}
                         onClick={() => openEditDialog(apt)}
-                        className={`absolute rounded-xl overflow-hidden shadow-lg cursor-grab active:cursor-grabbing hover:scale-[1.02] hover:shadow-xl transition-all flex flex-col ${
+                        className={`absolute rounded-2xl overflow-hidden cursor-grab active:cursor-grabbing hover:scale-[1.03] hover:-translate-y-0.5 transition-all duration-200 flex flex-col ${
                           isHighlighted ? 'ring-4 ring-yellow-400 ring-offset-2 z-20' : ''
                         }`}
                         style={{
@@ -206,11 +241,16 @@ export default function DayView({
                           ...(overlapInfo ? {} : { left: '4px', right: '4px' }),
                           ...(apt.paid ? { opacity: 0.5 } : apt.status === 'completed' ? { opacity: 0.65 } : {}),
                           borderLeft: `4px solid ${apt.paid ? '#10B981' : operatorColor}`,
+                          boxShadow: `0 3px 10px -2px ${(apt.paid ? '#10B981' : operatorColor)}66, 0 1px 3px rgba(45,27,20,0.15)`,
                         }}
                         title={`Clicca per modificare - ${apt.client_name}`}
                       >
                         {/* Riga nome cliente */}
-                        <div className="flex items-center justify-between px-1 bg-[#2D1B14]/90 text-white flex-shrink-0 gap-1" style={{ height: '22px' }}>
+                        <div
+                          className="flex items-center justify-between px-1 text-white flex-shrink-0 gap-1"
+                          style={{ height: '22px', background: `linear-gradient(90deg, ${(apt.paid ? '#10B981' : operatorColor)}CC, #2D1B14E6)` }}
+                        >
+
                           <ClientAvatar name={apt.client_name} size="xs" />
                           <span className="font-bold text-[13px] leading-none truncate flex-1">
                             {apt.paid && '✅ '}{apt.status === 'completed' && '✓ '}{apt.client_name}

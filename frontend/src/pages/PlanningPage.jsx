@@ -799,10 +799,10 @@ export default function PlanningPage() {
                 ? <><Unlock className="w-4 h-4 mr-1" /> Riapri Giorno</>
                 : <><Lock className="w-4 h-4 mr-1" /> Chiudi Giorno</>}
             </Button>
-            <div className="flex items-center gap-2 border border-[#F0E6DC] rounded-xl px-3 h-10 bg-white">
-              <span className="text-sm text-slate-500">Operatore</span>
+            <div className={`flex items-center gap-2 border rounded-full px-3.5 h-10 bg-white transition-colors ${selectedOperatorId ? 'border-[#C8617A] ring-1 ring-[#C8617A]/30' : 'border-[#F0E6DC]'}`}>
+              <span className="text-sm text-[#9C7060] font-medium">Operatore</span>
               <select
-                className="bg-transparent outline-none text-sm text-slate-900"
+                className="bg-transparent outline-none text-sm text-[#2D1B14] font-semibold"
                 value={selectedOperatorId}
                 onChange={(e) => setSelectedOperatorId(e.target.value)}
                 data-testid="operator-filter-select"
@@ -814,10 +814,10 @@ export default function PlanningPage() {
                 ))}
               </select>
             </div>
-            <div className="flex items-center gap-2 border border-[#F0E6DC] rounded-xl px-3 h-10 bg-white">
-              <span className="text-sm text-slate-500">Servizio</span>
+            <div className={`flex items-center gap-2 border rounded-full px-3.5 h-10 bg-white transition-colors ${selectedServiceId ? 'border-[#C8617A] ring-1 ring-[#C8617A]/30' : 'border-[#F0E6DC]'}`}>
+              <span className="text-sm text-[#9C7060] font-medium">Servizio</span>
               <select
-                className="bg-transparent outline-none text-sm text-slate-900"
+                className="bg-transparent outline-none text-sm text-[#2D1B14] font-semibold"
                 value={selectedServiceId}
                 onChange={(e) => setSelectedServiceId(e.target.value)}
                 data-testid="service-filter-select"
@@ -846,33 +846,37 @@ export default function PlanningPage() {
         )}
 
         {/* Category Color Legend */}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 pb-2" data-testid="category-legend">
+        <div className="flex flex-wrap items-center gap-1.5 px-1 pb-2" data-testid="category-legend">
           {CATEGORIES.map(cat => (
-            <div key={cat.value} className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: cat.color }} />
-              <span className="text-xs text-gray-500">{cat.label}</span>
+            <div key={cat.value} className="flex items-center gap-1.5 px-2 py-1 rounded-full" style={{ backgroundColor: `${cat.color}16` }}>
+              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
+              <span className="text-xs font-semibold" style={{ color: cat.color }}>{cat.label}</span>
             </div>
           ))}
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-sm bg-red-500" />
-            <span className="text-xs text-gray-500">Cancellato</span>
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-red-50">
+            <div className="w-2 h-2 rounded-full bg-red-500" />
+            <span className="text-xs font-semibold text-red-500">Cancellato</span>
           </div>
         </div>
 
         {/* KPI Bar — visibile solo in day view */}
         {!loading && viewMode === 'day' && filteredAppointments.length > 0 && (
           <div className="flex items-center gap-2.5 flex-wrap sticky top-0 z-20 py-2 -mx-1 px-1 backdrop-blur-md bg-[#FDF8F5]/80 border-b border-[#F0E6DC]/50">
-            <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl"
+            <div className="flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-transform hover:-translate-y-0.5"
               style={{ background: 'rgba(200,97,122,0.07)', border: '1px solid rgba(200,97,122,0.13)' }}>
-              <CalendarDays className="w-4 h-4 text-[#C8617A] shrink-0" />
+              <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: '#C8617A' }}>
+                <CalendarDays className="w-4 h-4 text-white" />
+              </div>
               <div>
                 <p className="text-[10px] text-[#9C7060] font-medium leading-none">Totale</p>
                 <p className="text-xl font-black text-[#2D1B14] leading-tight">{filteredAppointments.length}</p>
               </div>
             </div>
-            <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl"
+            <div className="flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-transform hover:-translate-y-0.5"
               style={{ background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.14)' }}>
-              <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
+              <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-emerald-500">
+                <CheckCircle className="w-4 h-4 text-white" />
+              </div>
               <div>
                 <p className="text-[10px] text-[#9C7060] font-medium leading-none">Completati</p>
                 <p className="text-xl font-black text-emerald-600 leading-tight">
@@ -881,9 +885,11 @@ export default function PlanningPage() {
               </div>
             </div>
             {dayEarnings > 0 && (
-              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl"
+              <div className="flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-transform hover:-translate-y-0.5"
                 style={{ background: 'rgba(212,175,122,0.09)', border: '1px solid rgba(212,175,122,0.18)' }}>
-                <Euro className="w-4 h-4 text-[#D4AF7A] shrink-0" />
+                <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: '#D4AF7A' }}>
+                  <Euro className="w-4 h-4 text-white" />
+                </div>
                 <div>
                   <p className="text-[10px] text-[#9C7060] font-medium leading-none">Incassato</p>
                   <p className="text-xl font-black text-[#2D1B14] leading-tight">€{dayEarnings.toFixed(0)}</p>
@@ -894,9 +900,11 @@ export default function PlanningPage() {
               const pending = filteredAppointments.filter(a => a.status !== 'completed' && a.status !== 'cancelled');
               const est = pending.reduce((s, a) => s + (a.total_price || 0), 0);
               return est > 0 ? (
-                <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl"
+                <div className="flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-transform hover:-translate-y-0.5"
                   style={{ background: 'rgba(200,97,122,0.04)', border: '1px solid rgba(200,97,122,0.09)' }}>
-                  <TrendingUp className="w-4 h-4 text-[#C8617A]/60 shrink-0" />
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-[#C8617A]/50">
+                    <TrendingUp className="w-4 h-4 text-white" />
+                  </div>
                   <div>
                     <p className="text-[10px] text-[#9C7060] font-medium leading-none">Stimato</p>
                     <p className="text-xl font-black text-[#9C7060] leading-tight">€{est.toFixed(0)}</p>
@@ -961,15 +969,15 @@ export default function PlanningPage() {
         )}
 
         {/* Legend */}
-        <div className="flex flex-wrap items-center gap-4 text-xs text-[#7C5C4A]">
-          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-[#C8617A]" /> Da fare</div>
-          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-emerald-500" /> Completato</div>
-          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-red-100 border border-red-300" /> Festivo</div>
-          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-red-200 border border-red-400" /> Bloccato</div>
+        <div className="flex flex-wrap items-center gap-2 text-xs text-[#7C5C4A]">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#C8617A]/10"><div className="w-2 h-2 rounded-full bg-[#C8617A]" /> Da fare</div>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50"><div className="w-2 h-2 rounded-full bg-emerald-500" /> Completato</div>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-50"><div className="w-2 h-2 rounded-full bg-red-300" /> Festivo</div>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-50"><div className="w-2 h-2 rounded-full bg-red-400" /> Bloccato</div>
           {operators.map(op => (
-            <div key={op.id} className="flex items-center gap-1.5">
-              <div className="w-1 h-5 rounded-full" style={{ backgroundColor: op.color }} />
-              {op.name}
+            <div key={op.id} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full" style={{ backgroundColor: `${op.color}18` }}>
+              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: op.color }} />
+              <span className="font-semibold" style={{ color: op.color }}>{op.name}</span>
             </div>
           ))}
         </div>

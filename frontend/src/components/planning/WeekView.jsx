@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Clock } from 'lucide-react';
@@ -34,6 +34,15 @@ export default function WeekView({
   const dragRef = useRef(null);
   const dragOverRef = useRef(null);
   const { svcById, svcByName } = buildServiceLookups(services);
+
+  // Linea "adesso" live sulla colonna di oggi
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(id);
+  }, []);
+  const showNowLine = now.getHours() >= 8 && now.getHours() < 20;
+  const nowTop = ((now.getHours() - 8) * 60 + now.getMinutes()) * (SLOT_H / 15);
 
   const getStyle = (apt, overlapInfo) => {
     const [h, m] = apt.time.split(':').map(Number);
@@ -115,7 +124,7 @@ export default function WeekView({
   };
 
   return (
-    <Card className="bg-white border-[#F0E6DC]/30 shadow-sm overflow-hidden">
+    <Card className="bg-white border-[#F0E6DC]/40 rounded-3xl shadow-[0_10px_34px_-8px_rgba(200,97,122,0.18)] overflow-hidden">
       <CardContent className="p-0">
         {/* Day Headers */}
         <div className="flex border-b-2 border-[#C8617A]/40 sticky top-0 z-20 bg-white">
@@ -128,26 +137,26 @@ export default function WeekView({
             const holiday = isHoliday(day);
             const dayApts = weekAppointments[dateStr] || [];
             return (
-              <div key={dateStr} className={`flex-1 min-w-[120px] p-2 border-r border-[#F0E6DC] last:border-r-0 ${isT ? 'bg-[#C8617A]/10' : holiday ? 'bg-red-50' : 'bg-[#FAF7F2]'}`}>
+              <div key={dateStr} className={`flex-1 min-w-[120px] p-2 border-r border-[#F0E6DC] last:border-r-0 transition-colors ${isT ? 'bg-gradient-to-b from-[#C8617A]/15 to-transparent' : holiday ? 'bg-red-50' : 'bg-[#FAF7F2]'}`}>
                 <div className="flex items-center justify-between">
                   <div className="cursor-pointer" onClick={() => onDayClick(day)}>
                     <p className={`text-[10px] font-bold uppercase ${holiday ? 'text-red-500' : isT ? 'text-[#C8617A]' : 'text-[#64748B]'}`}>
                       {format(day, 'EEE', { locale: it })}
                     </p>
-                    <p className={`text-xl font-black leading-none flex items-center justify-center w-9 h-9 rounded-full ${isT ? 'bg-[#C8617A] text-white' : holiday ? 'text-red-500' : 'text-[#2D1B14]'}`}>
+                    <p className={`text-xl font-black leading-none flex items-center justify-center w-9 h-9 rounded-full transition-all ${isT ? 'bg-gradient-to-br from-[#C8617A] to-[#A0404F] text-white shadow-[0_3px_10px_rgba(200,97,122,0.5)]' : holiday ? 'text-red-500' : 'text-[#2D1B14]'}`}>
                       {format(day, 'd')}
                     </p>
                     {holiday && <p className="text-[7px] font-bold text-red-400 leading-tight">{holiday.name}</p>}
                   </div>
                   <div className="flex flex-col items-end gap-0.5">
                     <Button variant="ghost" size="icon"
-                      className="h-6 w-6 rounded-full bg-[#C8617A]/10 hover:bg-[#C8617A]/20 text-[#C8617A]"
+                      className="h-6 w-6 rounded-full bg-[#C8617A]/10 hover:bg-[#C8617A]/20 text-[#C8617A] hover:scale-110 transition-transform"
                       onClick={(e) => { e.stopPropagation(); onAddAppointment(day); }}
                       data-testid={`week-add-apt-${dateStr}`}>
                       <Plus className="w-3 h-3" />
                     </Button>
                     {dayApts.length > 0 && (
-                      <span className="text-[9px] font-bold text-[#C8617A] bg-[#C8617A]/10 px-1.5 rounded-full">{dayApts.length}</span>
+                      <span className="text-[9px] font-bold text-white bg-gradient-to-r from-[#C8617A] to-[#A0404F] px-1.5 rounded-full shadow-sm">{dayApts.length}</span>
                     )}
                   </div>
                 </div>
@@ -159,6 +168,22 @@ export default function WeekView({
         {/* Time Grid */}
         <div ref={scrollRef} className="overflow-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
           <div className="flex relative">
+            {/* Linea "adesso" sulla colonna di oggi */}
+            {showNowLine && (() => {
+              const todayIdx = days.findIndex(d => isToday(d));
+              if (todayIdx === -1) return null;
+              const leftPct = (todayIdx / days.length) * 100;
+              const widthPct = (1 / days.length) * 100;
+              return (
+                <div
+                  className="absolute z-30 pointer-events-none flex items-center"
+                  style={{ top: `${nowTop}px`, left: `calc(56px + (100% - 56px) * ${leftPct / 100})`, width: `calc((100% - 56px) * ${widthPct / 100})` }}
+                >
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#C8617A] shadow-[0_0_6px_rgba(200,97,122,0.8)] ml-0.5 flex-shrink-0" />
+                  <div className="h-[2px] flex-1 bg-[#C8617A] shadow-[0_0_4px_rgba(200,97,122,0.6)]" />
+                </div>
+              );
+            })()}
             {/* Time column */}
             <div className="w-14 shrink-0 border-r border-[#F0E6DC] bg-[#FAF7F2]">
               {TIME_SLOTS.map((time, idx) => (
@@ -210,20 +235,31 @@ export default function WeekView({
                       const svcColors = getServiceColors(apt, svcById, svcByName);
                       const isCancelled = apt.status === 'cancelled';
                       const totalDuration = apt.services?.reduce((sum, s) => sum + (s.duration || 15), 0) || 1;
+                      const opColor = apt.operator_id && operators?.length ? (operators.find(o => o.id === apt.operator_id)?.color || '#64748B') : '#64748B';
                       const opName = apt.operator_id && operators?.length ? (operators.find(o => o.id === apt.operator_id)?.name || '') : '';
                       const isDragging = dragRef.current?.apt?.id === apt.id;
+                      const barColor = apt.paid ? '#10B981' : opColor;
                       return (
                         <div key={apt.id}
                           draggable={apt.status !== 'completed' && apt.status !== 'cancelled'}
                           onDragStart={(e) => handleDragStart(e, apt, dateStr)}
                           onDragEnd={handleDragEnd}
                           onClick={(e) => { e.stopPropagation(); onEditAppointment?.(apt); }}
-                          className={`absolute rounded-lg overflow-hidden cursor-grab active:cursor-grabbing hover:shadow-lg transition-all text-xs shadow-sm z-10 flex flex-col ${isDragging ? 'opacity-40' : ''}`}
-                          style={{ ...style, ...(overlapInfo ? {} : { left: '2px', right: '2px' }), ...(apt.paid ? { opacity: 0.5, borderLeft: '3px solid #10B981' } : {}), borderLeft: apt.paid ? '3px solid #10B981' : '' }}
+                          className={`absolute rounded-xl overflow-hidden cursor-grab active:cursor-grabbing hover:scale-[1.02] transition-all duration-200 text-xs z-10 flex flex-col ${isDragging ? 'opacity-40' : ''}`}
+                          style={{
+                            ...style,
+                            ...(overlapInfo ? {} : { left: '2px', right: '2px' }),
+                            ...(apt.paid ? { opacity: 0.5 } : {}),
+                            borderLeft: `3px solid ${barColor}`,
+                            boxShadow: `0 2px 8px -2px ${barColor}66, 0 1px 2px rgba(45,27,20,0.12)`,
+                          }}
                           title={`${apt.time} - ${apt.client_name}${opName ? ` (${opName})` : ''}\nTrascina per spostare`}
                           data-testid={`week-apt-${apt.id}`}>
                           {/* Header */}
-                          <div className="flex items-start justify-between px-1 bg-[#2D1B14]/90 text-white flex-shrink-0" style={{ minHeight: '18px' }}>
+                          <div
+                            className="flex items-start justify-between px-1 text-white flex-shrink-0"
+                            style={{ minHeight: '18px', background: `linear-gradient(90deg, ${barColor}CC, #2D1B14E6)` }}
+                          >
                             <div className="flex-1 min-w-0">
                               <span className="font-bold text-[10px] truncate block">{apt.paid && '✅ '}{apt.time} {apt.client_name}</span>
                             </div>
@@ -257,12 +293,12 @@ export default function WeekView({
         </div>
 
         {/* Category Legend */}
-        <div className="flex flex-wrap items-center gap-3 px-4 py-2 bg-[#FAF7F2] border-t border-[#F0E6DC]">
-          <span className="text-[10px] text-[#7C5C4A] font-semibold uppercase">Servizi:</span>
+        <div className="flex flex-wrap items-center gap-2 px-4 py-2.5 bg-[#FAF7F2] border-t border-[#F0E6DC]">
+          <span className="text-[10px] text-[#7C5C4A] font-semibold uppercase mr-1">Servizi:</span>
           {CATEGORIES.filter(c => c.value !== 'altro').map(x => (
-            <div key={x.value} className="flex items-center gap-1">
-              <div className="w-2.5 h-2.5 rounded-sm shadow-sm" style={{ backgroundColor: x.color }} />
-              <span className="text-[10px] font-medium text-[#2D1B14]">{x.label}</span>
+            <div key={x.value} className="flex items-center gap-1.5 px-2 py-0.5 rounded-full" style={{ backgroundColor: `${x.color}18` }}>
+              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: x.color }} />
+              <span className="text-[10px] font-semibold" style={{ color: x.color }}>{x.label}</span>
             </div>
           ))}
         </div>
