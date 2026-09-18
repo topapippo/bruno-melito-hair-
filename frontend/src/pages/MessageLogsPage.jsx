@@ -37,7 +37,8 @@ function deliveryInfo(log) {
     return { label: 'Fallito', color: 'bg-red-500', Icon: X, problem: true, detail: log.error };
   }
   if (log.delivery_status === 'failed') {
-    return { label: 'Non consegnato', color: 'bg-red-500', Icon: X, problem: true, detail: log.delivery_error };
+    const detail = log.delivery_error_code ? `${log.delivery_error} (#${log.delivery_error_code})` : log.delivery_error;
+    return { label: 'Non consegnato', color: 'bg-red-500', Icon: X, problem: true, detail };
   }
   if (log.delivery_status === 'delivered' || log.delivery_status === 'read') {
     return { label: 'Consegnato', color: 'bg-green-600', Icon: Check, problem: false, detail: null };

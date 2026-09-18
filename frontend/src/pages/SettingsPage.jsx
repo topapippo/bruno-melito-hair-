@@ -1386,7 +1386,7 @@ export default function SettingsPage() {
                       <div key={i} className={`p-2 rounded border text-xs ${t.status === 'APPROVED' ? 'bg-green-50 border-green-200' : t.status === 'REJECTED' ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'}`}>
                         <div className="flex justify-between items-center">
                           <code className="font-bold">{t.name}</code>
-                          <span className="font-medium">{t.status} · {t.language} · {t.param_count} var</span>
+                          <span className="font-medium">{t.status} · {t.category} · {t.language} · {t.param_count} var</span>
                         </div>
                         {t.body_text && <div className="text-[10px] text-gray-600 mt-1 line-clamp-2">{t.body_text}</div>}
                       </div>

@@ -80,6 +80,7 @@ async def receive_whatsapp_message(request: Request):
                         errors = status_info.get("errors")
                         if errors:
                             update_fields["delivery_error"] = errors[0].get("title") or errors[0].get("message")
+                            update_fields["delivery_error_code"] = errors[0].get("code")
                         await db.communication_logs.update_one(
                             {"wa_message_id": wamid}, {"$set": update_fields}
                         )
