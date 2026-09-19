@@ -7,7 +7,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -603,7 +603,13 @@ export default function EditAppointmentDialog({
     if (!currentAppointment) return;
     setSaving(true);
     try {
-      const payload = { ...formData, date: editDate, promo_id: preSelectedPromoId || null, card_id: preSelectedCardId || null };
+      const payload = {
+        ...formData,
+        date: editDate,
+        promo_id: preSelectedPromoId || null,
+        card_id: preSelectedCardId || null,
+        custom_services: hasCustomServices() ? buildCustomServicesPayload() : null,
+      };
       const res = await api.put(`${API}/appointments/${currentAppointment.id}`, payload);
       toast.success('Appuntamento aggiornato!');
       setLocalAppointment(res.data);
@@ -673,7 +679,7 @@ export default function EditAppointmentDialog({
 
   return (
     <Dialog open={open} onOpenChange={v => { if (!v) { resetCheckout(); onClose(); } }}>
-      <DialogContent className={`${checkoutMode ? 'sm:max-w-[720px]' : 'sm:max-w-[550px]'} max-h-[90vh] p-0 flex flex-col overflow-hidden`}>
+      <DialogContent className={`${checkoutMode ? 'sm:max-w-[880px]' : 'sm:max-w-[650px]'} max-h-[90vh] p-0 flex flex-col overflow-hidden`}>
         <DialogHeader className="px-5 pt-5 pb-3 shrink-0 border-b border-[#F0E6DC]">
           <DialogTitle className="font-display text-xl text-[#2D1B14]">
             {checkoutMode ? '💳 Incasso' : 'Modifica Appuntamento'}
@@ -1058,9 +1064,21 @@ export default function EditAppointmentDialog({
                         <SelectValue placeholder="+ Aggiungi servizio extra..." />
                       </SelectTrigger>
                       <SelectContent className="max-h-[240px]">
-                        {services.filter(sv => !formData.service_ids.includes(sv.id)).map(sv => (
-                          <SelectItem key={sv.id} value={sv.id}>{sv.name} — €{sv.price}</SelectItem>
-                        ))}
+                        {(() => {
+                          const available = services.filter(sv => !formData.service_ids.includes(sv.id));
+                          const grouped = groupServicesByCategory(available);
+                          return grouped.orderedKeys.map(catKey => {
+                            const catInfo = getCategoryInfo(catKey);
+                            return (
+                              <SelectGroup key={catKey}>
+                                <SelectLabel style={{color: catInfo.color}}>{catInfo.label}</SelectLabel>
+                                {grouped.groups[catKey].map(sv => (
+                                  <SelectItem key={sv.id} value={sv.id}>{sv.name} — €{sv.price}</SelectItem>
+                                ))}
+                              </SelectGroup>
+                            );
+                          });
+                        })()}
                       </SelectContent>
                     </Select>
                   </div>

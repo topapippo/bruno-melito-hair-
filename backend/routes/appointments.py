@@ -269,16 +269,26 @@ async def get_appointments(
     res = await db.appointments.find(query, {"_id": 0}).sort([("date", 1), ("time", 1)]).to_list(5000)
     return [AppointmentResponse(**a) for a in res]
 
-ALLOWED_APPOINTMENT_UPDATE_FIELDS = {"date", "time", "operator_id", "service_ids", "notes", "promo_id", "card_id"}
+ALLOWED_APPOINTMENT_UPDATE_FIELDS = {"date", "time", "operator_id", "service_ids", "notes", "promo_id", "card_id", "custom_services"}
 
 @router.put("/appointments/{appointment_id}", response_model=AppointmentResponse)
 async def update_appointment(appointment_id: str, data: dict, current_user: dict = Depends(get_current_user)):
     update = {k: v for k, v in data.items() if k in ALLOWED_APPOINTMENT_UPDATE_FIELDS and v is not None}
+    custom_services = update.pop("custom_services", None)
     if "service_ids" in update:
         services = await db.services.find({"id": {"$in": update["service_ids"]}, "user_id": current_user["id"]}).to_list(100)
         update["services"] = [{"id": s["id"], "name": s["name"], "duration": s["duration"], "price": s["price"]} for s in services]
         update["total_duration"] = sum(s["duration"] for s in services)
         update["total_price"] = sum(s["price"] for s in services)
+    if custom_services:
+        # Prezzi/quantità personalizzati e servizi extra hanno sempre l'ultima parola,
+        # anche quando non si sta incassando (stessa logica di checkout_appointment sopra).
+        update["services"] = [
+            {"id": s.get("id"), "name": s.get("name"), "price": s.get("price", 0), "quantity": s.get("quantity", 1), "duration": s.get("duration", 0)}
+            for s in custom_services
+        ]
+        update["total_duration"] = sum(s.get("duration", 0) for s in custom_services)
+        update["total_price"] = sum(float(s.get("price", 0)) * s.get("quantity", 1) for s in custom_services)
     if "time" in update or "total_duration" in update:
         existing = await db.appointments.find_one({"id": appointment_id, "user_id": current_user["id"]}, {"_id": 0, "time": 1, "total_duration": 1})
         if existing:
