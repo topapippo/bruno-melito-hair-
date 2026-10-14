@@ -43,8 +43,8 @@ export function ServicesSection({ servicesRef, landingServiceGroups, cardTemplat
           100% { transform: translateX(250%) skewX(-20deg); opacity: 0; }
         }
         @keyframes buttonGlow {
-          0%, 100% { box-shadow: 0 0 10px rgba(168, 85, 247, 0.3), 0 4px 12px rgba(0,0,0,0.2); }
-          50% { box-shadow: 0 0 20px rgba(168, 85, 247, 0.6), 0 4px 16px rgba(0,0,0,0.3); }
+          0%, 100% { box-shadow: 0 0 10px rgba(232, 71, 124, 0.3), 0 4px 12px rgba(0,0,0,0.2); }
+          50% { box-shadow: 0 0 20px rgba(232, 71, 124, 0.6), 0 4px 16px rgba(0,0,0,0.3); }
         }
         .cat-btn { position: relative; overflow: hidden; transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), filter 0.35s ease, box-shadow 0.35s ease; }
         .cat-btn::before {
@@ -66,13 +66,13 @@ export function ServicesSection({ servicesRef, landingServiceGroups, cardTemplat
         .service-prenota-btn:hover {
           transform: scale(1.05) translateY(-2px);
           animation: buttonGlow 2s ease-in-out infinite;
-          box-shadow: 0 0 20px rgba(168, 85, 247, 0.5) !important;
+          box-shadow: 0 0 20px rgba(232, 71, 124, 0.5) !important;
         }
       `}</style>
       <div className="max-w-6xl mx-auto px-4">
         <AnimatedSection>
           <div className="w-full text-center mb-16">
-            <p className="font-bold text-xs tracking-[0.4em] uppercase mb-4 text-[#D4AF7A]">✂️ Menu dei Trattamenti</p>
+            <p className="font-bold text-xs tracking-[0.4em] uppercase mb-4 text-[#D4AF7A]">Menu dei trattamenti</p>
             <h2 className="text-4xl sm:text-6xl font-black text-white" style={{ fontFamily: T.fontDisplay }}>Cosa Facciamo</h2>
           </div>
         </AnimatedSection>
@@ -85,7 +85,7 @@ export function ServicesSection({ servicesRef, landingServiceGroups, cardTemplat
                 <div key={catKey} className="group">
                   <button type="button" onClick={() => toggleLCat(catKey)}
                     className="cat-btn w-full flex items-center justify-between px-8 py-6 rounded-3xl font-black text-white text-left shadow-2xl"
-                    style={{ background: `linear-gradient(135deg, ${catInfo.color}, ${catInfo.color}AA)`, border: '1px solid rgba(255,255,255,0.12)' }}>
+                    style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderLeft: `4px solid ${T.primary}` }}>
                     <span className="text-xl uppercase tracking-tight">{catInfo.label}</span>
                     <div className="flex items-center gap-4">
                       <span className="text-xs font-bold bg-black/20 px-3 py-1 rounded-full uppercase">{catServices.length} voci</span>
