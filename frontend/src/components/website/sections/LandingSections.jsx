@@ -26,10 +26,7 @@ function AnimatedSection({ children, className = '', delay = 0 }) {
 export { AnimatedSection };
 
 export function ServicesSection({ servicesRef, landingServiceGroups, cardTemplates, setShowBooking, bookService, bookCard, T }) {
-    const [openLandingCats, setOpenLandingCats] = useState(() => {
-    const firstKey = landingServiceGroups?.orderedKeys?.[0];
-    return firstKey ? { [firstKey]: true } : {};
-  });
+    const [openLandingCats, setOpenLandingCats] = useState({});
   const toggleLCat = (key) => setOpenLandingCats(prev => ({ ...prev, [key]: !prev[key] }));
   const orderedKeys = landingServiceGroups?.orderedKeys || [];
 
@@ -85,7 +82,7 @@ export function ServicesSection({ servicesRef, landingServiceGroups, cardTemplat
                 <div key={catKey} className="group">
                   <button type="button" onClick={() => toggleLCat(catKey)}
                     className="cat-btn w-full flex items-center justify-between px-8 py-6 rounded-3xl font-black text-white text-left shadow-2xl"
-                    style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderLeft: `4px solid ${T.primary}` }}>
+                    style={{ background: `linear-gradient(135deg, ${catInfo.color}, ${catInfo.color}AA)`, border: '1px solid rgba(255,255,255,0.12)', textShadow: '0 1px 3px rgba(0,0,0,0.45)' }}>
                     <span className="text-xl uppercase tracking-tight">{catInfo.label}</span>
                     <div className="flex items-center gap-4">
                       <span className="text-xs font-bold bg-black/20 px-3 py-1 rounded-full uppercase">{catServices.length} voci</span>

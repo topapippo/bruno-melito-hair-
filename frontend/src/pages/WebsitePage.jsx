@@ -613,14 +613,14 @@ export default function WebsitePage() {
           <AnimatedSection>
             <div className="text-center mb-14">
               <span className="inline-block text-xs font-bold tracking-[0.3em] uppercase px-5 py-2 rounded-full mb-5"
-                style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.1)' }}>✦ SEMPLICISSIMO</span>
+                style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.85)', border: '1px solid rgba(255,255,255,0.1)' }}>✦ SEMPLICISSIMO</span>
               <h2 className="text-4xl sm:text-5xl font-black leading-tight text-white" style={{ fontFamily: T.fontDisplay }}>
                 Prenota in{' '}
-                <span style={{ background: `linear-gradient(135deg, ${T.primary}, ${T.accent})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+                <span style={{ color: '#FF7FA8' }}>
                   3 Tocchi
                 </span>
               </h2>
-              <p className="text-sm mt-4 max-w-sm mx-auto text-white/35">
+              <p className="text-sm mt-4 max-w-sm mx-auto text-white/80">
                 Nessuna telefonata, nessuna attesa. Solo tu e il tuo appuntamento.
               </p>
             </div>
@@ -636,7 +636,7 @@ export default function WebsitePage() {
               <AnimatedSection key={i} delay={i * 0.15}>
                 <div
                   className="relative text-center px-6 py-8 rounded-3xl hover:-translate-y-2 transition-all duration-500 cursor-default"
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', backdropFilter: 'blur(12px)' }}
+                  style={{ background: 'rgba(255,255,255,0.09)', border: '1px solid rgba(255,255,255,0.09)', backdropFilter: 'blur(12px)' }}
                 >
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full flex items-center justify-center text-white font-black text-sm"
                     style={{ background: `linear-gradient(135deg, ${step.color}, ${step.color}BB)` }}>
@@ -647,7 +647,7 @@ export default function WebsitePage() {
                     {step.icon}
                   </div>
                   <h3 className="font-black text-base mb-2 text-white">{step.title}</h3>
-                  <p className="text-sm leading-relaxed text-white/40">{step.desc}</p>
+                  <p className="text-sm leading-relaxed text-white/80">{step.desc}</p>
                 </div>
               </AnimatedSection>
             ))}
@@ -660,7 +660,7 @@ export default function WebsitePage() {
                 <Scissors className="w-5 h-5" />
                 Prenota Ora — Conferma Immediata
               </button>
-              <p className="text-xs mt-3 text-white/25">
+              <p className="text-xs mt-3 text-white/60">
                 Nessuna registrazione · Gratuito · Sempre disponibile
               </p>
             </div>
