@@ -94,7 +94,7 @@ export default function WebsitePage() {
   const [showWelcome, setShowWelcome] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowWelcome(false), 5000);
+    const timer = setTimeout(() => setShowWelcome(false), 2500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -558,11 +558,12 @@ export default function WebsitePage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md"
+            onClick={() => setShowWelcome(false)}
+            className="fixed inset-0 z-50 cursor-pointer flex items-center justify-center bg-black/85 backdrop-blur-md"
           >
             <div className="text-center px-6 py-8 sm:px-8 md:px-12 md:py-10 max-w-3xl mx-auto">
               <p className="text-[#D4AF7A] text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-[0.1em] uppercase leading-tight mb-6 sm:mb-8" style={{ fontFamily: "'Playfair Display', serif" }}>
-                {greeting.greeting}! ✨
+                {greeting.greeting}!
               </p>
               <p className="text-white text-xl sm:text-2xl md:text-3xl italic leading-relaxed font-light">
                 {greeting.message}
@@ -596,6 +597,11 @@ export default function WebsitePage() {
             <Button onClick={() => scrollTo(servicesRef)} variant="ghost" className="text-white border border-white/30 hover:bg-white/10 font-bold text-sm px-8 py-4 rounded-full tracking-wider uppercase">
               Scopri i Servizi
             </Button>
+            {phones[0] && (
+              <a href={`tel:${String(phones[0]).replace(/\s/g, '')}`} className="text-white border border-white/30 hover:bg-white/10 font-bold text-sm px-8 py-4 rounded-full tracking-wider uppercase text-center">
+                Chiama
+              </a>
+            )}
           </div>
         </div>
 
