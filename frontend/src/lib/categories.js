@@ -74,6 +74,9 @@ export const getCategoryLabel = (categoryValue) => {
   return getCategoryInfo(categoryValue).label;
 };
 
+// Stesso criterio del gestionale (ServicesPage): sort_order, poi numero iniziale del nome
+const serviceOrder = (s) => s.sort_order || parseInt(s.name?.match(/^\d+/)?.[0] || '999', 10);
+
 export const sortServicesByCategory = (services) => {
   return [...services].sort((a, b) => {
     const catA = CATEGORY_ORDER.indexOf(a.category);
@@ -81,7 +84,7 @@ export const sortServicesByCategory = (services) => {
     const orderA = catA === -1 ? 99 : catA;
     const orderB = catB === -1 ? 99 : catB;
     if (orderA !== orderB) return orderA - orderB;
-    return (a.order ?? a.sort_order ?? 999) - (b.order ?? b.sort_order ?? 999);
+    return serviceOrder(a) - serviceOrder(b);
   });
 };
 
