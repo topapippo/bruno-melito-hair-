@@ -478,6 +478,11 @@ const TEAM_NOTES = {
   roberta: 'Stilista eccellente, cordiale e simpatica: ogni tua richiesta è la benvenuta.',
 };
 
+const noteFor = (name) => {
+  const first = String(name || '').trim().split(/\s+/)[0].toLowerCase();
+  return Object.prototype.hasOwnProperty.call(TEAM_NOTES, first) ? TEAM_NOTES[first] : null;
+};
+
 export function TeamSection({ operators, T, setShowBooking }) {
   if (!operators?.length) return null;
   return (
@@ -495,8 +500,8 @@ export function TeamSection({ operators, T, setShowBooking }) {
                 <div className="w-full h-full rounded-full bg-zinc-900 flex items-center justify-center text-4xl text-white border border-white/10 uppercase" style={{ fontFamily: T.fontDisplay }}>{op.name.charAt(0)}</div>
               </div>
               <h3 className="text-white font-semibold text-lg" style={{ fontFamily: T.fontDisplay }}>{op.name}</h3>
-              {TEAM_NOTES[String(op.name).split(' ')[0].toLowerCase()] && (
-                <p className="text-white/70 text-sm mt-2 leading-snug">{TEAM_NOTES[String(op.name).split(' ')[0].toLowerCase()]}</p>
+              {noteFor(op.name) && (
+                <p className="text-white/70 text-sm mt-2 leading-snug">{noteFor(op.name)}</p>
               )}
             </div>
           ))}
