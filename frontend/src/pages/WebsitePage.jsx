@@ -620,7 +620,7 @@ export default function WebsitePage() {
             <div className="text-center mb-14">
               <span className="inline-block text-xs font-bold tracking-[0.3em] uppercase px-5 py-2 rounded-full mb-5"
                 style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.85)', border: '1px solid rgba(255,255,255,0.1)' }}>✦ SEMPLICISSIMO</span>
-              <h2 className="text-4xl sm:text-5xl font-black leading-tight text-white" style={{ fontFamily: T.fontDisplay }}>
+              <h2 className="text-4xl sm:text-5xl font-semibold leading-tight text-white" style={{ fontFamily: T.fontDisplay }}>
                 Prenota in{' '}
                 <span style={{ color: '#FF7FA8' }}>
                   3 Tocchi
@@ -715,7 +715,7 @@ export default function WebsitePage() {
         <div className="max-w-4xl mx-auto px-4">
           <div className="text-center mb-8">
             <p className="font-bold text-sm tracking-widest uppercase mb-3" style={{ color: T.accent }}>Prenota Subito</p>
-            <h2 className="text-3xl sm:text-4xl font-black" style={{ color: T.text, fontFamily: T.fontDisplay }}>Inquadra e Prenota</h2>
+            <h2 className="text-3xl sm:text-4xl font-semibold" style={{ color: T.text, fontFamily: T.fontDisplay }}>Inquadra e Prenota</h2>
             <p className="text-[#64748B] mt-3 max-w-md mx-auto">Scansiona il QR Code con il tuo smartphone per prenotare direttamente il tuo prossimo appuntamento</p>
           </div>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-8">

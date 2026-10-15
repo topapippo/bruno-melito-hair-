@@ -70,7 +70,7 @@ export function ServicesSection({ servicesRef, landingServiceGroups, cardTemplat
         <AnimatedSection>
           <div className="w-full text-center mb-16">
             <p className="font-bold text-xs tracking-[0.4em] uppercase mb-4 text-[#D4AF7A]">Menu dei trattamenti</p>
-            <h2 className="text-4xl sm:text-6xl font-black text-white" style={{ fontFamily: T.fontDisplay }}>Cosa Facciamo</h2>
+            <h2 className="text-4xl sm:text-6xl font-semibold text-white" style={{ fontFamily: T.fontDisplay }}>Cosa Facciamo</h2>
           </div>
         </AnimatedSection>
         <div className="space-y-4 mt-8 max-w-3xl mx-auto">
@@ -122,7 +122,7 @@ export function SalonSection({ salonPhotos, T }) {
         <AnimatedSection>
           <div className="mb-16">
             <p className="font-bold text-xs tracking-[0.4em] uppercase mb-4 text-[#D4AF7A]">Atmosfera</p>
-            <h2 className="text-4xl sm:text-6xl font-black text-white" style={{ fontFamily: T.fontDisplay }}>Il Nostro Salone</h2>
+            <h2 className="text-4xl sm:text-6xl font-semibold text-white" style={{ fontFamily: T.fontDisplay }}>Il Nostro Salone</h2>
           </div>
         </AnimatedSection>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
@@ -167,7 +167,7 @@ export function AboutSection({ config, salonPhotos, T }) {
             <AnimatedSection delay={0.2}>
               <div className="max-w-2xl">
                 <p className="text-[10px] font-black tracking-[0.6em] uppercase mb-8 text-[#D4AF7A]">La Nostra Storia</p>
-                <h2 className="text-4xl sm:text-7xl font-black mb-10 text-white leading-[0.9] uppercase italic" style={{ fontFamily: T.fontDisplay }}>
+                <h2 className="text-4xl sm:text-7xl font-semibold mb-10 text-white leading-[0.9] uppercase italic" style={{ fontFamily: T.fontDisplay }}>
                   {config.about_title || 'Dal 1983 con Passione'}<br />
                   <span className="text-transparent" style={{ WebkitTextStroke: '1px rgba(255,255,255,0.4)' }}>E Stile</span>
                 </h2>
@@ -225,10 +225,10 @@ export function PromotionsSection({ publicPromos, setShowBooking, bookPromo, T }
       <div className="max-w-6xl mx-auto px-4 text-center relative z-10">
         <AnimatedSection>
           <p className="font-black text-xs tracking-[0.4em] uppercase mb-4"
-            style={{ background: 'linear-gradient(90deg,#E8477C,#A855F7,#2EC4B6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+            style={{ color: '#FF7FA8' }}>
             ✦ Vantaggi Esclusivi
           </p>
-          <h2 className="text-4xl sm:text-6xl font-black text-white mb-16" style={{ fontFamily: T.fontDisplay }}>Offerte da non perdere</h2>
+          <h2 className="text-4xl sm:text-6xl font-semibold text-white mb-16" style={{ fontFamily: T.fontDisplay }}>Offerte da non perdere</h2>
         </AnimatedSection>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {publicPromos.map((promo, idx) => {
@@ -325,7 +325,7 @@ export function ReviewsSection({ reviews, T, config }) {
     <section className="py-24 sm:py-32 overflow-hidden" style={{ background: '#050508' }}>
       <div className="max-w-6xl mx-auto px-4 text-center mb-16">
         <p className="font-bold text-xs tracking-[0.4em] uppercase mb-4 text-[#D4AF7A]">Feedback</p>
-        <h2 className="text-4xl sm:text-6xl font-black text-white" style={{ fontFamily: T.fontDisplay }}>Cosa Dicono di Noi</h2>
+        <h2 className="text-4xl sm:text-6xl font-semibold text-white" style={{ fontFamily: T.fontDisplay }}>Cosa Dicono di Noi</h2>
       </div>
       <div className="flex gap-8 px-6 overflow-x-auto pb-12 custom-scrollbar no-scrollbar">
         {reviews.map((r, i) => (
@@ -470,7 +470,7 @@ export function TeamSection({ operators, T, setShowBooking }) {
     <section className="py-24 sm:py-32 relative" style={{ background: '#050508' }}>
       <div className="max-w-6xl mx-auto px-4 text-center">
         <p className="font-bold text-xs tracking-[0.4em] uppercase mb-4 text-[#D4AF7A]">Staff</p>
-        <h2 className="text-4xl sm:text-6xl font-black text-white mb-20" style={{ fontFamily: T.fontDisplay }}>Il Nostro Team</h2>
+        <h2 className="text-4xl sm:text-6xl font-semibold text-white mb-20" style={{ fontFamily: T.fontDisplay }}>Il Nostro Team</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-12">
           {operators.filter(o => o.active !== false).map((op) => (
             <div key={op.id} className="group">
@@ -544,7 +544,7 @@ export function GiftCardSection({ T, config, setShowBooking }) {
       <div className="max-w-5xl mx-auto px-4">
         <div className="rounded-[4rem] bg-gradient-to-br from-[#C8617A] to-[#1A0A10] p-12 sm:p-24 text-center text-white shadow-[0_30px_60px_rgba(0,0,0,0.4)] relative overflow-hidden group">
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20 group-hover:scale-110 transition-transform duration-1000" />
-          <h2 className="text-5xl sm:text-8xl font-black mb-8 uppercase leading-tight italic tracking-tighter" style={{ fontFamily: T.fontDisplay }}>Regala<br/>Bellezza</h2>
+          <h2 className="text-5xl sm:text-8xl font-semibold mb-8 uppercase leading-tight italic tracking-tighter" style={{ fontFamily: T.fontDisplay }}>Regala<br/>Bellezza</h2>
           <p className="text-xl text-white/70 mb-14 max-w-2xl mx-auto font-medium leading-relaxed">Sorprendi chi ami con un'esperienza di lusso firmata Bruno Melito.</p>
           <div className="flex flex-wrap justify-center gap-6 relative z-10">
              <button
@@ -567,7 +567,7 @@ export function ContactSection({ contactRef, config, hours, phones, setShowBooki
       <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-20 text-white">
          <div>
             <p className="font-bold text-xs tracking-[0.4em] uppercase mb-6 text-[#D4AF7A]">Location</p>
-            <h2 className="text-5xl sm:text-7xl font-black mb-12 uppercase italic" style={{ fontFamily: T.fontDisplay }}>Vieni a<br/>Trovarci</h2>
+            <h2 className="text-5xl sm:text-7xl font-semibold mb-12 uppercase italic" style={{ fontFamily: T.fontDisplay }}>Vieni a<br/>Trovarci</h2>
             <div className="space-y-10">
                <div className="flex gap-8 group">
                   <div className="w-16 h-16 rounded-2xl bg-[#C8617A]/10 flex items-center justify-center shrink-0 border border-[#C8617A]/20 group-hover:bg-[#C8617A] group-hover:text-white transition-colors duration-500">
@@ -620,7 +620,7 @@ export function QRCodeSection({ T, config }) {
       <div className="max-w-xl mx-auto px-4 text-center">
         <AnimatedSection>
           <p className="font-bold text-[10px] tracking-[0.5em] uppercase mb-4 text-[#D4AF7A]">Prenota ovunque sei</p>
-          <h2 className="text-4xl sm:text-5xl font-black text-white mb-4 italic uppercase" style={{ fontFamily: T.fontDisplay }}>
+          <h2 className="text-4xl sm:text-5xl font-semibold text-white mb-4 italic uppercase" style={{ fontFamily: T.fontDisplay }}>
             Scansiona e Prenota
           </h2>
           <div className="inline-flex flex-col items-center gap-6 mt-10">
