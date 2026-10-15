@@ -16,3 +16,18 @@
 
 **Sicurezza**
 - Password MongoDB `brunomongo` esposta in `test_login_debug.py` (ora eliminato) → cambiata su Atlas + `MONGO_URL` aggiornata su Render ✅
+
+## 2026-10-15
+
+### Sessione: sito pubblico — tipografia, colori, sezioni
+
+- Caratteri alleggeriti: Google Fonts caricati da `index.html`, rimosso `@import` da `index.css`
+- "Cosa facciamo" e "3 Tocchi": colori e pulsanti a categorie piatte con accento primario, categorie iniziali chiuse
+- Hero: saluto più corto (si chiude al click), aggiunto pulsante Chiama
+- Juicer (feed Instagram) rimosso, sostituito da blocco social con link
+- Titoli `<h2>` di sezione da `font-black` a `font-semibold` (11 titoli in `LandingSections.jsx` e `WebsitePage.jsx`)
+- "✦ Vantaggi Esclusivi" in rosa pieno `#FF7FA8`
+- "La nostra storia": "E Stile" in rosa pieno, testi più leggibili, tre riquadri (Consulenza su misura, Accoglienza, Sposa e cerimonie)
+- Recensioni: massimo 3 in griglia, etichetta "Recensione Google", pulsante verso Google se `maps_url` è impostato
+
+**Commit** `a202718` (titoli, "Vantaggi Esclusivi") e `856be6e` (La nostra storia, recensioni) su `main`
