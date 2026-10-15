@@ -62,6 +62,7 @@ export default function ServicesPage() {
     color: '#0EA5E9',
     linked_inventory_id: '',
     is_smart_offer: false,
+    sort_order: 0,
   });
 
   useEffect(() => {
@@ -108,7 +109,7 @@ export default function ServicesPage() {
       }
       setDialogOpen(false);
       setEditingService(null);
-      setFormData({ name: '', category: 'taglio', duration: 30, price: 0, color: '#0EA5E9', linked_inventory_id: '', is_smart_offer: false });
+      setFormData({ name: '', category: 'taglio', duration: 30, price: 0, color: '#0EA5E9', linked_inventory_id: '', is_smart_offer: false, sort_order: 0 });
       fetchServices();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Errore nel salvataggio');
@@ -127,6 +128,7 @@ export default function ServicesPage() {
       color: service.color || CATEGORIES.find(c => c.value === service.category)?.color || '#0EA5E9',
       linked_inventory_id: service.linked_inventory_id || '',
       is_smart_offer: service.is_smart_offer || false,
+      sort_order: service.sort_order || 0,
     });
     setDialogOpen(true);
   };
@@ -146,7 +148,7 @@ export default function ServicesPage() {
 
   const openNewDialog = () => {
     setEditingService(null);
-    setFormData({ name: '', category: 'taglio', duration: 30, price: 0, color: '#0EA5E9', linked_inventory_id: '', is_smart_offer: false });
+    setFormData({ name: '', category: 'taglio', duration: 30, price: 0, color: '#0EA5E9', linked_inventory_id: '', is_smart_offer: false, sort_order: 0 });
     setDialogOpen(true);
   };
 
@@ -346,7 +348,19 @@ export default function ServicesPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Ordine</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={formData.sort_order}
+                    onChange={(e) => setFormData({ ...formData, sort_order: parseInt(e.target.value) || 0 })}
+                    data-testid="service-sort-order-input"
+                    className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label>Durata (minuti)</Label>
                   <Input
