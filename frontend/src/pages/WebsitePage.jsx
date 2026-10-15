@@ -543,6 +543,7 @@ export default function WebsitePage() {
           loop
           muted
           playsInline
+          poster="https://res.cloudinary.com/dabpscxvz/video/upload/so_0,f_auto,q_auto,w_900/v1784728707/hero-video_hezmdf%20%27.jpg"
           className="absolute inset-0 w-full h-full object-cover"
         >
           <source src="https://res.cloudinary.com/dabpscxvz/video/upload/f_auto,q_auto/v1784728707/hero-video_hezmdf%20%27.mp4" type="video/mp4" />
@@ -827,8 +828,8 @@ export default function WebsitePage() {
                 <a href={`https://wa.me/${config.whatsapp || '393397833526'}?text=Ciao, vorrei prenotare un appuntamento!`} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">WhatsApp</a>
                 <a href={config.maps_url} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Come Raggiungerci</a>
               </div>
-              <p className="text-white/30 text-xs">{config.address}</p>
-              <p className="text-white/20 text-xs">&copy; {new Date().getFullYear()} {config.salon_name || 'Bruno Melito Hair'}. Tutti i diritti riservati.</p>
+              <p className="text-white/65 text-xs">{config.address}</p>
+              <p className="text-white/50 text-xs">&copy; {new Date().getFullYear()} {config.salon_name || 'Bruno Melito Hair'}. Tutti i diritti riservati.</p>
               <p className="text-white/10 text-[9px]" data-testid="build-version">v2.4-refactored</p>
             </div>
           </AnimatedSection>

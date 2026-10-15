@@ -31,3 +31,11 @@
 - Recensioni: massimo 3 in griglia, etichetta "Recensione Google", pulsante verso Google se `maps_url` è impostato
 
 **Commit** `a202718` (titoli, "Vantaggi Esclusivi") e `856be6e` (La nostra storia, recensioni) su `main`
+
+### Aggiornamenti sito pubblico
+
+- Team: aggiunte frasi per Bruno, Bruna e Roberta
+- Test: rimosso il report pytest iteration19 con riferimenti a `access_token`; nei report rimasti non compare `eyJ`, ma `access_token` è menzionato nelle iterazioni 38, 39, 40, 41 e 43
+- Dati pubblici dello staff: escluso il telefono
+- Hero video: aggiunta immagine di caricamento
+- Testi: aumentato il contrasto delle classi `text-white/*` indicate

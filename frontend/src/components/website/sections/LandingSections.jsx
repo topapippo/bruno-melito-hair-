@@ -95,7 +95,7 @@ export function ServicesSection({ servicesRef, landingServiceGroups, cardTemplat
                           <TiltCard key={service.id} className="flex items-center justify-between p-4 rounded-2xl bg-zinc-900/50 border border-white/5 hover:border-[#D4AF7A]/30 transition-colors">
                             <div className="min-w-0 flex-1">
                               <p className="font-bold text-base text-white">{service.name}</p>
-                              {service.duration > 0 && <p className="text-[10px] font-bold text-white/30 uppercase mt-1 tracking-widest">⏱ {service.duration} min</p>}
+                              {service.duration > 0 && <p className="text-[10px] font-bold text-white/65 uppercase mt-1 tracking-widest">⏱ {service.duration} min</p>}
                             </div>
                             <div className="flex items-center gap-4 ml-4">
                               {service.price > 0 && <span className="font-black text-base text-[#D4AF7A]">€{service.price}</span>}
@@ -624,7 +624,7 @@ export function ContactSection({ contactRef, config, hours, phones, setShowBooki
             </button>
             <div className="mt-12 flex justify-center gap-10 relative z-10">
                {SOCIAL_LINKS.map((link, i) => (
-                  <a key={i} href={link.url} target="_blank" className="text-white/20 hover:text-white hover:scale-125 transition-all duration-500">
+                  <a key={i} href={link.url} target="_blank" className="text-white/50 hover:text-white hover:scale-125 transition-all duration-500">
                      <link.icon size={30} />
                   </a>
                ))}
@@ -651,7 +651,7 @@ export function QRCodeSection({ T, config }) {
             <div className="p-6 rounded-[2.5rem] shadow-2xl" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}>
               <img src={qrUrl} alt="QR Code" width={200} height={200} className="rounded-2xl" />
             </div>
-            <p className="text-white/30 text-[10px] font-bold tracking-[0.4em] uppercase">brunomelitohair.it</p>
+            <p className="text-white/65 text-[10px] font-bold tracking-[0.4em] uppercase">brunomelitohair.it</p>
           </div>
         </AnimatedSection>
       </div>
