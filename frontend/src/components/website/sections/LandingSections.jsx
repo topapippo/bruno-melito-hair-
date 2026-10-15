@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { getMediaUrl } from '../../../lib/mediaUrl';
 import { Button } from '@/components/ui/button';
-import { Scissors, CheckCircle, ChevronDown, ChevronUp, Star, MessageSquare, MapPin, Phone, Mail, Clock, Gift, CreditCard, Search, ArrowLeft, ArrowRight, X, ExternalLink, ThumbsUp, Sparkles } from 'lucide-react';
+import { Scissors, CheckCircle, ChevronDown, ChevronUp, Star, MessageSquare, MapPin, Phone, Mail, Clock, Gift, CreditCard, Search, ArrowLeft, ArrowRight, X, ExternalLink, ThumbsUp } from 'lucide-react';
 import { getCategoryInfo } from '../../../lib/categories';
 import { SOCIAL_LINKS, BORDER_COLORS, GLOW_COLORS, AVATAR_BGS, AVATAR_TEXTS } from '../../../lib/websiteConstants';
 import TiltCard from '../TiltCard';
@@ -169,31 +169,32 @@ export function AboutSection({ config, salonPhotos, T }) {
                 <p className="text-[10px] font-black tracking-[0.6em] uppercase mb-8 text-[#D4AF7A]">La Nostra Storia</p>
                 <h2 className="text-4xl sm:text-7xl font-semibold mb-10 text-white leading-[0.9] uppercase italic" style={{ fontFamily: T.fontDisplay }}>
                   {config.about_title || 'Dal 1983 con Passione'}<br />
-                  <span className="text-transparent" style={{ WebkitTextStroke: '1px rgba(255,255,255,0.4)' }}>E Stile</span>
+                  <span style={{ color: '#FF7FA8' }}>E Stile</span>
                 </h2>
                 <div className="space-y-8">
                   <p className="text-xl sm:text-2xl text-white/80 font-medium leading-relaxed italic border-l-4 border-[#C8617A] pl-8 py-2" style={{ fontFamily: T.fontDisplay }}>
                     {config.about_text || 'Oltre 40 anni di eccellenza nell’hair styling d’alta moda.'}
                   </p>
-                  <p className="text-white/40 text-base leading-relaxed pl-9">
+                  <p className="text-white/75 text-base leading-relaxed pl-9">
                     {config.about_text_2 || 'Abbiamo introdotto una nuova linea di prodotti altamente curativi, di ultima generazione: senza parabeni, solfati e sale. Le nostre colorazioni sono senza ammoniaca, arricchite con cheratina e seta.'}
                   </p>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-16 pl-9">
-                   <div className="group flex flex-col gap-4 p-8 rounded-[2.5rem] bg-white/5 border border-white/10 hover:bg-[#C8617A] transition-all duration-500 cursor-default">
-                      <div className="w-12 h-12 rounded-2xl bg-[#D4AF7A]/20 flex items-center justify-center group-hover:bg-white transition-colors">
-                         <CheckCircle className="text-[#D4AF7A] group-hover:text-[#C8617A]" />
+                <div className="grid grid-cols-1 gap-4 mt-12 pl-9">
+                  {[
+                    ['Consulenza su misura', 'Consulenza gratuita sui tuoi capelli: ti consigliamo il taglio o il trattamento più adatto, senza vendite forzate.'],
+                    ['Accoglienza', 'Un ambiente rilassante e familiare, con caffè o acqua di benvenuto e puntualità negli appuntamenti.'],
+                    ['Sposa e cerimonie', 'Acconciature per le occasioni speciali, anche con prova.'],
+                  ].map(([titolo, testo]) => (
+                    <div key={titolo} className="group flex items-start gap-4 p-6 rounded-[2rem] bg-white/5 border border-white/10 hover:bg-[#C8617A] transition-all duration-500 cursor-default">
+                      <div className="w-11 h-11 shrink-0 rounded-2xl bg-[#D4AF7A]/20 flex items-center justify-center group-hover:bg-white transition-colors">
+                        <CheckCircle className="text-[#D4AF7A] group-hover:text-[#C8617A]" />
                       </div>
-                      <h3 className="text-white font-black uppercase text-xs tracking-widest">Artigianato</h3>
-                      <p className="text-white/30 text-xs font-bold leading-tight group-hover:text-white/80">Tagli sartoriali eseguiti con precisione assoluta.</p>
-                   </div>
-                   <div className="group flex flex-col gap-4 p-8 rounded-[2.5rem] bg-white/5 border border-white/10 hover:bg-blue-600 transition-all duration-500 cursor-default">
-                      <div className="w-12 h-12 rounded-2xl bg-blue-500/20 flex items-center justify-center group-hover:bg-white transition-colors">
-                         <Sparkles className="text-blue-400 group-hover:text-blue-600" />
+                      <div>
+                        <h3 className="text-white font-bold uppercase text-xs tracking-widest mb-1">{titolo}</h3>
+                        <p className="text-white/75 text-sm leading-snug">{testo}</p>
                       </div>
-                      <h3 className="text-white font-black uppercase text-xs tracking-widest">Innovazione</h3>
-                      <p className="text-white/30 text-xs font-bold leading-tight group-hover:text-white/80">Prodotti di lusso e tecnologie di colorazione avanzate.</p>
-                   </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </AnimatedSection>
@@ -323,29 +324,36 @@ export function ReviewsSection({ reviews, T, config }) {
   if (!reviews?.length) return null;
   return (
     <section className="py-24 sm:py-32 overflow-hidden" style={{ background: '#050508' }}>
-      <div className="max-w-6xl mx-auto px-4 text-center mb-16">
+      <div className="max-w-6xl mx-auto px-4 text-center mb-14">
         <p className="font-bold text-xs tracking-[0.4em] uppercase mb-4 text-[#D4AF7A]">Feedback</p>
         <h2 className="text-4xl sm:text-6xl font-semibold text-white" style={{ fontFamily: T.fontDisplay }}>Cosa Dicono di Noi</h2>
       </div>
-      <div className="flex gap-8 px-6 overflow-x-auto pb-12 custom-scrollbar no-scrollbar">
-        {reviews.map((r, i) => (
-          <div key={i} className="w-96 shrink-0 rounded-[3rem] p-10 bg-zinc-900 border border-white/5 shadow-2xl flex flex-col justify-between">
-             <div>
-                <div className="flex gap-1.5 mb-6 text-[#D4AF7A]">
-                   {[1,2,3,4,5].map(s => <Star key={s} size={18} fill="currentColor" />)}
-                </div>
-                <p className="text-white/80 text-lg italic mb-10 leading-relaxed font-medium">"{r.text}"</p>
-             </div>
-             <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-[#C8617A] flex items-center justify-center font-black text-white text-xl">{(r.name || 'C')[0]}</div>
-                <div>
-                   <p className="text-white font-black text-base uppercase tracking-tight">{r.name}</p>
-                   <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Cliente Verificato</p>
-                </div>
-             </div>
+      <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-6">
+        {reviews.slice(0, 3).map((r, i) => (
+          <div key={i} className="rounded-[2rem] p-8 bg-zinc-900 border border-white/10 shadow-2xl flex flex-col justify-between">
+            <div>
+              <div className="flex gap-1.5 mb-5 text-[#D4AF7A]">
+                {[1,2,3,4,5].map(s => <Star key={s} size={18} fill="currentColor" />)}
+              </div>
+              <p className="text-white/85 text-base italic mb-8 leading-relaxed">"{r.text}"</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="w-11 h-11 rounded-2xl bg-[#C8617A] flex items-center justify-center font-black text-white text-lg">{(r.name || 'C')[0]}</div>
+              <div>
+                <p className="text-white font-bold text-sm uppercase tracking-tight">{r.name}</p>
+                <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest">Recensione Google</p>
+              </div>
+            </div>
           </div>
         ))}
       </div>
+      {config?.maps_url && (
+        <div className="text-center px-4 mt-12">
+          <a href={config.maps_url} target="_blank" rel="noopener noreferrer" className="inline-block px-8 py-4 rounded-full border border-white/30 text-white font-bold text-sm tracking-wider uppercase hover:bg-white/10 transition-colors">
+            Leggi le altre recensioni su Google
+          </a>
+        </div>
+      )}
     </section>
   );
 }
