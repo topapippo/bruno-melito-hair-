@@ -478,9 +478,11 @@ const TEAM_NOTES = {
   roberta: 'Stilista eccellente, cordiale e simpatica: ogni tua richiesta è la benvenuta.',
 };
 
+// Ignora il numero d'ordine iniziale ("1 BRUNO") e usa la nota del primo nome riconosciuto (es. "2 BRUNA e ROBERTA" → Bruna)
 const noteFor = (name) => {
-  const first = String(name || '').trim().split(/\s+/)[0].toLowerCase();
-  return Object.prototype.hasOwnProperty.call(TEAM_NOTES, first) ? TEAM_NOTES[first] : null;
+  const words = String(name || '').toLowerCase().replace(/^\s*\d+/, '').split(/[^\p{L}]+/u).filter(Boolean);
+  const first = words.find((w) => Object.prototype.hasOwnProperty.call(TEAM_NOTES, w));
+  return first ? TEAM_NOTES[first] : null;
 };
 
 export function TeamSection({ operators, T, setShowBooking }) {
