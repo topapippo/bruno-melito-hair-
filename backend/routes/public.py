@@ -287,7 +287,7 @@ async def public_get_website():
         db.website_config.find_one(uid_filter, {"_id": 0, "user_id": 0}),
         db.website_reviews.find(uid_filter, {"_id": 0, "user_id": 0}).to_list(100),
         db.website_gallery.find({**uid_filter, "is_deleted": {"$ne": True}}, {"_id": 0, "user_id": 0}).sort("sort_order", 1).to_list(100),
-        db.services.find(uid_filter, {"_id": 0}).sort("order", 1).to_list(100),
+        db.services.find(uid_filter, {"_id": 0}).sort("sort_order", 1).to_list(100),
         db.card_templates.find({**uid_filter, "is_deleted": {"$ne": True}}, {"_id": 0}).to_list(100),
         db.operators.find(uid_filter, {"_id": 0, "user_id": 0, "phone": 0}).to_list(50),
         db.promotions.find({**uid_filter, "active": True}, {"_id": 0, "user_id": 0}).to_list(20),

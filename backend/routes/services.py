@@ -23,9 +23,10 @@ async def create_service(data: ServiceCreate, current_user: dict = Depends(get_c
 
 @router.get("/services", response_model=List[ServiceResponse])
 async def get_services(current_user: dict = Depends(get_current_user)):
+    # Ordina prima per categoria (alfabetico) e poi per sort_order (numerico)
     return await db.services.find(
         {"user_id": current_user["id"]}, {"_id": 0, "user_id": 0}
-    ).sort("order", 1).to_list(100)
+    ).sort([("category", 1), ("sort_order", 1)]).to_list(100)
 
 @router.put("/services/{service_id}", response_model=ServiceResponse)
 async def update_service(service_id: str, data: ServiceUpdate, current_user: dict = Depends(get_current_user)):
