@@ -793,20 +793,18 @@ export default function WebsitePage() {
       </LuxSection>
 
    
-           {/* SEZIONE INSTAGRAM LIVE (Juicer) */}
-      <section className="py-20 bg-[#FDF8F5]">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-10">
-            <span className="text-xs font-black tracking-[0.3em] uppercase text-[#D4AF7A]">Social</span>
-            <h2 className="text-3xl md:text-4xl font-black text-[#2D1B14] mt-2" style={{fontFamily: "'Playfair Display', serif"}}>Seguici su Instagram</h2>
-            <p className="text-sm text-[#9C7060] mt-2">@brunomelitohair</p>
-          </div>
-          
-          {/* Widget Juicer Nativo */}
-          <ul className="juicer-feed" data-feed-id="brunomelitohair" data-columns="3" data-per="9"></ul>
-          
-        </div>
-      </section>
+<section className="py-20 bg-[#FDF8F5]">
+  <div className="max-w-3xl mx-auto px-4 text-center">
+    <span className="text-xs font-black tracking-[0.3em] uppercase text-[#D4AF7A]">Social</span>
+    <h2 className="text-3xl md:text-4xl font-black text-[#2D1B14] mt-2" style={{fontFamily: "'Playfair Display', serif"}}>Seguici sui social</h2>
+    <p className="text-base text-[#6B4A3C] mt-3">Vieni a trovarci anche online.</p>
+    <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+      <a href="https://www.instagram.com/brunomelitohair" target="_blank" rel="noopener noreferrer" className="px-8 py-4 rounded-full bg-[#2D1B14] text-white font-bold text-sm tracking-wider uppercase text-center hover:opacity-90 transition-opacity">Instagram</a>
+      <a href="https://www.facebook.com/brunomelitohair" target="_blank" rel="noopener noreferrer" className="px-8 py-4 rounded-full bg-[#2D1B14] text-white font-bold text-sm tracking-wider uppercase text-center hover:opacity-90 transition-opacity">Facebook</a>
+      <a href="https://www.tiktok.com/@brunomelitohair" target="_blank" rel="noopener noreferrer" className="px-8 py-4 rounded-full bg-[#2D1B14] text-white font-bold text-sm tracking-wider uppercase text-center hover:opacity-90 transition-opacity">TikTok</a>
+    </div>
+  </div>
+</section>
       {/* FOOTER */}
       <footer className="py-12 relative" style={{ backgroundColor: `${T.text}`, color: '#fff' }}>
         <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, transparent, ${T.primary}, ${T.accent}, transparent)` }} />
