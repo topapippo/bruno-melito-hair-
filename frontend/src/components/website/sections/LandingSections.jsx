@@ -472,27 +472,36 @@ export function GallerySection({ config, hairstylePhotos, setShowBooking, T }) {
   );
 }
 
+const TEAM_NOTES = {
+  bruno: 'Il titolare. Serio e professionale al lavoro, simpaticissimo fuori.',
+  bruna: 'Stilista eccellente, cordiale e simpatica: accoglierà ogni tua richiesta.',
+  roberta: 'Stilista eccellente, cordiale e simpatica: ogni tua richiesta è la benvenuta.',
+};
+
 export function TeamSection({ operators, T, setShowBooking }) {
   if (!operators?.length) return null;
   return (
     <section className="py-24 sm:py-32 relative" style={{ background: '#050508' }}>
-      <div className="max-w-6xl mx-auto px-4 text-center">
-        <p className="font-bold text-xs tracking-[0.4em] uppercase mb-4 text-[#D4AF7A]">Staff</p>
-        <h2 className="text-4xl sm:text-6xl font-semibold text-white mb-20" style={{ fontFamily: T.fontDisplay }}>Il Nostro Team</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-12">
+      <div className="max-w-5xl mx-auto px-4 text-center">
+        <p className="font-bold text-xs tracking-[0.4em] uppercase mb-4 text-[#D4AF7A]">Il team</p>
+        <h2 className="text-4xl sm:text-6xl font-semibold text-white mb-5" style={{ fontFamily: T.fontDisplay }}>
+          Chi si prende <span className="italic" style={{ color: '#FF7FA8' }}>cura di te</span>
+        </h2>
+        <p className="text-white/75 text-lg max-w-xl mx-auto mb-16">Un gruppo affiatato che ti accoglie con un sorriso e ti ascolta prima di prendere in mano le forbici.</p>
+        <div className="flex flex-wrap justify-center gap-x-12 gap-y-10">
           {operators.filter(o => o.active !== false).map((op) => (
-            <div key={op.id} className="group">
-              <div className="w-40 h-40 mx-auto rounded-full mb-8 relative p-1.5 transition-transform duration-500 group-hover:scale-105" style={{ background: `linear-gradient(135deg, ${op.color || '#a855f7'}, transparent)` }}>
-                 <div className="w-full h-full rounded-full bg-zinc-900 flex items-center justify-center text-5xl font-black text-white border border-white/10 shadow-2xl uppercase">
-                    {op.name.charAt(0)}
-                 </div>
-                 <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-emerald-500 text-white text-[9px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-xl">Online</div>
+            <div key={op.id} className="group w-56">
+              <div className="w-28 h-28 mx-auto rounded-full mb-4 p-1.5 transition-transform duration-500 group-hover:scale-105" style={{ background: `linear-gradient(135deg, ${op.color || '#C8617A'}, transparent)` }}>
+                <div className="w-full h-full rounded-full bg-zinc-900 flex items-center justify-center text-4xl text-white border border-white/10 uppercase" style={{ fontFamily: T.fontDisplay }}>{op.name.charAt(0)}</div>
               </div>
-              <h3 className="text-white font-black text-xl uppercase tracking-tight italic">{op.name}</h3>
-              <p className="text-white/30 text-[10px] font-black uppercase tracking-widest mt-2">Specialist Stylist</p>
+              <h3 className="text-white font-semibold text-lg" style={{ fontFamily: T.fontDisplay }}>{op.name}</h3>
+              {TEAM_NOTES[String(op.name).split(' ')[0].toLowerCase()] && (
+                <p className="text-white/70 text-sm mt-2 leading-snug">{TEAM_NOTES[String(op.name).split(' ')[0].toLowerCase()]}</p>
+              )}
             </div>
           ))}
         </div>
+        <button onClick={() => setShowBooking(true)} className="mt-16 px-8 py-4 rounded-full bg-[#C93268] text-white font-bold text-sm tracking-wider uppercase hover:opacity-90 transition-opacity">Prenota e vieni a conoscerci</button>
       </div>
     </section>
   );
