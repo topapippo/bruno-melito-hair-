@@ -1,0 +1,2 @@
+- [PRD](PRD.md) — requisiti di prodotto del gestionale e del sito pubblico
+- [Changelog progetto](project_changelog.md) — modifiche per data, da aggiornare a fine sessione
