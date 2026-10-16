@@ -800,9 +800,9 @@ export default function WebsitePage() {
     <h2 className="text-3xl md:text-4xl font-black text-[#2D1B14] mt-2" style={{fontFamily: "'Playfair Display', serif"}}>Seguici sui social</h2>
     <p className="text-base text-[#6B4A3C] mt-3">Vieni a trovarci anche online.</p>
     <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
-      <a href="https://www.instagram.com/brunomelitohair" target="_blank" rel="noopener noreferrer" className="px-8 py-4 rounded-full bg-[#2D1B14] text-white font-bold text-sm tracking-wider uppercase text-center hover:opacity-90 transition-opacity">Instagram</a>
-      <a href="https://www.facebook.com/brunomelitohair" target="_blank" rel="noopener noreferrer" className="px-8 py-4 rounded-full bg-[#2D1B14] text-white font-bold text-sm tracking-wider uppercase text-center hover:opacity-90 transition-opacity">Facebook</a>
-      <a href="https://www.tiktok.com/@brunomelitohair" target="_blank" rel="noopener noreferrer" className="px-8 py-4 rounded-full bg-[#2D1B14] text-white font-bold text-sm tracking-wider uppercase text-center hover:opacity-90 transition-opacity">TikTok</a>
+      <a href="https://www.instagram.com/brunomelitohair/" target="_blank" rel="noopener noreferrer" className="px-8 py-4 rounded-full bg-[#2D1B14] text-white font-bold text-sm tracking-wider uppercase text-center hover:opacity-90 transition-opacity">Instagram</a>
+      <a href="https://www.facebook.com/brunomelitoparrucchierimettilatestaaposto1983" target="_blank" rel="noopener noreferrer" className="px-8 py-4 rounded-full bg-[#2D1B14] text-white font-bold text-sm tracking-wider uppercase text-center hover:opacity-90 transition-opacity">Facebook</a>
+      <a href="https://www.tiktok.com/@brunomelitohair.it" target="_blank" rel="noopener noreferrer" className="px-8 py-4 rounded-full bg-[#2D1B14] text-white font-bold text-sm tracking-wider uppercase text-center hover:opacity-90 transition-opacity">TikTok</a>
     </div>
   </div>
 </section>

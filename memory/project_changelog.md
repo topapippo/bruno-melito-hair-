@@ -58,3 +58,4 @@
 - PyJWT aggiornato a 2.15.1
 - Hero video: immagine di caricamento
 - Testi più leggibili (classi `text-white/*`)
+- Link social corretti: Facebook pagina (non profilo), TikTok @brunomelitohair.it, YouTube @BrunoMelito, aggiunto X, Instagram con slash finale; tolto link di prova dal footer
