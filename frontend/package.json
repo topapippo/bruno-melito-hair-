@@ -60,6 +60,10 @@
     "xlsx": "^0.18.5",
     "zod": "^3.24.4"
   },
+  "resolutions": {
+    "proxy-addr": "^2.0.8",
+    "shell-quote": "^1.11.0"
+  },
   "scripts": {
     "start": "craco start",
     "build": "cross-env DISABLE_ESLINT_PLUGIN=true craco build",
