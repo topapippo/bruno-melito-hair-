@@ -18,6 +18,25 @@ export function AuthProvider({ children }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
+  // Logout automatico dopo 2 ore senza attività (mouse, tastiera, tocco, scroll)
+  useEffect(() => {
+    if (!token) return;
+    const IDLE_TIMEOUT_MS = 2 * 60 * 60 * 1000;
+    const ACTIVITY_EVENTS = ['mousedown', 'keydown', 'touchstart', 'scroll'];
+    let lastActivity = Date.now();
+    const markActive = () => { lastActivity = Date.now(); };
+    ACTIVITY_EVENTS.forEach(evt => window.addEventListener(evt, markActive, { passive: true }));
+    // Controllo ogni minuto: confrontando con l'orario regge anche dopo lo stop del PC
+    const timer = setInterval(() => {
+      if (Date.now() - lastActivity > IDLE_TIMEOUT_MS) logout();
+    }, 60 * 1000);
+    return () => {
+      ACTIVITY_EVENTS.forEach(evt => window.removeEventListener(evt, markActive));
+      clearInterval(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
   const fetchUser = async () => {
     const MAX_ATTEMPTS = 4;
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
