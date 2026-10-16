@@ -39,3 +39,22 @@
 - Dati pubblici dello staff: escluso il telefono
 - Hero video: aggiunta immagine di caricamento
 - Testi: aumentato il contrasto delle classi `text-white/*` indicate
+
+## 2026-10-16
+
+### Sessione: sito pubblico e sicurezza
+
+- Caratteri alleggeriti
+- "Cosa facciamo" e "3 Tocchi": colori e pulsanti aggiornati
+- Saluto più corto con pulsante Chiama
+- Blocco social al posto di Instagram (Juicer tolto)
+- Titoli da font-black a font-semibold
+- "Vantaggi Esclusivi" in rosa
+- "La nostra storia" con tre riquadri
+- Recensioni limitate a 3, con pulsante verso Google
+- Team: frasi per Bruno, Bruna e Roberta
+- Test: token rimosso dai report (pytest iteration19 eliminato, `test_reports/` in .gitignore)
+- Telefono dello staff escluso dai dati pubblici
+- PyJWT aggiornato a 2.15.1
+- Hero video: immagine di caricamento
+- Testi più leggibili (classi `text-white/*`)
