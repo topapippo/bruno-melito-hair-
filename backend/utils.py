@@ -189,6 +189,8 @@ async def send_automatic_message(phone: str, template_name: str = None, template
     if not msg: return {"sent": False, "error": "Nessun testo da inviare"}
     res = await send_whatsapp_cloud(phone, msg)
     await _log_communication((user or {}).get("id", "system"), "whatsapp", phone, msg, res)
+    if not res.get("sent"):
+        logger.warning(f"WhatsApp testo libero fallito: {res.get('error')}")
     return res
 
 async def send_whatsapp(phone: str, message: str, user: dict = None) -> dict:
