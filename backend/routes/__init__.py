@@ -23,6 +23,7 @@ from routes.webhooks import router as webhooks_router
 from routes.messages import router as messages_router
 from routes.marketing import router as marketing_router
 from routes.inventory import router as inventory_router
+from routes.before_after import router as before_after_router
 
 all_routers = [
     auth_router,
@@ -50,4 +51,5 @@ all_routers = [
     messages_router,
     marketing_router,
     inventory_router,
+    before_after_router,
 ]
