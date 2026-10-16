@@ -9,7 +9,7 @@ python-dotenv==1.2.2
 python-multipart==0.0.32
 requests==2.33.1
 gunicorn==25.3.0
-slowapi==0.1.9
+slowapi==0.1.10
 fpdf2==2.8.3
 cloudinary==1.46.0
 Pillow==12.3.0
