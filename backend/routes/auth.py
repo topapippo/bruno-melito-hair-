@@ -6,6 +6,7 @@ import logging
 
 from database import db
 from auth import get_current_user, hash_password, verify_password, create_token
+from client_ip import get_client_ip
 from models import UserCreate, UserLogin, UserResponse, TokenResponse, ChangePasswordRequest
 
 logger = logging.getLogger(__name__)
@@ -20,13 +21,8 @@ REGISTER_WINDOW_SECONDS = 86400  # 24 ore
 
 
 def _get_client_ip(request: Request) -> str:
-    """Estrae l'IP reale del client. Render instrada le richieste dietro un proxy,
-    quindi request.client.host è l'IP del proxy: bisogna leggere X-Forwarded-For
-    (il primo valore della lista è il client originale)."""
-    forwarded = request.headers.get("x-forwarded-for")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
-    return request.client.host if request.client else "unknown"
+    """IP reale del client dietro il proxy di Render (vedi client_ip.py)."""
+    return get_client_ip(request)
 
 
 async def _check_rate_limit(collection, ip: str, max_attempts: int, window_seconds: int, error_message: str, cleanup: bool = False):

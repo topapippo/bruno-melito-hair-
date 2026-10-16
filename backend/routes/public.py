@@ -12,7 +12,7 @@ import logging
 import asyncio
 
 from slowapi import Limiter
-from slowapi.util import get_remote_address
+from client_ip import get_client_ip
 
 from database import db
 from auth import get_current_user
@@ -28,7 +28,7 @@ import base64
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-limiter = Limiter(key_func=get_remote_address)
+limiter = Limiter(key_func=get_client_ip)
 
 PUBLIC_ADMIN_EMAIL = os.environ.get("PUBLIC_ADMIN_EMAIL", "admin@brunomelito.it")
 APP_NAME = "mbhssalon"
