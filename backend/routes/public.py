@@ -235,7 +235,7 @@ async def confirm_appointment_by_client(request: Request, token: str, data: Conf
             msg = f"⚠️ DISDETTA ONLINE\n👤 {apt.get('client_name', 'N/D')}\n📅 {date_it} ⏰ {apt.get('time', '')}"
         background_tasks.add_task(send_whatsapp, user.get("phone") or "3397833526", msg, user)
     except Exception as e:
-        logger.error(f"Errore notifica conferma/disdetta cliente: {e}")
+        logger.error(f"Errore notifica conferma/disdetta cliente: {e}", exc_info=True)
 
     return {"confirmation_status": new_status}
 
@@ -431,8 +431,9 @@ async def create_public_booking(request: Request, data: PublicBookingRequest, ba
             # Prefer template di conferma approvato su Meta
             background_tasks.add_task(send_automatic_message, data.client_phone, "conferma_prenotazione", [data.client_name, date_it, data.time], client_msg, user)
             wa_result = True
-    except Exception:
-        pass
+    except Exception as e:
+        # Logga l'errore specifico per il debugging, ma non bloccare la risposta all'utente
+        logger.error(f"Fallimento invio notifica WhatsApp per prenotazione {appointment_id}: {str(e)}", exc_info=True)
 
     return {"success": True, "appointment_id": appointment_id, "wa_scheduled": wa_result}
 
@@ -546,8 +547,9 @@ async def cancel_public_appointment(request: Request, appt_id: str, phone: str, 
                f"📅 Data: {date_it}  ⏰ {apt.get('time', '')}\n"
                f"✂️ {service_names}")
         background_tasks.add_task(send_whatsapp, user.get("phone") or "3397833526", msg, user)
-    except Exception:
-        pass
+    except Exception as e:
+        # Logga l'errore specifico per il debugging, ma non bloccare la risposta all'utente
+        logger.error(f"Fallimento invio notifica WhatsApp per annullamento {appt_id}: {str(e)}", exc_info=True)
 
     return {"success": True}
 
