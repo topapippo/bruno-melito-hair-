@@ -75,7 +75,11 @@ async def lifespan(app: FastAPI):
         await db.users.create_index("email", unique=True)
         logger.info("Indice creato/verificato: users.email (unique)")
     except Exception as e:
-        logger.warning(f"Indice users.email non creato: {e}")
+        # Codice 11000 di MongoDB: esistono già email duplicate, l'indice unique non si può creare
+        if "11000" in str(e):
+            logger.error("CRITICO: Impossibile creare indice unique su email. Esistono già email duplicate nel DB!")
+        else:
+            logger.warning(f"Indice users.email non creato (motivo non critico): {e}")
 
     try:
         await db.appointments.create_index([("user_id", 1), ("date", 1)])
