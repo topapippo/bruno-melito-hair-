@@ -103,8 +103,9 @@ async def lifespan(app: FastAPI):
         await db.clients.create_index([("user_id", 1), ("name", 1)], unique=True)
         logger.info("Indice creato/verificato: clients.user_id_1_name_1 (unique)")
     except Exception as e:
-        # Il vincolo unique sui clienti non è attivo: possono esistere clienti duplicati
-        logger.error(f"CRITICO: indice unique clients (user_id, name) non attivo: {e}")
+        # Conflitto di nome con l'indice user_id_1_name_1 non unique; il vincolo unique
+        # su (user_id, name) è coperto dall'indice unique_client
+        logger.warning(f"Indice clients (user_id, name) unique non creato (nome già in uso): {e}")
 
     try:
         await db.login_attempts.create_index([("ip", 1), ("ts", 1)])
