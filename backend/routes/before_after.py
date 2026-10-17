@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel
 from datetime import datetime, timezone
 from typing import List, Optional
@@ -103,8 +104,8 @@ async def upload_before_after(
 
     try:
         transformation = [{"width": 1200, "height": 1200, "crop": "limit", "quality": "auto:good"}]
-        before_result = cloudinary.uploader.upload(before_bytes, resource_type="image", transformation=transformation)
-        after_result = cloudinary.uploader.upload(after_bytes, resource_type="image", transformation=transformation)
+        before_result = await run_in_threadpool(cloudinary.uploader.upload, before_bytes, resource_type="image", transformation=transformation)
+        after_result = await run_in_threadpool(cloudinary.uploader.upload, after_bytes, resource_type="image", transformation=transformation)
         return {
             "before_url": before_result.get("secure_url"),
             "after_url": after_result.get("secure_url"),
