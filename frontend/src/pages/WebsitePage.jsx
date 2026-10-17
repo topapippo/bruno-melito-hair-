@@ -24,6 +24,19 @@ import {
   PhotoInterlude,
 } from '../components/website/sections/LandingSections';
 
+const readableBg = (hex) => {
+  const m = /^#([0-9a-f]{6})$/i.exec(hex || '');
+  if (!m) return hex;
+  const n = parseInt(m[1], 16);
+  let rgb = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  const lin = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+  const lum = (c) => 0.2126 * lin(c[0]) + 0.7152 * lin(c[1]) + 0.0722 * lin(c[2]);
+  for (let i = 0; i < 12 && 1.05 / (lum(rgb) + 0.05) < 4.5; i++) {
+    rgb = rgb.map((v) => Math.round(v * 0.93));
+  }
+  return '#' + rgb.map((v) => v.toString(16).padStart(2, '0')).join('');
+};
+
 
 // Helper per le animazioni on-scroll eleganti
 function LuxSection({ children, className = "", ...props }) {
@@ -435,7 +448,7 @@ export default function WebsitePage() {
         .float-med { animation: float 4s ease-in-out infinite 1s; }
         .pulse-glow { animation: pulseGlow 3s ease-in-out infinite; }
         .hero-cta-primary {
-          background: linear-gradient(110deg, #C8617A 0%, #D4AF7A 100%) !important;
+          background: linear-gradient(110deg, #B0485F 0%, #8F6A2A 100%) !important;
           background-size: 200% auto !important;
           animation: heroShimmer 4s linear infinite;
           transition: transform 0.3s, box-shadow 0.3s;
@@ -847,7 +860,7 @@ export default function WebsitePage() {
           <MessageCircle className="w-5 h-5 shrink-0" />
           <span className="text-sm">WA</span>
         </a>
-        <Button onClick={trackBookingClick} style={{ backgroundColor: T.primary }} className="flex-1 text-white hover:opacity-90 font-black py-5 rounded-2xl shadow-lg" data-testid="website-mobile-book-btn">
+        <Button onClick={trackBookingClick} style={{ backgroundColor: readableBg(T.primary) }} className="flex-1 text-white hover:opacity-90 font-black py-5 rounded-2xl shadow-lg" data-testid="website-mobile-book-btn">
           <Scissors className="w-5 h-5 mr-2" /> PRENOTA ORA
         </Button>
       </div>
