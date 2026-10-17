@@ -516,7 +516,7 @@ export default function BookingForm({
                 })()}
                 onChange={(e) => {
                   const val = e.target.value;
-                  const clean = (formData.notes || '').replace(/\[PROMO-CODE: [^\]]+\] ?/g, '').trim();
+                  const clean = (formData.notes || '').replace(/\[PROMO-CODE: [^\]]+\] ?/g, '').replace(/\[AMICA: [^\]]*\] ?/g, '').trim();
                   setFormData(prev => ({ ...prev, notes: val ? `[PROMO-CODE: ${val}] ${clean}`.trim() : clean }));
                 }}
               >
@@ -525,6 +525,29 @@ export default function BookingForm({
                 <option value="under30">Speciale Under 30 (Lucidante OMAGGIO)</option>
                 <option value="benvenuta">Prima Visita (Consulenza + Trattamento OMAGGIO)</option>
               </select>
+              {(formData.notes || '').includes('[PROMO-CODE: amica]') && (
+                <div className="space-y-1">
+                  <label htmlFor="amica-name" className="text-sm font-semibold text-gray-700">Chi ti ha portato?</label>
+                  <input
+                    id="amica-name"
+                    type="text"
+                    maxLength={60}
+                    className="w-full border border-purple-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-purple-300 bg-white"
+                    value={(() => {
+                      const m = (formData.notes || '').match(/\[AMICA: ([^\]]*)\]/);
+                      return m ? m[1] : '';
+                    })()}
+                    onChange={(e) => {
+                      const text = e.target.value.replace(/[\[\]]/g, '');
+                      setFormData(prev => {
+                        const clean = (prev.notes || '').replace(/\[AMICA: [^\]]*\] ?/g, '').trim();
+                        const tag = text.trim() ? `[AMICA: ${text}]` : '';
+                        return { ...prev, notes: [clean, tag].filter(Boolean).join(' ') };
+                      });
+                    }}
+                  />
+                </div>
+              )}
               <p className="text-[10px] text-purple-600 italic">* La promo verrà applicata direttamente in salone</p>
             </div>
 
