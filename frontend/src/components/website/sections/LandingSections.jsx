@@ -207,12 +207,12 @@ export function AboutSection({ config, salonPhotos, T }) {
 
 // Palette di gradienti vivaci per le promo — accenti colorati su base scura
 const PROMO_GRADIENTS = [
-  { from: '#E8477C', to: '#A855F7', glow: 'rgba(232,71,124,0.45)' },  // rosa → viola
-  { from: '#2EC4B6', to: '#0EA5E9', glow: 'rgba(46,196,182,0.45)' },  // turchese → azzurro
-  { from: '#F59E0B', to: '#EF4444', glow: 'rgba(245,158,11,0.45)' },  // ambra → rosso
-  { from: '#8B5CF6', to: '#EC4899', glow: 'rgba(139,92,246,0.45)' },  // viola → fucsia
-  { from: '#10B981', to: '#84CC16', glow: 'rgba(16,185,129,0.45)' },  // verde → lime
-  { from: '#06B6D4', to: '#6366F1', glow: 'rgba(6,182,212,0.45)' },   // ciano → indaco
+  { from: '#E8477C', to: '#A855F7', btnFrom: '#BE185D', btnTo: '#7E22CE', glow: 'rgba(232,71,124,0.45)' },  // rosa → viola
+  { from: '#2EC4B6', to: '#0EA5E9', btnFrom: '#0F766E', btnTo: '#0369A1', glow: 'rgba(46,196,182,0.45)' },  // turchese → azzurro
+  { from: '#F59E0B', to: '#EF4444', btnFrom: '#B45309', btnTo: '#B91C1C', glow: 'rgba(245,158,11,0.45)' },  // ambra → rosso
+  { from: '#8B5CF6', to: '#EC4899', btnFrom: '#7C3AED', btnTo: '#BE185D', glow: 'rgba(139,92,246,0.45)' },  // viola → fucsia
+  { from: '#10B981', to: '#84CC16', btnFrom: '#047857', btnTo: '#4D7C0F', glow: 'rgba(16,185,129,0.45)' },  // verde → lime
+  { from: '#06B6D4', to: '#6366F1', btnFrom: '#0E7490', btnTo: '#4F46E5', glow: 'rgba(6,182,212,0.45)' },   // ciano → indaco
 ];
 
 export function PromotionsSection({ publicPromos, setShowBooking, bookPromo, T }) {
@@ -262,7 +262,7 @@ export function PromotionsSection({ publicPromos, setShowBooking, bookPromo, T }
                   </div>
                   <button onClick={() => open(promo)}
                     className="relative mt-auto w-full py-4 rounded-2xl font-black text-sm text-white uppercase tracking-widest shadow-xl hover:scale-[1.03] transition-transform duration-300"
-                    style={{ background: `linear-gradient(135deg, ${g.from}, ${g.to})` }}>
+                    style={{ background: `linear-gradient(135deg, ${g.btnFrom}, ${g.btnTo})` }}>
                     Prenota Ora
                   </button>
                 </div>

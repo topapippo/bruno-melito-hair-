@@ -871,7 +871,7 @@ export default function WebsitePage() {
             onClick={trackBookingClick}
             className="relative flex items-center gap-2.5 px-7 py-3.5 rounded-full text-white font-black text-sm transition-all duration-300"
             style={{
-              background: 'linear-gradient(135deg, #C8617A, #A0404F)',
+              background: 'linear-gradient(135deg, #B0485F, #A0404F)',
               boxShadow: '0 10px 25px rgba(200,97,122,0.4), inset 0 -3px 5px rgba(0,0,0,0.1), inset 0 3px 5px rgba(255,255,255,0.2)',
               transition: 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)'
             }}
