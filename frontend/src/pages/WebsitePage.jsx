@@ -23,6 +23,7 @@ import {
   TransformationsSection, TeamSection, WelcomeBanner, GiftCardSection,
   PhotoInterlude,
 } from '../components/website/sections/LandingSections';
+import { setCategories } from '../lib/categories';
 
 const readableBg = (hex) => {
   const m = /^#([0-9a-f]{6})$/i.exec(hex || '');
@@ -130,6 +131,7 @@ export default function WebsitePage() {
           if (attempt > 0) await new Promise(r => setTimeout(r, 5000));
           const res = await api.get(`${API}/public/website`);
           const d = res.data;
+          if (Array.isArray(d.categories)) setCategories(d.categories);
           setSiteData(d);
           setOperators(d.operators || []);
           setBookingServices(d.services || []);

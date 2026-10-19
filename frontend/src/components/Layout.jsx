@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import CommandPalette from './CommandPalette';
+import { ensureCategoriesLoaded } from '../lib/categories';
 
 const navGroups = [
   {
@@ -74,6 +75,7 @@ const NEW_DEFAULTS = {
 };
 
 export default function Layout({ children }) {
+  useEffect(() => { ensureCategoriesLoaded(); }, []);
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();

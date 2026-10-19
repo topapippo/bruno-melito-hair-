@@ -32,9 +32,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Scissors, Plus, Clock, Euro, Edit2, Trash2, Loader2 } from 'lucide-react';
+import { Scissors, Plus, Clock, Euro, Edit2, Trash2, Loader2, Tags } from 'lucide-react';
 import { toast } from 'sonner';
-import { CATEGORIES, CATEGORY_ORDER, getCategoryInfo } from '../lib/categories';
+import { CATEGORIES, CATEGORY_ORDER, getCategoryInfo, useCategories } from '../lib/categories';
+import CategoriesManager from '../components/CategoriesManager';
 import { COLORS } from '../lib/brandColors';
 
 
@@ -45,6 +46,8 @@ const COLOR_PRESETS = [
 ];
 
 export default function ServicesPage() {
+  useCategories(); // si ridisegna quando le categorie cambiano
+  const [catDialogOpen, setCatDialogOpen] = useState(false);
   const [services, setServices] = useState([]);
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -56,7 +59,7 @@ export default function ServicesPage() {
   
   const [formData, setFormData] = useState({
     name: '',
-    category: 'taglio',
+    category: CATEGORIES[0]?.value || 'altro',
     duration: 30,
     price: 0,
     color: '#0EA5E9',
@@ -109,7 +112,7 @@ export default function ServicesPage() {
       }
       setDialogOpen(false);
       setEditingService(null);
-      setFormData({ name: '', category: 'taglio', duration: 30, price: 0, color: '#0EA5E9', linked_inventory_id: '', is_smart_offer: false, sort_order: 0 });
+      setFormData({ name: '', category: CATEGORIES[0]?.value || 'altro', duration: 30, price: 0, color: '#0EA5E9', linked_inventory_id: '', is_smart_offer: false, sort_order: 0 });
       fetchServices();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Errore nel salvataggio');
@@ -148,7 +151,7 @@ export default function ServicesPage() {
 
   const openNewDialog = () => {
     setEditingService(null);
-    setFormData({ name: '', category: 'taglio', duration: 30, price: 0, color: '#0EA5E9', linked_inventory_id: '', is_smart_offer: false, sort_order: 0 });
+    setFormData({ name: '', category: CATEGORIES[0]?.value || 'altro', duration: 30, price: 0, color: '#0EA5E9', linked_inventory_id: '', is_smart_offer: false, sort_order: 0 });
     setDialogOpen(true);
   };
 
@@ -181,6 +184,17 @@ export default function ServicesPage() {
             <h1 className="font-display text-3xl font-medium text-[#2D1B14]">Servizi</h1>
             <p className="text-[#7C5C4A] mt-1 ">{services.length} servizi disponibili</p>
           </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setCatDialogOpen(true)}
+              data-testid="manage-categories-btn"
+              className="border-[#C8617A] text-[#A0404F] hover:bg-[#C8617A]/10"
+            >
+              <Tags className="w-5 h-5 mr-2" />
+              Gestisci categorie
+            </Button>
           <Button 
             onClick={openNewDialog}
             data-testid="new-service-btn"
@@ -189,6 +203,7 @@ export default function ServicesPage() {
             <Plus className="w-5 h-5 mr-2" />
             Nuovo Servizio
           </Button>
+          </div>
         </div>
 
         {/* Services by Category */}
@@ -216,6 +231,17 @@ export default function ServicesPage() {
                     <Badge variant="outline" className="ml-2 border-[#F0E6DC] text-[#7C5C4A]">
                       {categoryServices.length}
                     </Badge>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      aria-label={`Modifica la categoria ${category.label}`}
+                      onClick={() => setCatDialogOpen(true)}
+                      data-testid={`edit-category-${category.value}`}
+                      className="text-[#7C5C4A] hover:text-[#C8617A]"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 stagger-fast">
@@ -334,7 +360,12 @@ export default function ServicesPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {CATEGORIES.map((cat) => (
+                    {[
+                      ...CATEGORIES,
+                      ...(formData.category && !CATEGORIES.some((c) => c.value === formData.category)
+                        ? [{ value: formData.category, label: `${formData.category} (non in elenco)`, color: '#64748B' }]
+                        : []),
+                    ].map((cat) => (
                       <SelectItem key={cat.value} value={cat.value}>
                         <div className="flex items-center gap-2">
                           <div 
@@ -446,6 +477,8 @@ export default function ServicesPage() {
             </form>
           </DialogContent>
         </Dialog>
+
+        <CategoriesManager open={catDialogOpen} onOpenChange={setCatDialogOpen} onChanged={fetchServices} />
 
         {/* Delete Confirmation */}
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

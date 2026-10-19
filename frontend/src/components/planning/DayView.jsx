@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Clock, Repeat, MessageCircle, Euro, Info } from 'lucide-react';
 import { addDays, subDays, isToday } from 'date-fns';
-import { getAppointmentColor, getServiceColors, buildServiceLookups } from '../../lib/categories';
+import { getAppointmentColor, getServiceColors, buildServiceLookups, useCategories } from '../../lib/categories';
 import ClientAvatar from '../ClientAvatar';
 
 const GRID_START_HOUR = 8;
@@ -39,6 +39,7 @@ export default function DayView({
   services,
   onViewDetail,
 }) {
+  useCategories(); // si ridisegna quando le categorie cambiano
   const { svcById, svcByName } = buildServiceLookups(services);
 
   // Linea "adesso" live sulla vista di oggi — aggiornata ogni minuto

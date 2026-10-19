@@ -14,7 +14,7 @@ import { Loader2, User, CreditCard, Bell, UserPlus, Gift, Check, Ticket, Smartph
 import { format, isToday } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { getCategoryInfo, groupServicesByCategory } from '../../lib/categories';
+import { getCategoryInfo, groupServicesByCategory, useCategories } from '../../lib/categories';
 import { ALL_SLOTS, DAY_MAP } from '../../lib/timeSlots';
 
 
@@ -65,6 +65,7 @@ export default function NewAppointmentDialog({
   open, onClose, initialDate, initialTime, initialOperatorId,
   operators, clients, services, cardTemplates, onSuccess, onSaveAndCheckout,
 }) {
+  useCategories(); // si ridisegna quando le categorie cambiano
   const [saving, setSaving] = useState(false);
   const [checkoutMethod, setCheckoutMethod] = useState(null);
   const [openCats, setOpenCats] = useState({});

@@ -5,7 +5,7 @@ import { Plus, Clock } from 'lucide-react';
 import { format, startOfWeek, eachDayOfInterval, addDays, isToday } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { isHoliday } from './holidays';
-import { getCategoryInfo, CATEGORIES, getAppointmentColor, getServiceColors, buildServiceLookups } from '../../lib/categories';
+import { getCategoryInfo, CATEGORIES, getAppointmentColor, getServiceColors, buildServiceLookups, useCategories } from '../../lib/categories';
 
 const TIME_SLOTS = [];
 for (let h = 8; h <= 20; h++) {
@@ -28,6 +28,7 @@ export default function WeekView({
   onDragDrop,
   services,
 }) {
+  useCategories(); // si ridisegna quando le categorie cambiano
   const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
   const days = eachDayOfInterval({ start: weekStart, end: addDays(weekStart, 5) });
   const scrollRef = useRef(null);

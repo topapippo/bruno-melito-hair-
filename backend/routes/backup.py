@@ -259,6 +259,8 @@ async def download_backup_pdf(current_user: dict = Depends(get_current_user)):
         loyalty, loyalty_rewards, operators_u, services_u, promotions,
         blocked_slots, sospesi, users,
     ) = await _collect_all(uid)
+    from routes.categories import load_categories
+    cat_labels = {c["value"]: c["label"] for c in await load_categories(uid)}
 
     today = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M")
     salon = current_user.get("salon_name", "Salone")
@@ -336,7 +338,7 @@ async def download_backup_pdf(current_user: dict = Depends(get_current_user)):
     table_header(("Nome", 80), ("Categoria", 40), ("Durata (min)", 30), ("Prezzo EUR", 30))
     for s in sorted(services_u, key=lambda x: x.get("name", "")):
         pdf.cell(80, 5, safe(s.get("name")), border=1)
-        pdf.cell(40, 5, safe(s.get("category")), border=1)
+        pdf.cell(40, 5, safe(cat_labels.get(s.get("category"), s.get("category"))), border=1)
         pdf.cell(30, 5, str(s.get("duration", "")), border=1)
         pdf.cell(30, 5, f"{s.get('price', 0):.2f}", border=1)
         pdf.ln()

@@ -19,6 +19,7 @@ from auth import get_current_user
 from models import PublicBookingRequest, get_loyalty_rewards, LOYALTY_POINTS_PER_EURO
 from utils import normalize_phone_wa, send_whatsapp, calculate_end_time, send_automatic_message, resolve_client
 from cache_utils import invalidate_website_cache, get_cached_website, set_cached_website
+from routes.categories import public_categories
 from database import fs, sync_db
 from fastapi.responses import StreamingResponse, Response
 from fastapi.concurrency import run_in_threadpool
@@ -283,22 +284,24 @@ async def public_get_website():
     uid = user["id"] if user else None
     uid_filter = {"user_id": uid} if uid else {}
 
-    (config_raw, reviews, gallery, services, card_templates_raw, operators, promotions, loyalty_rewards_data) = await asyncio.gather(
+    (config_raw, reviews, gallery, services, card_templates_raw, operators, promotions, loyalty_rewards_data, categories) = await asyncio.gather(
         db.website_config.find_one(uid_filter, {"_id": 0, "user_id": 0}),
         db.website_reviews.find(uid_filter, {"_id": 0, "user_id": 0}).to_list(100),
         db.website_gallery.find({**uid_filter, "is_deleted": {"$ne": True}}, {"_id": 0, "user_id": 0}).sort("sort_order", 1).to_list(100),
-        db.services.find(uid_filter, {"_id": 0}).sort("sort_order", 1).to_list(100),
+        db.services.find(uid_filter, {"_id": 0}).sort("sort_order", 1).to_list(1000),
         db.card_templates.find({**uid_filter, "is_deleted": {"$ne": True}}, {"_id": 0}).to_list(100),
         db.operators.find(uid_filter, {"_id": 0, "user_id": 0, "phone": 0}).to_list(50),
         db.promotions.find({**uid_filter, "active": True}, {"_id": 0, "user_id": 0}).to_list(20),
         get_loyalty_rewards(uid or ""),
+        public_categories(uid),
     )
 
     config = {**DEFAULT_WEBSITE_CONFIG, **(config_raw or {})}
     result = {
         "config": config, "reviews": reviews, "gallery": gallery, "services": services,
         "card_templates": card_templates_raw, "operators": operators,
-        "promotions": promotions, "loyalty": {"points_per_euro": LOYALTY_POINTS_PER_EURO, "rewards": loyalty_rewards_data}
+        "promotions": promotions, "loyalty": {"points_per_euro": LOYALTY_POINTS_PER_EURO, "rewards": loyalty_rewards_data},
+        "categories": categories,
     }
     set_cached_website(result)
     return result

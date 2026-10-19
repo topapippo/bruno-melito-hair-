@@ -1,5 +1,11 @@
-// Ordine progressivo delle categorie - condiviso tra gestionale, planning e pagina pubblica
-export const CATEGORIES = [
+import { useSyncExternalStore } from 'react';
+import api, { API } from './api';
+
+// Categorie dei servizi - condivise tra gestionale, planning e pagina pubblica.
+// L'elenco predefinito qui sotto vale finché non si caricano quelle salvate dal salone
+// (Servizi -> Gestisci categorie). Il campo `value` è l'identificativo stabile salvato nei
+// servizi; etichetta e colore si possono cambiare senza toccare servizi e appuntamenti.
+export const DEFAULT_CATEGORIES = [
   { value: 'taglio', label: 'Styling', color: '#0EA5E9', bg: '#E0F2FE', text: '#0369A1' },
   { value: 'trattamento', label: 'Trattamenti', color: '#F59E0B', bg: '#FEF3C7', text: '#92400E' },
   { value: 'colore', label: 'Colore', color: '#10B981', bg: '#D1FAE5', text: '#065F46' },
@@ -9,7 +15,81 @@ export const CATEGORIES = [
   { value: 'altro', label: 'Altro', color: '#64748B', bg: '#F1F5F9', text: '#334155' },
 ];
 
+// Array condivisi: setCategories() li aggiorna "sul posto", così tutti i file che li importano
+// (planning, statistiche, prenotazione online...) leggono sempre l'elenco corrente.
+export const CATEGORIES = [...DEFAULT_CATEGORIES];
 export const CATEGORY_ORDER = CATEGORIES.map(c => c.value);
+
+const CACHE_KEY = 'serviceCategories.v1';
+const HEX_RE = /^#[0-9a-fA-F]{6}$/;
+const listeners = new Set();
+let version = 0;
+
+const mixColor = (hex, other, ratio) => {
+  const a = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
+  const b = [1, 3, 5].map(i => parseInt(other.slice(i, i + 2), 16));
+  return '#' + a.map((x, i) => Math.round(x * (1 - ratio) + b[i] * ratio).toString(16).padStart(2, '0')).join('').toUpperCase();
+};
+
+// Sfondo chiaro e testo scuro derivati dal colore di una categoria
+export const categoryTints = (color) => ({
+  bg: mixColor(color, '#FFFFFF', 0.86),
+  text: mixColor(color, '#000000', 0.5),
+});
+
+const normalize = (list) => (Array.isArray(list) ? list : [])
+  .filter(c => c && c.value && c.label)
+  .map(c => {
+    const color = HEX_RE.test(c.color || '') ? c.color : '#64748B';
+    const t = categoryTints(color);
+    return { value: String(c.value), label: String(c.label), color, bg: HEX_RE.test(c.bg || '') ? c.bg : t.bg, text: HEX_RE.test(c.text || '') ? c.text : t.text };
+  });
+
+/** Sostituisce l'elenco corrente. Restituisce true solo se qualcosa è cambiato. */
+export function setCategories(list, { persist = true } = {}) {
+  const next = normalize(list);
+  if (!next.length) return false;
+  if (JSON.stringify(next) === JSON.stringify(CATEGORIES)) return false;
+  CATEGORIES.splice(0, CATEGORIES.length, ...next);
+  CATEGORY_ORDER.splice(0, CATEGORY_ORDER.length, ...next.map(c => c.value));
+  version += 1;
+  if (persist) {
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify(next)); } catch (e) { /* storage non disponibile */ }
+  }
+  listeners.forEach(l => l());
+  return true;
+}
+
+// Al primo avvio usa l'ultimo elenco salvato sul dispositivo (evita il "salto" di colori e nomi)
+try {
+  const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+  if (cached) setCategories(cached, { persist: false });
+} catch (e) { /* cache non valida: si usa l'elenco predefinito */ }
+
+const subscribe = (cb) => { listeners.add(cb); return () => listeners.delete(cb); };
+const getVersion = () => version;
+
+/** Da chiamare nei componenti che mostrano categorie: si ridisegnano quando l'elenco cambia. */
+export function useCategories() {
+  useSyncExternalStore(subscribe, getVersion);
+  return CATEGORIES;
+}
+
+/** Carica dal server l'elenco completo (con conteggi) e aggiorna quello condiviso. */
+export async function fetchCategories() {
+  const res = await api.get(`${API}/service-categories`);
+  const list = res.data?.categories || [];
+  setCategories(list.filter(c => !c.legacy));
+  return list;
+}
+
+let loadedOnce = false;
+/** Una sola volta per sessione: usata dal Layout del gestionale. */
+export function ensureCategoriesLoaded() {
+  if (loadedOnce) return;
+  loadedOnce = true;
+  fetchCategories().catch(() => { loadedOnce = false; });
+}
 
 export const getCategoryInfo = (categoryValue) => {
   return CATEGORIES.find(c => c.value === categoryValue) || { value: categoryValue, label: categoryValue, color: '#64748B', bg: '#F1F5F9', text: '#334155' };

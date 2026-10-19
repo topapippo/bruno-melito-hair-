@@ -24,6 +24,7 @@ from routes.messages import router as messages_router
 from routes.marketing import router as marketing_router
 from routes.inventory import router as inventory_router
 from routes.before_after import router as before_after_router
+from routes.categories import router as categories_router
 
 all_routers = [
     auth_router,
@@ -52,4 +53,5 @@ all_routers = [
     marketing_router,
     inventory_router,
     before_after_router,
+    categories_router,
 ]

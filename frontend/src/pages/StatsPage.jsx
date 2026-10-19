@@ -25,6 +25,7 @@ import {
 } from 'recharts';
 import { toast } from 'sonner';
 import { COLORS as BRAND_COLORS } from '../lib/brandColors';
+import { getCategoryLabel, useCategories } from '../lib/categories';
 
 const COLORS = ['#C8617A', '#789F8A', '#E9C46A', '#0EA5E9', '#D4AF7A', '#F97316', '#10B981', '#6366F1'];
 
@@ -74,12 +75,6 @@ function ServiceChip({ label, variant = 'done' }) {
 const PAYMENT_LABELS = {
   cash: 'Contanti', pos: 'POS / Carta', prepaid: 'Abbonamento',
   loyalty: 'Fedeltà',
-};
-
-const CATEGORY_LABELS = {
-  taglio: 'Taglio', colore: 'Colore', permanente: 'Permanente',
-  stiratura: 'Stiratura', trattamento: 'Trattamento',
-  abbonamento: 'Abbonamento', altro: 'Altro',
 };
 
 const EXPENSE_CAT_LABELS = {
@@ -141,6 +136,7 @@ function EmptyChart({ height = 200 }) {
 }
 
 export default function StatsPage() {
+  useCategories(); // si ridisegna quando le categorie cambiano
   const [activeTab, setActiveTab] = useState('panoramica');
   const [dateRange, setDateRange] = useState({ start: startOfMonth(new Date()), end: new Date() });
 
@@ -747,14 +743,14 @@ export default function StatsPage() {
                               <Pie data={revenueStats.category_breakdown} dataKey="revenue" cx="50%" cy="50%" innerRadius={45} outerRadius={72} paddingAngle={2}>
                                 {revenueStats.category_breakdown.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                               </Pie>
-                              <Tooltip formatter={(v, n, p) => [`€${v.toFixed(2)}`, CATEGORY_LABELS[p.payload.category] || p.payload.category]} />
+                              <Tooltip formatter={(v, n, p) => [`€${v.toFixed(2)}`, getCategoryLabel(p.payload.category)]} />
                             </PieChart>
                           </ResponsiveContainer>
                           <div className="grid grid-cols-2 gap-2">
                             {revenueStats.category_breakdown.map((c, i) => (
                               <div key={c.category} className="flex items-center gap-2 text-sm">
                                 <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: COLORS[i % COLORS.length] }} />
-                                <span className="text-[#2D1B14] truncate">{CATEGORY_LABELS[c.category] || c.category}</span>
+                                <span className="text-[#2D1B14] truncate">{getCategoryLabel(c.category)}</span>
                                 <span className="text-[#7C5C4A] ml-auto flex-shrink-0">€{c.revenue.toFixed(0)}</span>
                               </div>
                             ))}

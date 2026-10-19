@@ -9,7 +9,7 @@ import { ChevronLeft, ChevronRight, Plus, CalendarDays, CheckCircle, RefreshCcw,
 import { format, addDays, subDays, startOfWeek, endOfWeek, addWeeks, subWeeks, startOfMonth, endOfMonth, addMonths, subMonths, eachDayOfInterval, isToday } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { CATEGORIES } from '../lib/categories';
+import { CATEGORIES, useCategories } from '../lib/categories';
 import { generateTimeSlots, ALL_SLOTS, DAY_MAP } from '../lib/timeSlots';
 
 // Sub-components
@@ -30,6 +30,7 @@ import AppointmentDetailPanel from '../components/planning/AppointmentDetailPane
 const TIME_SLOTS = generateTimeSlots();
 
 export default function PlanningPage() {
+  useCategories(); // si ridisegna quando le categorie cambiano
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 

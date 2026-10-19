@@ -18,7 +18,7 @@ import {
   Star, Gift, Ticket, Plus, Trash2, Edit3, X, Smartphone, AlertTriangle, Clock, History, ChevronDown, UserX, Package, Info,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { getCategoryInfo, groupServicesByCategory, CATEGORY_ORDER } from '../../lib/categories';
+import { getCategoryInfo, groupServicesByCategory, CATEGORY_ORDER, useCategories } from '../../lib/categories';
 import { ALL_SLOTS, DAY_MAP } from '../../lib/timeSlots';
 import { COLORS } from '../../lib/brandColors';
 
@@ -60,6 +60,7 @@ export default function EditAppointmentDialog({
   open, onClose, appointment, operators, clients, services, cardTemplates = [], onSuccess,
   onLastServiceAlert, onThankYou, autoCheckout = false, keepOpenAfterCheckout = false,
 }) {
+  useCategories(); // si ridisegna quando le categorie cambiano
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [markingNoShow, setMarkingNoShow] = useState(false);
