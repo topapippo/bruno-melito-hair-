@@ -61,3 +61,5 @@ bruno-melito-hair--main/
 pack_project.py
 project_export.txt
 bruno-melito-hair--main.backup/
+# Playwright CLI output (may contain credentials)
+.playwright-cli/
