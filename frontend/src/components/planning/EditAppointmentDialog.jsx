@@ -803,14 +803,14 @@ export default function EditAppointmentDialog({
               <>
                 <div className="grid grid-cols-3 gap-3">
                   <div className="space-y-1.5">
-                    <Label className="text-[#2D1B14] font-semibold text-sm">Data</Label>
-                    <Input type="date" value={editDate} onChange={e=>setEditDate(e.target.value)} className="border-2 border-[#F0E6DC] h-10"/>
+                    <Label htmlFor="appt-date" className="text-[#2D1B14] font-semibold text-sm">Data</Label>
+                    <Input id="appt-date" type="date" value={editDate} onChange={e=>setEditDate(e.target.value)} className="border-2 border-[#F0E6DC] h-10"/>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-[#2D1B14] font-semibold text-sm">Orario</Label>
+                    <Label htmlFor="appt-time" className="text-[#2D1B14] font-semibold text-sm">Orario</Label>
                     {dayWarning && <p className="text-xs font-bold text-red-600 bg-red-50 border border-red-200 rounded px-2 py-1">{dayWarning}</p>}
                     <Select value={formData.time} onValueChange={v=>setFormData({...formData,time:v})}>
-                      <SelectTrigger className="border-2 border-[#F0E6DC] h-10"><SelectValue/></SelectTrigger>
+                      <SelectTrigger id="appt-time" className="border-2 border-[#F0E6DC] h-10"><SelectValue/></SelectTrigger>
                       <SelectContent className="max-h-[200px]">
                         {editAvailableSlots.map(t=><SelectItem key={t} value={t}>{t}</SelectItem>)}
                         {editAvailableSlots.length===0 && <SelectItem value="closed" disabled>Nessun orario</SelectItem>}
@@ -818,9 +818,9 @@ export default function EditAppointmentDialog({
                     </Select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-[#2D1B14] font-semibold text-sm">Operatore</Label>
+                    <Label htmlFor="appt-operator" className="text-[#2D1B14] font-semibold text-sm">Operatore</Label>
                     <Select value={formData.operator_id||operators[0]?.id||''} onValueChange={v=>setFormData({...formData,operator_id:v})}>
-                      <SelectTrigger className="border-2 border-[#F0E6DC] h-10"><SelectValue placeholder="Seleziona..."/></SelectTrigger>
+                      <SelectTrigger id="appt-operator" className="border-2 border-[#F0E6DC] h-10"><SelectValue placeholder="Seleziona..."/></SelectTrigger>
                       <SelectContent>
                         {operators.map(op=>(
                           <SelectItem key={op.id} value={op.id}>
@@ -844,7 +844,7 @@ export default function EditAppointmentDialog({
                       return (
                         <div key={catKey} className="rounded-xl border-2 border-[#F0E6DC] overflow-hidden">
                           <button type="button" onClick={()=>toggleCat(catKey)}
-                            className="w-full flex items-center justify-between px-3 py-2.5 bg-white hover:bg-gray-50">
+                            aria-expanded={!!isCatOpen} className="w-full flex items-center justify-between px-3 py-2.5 bg-white hover:bg-gray-50">
                             <div className="flex items-center gap-2">
                               <div className="w-3 h-3 rounded-full" style={{backgroundColor:catInfo.color}}/>
                               <span className="font-bold text-sm uppercase tracking-wide" style={{color:catInfo.color}}>{catInfo.label}</span>
@@ -885,7 +885,7 @@ export default function EditAppointmentDialog({
                 {/* Card pre-selezionata */}
                 {clientCards.length > 0 && (
                   <div className="rounded-xl border-2 border-emerald-300 overflow-hidden">
-                    <button type="button" onClick={()=>toggleCat('_editCards')}
+                    <button type="button" onClick={()=>toggleCat('_editCards')} aria-expanded={!!openCats['_editCards']}
                       className="w-full flex items-center justify-between px-3 py-2.5 bg-emerald-50 hover:bg-emerald-100">
                       <div className="flex items-center gap-2">
                         <Ticket className="w-3.5 h-3.5 text-emerald-600"/>
@@ -924,8 +924,8 @@ export default function EditAppointmentDialog({
                 )}
 
                 <div className="space-y-1.5">
-                  <Label className="text-[#2D1B14] font-semibold text-sm">Note</Label>
-                  <Input value={formData.notes} onChange={e=>setFormData({...formData,notes:e.target.value})} placeholder="Note aggiuntive..." className="bg-white border-2 border-[#F0E6DC] h-10"/>
+                  <Label htmlFor="appt-notes" className="text-[#2D1B14] font-semibold text-sm">Note</Label>
+                  <Input id="appt-notes" value={formData.notes} onChange={e=>setFormData({...formData,notes:e.target.value})} placeholder="Note aggiuntive..." className="bg-white border-2 border-[#F0E6DC] h-10"/>
                 </div>
 
                 {/* Totale + bottone incassa */}
@@ -992,7 +992,7 @@ export default function EditAppointmentDialog({
                     return (
                       <div key={catKey} className="rounded-xl border-2 overflow-hidden transition-all" style={{borderColor: COLORS.borderLight, boxShadow: `0 2px 8px rgba(0, 0, 0, 0.05)`}}>
                         <button type="button" onClick={()=>toggleCat(catKey)}
-                          className="w-full flex items-center justify-between px-4 py-3 transition-all hover:bg-gray-50" style={{backgroundColor: COLORS.bg}}>
+                          aria-expanded={isOpen} className="w-full flex items-center justify-between px-4 py-3 transition-all hover:bg-gray-50" style={{backgroundColor: COLORS.bg}}>
                           <div className="flex items-center gap-2">
                             <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{backgroundColor: catInfo.color}}/>
                             <span className="font-bold text-sm" style={{color: COLORS.textDark}}>{catInfo.label}</span>
@@ -1087,7 +1087,7 @@ export default function EditAppointmentDialog({
 
                 {/* ── 1a. RIVENDITA (prodotti da magazzino) ── */}
                 <div className="rounded-xl border-2 border-gray-200 overflow-hidden">
-                  <button type="button" onClick={()=>toggleCat('_retail')}
+                  <button type="button" onClick={()=>toggleCat('_retail')} aria-expanded={!!openCats['_retail']}
                     className="w-full flex items-center justify-between px-3 py-3 bg-white hover:bg-gray-50">
                     <div className="flex items-center gap-2">
                       <Package className="w-4 h-4 text-gray-500"/>
@@ -1266,7 +1266,7 @@ export default function EditAppointmentDialog({
                 {/* ── 3. PROMOZIONI (collassabile) ── */}
                 {eligiblePromos.length > 0 && (
                   <div className="rounded-xl border-2 border-pink-200 overflow-hidden">
-                    <button type="button" onClick={()=>toggleCat('_promos')}
+                    <button type="button" onClick={()=>toggleCat('_promos')} aria-expanded={!!openCats['_promos']}
                       className={`w-full flex items-center justify-between px-3 py-3 transition-colors ${selectedPromo?'bg-pink-100':'bg-pink-50 hover:bg-pink-100'}`}>
                       <div className="flex items-center gap-2">
                         <Gift className="w-4 h-4 text-pink-600"/>
@@ -1307,7 +1307,7 @@ export default function EditAppointmentDialog({
 
                 {/* ── 4. OPZIONI (sconto, punti, sospeso) ── */}
                 <div className="rounded-xl border-2 border-gray-200 overflow-hidden">
-                  <button type="button" onClick={()=>toggleCat('_opts')}
+                  <button type="button" onClick={()=>toggleCat('_opts')} aria-expanded={!!openCats['_opts']}
                     className="w-full flex items-center justify-between px-3 py-2.5 bg-gray-50 hover:bg-gray-100">
                     <span className="font-bold text-sm text-gray-600">Sconto / Punti / Sospeso</span>
                     <div className="flex items-center gap-2">
