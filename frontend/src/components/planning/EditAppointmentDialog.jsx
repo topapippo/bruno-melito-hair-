@@ -1511,7 +1511,7 @@ export default function EditAppointmentDialog({
                 {/* Conferma SOSPESO */}
                 {paymentMethod === 'sospeso' && (
                   <button type="button" onClick={()=>handleCheckout('sospeso', null)} disabled={processing}
-                    className="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 active:scale-95 disabled:opacity-60 text-white font-black py-4 rounded-2xl shadow-md transition-all">
+                    className="w-full flex items-center justify-center gap-2 bg-[#B8893F] hover:opacity-90 active:scale-95 disabled:opacity-60 text-[#2D1B14] font-black py-4 rounded-2xl shadow-md transition-all">
                     {processing ? <Loader2 className="w-5 h-5 animate-spin"/> : <><AlertTriangle className="w-5 h-5"/> REGISTRA COME SOSPESO — €{totalAfterDiscount.toFixed(2)}</>}
                   </button>
                 )}
@@ -1536,8 +1536,8 @@ export default function EditAppointmentDialog({
               <Button type="button" variant="outline" size="sm" onClick={resetCheckout} className="ml-auto border-[#C8617A] text-[#C8617A]">
                 ← Modifica appuntamento
               </Button>
-              <Button type="button" size="sm" onClick={()=>saveAppointment(false)} disabled={saving} className="bg-amber-500 hover:bg-amber-600 text-white font-bold">
-                {saving?<Loader2 className="w-4 h-4 animate-spin"/>:<><Edit3 className="w-3.5 h-3.5 mr-1"/>Salva modifiche</>}
+              <Button type="button" variant="outline" size="sm" onClick={()=>saveAppointment(false)} disabled={saving} className="font-bold text-[#A94C63] bg-transparent hover:bg-[#FAF0F5] border-[#C8617A]">
+                {saving?<Loader2 className="w-4 h-4 animate-spin"/>:<><Edit3 className="w-3.5 h-3.5 mr-1"/>Salva</>}
               </Button>
             </div>
           ) : (
@@ -1567,7 +1567,7 @@ export default function EditAppointmentDialog({
                   </div>
                 );
               })()}
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button type="button" onClick={handleDelete} disabled={deleting} className="mr-auto text-white font-bold transition-all duration-200 hover:scale-105 active:scale-95" style={{backgroundColor: COLORS.error, boxShadow: `0 4px 12px rgba(220, 38, 38, 0.2)`}} aria-label="Elimina appuntamento">
                   {deleting?<Loader2 className="w-4 h-4 animate-spin"/>:<><Trash2 className="w-4 h-4 mr-1"/>Elimina</>}
                 </Button>
@@ -1577,12 +1577,12 @@ export default function EditAppointmentDialog({
                   </Button>
                 )}
                 {activeStatus!=='completed' && (
-                  <Button type="button" onClick={()=>saveAppointment(true)} disabled={saving} className="text-white font-bold px-6 transition-all duration-200 hover:scale-105 active:scale-95" style={{background: `linear-gradient(135deg, ${COLORS.gold} 0%, #c49a6f 100%)`, boxShadow: `0 4px 12px rgba(212, 175, 122, 0.2)`}}>
+                  <Button type="button" onClick={()=>saveAppointment(true)} disabled={saving} className="text-[#2D1B14] font-bold px-6 transition-all duration-200 active:scale-95" style={{backgroundColor: '#B8893F', boxShadow: `0 4px 12px rgba(184, 137, 63, 0.25)`}}>
                     {saving?<Loader2 className="w-4 h-4 animate-spin"/>:'Vai in Cassa'}
                   </Button>
                 )}
-                <Button type="button" variant="outline" onClick={()=>{resetCheckout();onClose();}} className="transition-all duration-200 hover:scale-105 active:scale-95" style={{borderColor: COLORS.borderLight}}>Annulla</Button>
-                <Button type="submit" disabled={saving} className="text-white font-bold transition-all duration-200 hover:scale-105 active:scale-95" style={{background: `linear-gradient(135deg, ${COLORS.rose} 0%, #b04f67 100%)`, boxShadow: `0 4px 12px rgba(200, 97, 122, 0.2)`}}>
+                <Button type="button" variant="outline" onClick={()=>{resetCheckout();onClose();}} className="transition-all duration-200 active:scale-95" style={{borderColor: COLORS.borderLight}}>Annulla</Button>
+                <Button type="submit" variant="outline" disabled={saving} className="font-bold text-[#A94C63] bg-transparent hover:bg-[#FAF0F5] transition-all duration-200 active:scale-95" style={{borderColor: COLORS.rose}}>
                   {saving?<Loader2 className="w-4 h-4 animate-spin"/>:<><Edit3 className="w-4 h-4 mr-1"/>Salva</>}
                 </Button>
               </div>
