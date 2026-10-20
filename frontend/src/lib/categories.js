@@ -56,6 +56,14 @@ export const readableTextOn = (bg) => {
   return wcagContrast(bg, '#FFFFFF') >= wcagContrast(bg, '#1A0A10') ? '#FFFFFF' : '#1A0A10';
 };
 
+/** Colore del testo di un'intestazione su sfondo bianco: scurisce la stessa tinta finché il contrasto WCAG arriva a 4,5:1 */
+export const headingTextOn = (color) => {
+  if (!HEX_RE.test(color || '')) return color;
+  let c = color;
+  for (let i = 0; i < 10 && wcagContrast(c, '#FFFFFF') < 4.5; i++) c = mixColor(c, '#000000', 0.12);
+  return c;
+};
+
 const normalize = (list) => (Array.isArray(list) ? list : [])
   .filter(c => c && c.value && c.label)
   .map(c => {

@@ -14,7 +14,7 @@ import { Loader2, User, CreditCard, Bell, UserPlus, Gift, Check, Ticket, Smartph
 import { format, isToday } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { getCategoryInfo, groupServicesByCategory, useCategories } from '../../lib/categories';
+import { getCategoryInfo, groupServicesByCategory, useCategories, headingTextOn } from '../../lib/categories';
 import { ALL_SLOTS, DAY_MAP } from '../../lib/timeSlots';
 
 
@@ -479,7 +479,7 @@ export default function NewAppointmentDialog({
                         className="w-full flex items-center justify-between px-3 py-2 bg-white hover:bg-gray-50">
                         <div className="flex items-center gap-2">
                           <div className="w-3 h-3 rounded-full" style={{ backgroundColor: catInfo.color }} />
-                          <span className="font-bold text-sm uppercase tracking-wide" style={{ color: catInfo.color }}>{catInfo.label}</span>
+                          <span className="font-bold text-sm uppercase tracking-wide" style={{ color: headingTextOn(catInfo.color) }}>{catInfo.label}</span>
                         </div>
                         <Check className={`w-4 h-4 text-emerald-500 ${catServices.some(s=>formData.service_ids.includes(s.id)) ? 'opacity-100' : 'opacity-0'}`} />
                       </button>

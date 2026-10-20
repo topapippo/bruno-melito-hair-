@@ -18,7 +18,7 @@ import {
   Star, Gift, Ticket, Plus, Trash2, Edit3, X, Smartphone, AlertTriangle, Clock, History, ChevronDown, UserX, Package, Info,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { getCategoryInfo, groupServicesByCategory, CATEGORY_ORDER, useCategories } from '../../lib/categories';
+import { getCategoryInfo, groupServicesByCategory, CATEGORY_ORDER, useCategories, headingTextOn } from '../../lib/categories';
 import { ALL_SLOTS, DAY_MAP } from '../../lib/timeSlots';
 import { COLORS } from '../../lib/brandColors';
 
@@ -847,7 +847,7 @@ export default function EditAppointmentDialog({
                             aria-expanded={!!isCatOpen} className="w-full flex items-center justify-between px-3 py-2.5 bg-white hover:bg-gray-50">
                             <div className="flex items-center gap-2">
                               <div className="w-3 h-3 rounded-full" style={{backgroundColor:catInfo.color}}/>
-                              <span className="font-bold text-sm uppercase tracking-wide" style={{color:catInfo.color}}>{catInfo.label}</span>
+                              <span className="font-bold text-sm uppercase tracking-wide" style={{color:headingTextOn(catInfo.color)}}>{catInfo.label}</span>
                               <span className="text-xs text-gray-400">({catSvcs.length})</span>
                             </div>
                             <div className="flex items-center gap-2">
@@ -1072,7 +1072,7 @@ export default function EditAppointmentDialog({
                             const catInfo = getCategoryInfo(catKey);
                             return (
                               <SelectGroup key={catKey}>
-                                <SelectLabel style={{color: catInfo.color}}>{catInfo.label}</SelectLabel>
+                                <SelectLabel style={{color: headingTextOn(catInfo.color)}}>{catInfo.label}</SelectLabel>
                                 {grouped.groups[catKey].map(sv => (
                                   <SelectItem key={sv.id} value={sv.id}>{sv.name} — €{sv.price}</SelectItem>
                                 ))}
