@@ -63,3 +63,5 @@ project_export.txt
 bruno-melito-hair--main.backup/
 # Playwright CLI output (may contain credentials)
 .playwright-cli/
+# Playwright MCP snapshots (may contain page data)
+.playwright-mcp/
