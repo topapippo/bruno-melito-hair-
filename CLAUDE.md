@@ -23,7 +23,7 @@ Gestionale salone + sito pubblico. React (frontend) + FastAPI (backend) + MongoD
 ## Workflow
 - Dopo ogni feature: commit descrittivo + push subito (senza aspettare richiesta).
 - Prima del push: grep `console.log` sui file staged; se trovato, rimuovere.
-- Controlli qualità (`/security`, `/deploy-check`, `/perf`, `/db-audit`, `/ui-check`, `/a11y`) SOLO su richiesta o prima di un push importante — non a ogni modifica.
+- Controlli qualità (sicurezza, deploy, performance, database, UI, accessibilità) SOLO su richiesta o prima di un push importante — non a ogni modifica. I comandi slash corrispondenti non sono nel repo: si eseguono solo se installati.
 - Fine sessione: aggiornare `memory/project_changelog.md`.
 
 ## Risparmio token
