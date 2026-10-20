@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Clock, Repeat, MessageCircle, Euro, Info } from 'lucide-react';
 import { addDays, subDays, isToday } from 'date-fns';
-import { getAppointmentColor, getServiceColors, buildServiceLookups, useCategories } from '../../lib/categories';
+import { getAppointmentColor, getServiceColors, buildServiceLookups, useCategories, readableTextOn } from '../../lib/categories';
 import ClientAvatar from '../ClientAvatar';
 
 const GRID_START_HOUR = 8;
@@ -297,9 +297,9 @@ export default function DayView({
                           {apt.services.map((s, i) => {
                             const color = isCancelled ? '#EF4444' : (svcColors[i] || '#64748B');
                             return (
-                              <div key={i} className="flex items-center px-2 flex-1 min-h-0 border-t border-white/10" style={{ backgroundColor: color }}>
-                                <span className="text-white font-bold text-[13px] truncate drop-shadow-sm flex-1">{s.name}</span>
-                                <span className="text-white/80 text-[10px] flex-shrink-0 ml-1">{s.duration || 15}&apos;</span>
+                              <div key={i} className="flex items-center px-2 flex-1 min-h-0 border-t border-white/10" style={{ backgroundColor: color, color: readableTextOn(color) }}>
+                                <span className="font-bold text-[13px] truncate drop-shadow-sm flex-1">{s.name}</span>
+                                <span className="text-[10px] flex-shrink-0 ml-1">{s.duration || 15}&apos;</span>
                               </div>
                             );
                           })}

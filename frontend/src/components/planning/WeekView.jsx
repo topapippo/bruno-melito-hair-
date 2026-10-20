@@ -5,7 +5,7 @@ import { Plus, Clock } from 'lucide-react';
 import { format, startOfWeek, eachDayOfInterval, addDays, isToday } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { isHoliday } from './holidays';
-import { getCategoryInfo, CATEGORIES, getAppointmentColor, getServiceColors, buildServiceLookups, useCategories } from '../../lib/categories';
+import { getCategoryInfo, CATEGORIES, getAppointmentColor, getServiceColors, buildServiceLookups, useCategories, readableTextOn } from '../../lib/categories';
 
 const TIME_SLOTS = [];
 for (let h = 8; h <= 20; h++) {
@@ -277,8 +277,8 @@ export default function WeekView({
                               const color = isCancelled ? '#EF4444' : (svcColors[i] || '#64748B');
                               return (
                                 <div key={i} className="flex items-center px-1 overflow-hidden border-b border-white/20 last:border-b-0"
-                                  style={{ backgroundColor: color, flex: `${pct} 0 0%`, minHeight: '12px' }}>
-                                  <span className="text-white font-semibold text-[9px] truncate drop-shadow-sm">{s.name}</span>
+                                  style={{ backgroundColor: color, color: readableTextOn(color), flex: `${pct} 0 0%`, minHeight: '12px' }}>
+                                  <span className="font-semibold text-[9px] truncate drop-shadow-sm">{s.name}</span>
                                 </div>
                               );
                             })}

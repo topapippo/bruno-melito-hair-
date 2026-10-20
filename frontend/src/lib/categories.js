@@ -37,6 +37,25 @@ export const categoryTints = (color) => ({
   text: mixColor(color, '#000000', 0.5),
 });
 
+// Luminanza relativa e contrasto WCAG (formula ufficiale)
+const relLum = (hex) => {
+  const n = parseInt(hex.slice(1), 16);
+  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map(v => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+const wcagContrast = (a, b) => {
+  const [hi, lo] = [relLum(a), relLum(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+};
+/** Testo leggibile su un fondo colorato: bianco o espresso (#1A0A10), quello con contrasto WCAG più alto */
+export const readableTextOn = (bg) => {
+  if (!HEX_RE.test(bg || '')) return '#FFFFFF';
+  return wcagContrast(bg, '#FFFFFF') >= wcagContrast(bg, '#1A0A10') ? '#FFFFFF' : '#1A0A10';
+};
+
 const normalize = (list) => (Array.isArray(list) ? list : [])
   .filter(c => c && c.value && c.label)
   .map(c => {
