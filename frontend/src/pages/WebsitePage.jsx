@@ -705,7 +705,7 @@ export default function WebsitePage() {
                   <h3 className="font-bold text-lg text-[#2D1B14]">{s.name}</h3>
                   <p className="text-xs text-[#9C7060] mt-1">{s.duration} minuti</p>
                   <p className="text-2xl font-black text-[#C8617A] mt-3">€{s.price.toFixed(2)}</p>
-                  <button onClick={() => bookService(s.id)} className="mt-4 bg-[#C8617A] text-white text-xs font-bold px-6 py-2.5 rounded-full hover:bg-[#A0404F] transition-colors">
+                  <button onClick={() => bookService(s.id)} className="mt-4 bg-[#A94C63] text-white text-xs font-bold px-6 py-2.5 rounded-full hover:bg-[#A0404F] transition-colors">
                     Prenota Ora
                   </button>
                 </div>
