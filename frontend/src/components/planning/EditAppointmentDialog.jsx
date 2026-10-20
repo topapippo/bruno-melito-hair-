@@ -948,8 +948,8 @@ export default function EditAppointmentDialog({
                       <p className="text-sm font-semibold" style={{color: COLORS.textDark}}>Totale</p>
                       <p className="text-3xl font-black" style={{color: COLORS.rose}}>€{calculateSubtotal().toFixed(2)}</p>
                     </div>
-                    <Button type="button" onClick={()=>openCheckoutMode()} className="w-full text-white font-black px-8 py-4 rounded-2xl transition-all duration-200 hover:scale-105 active:scale-95 text-lg flex items-center justify-center gap-2" style={{background: `linear-gradient(135deg, ${COLORS.rose} 0%, #b04f67 100%)`, boxShadow: `0 8px 24px rgba(200, 97, 122, 0.35)`}}>
-                      <Euro className="w-5 h-5"/>INCASSA
+                    <Button type="button" onClick={()=>saveAppointment(true)} disabled={saving} className="w-full text-white font-black px-8 py-4 rounded-2xl transition-all duration-200 hover:scale-105 active:scale-95 text-lg flex items-center justify-center gap-2 disabled:opacity-60" style={{backgroundColor: '#A94C63', boxShadow: `0 8px 24px rgba(169, 76, 99, 0.35)`}}>
+                      {saving?<Loader2 className="w-5 h-5 animate-spin"/>:<><Euro className="w-5 h-5"/>INCASSA</>}
                     </Button>
                   </div>
                 )}
@@ -1574,11 +1574,6 @@ export default function EditAppointmentDialog({
                 {!['completed','no_show','cancelled'].includes(activeStatus) && (
                   <Button type="button" variant="outline" onClick={handleNoShow} disabled={markingNoShow} className="transition-all duration-200 hover:scale-105 active:scale-95" style={{borderColor: COLORS.rose, color: COLORS.rose}} aria-label="Segna cliente non presentato e invia messaggio di recupero">
                     {markingNoShow?<Loader2 className="w-4 h-4 animate-spin"/>:<><UserX className="w-4 h-4 mr-1"/>Non presentato</>}
-                  </Button>
-                )}
-                {activeStatus!=='completed' && (
-                  <Button type="button" onClick={()=>saveAppointment(true)} disabled={saving} className="text-[#2D1B14] font-bold px-6 transition-all duration-200 active:scale-95" style={{backgroundColor: '#B8893F', boxShadow: `0 4px 12px rgba(184, 137, 63, 0.25)`}}>
-                    {saving?<Loader2 className="w-4 h-4 animate-spin"/>:'Vai in Cassa'}
                   </Button>
                 )}
                 <Button type="button" variant="outline" onClick={()=>{resetCheckout();onClose();}} className="transition-all duration-200 active:scale-95" style={{borderColor: COLORS.borderLight}}>Annulla</Button>
