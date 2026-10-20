@@ -30,10 +30,11 @@ export default function BookingForm({
 
   const goStep = (n) => { setStepDir(n > step ? 1 : -1); setStep(n); };
 
+  // Tutte le categorie partono chiuse; se si arriva da una scheda servizio, apre la categoria del servizio scelto
   useEffect(() => {
-    const { orderedKeys: cats } = groupServicesByCategory(bookingServices);
-    if (cats.length > 0) setOpenCats(prev => ({ [`b_${cats[0]}`]: true, ...prev }));
-  }, [bookingServices]);
+    const picked = bookingServices.find(s => (formData.service_ids || []).includes(s.id));
+    if (picked) setOpenCats(prev => ({ ...prev, [`b_${picked.category || 'altro'}`]: true }));
+  }, [bookingServices]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     api.get(`${API}/public/blocked-all-day`)
