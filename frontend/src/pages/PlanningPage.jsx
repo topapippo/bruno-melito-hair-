@@ -424,6 +424,7 @@ export default function PlanningPage() {
   const unavailableSlots = getUnavailableSlots();
 
   const handleToggleDayClosure = async () => {
+    if (!dayClosureBlock && !window.confirm('Chiudere il giorno? Il sito non accetterà prenotazioni online per questa data.')) return;
     setClosingDay(true);
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
     try {
@@ -793,8 +794,8 @@ export default function PlanningPage() {
               disabled={closingDay}
               data-testid="toggle-day-closure-btn"
               className={dayClosureBlock
-                ? "border-green-400 text-green-700 hover:bg-green-50 h-10 px-4 font-semibold"
-                : "border-red-300 text-red-600 hover:bg-red-50 h-10 px-4 font-semibold"}
+                ? "ml-4 border-green-400 text-green-700 hover:bg-green-50 h-10 px-4 font-semibold"
+                : "ml-4 border-red-300 text-red-600 hover:bg-red-50 h-10 px-4 font-semibold"}
             >
               {dayClosureBlock
                 ? <><Unlock className="w-4 h-4 mr-1" /> Riapri Giorno</>
