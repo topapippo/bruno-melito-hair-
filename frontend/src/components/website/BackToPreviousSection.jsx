@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 
 export default function BackToPreviousSection() {
@@ -25,6 +25,18 @@ export default function BackToPreviousSection() {
     window.scrollTo({ top: Math.max(targetTop, 0), behavior: 'smooth' });
   }, []);
 
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const onScroll = () => {
+      const root = document.querySelector('[data-testid="website-landing"]') || document.body;
+      const first = root.querySelector('section');
+      setVisible(!!first && window.scrollY + 90 >= first.getBoundingClientRect().bottom + window.scrollY);
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+  if (!visible) return null;
   return (
     <button
       onClick={goToPreviousSection}
