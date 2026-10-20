@@ -65,3 +65,5 @@ bruno-melito-hair--main.backup/
 .playwright-cli/
 # Playwright MCP snapshots (may contain page data)
 .playwright-mcp/
+# Impeccable critique snapshots (generated, not source)
+.impeccable/
