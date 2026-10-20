@@ -1530,7 +1530,7 @@ export default function EditAppointmentDialog({
           {/* ═════════════════ FOOTER ═════════════════ */}
           {checkoutMode ? (
             <div className="shrink-0 px-5 py-2.5 bg-white border-t-2 border-[#F0E6DC] flex items-center gap-2">
-              <Button type="button" variant="destructive" size="sm" onClick={handleDelete} disabled={deleting}>
+              <Button type="button" variant="ghost" size="sm" onClick={handleDelete} disabled={deleting} className="font-bold text-[#DC2626] hover:bg-transparent hover:underline" aria-label="Elimina appuntamento">
                 {deleting?<Loader2 className="w-4 h-4 animate-spin"/>:<><Trash2 className="w-3.5 h-3.5 mr-1"/>Elimina</>}
               </Button>
               <Button type="button" variant="outline" size="sm" onClick={resetCheckout} className="ml-auto border-[#C8617A] text-[#C8617A]">
@@ -1568,11 +1568,12 @@ export default function EditAppointmentDialog({
                 );
               })()}
               <div className="flex flex-wrap gap-2">
-                <Button type="button" onClick={handleDelete} disabled={deleting} className="mr-auto text-white font-bold transition-all duration-200 hover:scale-105 active:scale-95" style={{backgroundColor: COLORS.error, boxShadow: `0 4px 12px rgba(220, 38, 38, 0.2)`}} aria-label="Elimina appuntamento">
+                <Button type="button" variant="ghost" onClick={handleDelete} disabled={deleting} className="mr-auto font-bold text-[#DC2626] hover:bg-transparent hover:underline transition-all duration-200 active:scale-95" aria-label="Elimina appuntamento">
                   {deleting?<Loader2 className="w-4 h-4 animate-spin"/>:<><Trash2 className="w-4 h-4 mr-1"/>Elimina</>}
                 </Button>
+                <div className="ml-auto flex gap-2">
                 {!['completed','no_show','cancelled'].includes(activeStatus) && (
-                  <Button type="button" variant="outline" onClick={handleNoShow} disabled={markingNoShow} className="transition-all duration-200 hover:scale-105 active:scale-95" style={{borderColor: COLORS.rose, color: COLORS.rose}} aria-label="Segna cliente non presentato e invia messaggio di recupero">
+                  <Button type="button" variant="outline" onClick={handleNoShow} disabled={markingNoShow} className="transition-all duration-200 active:scale-95" style={{borderColor: COLORS.rose, color: COLORS.rose}} aria-label="Segna cliente non presentato e invia messaggio di recupero">
                     {markingNoShow?<Loader2 className="w-4 h-4 animate-spin"/>:<><UserX className="w-4 h-4 mr-1"/>Non presentato</>}
                   </Button>
                 )}
@@ -1580,6 +1581,7 @@ export default function EditAppointmentDialog({
                 <Button type="submit" variant="outline" disabled={saving} className="font-bold text-[#A94C63] bg-transparent hover:bg-[#FAF0F5] transition-all duration-200 active:scale-95" style={{borderColor: COLORS.rose}}>
                   {saving?<Loader2 className="w-4 h-4 animate-spin"/>:<><Edit3 className="w-4 h-4 mr-1"/>Salva</>}
                 </Button>
+              </div>
               </div>
             </div>
           )}
