@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { ArrowUpRight, X } from 'lucide-react';
+import { ArrowUpRight, X, ChevronDown } from 'lucide-react';
 import api from '../../lib/api';
 import { getMediaUrl } from '../../lib/mediaUrl';
 import { format } from 'date-fns';
@@ -60,9 +60,10 @@ function isAutoTitle(title) {
   return false;
 }
 
-export default function TrendGallery({ setShowBooking }) {
+export default function TrendGallery({ setShowBooking, buttonBg = '#A94C63' }) {
   const [trends, setTrends] = useState([]);
   const [lightbox, setLightbox] = useState(null);
+  const [open, setOpen] = useState(false);
   const prefersReducedMotion = useReducedMotion();
   const videoNodeRefs = useRef({});
 
@@ -166,6 +167,8 @@ export default function TrendGallery({ setShowBooking }) {
             const hasTitle = !isAutoTitle(t.title);
             const hasBadge = t.badge && !isAutoTitle(t.badge);
             const mediaSrc = t.img || getMediaUrl(t.image_url);
+            const collapsed = !open && i > 0;
+            const coverClosed = !open && i === 0;
 
             return (
               <motion.article
@@ -186,8 +189,9 @@ export default function TrendGallery({ setShowBooking }) {
                 }}
                 className={`bento-card group relative overflow-hidden rounded-3xl ${!isVideo ? 'cursor-zoom-in' : ''} ${spanClass}`}
                 style={{
-                  gridColumn: `span ${pattern.col}`,
-                  gridRow: `span ${pattern.row}`,
+                  display: collapsed ? 'none' : undefined,
+                  gridColumn: coverClosed ? '1 / -1' : `span ${pattern.col}`,
+                  gridRow: coverClosed ? 'span 2' : `span ${pattern.row}`,
                   background: 'rgba(255,255,255,0.04)',
                   border: '1px solid rgba(255,255,255,0.07)',
                   boxShadow: '0 4px 22px rgba(0,0,0,0.4)',
@@ -279,6 +283,20 @@ export default function TrendGallery({ setShowBooking }) {
             );
           })}
         </div>
+        {items.length > 1 && (
+          <div className="flex justify-center mt-10">
+            <button
+              type="button"
+              aria-expanded={open}
+              onClick={() => setOpen(o => !o)}
+              className="inline-flex items-center gap-2 font-bold text-xs tracking-[0.2em] uppercase px-8 py-3 rounded-full shadow-md transition-transform active:scale-95"
+              style={{ backgroundColor: buttonBg, color: '#FFFFFF' }}
+            >
+              {open ? 'CHIUDI' : 'SCOPRI'}
+              <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
+        )}
       </div>
 
       <AnimatePresence>

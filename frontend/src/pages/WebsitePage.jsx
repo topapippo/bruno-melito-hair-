@@ -414,7 +414,7 @@ export default function WebsitePage() {
       case 'team':
         return operators.filter(o => o.active !== false).length > 0 ? <TeamSection key="team" operators={operators} T={T} setShowBooking={setShowBooking} /> : null;
       case 'trend_gallery':
-        return <TrendGallery key="trend_gallery" setShowBooking={setShowBooking} />;
+        return <TrendGallery key="trend_gallery" setShowBooking={setShowBooking} buttonBg={readableBg(T.primary)} />;
       case 'gift_card':
         return <GiftCardSection key="gift_card" T={T} config={config} setShowBooking={setShowBooking} />;
       case 'contact':
