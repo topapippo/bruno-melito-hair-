@@ -14,6 +14,7 @@ import BookingForm from '../components/website/BookingForm';
 import BookingSuccess from '../components/website/BookingSuccess';
 import MyAppointmentsModal from '../components/website/MyAppointmentsModal';
 import TrendGallery from '../components/website/TrendGallery';
+import CollapsibleReveal from '../components/website/CollapsibleReveal';
 import BackToPreviousSection from '../components/website/BackToPreviousSection';
 import CinematicInterlude from '../components/website/sections/CinematicInterlude';
 import {
@@ -699,6 +700,7 @@ export default function WebsitePage() {
               <h2 className="text-3xl md:text-4xl font-black text-[#2D1B14] mt-2" style={{ fontFamily: "'Playfair Display', serif" }}>Servizi Express a Prezzo Vantaggioso</h2>
               <p className="text-sm text-[#9C7060] mt-2">Ideali per un cambio look rapido e accessibile. Prenota online in 1 minuto.</p>
             </div>
+            <CollapsibleReveal buttonBg={readableBg(T.primary)} buttonText="#FFFFFF">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {bookingServices.filter(s => s.is_smart_offer).map(s => (
                 <div key={s.id} className="bg-white rounded-2xl p-6 shadow-md border border-[#D4AF7A]/30 text-center hover:-translate-y-1 transition-transform">
@@ -711,6 +713,7 @@ export default function WebsitePage() {
                 </div>
               ))}
             </div>
+            </CollapsibleReveal>
           </div>
         </LuxSection>
       )}
