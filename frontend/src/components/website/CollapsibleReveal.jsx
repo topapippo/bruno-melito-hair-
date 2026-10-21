@@ -3,7 +3,7 @@ import { useReducedMotion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 
 // Contenuto chiuso all'inizio: resta nel DOM (non smontato), SCOPRI lo apre, CHIUDI lo richiude
-export default function CollapsibleReveal({ children, buttonBg, buttonText, label = 'SCOPRI', closeLabel = 'CHIUDI' }) {
+export default function CollapsibleReveal({ children, buttonBg, buttonText, label = 'SCOPRI', closeLabel = 'CHIUDI', darkBg = false }) {
   const [open, setOpen] = useState(false);
   const reduceMotion = useReducedMotion();
 
@@ -24,7 +24,7 @@ export default function CollapsibleReveal({ children, buttonBg, buttonText, labe
           type="button"
           aria-expanded={open}
           onClick={() => setOpen(o => !o)}
-          className="inline-flex items-center gap-2 font-bold text-xs tracking-[0.2em] uppercase px-8 py-3 rounded-full shadow-md transition-transform active:scale-95"
+          className={`inline-flex items-center gap-2 font-bold text-xs tracking-[0.2em] uppercase px-8 py-3 rounded-full shadow-md transition-transform active:scale-95${darkBg ? ' border border-white/50' : ''}`}
           style={{ backgroundColor: buttonBg, color: buttonText }}
         >
           {open ? closeLabel : label}

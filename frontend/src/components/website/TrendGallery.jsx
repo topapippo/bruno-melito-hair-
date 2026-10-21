@@ -3,6 +3,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { ArrowUpRight, X } from 'lucide-react';
 import api from '../../lib/api';
 import { getMediaUrl } from '../../lib/mediaUrl';
+import CollapsibleReveal from './CollapsibleReveal';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 
@@ -60,7 +61,7 @@ function isAutoTitle(title) {
   return false;
 }
 
-export default function TrendGallery({ setShowBooking }) {
+export default function TrendGallery({ setShowBooking, buttonBg = '#A94C63' }) {
   const [trends, setTrends] = useState([]);
   const [lightbox, setLightbox] = useState(null);
   const prefersReducedMotion = useReducedMotion();
@@ -82,86 +83,11 @@ export default function TrendGallery({ setShowBooking }) {
   // Solo foto in galleria: i video richiedevano un click per partire, tolti per alleggerire la pagina
   const items = (trends.length ? trends : FALLBACK).filter((t) => !isVideoItem(t));
 
-  return (
-    <section className="py-24 px-4 sm:px-8 overflow-hidden" style={{ background: '#0a0a0f' }}>
-      <style>{`
-        .bento-card .bento-img { transition: transform 1.1s cubic-bezier(0.22, 1, 0.36, 1), filter 0.7s ease; will-change: transform; }
-        .bento-card .bento-desc, .bento-card .bento-cta { opacity: 0; transform: translateY(10px); transition: opacity 0.5s ease, transform 0.5s ease; }
-        .bento-cta-line { transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1); transform-origin: left center; }
-        /* Effetti hover solo su dispositivi con puntatore vero (mouse/trackpad).
-           Su touch (cellulare/tablet) queste regole :hover causavano un bug noto di
-           iOS/Android: il primo tap "attiva" l'hover invece del click, quindi foto e
-           video sembravano non aprirsi al primo tocco e serviva toccare due volte. */
-        @media (hover: hover) {
-          .bento-card:hover .bento-img { transform: scale(1.08) rotate(-1.2deg); filter: brightness(1.06) saturate(1.12); }
-          .bento-card:hover .bento-desc, .bento-card:hover .bento-cta { opacity: 1; transform: translateY(0); }
-          .bento-card:hover .bento-cta-line { transform: scaleX(1.05); }
-        }
-        /* Su touch, CTA e descrizione restano sempre visibili invece di dipendere dall'hover */
-        @media (hover: none) {
-          .bento-card .bento-desc, .bento-card .bento-cta { opacity: 1; transform: translateY(0); }
-        }
-        @media (max-width: 639px) {
-          .bento-grid { grid-template-columns: 1fr !important; }
-          .bento-card { grid-column: span 1 !important; grid-row: span 1 !important; min-height: 280px; }
-        }
-        @media (min-width: 640px) and (max-width: 1023px) {
-          .bento-grid { grid-template-columns: repeat(2, 1fr) !important; }
-          .bento-card { grid-column: span 1 !important; }
-          .bento-card.span-2 { grid-column: span 2 !important; }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .bento-card .bento-img,
-          .bento-card .bento-desc,
-          .bento-card .bento-cta,
-          .bento-cta-line { transition: none !important; transform: none !important; }
-          .bento-card:hover .bento-desc,
-          .bento-card:hover .bento-cta { opacity: 1; }
-        }
-      `}</style>
-
-      <div className="max-w-6xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: prefersReducedMotion ? 0.2 : 0.85, ease: EASE }}
-          className="mb-14"
-        >
-          <p className="text-xs font-bold tracking-[0.4em] uppercase mb-5" style={{ color: 'rgba(255,255,255,0.65)' }}>
-            VOGUE 2026 — EDITORIAL LOOK BOOK &nbsp;·&nbsp; {format(new Date(), "d MMMM yyyy", { locale: it }).toUpperCase()}
-          </p>
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
-            <h2
-              className="font-black"
-              style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(3rem, 8vw, 6.5rem)', lineHeight: 0.88, color: 'white' }}
-            >
-              I Look
-              <br />
-              <span style={{ WebkitTextStroke: '2px rgba(255,255,255,0.55)', color: 'transparent' }}>
-                Autunno Inverno
-              </span>
-            </h2>
-            <p style={{ color: 'rgba(255,255,255,0.65)', maxWidth: '22rem', fontSize: '0.9rem', lineHeight: 1.75 }}>
-              Tendenze selezionate da <strong className="text-white">Bruno Melito</strong> — prenotale subito per portarle con te.
-            </p>
-          </div>
-        </motion.div>
-
-        <div
-          className="bento-grid"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
-            gridAutoRows: '180px',
-            gap: '14px',
-          }}
-        >
-          {items.map((t, i) => {
+  const renderCard = (t, i, coverMode) => {
             const pattern = BENTO_PATTERN[i % BENTO_PATTERN.length];
             const glow = t.color_code || GLOW_COLORS[i % GLOW_COLORS.length];
             const isHero = pattern.col === 2 && pattern.row === 2;
-            const spanClass = pattern.col === 2 ? 'span-2' : '';
+            const spanClass = !coverMode && pattern.col === 2 ? 'span-2' : '';
             const isVideo = isVideoItem(t);
             const hasTitle = !isAutoTitle(t.title);
             const hasBadge = t.badge && !isAutoTitle(t.badge);
@@ -186,8 +112,8 @@ export default function TrendGallery({ setShowBooking }) {
                 }}
                 className={`bento-card group relative overflow-hidden rounded-3xl ${!isVideo ? 'cursor-zoom-in' : ''} ${spanClass}`}
                 style={{
-                  gridColumn: `span ${pattern.col}`,
-                  gridRow: `span ${pattern.row}`,
+                  gridColumn: coverMode ? undefined : `span ${pattern.col}`,
+                  gridRow: coverMode ? undefined : `span ${pattern.row}`,
                   background: 'rgba(255,255,255,0.04)',
                   border: '1px solid rgba(255,255,255,0.07)',
                   boxShadow: '0 4px 22px rgba(0,0,0,0.4)',
@@ -277,8 +203,97 @@ export default function TrendGallery({ setShowBooking }) {
                 )}
               </motion.article>
             );
-          })}
+  };
+
+  return (
+    <section className="py-24 px-4 sm:px-8 overflow-hidden" style={{ background: '#0a0a0f' }}>
+      <style>{`
+        .bento-card .bento-img { transition: transform 1.1s cubic-bezier(0.22, 1, 0.36, 1), filter 0.7s ease; will-change: transform; }
+        .bento-card .bento-desc, .bento-card .bento-cta { opacity: 0; transform: translateY(10px); transition: opacity 0.5s ease, transform 0.5s ease; }
+        .bento-cta-line { transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1); transform-origin: left center; }
+        /* Effetti hover solo su dispositivi con puntatore vero (mouse/trackpad).
+           Su touch (cellulare/tablet) queste regole :hover causavano un bug noto di
+           iOS/Android: il primo tap "attiva" l'hover invece del click, quindi foto e
+           video sembravano non aprirsi al primo tocco e serviva toccare due volte. */
+        @media (hover: hover) {
+          .bento-card:hover .bento-img { transform: scale(1.08) rotate(-1.2deg); filter: brightness(1.06) saturate(1.12); }
+          .bento-card:hover .bento-desc, .bento-card:hover .bento-cta { opacity: 1; transform: translateY(0); }
+          .bento-card:hover .bento-cta-line { transform: scaleX(1.05); }
+        }
+        /* Su touch, CTA e descrizione restano sempre visibili invece di dipendere dall'hover */
+        @media (hover: none) {
+          .bento-card .bento-desc, .bento-card .bento-cta { opacity: 1; transform: translateY(0); }
+        }
+        .bento-grid { grid-auto-rows: auto; }
+        .bento-cover { display: grid; grid-template-columns: 1fr; gap: 14px; margin-bottom: 14px; grid-auto-rows: 280px; }
+        @media (min-width: 640px) {
+          .bento-grid { grid-auto-rows: 180px; }
+          .bento-cover { grid-auto-rows: 374px; }
+        }
+        @media (max-width: 639px) {
+          .bento-grid { grid-template-columns: 1fr !important; }
+          .bento-card { grid-column: span 1 !important; grid-row: span 1 !important; min-height: 280px; }
+        }
+        @media (min-width: 640px) and (max-width: 1023px) {
+          .bento-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .bento-card { grid-column: span 1 !important; }
+          .bento-card.span-2 { grid-column: span 2 !important; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .bento-card .bento-img,
+          .bento-card .bento-desc,
+          .bento-card .bento-cta,
+          .bento-cta-line { transition: none !important; transform: none !important; }
+          .bento-card:hover .bento-desc,
+          .bento-card:hover .bento-cta { opacity: 1; }
+        }
+      `}</style>
+
+      <div className="max-w-6xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: prefersReducedMotion ? 0.2 : 0.85, ease: EASE }}
+          className="mb-14"
+        >
+          <p className="text-xs font-bold tracking-[0.4em] uppercase mb-5" style={{ color: 'rgba(255,255,255,0.65)' }}>
+            VOGUE 2026 — EDITORIAL LOOK BOOK &nbsp;·&nbsp; {format(new Date(), "d MMMM yyyy", { locale: it }).toUpperCase()}
+          </p>
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
+            <h2
+              className="font-black"
+              style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(3rem, 8vw, 6.5rem)', lineHeight: 0.88, color: 'white' }}
+            >
+              I Look
+              <br />
+              <span style={{ WebkitTextStroke: '2px rgba(255,255,255,0.55)', color: 'transparent' }}>
+                Autunno Inverno
+              </span>
+            </h2>
+            <p style={{ color: 'rgba(255,255,255,0.65)', maxWidth: '22rem', fontSize: '0.9rem', lineHeight: 1.75 }}>
+              Tendenze selezionate da <strong className="text-white">Bruno Melito</strong> — prenotale subito per portarle con te.
+            </p>
+          </div>
+        </motion.div>
+
+        <div className="bento-cover">
+          {items.slice(0, 1).map((t) => renderCard(t, 0, true))}
         </div>
+        {items.length > 1 && (
+          <CollapsibleReveal buttonBg={buttonBg} buttonText="#FFFFFF" darkBg>
+            <div
+              className="bento-grid"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: '14px',
+              }}
+            >
+              {items.slice(1).map((t, k) => renderCard(t, k + 1, false))}
+            </div>
+          </CollapsibleReveal>
+        )}
       </div>
 
       <AnimatePresence>
