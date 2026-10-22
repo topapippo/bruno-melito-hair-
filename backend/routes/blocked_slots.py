@@ -5,6 +5,7 @@ from datetime import datetime, timezone, date as date_type, timedelta
 import uuid
 import os
 import re
+import unicodedata
 from database import db
 from routes.auth import get_current_user
 
@@ -17,6 +18,23 @@ async def _get_salon_owner() -> Optional[dict]:
     return user
 
 router = APIRouter()
+
+# Giorni della settimana: l'unico posto dove si decide come confrontarli.
+# I blocchi ricorrenti possono essere stati salvati con o senza accento ("lunedi" / "lunedì"),
+# con maiuscole diverse o spazi: si confronta sempre la forma canonica, senza toccare i dati salvati.
+_DAY_CANONICAL = {
+    "lunedi": "lunedì", "martedi": "martedì", "mercoledi": "mercoledì",
+    "giovedi": "giovedì", "venerdi": "venerdì", "sabato": "sabato", "domenica": "domenica",
+}
+
+
+def canonical_day(name):
+    """'Lunedi', ' LUNEDÌ ', 'lunedì' -> 'lunedì' (ignora maiuscole, spazi e accenti).
+    Valori non riconosciuti (o non testuali) restano com'erano."""
+    if not isinstance(name, str):
+        return name
+    stripped = "".join(c for c in unicodedata.normalize("NFD", name.strip().lower()) if unicodedata.category(c) != "Mn")
+    return _DAY_CANONICAL.get(stripped, name)
 
 
 class BlockedSlotCreate(BaseModel):
@@ -35,6 +53,10 @@ async def get_blocked_slots(current_user: dict = Depends(get_current_user)):
     slots = await db.blocked_slots.find(
         {"user_id": current_user["id"]}, {"_id": 0}
     ).to_list(500)
+    # Il giorno dei blocchi ricorrenti esce sempre nella forma canonica ("lunedì"), anche per i dati vecchi
+    for slot in slots:
+        if slot.get("day_of_week"):
+            slot["day_of_week"] = canonical_day(slot["day_of_week"])
     return slots
 
 
@@ -52,7 +74,7 @@ async def create_blocked_slot(data: BlockedSlotCreate, current_user: dict = Depe
         "id": str(uuid.uuid4()),
         "user_id": current_user["id"],
         "type": data.type,
-        "day_of_week": data.day_of_week,
+        "day_of_week": canonical_day(data.day_of_week),
         "date": data.date,
         "day_of_month": data.day_of_month,
         "month_of_year": data.month_of_year,
@@ -138,9 +160,11 @@ async def get_public_blocked_for_date(date: str):
         {"user_id": user_id, "type": "one-time", "date": date}, {"_id": 0}
     ).to_list(100)
     # recurring weekly blocks for this day of week
-    recurring = await db.blocked_slots.find(
-        {"user_id": user_id, "type": "recurring", "day_of_week": day_of_week}, {"_id": 0}
-    ).to_list(100)
+    # (si leggono tutti i blocchi settimanali e si confronta il giorno ignorando accenti e maiuscole)
+    recurring_all = await db.blocked_slots.find(
+        {"user_id": user_id, "type": "recurring"}, {"_id": 0}
+    ).to_list(500)
+    recurring = [s for s in recurring_all if canonical_day(s.get("day_of_week")) == day_of_week]
     # daily blocks (apply every day)
     daily = await db.blocked_slots.find(
         {"user_id": user_id, "type": "daily"}, {"_id": 0}
@@ -190,7 +214,7 @@ async def get_public_all_day_blocked():
 
     return {
         "dates": [s["date"] for s in one_time if s.get("date")],
-        "recurring_days": [s["day_of_week"] for s in recurring if s.get("day_of_week")]
+        "recurring_days": [canonical_day(s["day_of_week"]) for s in recurring if s.get("day_of_week")]
     }
 
 
