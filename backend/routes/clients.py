@@ -29,6 +29,24 @@ def _normalize_phone(phone: str) -> str:
     return digits
 
 
+PERSONAL_DISCOUNT_FIELDS = ("personal_discount_type", "personal_discount_value")
+
+
+def _validate_personal_discount(discount_type, discount_value) -> None:
+    """Sconto personale: tipo 'percent' o 'euro' + valore >= 0 (e <= 100 se percentuale).
+    Tipo e valore vuoti insieme = nessuno sconto personale."""
+    if discount_type is None and discount_value is None:
+        return
+    if discount_type not in ("percent", "euro"):
+        raise HTTPException(status_code=400, detail="Tipo di sconto non valido: usa 'percent' oppure 'euro'")
+    if discount_value is None:
+        raise HTTPException(status_code=400, detail="Indica il valore dello sconto")
+    if discount_value < 0:
+        raise HTTPException(status_code=400, detail="Lo sconto non può essere negativo")
+    if discount_type == "percent" and discount_value > 100:
+        raise HTTPException(status_code=400, detail="Lo sconto in percentuale non può superare 100")
+
+
 def _normalize_client(doc: dict) -> dict:
     doc.pop("sms_reminder", None)
     doc.pop("send_sms_reminders", None)
@@ -79,6 +97,8 @@ async def import_clients_bulk(data: ClientBulkImport, current_user: dict = Depen
 
 @router.post("/clients", response_model=ClientResponse)
 async def create_client(data: ClientCreate, current_user: dict = Depends(get_current_user)):
+    discount_type = data.personal_discount_type or None
+    _validate_personal_discount(discount_type, data.personal_discount_value)
     client_id = str(uuid.uuid4())
     client_doc = {
         "id": client_id, "user_id": current_user["id"],
@@ -86,6 +106,8 @@ async def create_client(data: ClientCreate, current_user: dict = Depends(get_cur
         "email": data.email or "", "hair_notes": data.hair_notes or "",
         "current_color_code": data.current_color_code or "",
         "birthday": data.birthday or None,
+        "personal_discount_type": discount_type,
+        "personal_discount_value": data.personal_discount_value if discount_type else None,
         "total_visits": 0, "created_at": datetime.now(timezone.utc).isoformat()
     }
     try:
@@ -375,9 +397,28 @@ async def get_client(client_id: str, current_user: dict = Depends(get_current_us
 
 @router.put("/clients/{client_id}", response_model=ClientResponse)
 async def update_client(client_id: str, data: ClientUpdate, current_user: dict = Depends(get_current_user)):
-    update_data = {k: v for k, v in data.model_dump().items() if v is not None or k == "birthday"}
+    sent = data.model_fields_set
+    # Lo sconto personale si toglie inviando esplicitamente tipo e valore a null
+    update_data = {
+        k: v for k, v in data.model_dump().items()
+        if v is not None or k == "birthday" or (k in PERSONAL_DISCOUNT_FIELDS and k in sent)
+    }
     if not update_data:
         raise HTTPException(status_code=400, detail="Nessun dato da aggiornare")
+    if any(k in update_data for k in PERSONAL_DISCOUNT_FIELDS):
+        existing = await db.clients.find_one(
+            {"id": client_id, "user_id": current_user["id"]},
+            {"_id": 0, "personal_discount_type": 1, "personal_discount_value": 1},
+        )
+        if not existing:
+            raise HTTPException(status_code=404, detail="Cliente non trovato")
+        eff_type = (update_data["personal_discount_type"] if "personal_discount_type" in update_data
+                    else existing.get("personal_discount_type")) or None
+        eff_value = (update_data["personal_discount_value"] if "personal_discount_value" in update_data
+                     else existing.get("personal_discount_value"))
+        _validate_personal_discount(eff_type, eff_value)
+        if "personal_discount_type" in update_data:
+            update_data["personal_discount_type"] = update_data["personal_discount_type"] or None
     try:
         result = await db.clients.update_one(
             {"id": client_id, "user_id": current_user["id"]}, {"$set": update_data}
@@ -388,7 +429,7 @@ async def update_client(client_id: str, data: ClientUpdate, current_user: dict =
         raise HTTPException(status_code=500, detail=f"Errore aggiornamento: {str(e)}")
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Cliente non trovato")
-    updated = await db.clients.find_one({"id": client_id}, {"_id": 0})
+    updated = await db.clients.find_one({"id": client_id, "user_id": current_user["id"]}, {"_id": 0})
     return ClientResponse(**_normalize_client(updated))
 
 

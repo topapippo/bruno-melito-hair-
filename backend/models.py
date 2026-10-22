@@ -84,6 +84,8 @@ class ClientCreate(BaseModel):
     hair_notes: Optional[str] = ""
     current_color_code: Optional[str] = ""   # codice nuance colore (= nome prodotto in magazzino)
     birthday: Optional[str] = None   # formato MM-DD (es. "03-15")
+    personal_discount_type: Optional[str] = None    # "percent" o "euro"
+    personal_discount_value: Optional[float] = Field(None, ge=0)
 
 class ClientResponse(BaseModel):
     id: str
@@ -95,6 +97,8 @@ class ClientResponse(BaseModel):
     birthday: Optional[str] = None
     created_at: str
     total_visits: int = 0
+    personal_discount_type: Optional[str] = None
+    personal_discount_value: Optional[float] = None
 
 class ClientUpdate(BaseModel):
     name: Optional[str] = None
@@ -103,6 +107,8 @@ class ClientUpdate(BaseModel):
     hair_notes: Optional[str] = None
     current_color_code: Optional[str] = None
     birthday: Optional[str] = None
+    personal_discount_type: Optional[str] = None    # "percent" o "euro"; null insieme al valore = toglie lo sconto
+    personal_discount_value: Optional[float] = Field(None, ge=0)
 
 class ClientBulkImport(BaseModel):
     clients: List[dict]
