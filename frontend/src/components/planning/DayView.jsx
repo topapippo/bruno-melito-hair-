@@ -205,9 +205,9 @@ export default function DayView({
                         style={isBlocked ? { backgroundImage: 'repeating-linear-gradient(45deg,#E4DCDD,#E4DCDD 6px,#F3EEEE 6px,#F3EEEE 12px)' } : undefined}
                         className={`h-[48px] border-b border-[#F1E8E9] transition-colors ${time.endsWith(':00') ? 'border-t border-t-[#D9CBCD]' : ''} ${
                           isBlocked
-                            ? 'cursor-not-allowed'
+                            ? (embedded ? 'cursor-pointer' : 'cursor-not-allowed')
                             : isUnavailable
-                            ? (closed ? 'bg-red-50 cursor-not-allowed' : 'bg-gray-100/80 cursor-not-allowed')
+                            ? (closed ? 'bg-red-50' : 'bg-gray-100/80') + (embedded ? ' cursor-pointer' : ' cursor-not-allowed')
                             : (closed ? 'bg-red-50' : 'bg-white')
                         } ${
                           dragOverSlot === `${time}-${col.id}` ? 'bg-[#A94C63]/30 ring-2 ring-[#A94C63] ring-inset' : ''

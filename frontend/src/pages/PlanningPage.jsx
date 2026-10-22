@@ -646,16 +646,8 @@ export default function PlanningPage() {
   };
 
   // --- Vista 3 giorni: click su slot e trascinamento (stessa logica della vista giorno, con la data del giorno cliccato) ---
+  // Come la vecchia vista settimana: il clic apre sempre la creazione, anche su slot bloccati o fuori orario
   const handleMultiDaySlotClick = (dateStr, time, operatorId) => {
-    const d = multiDayData[dateStr];
-    if ((d?.blockedSlots || []).includes(time)) {
-      toast.error('Questo orario è bloccato. Rimuovi il blocco dalle Impostazioni.');
-      return;
-    }
-    if (d?.unavailableSlots?.has(time)) {
-      toast.error('Orario fuori dagli orari di apertura.');
-      return;
-    }
     setNewDialogInitial({
       date: dateStr,
       time,
