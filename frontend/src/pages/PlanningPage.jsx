@@ -1124,6 +1124,7 @@ export default function PlanningPage() {
             selectedDate={selectedDate}
             monthAppointments={filteredMonthAppointments}
             onDayClick={(day) => { setSelectedDate(day); setViewMode('day'); }}
+            onEditAppointment={openEditDialog}
           />
         )}
 
