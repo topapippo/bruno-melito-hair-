@@ -45,7 +45,8 @@ export default function ThreeDaysView({
   const isWeek = numDays > 3;
   // Settimana: i giorni aperti partono da 150px e si dividono lo spazio senza mai far comparire lo scorrimento orizzontale
   const wideSize = isWeek ? 'flex-1 basis-[150px] min-w-0' : 'flex-1 min-w-[240px]';
-  const closedSize = isWeek ? 'flex-none w-[100px]' : 'flex-none w-[150px]';
+  // Giorni chiusi senza appuntamenti: colonna stretta (circa 60px in settimana)
+  const closedSize = isWeek ? 'flex-none w-[60px]' : 'flex-none w-[150px]';
 
   return (
     <Card className="bg-white border border-[#E8DCDD] rounded-xl shadow-sm overflow-hidden">
@@ -98,22 +99,30 @@ export default function ThreeDaysView({
               const prefix = `${dateStr}|`;
               const dayDragOver = dragOverSlot && dragOverSlot.startsWith(prefix) ? dragOverSlot.slice(prefix.length) : null;
 
-              const label = capitalize(format(day, d.closed || numDays > 3 ? 'EEE d' : 'EEE d MMM', { locale: it }));
+              // Stretto solo se chiuso E senza appuntamenti: un giorno con appuntamenti resta largo (rosso) e leggibile
+              const narrow = d.closed && d.appointments.length === 0;
+              const stacked = narrow && isWeek;
+              const label = capitalize(format(day, narrow || numDays > 3 ? 'EEE d' : 'EEE d MMM', { locale: it }));
               const title = (
                 <div className="flex items-center gap-2 min-w-0">
                   <button
                     type="button"
                     onClick={() => onDayClick?.(day)}
-                    className="font-display font-bold truncate hover:underline"
+                    className={`font-display font-bold hover:underline ${stacked ? 'flex flex-col items-center leading-tight text-sm' : 'truncate'}`}
                     title={d.closed ? (d.closedReason || 'Chiuso') : 'Apri questo giorno'}
                     data-testid={`three-days-title-${dateStr}`}
                   >
-                    {label}
+                    {stacked ? (
+                      <>
+                        <span>{capitalize(format(day, 'EEE', { locale: it }))}</span>
+                        <span>{format(day, 'd')}</span>
+                      </>
+                    ) : label}
                   </button>
-                  {!d.closed && d.appointments.length > 0 && (
+                  {!narrow && d.appointments.length > 0 && (
                     <span className="text-sm font-bold text-white bg-[#A94C63] px-2 rounded-full shrink-0">{d.appointments.length}</span>
                   )}
-                  {onAddAppointment && !(d.closed && isWeek) && (
+                  {onAddAppointment && !stacked && (
                     <button
                       type="button"
                       onClick={() => onAddAppointment(day)}
@@ -130,13 +139,14 @@ export default function ThreeDaysView({
               return (
                 <div
                   key={dateStr}
-                  className={`border-r-2 border-[#D9CBCD] last:border-r-0 ${d.closed ? closedSize : wideSize}`}
+                  className={`border-r-2 border-[#D9CBCD] last:border-r-0 ${narrow ? closedSize : wideSize}`}
                   data-testid={`three-days-col-${dateStr}`}
                 >
                   <DayView
                     embedded
                     dense={isWeek}
                     closed={d.closed}
+                    narrow={narrow}
                     dayTitle={title}
                     clients={clients}
                     columns={columns}

@@ -43,10 +43,11 @@ export default function DayView({
   dayTitle = null,
   closed = false,
   dense = false, // settimana: colonne strette, testo a 14px, senza icone nelle schede
+  narrow = null, // giorno chiuso senza appuntamenti: colonna stretta (se non indicato, vale `closed`)
 }) {
   useCategories(); // si ridisegna quando le categorie cambiano
   const { svcById, svcByName } = buildServiceLookups(services);
-  const compact = embedded && closed; // giorno di chiusura: colonna stretta
+  const compact = embedded && (narrow ?? closed); // giorno di chiusura: colonna stretta
   const colMinW = (compact || dense) ? 'min-w-0' : embedded ? 'min-w-[110px]' : 'min-w-[100px] sm:min-w-[150px]';
   const Shell = embedded ? 'div' : Card;
   const Body = embedded ? 'div' : CardContent;
@@ -95,7 +96,7 @@ export default function DayView({
       <Body className={embedded ? '' : 'p-0'}>
         {/* Titolo del giorno (solo vista 3 giorni) */}
         {embedded && dayTitle && (
-          <div className={`h-11 sticky top-0 z-20 flex items-center justify-center border-b border-[#E8DCDD] font-display font-bold ${dense ? 'text-base' : 'text-lg sm:text-2xl'} px-2 truncate ${closed ? 'bg-red-100 text-red-700' : 'bg-white text-[#2D2326]'}`}>
+          <div className={`h-11 sticky top-0 z-20 flex items-center justify-center border-b border-[#E8DCDD] font-display font-bold ${dense ? 'text-base' : 'text-lg sm:text-2xl'} ${compact ? 'px-0.5' : 'px-2'} truncate ${closed ? 'bg-red-100 text-red-700' : 'bg-white text-[#2D2326]'}`}>
             {dayTitle}
           </div>
         )}
