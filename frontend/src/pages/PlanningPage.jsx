@@ -16,6 +16,7 @@ import { generateTimeSlots, ALL_SLOTS, DAY_MAP } from '../lib/timeSlots';
 import { isHoliday } from '../components/planning/holidays';
 import DayView from '../components/planning/DayView';
 import WeekView from '../components/planning/WeekView';
+import ThreeDaysView from '../components/planning/ThreeDaysView';
 import MonthView from '../components/planning/MonthView';
 import NewAppointmentDialog from '../components/planning/NewAppointmentDialog';
 import EditAppointmentDialog from '../components/planning/EditAppointmentDialog';
@@ -50,6 +51,7 @@ export default function PlanningPage() {
   const [viewMode, setViewMode] = useState('day');
   const [weekAppointments, setWeekAppointments] = useState({});
   const [monthAppointments, setMonthAppointments] = useState({});
+  const [threeDayData, setThreeDayData] = useState({});
   const [blockedSlots, setBlockedSlots] = useState([]);
   const [hoursConfig, setHoursConfig] = useState(null);
   const [selectedOperatorId, setSelectedOperatorId] = useState('');
@@ -141,6 +143,11 @@ export default function PlanningPage() {
     if (viewMode === 'week') fetchWeekData();
     if (viewMode === 'month') fetchMonthData();
   }, [selectedDate, viewMode]);
+
+  // Vista 3 giorni: ricarica quando cambia data, vista o orari di apertura
+  useEffect(() => {
+    if (viewMode === 'three') fetchThreeDayData();
+  }, [selectedDate, viewMode, hoursConfig]);
 
   // Poll for new online bookings
   const seenBookingIdsRef = useRef(new Set());
@@ -291,6 +298,44 @@ export default function PlanningPage() {
     setMonthAppointments
   );
 
+  // Vista 3 giorni: appuntamenti, blocchi e chiusure per ciascuno dei 3 giorni dalla data selezionata
+  const fetchThreeDayData = async () => {
+    const days = [0, 1, 2].map((i) => addDays(selectedDate, i));
+    const dateStrs = days.map((d) => format(d, 'yyyy-MM-dd'));
+    try {
+      const [aptsRes, adminBlocksRes, ...blockedRes] = await Promise.all([
+        api.get(`${API}/appointments?start_date=${dateStrs[0]}&end_date=${dateStrs[2]}`).catch(() => ({ data: [] })),
+        api.get(`${API}/blocked-slots`).catch(() => ({ data: [] })),
+        ...dateStrs.map((ds) => api.get(`${API}/public/blocked-slots/${ds}`).catch(() => ({ data: [] }))),
+      ]);
+      const allBlocks = adminBlocksRes.data || [];
+      const dayNameMap = { 0:'domenica',1:'lunedì',2:'martedì',3:'mercoledì',4:'giovedì',5:'venerdì',6:'sabato' };
+      const result = {};
+      dateStrs.forEach((ds, i) => {
+        const day = days[i];
+        const dayName = dayNameMap[day.getDay()];
+        const closure = allBlocks.find((b) => b.type === 'one-time' && b.date === ds && b.reason === 'Giorno Chiuso');
+        const holidayBlock = allBlocks.find((b) => b.reason !== 'Giorno Chiuso' && (
+          (b.type === 'one-time' && b.date === ds && b.start_time === '00:00' && b.end_time === '23:59') ||
+          (b.type === 'recurring' && b.day_of_week === dayName && b.start_time === '00:00' && b.end_time === '23:59')
+        ));
+        const holiday = isHoliday(day);
+        const unavailable = getUnavailableSlots(day);
+        const closedByHours = ALL_SLOTS.every((s) => unavailable.has(s));
+        result[ds] = {
+          appointments: (aptsRes.data || []).filter((a) => a.date === ds),
+          blockedSlots: blockedRes[i].data || [],
+          unavailableSlots: unavailable,
+          closed: !!closure || !!holidayBlock || !!holiday || closedByHours,
+          closedReason: closure ? 'Giorno chiuso' : (holidayBlock?.reason || holiday?.name || 'Chiuso'),
+        };
+      });
+      setThreeDayData(result);
+    } catch {
+      toast.error('Errore nel caricamento dei dati');
+    }
+  };
+
   const matchesFilters = (apt) =>
     (!selectedOperatorId || apt.operator_id === selectedOperatorId) &&
     (!selectedServiceId || (apt.services || []).some((service) => service.id === selectedServiceId));
@@ -302,6 +347,9 @@ export default function PlanningPage() {
   const filteredAppointments = appointments.filter(matchesFilters);
   const filteredWeekAppointments = filterGroupedAppointments(weekAppointments);
   const filteredMonthAppointments = filterGroupedAppointments(monthAppointments);
+  const filteredThreeDayData = Object.fromEntries(
+    Object.entries(threeDayData).map(([ds, v]) => [ds, { ...v, appointments: v.appointments.filter(matchesFilters) }])
+  );
 
   const filteredColumns = selectedOperatorId ? operators.filter((op) => op.id === selectedOperatorId) : operators;
 
@@ -317,6 +365,7 @@ export default function PlanningPage() {
     refreshClients();
     if (viewMode === 'week') fetchWeekData();
     if (viewMode === 'month') fetchMonthData();
+    if (viewMode === 'three') fetchThreeDayData();
   };
 
   // --- Online bookings ---
@@ -381,8 +430,8 @@ export default function PlanningPage() {
   };
 
   // --- Slot helpers ---
-  const getUnavailableSlots = () => {
-    const dateStr = format(selectedDate, 'yyyy-MM-dd');
+  const getUnavailableSlots = (date = selectedDate) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
     const unavailable = new Set();
 
     // Slot fuori orario di lavoro
@@ -522,7 +571,7 @@ export default function PlanningPage() {
     const phone = apt.client_phone || apt.client?.phone || '';
     if (!phone) { toast.error('Numero non disponibile'); return; }
     const services = (apt.services || []).map(s => s.name).join(', ');
-    const dateStr = format(selectedDate, 'dd/MM/yy');
+    const dateStr = apt.date ? format(new Date(apt.date + 'T12:00:00'), 'dd/MM/yy') : format(selectedDate, 'dd/MM/yy');
     const msg = `Ciao ${apt.client_name}! 👋 Ricordiamo il tuo appuntamento del ${dateStr} alle ${apt.time}${services ? ` per ${services}` : ''}. A presto! ✂️`;
     await sendWA(phone, msg, { successMsg: '✅ Promemoria inviato!' });
   };
@@ -599,6 +648,62 @@ export default function PlanningPage() {
     } catch {
       toast.error('Errore nello spostamento');
       setAppointments(prevApts); // ripristina se fallisce
+    }
+  };
+
+  // --- Vista 3 giorni: click su slot e trascinamento (stessa logica della vista giorno, con la data del giorno cliccato) ---
+  const handleThreeDaySlotClick = (dateStr, time, operatorId) => {
+    const d = threeDayData[dateStr];
+    if ((d?.blockedSlots || []).includes(time)) {
+      toast.error('Questo orario è bloccato. Rimuovi il blocco dalle Impostazioni.');
+      return;
+    }
+    if (d?.unavailableSlots?.has(time)) {
+      toast.error('Orario fuori dagli orari di apertura.');
+      return;
+    }
+    setNewDialogInitial({
+      date: dateStr,
+      time,
+      operatorId: operatorId || mbhsOperator?.id || ''
+    });
+    setNewDialogOpen(true);
+  };
+
+  const handleThreeDayDragOver = (e, dateStr, time, colId) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverSlot(`${dateStr}|${time}-${colId}`);
+  };
+
+  const handleThreeDayDrop = async (e, dateStr, time, colId) => {
+    e.preventDefault();
+    setDragOverSlot(null);
+    if (!draggedApt) return;
+    const moved = draggedApt;
+    if (moved.date === dateStr && moved.time === time && moved.operator_id === colId) return;
+
+    // Avvisa se c'è già un appuntamento nel slot di destinazione
+    const [dropH, dropM] = time.split(':').map(Number);
+    const dropStart = dropH * 60 + dropM;
+    const dropEnd = dropStart + (moved.total_duration || 15);
+    const hasConflict = (threeDayData[dateStr]?.appointments || []).some(apt => {
+      if (apt.id === moved.id || apt.operator_id !== colId) return false;
+      const [h, m] = apt.time.split(':').map(Number);
+      const s = h * 60 + m; const en = s + (apt.total_duration || 15);
+      return dropStart < en && dropEnd > s;
+    });
+    if (hasConflict) toast.warning('Attenzione: slot sovrapposto con un altro appuntamento');
+
+    setDraggedApt(null);
+    try {
+      const updateData = { time, date: dateStr };
+      if (colId !== moved.operator_id) updateData.operator_id = colId || '';
+      await api.put(`${API}/appointments/${moved.id}`, updateData);
+      toast.success(`Spostato a ${format(new Date(dateStr + 'T12:00:00'), 'EEE dd-MM', { locale: it })} ${time}`);
+      fetchThreeDayData();
+    } catch {
+      toast.error('Errore nello spostamento');
     }
   };
 
@@ -697,7 +802,9 @@ export default function PlanningPage() {
             <div>
               <h1 className="text-base font-bold uppercase tracking-widest text-[#6B5A5E] leading-tight">Planning</h1>
               <p className="font-display font-bold capitalize text-[#2D2326] mt-0.5 text-3xl sm:text-[40px] leading-tight">
-                {format(selectedDate, "EEEE d MMMM", { locale: it })}
+                {viewMode === 'three'
+                  ? `${format(selectedDate, 'd MMM', { locale: it })} – ${format(addDays(selectedDate, 2), 'd MMM', { locale: it })}`
+                  : format(selectedDate, "EEEE d MMMM", { locale: it })}
                 {isToday(selectedDate) && (
                   <span className="ml-2 inline-flex items-center bg-[#A94C63] text-white text-sm font-black px-2.5 py-1 rounded-full align-middle">
                     OGGI
@@ -715,6 +822,7 @@ export default function PlanningPage() {
                 variant="outline" size="icon"
                 onClick={() => {
                   if (viewMode === 'day') setSelectedDate(subDays(selectedDate, 1));
+                  else if (viewMode === 'three') setSelectedDate(subDays(selectedDate, 3));
                   else if (viewMode === 'week') setSelectedDate(subWeeks(selectedDate, 1));
                   else setSelectedDate(subMonths(selectedDate, 1));
                 }}
@@ -724,19 +832,33 @@ export default function PlanningPage() {
               >
                 <ChevronLeft className="w-5 h-5" />
               </Button>
-              <Button
-                variant="outline"
-                onClick={() => setSelectedDate(new Date())}
-                className={isToday(selectedDate)
-                  ? "bg-[#A94C63] text-white border-2 border-[#A94C63] hover:bg-[#8E3A50] hover:text-white px-5 h-12 rounded-lg text-lg font-bold"
-                  : "bg-white border-2 border-[#A94C63] text-[#A94C63] hover:bg-[#FAEEF1] px-5 h-12 rounded-lg text-lg font-bold"}
-              >
-                Oggi
-              </Button>
+              {(() => {
+                const tomorrowStr = format(addDays(new Date(), 1), 'yyyy-MM-dd');
+                return [
+                  { key: 'today', label: 'OGGI', active: viewMode === 'day' && isToday(selectedDate),
+                    onClick: () => { setSelectedDate(new Date()); setViewMode('day'); } },
+                  { key: 'tomorrow', label: 'DOMANI', active: viewMode === 'day' && format(selectedDate, 'yyyy-MM-dd') === tomorrowStr,
+                    onClick: () => { setSelectedDate(addDays(new Date(), 1)); setViewMode('day'); } },
+                  { key: 'three', label: '3 GIORNI', active: viewMode === 'three',
+                    onClick: () => setViewMode('three') },
+                  { key: 'week', label: 'SETTIMANA', active: viewMode === 'week',
+                    onClick: () => setViewMode('week') },
+                  { key: 'month', label: 'MESE', active: viewMode === 'month',
+                    onClick: () => setViewMode('month') },
+                ].map(v => (
+                  <Button key={v.key} variant="outline" onClick={v.onClick}
+                    aria-pressed={v.active}
+                    className={`rounded-lg border-2 border-[#A94C63] text-lg font-bold px-4 h-12 whitespace-nowrap ${v.active ? 'bg-[#A94C63] text-white hover:bg-[#8E3A50] hover:text-white' : 'bg-white text-[#A94C63] hover:bg-[#FAEEF1] hover:text-[#A94C63]'}`}
+                    data-testid={`view-${v.key}-btn`}>
+                    {v.label}
+                  </Button>
+                ));
+              })()}
               <Button
                 variant="outline" size="icon"
                 onClick={() => {
                   if (viewMode === 'day') setSelectedDate(addDays(selectedDate, 1));
+                  else if (viewMode === 'three') setSelectedDate(addDays(selectedDate, 3));
                   else if (viewMode === 'week') setSelectedDate(addWeeks(selectedDate, 1));
                   else setSelectedDate(addMonths(selectedDate, 1));
                 }}
@@ -746,21 +868,6 @@ export default function PlanningPage() {
               >
                 <ChevronRight className="w-5 h-5" />
               </Button>
-              <div className="flex gap-2">
-                {[
-                  { key: 'day', label: 'Giorno', short: 'G' },
-                  { key: 'week', label: 'Sett.', short: 'S' },
-                  { key: 'month', label: 'Mese', short: 'M' },
-                ].map(v => (
-                  <Button key={v.key} variant="ghost" size="sm"
-                    onClick={() => setViewMode(v.key)}
-                    className={`rounded-lg border-2 border-[#A94C63] text-base sm:text-lg font-bold px-3 sm:px-4 h-12 ${viewMode === v.key ? 'bg-[#A94C63] text-white hover:bg-[#8E3A50] hover:text-white' : 'bg-white text-[#A94C63] hover:bg-[#FAEEF1] hover:text-[#A94C63]'}`}
-                    data-testid={`view-${v.key}-btn`}>
-                    <span className="sm:hidden">{v.short}</span>
-                    <span className="hidden sm:inline">{v.label}</span>
-                  </Button>
-                ))}
-              </div>
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -949,6 +1056,31 @@ export default function PlanningPage() {
             services={services}
             clients={clients}
             onViewDetail={setDetailApt}
+          />
+        ) : viewMode === 'three' ? (
+          <ThreeDaysView
+            selectedDate={selectedDate}
+            dayData={filteredThreeDayData}
+            columns={columns}
+            operatorIds={operators.map((op) => op.id)}
+            TIME_SLOTS={TIME_SLOTS}
+            highlightedClientId={highlightedClientId}
+            onSlotClick={handleThreeDaySlotClick}
+            getAppointmentStyle={getAppointmentStyle}
+            openEditDialog={openEditDialog}
+            openRecurringDialog={openRecurringDialog}
+            onSendWhatsApp={handleSendWhatsApp}
+            onQuickCheckout={openEditDialogForCheckout}
+            onViewDetail={setDetailApt}
+            dragOverSlot={dragOverSlot}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onDragOver={handleThreeDayDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleThreeDayDrop}
+            services={services}
+            clients={clients}
+            onDayClick={(day) => { setSelectedDate(day); setViewMode('day'); }}
           />
         ) : viewMode === 'week' ? (
           <WeekView

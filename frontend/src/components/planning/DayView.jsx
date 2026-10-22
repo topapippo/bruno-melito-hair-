@@ -38,9 +38,17 @@ export default function DayView({
   touchStartRef,
   services,
   onViewDetail,
+  // Modalità incorporata (vista 3 giorni): senza riquadro, colonna orari e scroll propri
+  embedded = false,
+  dayTitle = null,
+  closed = false,
 }) {
   useCategories(); // si ridisegna quando le categorie cambiano
   const { svcById, svcByName } = buildServiceLookups(services);
+  const compact = embedded && closed; // giorno di chiusura: colonna stretta
+  const colMinW = compact ? 'min-w-0' : embedded ? 'min-w-[110px]' : 'min-w-[100px] sm:min-w-[150px]';
+  const Shell = embedded ? 'div' : Card;
+  const Body = embedded ? 'div' : CardContent;
 
   // Linea "adesso" live sulla vista di oggi — aggiornata ogni minuto
   const [now, setNow] = useState(() => new Date());
@@ -82,22 +90,33 @@ export default function DayView({
   };
 
   return (
-    <Card className="bg-white border border-[#E8DCDD] rounded-xl shadow-sm overflow-hidden">
-      <CardContent className="p-0">
-        {/* Header with operator names */}
-        <div className="flex border-b-2 border-[#D9CBCD] bg-white sticky top-0 z-10">
-          <div className="w-14 sm:w-[72px] flex-shrink-0 p-1 sm:p-2 border-r border-[#E8DCDD] flex items-center justify-center">
-            <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-[#A94C63]" />
+    <Shell className={embedded ? 'bg-white' : 'bg-white border border-[#E8DCDD] rounded-xl shadow-sm overflow-hidden'}>
+      <Body className={embedded ? '' : 'p-0'}>
+        {/* Titolo del giorno (solo vista 3 giorni) */}
+        {embedded && dayTitle && (
+          <div className={`h-11 sticky top-0 z-20 flex items-center justify-center border-b border-[#E8DCDD] font-display font-bold text-lg sm:text-2xl px-2 truncate ${closed ? 'bg-red-100 text-red-700' : 'bg-white text-[#2D2326]'}`}>
+            {dayTitle}
           </div>
+        )}
+        {/* Header with operator names */}
+        <div
+          className={`flex border-b-2 border-[#D9CBCD] sticky z-10 ${closed ? 'bg-red-50' : 'bg-white'} ${embedded ? 'h-16' : 'top-0'}`}
+          style={embedded ? { top: dayTitle ? '44px' : 0 } : undefined}
+        >
+          {!embedded && (
+            <div className="w-14 sm:w-[72px] flex-shrink-0 p-1 sm:p-2 border-r border-[#E8DCDD] flex items-center justify-center">
+              <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-[#A94C63]" />
+            </div>
+          )}
           {columns.map((col) => (
             <div
               key={col.id || 'unassigned'}
-              className="flex-1 min-w-[100px] sm:min-w-[150px] p-2 sm:p-3 border-r border-[#E8DCDD] last:border-r-0"
+              className={`flex-1 ${colMinW} p-2 sm:p-3 border-r border-[#E8DCDD] last:border-r-0 flex items-center justify-center`}
               style={{ background: `linear-gradient(180deg, ${col.color}22, transparent 70%)` }}
             >
               <div className="flex items-center justify-center gap-2">
                 <div
-                  className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-white text-[11px] font-black shadow-md ring-2 ring-white"
+                  className={`w-7 h-7 rounded-full flex-shrink-0 items-center justify-center text-white text-[11px] font-black shadow-md ring-2 ring-white ${compact ? 'hidden' : 'flex'}`}
                   style={{ backgroundColor: col.color }}
                 >
                   {(col.name || '?').trim().charAt(0).toUpperCase()}
@@ -113,10 +132,10 @@ export default function DayView({
         {/* Time slots grid */}
         <div
           ref={scrollRef}
-          className="overflow-auto"
-          style={{ maxHeight: 'calc(100vh - 280px)' }}
-          onTouchStart={(e) => { touchStartRef.current = e.touches[0].clientX; }}
-          onTouchEnd={(e) => {
+          className={embedded ? '' : 'overflow-auto'}
+          style={embedded ? undefined : { maxHeight: 'calc(100vh - 280px)' }}
+          onTouchStart={embedded ? undefined : (e) => { touchStartRef.current = e.touches[0].clientX; }}
+          onTouchEnd={embedded ? undefined : (e) => {
             if (!touchStartRef.current) return;
             const diff = e.changedTouches[0].clientX - touchStartRef.current;
             if (Math.abs(diff) > 80) {
@@ -138,6 +157,7 @@ export default function DayView({
               </div>
             )}
             {/* Time column */}
+            {!embedded && (
             <div className="w-14 sm:w-[72px] flex-shrink-0 bg-white border-r border-[#E8DCDD]">
               {TIME_SLOTS.map((time) => (
                 <div
@@ -150,6 +170,7 @@ export default function DayView({
                 </div>
               ))}
             </div>
+            )}
 
             {/* Operator columns */}
             {columns.map((col) => {
@@ -158,10 +179,10 @@ export default function DayView({
               return (
                 <div
                   key={col.id || 'unassigned'}
-                  className="flex-1 min-w-[100px] sm:min-w-[150px] relative border-r border-[#E8DCDD] last:border-r-0"
-                  style={{ backgroundColor: `${col.color}0A` }}
+                  className={`flex-1 ${colMinW} relative border-r border-[#E8DCDD] last:border-r-0`}
+                  style={{ backgroundColor: closed ? '#FEF2F2' : `${col.color}0A` }}
                 >
-                  {colAppointments.length === 0 && (
+                  {colAppointments.length === 0 && !compact && (
                     <div className="absolute inset-0 flex items-start justify-center pt-16 pointer-events-none">
                       <span className="text-[11px] text-[#B0A09A] font-medium italic">Nessun appuntamento</span>
                     </div>
@@ -185,8 +206,8 @@ export default function DayView({
                           isBlocked
                             ? 'cursor-not-allowed'
                             : isUnavailable
-                            ? 'bg-gray-100/80 cursor-not-allowed'
-                            : 'bg-white'
+                            ? (closed ? 'bg-red-50 cursor-not-allowed' : 'bg-gray-100/80 cursor-not-allowed')
+                            : (closed ? 'bg-red-50' : 'bg-white')
                         } ${
                           dragOverSlot === `${time}-${col.id}` ? 'bg-[#A94C63]/30 ring-2 ring-[#A94C63] ring-inset' : ''
                         } ${
@@ -314,7 +335,7 @@ export default function DayView({
             })}
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </Body>
+    </Shell>
   );
 }
