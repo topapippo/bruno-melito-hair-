@@ -523,7 +523,7 @@ export default function BookingForm({
               >
                 <option value="">Nessuna promozione</option>
                 <option value="amica">Porta un&apos;Amica (Trattamento OMAGGIO)</option>
-                <option value="under30">Speciale Under 30 (Lucidante OMAGGIO)</option>
+                <option value="under30">Speciale Under 30 (Schiariture veloci a metà prezzo)</option>
                 <option value="benvenuta">Prima Visita (Consulenza + Trattamento OMAGGIO)</option>
               </select>
               {(formData.notes || '').includes('[PROMO-CODE: amica]') && (
