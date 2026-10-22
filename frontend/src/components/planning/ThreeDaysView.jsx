@@ -1,10 +1,11 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { Clock } from 'lucide-react';
+import { Clock, Plus } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { it } from 'date-fns/locale';
 import DayView from './DayView';
+import { CATEGORIES } from '../../lib/categories';
 
-// Vista 3 giorni: una sola colonna degli orari e tre blocchi giorno affiancati.
+// Vista a più giorni (3 giorni e settimana): una sola colonna degli orari e un blocco per giorno.
 // Ogni blocco è un DayView in modalità "embedded", quindi appuntamenti, click sugli slot
 // e trascinamento si comportano come nella vista giorno.
 // Titolo (44px) + intestazione operatori (64px) del DayView embedded = 108px di spazio sopra gli orari.
@@ -13,7 +14,10 @@ const HEADER_SPACER_PX = 108;
 const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export default function ThreeDaysView({
-  selectedDate,
+  selectedDate,     // primo giorno mostrato
+  numDays = 3,      // 3 giorni oppure 7 (settimana)
+  onAddAppointment, // (day) — se presente, mostra il "+" nel titolo del giorno
+  showLegend = false,
   dayData,          // { 'yyyy-MM-dd': { appointments, blockedSlots, unavailableSlots, closed, closedReason } }
   columns,          // operatori visibili: { id, name, color }
   operatorIds,      // id di tutti gli operatori (per la colonna "senza operatore")
@@ -37,7 +41,8 @@ export default function ThreeDaysView({
   clients,
   onDayClick,
 }) {
-  const days = [0, 1, 2].map((i) => addDays(selectedDate, i));
+  const days = Array.from({ length: numDays }, (_, i) => addDays(selectedDate, i));
+  const wideMinW = numDays > 3 ? 'min-w-[220px]' : 'min-w-[240px]';
 
   return (
     <Card className="bg-white border border-[#E8DCDD] rounded-xl shadow-sm overflow-hidden">
@@ -86,23 +91,39 @@ export default function ThreeDaysView({
               const prefix = `${dateStr}|`;
               const dayDragOver = dragOverSlot && dragOverSlot.startsWith(prefix) ? dragOverSlot.slice(prefix.length) : null;
 
-              const label = capitalize(format(day, d.closed ? 'EEE d' : 'EEE d MMM', { locale: it }));
+              const label = capitalize(format(day, d.closed || numDays > 3 ? 'EEE d' : 'EEE d MMM', { locale: it }));
               const title = (
-                <button
-                  type="button"
-                  onClick={() => onDayClick?.(day)}
-                  className="font-display font-bold truncate hover:underline"
-                  title={d.closed ? (d.closedReason || 'Chiuso') : 'Apri questo giorno'}
-                  data-testid={`three-days-title-${dateStr}`}
-                >
-                  {label}
-                </button>
+                <div className="flex items-center gap-2 min-w-0">
+                  <button
+                    type="button"
+                    onClick={() => onDayClick?.(day)}
+                    className="font-display font-bold truncate hover:underline"
+                    title={d.closed ? (d.closedReason || 'Chiuso') : 'Apri questo giorno'}
+                    data-testid={`three-days-title-${dateStr}`}
+                  >
+                    {label}
+                  </button>
+                  {!d.closed && d.appointments.length > 0 && (
+                    <span className="text-sm font-bold text-white bg-[#A94C63] px-2 rounded-full shrink-0">{d.appointments.length}</span>
+                  )}
+                  {onAddAppointment && (
+                    <button
+                      type="button"
+                      onClick={() => onAddAppointment(day)}
+                      aria-label={`Nuovo appuntamento ${label}`}
+                      className="h-7 w-7 shrink-0 rounded-full bg-[#A94C63]/10 text-[#A94C63] hover:bg-[#A94C63]/20 flex items-center justify-center"
+                      data-testid={`week-add-apt-${dateStr}`}
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               );
 
               return (
                 <div
                   key={dateStr}
-                  className={`border-r-2 border-[#D9CBCD] last:border-r-0 ${d.closed ? 'flex-none w-[150px]' : 'flex-1 min-w-[240px]'}`}
+                  className={`border-r-2 border-[#D9CBCD] last:border-r-0 ${d.closed ? 'flex-none w-[150px]' : `flex-1 ${wideMinW}`}`}
                   data-testid={`three-days-col-${dateStr}`}
                 >
                   <DayView
@@ -140,6 +161,18 @@ export default function ThreeDaysView({
             })}
           </div>
         </div>
+
+        {showLegend && (
+          <div className="flex flex-wrap items-center gap-2 px-4 py-2.5 bg-white border-t border-[#E8DCDD]">
+            <span className="text-sm text-[#6B5A5E] font-semibold uppercase mr-1">Servizi:</span>
+            {CATEGORIES.filter((c) => c.value !== 'altro').map((x) => (
+              <div key={x.value} className="flex items-center gap-1.5 px-2 py-0.5 rounded-full" style={{ backgroundColor: `${x.color}18` }}>
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: x.color }} />
+                <span className="text-sm font-semibold" style={{ color: x.color }}>{x.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -6,7 +6,7 @@ import Layout from '../components/Layout';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ChevronLeft, ChevronRight, Plus, CalendarDays, CheckCircle, RefreshCcw, MessageCircle, Lock, Unlock, Euro, TrendingUp } from 'lucide-react';
-import { format, addDays, subDays, startOfWeek, endOfWeek, addWeeks, subWeeks, startOfMonth, endOfMonth, addMonths, subMonths, eachDayOfInterval, isToday } from 'date-fns';
+import { format, addDays, subDays, startOfWeek, addWeeks, subWeeks, startOfMonth, endOfMonth, addMonths, subMonths, eachDayOfInterval, isToday } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { CATEGORIES, useCategories } from '../lib/categories';
@@ -15,7 +15,6 @@ import { generateTimeSlots, ALL_SLOTS, DAY_MAP } from '../lib/timeSlots';
 // Sub-components
 import { isHoliday } from '../components/planning/holidays';
 import DayView from '../components/planning/DayView';
-import WeekView from '../components/planning/WeekView';
 import ThreeDaysView from '../components/planning/ThreeDaysView';
 import MonthView from '../components/planning/MonthView';
 import NewAppointmentDialog from '../components/planning/NewAppointmentDialog';
@@ -49,9 +48,9 @@ export default function PlanningPage() {
   // Navigation
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState('day');
-  const [weekAppointments, setWeekAppointments] = useState({});
+  const isMultiDay = viewMode === 'three' || viewMode === 'week'; // viste con più giorni affiancati
   const [monthAppointments, setMonthAppointments] = useState({});
-  const [threeDayData, setThreeDayData] = useState({});
+  const [multiDayData, setMultiDayData] = useState({});
   const [blockedSlots, setBlockedSlots] = useState([]);
   const [hoursConfig, setHoursConfig] = useState(null);
   const [selectedOperatorId, setSelectedOperatorId] = useState('');
@@ -142,13 +141,12 @@ export default function PlanningPage() {
   }, [selectedDate]);
 
   useEffect(() => {
-    if (viewMode === 'week') fetchWeekData();
     if (viewMode === 'month') fetchMonthData();
   }, [selectedDate, viewMode]);
 
-  // Vista 3 giorni: ricarica quando cambia data, vista o orari di apertura
+  // Viste 3 giorni e settimana: ricarica quando cambia data, vista o orari di apertura
   useEffect(() => {
-    if (viewMode === 'three') fetchThreeDayData();
+    if (isMultiDay) fetchMultiDayData();
   }, [selectedDate, viewMode, hoursConfig]);
 
   // Poll for new online bookings
@@ -288,25 +286,22 @@ export default function PlanningPage() {
     setter(results);
   };
 
-  const fetchWeekData = () => fetchRangeAppointments(
-    startOfWeek(selectedDate, { weekStartsOn: 1 }),
-    endOfWeek(selectedDate, { weekStartsOn: 1 }),
-    setWeekAppointments
-  );
-
   const fetchMonthData = () => fetchRangeAppointments(
     startOfMonth(selectedDate),
     endOfMonth(selectedDate),
     setMonthAppointments
   );
 
-  // Vista 3 giorni: appuntamenti, blocchi e chiusure per ciascuno dei 3 giorni dalla data selezionata
-  const fetchThreeDayData = async () => {
-    const days = [0, 1, 2].map((i) => addDays(selectedDate, i));
+  // Viste 3 giorni e settimana: appuntamenti, blocchi e chiusure per ciascun giorno mostrato
+  // (3 giorni dalla data selezionata; settimana = lunedì–domenica)
+  const fetchMultiDayData = async () => {
+    const isWeekView = viewMode === 'week';
+    const firstDay = isWeekView ? startOfWeek(selectedDate, { weekStartsOn: 1 }) : selectedDate;
+    const days = Array.from({ length: isWeekView ? 7 : 3 }, (_, i) => addDays(firstDay, i));
     const dateStrs = days.map((d) => format(d, 'yyyy-MM-dd'));
     try {
       const [aptsRes, adminBlocksRes, ...blockedRes] = await Promise.all([
-        api.get(`${API}/appointments?start_date=${dateStrs[0]}&end_date=${dateStrs[2]}`).catch(() => ({ data: [] })),
+        api.get(`${API}/appointments?start_date=${dateStrs[0]}&end_date=${dateStrs[dateStrs.length - 1]}`).catch(() => ({ data: [] })),
         api.get(`${API}/blocked-slots`).catch(() => ({ data: [] })),
         ...dateStrs.map((ds) => api.get(`${API}/public/blocked-slots/${ds}`).catch(() => ({ data: [] }))),
       ]);
@@ -332,7 +327,7 @@ export default function PlanningPage() {
           closedReason: closure ? 'Giorno chiuso' : (holidayBlock?.reason || holiday?.name || 'Chiuso'),
         };
       });
-      setThreeDayData(result);
+      setMultiDayData(result);
     } catch {
       toast.error('Errore nel caricamento dei dati');
     }
@@ -347,10 +342,9 @@ export default function PlanningPage() {
   );
 
   const filteredAppointments = appointments.filter(matchesFilters);
-  const filteredWeekAppointments = filterGroupedAppointments(weekAppointments);
   const filteredMonthAppointments = filterGroupedAppointments(monthAppointments);
-  const filteredThreeDayData = Object.fromEntries(
-    Object.entries(threeDayData).map(([ds, v]) => [ds, { ...v, appointments: v.appointments.filter(matchesFilters) }])
+  const filteredMultiDayData = Object.fromEntries(
+    Object.entries(multiDayData).map(([ds, v]) => [ds, { ...v, appointments: v.appointments.filter(matchesFilters) }])
   );
 
   const filteredColumns = selectedOperatorId ? operators.filter((op) => op.id === selectedOperatorId) : operators;
@@ -365,9 +359,8 @@ export default function PlanningPage() {
   const refreshAll = () => {
     fetchData();
     refreshClients();
-    if (viewMode === 'week') fetchWeekData();
     if (viewMode === 'month') fetchMonthData();
-    if (viewMode === 'three') fetchThreeDayData();
+    if (isMultiDay) fetchMultiDayData();
   };
 
   // --- Online bookings ---
@@ -526,9 +519,9 @@ export default function PlanningPage() {
   };
 
   // Vista 3 giorni: stesso blocco orari, con la data del giorno cliccato
-  const handleThreeDaySlotRightClick = (e, dateStr, time) => {
+  const handleMultiDaySlotRightClick = (e, dateStr, time) => {
     e.preventDefault();
-    const d = threeDayData[dateStr];
+    const d = multiDayData[dateStr];
     if ((d?.blockedSlots || []).includes(time) || d?.unavailableSlots?.has(time)) return;
     setBlockInitialTime(time);
     setBlockDate(new Date(dateStr + 'T12:00:00'));
@@ -542,18 +535,6 @@ export default function PlanningPage() {
       operatorId: mbhsOperator?.id || ''
     });
     setNewDialogOpen(true);
-  };
-
-  // Week view drag & drop handler
-  const handleWeekDragDrop = async (apt, newDate, newTime) => {
-    try {
-      const updateData = { time: newTime, date: newDate };
-      await api.put(`${API}/appointments/${apt.id}`, updateData);
-      toast.success(`Spostato a ${format(new Date(newDate + 'T12:00:00'), 'EEE dd-MM', { locale: it })} ${newTime}`);
-      fetchWeekData();
-    } catch {
-      toast.error('Errore nello spostamento');
-    }
   };
 
   // --- Appointment interactions ---
@@ -665,8 +646,8 @@ export default function PlanningPage() {
   };
 
   // --- Vista 3 giorni: click su slot e trascinamento (stessa logica della vista giorno, con la data del giorno cliccato) ---
-  const handleThreeDaySlotClick = (dateStr, time, operatorId) => {
-    const d = threeDayData[dateStr];
+  const handleMultiDaySlotClick = (dateStr, time, operatorId) => {
+    const d = multiDayData[dateStr];
     if ((d?.blockedSlots || []).includes(time)) {
       toast.error('Questo orario è bloccato. Rimuovi il blocco dalle Impostazioni.');
       return;
@@ -683,13 +664,13 @@ export default function PlanningPage() {
     setNewDialogOpen(true);
   };
 
-  const handleThreeDayDragOver = (e, dateStr, time, colId) => {
+  const handleMultiDayDragOver = (e, dateStr, time, colId) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     setDragOverSlot(`${dateStr}|${time}-${colId}`);
   };
 
-  const handleThreeDayDrop = async (e, dateStr, time, colId) => {
+  const handleMultiDayDrop = async (e, dateStr, time, colId) => {
     e.preventDefault();
     setDragOverSlot(null);
     if (!draggedApt) return;
@@ -700,7 +681,7 @@ export default function PlanningPage() {
     const [dropH, dropM] = time.split(':').map(Number);
     const dropStart = dropH * 60 + dropM;
     const dropEnd = dropStart + (moved.total_duration || 15);
-    const hasConflict = (threeDayData[dateStr]?.appointments || []).some(apt => {
+    const hasConflict = (multiDayData[dateStr]?.appointments || []).some(apt => {
       if (apt.id === moved.id || apt.operator_id !== colId) return false;
       const [h, m] = apt.time.split(':').map(Number);
       const s = h * 60 + m; const en = s + (apt.total_duration || 15);
@@ -714,7 +695,7 @@ export default function PlanningPage() {
       if (colId !== moved.operator_id) updateData.operator_id = colId || '';
       await api.put(`${API}/appointments/${moved.id}`, updateData);
       toast.success(`Spostato a ${format(new Date(dateStr + 'T12:00:00'), 'EEE dd-MM', { locale: it })} ${time}`);
-      fetchThreeDayData();
+      fetchMultiDayData();
     } catch {
       toast.error('Errore nello spostamento');
     }
@@ -1074,16 +1055,19 @@ export default function PlanningPage() {
             clients={clients}
             onViewDetail={setDetailApt}
           />
-        ) : viewMode === 'three' ? (
+        ) : isMultiDay ? (
           <ThreeDaysView
-            selectedDate={selectedDate}
-            dayData={filteredThreeDayData}
+            selectedDate={viewMode === 'week' ? startOfWeek(selectedDate, { weekStartsOn: 1 }) : selectedDate}
+            numDays={viewMode === 'week' ? 7 : 3}
+            onAddAppointment={viewMode === 'week' ? openNewAppointmentForDate : undefined}
+            showLegend={viewMode === 'week'}
+            dayData={filteredMultiDayData}
             columns={columns}
             operatorIds={operators.map((op) => op.id)}
             TIME_SLOTS={TIME_SLOTS}
             highlightedClientId={highlightedClientId}
-            onSlotClick={handleThreeDaySlotClick}
-            onSlotRightClick={handleThreeDaySlotRightClick}
+            onSlotClick={handleMultiDaySlotClick}
+            onSlotRightClick={handleMultiDaySlotRightClick}
             getAppointmentStyle={getAppointmentStyle}
             openEditDialog={openEditDialog}
             openRecurringDialog={openRecurringDialog}
@@ -1093,24 +1077,12 @@ export default function PlanningPage() {
             dragOverSlot={dragOverSlot}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
-            onDragOver={handleThreeDayDragOver}
+            onDragOver={handleMultiDayDragOver}
             onDragLeave={handleDragLeave}
-            onDrop={handleThreeDayDrop}
+            onDrop={handleMultiDayDrop}
             services={services}
             clients={clients}
             onDayClick={(day) => { setSelectedDate(day); setViewMode('day'); }}
-          />
-        ) : viewMode === 'week' ? (
-          <WeekView
-            selectedDate={selectedDate}
-            weekAppointments={filteredWeekAppointments}
-            operators={filteredColumns}
-            blockedSlotsMap={{}}
-            onAddAppointment={openNewAppointmentForDate}
-            onDayClick={(day) => { setSelectedDate(day); setViewMode('day'); }}
-            onEditAppointment={openEditDialog}
-            onDragDrop={handleWeekDragDrop}
-            services={services}
           />
         ) : (
           <MonthView
@@ -1200,7 +1172,7 @@ export default function PlanningPage() {
           onClose={() => setBlockDialogOpen(false)}
           initialTime={blockInitialTime}
           selectedDate={blockDate || selectedDate}
-          onSuccess={() => { fetchData(); if (viewMode === 'three') fetchThreeDayData(); }}
+          onSuccess={() => { fetchData(); if (isMultiDay) fetchMultiDayData(); }}
         />
 
         {/* THANK YOU DIALOG */}
