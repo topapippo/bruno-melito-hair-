@@ -167,6 +167,9 @@ export default function WebsitePage() {
   };
 
   const config = siteData?.config || {};
+  const heroVideoUrl = config.hero_video ? getMediaUrl(config.hero_video) : '';
+  const DEFAULT_HERO_POSTER = "https://res.cloudinary.com/dabpscxvz/video/upload/so_0,f_auto,q_auto,w_900/v1784728707/hero-video_hezmdf%20%27.jpg";
+  const DEFAULT_HERO_VIDEO = "https://res.cloudinary.com/dabpscxvz/video/upload/f_auto,q_auto/v1784728707/hero-video_hezmdf%20%27.mp4";
   const reviews = siteData?.reviews || [];
   const gallery = siteData?.gallery || [];
   const salonPhotos = gallery.filter(g => g.section === 'salon');
@@ -555,14 +558,15 @@ export default function WebsitePage() {
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-black">
         {/* Sfondo Video */}
         <video
+          key={heroVideoUrl}
           autoPlay
           loop
           muted
           playsInline
-          poster="https://res.cloudinary.com/dabpscxvz/video/upload/so_0,f_auto,q_auto,w_900/v1784728707/hero-video_hezmdf%20%27.jpg"
+          poster={heroVideoUrl ? undefined : DEFAULT_HERO_POSTER}
           className="absolute inset-0 w-full h-full object-cover"
         >
-          <source src="https://res.cloudinary.com/dabpscxvz/video/upload/f_auto,q_auto/v1784728707/hero-video_hezmdf%20%27.mp4" type="video/mp4" />
+          <source src={heroVideoUrl || DEFAULT_HERO_VIDEO} type="video/mp4" />
         </video>
 
         {/* Overlay scuro elegante per leggibilità */}

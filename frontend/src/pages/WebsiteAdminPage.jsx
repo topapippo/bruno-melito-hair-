@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import api, { API } from '../lib/api';
+import api, { API, getErrorMessage } from '../lib/api';
 import { getCategoryInfo, groupServicesByCategory } from '../lib/categories';
 import { getMediaUrl } from '../lib/mediaUrl';
 import Layout from '../components/Layout';
@@ -57,6 +57,8 @@ export default function WebsiteAdminPage() {
   const [editPromo, setEditPromo] = useState(null);
   const [promoForm, setPromoForm] = useState({ name: '', description: '', discount_type: 'percent', discount_value: 10, active: true, show_on_booking: true });
   const heroInputRef = useRef(null);
+  const heroVideoInputRef = useRef(null);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, type: null, id: null, label: '' });
   const [trends, setTrends] = useState([]);
@@ -75,6 +77,25 @@ export default function WebsiteAdminPage() {
       toast.success('Immagine hero caricata!');
     } catch (err) { toast.error('Errore upload immagine hero'); }
     finally { setUploading(false); }
+  };
+
+  const handleHeroVideoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error('Il video è troppo grande: massimo 50MB. Scegli un video più corto o più leggero.');
+      return;
+    }
+    setUploadingVideo(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const uploadRes = await api.post('/website/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      updateField('hero_video', uploadRes.data.url);
+      toast.success('Video hero caricato! Premi Salva per pubblicarlo.');
+    } catch (err) { toast.error(getErrorMessage(err, 'Errore upload video hero')); }
+    finally { setUploadingVideo(false); }
   };
 
   useEffect(() => { fetchAll(); }, []);
@@ -513,6 +534,36 @@ export default function WebsiteAdminPage() {
                         )}
                       </div>
                       <p className="text-[10px] text-[#94A3B8]">Consigliato: 1920x1080px, formato orizzontale</p>
+                    </div>
+                  </div>
+
+                  {/* Video Hero */}
+                  <div className="mt-4 pt-4 border-t border-[#C8617A]/20">
+                    <Label className="text-sm font-bold text-[#2D1B14] flex items-center gap-2 mb-3"><Upload className="w-4 h-4 text-[#C8617A]" /> Video Hero</Label>
+                    <div className="flex flex-col md:flex-row gap-4 items-start">
+                      <div className="relative w-full md:w-64 h-36 rounded-xl overflow-hidden bg-[#1a0e08] shrink-0">
+                        {config.hero_video ? (
+                          <video key={config.hero_video} src={getMediaUrl(config.hero_video)} muted loop playsInline controls className="w-full h-full object-cover" data-testid="hero-video-preview" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-white/60 text-sm text-center px-2">Video attuale del sito</div>
+                        )}
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <p className="text-xs text-[#7C5C4A]">Questo video appare come sfondo in movimento della sezione Hero del sito pubblico.</p>
+                        <div className="flex flex-wrap gap-2">
+                          <input ref={heroVideoInputRef} type="file" accept="video/*" className="hidden" onChange={handleHeroVideoUpload} />
+                          <Button variant="outline" size="sm" onClick={() => heroVideoInputRef.current?.click()} disabled={uploadingVideo}
+                            className="border-[#C8617A] text-[#C8617A] hover:bg-[#C8617A]/10" data-testid="hero-video-upload-btn">
+                            <Upload className="w-4 h-4 mr-1" /> {uploadingVideo ? 'Caricamento...' : 'Carica Video'}
+                          </Button>
+                          {config.hero_video && (
+                            <Button variant="ghost" size="sm" onClick={() => updateField('hero_video', '')} className="text-red-500" data-testid="hero-video-reset-btn">
+                              <Trash2 className="w-4 h-4 mr-1" /> Ripristina video originale
+                            </Button>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-[#94A3B8]">Video mp4, max 50MB, consigliati 10-20 secondi, senza audio</p>
+                      </div>
                     </div>
                   </div>
                 </div>
