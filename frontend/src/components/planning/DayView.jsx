@@ -143,7 +143,7 @@ export default function DayView({
                 <div
                   key={time}
                   className={`h-[48px] flex items-start justify-center pt-0.5 border-b border-[#F0E6DC]/30 ${
-                    time.endsWith(':00') ? 'font-bold text-[10px] sm:text-sm text-[#2D1B14] bg-[#E2E8F0]/20' : 'text-[9px] sm:text-xs text-[#7C5C4A]'
+                    time.endsWith(':00') ? 'font-bold text-xs sm:text-base text-[#2D2326] bg-[#E2E8F0]/20' : 'text-[10px] sm:text-sm text-[#6B5A5E]'
                   }`}
                 >
                   {time}
@@ -182,21 +182,21 @@ export default function DayView({
                         onDrop={(e) => !isUnavailable && onDrop(e, time, col.id)}
                         className={`h-[48px] border-b border-[#F0E6DC]/20 transition-colors ${
                           isBlocked
-                            ? 'bg-red-100/80 cursor-not-allowed'
+                            ? 'bg-gray-200/80 cursor-not-allowed'
                             : isUnavailable
                             ? 'bg-gray-100/80 cursor-not-allowed'
                             : time.endsWith(':00') ? 'bg-white' : 'bg-[#FAF7F2]/50'
                         } ${
-                          dragOverSlot === `${time}-${col.id}` ? 'bg-[#C8617A]/30 ring-2 ring-[#C8617A] ring-inset' : ''
+                          dragOverSlot === `${time}-${col.id}` ? 'bg-[#A94C63]/30 ring-2 ring-[#A94C63] ring-inset' : ''
                         } ${
                           isClickable && !isUnavailable
-                            ? 'hover:bg-[#C8617A]/20 cursor-pointer'
+                            ? 'hover:bg-[#A94C63]/20 cursor-pointer'
                             : ''
                         }`}
                       >
                         {isBlocked && col.id === columns[0]?.id && (
                           <div className="h-full flex items-center px-2">
-                            <span className="text-[10px] text-red-400 font-bold uppercase tracking-wider">Bloccato</span>
+                            <span className="text-xs text-[#4B3F43] font-bold uppercase tracking-wider">Bloccato</span>
                           </div>
                         )}
                         {isUnavailable && !isBlocked && col.id === columns[0]?.id && (

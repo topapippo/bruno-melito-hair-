@@ -696,10 +696,10 @@ export default function PlanningPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
               <h1 className="font-display text-2xl sm:text-4xl font-black text-[#2D1B14] leading-tight">Planning</h1>
-              <p className="text-[#C8617A] mt-0.5 font-bold text-xs sm:text-lg">
+              <p className="text-[#A94C63] mt-0.5 font-bold text-sm sm:text-xl">
                 {format(selectedDate, "EEEE dd/MM/yy", { locale: it })}
                 {isToday(selectedDate) && (
-                  <span className="ml-2 inline-flex items-center bg-[#C8617A] text-white text-xs font-black px-2.5 py-1 rounded-full align-middle">
+                  <span className="ml-2 inline-flex items-center bg-[#A94C63] text-white text-sm font-black px-2.5 py-1 rounded-full align-middle">
                     OGGI
                   </span>
                 )}
@@ -728,8 +728,8 @@ export default function PlanningPage() {
                 variant="outline"
                 onClick={() => setSelectedDate(new Date())}
                 className={isToday(selectedDate)
-                  ? "bg-[#C8617A] text-white border-[#C8617A] hover:bg-[#A0404F] hover:text-white px-4"
-                  : "border-[#F0E6DC] text-[#2D1B14] px-4"}
+                  ? "bg-[#A94C63] text-white border-[#A94C63] hover:bg-[#8E3A50] hover:text-white px-4 text-base font-bold"
+                  : "border-[#F0E6DC] text-[#2D2326] px-4 text-base font-bold"}
               >
                 Oggi
               </Button>
@@ -754,7 +754,7 @@ export default function PlanningPage() {
                 ].map(v => (
                   <Button key={v.key} variant="ghost" size="sm"
                     onClick={() => setViewMode(v.key)}
-                    className={`rounded-none text-xs px-2 sm:px-3 h-9 sm:h-10 ${viewMode === v.key ? 'bg-[#C8617A] text-white hover:bg-[#C8617A]' : 'text-[#64748B] hover:bg-gray-100'}`}
+                    className={`rounded-none text-sm sm:text-base px-2 sm:px-3 h-9 sm:h-10 ${viewMode === v.key ? 'bg-[#A94C63] text-white hover:bg-[#A94C63]' : 'text-[#64748B] hover:bg-gray-100'}`}
                     data-testid={`view-${v.key}-btn`}>
                     <span className="sm:hidden">{v.short}</span>
                     <span className="hidden sm:inline">{v.label}</span>
