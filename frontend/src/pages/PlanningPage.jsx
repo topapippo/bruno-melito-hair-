@@ -10,7 +10,7 @@ import { format, addDays, subDays, startOfWeek, addWeeks, subWeeks, startOfMonth
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { CATEGORIES, useCategories } from '../lib/categories';
-import { generateTimeSlots, ALL_SLOTS, DAY_MAP } from '../lib/timeSlots';
+import { generateTimeSlots, ALL_SLOTS, DAY_MAP, isWorkSlot } from '../lib/timeSlots';
 
 // Sub-components
 import { isHoliday } from '../components/planning/holidays';
@@ -473,47 +473,21 @@ export default function PlanningPage() {
   // --- Slot helpers ---
   const getUnavailableSlots = (date = selectedDate) => {
     const dateStr = format(date, 'yyyy-MM-dd');
+    const dow = date.getDay();
     const unavailable = new Set();
 
-    // Slot fuori orario di lavoro
-    if (hoursConfig) {
-      const d = new Date(dateStr + 'T12:00:00');
-      const dow = d.getDay();
-      const configLower = {};
-      Object.keys(hoursConfig).forEach(k => { configLower[k.toLowerCase()] = hoursConfig[k]; });
-      const dayMapFull  = { 0:'domenica',1:'lunedì',2:'martedì',3:'mercoledì',4:'giovedì',5:'venerdì',6:'sabato' };
-      const dayMapShort = { 0:'dom',1:'lun',2:'mar',3:'mer',4:'gio',5:'ven',6:'sab' };
-      const dayHours = (configLower[dayMapFull[dow]] || configLower[dayMapShort[dow]] || '').toLowerCase();
+    // Fuori orario: tutto cio' che non e' nelle fasce di lavoro del giorno (WORK_HOURS in timeSlots.js).
+    // Pausa 13:00-14:00 (mar-gio), mattino presto, sera e giorni chiusi (domenica, lunedi) sono "Fuori orario" ma restano cliccabili.
+    ALL_SLOTS.forEach(s => { if (!isWorkSlot(dow, s)) unavailable.add(s); });
 
-      if (!dayHours || dayHours === 'chiuso' || dayHours === '-') {
-        ALL_SLOTS.forEach(s => unavailable.add(s));
-      } else {
-        const rangePattern = /(\d{1,2})[.:](\d{2})\s*[-–]\s*(\d{1,2})[.:](\d{2})/g;
-        const allowed = new Set();
-        let match;
-        while ((match = rangePattern.exec(dayHours)) !== null) {
-          const openMin  = parseInt(match[1]) * 60 + parseInt(match[2]);
-          const closeMin = parseInt(match[3]) * 60 + parseInt(match[4]);
-          ALL_SLOTS.forEach(s => {
-            const [h, m] = s.split(':').map(Number);
-            const t = h * 60 + m;
-            if (t >= openMin && t <= closeMin - 30) allowed.add(s);
-          });
-        }
-        if (allowed.size > 0) {
-          ALL_SLOTS.forEach(s => { if (!allowed.has(s)) unavailable.add(s); });
-        }
-      }
-    }
-
-    // Orario esteso per quel giorno: diventa orario di lavoro normale (stessa regola degli orari configurati)
+    // Orario esteso per quel giorno ("Prolunga orario"): diventa orario di lavoro normale
     (extraHours || []).filter(x => x.date === dateStr).forEach(x => {
       const [sh, sm] = x.start_time.split(':').map(Number);
       const [eh, em] = x.end_time.split(':').map(Number);
       ALL_SLOTS.forEach(s => {
         const [h, m] = s.split(':').map(Number);
         const t = h * 60 + m;
-        if (t >= sh * 60 + sm && t <= eh * 60 + em - 30) unavailable.delete(s);
+        if (t >= sh * 60 + sm && t < eh * 60 + em) unavailable.delete(s);
       });
     });
 
@@ -555,10 +529,7 @@ export default function PlanningPage() {
       toast.error('Questo orario è bloccato. Rimuovi il blocco dalle Impostazioni.');
       return;
     }
-    if (unavailableSlots.has(time)) {
-      toast.error('Orario fuori dagli orari di apertura.');
-      return;
-    }
+    // Fascia "Fuori orario" (pausa, mattino presto, sera): resta cliccabile per creare un appuntamento
     setNewDialogInitial({
       date: format(selectedDate, 'yyyy-MM-dd'),
       time: time,

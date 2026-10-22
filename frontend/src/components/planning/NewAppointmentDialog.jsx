@@ -15,7 +15,7 @@ import { format, isToday } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { getCategoryInfo, groupServicesByCategory, useCategories, headingTextOn } from '../../lib/categories';
-import { ALL_SLOTS, DAY_MAP } from '../../lib/timeSlots';
+import { ALL_SLOTS, DAY_MAP, isWorkSlot } from '../../lib/timeSlots';
 
 
 // Orario esteso per il giorno ("Prolunga orario"): gli slot tra inizio e fine contano come orario di lavoro
@@ -27,58 +27,23 @@ const extraRangeSlots = (extraRanges = []) => {
     ALL_SLOTS.forEach(slot => {
       const [h, m] = slot.split(':').map(Number);
       const t = h * 60 + m;
-      if (t >= sh * 60 + sm && t <= eh * 60 + em) out.push(slot);
+      if (t >= sh * 60 + sm && t < eh * 60 + em) out.push(slot);
     });
   });
   return out;
 };
 
 const getFilteredSlots = (dateStr, hoursConfig, blockedSlots = [], extraRanges = []) => {
-  let slots = [...ALL_SLOTS];
+  // Orario di lavoro del Planning (WORK_HOURS in timeSlots.js) + eventuale orario esteso di quel giorno
+  const dow = new Date(dateStr + 'T12:00:00').getDay();
   const extraSlots = extraRangeSlots(extraRanges);
-  
-  if (hoursConfig) {
-    const d = new Date(dateStr + 'T12:00:00');
-    const dayKey = DAY_MAP[d.getDay()];
-    // Case-insensitive lookup
-    const configLower = {};
-    Object.keys(hoursConfig).forEach(k => { configLower[k.toLowerCase()] = hoursConfig[k]; });
-    const dayMapFull = { 0: 'domenica', 1: 'lunedì', 2: 'martedì', 3: 'mercoledì', 4: 'giovedì', 5: 'venerdì', 6: 'sabato' };
-    const dayMapNoAccent = { 0: 'domenica', 1: 'lunedi', 2: 'martedi', 3: 'mercoledi', 4: 'giovedi', 5: 'venerdi', 6: 'sabato' };
-    const dow = d.getDay();
-    const dayHours = (configLower[dayMapFull[dow]] || configLower[dayMapNoAccent[dow]] || configLower[dayKey] || '').toLowerCase();
-    if (!dayHours || dayHours === 'chiuso' || dayHours === '-') {
-      // Giorno chiuso ma con orario esteso: valgono solo gli slot dell'estensione
-      if (extraSlots.length === 0) return { slots: [], closed: true, dayLabel: dayKey };
-      return { slots: blockedSlots.length ? extraSlots.filter(s => !blockedSlots.includes(s)) : extraSlots, closed: false };
-    }
-    // Support split schedules: "08:00 - 13:00---14:00 - 19:00"
-    const rangePattern = /(\d{1,2})[.:](\d{2})\s*[-–]\s*(\d{1,2})[.:](\d{2})/g;
-    let match;
-    let foundRange = false;
-    const rangeSlots = [];
-    while ((match = rangePattern.exec(dayHours)) !== null) {
-      foundRange = true;
-      const openMin = parseInt(match[1]) * 60 + parseInt(match[2]);
-      const closeMin = parseInt(match[3]) * 60 + parseInt(match[4]);
-      ALL_SLOTS.forEach(slot => {
-        const [h, m] = slot.split(':').map(Number);
-        const t = h * 60 + m;
-        if (t >= openMin && t <= closeMin) rangeSlots.push(slot);
-      });
-    }
-    if (foundRange) {
-      slots = rangeSlots;
-    }
-  }
-
+  let slots = ALL_SLOTS.filter(slot => isWorkSlot(dow, slot));
+  if (slots.length === 0 && extraSlots.length === 0) return { slots: [], closed: true, dayLabel: DAY_MAP[dow] };
   if (extraSlots.length > 0) slots = [...new Set([...slots, ...extraSlots])].sort();
-  // Filter blocked slots
   if (blockedSlots.length > 0) {
     const blockedSet = new Set(blockedSlots);
     slots = slots.filter(slot => !blockedSet.has(slot));
   }
-
   return { slots, closed: false };
 };
 
@@ -172,6 +137,10 @@ export default function NewAppointmentDialog({
   }, [formData.date, hoursConfig]);
 
   const { slots: availableSlots, closed: isDayClosed } = getFilteredSlots(formData.date, hoursConfig, blockedSlots, (extraHours || []).filter(x => x.date === formData.date));
+  // L'orario scelto nel Planning (anche nella fascia "Fuori orario") resta selezionabile
+  const timeOptions = (!formData.time || availableSlots.includes(formData.time) || isDayClosed)
+    ? availableSlots
+    : [...availableSlots, formData.time].sort();
 
   const toggleService = (serviceId) => {
     setFormData(prev => ({
@@ -472,7 +441,7 @@ export default function NewAppointmentDialog({
                 <Select value={formData.time} onValueChange={(val) => setFormData({ ...formData, time: val })}>
                   <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                   <SelectContent className="max-h-[200px]">
-                    {availableSlots.map((time) => (
+                    {timeOptions.map((time) => (
                       <SelectItem key={time} value={time}>{time}</SelectItem>
                     ))}
                   </SelectContent>

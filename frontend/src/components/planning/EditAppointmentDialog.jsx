@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getCategoryInfo, groupServicesByCategory, CATEGORY_ORDER, useCategories, headingTextOn } from '../../lib/categories';
-import { ALL_SLOTS, DAY_MAP } from '../../lib/timeSlots';
+import { ALL_SLOTS, DAY_MAP, isWorkSlot } from '../../lib/timeSlots';
 import { COLORS } from '../../lib/brandColors';
 
 
@@ -32,43 +32,18 @@ const extraRangeSlots = (extraRanges = []) => {
     ALL_SLOTS.forEach(slot => {
       const [h, m] = slot.split(':').map(Number);
       const t = h * 60 + m;
-      if (t >= sh * 60 + sm && t <= eh * 60 + em) out.push(slot);
+      if (t >= sh * 60 + sm && t < eh * 60 + em) out.push(slot);
     });
   });
   return out;
 };
 
 const getFilteredSlots = (dateStr, hoursConfig, blockedSlots = [], extraRanges = []) => {
-  let slots = [...ALL_SLOTS];
+  // Orario di lavoro del Planning (WORK_HOURS in timeSlots.js) + eventuale orario esteso di quel giorno
+  const dow = new Date(dateStr + 'T12:00:00').getDay();
   const extraSlots = extraRangeSlots(extraRanges);
-  if (hoursConfig) {
-    const d = new Date(dateStr + 'T12:00:00');
-    const dayKey = DAY_MAP[d.getDay()];
-    const fullKeys = { 0:'domenica',1:'lunedì',2:'martedì',3:'mercoledì',4:'giovedì',5:'venerdì',6:'sabato' };
-    const configLower = {};
-    Object.keys(hoursConfig).forEach(k => { configLower[k.toLowerCase()] = hoursConfig[k]; });
-    const dayHours = (configLower[fullKeys[d.getDay()]] || configLower[dayKey] || '').toLowerCase().trim();
-    if (!dayHours || dayHours === 'chiuso' || dayHours === '-') {
-      // Giorno chiuso ma con orario esteso: valgono solo gli slot dell'estensione
-      if (extraSlots.length === 0) return { slots: [], closed: true };
-      return { slots: blockedSlots.length ? extraSlots.filter(s => !blockedSlots.includes(s)) : extraSlots, closed: false };
-    }
-    const rangePattern = /(\d{1,2})[.:](\d{2})\s*[-–]\s*(\d{1,2})[.:](\d{2})/g;
-    const allowed = new Set();
-    let match;
-    let foundRange = false;
-    while ((match = rangePattern.exec(dayHours)) !== null) {
-      foundRange = true;
-      const openMin  = parseInt(match[1]) * 60 + parseInt(match[2]);
-      const closeMin = parseInt(match[3]) * 60 + parseInt(match[4]);
-      ALL_SLOTS.forEach(slot => {
-        const [h, m] = slot.split(':').map(Number);
-        const t = h * 60 + m;
-        if (t >= openMin && t <= closeMin) allowed.add(slot);
-      });
-    }
-    if (foundRange) slots = ALL_SLOTS.filter(s => allowed.has(s));
-  }
+  let slots = ALL_SLOTS.filter(slot => isWorkSlot(dow, slot));
+  if (slots.length === 0 && extraSlots.length === 0) return { slots: [], closed: true, dayLabel: DAY_MAP[dow] };
   if (extraSlots.length > 0) slots = [...new Set([...slots, ...extraSlots])].sort();
   if (blockedSlots.length > 0) {
     const blockedSet = new Set(blockedSlots);
@@ -276,6 +251,10 @@ export default function EditAppointmentDialog({
   }, [editDate, hoursConfig]);
 
   const { slots: editAvailableSlots } = getFilteredSlots(editDate, hoursConfig, blockedSlots, (extraHours || []).filter(x => x.date === editDate));
+  // L'orario già fissato per l'appuntamento resta selezionabile anche se fuori orario
+  const editTimeOptions = (!formData.time || editAvailableSlots.includes(formData.time) || editAvailableSlots.length === 0)
+    ? editAvailableSlots
+    : [...editAvailableSlots, formData.time].sort();
   const currentAppointment = localAppointment || appointment || { services: [], client_id: '', promo_id: '' };
   const activeStatus = currentAppointment?.status;
 
@@ -843,7 +822,7 @@ export default function EditAppointmentDialog({
                     <Select value={formData.time} onValueChange={v=>setFormData({...formData,time:v})}>
                       <SelectTrigger id="appt-time" className="border-2 border-[#F0E6DC] h-10"><SelectValue/></SelectTrigger>
                       <SelectContent className="max-h-[200px]">
-                        {editAvailableSlots.map(t=><SelectItem key={t} value={t}>{t}</SelectItem>)}
+                        {editTimeOptions.map(t=><SelectItem key={t} value={t}>{t}</SelectItem>)}
                         {editAvailableSlots.length===0 && <SelectItem value="closed" disabled>Nessun orario</SelectItem>}
                       </SelectContent>
                     </Select>

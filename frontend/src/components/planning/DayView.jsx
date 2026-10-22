@@ -219,7 +219,7 @@ export default function DayView({
                           isBlocked
                             ? (embedded ? 'cursor-pointer' : 'cursor-not-allowed')
                             : isUnavailable
-                            ? (closed ? 'bg-red-50' : 'bg-gray-100/80') + (embedded ? ' cursor-pointer' : ' cursor-not-allowed')
+                            ? (closed ? 'bg-red-50' : 'bg-gray-100/80') + ' cursor-pointer'
                             : (closed ? 'bg-red-50' : 'bg-white')
                         } ${
                           dragOverSlot === `${time}-${col.id}` ? 'bg-[#A94C63]/30 ring-2 ring-[#A94C63] ring-inset' : ''
