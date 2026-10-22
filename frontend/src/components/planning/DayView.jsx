@@ -9,6 +9,13 @@ const GRID_START_HOUR = 8;
 const GRID_END_HOUR = 20;
 const PX_PER_MIN = 48 / 15;
 
+// Nome breve per le intestazioni delle viste a più giorni: solo il primo nome, senza numero iniziale
+// ("1 BRUNO" -> "Bruno", "2 BRUNA e ROBERTA" -> "Bruna")
+const shortName = (name = '') => {
+  const first = name.replace(/^[\s\d.\-)]+/, '').trim().split(/\s+/)[0] || name.trim();
+  return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
+};
+
 export default function DayView({
   clients = [],
   columns,
@@ -123,9 +130,14 @@ export default function DayView({
                 >
                   {(col.name || '?').trim().charAt(0).toUpperCase()}
                 </div>
-                <span className={`font-bold text-[#2D2326] ${dense ? 'text-base' : 'text-base sm:text-xl'} truncate min-w-0`}>
-                  {col.name}
-                </span>
+                {!compact && (
+                  <span
+                    className={`font-bold text-[#2D2326] ${dense ? 'text-base' : 'text-base sm:text-xl'} truncate min-w-0`}
+                    title={col.name}
+                  >
+                    {embedded ? shortName(col.name) : col.name}
+                  </span>
+                )}
               </div>
             </div>
           ))}
