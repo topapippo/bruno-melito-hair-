@@ -286,6 +286,9 @@ export default function DayView({
                     const isCancelled = apt.status === 'cancelled';
                     const totalDuration = apt.services.reduce((sum, s) => sum + (s.duration || 15), 0) || 1;
                     const operatorColor = col.color || '#64748B';
+                    // Scheda piccola (viste a più giorni): non c'è spazio per le righe dei servizi, mostra solo il nome cliente
+                    const cardHeight = parseInt(style.height, 10) || 0;
+                    const nameOnly = embedded && (cardHeight - 28 < 22 * Math.max(1, apt.services.length));
                     return (
                       <div
                         key={apt.id}
@@ -309,11 +312,11 @@ export default function DayView({
                         {/* Riga nome cliente */}
                         <div
                           className="flex items-center justify-between px-1 text-white flex-shrink-0 gap-1"
-                          style={{ height: '28px', background: `linear-gradient(90deg, ${(apt.paid ? '#10B981' : operatorColor)}CC, #2D1B14E6)` }}
+                          style={{ height: nameOnly ? '100%' : '28px', background: `linear-gradient(90deg, ${(apt.paid ? '#10B981' : operatorColor)}CC, #2D1B14E6)` }}
                         >
 
                           {!dense && <ClientAvatar name={apt.client_name} size="xs" />}
-                          <span className={`font-bold ${dense ? 'text-sm' : 'text-base'} leading-none truncate flex-1`}>
+                          <span className={`font-bold ${dense ? 'text-sm' : 'text-base'} leading-none truncate flex-1 min-w-0`}>
                             {apt.paid && '✅ '}{apt.status === 'completed' && '✓ '}{apt.client_name}
                           </span>
                           {apt.card_last_service && <span title="Ultimo servizio abbonamento!" className="text-orange-300 text-[11px] flex-shrink-0">⚠️</span>}
@@ -354,18 +357,20 @@ export default function DayView({
                             )}
                           </div>
                         </div>
-                        {/* Una riga colorata per ogni servizio */}
+                        {/* Una riga colorata per ogni servizio (nascosta nelle schede piccole) */}
+                        {!nameOnly && (
                         <div className="flex flex-col flex-1 min-h-0" data-testid={`apt-colors-${apt.id}`}>
                           {apt.services.map((s, i) => {
                             const color = isCancelled ? '#EF4444' : (svcColors[i] || '#64748B');
                             return (
                               <div key={i} className="flex items-center px-2 flex-1 min-h-0 border-t border-white/10" style={{ backgroundColor: color, color: readableTextOn(color) }}>
                                 <span className={`font-bold ${dense ? 'text-sm' : 'text-base'} truncate drop-shadow-sm flex-1`}>{s.name}</span>
-                                <span className={`${dense ? 'text-xs' : 'text-sm'} flex-shrink-0 ml-1`}>{s.duration || 15}&apos;</span>
+                                {!dense && <span className="text-sm flex-shrink-0 ml-1">{s.duration || 15}&apos;</span>}
                               </div>
                             );
                           })}
                         </div>
+                        )}
                       </div>
                     );
                   });
