@@ -71,7 +71,7 @@ async def run_backup(user_id: str) -> bool:
         (
             appointments, clients, payments, expenses, cards, card_templates,
             loyalty, loyalty_rewards, operators, services, promotions,
-            blocked_slots, sospesi, users,
+            blocked_slots, sospesi, extra_hours, users,
         ) = await _collect_all(user_id)
 
         backup_data = {
@@ -89,6 +89,7 @@ async def run_backup(user_id: str) -> bool:
             "promotions": promotions,
             "blocked_slots": blocked_slots,
             "sospesi": sospesi,
+            "extra_hours": extra_hours,
             "users": users,
         }
 
@@ -142,13 +143,14 @@ async def _collect_all(user_id: str):
     promotions    = await db.promotions.find(q, {"_id": 0}).to_list(500)
     blocked_slots = await db.blocked_slots.find(q, {"_id": 0}).to_list(2_000)
     sospesi       = await db.sospesi.find(q, {"_id": 0}).to_list(20_000)
+    extra_hours   = await db.extra_hours.find(q, {"_id": 0}).to_list(5_000)   # orari estesi ("Prolunga orario")
     # Utente: escludi il campo password per sicurezza
     own_user      = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0})
     users         = [own_user] if own_user else []
     return (
         appointments, clients, payments, expenses, cards, card_templates,
         loyalty, loyalty_rewards, operators, services, promotions,
-        blocked_slots, sospesi, users,
+        blocked_slots, sospesi, extra_hours, users,
     )
 
 
@@ -257,7 +259,7 @@ async def download_backup_pdf(current_user: dict = Depends(get_current_user)):
     (
         appointments_u, clients_u, payments_u, expenses_u, cards_u, card_templates,
         loyalty, loyalty_rewards, operators_u, services_u, promotions,
-        blocked_slots, sospesi, users,
+        blocked_slots, sospesi, extra_hours, users,
     ) = await _collect_all(uid)
     from routes.categories import load_categories
     cat_labels = {c["value"]: c["label"] for c in await load_categories(uid)}
