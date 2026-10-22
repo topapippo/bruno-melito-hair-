@@ -374,8 +374,8 @@ export default function ClientsPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="font-display text-3xl font-medium text-[#2D1B14]">Clienti</h1>
-            <p className="text-[#7C5C4A] mt-1 ">{clients.length} clienti totali</p>
+            <h1 className="font-display text-4xl font-medium text-[#2D2326]">Clienti</h1>
+            <p className="text-[#6B5A5E] mt-1 text-base">{clients.length} clienti totali</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <Button
@@ -399,7 +399,7 @@ export default function ClientsPage() {
             <Button
               onClick={openNewDialog}
               data-testid="new-client-btn"
-              className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-lg shadow-[rgba(200,97,122,0.35)]"
+              className="bg-[#A94C63] hover:bg-[#8E3A50] text-white text-base font-bold shadow-lg shadow-[rgba(169,76,99,0.35)]"
             >
               <Plus className="w-5 h-5 mr-2" />
               Nuovo Cliente
@@ -417,7 +417,7 @@ export default function ClientsPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               data-testid="search-clients-input"
-              className="pl-10 bg-white border-[#E8D5C8] focus:border-[#C8617A] h-12"
+              className="pl-10 bg-white border-[#E8D5C8] focus:border-[#A94C63] h-12 text-base"
             />
           </div>
           <button
@@ -427,7 +427,7 @@ export default function ClientsPage() {
             data-testid="filter-color-btn"
             className={`flex items-center justify-center gap-2 px-5 h-12 rounded-xl font-bold text-sm transition-all border shrink-0 ${
               colorOnly
-                ? 'bg-[#C8617A] text-white border-[#C8617A] shadow-md'
+                ? 'bg-[#A94C63] text-white border-[#A94C63] shadow-md'
                 : 'bg-white text-[#7C5C4A] border-[#E8D5C8] hover:bg-[#FDF8F5]'
             }`}
           >
@@ -482,7 +482,7 @@ export default function ClientsPage() {
                     <div className="flex items-center gap-3">
                       <ClientAvatar name={client.name} size="lg" />
                       <div>
-                        <h3 className="font-semibold text-[#2D1B14]">{client.name}</h3>
+                        <h3 className="font-semibold text-lg text-[#2D2326]">{client.name}</h3>
                         <div className="flex items-center gap-1 text-xs text-[#7C5C4A]">
                           <History className="w-3 h-3" />
                           {client.total_visits} visite
@@ -494,7 +494,7 @@ export default function ClientsPage() {
                         size="icon"
                         variant="ghost"
                         onClick={() => handleEdit(client)}
-                        className="text-[#7C5C4A] hover:text-[#C8617A]"
+                        className="text-[#7C5C4A] hover:text-[#A94C63]"
                       >
                         <Edit2 className="w-4 h-4" />
                       </Button>
@@ -532,7 +532,7 @@ export default function ClientsPage() {
                     )}
                     {client.current_color_code && (
                       <div className="flex items-center gap-2 text-[#7C5C4A]">
-                        <Palette className="w-4 h-4 text-[#C8617A]" />
+                        <Palette className="w-4 h-4 text-[#A94C63]" />
                         <span className="text-xs">Colore: <strong>{client.current_color_code}</strong></span>
                       </div>
                     )}
@@ -550,7 +550,7 @@ export default function ClientsPage() {
                       size="sm"
                       variant="outline"
                       onClick={() => openClientHistory(client)}
-                      className="flex-1 text-xs border-[#C8617A] text-[#C8617A] hover:bg-gradient-to-r from-[#C8617A] to-[#A0404F]/10"
+                      className="flex-1 text-sm border-[#A94C63] text-[#A94C63] hover:bg-[#A94C63]/10"
                     >
                       <History className="w-3 h-3 mr-1" />
                       Storico
@@ -646,7 +646,7 @@ export default function ClientsPage() {
               </div>
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
-                  <Palette className="w-4 h-4 text-[#C8617A]" />
+                  <Palette className="w-4 h-4 text-[#A94C63]" />
                   Codice Colore (scarico magazzino — più codici separati da virgola)
                 </Label>
                 <div className="relative">
