@@ -5,12 +5,12 @@ import { sendWA } from '../lib/sendWA';
 import Layout from '../components/Layout';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ChevronLeft, ChevronRight, Plus, CalendarDays, CheckCircle, RefreshCcw, MessageCircle, Lock, Unlock, Euro, TrendingUp } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, CalendarDays, CheckCircle, RefreshCcw, Lock, Unlock, Euro, TrendingUp } from 'lucide-react';
 import { format, addDays, subDays, startOfWeek, addWeeks, subWeeks, startOfMonth, endOfMonth, addMonths, subMonths, eachDayOfInterval, isToday } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { CATEGORIES, useCategories } from '../lib/categories';
-import { generateTimeSlots, ALL_SLOTS, DAY_MAP, isWorkSlot } from '../lib/timeSlots';
+import { generateTimeSlots, ALL_SLOTS, isWorkSlot } from '../lib/timeSlots';
 
 // Sub-components
 import { isHoliday } from '../components/planning/holidays';
@@ -167,7 +167,6 @@ export default function PlanningPage() {
   // Refs
   const scrollRef = useRef(null);
   const touchStartRef = useRef(null);
-  const hasScrolledRef = useRef(false);
   const selectedDateRef = useRef(selectedDate);
 
   // Mantieni il ref aggiornato alla data selezionata (evita stale closure nel listener SW)

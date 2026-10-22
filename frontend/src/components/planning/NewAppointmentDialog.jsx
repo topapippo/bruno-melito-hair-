@@ -330,7 +330,6 @@ export default function NewAppointmentDialog({
 
   const selectedServicesInfo = services.filter(s => formData.service_ids.includes(s.id));
   const totalPrice = selectedServicesInfo.reduce((sum, s) => sum + (s.price || 0), 0);
-  const totalDuration = selectedServicesInfo.reduce((sum, s) => sum + (s.duration || 15), 0);
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>

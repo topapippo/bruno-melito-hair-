@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Clock, Repeat, MessageCircle, Euro, Info } from 'lucide-react';
 import { addDays, subDays, isToday } from 'date-fns';
-import { getAppointmentColor, getServiceColors, buildServiceLookups, useCategories, readableTextOn } from '../../lib/categories';
+import { getServiceColors, buildServiceLookups, useCategories, readableTextOn } from '../../lib/categories';
 import ClientAvatar from '../ClientAvatar';
 
 const GRID_START_HOUR = 8;
@@ -304,7 +304,6 @@ export default function DayView({
                     const isHighlighted = highlightedClientId && apt.client_id === highlightedClientId;
                     const svcColors = getServiceColors(apt, svcById, svcByName);
                     const isCancelled = apt.status === 'cancelled';
-                    const totalDuration = apt.services.reduce((sum, s) => sum + (s.duration || 15), 0) || 1;
                     const operatorColor = col.color || '#64748B';
                     // Scheda piccola (viste a più giorni): non c'è spazio per le righe dei servizi, mostra solo il nome cliente
                     const cardHeight = parseInt(style.height, 10) || 0;
