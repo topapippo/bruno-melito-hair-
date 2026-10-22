@@ -333,7 +333,7 @@ export function ReviewsSection({ reviews, T, config }) {
           <div key={i} className="rounded-[2rem] p-8 bg-zinc-900 border border-white/10 shadow-2xl flex flex-col justify-between">
             <div>
               <div className="flex gap-1.5 mb-5 text-[#D4AF7A]">
-                {[1,2,3,4,5].map(s => <Star key={s} size={18} fill="currentColor" />)}
+                {Array.from({ length: Math.max(0, Math.min(5, Math.round(Number(r.rating) || 0))) }, (_, s) => <Star key={s} size={18} fill="currentColor" />)}
               </div>
               <p className="text-white/85 text-base italic mb-8 leading-relaxed">"{r.text}"</p>
             </div>
