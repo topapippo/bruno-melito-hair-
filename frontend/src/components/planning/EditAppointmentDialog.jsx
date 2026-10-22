@@ -680,12 +680,12 @@ export default function EditAppointmentDialog({
 
   return (
     <Dialog open={open} onOpenChange={v => { if (!v) { resetCheckout(); onClose(); } }}>
-      <DialogContent className={`${checkoutMode ? 'sm:max-w-[880px]' : 'sm:max-w-[650px]'} max-h-[90vh] p-0 flex flex-col overflow-hidden`}>
+      <DialogContent className={`${checkoutMode ? 'sm:max-w-[880px]' : 'sm:max-w-[650px]'} max-h-[90vh] p-0 flex flex-col overflow-hidden rounded-2xl shadow-[0_8px_32px_rgba(45,35,38,0.25)]`}>
         <DialogHeader className="px-5 pt-5 pb-3 shrink-0 border-b border-[#F0E6DC]">
-          <DialogTitle className="font-display text-xl text-[#2D1B14]">
-            {checkoutMode ? '💳 Incasso' : 'Modifica Appuntamento'}
+          <DialogTitle className="font-display font-bold text-3xl sm:text-4xl text-[#2D2326]">
+            {checkoutMode ? 'Incasso' : 'Modifica Appuntamento'}
           </DialogTitle>
-          <DialogDescription className="text-sm">
+          <DialogDescription className="text-base text-[#6B5A5E]">
             {appointment.date} alle {appointment.time}
             {checkoutMode && selectedClientInfo && ` · ${selectedClientInfo.name}`}
           </DialogDescription>
@@ -945,10 +945,10 @@ export default function EditAppointmentDialog({
                 ) : (
                   <div className="pt-4 border-t-2 space-y-3 transition-all" style={{borderColor: COLORS.borderLight}}>
                     <div className="flex items-baseline gap-2">
-                      <p className="text-sm font-semibold" style={{color: COLORS.textDark}}>Totale</p>
-                      <p className="text-3xl font-black" style={{color: COLORS.rose}}>€{calculateSubtotal().toFixed(2)}</p>
+                      <p className="text-xl font-semibold" style={{color: COLORS.textDark}}>Totale</p>
+                      <p className="font-display text-5xl font-bold" style={{color: '#2D2326'}}>€{calculateSubtotal().toFixed(2)}</p>
                     </div>
-                    <Button type="button" onClick={()=>saveAppointment(true)} disabled={saving} className="w-full text-white font-black px-8 py-4 rounded-2xl transition-all duration-200 hover:scale-105 active:scale-95 text-lg flex items-center justify-center gap-2 disabled:opacity-60" style={{backgroundColor: '#A94C63', boxShadow: `0 8px 24px rgba(169, 76, 99, 0.35)`}}>
+                    <Button type="button" onClick={()=>saveAppointment(true)} disabled={saving} className="w-full text-white font-black px-9 py-5 h-auto rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 text-[22px] flex items-center justify-center gap-2 disabled:opacity-60" style={{backgroundColor: '#A94C63', boxShadow: `0 8px 24px rgba(169, 76, 99, 0.35)`}}>
                       {saving?<Loader2 className="w-5 h-5 animate-spin"/>:<><Euro className="w-5 h-5"/>INCASSA</>}
                     </Button>
                   </div>
@@ -1091,7 +1091,7 @@ export default function EditAppointmentDialog({
                     className="w-full flex items-center justify-between px-3 py-3 bg-white hover:bg-gray-50">
                     <div className="flex items-center gap-2">
                       <Package className="w-4 h-4 text-gray-500"/>
-                      <span className="font-bold text-sm text-gray-800">Rivendita</span>
+                      <span className="font-display font-bold text-2xl text-[#2D2326]">Rivendita</span>
                       <span className="text-xs text-gray-400">({retailItems.length})</span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -1217,7 +1217,7 @@ export default function EditAppointmentDialog({
                   <div className="rounded-xl border-2 border-[#A94C63] overflow-hidden">
                     <div className="px-3 py-2 bg-[#FFF0F3] flex items-center gap-2">
                       <Ticket className="w-4 h-4 text-[#A94C63]"/>
-                      <span className="font-bold text-base uppercase tracking-wide text-[#A94C63]">Abbonamenti / Card</span>
+                      <span className="font-bold font-display text-2xl text-[#A94C63]">Abbonamenti / Card</span>
                       {selectedCard && <span className="ml-auto text-xs font-bold px-2 py-0.5 bg-[#A94C63] text-white rounded-full">Selezionato</span>}
                     </div>
                     <div className="border-t border-[#F5D0DA] px-2 py-2 space-y-1.5 bg-white">
@@ -1270,7 +1270,7 @@ export default function EditAppointmentDialog({
                       className={`w-full flex items-center justify-between px-3 py-3 transition-colors ${selectedPromo?'bg-pink-100':'bg-pink-50 hover:bg-pink-100'}`}>
                       <div className="flex items-center gap-2">
                         <Gift className="w-4 h-4 text-pink-600"/>
-                        <span className="font-bold text-sm uppercase tracking-wide text-pink-700">Promozioni</span>
+                        <span className="font-display font-bold text-2xl text-[#2D2326]">Promozioni</span>
                         <span className="text-xs text-pink-400">({eligiblePromos.length})</span>
                       </div>
                       <div className="flex items-center gap-2">
@@ -1309,7 +1309,7 @@ export default function EditAppointmentDialog({
                 <div className="rounded-xl border-2 border-gray-200 overflow-hidden">
                   <button type="button" onClick={()=>toggleCat('_opts')} aria-expanded={!!openCats['_opts']}
                     className="w-full flex items-center justify-between px-3 py-2.5 bg-gray-50 hover:bg-gray-100">
-                    <span className="font-bold text-sm text-gray-600">Sconto / Punti / Sospeso</span>
+                    <span className="font-display font-bold text-2xl text-[#2D2326]">Sconto / Punti / Sospeso</span>
                     <div className="flex items-center gap-2">
                       {(discountType!=='none'||paymentMethod==='sospeso')&&<span className="w-2 h-2 rounded-full bg-amber-500"/>}
                       <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${openCats['_opts']?'rotate-180':''}`}/>
@@ -1345,9 +1345,9 @@ export default function EditAppointmentDialog({
                 </div>
 
                 {/* ── 5. RIEPILOGO ── */}
-                <div className="bg-white border-2 border-green-200 rounded-xl px-4 py-3 space-y-1.5">
-                  <div className="flex justify-between text-sm text-gray-600"><span>Servizi:</span><span className="font-semibold">€{calculateSubtotal().toFixed(2)}</span></div>
-                  {retailItems.length > 0 && <div className="flex justify-between text-sm text-gray-600"><span>Rivendita:</span><span className="font-semibold">€{calculateRetailTotal().toFixed(2)}</span></div>}
+                <div className="bg-white border-2 border-[#E8DCDD] rounded-xl px-4 py-3 space-y-1.5">
+                  <div className="flex justify-between text-lg text-gray-600"><span>Servizi:</span><span className="font-semibold">€{calculateSubtotal().toFixed(2)}</span></div>
+                  {retailItems.length > 0 && <div className="flex justify-between text-lg text-gray-600"><span>Rivendita:</span><span className="font-semibold">€{calculateRetailTotal().toFixed(2)}</span></div>}
                   {selectedPromo && <div className="flex justify-between text-sm text-pink-600"><span className="flex items-center gap-1"><Gift className="w-3.5 h-3.5"/>Omaggio:</span><span className="font-semibold">{selectedPromo.free_service_name}</span></div>}
                   {discountType!=='none' && calculateDiscount()>0 && <div className="flex justify-between text-sm text-red-500"><span>Sconto:</span><span className="font-semibold">-€{calculateDiscount().toFixed(2)}</span></div>}
                   {selectedCard && (
@@ -1361,9 +1361,9 @@ export default function EditAppointmentDialog({
                       </span>
                     </div>
                   )}
-                  <div className="flex justify-between text-xl font-black pt-1.5 border-t border-green-200">
+                  <div className="flex justify-between items-baseline text-xl font-bold pt-2 border-t border-[#E8DCDD]">
                     <span>TOTALE:</span>
-                    <span className="text-green-700">€{displayTotal.toFixed(2)}</span>
+                    <span className="font-display text-5xl text-[#2D2326]">€{displayTotal.toFixed(2)}</span>
                   </div>
                 </div>
 
@@ -1425,20 +1425,20 @@ export default function EditAppointmentDialog({
                       onClick={()=>handleCheckout('cash', null)}
                       disabled={processing}
                       onMouseEnter={e => {
-                        e.currentTarget.style.boxShadow = `0 12px 32px rgba(16, 185, 129, 0.4), inset 0 1px 0 rgba(255,255,255,0.2)`;
+                        e.currentTarget.style.boxShadow = `0 6px 16px rgba(169, 76, 99, 0.25)`;
                         e.currentTarget.style.transform = 'scale(1.05) translateY(-2px)';
                       }}
                       onMouseLeave={e => {
-                        e.currentTarget.style.boxShadow = `0 8px 20px rgba(16, 185, 129, 0.35)`;
+                        e.currentTarget.style.boxShadow = `0 2px 6px rgba(169, 76, 99, 0.12)`;
                         e.currentTarget.style.transform = 'scale(1)';
                       }}
                       style={{
-                        background: `linear-gradient(135deg, ${COLORS.success} 0%, #059669 100%)`,
-                        boxShadow: `0 8px 20px rgba(16, 185, 129, 0.35)`,
+                        background: '#fff', border: '2px solid #A94C63',
+                        boxShadow: `0 2px 6px rgba(169, 76, 99, 0.12)`,
                       }}
-                      className="flex flex-col items-center gap-2 text-white font-black rounded-2xl py-5 transition-all duration-200 active:scale-95 disabled:opacity-50">
+                      className="flex flex-col items-center gap-2 text-[#A94C63] font-black rounded-lg py-5 transition-all duration-200 active:scale-95 disabled:opacity-50">
                       <Banknote className="w-7 h-7"/>
-                      <span className="text-xs font-bold uppercase tracking-wide">Contanti</span>
+                      <span className="text-base font-bold uppercase tracking-wide">Contanti</span>
                       <span className="text-xl leading-tight font-black">€{totalAfterDiscount.toFixed(2)}</span>
                     </button>
 
@@ -1447,20 +1447,20 @@ export default function EditAppointmentDialog({
                       onClick={()=>handleCheckout('pos', null)}
                       disabled={processing}
                       onMouseEnter={e => {
-                        e.currentTarget.style.boxShadow = `0 12px 32px rgba(59, 130, 246, 0.4), inset 0 1px 0 rgba(255,255,255,0.2)`;
+                        e.currentTarget.style.boxShadow = `0 6px 16px rgba(169, 76, 99, 0.25)`;
                         e.currentTarget.style.transform = 'scale(1.05) translateY(-2px)';
                       }}
                       onMouseLeave={e => {
-                        e.currentTarget.style.boxShadow = `0 8px 20px rgba(59, 130, 246, 0.35)`;
+                        e.currentTarget.style.boxShadow = `0 2px 6px rgba(169, 76, 99, 0.12)`;
                         e.currentTarget.style.transform = 'scale(1)';
                       }}
                       style={{
-                        background: `linear-gradient(135deg, ${COLORS.info} 0%, #2563eb 100%)`,
-                        boxShadow: `0 8px 20px rgba(59, 130, 246, 0.35)`,
+                        background: '#fff', border: '2px solid #A94C63',
+                        boxShadow: `0 2px 6px rgba(169, 76, 99, 0.12)`,
                       }}
-                      className="flex flex-col items-center gap-2 text-white font-black rounded-2xl py-5 transition-all duration-200 active:scale-95 disabled:opacity-50">
+                      className="flex flex-col items-center gap-2 text-[#A94C63] font-black rounded-lg py-5 transition-all duration-200 active:scale-95 disabled:opacity-50">
                       <Smartphone className="w-7 h-7"/>
-                      <span className="text-xs font-bold uppercase tracking-wide">POS</span>
+                      <span className="text-base font-bold uppercase tracking-wide">POS</span>
                       <span className="text-xl leading-tight font-black">€{totalAfterDiscount.toFixed(2)}</span>
                     </button>
 
@@ -1473,27 +1473,27 @@ export default function EditAppointmentDialog({
                       disabled={processing}
                       onMouseEnter={e => {
                         if (selectedCard) {
-                          e.currentTarget.style.boxShadow = `0 12px 32px rgba(200, 97, 122, 0.4), inset 0 1px 0 rgba(255,255,255,0.2)`;
+                          e.currentTarget.style.boxShadow = `0 6px 16px rgba(169, 76, 99, 0.25)`;
                           e.currentTarget.style.transform = 'scale(1.05) translateY(-2px)';
                         }
                       }}
                       onMouseLeave={e => {
                         if (selectedCard) {
-                          e.currentTarget.style.boxShadow = `0 8px 20px rgba(200, 97, 122, 0.35)`;
+                          e.currentTarget.style.boxShadow = `0 2px 6px rgba(169, 76, 99, 0.12)`;
                           e.currentTarget.style.transform = 'scale(1)';
                         }
                       }}
                       style={selectedCard ? {
-                        background: `linear-gradient(135deg, ${COLORS.rose} 0%, #b04f67 100%)`,
-                        boxShadow: `0 8px 20px rgba(200, 97, 122, 0.35)`,
+                        background: '#FAEEF1', border: '2px solid #A94C63',
+                        boxShadow: `0 2px 6px rgba(169, 76, 99, 0.12)`,
                       } : {
                         background: `linear-gradient(135deg, #d1d5db 0%, #9ca3af 100%)`,
                         boxShadow: `0 2px 8px rgba(0, 0, 0, 0.08)`,
                         color: '#6b7280'
                       }}
-                      className={`flex flex-col items-center gap-2 font-black rounded-2xl py-5 transition-all duration-200 active:scale-95 disabled:opacity-50 ${selectedCard ? 'text-white' : ''}`}>
+                      className={`flex flex-col items-center gap-2 font-black rounded-lg py-5 transition-all duration-200 active:scale-95 disabled:opacity-50 ${selectedCard ? 'text-[#A94C63]' : ''}`}>
                       <Ticket className="w-7 h-7"/>
-                      <span className="text-xs font-bold uppercase tracking-wide truncate px-1 w-full text-center">
+                      <span className="text-base font-bold uppercase tracking-wide truncate px-1 w-full text-center">
                         {selectedCard ? (selectedCardIsSubscription ? 'Scala Abb.' : selectedCard.name.split(' ')[0]) : 'Card/Abb.'}
                       </span>
                       <span className="text-xl leading-tight font-black">
@@ -1530,13 +1530,13 @@ export default function EditAppointmentDialog({
           {/* ═════════════════ FOOTER ═════════════════ */}
           {checkoutMode ? (
             <div className="shrink-0 px-5 py-2.5 bg-white border-t-2 border-[#F0E6DC] flex items-center gap-2">
-              <Button type="button" variant="ghost" size="sm" onClick={handleDelete} disabled={deleting} className="font-bold text-[#DC2626] hover:bg-transparent hover:underline" aria-label="Elimina appuntamento">
+              <Button type="button" variant="ghost" size="sm" onClick={handleDelete} disabled={deleting} className="font-bold text-lg h-12 px-5 rounded-lg text-[#B42318] hover:bg-transparent hover:underline" aria-label="Elimina appuntamento">
                 {deleting?<Loader2 className="w-4 h-4 animate-spin"/>:<><Trash2 className="w-3.5 h-3.5 mr-1"/>Elimina</>}
               </Button>
-              <Button type="button" variant="outline" size="sm" onClick={resetCheckout} className="ml-auto border-[#A94C63] text-[#A94C63] text-base">
+              <Button type="button" variant="outline" size="sm" onClick={resetCheckout} className="ml-auto border-2 border-[#A94C63] text-[#A94C63] bg-white text-lg font-bold h-12 px-5 rounded-lg">
                 ← Modifica appuntamento
               </Button>
-              <Button type="button" variant="outline" size="sm" onClick={()=>saveAppointment(false)} disabled={saving} className="font-bold text-[#A94C63] bg-transparent hover:bg-[#FAF0F5] border-[#A94C63] text-base">
+              <Button type="button" variant="outline" size="sm" onClick={()=>saveAppointment(false)} disabled={saving} className="font-bold text-[#A94C63] bg-white hover:bg-[#FAEEF1] border-2 border-[#A94C63] text-lg h-12 px-5 rounded-lg">
                 {saving?<Loader2 className="w-4 h-4 animate-spin"/>:<><Edit3 className="w-3.5 h-3.5 mr-1"/>Salva</>}
               </Button>
             </div>
