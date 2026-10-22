@@ -266,7 +266,7 @@ export default function Layout({ children }) {
           )}
         </div>
         {!mini && (
-          <span className="truncate text-xs flex-1">{item.label}</span>
+          <span className="truncate text-base flex-1">{item.label}</span>
         )}
         {!mini && badge > 0 && (
           <span
@@ -384,7 +384,7 @@ export default function Layout({ children }) {
                     >
                       <div className="flex items-center gap-2">
                         <span className="text-sm leading-none">{group.emoji}</span>
-                        <span className="text-[9px] font-black uppercase tracking-[0.2em]" style={{ fontFamily: `'DM Sans', sans-serif`, letterSpacing: '0.18em' }}>{group.label}</span>
+                        <span className="text-xs font-black uppercase tracking-[0.2em]" style={{ fontFamily: `'DM Sans', sans-serif`, letterSpacing: '0.18em' }}>{group.label}</span>
                       </div>
                       <ChevronDown
                         className="w-3 h-3 transition-transform duration-200"

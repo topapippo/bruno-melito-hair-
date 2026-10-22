@@ -82,27 +82,27 @@ export default function DayView({
   };
 
   return (
-    <Card className="bg-white border-[#F0E6DC]/40 rounded-3xl shadow-[0_10px_34px_-8px_rgba(200,97,122,0.18)] overflow-hidden">
+    <Card className="bg-white border border-[#E8DCDD] rounded-xl shadow-sm overflow-hidden">
       <CardContent className="p-0">
         {/* Header with operator names */}
-        <div className="flex border-b-2 border-[#C8617A]/40 bg-gradient-to-r from-[#C8617A]/10 to-[#E2E8F0]/20 sticky top-0 z-10">
-          <div className="w-12 sm:w-16 flex-shrink-0 p-1 sm:p-2 border-r-2 border-[#C8617A]/30 flex items-center justify-center">
-            <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-[#C8617A]" />
+        <div className="flex border-b-2 border-[#D9CBCD] bg-white sticky top-0 z-10">
+          <div className="w-14 sm:w-[72px] flex-shrink-0 p-1 sm:p-2 border-r border-[#E8DCDD] flex items-center justify-center">
+            <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-[#A94C63]" />
           </div>
           {columns.map((col) => (
             <div
               key={col.id || 'unassigned'}
-              className="flex-1 min-w-[100px] sm:min-w-[150px] p-2 sm:p-3 border-r-2 border-[#C8617A]/30 last:border-r-0"
+              className="flex-1 min-w-[100px] sm:min-w-[150px] p-2 sm:p-3 border-r border-[#E8DCDD] last:border-r-0"
               style={{ background: `linear-gradient(180deg, ${col.color}22, transparent 70%)` }}
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center gap-2">
                 <div
                   className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-white text-[11px] font-black shadow-md ring-2 ring-white"
                   style={{ backgroundColor: col.color }}
                 >
                   {(col.name || '?').trim().charAt(0).toUpperCase()}
                 </div>
-                <span className="font-bold text-[#2D1B14] text-sm truncate">
+                <span className="font-bold text-[#2D2326] text-base sm:text-xl truncate">
                   {col.name}
                 </span>
               </div>
@@ -133,17 +133,17 @@ export default function DayView({
                 className="absolute left-0 right-0 z-30 pointer-events-none flex items-center"
                 style={{ top: `${nowTop}px` }}
               >
-                <div className="w-2 h-2 rounded-full bg-[#C8617A] shadow-[0_0_6px_rgba(200,97,122,0.8)] ml-1.5 sm:ml-2 flex-shrink-0" />
-                <div className="h-[2px] flex-1 bg-[#C8617A] shadow-[0_0_4px_rgba(200,97,122,0.6)]" />
+                <div className="w-2 h-2 rounded-full bg-[#A94C63] shadow-[0_0_6px_rgba(169,76,99,0.8)] ml-1.5 sm:ml-2 flex-shrink-0" />
+                <div className="h-[2px] flex-1 bg-[#A94C63] shadow-[0_0_4px_rgba(169,76,99,0.6)]" />
               </div>
             )}
             {/* Time column */}
-            <div className="w-12 sm:w-16 flex-shrink-0 bg-gradient-to-b from-[#F8FAFC] to-white">
+            <div className="w-14 sm:w-[72px] flex-shrink-0 bg-white border-r border-[#E8DCDD]">
               {TIME_SLOTS.map((time) => (
                 <div
                   key={time}
-                  className={`h-[48px] flex items-start justify-center pt-0.5 border-b border-[#F0E6DC]/30 ${
-                    time.endsWith(':00') ? 'font-bold text-xs sm:text-base text-[#2D2326] bg-[#E2E8F0]/20' : 'text-[10px] sm:text-sm text-[#6B5A5E]'
+                  className={`h-[48px] flex items-start justify-center pt-0.5 border-b border-[#F1E8E9] ${
+                    time.endsWith(':00') ? 'font-bold text-sm sm:text-base text-[#2D2326] border-t border-t-[#D9CBCD]' : 'text-xs sm:text-[13px] text-[#6B5A5E]'
                   }`}
                 >
                   {time}
@@ -158,7 +158,7 @@ export default function DayView({
               return (
                 <div
                   key={col.id || 'unassigned'}
-                  className="flex-1 min-w-[100px] sm:min-w-[150px] relative border-r border-[#F0E6DC]/20 last:border-r-0"
+                  className="flex-1 min-w-[100px] sm:min-w-[150px] relative border-r border-[#E8DCDD] last:border-r-0"
                   style={{ backgroundColor: `${col.color}0A` }}
                 >
                   {colAppointments.length === 0 && (
@@ -180,12 +180,13 @@ export default function DayView({
                         onDragOver={(e) => !isUnavailable && onDragOver(e, time, col.id)}
                         onDragLeave={onDragLeave}
                         onDrop={(e) => !isUnavailable && onDrop(e, time, col.id)}
-                        className={`h-[48px] border-b border-[#F0E6DC]/20 transition-colors ${
+                        style={isBlocked ? { backgroundImage: 'repeating-linear-gradient(45deg,#E4DCDD,#E4DCDD 6px,#F3EEEE 6px,#F3EEEE 12px)' } : undefined}
+                        className={`h-[48px] border-b border-[#F1E8E9] transition-colors ${time.endsWith(':00') ? 'border-t border-t-[#D9CBCD]' : ''} ${
                           isBlocked
-                            ? 'bg-gray-200/80 cursor-not-allowed'
+                            ? 'cursor-not-allowed'
                             : isUnavailable
                             ? 'bg-gray-100/80 cursor-not-allowed'
-                            : time.endsWith(':00') ? 'bg-white' : 'bg-[#FAF7F2]/50'
+                            : 'bg-white'
                         } ${
                           dragOverSlot === `${time}-${col.id}` ? 'bg-[#A94C63]/30 ring-2 ring-[#A94C63] ring-inset' : ''
                         } ${
@@ -196,7 +197,7 @@ export default function DayView({
                       >
                         {isBlocked && col.id === columns[0]?.id && (
                           <div className="h-full flex items-center px-2">
-                            <span className="text-xs text-[#4B3F43] font-bold uppercase tracking-wider">Bloccato</span>
+                            <span className="text-sm text-[#4B3F43] font-bold">Bloccato</span>
                           </div>
                         )}
                         {isUnavailable && !isBlocked && col.id === columns[0]?.id && (
@@ -234,7 +235,7 @@ export default function DayView({
                         onDragStart={(e) => onDragStart(e, apt)}
                         onDragEnd={onDragEnd}
                         onClick={() => openEditDialog(apt)}
-                        className={`absolute rounded-2xl overflow-hidden cursor-grab active:cursor-grabbing hover:scale-[1.03] hover:-translate-y-0.5 transition-all duration-200 flex flex-col ${
+                        className={`absolute rounded-[5px] overflow-hidden cursor-grab active:cursor-grabbing hover:scale-[1.03] hover:-translate-y-0.5 transition-all duration-200 flex flex-col ${
                           isHighlighted ? 'ring-4 ring-yellow-400 ring-offset-2 z-20' : ''
                         }`}
                         style={{
@@ -249,11 +250,11 @@ export default function DayView({
                         {/* Riga nome cliente */}
                         <div
                           className="flex items-center justify-between px-1 text-white flex-shrink-0 gap-1"
-                          style={{ height: '22px', background: `linear-gradient(90deg, ${(apt.paid ? '#10B981' : operatorColor)}CC, #2D1B14E6)` }}
+                          style={{ height: '28px', background: `linear-gradient(90deg, ${(apt.paid ? '#10B981' : operatorColor)}CC, #2D1B14E6)` }}
                         >
 
                           <ClientAvatar name={apt.client_name} size="xs" />
-                          <span className="font-bold text-[13px] leading-none truncate flex-1">
+                          <span className="font-bold text-base leading-none truncate flex-1">
                             {apt.paid && '✅ '}{apt.status === 'completed' && '✓ '}{apt.client_name}
                           </span>
                           {apt.card_last_service && <span title="Ultimo servizio abbonamento!" className="text-orange-300 text-[11px] flex-shrink-0">⚠️</span>}
@@ -298,8 +299,8 @@ export default function DayView({
                             const color = isCancelled ? '#EF4444' : (svcColors[i] || '#64748B');
                             return (
                               <div key={i} className="flex items-center px-2 flex-1 min-h-0 border-t border-white/10" style={{ backgroundColor: color, color: readableTextOn(color) }}>
-                                <span className="font-bold text-[13px] truncate drop-shadow-sm flex-1">{s.name}</span>
-                                <span className="text-[10px] flex-shrink-0 ml-1">{s.duration || 15}&apos;</span>
+                                <span className="font-bold text-base truncate drop-shadow-sm flex-1">{s.name}</span>
+                                <span className="text-sm flex-shrink-0 ml-1">{s.duration || 15}&apos;</span>
                               </div>
                             );
                           })}

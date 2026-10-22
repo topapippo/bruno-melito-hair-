@@ -695,9 +695,9 @@ export default function PlanningPage() {
         <div className="flex flex-col gap-2 sm:gap-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
-              <h1 className="font-display text-2xl sm:text-4xl font-black text-[#2D1B14] leading-tight">Planning</h1>
-              <p className="text-[#A94C63] mt-0.5 font-bold text-sm sm:text-xl">
-                {format(selectedDate, "EEEE dd/MM/yy", { locale: it })}
+              <h1 className="text-base font-bold uppercase tracking-widest text-[#6B5A5E] leading-tight">Planning</h1>
+              <p className="font-display font-bold capitalize text-[#2D2326] mt-0.5 text-3xl sm:text-[40px] leading-tight">
+                {format(selectedDate, "EEEE d MMMM", { locale: it })}
                 {isToday(selectedDate) && (
                   <span className="ml-2 inline-flex items-center bg-[#A94C63] text-white text-sm font-black px-2.5 py-1 rounded-full align-middle">
                     OGGI
@@ -718,7 +718,7 @@ export default function PlanningPage() {
                   else if (viewMode === 'week') setSelectedDate(subWeeks(selectedDate, 1));
                   else setSelectedDate(subMonths(selectedDate, 1));
                 }}
-                className="border-[#F0E6DC] h-10 w-10"
+                className="border-2 border-[#A94C63] text-[#A94C63] bg-white hover:bg-[#FAEEF1] rounded-lg h-12 w-12"
                 data-testid="prev-day-btn"
                 aria-label="Giorno precedente"
               >
@@ -728,8 +728,8 @@ export default function PlanningPage() {
                 variant="outline"
                 onClick={() => setSelectedDate(new Date())}
                 className={isToday(selectedDate)
-                  ? "bg-[#A94C63] text-white border-[#A94C63] hover:bg-[#8E3A50] hover:text-white px-4 text-base font-bold"
-                  : "border-[#F0E6DC] text-[#2D2326] px-4 text-base font-bold"}
+                  ? "bg-[#A94C63] text-white border-2 border-[#A94C63] hover:bg-[#8E3A50] hover:text-white px-5 h-12 rounded-lg text-lg font-bold"
+                  : "bg-white border-2 border-[#A94C63] text-[#A94C63] hover:bg-[#FAEEF1] px-5 h-12 rounded-lg text-lg font-bold"}
               >
                 Oggi
               </Button>
@@ -740,13 +740,13 @@ export default function PlanningPage() {
                   else if (viewMode === 'week') setSelectedDate(addWeeks(selectedDate, 1));
                   else setSelectedDate(addMonths(selectedDate, 1));
                 }}
-                className="border-[#F0E6DC] h-10 w-10"
+                className="border-2 border-[#A94C63] text-[#A94C63] bg-white hover:bg-[#FAEEF1] rounded-lg h-12 w-12"
                 data-testid="next-day-btn"
                 aria-label="Giorno successivo"
               >
                 <ChevronRight className="w-5 h-5" />
               </Button>
-              <div className="flex border border-[#F0E6DC] rounded-xl overflow-hidden">
+              <div className="flex gap-2">
                 {[
                   { key: 'day', label: 'Giorno', short: 'G' },
                   { key: 'week', label: 'Sett.', short: 'S' },
@@ -754,7 +754,7 @@ export default function PlanningPage() {
                 ].map(v => (
                   <Button key={v.key} variant="ghost" size="sm"
                     onClick={() => setViewMode(v.key)}
-                    className={`rounded-none text-sm sm:text-base px-2 sm:px-3 h-9 sm:h-10 ${viewMode === v.key ? 'bg-[#A94C63] text-white hover:bg-[#A94C63]' : 'text-[#64748B] hover:bg-gray-100'}`}
+                    className={`rounded-lg border-2 border-[#A94C63] text-base sm:text-lg font-bold px-3 sm:px-4 h-12 ${viewMode === v.key ? 'bg-[#A94C63] text-white hover:bg-[#8E3A50] hover:text-white' : 'bg-white text-[#A94C63] hover:bg-[#FAEEF1] hover:text-[#A94C63]'}`}
                     data-testid={`view-${v.key}-btn`}>
                     <span className="sm:hidden">{v.short}</span>
                     <span className="hidden sm:inline">{v.label}</span>
@@ -783,7 +783,7 @@ export default function PlanningPage() {
             <Button
               variant="outline"
               onClick={refreshAll}
-              className="border-[#F0E6DC] text-[#2D1B14] h-10 px-4"
+              className="border-2 border-[#A94C63] text-[#A94C63] bg-white hover:bg-[#FAEEF1] hover:text-[#A94C63] rounded-lg h-12 px-5 text-lg font-bold"
               data-testid="refresh-planning-btn"
             >
               <RefreshCcw className="w-4 h-4 mr-1" /> Aggiorna
