@@ -2,20 +2,38 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://brunomelitohair.it/sito</loc>
-    <lastmod>2026-05-13</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://brunomelitohair.it/</loc>
-    <lastmod>2026-03-03</lastmod>
+    <loc>https://brunomelitohair.it/servizi/balayage</loc>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://brunomelitohair.it/login</loc>
-    <lastmod>2026-03-03</lastmod>
+    <loc>https://brunomelitohair.it/servizi/taglio</loc>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.1</priority>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://brunomelitohair.it/servizi/colorazione</loc>
+    <lastmod>2026-10-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://brunomelitohair.it/servizi/trattamenti</loc>
+    <lastmod>2026-10-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://brunomelitohair.it/servizi/piega</loc>
+    <lastmod>2026-10-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
 </urlset>
