@@ -20,6 +20,7 @@ export default function ThreeDaysView({
   TIME_SLOTS,
   highlightedClientId,
   onSlotClick,      // (dateStr, time, operatorId)
+  onSlotRightClick, // (e, dateStr, time)
   getAppointmentStyle,
   openEditDialog,
   openRecurringDialog,
@@ -117,7 +118,7 @@ export default function ThreeDaysView({
                     setSelectedDate={() => {}}
                     highlightedClientId={highlightedClientId}
                     onSlotClick={(time, operatorId) => onSlotClick(dateStr, time, operatorId)}
-                    onSlotRightClick={(e) => e.preventDefault()}
+                    onSlotRightClick={(e, time) => onSlotRightClick(e, dateStr, time)}
                     isSlotOccupied={isSlotOccupied}
                     getOperatorAppointments={getOperatorAppointments}
                     getAppointmentStyle={getAppointmentStyle}

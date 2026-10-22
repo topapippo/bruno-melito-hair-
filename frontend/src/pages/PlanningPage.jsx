@@ -90,6 +90,7 @@ export default function PlanningPage() {
   const [recurringAppointment, setRecurringAppointment] = useState(null);
   const [blockDialogOpen, setBlockDialogOpen] = useState(false);
   const [blockInitialTime, setBlockInitialTime] = useState('');
+  const [blockDate, setBlockDate] = useState(null); // giorno dello slot cliccato col tasto destro
   const [dayClosureBlock, setDayClosureBlock] = useState(null);
   const [dayHolidayBlock, setDayHolidayBlock] = useState(null);
   const [closingDay, setClosingDay] = useState(false);
@@ -520,6 +521,17 @@ export default function PlanningPage() {
     e.preventDefault();
     if (blockedSlots.includes(time) || unavailableSlots.has(time)) return;
     setBlockInitialTime(time);
+    setBlockDate(selectedDate);
+    setBlockDialogOpen(true);
+  };
+
+  // Vista 3 giorni: stesso blocco orari, con la data del giorno cliccato
+  const handleThreeDaySlotRightClick = (e, dateStr, time) => {
+    e.preventDefault();
+    const d = threeDayData[dateStr];
+    if ((d?.blockedSlots || []).includes(time) || d?.unavailableSlots?.has(time)) return;
+    setBlockInitialTime(time);
+    setBlockDate(new Date(dateStr + 'T12:00:00'));
     setBlockDialogOpen(true);
   };
 
@@ -1071,6 +1083,7 @@ export default function PlanningPage() {
             TIME_SLOTS={TIME_SLOTS}
             highlightedClientId={highlightedClientId}
             onSlotClick={handleThreeDaySlotClick}
+            onSlotRightClick={handleThreeDaySlotRightClick}
             getAppointmentStyle={getAppointmentStyle}
             openEditDialog={openEditDialog}
             openRecurringDialog={openRecurringDialog}
@@ -1186,8 +1199,8 @@ export default function PlanningPage() {
           open={blockDialogOpen}
           onClose={() => setBlockDialogOpen(false)}
           initialTime={blockInitialTime}
-          selectedDate={selectedDate}
-          onSuccess={fetchData}
+          selectedDate={blockDate || selectedDate}
+          onSuccess={() => { fetchData(); if (viewMode === 'three') fetchThreeDayData(); }}
         />
 
         {/* THANK YOU DIALOG */}
