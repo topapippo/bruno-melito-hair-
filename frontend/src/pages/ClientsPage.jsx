@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api, { API } from '../lib/api';
+import api, { API, getErrorMessage } from '../lib/api';
 import { sendWA } from '../lib/sendWA';
 import { fmtDate } from '../lib/dateUtils';
 import * as XLSX from 'xlsx';
@@ -32,8 +32,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Users, Plus, Search, Phone, Mail, Edit2, Trash2, Loader2, History, MessageSquare, Upload, FileSpreadsheet, Euro, AlertTriangle, Scissors, Cake, ShieldCheck, Palette, ArrowDownAZ } from 'lucide-react';
 import { toast } from 'sonner';
 import PageHeader from '../components/PageHeader';
-import ClientAvatar from '../components/ClientAvatar';
-import { COLORS } from '../lib/brandColors';
 
 
 export default function ClientsPage() {
@@ -62,6 +60,12 @@ export default function ClientsPage() {
   const [integrityData, setIntegrityData] = useState(null);
   const [checkingIntegrity, setCheckingIntegrity] = useState(false);
   const [mergingId, setMergingId] = useState(null);
+  // Scheda cliente (elenco a sinistra, dettaglio a destra)
+  const [selectedClientId, setSelectedClientId] = useState(null);
+  const [detail, setDetail] = useState({ id: null, loading: false, history: null, cards: [] });
+  const [discountType, setDiscountType] = useState('percent');
+  const [discountInput, setDiscountInput] = useState('');
+  const [savingDiscount, setSavingDiscount] = useState(false);
 
   const [inventoryColors, setInventoryColors] = useState([]);
   const [colorSuggestions, setColorSuggestions] = useState([]);
@@ -359,6 +363,75 @@ export default function ClientsPage() {
     return key(a.name).localeCompare(key(b.name), 'it');
   });
 
+  // Cliente mostrato nella scheda: quello scelto, altrimenti il primo dell'elenco filtrato
+  const activeClient = filteredClients.find((c) => c.id === selectedClientId) || filteredClients[0] || null;
+  const activeId = activeClient?.id || null;
+  const activeDiscountType = activeClient?.personal_discount_type || null;
+  const activeDiscountValue = activeClient?.personal_discount_value ?? null;
+
+  // Dati della scheda: storico (endpoint già esistente) e card/abbonamenti (endpoint già esistente)
+  useEffect(() => {
+    if (!activeId) {
+      setDetail({ id: null, loading: false, history: null, cards: [] });
+      return undefined;
+    }
+    let cancelled = false;
+    setDetail({ id: activeId, loading: true, history: null, cards: [] });
+    Promise.all([
+      api.get(`${API}/clients/${activeId}/history`).then((r) => r.data).catch(() => null),
+      api.get(`${API}/cards?client_id=${activeId}`).then((r) => r.data || []).catch(() => []),
+    ]).then(([history, cards]) => {
+      if (!cancelled) setDetail({ id: activeId, loading: false, history, cards });
+    });
+    return () => { cancelled = true; };
+  }, [activeId]);
+
+  // Riporta nei campi lo sconto salvato quando cambia cliente o valore salvato
+  useEffect(() => {
+    setDiscountType(activeDiscountType === 'euro' ? 'euro' : 'percent');
+    setDiscountInput(activeDiscountType && activeDiscountValue !== null ? String(activeDiscountValue) : '');
+  }, [activeId, activeDiscountType, activeDiscountValue]);
+
+  const saveDiscount = async (remove = false) => {
+    if (!activeClient) return;
+    let payload;
+    if (remove || discountInput.trim() === '') {
+      payload = { personal_discount_type: null, personal_discount_value: null };
+    } else {
+      const value = parseFloat(discountInput.replace(',', '.'));
+      if (Number.isNaN(value) || value < 0) {
+        toast.error('Inserisci un numero maggiore o uguale a 0');
+        return;
+      }
+      if (discountType === 'percent' && value > 100) {
+        toast.error('Lo sconto in percentuale non può superare 100');
+        return;
+      }
+      payload = { personal_discount_type: discountType, personal_discount_value: value };
+    }
+    setSavingDiscount(true);
+    try {
+      const res = await api.put(`${API}/clients/${activeClient.id}`, payload);
+      setClients((prev) => prev.map((c) => (c.id === res.data.id ? { ...c, ...res.data } : c)));
+      toast.success(payload.personal_discount_type ? 'Sconto personale salvato' : 'Sconto personale tolto');
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Errore nel salvataggio dello sconto'));
+    } finally {
+      setSavingDiscount(false);
+    }
+  };
+
+  // Card e abbonamenti ancora utilizzabili (stessa regola della cassa)
+  const activeCards = (detail.id === activeId ? detail.cards : []).filter((c) =>
+    c.active && (
+      (c.remaining_value || 0) > 0 ||
+      (c.card_type === 'subscription' && (!c.total_services || (c.used_services || 0) < c.total_services))
+    )
+  );
+  const historyApts = (detail.id === activeId ? (detail.history?.appointments || []) : [])
+    .filter((a) => a.status !== 'cancelled')
+    .slice(0, 8);
+
   return (
     <Layout>
       <div className="space-y-6" data-testid="clients-page">
@@ -446,130 +519,227 @@ export default function ClientsPage() {
           </button>
         </div>
 
-        {/* Clients Grid */}
+        {/* Elenco cercabile a sinistra + scheda del cliente a destra */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Skeleton key={i} className="h-48" />
-            ))}
+          <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6">
+            <Skeleton className="h-96" />
+            <Skeleton className="h-96" />
           </div>
-        ) : filteredClients.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 stagger-fast">
-            {filteredClients.map((client) => (
-              <div
-                key={client.id}
-                data-testid={`client-card-${client.id}`}
-                onMouseEnter={e => {
-                  e.currentTarget.style.boxShadow = `0 16px 48px rgba(200,97,122,0.35), inset 0 1px 0 rgba(255,255,255,0.3)`;
-                  e.currentTarget.style.transform = 'scale(1.03) translateY(-4px)';
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.boxShadow = `0 8px 24px rgba(200,97,122,0.2)`;
-                  e.currentTarget.style.transform = 'scale(1)';
-                }}
-                className="transition-all duration-300"
-                style={{
-                  background: `linear-gradient(135deg, #FAF0F5 0%, ${COLORS.bgLight} 100%)`,
-                  border: `1px solid ${COLORS.borderLight}`,
-                  borderRadius: '16px',
-                  boxShadow: `0 8px 24px rgba(200,97,122,0.2)`,
-                  padding: '20px',
-                }}
-              >
-                <Card className="border-0 bg-transparent shadow-none">
-                <CardContent className="p-0">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <ClientAvatar name={client.name} size="lg" />
-                      <div>
-                        <h3 className="font-semibold text-lg text-[#2D2326]">{client.name}</h3>
-                        <div className="flex items-center gap-1 text-xs text-[#7C5C4A]">
-                          <History className="w-3 h-3" />
-                          {client.total_visits} visite
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex gap-1">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => handleEdit(client)}
-                        className="text-[#7C5C4A] hover:text-[#A94C63]"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => {
-                          setClientToDelete(client.id);
-                          setDeleteDialogOpen(true);
-                        }}
-                        className="text-[#7C5C4A] hover:text-[#E76F51]"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
+        ) : filteredClients.length > 0 && activeClient ? (
+          <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6 items-start">
+            {/* Elenco */}
+            <div
+              className="bg-white border border-[#E8DCDD] rounded-xl p-3 max-h-[320px] lg:max-h-[calc(100vh-260px)] overflow-y-auto"
+              data-testid="clients-list"
+            >
+              {filteredClients.map((client) => {
+                const isActive = activeClient.id === client.id;
+                return (
+                  <button
+                    key={client.id}
+                    type="button"
+                    onClick={() => setSelectedClientId(client.id)}
+                    aria-current={isActive ? 'true' : undefined}
+                    data-testid={`client-card-${client.id}`}
+                    className={`w-full text-left px-4 py-3 rounded-lg border-b border-[#E8DCDD] last:border-b-0 transition-colors ${isActive ? 'bg-[#F6E4E8]' : 'hover:bg-[#FBF7F5]'}`}
+                  >
+                    <span className={`block text-lg text-[#2D2326] ${isActive ? 'font-bold' : ''}`}>{client.name}</span>
+                    <span className="block text-base text-[#6B5A5E]">
+                      {client.total_visits} visite{!client.phone && ' · telefono mancante'}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
 
-                  <div className="space-y-2 text-sm">
-                    {client.phone ? (
-                      <div className="flex items-center gap-2 text-[#7C5C4A]">
-                        <Phone className="w-4 h-4" />
-                        <span>{client.phone}</span>
-                      </div>
+            {/* Scheda cliente */}
+            <div className="space-y-6 min-w-0" data-testid="client-detail">
+              <div className="bg-white border border-[#E8DCDD] rounded-xl p-6">
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+                  <div className="min-w-0">
+                    <h2 className="font-display font-bold text-4xl text-[#2D2326] break-words">{activeClient.name}</h2>
+                    {activeClient.phone ? (
+                      <p className="text-lg text-[#6B5A5E] mt-2 flex items-center gap-2">
+                        <Phone className="w-5 h-5" /> Telefono: {activeClient.phone}
+                      </p>
                     ) : (
-                      <div className="flex items-center gap-2 text-red-500 bg-red-50 px-2 py-1.5 rounded-xl">
-                        <Phone className="w-4 h-4" />
-                        <span className="font-semibold text-xs">Telefono mancante!</span>
-                      </div>
+                      <p className="text-lg text-red-700 font-semibold mt-2 flex items-center gap-2">
+                        <Phone className="w-5 h-5" /> Telefono mancante!
+                      </p>
                     )}
-                    {client.email && (
-                      <div className="flex items-center gap-2 text-[#7C5C4A]">
-                        <Mail className="w-4 h-4" />
-                        <span className="truncate">{client.email}</span>
-                      </div>
+                    {activeClient.email && (
+                      <p className="text-base text-[#6B5A5E] mt-1 flex items-center gap-2">
+                        <Mail className="w-4 h-4" /> <span className="truncate">{activeClient.email}</span>
+                      </p>
                     )}
-                    {client.current_color_code && (
-                      <div className="flex items-center gap-2 text-[#7C5C4A]">
-                        <Palette className="w-4 h-4 text-[#A94C63]" />
-                        <span className="text-xs">Colore: <strong>{client.current_color_code}</strong></span>
-                      </div>
+                    {activeClient.birthday && (
+                      <p className="text-base text-[#6B5A5E] mt-1 flex items-center gap-2">
+                        <Cake className="w-4 h-4" /> Compleanno: {activeClient.birthday}
+                      </p>
                     )}
-                    {client.birthday && (
-                      <div className="flex items-center gap-2 text-[#7C5C4A]">
-                        <Cake className="w-4 h-4 text-pink-400" />
-                        <span className="text-xs">Compleanno: {client.birthday}</span>
-                      </div>
+                    {detail.id === activeClient.id && detail.history?.last_visit && (
+                      <p className="text-base text-[#6B5A5E] mt-1">Ultima visita: {fmtDate(detail.history.last_visit)}</p>
+                    )}
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <Button
+                      variant="outline"
+                      onClick={() => handleEdit(activeClient)}
+                      className="border-2 border-[#A94C63] text-[#A94C63] bg-white hover:bg-[#FAEEF1] hover:text-[#A94C63] rounded-lg h-12 px-4 text-lg font-bold"
+                      data-testid="client-edit-btn"
+                    >
+                      <Edit2 className="w-4 h-4 mr-2" /> Modifica
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => { setClientToDelete(activeClient.id); setDeleteDialogOpen(true); }}
+                      className="text-[#B42318] hover:bg-transparent hover:underline rounded-lg h-12 px-4 text-lg font-bold"
+                      data-testid="client-delete-btn"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" /> Elimina
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-6">
+                  {/* Abbonamento / card */}
+                  <div className="border-2 border-[#E8DCDD] rounded-lg p-4" data-testid="client-cards-block">
+                    <h3 className="text-lg font-bold text-[#2D2326] mb-2">Abbonamento / card</h3>
+                    {detail.id !== activeClient.id || detail.loading ? (
+                      <Loader2 className="w-5 h-5 animate-spin text-[#A94C63]" />
+                    ) : activeCards.length > 0 ? (
+                      <>
+                        <span className="inline-block bg-[#DDF0E3] text-[#1E4A2F] rounded-full px-4 py-1 text-lg font-bold">✓ Attivo</span>
+                        <ul className="mt-2 space-y-1">
+                          {activeCards.map((card) => {
+                            const isSub = card.card_type === 'subscription';
+                            const left = card.total_services ? card.total_services - (card.used_services || 0) : null;
+                            return (
+                              <li key={card.id} className="text-lg text-[#6B5A5E]">
+                                <span className="font-semibold text-[#2D2326]">{card.name}</span>
+                                {isSub
+                                  ? ` · ${left !== null ? `${left} ingressi rimasti` : 'ingressi illimitati'}`
+                                  : ` · residuo € ${(card.remaining_value ?? 0).toFixed(2)}`}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </>
+                    ) : (
+                      <p className="text-lg text-[#6B5A5E]">Nessuno</p>
                     )}
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex gap-2 mt-4 pt-3 border-t border-[#F0E6DC]">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => openClientHistory(client)}
-                      className="flex-1 text-sm border-[#A94C63] text-[#A94C63] hover:bg-[#A94C63]/10"
-                    >
-                      <History className="w-3 h-3 mr-1" />
-                      Storico
-                    </Button>
-                    {client.phone && (
+                  {/* Sconto personale */}
+                  <div className="border-2 border-[#E8DCDD] rounded-lg p-4" data-testid="client-discount-block">
+                    <h3 className="text-lg font-bold text-[#2D2326] mb-2">Sconto personale</h3>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        min="0"
+                        max={discountType === 'percent' ? 100 : undefined}
+                        step="0.5"
+                        value={discountInput}
+                        onChange={(e) => setDiscountInput(e.target.value)}
+                        aria-label="Valore dello sconto personale"
+                        placeholder="0"
+                        className="w-28 h-12 text-lg text-right border-2 border-[#E8DCDD]"
+                        data-testid="client-discount-input"
+                      />
+                      {[{ key: 'percent', label: '%' }, { key: 'euro', label: '€' }].map((opt) => (
+                        <button
+                          key={opt.key}
+                          type="button"
+                          onClick={() => setDiscountType(opt.key)}
+                          aria-pressed={discountType === opt.key}
+                          data-testid={`client-discount-type-${opt.key}`}
+                          className={`rounded-lg border-2 border-[#A94C63] px-5 h-12 text-lg font-bold ${discountType === opt.key ? 'bg-[#A94C63] text-white' : 'bg-white text-[#A94C63] hover:bg-[#FAEEF1]'}`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-2 mt-3 flex-wrap">
                       <Button
-                        size="sm"
-                        onClick={() => openWhatsApp(client)}
-                        className="flex-1 text-xs bg-green-500 hover:bg-green-600 text-white"
+                        onClick={() => saveDiscount(false)}
+                        disabled={savingDiscount}
+                        className="bg-[#A94C63] hover:bg-[#8E3A50] text-white rounded-lg h-12 px-5 text-lg font-bold"
+                        data-testid="client-discount-save"
                       >
-                        <MessageSquare className="w-3 h-3 mr-1" />
-                        WhatsApp
+                        {savingDiscount ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salva sconto'}
                       </Button>
-                    )}
+                      {activeClient.personal_discount_type && (
+                        <Button
+                          variant="outline"
+                          onClick={() => saveDiscount(true)}
+                          disabled={savingDiscount}
+                          className="border-2 border-[#A94C63] text-[#A94C63] bg-white hover:bg-[#FAEEF1] hover:text-[#A94C63] rounded-lg h-12 px-5 text-lg font-bold"
+                          data-testid="client-discount-remove"
+                        >
+                          Togli sconto
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-base text-[#6B5A5E] mt-2">Viene applicato in automatico in cassa per questo cliente</p>
                   </div>
-                </CardContent>
-                </Card>
+                </div>
+
+                <div className="flex gap-2 mt-5 flex-wrap">
+                  <Button
+                    variant="outline"
+                    onClick={() => openClientHistory(activeClient)}
+                    className="border-2 border-[#A94C63] text-[#A94C63] bg-white hover:bg-[#FAEEF1] hover:text-[#A94C63] rounded-lg h-12 px-5 text-lg font-bold"
+                    data-testid="client-history-btn"
+                  >
+                    <History className="w-4 h-4 mr-2" /> Storico completo
+                  </Button>
+                  {activeClient.phone && (
+                    <Button
+                      onClick={() => openWhatsApp(activeClient)}
+                      className="bg-green-700 hover:bg-green-800 text-white rounded-lg h-12 px-5 text-lg font-bold"
+                      data-testid="client-whatsapp-btn"
+                    >
+                      <MessageSquare className="w-4 h-4 mr-2" /> WhatsApp
+                    </Button>
+                  )}
+                </div>
               </div>
-            ))}
+
+              {/* Storico servizi */}
+              <div className="bg-white border border-[#E8DCDD] rounded-xl p-6" data-testid="client-services-history">
+                <h3 className="font-display font-bold text-3xl text-[#2D2326] mb-2">Storico servizi</h3>
+                {detail.id !== activeClient.id || detail.loading ? (
+                  <Loader2 className="w-5 h-5 animate-spin text-[#A94C63]" />
+                ) : historyApts.length > 0 ? (
+                  historyApts.map((apt) => {
+                    const amount = apt.amount_paid > 0
+                      ? apt.amount_paid
+                      : (apt.services || []).reduce((sum, s) => sum + (s.price || 0) * (s.quantity || 1), 0);
+                    return (
+                      <div key={apt.id} className="flex justify-between gap-4 py-3 border-b border-[#E8DCDD] last:border-b-0 text-lg">
+                        <span className="shrink-0">{fmtDate(apt.date)}</span>
+                        <span className="flex-1 text-center truncate">{(apt.services || []).map((s) => s.name).filter(Boolean).join(', ') || '—'}</span>
+                        <span className="shrink-0">€ {amount.toFixed(2)}</span>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-lg text-[#6B5A5E]">Nessun servizio negli ultimi 12 mesi</p>
+                )}
+              </div>
+
+              {/* Note colore */}
+              <div className="bg-white border border-[#E8DCDD] rounded-xl p-6" data-testid="client-color-notes">
+                <h3 className="font-display font-bold text-3xl text-[#2D2326] mb-2">Note colore</h3>
+                {activeClient.current_color_code && (
+                  <p className="text-lg text-[#2D2326] mb-1 flex items-center gap-2">
+                    <Palette className="w-5 h-5 text-[#A94C63]" /> Colore: <strong>{activeClient.current_color_code}</strong>
+                  </p>
+                )}
+                <p className="text-lg leading-relaxed text-[#6B5A5E] whitespace-pre-wrap">{activeClient.hair_notes || 'Nessuna nota'}</p>
+              </div>
+            </div>
           </div>
         ) : (
           <Card className="bg-white border-[#F0E6DC]">
@@ -584,7 +754,7 @@ export default function ClientsPage() {
               {!search && (
                 <Button
                   onClick={openNewDialog}
-                  className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white"
+                  className="bg-[#A94C63] hover:bg-[#8E3A50] text-white"
                 >
                   <Plus className="w-4 h-4 mr-2" /> Aggiungi Cliente
                 </Button>
