@@ -42,13 +42,20 @@ export default function ThreeDaysView({
   onDayClick,
 }) {
   const days = Array.from({ length: numDays }, (_, i) => addDays(selectedDate, i));
-  const wideMinW = numDays > 3 ? 'min-w-[220px]' : 'min-w-[240px]';
+  const isWeek = numDays > 3;
+  // Settimana: i giorni aperti partono da 150px e si dividono lo spazio senza mai far comparire lo scorrimento orizzontale
+  const wideSize = isWeek ? 'flex-1 basis-[150px] min-w-0' : 'flex-1 min-w-[240px]';
+  const closedSize = isWeek ? 'flex-none w-[100px]' : 'flex-none w-[150px]';
 
   return (
     <Card className="bg-white border border-[#E8DCDD] rounded-xl shadow-sm overflow-hidden">
       <CardContent className="p-0">
-        <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 280px)' }} data-testid="three-days-view">
-          <div className="flex">
+        <div
+          className={isWeek ? 'overflow-y-auto overflow-x-hidden' : 'overflow-auto'}
+          style={{ maxHeight: 'calc(100vh - 280px)' }}
+          data-testid="three-days-view"
+        >
+          <div className="flex min-w-0">
             {/* Colonna orari condivisa */}
             <div className="w-14 sm:w-[72px] flex-shrink-0 bg-white border-r border-[#E8DCDD] sticky left-0 z-20">
               <div
@@ -106,7 +113,7 @@ export default function ThreeDaysView({
                   {!d.closed && d.appointments.length > 0 && (
                     <span className="text-sm font-bold text-white bg-[#A94C63] px-2 rounded-full shrink-0">{d.appointments.length}</span>
                   )}
-                  {onAddAppointment && (
+                  {onAddAppointment && !(d.closed && isWeek) && (
                     <button
                       type="button"
                       onClick={() => onAddAppointment(day)}
@@ -123,11 +130,12 @@ export default function ThreeDaysView({
               return (
                 <div
                   key={dateStr}
-                  className={`border-r-2 border-[#D9CBCD] last:border-r-0 ${d.closed ? 'flex-none w-[150px]' : `flex-1 ${wideMinW}`}`}
+                  className={`border-r-2 border-[#D9CBCD] last:border-r-0 ${d.closed ? closedSize : wideSize}`}
                   data-testid={`three-days-col-${dateStr}`}
                 >
                   <DayView
                     embedded
+                    dense={isWeek}
                     closed={d.closed}
                     dayTitle={title}
                     clients={clients}

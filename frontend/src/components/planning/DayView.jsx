@@ -42,11 +42,12 @@ export default function DayView({
   embedded = false,
   dayTitle = null,
   closed = false,
+  dense = false, // settimana: colonne strette, testo a 14px, senza icone nelle schede
 }) {
   useCategories(); // si ridisegna quando le categorie cambiano
   const { svcById, svcByName } = buildServiceLookups(services);
   const compact = embedded && closed; // giorno di chiusura: colonna stretta
-  const colMinW = compact ? 'min-w-0' : embedded ? 'min-w-[110px]' : 'min-w-[100px] sm:min-w-[150px]';
+  const colMinW = (compact || dense) ? 'min-w-0' : embedded ? 'min-w-[110px]' : 'min-w-[100px] sm:min-w-[150px]';
   const Shell = embedded ? 'div' : Card;
   const Body = embedded ? 'div' : CardContent;
 
@@ -94,7 +95,7 @@ export default function DayView({
       <Body className={embedded ? '' : 'p-0'}>
         {/* Titolo del giorno (solo vista 3 giorni) */}
         {embedded && dayTitle && (
-          <div className={`h-11 sticky top-0 z-20 flex items-center justify-center border-b border-[#E8DCDD] font-display font-bold text-lg sm:text-2xl px-2 truncate ${closed ? 'bg-red-100 text-red-700' : 'bg-white text-[#2D2326]'}`}>
+          <div className={`h-11 sticky top-0 z-20 flex items-center justify-center border-b border-[#E8DCDD] font-display font-bold ${dense ? 'text-base' : 'text-lg sm:text-2xl'} px-2 truncate ${closed ? 'bg-red-100 text-red-700' : 'bg-white text-[#2D2326]'}`}>
             {dayTitle}
           </div>
         )}
@@ -116,12 +117,12 @@ export default function DayView({
             >
               <div className="flex items-center justify-center gap-2">
                 <div
-                  className={`w-7 h-7 rounded-full flex-shrink-0 items-center justify-center text-white text-[11px] font-black shadow-md ring-2 ring-white ${compact ? 'hidden' : 'flex'}`}
+                  className={`w-7 h-7 rounded-full flex-shrink-0 items-center justify-center text-white text-[11px] font-black shadow-md ring-2 ring-white ${(compact || dense) ? 'hidden' : 'flex'}`}
                   style={{ backgroundColor: col.color }}
                 >
                   {(col.name || '?').trim().charAt(0).toUpperCase()}
                 </div>
-                <span className="font-bold text-[#2D2326] text-base sm:text-xl truncate">
+                <span className={`font-bold text-[#2D2326] ${dense ? 'text-base' : 'text-base sm:text-xl'} truncate`}>
                   {col.name}
                 </span>
               </div>
@@ -182,7 +183,7 @@ export default function DayView({
                   className={`flex-1 ${colMinW} relative border-r border-[#E8DCDD] last:border-r-0`}
                   style={{ backgroundColor: closed ? '#FEF2F2' : `${col.color}0A` }}
                 >
-                  {colAppointments.length === 0 && !compact && (
+                  {colAppointments.length === 0 && !compact && !dense && (
                     <div className="absolute inset-0 flex items-start justify-center pt-16 pointer-events-none">
                       <span className="text-[11px] text-[#B0A09A] font-medium italic">Nessun appuntamento</span>
                     </div>
@@ -274,8 +275,8 @@ export default function DayView({
                           style={{ height: '28px', background: `linear-gradient(90deg, ${(apt.paid ? '#10B981' : operatorColor)}CC, #2D1B14E6)` }}
                         >
 
-                          <ClientAvatar name={apt.client_name} size="xs" />
-                          <span className="font-bold text-base leading-none truncate flex-1">
+                          {!dense && <ClientAvatar name={apt.client_name} size="xs" />}
+                          <span className={`font-bold ${dense ? 'text-sm' : 'text-base'} leading-none truncate flex-1`}>
                             {apt.paid && '✅ '}{apt.status === 'completed' && '✓ '}{apt.client_name}
                           </span>
                           {apt.card_last_service && <span title="Ultimo servizio abbonamento!" className="text-orange-300 text-[11px] flex-shrink-0">⚠️</span>}
@@ -284,7 +285,7 @@ export default function DayView({
                             {apt.confirmation_status === 'confirmed' && <span title="Confermato" className="text-green-400 text-[10px]">✓</span>}
                             {apt.confirmation_status === 'cancelled_by_client' && <span title="Disdetto" className="text-red-400 text-[10px]">✕</span>}
                             {apt.confirmation_status === 'pending' && <span title="In attesa" className="text-yellow-300 text-[10px]">⏳</span>}
-                            {apt.status !== 'completed' && apt.status !== 'cancelled' && onQuickCheckout && (
+                            {!dense && apt.status !== 'completed' && apt.status !== 'cancelled' && onQuickCheckout && (
                               <button
                                 onClick={(e) => { e.stopPropagation(); onQuickCheckout(apt); }}
                                 className="p-0.5 rounded hover:bg-emerald-500/60"
@@ -294,7 +295,7 @@ export default function DayView({
                                 <Euro className="w-3 h-3 text-emerald-300" />
                               </button>
                             )}
-                            {apt.client_phone && onSendWhatsApp && (
+                            {!dense && apt.client_phone && onSendWhatsApp && (
                               <button
                                 onClick={(e) => { e.stopPropagation(); onSendWhatsApp(apt); }}
                                 className="p-0.5 rounded hover:bg-green-500/60"
@@ -304,10 +305,12 @@ export default function DayView({
                                 <MessageCircle className="w-3 h-3 text-green-300" />
                               </button>
                             )}
-                            <button onClick={(e) => { e.stopPropagation(); openRecurringDialog(apt); }} className="p-0.5 rounded hover:bg-white/20" title="Ripeti" data-testid={`repeat-btn-${apt.id}`}>
-                              <Repeat className="w-3 h-3" />
-                            </button>
-                            {onViewDetail && (
+                            {!dense && (
+                              <button onClick={(e) => { e.stopPropagation(); openRecurringDialog(apt); }} className="p-0.5 rounded hover:bg-white/20" title="Ripeti" data-testid={`repeat-btn-${apt.id}`}>
+                                <Repeat className="w-3 h-3" />
+                              </button>
+                            )}
+                            {!dense && onViewDetail && (
                               <button onClick={(e) => { e.stopPropagation(); onViewDetail(apt); }} className="p-0.5 rounded hover:bg-white/20" title="Dettagli" data-testid={`detail-btn-${apt.id}`}>
                                 <Info className="w-3 h-3 text-sky-300" />
                               </button>
@@ -320,8 +323,8 @@ export default function DayView({
                             const color = isCancelled ? '#EF4444' : (svcColors[i] || '#64748B');
                             return (
                               <div key={i} className="flex items-center px-2 flex-1 min-h-0 border-t border-white/10" style={{ backgroundColor: color, color: readableTextOn(color) }}>
-                                <span className="font-bold text-base truncate drop-shadow-sm flex-1">{s.name}</span>
-                                <span className="text-sm flex-shrink-0 ml-1">{s.duration || 15}&apos;</span>
+                                <span className={`font-bold ${dense ? 'text-sm' : 'text-base'} truncate drop-shadow-sm flex-1`}>{s.name}</span>
+                                <span className={`${dense ? 'text-xs' : 'text-sm'} flex-shrink-0 ml-1`}>{s.duration || 15}&apos;</span>
                               </div>
                             );
                           })}
