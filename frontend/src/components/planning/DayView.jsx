@@ -115,14 +115,14 @@ export default function DayView({
               className={`flex-1 ${colMinW} p-2 sm:p-3 border-r border-[#E8DCDD] last:border-r-0 flex items-center justify-center`}
               style={{ background: `linear-gradient(180deg, ${col.color}22, transparent 70%)` }}
             >
-              <div className="flex items-center justify-center gap-2">
+              <div className="flex items-center justify-center gap-2 min-w-0 w-full">
                 <div
                   className={`w-7 h-7 rounded-full flex-shrink-0 items-center justify-center text-white text-[11px] font-black shadow-md ring-2 ring-white ${(compact || dense) ? 'hidden' : 'flex'}`}
                   style={{ backgroundColor: col.color }}
                 >
                   {(col.name || '?').trim().charAt(0).toUpperCase()}
                 </div>
-                <span className={`font-bold text-[#2D2326] ${dense ? 'text-base' : 'text-base sm:text-xl'} truncate`}>
+                <span className={`font-bold text-[#2D2326] ${dense ? 'text-base' : 'text-base sm:text-xl'} truncate min-w-0`}>
                   {col.name}
                 </span>
               </div>

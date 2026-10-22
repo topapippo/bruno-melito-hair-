@@ -293,11 +293,11 @@ export default function PlanningPage() {
   );
 
   // Viste 3 giorni e settimana: appuntamenti, blocchi e chiusure per ciascun giorno mostrato
-  // (3 giorni dalla data selezionata; settimana = lunedì–domenica)
+  // (3 giorni dalla data selezionata; settimana = lunedì–sabato, senza domenica)
   const fetchMultiDayData = async () => {
     const isWeekView = viewMode === 'week';
     const firstDay = isWeekView ? startOfWeek(selectedDate, { weekStartsOn: 1 }) : selectedDate;
-    const days = Array.from({ length: isWeekView ? 7 : 3 }, (_, i) => addDays(firstDay, i));
+    const days = Array.from({ length: isWeekView ? 6 : 3 }, (_, i) => addDays(firstDay, i));
     const dateStrs = days.map((d) => format(d, 'yyyy-MM-dd'));
     try {
       const [aptsRes, adminBlocksRes, ...blockedRes] = await Promise.all([
@@ -1050,7 +1050,7 @@ export default function PlanningPage() {
         ) : isMultiDay ? (
           <ThreeDaysView
             selectedDate={viewMode === 'week' ? startOfWeek(selectedDate, { weekStartsOn: 1 }) : selectedDate}
-            numDays={viewMode === 'week' ? 7 : 3}
+            numDays={viewMode === 'week' ? 6 : 3}
             onAddAppointment={viewMode === 'week' ? openNewAppointmentForDate : undefined}
             showLegend={viewMode === 'week'}
             dayData={filteredMultiDayData}
