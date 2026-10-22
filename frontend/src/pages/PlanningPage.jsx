@@ -59,17 +59,30 @@ export default function PlanningPage() {
   // Search
   const [highlightedClientId, setHighlightedClientId] = useState(null);
 
-  // Legge parametri URL da GlobalSearch (?date=YYYY-MM-DD&clientId=...)
+  // Cliente per cui aprire subito "Nuovo appuntamento" (?newClientId=..., dalla scheda cliente)
+  const [pendingNewClientId, setPendingNewClientId] = useState(null);
+
+  // Legge parametri URL da GlobalSearch (?date=YYYY-MM-DD&clientId=...) e dalla scheda cliente
   useEffect(() => {
     const date = searchParams.get('date');
     const clientId = searchParams.get('clientId');
+    const newClientId = searchParams.get('newClientId');
+    if (newClientId) setPendingNewClientId(newClientId);
     if (date) setSelectedDate(new Date(date + 'T12:00:00'));
     if (clientId) {
       setHighlightedClientId(clientId);
       setTimeout(() => setHighlightedClientId(null), 8000);
     }
-    if (date || clientId) setSearchParams({}, { replace: true });
+    if (date || clientId || newClientId) setSearchParams({}, { replace: true });
   }, []);
+
+  // Quando operatori e clienti sono caricati, apre il componente "Nuovo appuntamento" con quel cliente
+  useEffect(() => {
+    if (!pendingNewClientId || operators.length === 0 || clients.length === 0) return;
+    setNewDialogInitial({ date: format(new Date(), 'yyyy-MM-dd'), time: '', operatorId: '', clientId: pendingNewClientId });
+    setNewDialogOpen(true);
+    setPendingNewClientId(null);
+  }, [pendingNewClientId, operators, clients]);
 
   // Banners
   const [newOnlineBookings, setNewOnlineBookings] = useState([]);
@@ -1105,6 +1118,7 @@ export default function PlanningPage() {
           initialDate={newDialogInitial.date}
           initialTime={newDialogInitial.time}
           initialOperatorId={newDialogInitial.operatorId}
+          initialClientId={newDialogInitial.clientId}
           operators={operators}
           clients={clients}
           services={services}

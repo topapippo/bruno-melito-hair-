@@ -687,6 +687,13 @@ export default function ClientsPage() {
 
                 <div className="flex gap-2 mt-5 flex-wrap">
                   <Button
+                    onClick={() => navigate(`/planning?newClientId=${activeClient.id}`)}
+                    className="bg-[#A94C63] hover:bg-[#8E3A50] text-white rounded-lg h-12 px-5 text-lg font-bold"
+                    data-testid="client-new-appointment-btn"
+                  >
+                    <Plus className="w-4 h-4 mr-2" /> Nuovo appuntamento
+                  </Button>
+                  <Button
                     variant="outline"
                     onClick={() => openClientHistory(activeClient)}
                     className="border-2 border-[#A94C63] text-[#A94C63] bg-white hover:bg-[#FAEEF1] hover:text-[#A94C63] rounded-lg h-12 px-5 text-lg font-bold"

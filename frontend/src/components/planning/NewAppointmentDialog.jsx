@@ -62,7 +62,7 @@ const getFilteredSlots = (dateStr, hoursConfig, blockedSlots = []) => {
 };
 
 export default function NewAppointmentDialog({
-  open, onClose, initialDate, initialTime, initialOperatorId,
+  open, onClose, initialDate, initialTime, initialOperatorId, initialClientId,
   operators, clients, services, cardTemplates, onSuccess, onSaveAndCheckout,
 }) {
   useCategories(); // si ridisegna quando le categorie cambiano
@@ -116,12 +116,17 @@ export default function NewAppointmentDialog({
         notes: '',
         date: initialDate || format(new Date(), 'yyyy-MM-dd')
       });
+      // Cliente preselezionato (es. dalla scheda cliente): stessa selezione che fa l'elenco clienti
+      if (initialClientId) {
+        const preClient = (clients || []).find(c => c.id === initialClientId);
+        if (preClient) handleClientSelect(preClient.id, preClient.name);
+      }
       // Fetch all active promos
       api.get(`${API}/promotions`).then(res => setAllPromos(res.data || [])).catch(() => setAllPromos([]));
       // Fetch hours config
       api.get(`${API}/public/website`).then(res => setHoursConfig(res.data?.config?.hours || null)).catch(() => {});
     }
-  }, [open, initialDate, initialTime, initialOperatorId]);
+  }, [open, initialDate, initialTime, initialOperatorId, initialClientId]);
 
   const sortedServices = groupServicesByCategory(services);
 
