@@ -4,6 +4,7 @@ import api, { API, getErrorMessage } from '../lib/api';
 import { sendWA } from '../lib/sendWA';
 import { fmtDate } from '../lib/dateUtils';
 import * as XLSX from 'xlsx';
+import { format } from 'date-fns';
 import Layout from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -392,6 +393,26 @@ export default function ClientsPage() {
     setDiscountInput(activeDiscountType && activeDiscountValue !== null ? String(activeDiscountValue) : '');
   }, [activeId, activeDiscountType, activeDiscountValue]);
 
+  // "Vai in cassa": primo appuntamento di OGGI di questo cliente non ancora pagato (in ordine di orario).
+  // Se non c'è, avviso e nient'altro; se c'è, il Planning apre l'incasso esistente.
+  const goToCash = async () => {
+    if (!activeClient) return;
+    try {
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const res = await api.get(`${API}/appointments?date=${today}`);
+      const toPay = (res.data || [])
+        .filter((a) => a.client_id === activeClient.id && !a.paid && !['completed', 'cancelled', 'no_show'].includes(a.status))
+        .sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+      if (toPay.length === 0) {
+        toast.warning('Nessun appuntamento da incassare oggi per questo cliente');
+        return;
+      }
+      navigate(`/planning?cashAppointmentId=${toPay[0].id}`);
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Errore nel controllo degli appuntamenti di oggi'));
+    }
+  };
+
   const saveDiscount = async (remove = false) => {
     if (!activeClient) return;
     let payload;
@@ -692,6 +713,14 @@ export default function ClientsPage() {
                     data-testid="client-new-appointment-btn"
                   >
                     <Plus className="w-4 h-4 mr-2" /> Nuovo appuntamento
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={goToCash}
+                    className="border-2 border-[#A94C63] text-[#A94C63] bg-white hover:bg-[#FAEEF1] hover:text-[#A94C63] rounded-lg h-12 px-5 text-lg font-bold"
+                    data-testid="client-go-to-cash-btn"
+                  >
+                    <Euro className="w-4 h-4 mr-2" /> Vai in cassa
                   </Button>
                   <Button
                     variant="outline"

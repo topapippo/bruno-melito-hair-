@@ -61,6 +61,8 @@ export default function PlanningPage() {
 
   // Cliente per cui aprire subito "Nuovo appuntamento" (?newClientId=..., dalla scheda cliente)
   const [pendingNewClientId, setPendingNewClientId] = useState(null);
+  // Appuntamento di oggi di cui aprire subito l'incasso (?cashAppointmentId=..., dalla scheda cliente)
+  const [pendingCashAptId, setPendingCashAptId] = useState(null);
 
   // Legge parametri URL da GlobalSearch (?date=YYYY-MM-DD&clientId=...) e dalla scheda cliente
   useEffect(() => {
@@ -68,12 +70,14 @@ export default function PlanningPage() {
     const clientId = searchParams.get('clientId');
     const newClientId = searchParams.get('newClientId');
     if (newClientId) setPendingNewClientId(newClientId);
+    const cashAppointmentId = searchParams.get('cashAppointmentId');
+    if (cashAppointmentId) setPendingCashAptId(cashAppointmentId);
     if (date) setSelectedDate(new Date(date + 'T12:00:00'));
     if (clientId) {
       setHighlightedClientId(clientId);
       setTimeout(() => setHighlightedClientId(null), 8000);
     }
-    if (date || clientId || newClientId) setSearchParams({}, { replace: true });
+    if (date || clientId || newClientId || cashAppointmentId) setSearchParams({}, { replace: true });
   }, []);
 
   // Quando operatori e clienti sono caricati, apre il componente "Nuovo appuntamento" con quel cliente
@@ -83,6 +87,23 @@ export default function PlanningPage() {
     setNewDialogOpen(true);
     setPendingNewClientId(null);
   }, [pendingNewClientId, operators, clients]);
+
+  // Apre l'incasso esistente (stesso dell'icona € sull'appuntamento) quando i dati sono caricati
+  useEffect(() => {
+    if (!pendingCashAptId || operators.length === 0 || clients.length === 0 || services.length === 0) return;
+    const aptId = pendingCashAptId;
+    setPendingCashAptId(null);
+    (async () => {
+      try {
+        const res = await api.get(`${API}/appointments?date=${format(new Date(), 'yyyy-MM-dd')}`);
+        const apt = (res.data || []).find((a) => a.id === aptId);
+        if (apt) openEditDialogForCheckout(apt);
+        else toast.error('Appuntamento da incassare non trovato');
+      } catch {
+        toast.error('Errore nel caricamento dell\'appuntamento');
+      }
+    })();
+  }, [pendingCashAptId, operators, clients, services]);
 
   // Banners
   const [newOnlineBookings, setNewOnlineBookings] = useState([]);
