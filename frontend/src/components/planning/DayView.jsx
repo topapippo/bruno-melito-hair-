@@ -203,7 +203,7 @@ export default function DayView({
                         onDragLeave={onDragLeave}
                         onDrop={(e) => !isUnavailable && onDrop(e, time, col.id)}
                         style={isBlocked ? { backgroundImage: 'repeating-linear-gradient(45deg,#E4DCDD,#E4DCDD 6px,#F3EEEE 6px,#F3EEEE 12px)' } : undefined}
-                        className={`h-[48px] border-b border-[#F1E8E9] transition-colors ${time.endsWith(':00') ? 'border-t border-t-[#D9CBCD]' : ''} ${
+                        className={`h-[48px] overflow-hidden border-b border-[#F1E8E9] transition-colors ${time.endsWith(':00') ? 'border-t border-t-[#D9CBCD]' : ''} ${
                           isBlocked
                             ? (embedded ? 'cursor-pointer' : 'cursor-not-allowed')
                             : isUnavailable
@@ -217,12 +217,12 @@ export default function DayView({
                             : ''
                         }`}
                       >
-                        {isBlocked && col.id === columns[0]?.id && (
+                        {isBlocked && !dense && !compact && col.id === columns[0]?.id && (
                           <div className="h-full flex items-center px-2">
                             <span className="text-sm text-[#4B3F43] font-bold">Bloccato</span>
                           </div>
                         )}
-                        {isUnavailable && !isBlocked && col.id === columns[0]?.id && (
+                        {isUnavailable && !isBlocked && !dense && !compact && col.id === columns[0]?.id && (
                           <div className="h-full flex items-center px-2">
                             <span className="text-[10px] text-gray-400 uppercase tracking-wider">—</span>
                           </div>
