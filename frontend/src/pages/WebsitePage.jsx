@@ -201,14 +201,6 @@ export default function WebsitePage() {
     setMeta('twitter:description', desc);
 
     // --- INIZIO DATI STRUTTURATI SCHEMA.ORG ---
-    const dayMap = { lun: 'Monday', mar: 'Tuesday', mer: 'Wednesday', gio: 'Thursday', ven: 'Friday', sab: 'Saturday', dom: 'Sunday' };
-    const openingHoursArray = Object.entries(config.hours || {})
-      .filter(([k, v]) => dayMap[k] && v && !['chiuso', '-'].includes(String(v).toLowerCase().trim()))
-      .map(([k, v]) => `${dayMap[k]} ${String(v).replace(/\s/g, '')}`);
-
-    const totalReviews = reviews.length;
-    const avgRating = totalReviews > 0 ? (reviews.reduce((sum, r) => sum + (r.rating || 5), 0) / totalReviews).toFixed(1) : 5.0;
-
     const schema = {
       "@context": "https://schema.org",
       "@type": "HairSalon",
@@ -217,23 +209,18 @@ export default function WebsitePage() {
       "url": url,
       "telephone": config.whatsapp || (config.phones && config.phones[0]) || "",
       "image": config.hero_image ? `${window.location.origin}${config.hero_image}` : `${window.location.origin}/logo.png`,
-      "priceRange": "€€",
+      "priceRange": "€10-€60",
       "address": {
         "@type": "PostalAddress",
         "streetAddress": config.address || "Caserta",
         "addressCountry": "IT"
       },
-      "openingHoursSpecification": openingHoursArray.length > 0 ? [{
-        "@type": "OpeningHoursSpecification",
-        "dayOfWeek": openingHoursArray.map(o => o.split(' ')[0]),
-        "opens": openingHoursArray[0].split(' ')[1].split('-')[0],
-        "closes": openingHoursArray[0].split(' ')[1].split('-')[1]
-      }] : [],
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": avgRating,
-        "reviewCount": totalReviews || 1
-      }
+      // Orari reali del salone (gli stessi di index.html): non derivati da config.hours, che usa un formato libero
+      "openingHoursSpecification": [
+        { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Tuesday", "Wednesday", "Thursday"], "opens": "08:15", "closes": "13:00" },
+        { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Tuesday", "Wednesday", "Thursday"], "opens": "14:00", "closes": "18:30" },
+        { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Friday", "Saturday"], "opens": "08:15", "closes": "18:30" }
+      ],
     };
 
     let schemaScript = document.querySelector('script[type="application/ld+json"]');
@@ -251,7 +238,7 @@ export default function WebsitePage() {
       const existingScript = document.querySelector('script[type="application/ld+json"]');
       if (existingScript) existingScript.remove();
     };
-  }, [siteData, config.salon_name, config.hero_description, config.hero_image, config.hours, config.address, config.phones, config.whatsapp, reviews]);
+  }, [siteData, config.salon_name, config.hero_description, config.hero_image, config.hours, config.address, config.phones, config.whatsapp]);
 
   // Load CMS fonts — evita link duplicati
   useEffect(() => {
