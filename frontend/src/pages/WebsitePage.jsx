@@ -210,11 +210,33 @@ export default function WebsitePage() {
       "telephone": config.whatsapp || (config.phones && config.phones[0]) || "",
       "image": config.hero_image ? `${window.location.origin}${config.hero_image}` : `${window.location.origin}/logo.png`,
       "priceRange": "€10-€60",
+      "founder": { "@type": "Person", "name": "Bruno Melito" },
+      "foundingDate": "1983",
+      "sameAs": [
+        "https://www.instagram.com/brunomelitohair/",
+        "https://www.facebook.com/brunomelitoparrucchierimettilatestaaposto1983",
+        "https://www.tiktok.com/@brunomelitohair.it",
+        "https://www.youtube.com/@BrunoMelito",
+        "https://x.com/BrunoMelitoHair",
+        "https://maps.google.com/?cid=14990155446111754116"
+      ],
+      "potentialAction": {
+        "@type": "ReserveAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://brunomelitohair.it/prenota",
+          "actionPlatform": ["http://schema.org/DesktopWebPlatform", "http://schema.org/MobileWebPlatform"]
+        },
+        "result": { "@type": "Reservation", "name": "Prenota appuntamento" }
+      },
       "address": {
         "@type": "PostalAddress",
         "streetAddress": config.address || "Caserta",
         "addressCountry": "IT"
       },
+      // Dati fissi, identici a quelli del blocco in index.html
+      "geo": { "@type": "GeoCoordinates", "latitude": 41.0774076, "longitude": 14.265057 },
+      "hasMap": "https://maps.google.com/?cid=14990155446111754116",
       // Orari reali del salone (gli stessi di index.html): non derivati da config.hours, che usa un formato libero
       "openingHoursSpecification": [
         { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Tuesday", "Wednesday", "Thursday"], "opens": "08:15", "closes": "13:00" },
