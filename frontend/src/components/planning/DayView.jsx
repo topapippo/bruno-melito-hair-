@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Clock, Repeat, MessageCircle, Euro, Info } from 'lucide-react';
 import { addDays, subDays, isToday } from 'date-fns';
@@ -15,6 +15,26 @@ const shortName = (name = '') => {
   const first = name.replace(/^[\s\d.\-)]+/, '').trim().split(/\s+/)[0] || name.trim();
   return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
 };
+
+// Durata in minuti sul blocco appuntamento (viste 3 giorni e settimana): compare SOLO se la scheda
+// (elemento con data-apt-card) e' abbastanza larga e alta. Sta nella riga del servizio, mai sul nome del cliente.
+function CardDuration({ minutes, minWidth, minHeight }) {
+  const ref = useRef(null);
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const card = ref.current?.closest('[data-apt-card]');
+    if (!card) return undefined;
+    const update = () => setShow(card.clientWidth >= minWidth && card.clientHeight >= minHeight);
+    update();
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(update);
+    observer.observe(card);
+    return () => observer.disconnect();
+  }, [minWidth, minHeight]);
+  return (
+    <span ref={ref} className={show ? 'text-sm flex-shrink-0 ml-1' : 'hidden'}>{minutes}&apos;</span>
+  );
+}
 
 export default function DayView({
   clients = [],
@@ -293,6 +313,7 @@ export default function DayView({
                       <div
                         key={apt.id}
                         data-testid={`planning-apt-${apt.id}`}
+                        data-apt-card=""
                         draggable="true"
                         onDragStart={(e) => onDragStart(e, apt)}
                         onDragEnd={onDragEnd}
@@ -365,7 +386,15 @@ export default function DayView({
                             return (
                               <div key={i} className="flex items-center px-2 flex-1 min-h-0 border-t border-white/10" style={{ backgroundColor: color, color: readableTextOn(color) }}>
                                 <span className={`font-bold ${dense ? 'text-sm' : 'text-base'} truncate drop-shadow-sm flex-1`}>{s.name}</span>
-                                {!dense && <span className="text-sm flex-shrink-0 ml-1">{s.duration || 15}&apos;</span>}
+                                {embedded ? (
+                                  <CardDuration
+                                    minutes={s.duration || 15}
+                                    minWidth={130}
+                                    minHeight={28 + 24 * Math.max(1, apt.services.length)}
+                                  />
+                                ) : (
+                                  <span className="text-sm flex-shrink-0 ml-1">{s.duration || 15}&apos;</span>
+                                )}
                               </div>
                             );
                           })}
