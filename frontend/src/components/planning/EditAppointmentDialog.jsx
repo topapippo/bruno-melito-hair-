@@ -1425,18 +1425,18 @@ export default function EditAppointmentDialog({
                       onClick={()=>handleCheckout('cash', null)}
                       disabled={processing}
                       onMouseEnter={e => {
-                        e.currentTarget.style.boxShadow = `0 6px 16px rgba(169, 76, 99, 0.25)`;
+                        e.currentTarget.style.boxShadow = `0 12px 32px rgba(16, 185, 129, 0.4), inset 0 1px 0 rgba(255,255,255,0.2)`;
                         e.currentTarget.style.transform = 'scale(1.05) translateY(-2px)';
                       }}
                       onMouseLeave={e => {
-                        e.currentTarget.style.boxShadow = `0 2px 6px rgba(169, 76, 99, 0.12)`;
+                        e.currentTarget.style.boxShadow = `0 8px 20px rgba(16, 185, 129, 0.35)`;
                         e.currentTarget.style.transform = 'scale(1)';
                       }}
                       style={{
-                        background: '#fff', border: '2px solid #A94C63',
-                        boxShadow: `0 2px 6px rgba(169, 76, 99, 0.12)`,
+                        background: `linear-gradient(135deg, ${COLORS.success} 0%, #059669 100%)`,
+                        boxShadow: `0 8px 20px rgba(16, 185, 129, 0.35)`,
                       }}
-                      className="flex flex-col items-center gap-2 text-[#A94C63] font-black rounded-lg py-5 transition-all duration-200 active:scale-95 disabled:opacity-50">
+                      className="flex flex-col items-center gap-2 text-white font-black rounded-2xl py-5 transition-all duration-200 active:scale-95 disabled:opacity-50">
                       <Banknote className="w-7 h-7"/>
                       <span className="text-base font-bold uppercase tracking-wide">Contanti</span>
                       <span className="text-xl leading-tight font-black">€{totalAfterDiscount.toFixed(2)}</span>
@@ -1447,18 +1447,18 @@ export default function EditAppointmentDialog({
                       onClick={()=>handleCheckout('pos', null)}
                       disabled={processing}
                       onMouseEnter={e => {
-                        e.currentTarget.style.boxShadow = `0 6px 16px rgba(169, 76, 99, 0.25)`;
+                        e.currentTarget.style.boxShadow = `0 12px 32px rgba(59, 130, 246, 0.4), inset 0 1px 0 rgba(255,255,255,0.2)`;
                         e.currentTarget.style.transform = 'scale(1.05) translateY(-2px)';
                       }}
                       onMouseLeave={e => {
-                        e.currentTarget.style.boxShadow = `0 2px 6px rgba(169, 76, 99, 0.12)`;
+                        e.currentTarget.style.boxShadow = `0 8px 20px rgba(59, 130, 246, 0.35)`;
                         e.currentTarget.style.transform = 'scale(1)';
                       }}
                       style={{
-                        background: '#fff', border: '2px solid #A94C63',
-                        boxShadow: `0 2px 6px rgba(169, 76, 99, 0.12)`,
+                        background: `linear-gradient(135deg, ${COLORS.info} 0%, #2563eb 100%)`,
+                        boxShadow: `0 8px 20px rgba(59, 130, 246, 0.35)`,
                       }}
-                      className="flex flex-col items-center gap-2 text-[#A94C63] font-black rounded-lg py-5 transition-all duration-200 active:scale-95 disabled:opacity-50">
+                      className="flex flex-col items-center gap-2 text-white font-black rounded-2xl py-5 transition-all duration-200 active:scale-95 disabled:opacity-50">
                       <Smartphone className="w-7 h-7"/>
                       <span className="text-base font-bold uppercase tracking-wide">POS</span>
                       <span className="text-xl leading-tight font-black">€{totalAfterDiscount.toFixed(2)}</span>
@@ -1473,25 +1473,25 @@ export default function EditAppointmentDialog({
                       disabled={processing}
                       onMouseEnter={e => {
                         if (selectedCard) {
-                          e.currentTarget.style.boxShadow = `0 6px 16px rgba(169, 76, 99, 0.25)`;
+                          e.currentTarget.style.boxShadow = `0 12px 32px rgba(200, 97, 122, 0.4), inset 0 1px 0 rgba(255,255,255,0.2)`;
                           e.currentTarget.style.transform = 'scale(1.05) translateY(-2px)';
                         }
                       }}
                       onMouseLeave={e => {
                         if (selectedCard) {
-                          e.currentTarget.style.boxShadow = `0 2px 6px rgba(169, 76, 99, 0.12)`;
+                          e.currentTarget.style.boxShadow = `0 8px 20px rgba(200, 97, 122, 0.35)`;
                           e.currentTarget.style.transform = 'scale(1)';
                         }
                       }}
                       style={selectedCard ? {
-                        background: '#FAEEF1', border: '2px solid #A94C63',
-                        boxShadow: `0 2px 6px rgba(169, 76, 99, 0.12)`,
+                        background: `linear-gradient(135deg, ${COLORS.rose} 0%, #b04f67 100%)`,
+                        boxShadow: `0 8px 20px rgba(200, 97, 122, 0.35)`,
                       } : {
                         background: `linear-gradient(135deg, #d1d5db 0%, #9ca3af 100%)`,
                         boxShadow: `0 2px 8px rgba(0, 0, 0, 0.08)`,
                         color: '#6b7280'
                       }}
-                      className={`flex flex-col items-center gap-2 font-black rounded-lg py-5 transition-all duration-200 active:scale-95 disabled:opacity-50 ${selectedCard ? 'text-[#A94C63]' : ''}`}>
+                      className={`flex flex-col items-center gap-2 font-black rounded-2xl py-5 transition-all duration-200 active:scale-95 disabled:opacity-50 ${selectedCard ? 'text-white' : ''}`}>
                       <Ticket className="w-7 h-7"/>
                       <span className="text-base font-bold uppercase tracking-wide truncate px-1 w-full text-center">
                         {selectedCard ? (selectedCardIsSubscription ? 'Scala Abb.' : selectedCard.name.split(' ')[0]) : 'Card/Abb.'}
