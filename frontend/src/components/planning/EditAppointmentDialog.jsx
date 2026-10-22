@@ -1214,11 +1214,11 @@ export default function EditAppointmentDialog({
 
                 {/* ── 2. ABBONAMENTI / CARD ── */}
                 {activeCards.length > 0 && (
-                  <div className="rounded-xl border-2 border-[#C8617A] overflow-hidden">
+                  <div className="rounded-xl border-2 border-[#A94C63] overflow-hidden">
                     <div className="px-3 py-2 bg-[#FFF0F3] flex items-center gap-2">
-                      <Ticket className="w-4 h-4 text-[#C8617A]"/>
-                      <span className="font-bold text-sm uppercase tracking-wide text-[#C8617A]">Abbonamenti / Card</span>
-                      {selectedCard && <span className="ml-auto text-xs font-bold px-2 py-0.5 bg-[#C8617A] text-white rounded-full">Selezionato</span>}
+                      <Ticket className="w-4 h-4 text-[#A94C63]"/>
+                      <span className="font-bold text-base uppercase tracking-wide text-[#A94C63]">Abbonamenti / Card</span>
+                      {selectedCard && <span className="ml-auto text-xs font-bold px-2 py-0.5 bg-[#A94C63] text-white rounded-full">Selezionato</span>}
                     </div>
                     <div className="border-t border-[#F5D0DA] px-2 py-2 space-y-1.5 bg-white">
                       {activeCards.map(card => {
@@ -1233,10 +1233,10 @@ export default function EditAppointmentDialog({
                               if (isSel) { setPaymentMethod('cash'); setSelectedCardId(''); }
                               else { setPaymentMethod('prepaid'); setSelectedCardId(card.id); }
                             }}
-                            className={`w-full p-3 rounded-xl border-2 text-left transition-all ${isSel?'border-[#C8617A] bg-[#FFF0F3] shadow-sm':'border-gray-200 hover:border-[#C8617A]'}`}>
+                            className={`w-full p-3 rounded-xl border-2 text-left transition-all ${isSel?'border-[#A94C63] bg-[#FFF0F3] shadow-sm':'border-gray-200 hover:border-[#A94C63]'}`}>
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2 min-w-0">
-                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${isSel?'bg-[#C8617A] border-[#C8617A]':'border-gray-300'}`}>
+                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${isSel?'bg-[#A94C63] border-[#A94C63]':'border-gray-300'}`}>
                                   {isSel && <Check className="w-3 h-3 text-white"/>}
                                 </div>
                                 <div className="min-w-0">
@@ -1247,13 +1247,13 @@ export default function EditAppointmentDialog({
                               <div className="text-right shrink-0 ml-2">
                                 {isSub ? (
                                   <>
-                                    <p className="font-black text-[#C8617A] text-sm">{left!==null?`${left} rimasti`:'∞'}</p>
+                                    <p className="font-black text-[#A94C63] text-sm">{left!==null?`${left} rimasti`:'∞'}</p>
                                     {total && <p className="text-[10px] text-gray-400">{used}/{total} usati</p>}
                                   </>
                                 ) : (
-                                  <p className="font-black text-[#C8617A] text-sm">€{(card.remaining_value??0).toFixed(2)}</p>
+                                  <p className="font-black text-[#A94C63] text-sm">€{(card.remaining_value??0).toFixed(2)}</p>
                                 )}
-                                {isSel && <p className="text-[10px] font-bold text-[#C8617A]">{isSub?'scala €0':'da carta'}</p>}
+                                {isSel && <p className="text-xs font-bold text-[#A94C63]">{isSub?'scala €0':'da carta'}</p>}
                               </div>
                             </div>
                           </button>
@@ -1533,10 +1533,10 @@ export default function EditAppointmentDialog({
               <Button type="button" variant="ghost" size="sm" onClick={handleDelete} disabled={deleting} className="font-bold text-[#DC2626] hover:bg-transparent hover:underline" aria-label="Elimina appuntamento">
                 {deleting?<Loader2 className="w-4 h-4 animate-spin"/>:<><Trash2 className="w-3.5 h-3.5 mr-1"/>Elimina</>}
               </Button>
-              <Button type="button" variant="outline" size="sm" onClick={resetCheckout} className="ml-auto border-[#C8617A] text-[#C8617A]">
+              <Button type="button" variant="outline" size="sm" onClick={resetCheckout} className="ml-auto border-[#A94C63] text-[#A94C63] text-base">
                 ← Modifica appuntamento
               </Button>
-              <Button type="button" variant="outline" size="sm" onClick={()=>saveAppointment(false)} disabled={saving} className="font-bold text-[#A94C63] bg-transparent hover:bg-[#FAF0F5] border-[#C8617A]">
+              <Button type="button" variant="outline" size="sm" onClick={()=>saveAppointment(false)} disabled={saving} className="font-bold text-[#A94C63] bg-transparent hover:bg-[#FAF0F5] border-[#A94C63] text-base">
                 {saving?<Loader2 className="w-4 h-4 animate-spin"/>:<><Edit3 className="w-3.5 h-3.5 mr-1"/>Salva</>}
               </Button>
             </div>
