@@ -7,8 +7,7 @@ const SERVICES = {
     subtitle: 'Colorazione naturale con effetto sole',
     description: 'Il balayage è la tecnica di colorazione più richiesta del momento. Bruno Melito Hair a Santa Maria Capua Vetere ti offre un balayage personalizzato che valorizza il colore naturale dei tuoi capelli con sfumature luminose e naturali. Ogni trattamento è studiato sulla forma del viso e sulla struttura del capello.',
     benefits: ['Effetto naturale e luminoso', 'Durata superiore alla tinta tradizionale', 'Nessuna radice evidente', 'Adatto a tutti i tipi di capello'],
-    price: 'Da €80',
-    duration: '2-3 ore',
+    price: 'Da €50',
     keywords: 'balayage Santa Maria Capua Vetere, colorazione capelli Caserta, salone di parrucchieri SMCV',
   },
   taglio: {
@@ -16,8 +15,7 @@ const SERVICES = {
     subtitle: 'Taglio personalizzato per ogni forma di viso',
     description: 'Un buon taglio di capelli cambia tutto. Da Bruno Melito Hair a Santa Maria Capua Vetere, ogni taglio viene studiato in base alla forma del viso, alla struttura del capello e allo stile di vita della cliente. Precisione, cura dei dettagli e ascolto sono la nostra firma.',
     benefits: ['Consulenza personalizzata inclusa', 'Tecniche moderne e classiche', 'Styling e piega inclusi', 'Prodotti professionali'],
-    price: 'Da €30',
-    duration: '45-60 min',
+    price: 'Da €20',
     keywords: 'taglio capelli donna Santa Maria Capua Vetere, parrucchiere Caserta, haircut SMCV',
   },
   colorazione: {
@@ -25,8 +23,7 @@ const SERVICES = {
     subtitle: 'Colore pieno, tinta e copertura capelli bianchi',
     description: 'La colorazione professionale da Bruno Melito Hair utilizza prodotti di alta qualità per garantire un colore brillante, uniforme e duraturo. Sia che tu voglia coprire i capelli bianchi o cambiare completamente colore, il nostro team saprà consigliarti la soluzione migliore.',
     benefits: ['Prodotti ammoniaca-free disponibili', 'Copertura completa capelli bianchi', 'Trattamento nutriente incluso', 'Consulenza colore gratuita'],
-    price: 'Da €45',
-    duration: '1-2 ore',
+    price: 'Da €30',
     keywords: 'colorazione capelli Santa Maria Capua Vetere, tinta capelli Caserta, copertura bianchi SMCV',
   },
   trattamenti: {
@@ -34,8 +31,7 @@ const SERVICES = {
     subtitle: 'Nutrizione, cheratina e ristrutturazione capillare',
     description: 'I capelli sani sono la base di ogni look. Da Bruno Melito Hair a Santa Maria Capua Vetere proponiamo trattamenti professionali per ogni esigenza: dalla cheratina per capelli lisci e morbidi, ai trattamenti nutrienti per capelli secchi o danneggiati.',
     benefits: ['Cheratina professionale', 'Trattamento nutriente intensivo', 'Ristrutturazione capelli danneggiati', 'Prodotti professionali inclusi'],
-    price: 'Da €40',
-    duration: '1-2 ore',
+    price: 'Da €6',
     keywords: 'trattamenti capelli Santa Maria Capua Vetere, cheratina Caserta, nutrizione capelli SMCV',
   },
   piega: {
@@ -43,8 +39,7 @@ const SERVICES = {
     subtitle: 'Acconciatura per ogni occasione',
     description: 'Per un\'uscita speciale, un matrimonio o semplicemente per sentirti al meglio ogni giorno. Da Bruno Melito Hair a Santa Maria Capua Vetere realizziamo pieghe, acconciature e styling su misura per ogni occasione.',
     benefits: ['Piega liscio o ricci', 'Acconciature cerimonia', 'Styling up-do e raccolti', 'Prodotti fissativi professionali'],
-    price: 'Da €20',
-    duration: '30-45 min',
+    price: 'Da €10',
     keywords: 'piega capelli Santa Maria Capua Vetere, acconciatura cerimonia Caserta, styling capelli SMCV',
   },
 };
@@ -89,12 +84,10 @@ export default function ServiceDetailPage() {
           </div>
 
           {/* Info card */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
+          <div className="grid grid-cols-2 gap-4 mb-10">
             {[
               { label: 'Prezzo', value: service.price },
-              { label: 'Durata', value: service.duration },
               { label: 'Sede', value: 'SMCV (CE)' },
-              { label: 'Valutazione', value: '★★★★★' },
             ].map(item => (
               <div key={item.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center">
                 <p className="text-xs text-gray-400 font-medium mb-1">{item.label}</p>
