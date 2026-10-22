@@ -21,6 +21,7 @@ import NewAppointmentDialog from '../components/planning/NewAppointmentDialog';
 import EditAppointmentDialog from '../components/planning/EditAppointmentDialog';
 import RecurringDialog from '../components/planning/RecurringDialog';
 import BlockSlotDialog from '../components/planning/BlockSlotDialog';
+import ExtendHoursDialog from '../components/planning/ExtendHoursDialog';
 import { OnlineBookingBanner, IncomingMessageBanner, LastServiceBanner } from '../components/planning/PlanningBanners';
 import PlanningSearch from '../components/planning/PlanningSearch';
 import ErrorBoundary from '../components/ErrorBoundary';
@@ -51,6 +52,15 @@ export default function PlanningPage() {
   const isMultiDay = viewMode === 'three' || viewMode === 'week'; // viste con più giorni affiancati
   const [monthAppointments, setMonthAppointments] = useState({});
   const [multiDayData, setMultiDayData] = useState({});
+  // Orari estesi ("Prolunga orario"): fasce di lavoro in più per singoli giorni
+  const [extraHours, setExtraHours] = useState([]);
+  const [extendDialogOpen, setExtendDialogOpen] = useState(false);
+  const fetchExtraHours = async () => {
+    try {
+      const res = await api.get(`${API}/extra-hours?start=${format(subDays(new Date(), 90), 'yyyy-MM-dd')}`);
+      setExtraHours(res.data || []);
+    } catch { /* silenzioso: senza estensioni vale l'orario normale */ }
+  };
   const [blockedSlots, setBlockedSlots] = useState([]);
   const [hoursConfig, setHoursConfig] = useState(null);
   const [selectedOperatorId, setSelectedOperatorId] = useState('');
@@ -178,10 +188,12 @@ export default function PlanningPage() {
     if (viewMode === 'month') fetchMonthData();
   }, [selectedDate, viewMode]);
 
-  // Viste 3 giorni e settimana: ricarica quando cambia data, vista o orari di apertura
+  useEffect(() => { fetchExtraHours(); }, []);
+
+  // Viste 3 giorni e settimana: ricarica quando cambia data, vista, orari di apertura o orari estesi
   useEffect(() => {
     if (isMultiDay) fetchMultiDayData();
-  }, [selectedDate, viewMode, hoursConfig]);
+  }, [selectedDate, viewMode, hoursConfig, extraHours]);
 
   // Poll for new online bookings
   const seenBookingIdsRef = useRef(new Set());
@@ -493,6 +505,17 @@ export default function PlanningPage() {
         }
       }
     }
+
+    // Orario esteso per quel giorno: diventa orario di lavoro normale (stessa regola degli orari configurati)
+    (extraHours || []).filter(x => x.date === dateStr).forEach(x => {
+      const [sh, sm] = x.start_time.split(':').map(Number);
+      const [eh, em] = x.end_time.split(':').map(Number);
+      ALL_SLOTS.forEach(s => {
+        const [h, m] = s.split(':').map(Number);
+        const t = h * 60 + m;
+        if (t >= sh * 60 + sm && t <= eh * 60 + em - 30) unavailable.delete(s);
+      });
+    });
 
     return unavailable;
   };
@@ -921,6 +944,22 @@ export default function PlanningPage() {
             />
             <Button
               variant="outline"
+              onClick={() => { setBlockInitialTime(''); setBlockDate(selectedDate); setBlockDialogOpen(true); }}
+              className="border-2 border-[#A94C63] text-[#A94C63] bg-white hover:bg-[#FAEEF1] hover:text-[#A94C63] rounded-lg h-12 px-5 text-lg font-bold"
+              data-testid="block-hours-btn"
+            >
+              Blocca orario
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setExtendDialogOpen(true)}
+              className="border-2 border-[#A94C63] text-[#A94C63] bg-white hover:bg-[#FAEEF1] hover:text-[#A94C63] rounded-lg h-12 px-5 text-lg font-bold"
+              data-testid="extend-hours-btn"
+            >
+              Prolunga orario
+            </Button>
+            <Button
+              variant="outline"
               onClick={handleToggleDayClosure}
               disabled={closingDay}
               data-testid="toggle-day-closure-btn"
@@ -1140,6 +1179,7 @@ export default function PlanningPage() {
           initialTime={newDialogInitial.time}
           initialOperatorId={newDialogInitial.operatorId}
           initialClientId={newDialogInitial.clientId}
+          extraHours={extraHours}
           operators={operators}
           clients={clients}
           services={services}
@@ -1158,6 +1198,7 @@ export default function PlanningPage() {
             clients={clients}
             services={services}
             cardTemplates={cardTemplates}
+            extraHours={extraHours}
             onSuccess={refreshAll}
             onLastServiceAlert={(data) => setLastServiceAlerts(prev => [...prev, data])}
             onThankYou={setThankYouData}
@@ -1176,6 +1217,7 @@ export default function PlanningPage() {
             clients={clients}
             services={services}
             cardTemplates={cardTemplates}
+            extraHours={extraHours}
             onSuccess={() => {
               refreshAll();
               // Dopo checkout, deseleziona per permettere la selezione del prossimo
@@ -1200,6 +1242,13 @@ export default function PlanningPage() {
           initialTime={blockInitialTime}
           selectedDate={blockDate || selectedDate}
           onSuccess={() => { fetchData(); if (isMultiDay) fetchMultiDayData(); }}
+        />
+
+        <ExtendHoursDialog
+          open={extendDialogOpen}
+          onClose={() => setExtendDialogOpen(false)}
+          selectedDate={selectedDate}
+          onChanged={fetchExtraHours}
         />
 
         {/* THANK YOU DIALOG */}

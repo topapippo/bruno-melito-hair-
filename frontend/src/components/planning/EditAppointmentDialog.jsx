@@ -23,8 +23,24 @@ import { ALL_SLOTS, DAY_MAP } from '../../lib/timeSlots';
 import { COLORS } from '../../lib/brandColors';
 
 
-const getFilteredSlots = (dateStr, hoursConfig, blockedSlots = []) => {
+// Orario esteso per il giorno ("Prolunga orario"): gli slot tra inizio e fine contano come orario di lavoro
+const extraRangeSlots = (extraRanges = []) => {
+  const out = [];
+  extraRanges.forEach(r => {
+    const [sh, sm] = r.start_time.split(':').map(Number);
+    const [eh, em] = r.end_time.split(':').map(Number);
+    ALL_SLOTS.forEach(slot => {
+      const [h, m] = slot.split(':').map(Number);
+      const t = h * 60 + m;
+      if (t >= sh * 60 + sm && t <= eh * 60 + em) out.push(slot);
+    });
+  });
+  return out;
+};
+
+const getFilteredSlots = (dateStr, hoursConfig, blockedSlots = [], extraRanges = []) => {
   let slots = [...ALL_SLOTS];
+  const extraSlots = extraRangeSlots(extraRanges);
   if (hoursConfig) {
     const d = new Date(dateStr + 'T12:00:00');
     const dayKey = DAY_MAP[d.getDay()];
@@ -32,7 +48,11 @@ const getFilteredSlots = (dateStr, hoursConfig, blockedSlots = []) => {
     const configLower = {};
     Object.keys(hoursConfig).forEach(k => { configLower[k.toLowerCase()] = hoursConfig[k]; });
     const dayHours = (configLower[fullKeys[d.getDay()]] || configLower[dayKey] || '').toLowerCase().trim();
-    if (!dayHours || dayHours === 'chiuso' || dayHours === '-') return { slots: [], closed: true };
+    if (!dayHours || dayHours === 'chiuso' || dayHours === '-') {
+      // Giorno chiuso ma con orario esteso: valgono solo gli slot dell'estensione
+      if (extraSlots.length === 0) return { slots: [], closed: true };
+      return { slots: blockedSlots.length ? extraSlots.filter(s => !blockedSlots.includes(s)) : extraSlots, closed: false };
+    }
     const rangePattern = /(\d{1,2})[.:](\d{2})\s*[-–]\s*(\d{1,2})[.:](\d{2})/g;
     const allowed = new Set();
     let match;
@@ -49,6 +69,7 @@ const getFilteredSlots = (dateStr, hoursConfig, blockedSlots = []) => {
     }
     if (foundRange) slots = ALL_SLOTS.filter(s => allowed.has(s));
   }
+  if (extraSlots.length > 0) slots = [...new Set([...slots, ...extraSlots])].sort();
   if (blockedSlots.length > 0) {
     const blockedSet = new Set(blockedSlots);
     slots = slots.filter(slot => !blockedSet.has(slot));
@@ -58,7 +79,7 @@ const getFilteredSlots = (dateStr, hoursConfig, blockedSlots = []) => {
 
 export default function EditAppointmentDialog({
   open, onClose, appointment, operators, clients, services, cardTemplates = [], onSuccess,
-  onLastServiceAlert, onThankYou, autoCheckout = false, keepOpenAfterCheckout = false,
+  onLastServiceAlert, onThankYou, autoCheckout = false, keepOpenAfterCheckout = false, extraHours = [],
 }) {
   useCategories(); // si ridisegna quando le categorie cambiano
   const [saving, setSaving] = useState(false);
@@ -254,7 +275,7 @@ export default function EditAppointmentDialog({
     }
   }, [editDate, hoursConfig]);
 
-  const { slots: editAvailableSlots } = getFilteredSlots(editDate, hoursConfig, blockedSlots);
+  const { slots: editAvailableSlots } = getFilteredSlots(editDate, hoursConfig, blockedSlots, (extraHours || []).filter(x => x.date === editDate));
   const currentAppointment = localAppointment || appointment || { services: [], client_id: '', promo_id: '' };
   const activeStatus = currentAppointment?.status;
 

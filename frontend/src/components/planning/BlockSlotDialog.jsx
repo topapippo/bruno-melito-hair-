@@ -17,12 +17,13 @@ export default function BlockSlotDialog({ open, onClose, initialTime, selectedDa
   });
 
   useEffect(() => {
-    if (open && initialTime) {
-      const endH = parseInt(initialTime.split(':')[0]);
-      const endM = parseInt(initialTime.split(':')[1]) + 30;
+    if (open) {
+      const startTime = initialTime || '09:00'; // aperta dal pulsante "Blocca orario": si sceglie tutto nella finestra
+      const endH = parseInt(startTime.split(':')[0]);
+      const endM = parseInt(startTime.split(':')[1]) + 30;
       const endTime = `${Math.floor((endH * 60 + endM) / 60).toString().padStart(2, '0')}:${((endH * 60 + endM) % 60).toString().padStart(2, '0')}`;
       setBlockForm({
-        start_time: initialTime,
+        start_time: startTime,
         end_time: endTime,
         reason: '',
         type: 'one-time',
@@ -45,6 +46,14 @@ export default function BlockSlotDialog({ open, onClose, initialTime, selectedDa
   };
 
   const handleBlock = async () => {
+    if ((blockForm.type === 'one-time' || blockForm.type === 'recurring') && !blockForm.date) {
+      toast.error('Scegli la data');
+      return;
+    }
+    if (!blockForm.start_time || !blockForm.end_time || blockForm.end_time <= blockForm.start_time) {
+      toast.error("L'ora di fine deve essere dopo quella di inizio");
+      return;
+    }
     const data = { ...blockForm };
     if (data.type === 'recurring') {
       const dayNames = ["domenica", "lunedi", "martedi", "mercoledi", "giovedi", "venerdi", "sabato"];
@@ -70,6 +79,18 @@ export default function BlockSlotDialog({ open, onClose, initialTime, selectedDa
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-2">
+          <div>
+            <Label htmlFor="block-date" className="text-xs font-semibold">Data</Label>
+            <Input
+              id="block-date" type="date" value={blockForm.date}
+              onChange={e => {
+                const v = e.target.value;
+                const d = v ? new Date(v + 'T12:00:00') : null;
+                setBlockForm({ ...blockForm, date: v, ...(d ? { day_of_month: d.getDate(), month_of_year: d.getMonth() + 1 } : {}) });
+              }}
+              data-testid="block-dialog-date"
+            />
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label className="text-xs font-semibold">Da</Label>

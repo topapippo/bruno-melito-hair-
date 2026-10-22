@@ -4,6 +4,7 @@ from typing import Optional
 from datetime import datetime, timezone, date as date_type, timedelta
 import uuid
 import os
+import re
 from database import db
 from routes.auth import get_current_user
 
@@ -191,3 +192,67 @@ async def get_public_all_day_blocked():
         "dates": [s["date"] for s in one_time if s.get("date")],
         "recurring_days": [s["day_of_week"] for s in recurring if s.get("day_of_week")]
     }
+
+
+# ============== ORARIO ESTESO (per singolo giorno) ==============
+# Fascia di lavoro in piu, valida solo per quel giorno (es. 18:30-20:00). Collezione: extra_hours.
+
+_HHMM_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
+
+
+class ExtraHoursCreate(BaseModel):
+    date: str  # "2026-10-24"
+    start_time: str  # "18:30"
+    end_time: str  # "20:00"
+
+
+def _check_iso_date(value: str, label: str = "Data") -> None:
+    try:
+        date_type.fromisoformat(value)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail=f"{label} non valida (usa YYYY-MM-DD)")
+
+
+@router.get("/extra-hours")
+async def get_extra_hours(start: Optional[str] = None, end: Optional[str] = None,
+                          current_user: dict = Depends(get_current_user)):
+    """Orari estesi del titolare, opzionalmente tra due date (YYYY-MM-DD, estremi inclusi)."""
+    query = {"user_id": current_user["id"]}
+    date_filter = {}
+    if start:
+        _check_iso_date(start, "Data di inizio")
+        date_filter["$gte"] = start
+    if end:
+        _check_iso_date(end, "Data di fine")
+        date_filter["$lte"] = end
+    if date_filter:
+        query["date"] = date_filter
+    return await db.extra_hours.find(query, {"_id": 0}).sort([("date", 1), ("start_time", 1)]).to_list(1000)
+
+
+@router.post("/extra-hours")
+async def create_extra_hours(data: ExtraHoursCreate, current_user: dict = Depends(get_current_user)):
+    _check_iso_date(data.date)
+    if not _HHMM_RE.match(data.start_time or "") or not _HHMM_RE.match(data.end_time or ""):
+        raise HTTPException(status_code=400, detail="Orario non valido (usa HH:MM)")
+    if data.start_time >= data.end_time:
+        raise HTTPException(status_code=400, detail="L'ora di fine deve essere dopo quella di inizio")
+    doc = {
+        "id": str(uuid.uuid4()),
+        "user_id": current_user["id"],
+        "date": data.date,
+        "start_time": data.start_time,
+        "end_time": data.end_time,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.extra_hours.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+
+@router.delete("/extra-hours/{extra_id}")
+async def delete_extra_hours(extra_id: str, current_user: dict = Depends(get_current_user)):
+    result = await db.extra_hours.delete_one({"id": extra_id, "user_id": current_user["id"]})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Orario esteso non trovato")
+    return {"success": True}
