@@ -226,7 +226,7 @@ export default function EditAppointmentDialog({
         setSospesiTotal(sospData.total || 0);
         if (isNew && (sospData.sospesi || []).length > 0) setShowSospesiPopup(true);
         if (isNew && autoCheckout && appointment.status !== 'completed') {
-          _enterCheckout(appointment, cards);
+          _enterCheckout(appointment, cards, clientRes.data || client);
         }
       });
     } else if (isNew) {
@@ -378,10 +378,20 @@ export default function EditAppointmentDialog({
     return Math.max(0, calculateSubtotal() - calculateDiscount()) + calculateRetailTotal();
   };
 
-  const _enterCheckout = (apt, cards) => {
+  const _enterCheckout = (apt, cards, clientOverride = null) => {
     setCheckoutMode(true);
     // Open services + cards + options sections by default for easy modification
     setOpenCats(prev => ({ ...prev, _svc: true, _cards: (cards || []).length > 0, _opts: true }));
+
+    // Sconto personale del cliente: precompila i campi sconto già esistenti (l'operatore può cambiarli o toglierli).
+    // Nessun calcolo nuovo: li usa calculateDiscount come per uno sconto inserito a mano.
+    const discountClient = clientOverride || selectedClientInfo || (clients || []).find(c => c.id === apt?.client_id);
+    const personalType = discountClient?.personal_discount_type;
+    const personalValue = discountClient?.personal_discount_value;
+    if (personalType && personalValue > 0) {
+      setDiscountType(personalType === 'euro' ? 'fixed' : 'percent');
+      setDiscountValue(String(personalValue));
+    }
 
     api.get(`${API}/inventory?category=rivendita`)
       .then(res => setRetailProducts(res.data || []))
@@ -1319,6 +1329,11 @@ export default function EditAppointmentDialog({
                     <div className="border-t border-gray-100 px-4 py-3 bg-white space-y-3">
                       <div>
                         <Label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Sconto</Label>
+                        {selectedClientInfo?.personal_discount_type && selectedClientInfo?.personal_discount_value > 0 && (
+                          <p className="text-sm text-[#6B5A5E] mb-1.5">
+                            Sconto personale del cliente: {selectedClientInfo.personal_discount_value}{selectedClientInfo.personal_discount_type === 'euro' ? ' €' : '%'} — puoi cambiarlo o toglierlo
+                          </p>
+                        )}
                         <div className="flex gap-2">
                           <Select value={discountType} onValueChange={setDiscountType}>
                             <SelectTrigger className="w-36 border"><SelectValue/></SelectTrigger>
