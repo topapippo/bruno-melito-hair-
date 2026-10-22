@@ -202,7 +202,6 @@ export default function DayView({
                         onDragOver={(e) => !isUnavailable && onDragOver(e, time, col.id)}
                         onDragLeave={onDragLeave}
                         onDrop={(e) => !isUnavailable && onDrop(e, time, col.id)}
-                        style={isBlocked ? { backgroundImage: 'repeating-linear-gradient(45deg,#E4DCDD,#E4DCDD 6px,#F3EEEE 6px,#F3EEEE 12px)' } : undefined}
                         className={`h-[48px] overflow-hidden border-b border-[#F1E8E9] transition-colors ${time.endsWith(':00') ? 'border-t border-t-[#D9CBCD]' : ''} ${
                           isBlocked
                             ? (embedded ? 'cursor-pointer' : 'cursor-not-allowed')
@@ -216,20 +215,45 @@ export default function DayView({
                             ? 'hover:bg-[#A94C63]/20 cursor-pointer'
                             : ''
                         }`}
-                      >
-                        {isBlocked && !dense && !compact && col.id === columns[0]?.id && (
-                          <div className="h-full flex items-center px-2">
-                            <span className="text-sm text-[#4B3F43] font-bold">Bloccato</span>
-                          </div>
-                        )}
-                        {isUnavailable && !isBlocked && !dense && !compact && col.id === columns[0]?.id && (
-                          <div className="h-full flex items-center px-2">
-                            <span className="text-[10px] text-gray-400 uppercase tracking-wider">—</span>
-                          </div>
-                        )}
-                      </div>
+                      />
                     );
                   })}
+
+                  {/* Fasce bloccate / fuori orario: UNA fascia per ogni intervallo, con la scritta una sola volta in alto.
+                      pointer-events-none: il clic e il trascinamento passano agli slot sotto. */}
+                  {(() => {
+                    const bands = [];
+                    let runStart = -1;
+                    let runHasBlocked = false;
+                    TIME_SLOTS.forEach((time, idx) => {
+                      const off = blockedSlots.includes(time) || unavailableSlots.has(time);
+                      if (off) {
+                        if (runStart === -1) { runStart = idx; runHasBlocked = false; }
+                        if (blockedSlots.includes(time)) runHasBlocked = true;
+                      }
+                      if (runStart !== -1 && (!off || idx === TIME_SLOTS.length - 1)) {
+                        bands.push({ start: runStart, end: off ? idx : idx - 1, blocked: runHasBlocked });
+                        runStart = -1;
+                      }
+                    });
+                    return bands.map((b) => (
+                      <div
+                        key={`band-${b.start}`}
+                        className="absolute left-0 right-0 z-[1] pointer-events-none overflow-hidden"
+                        style={{
+                          top: `${b.start * 48}px`,
+                          height: `${(b.end - b.start + 1) * 48}px`,
+                          backgroundImage: 'repeating-linear-gradient(45deg, rgba(200,190,192,0.55), rgba(200,190,192,0.55) 6px, rgba(243,238,238,0.55) 6px, rgba(243,238,238,0.55) 12px)',
+                        }}
+                      >
+                        {col.id === columns[0]?.id && (
+                          <span className={`block px-1 pt-0.5 font-bold text-[#4B3F43] truncate ${(compact || dense) ? 'text-[10px]' : 'text-xs'}`}>
+                            {b.blocked ? 'Bloccato' : 'Fuori orario'}
+                          </span>
+                        )}
+                      </div>
+                    ));
+                  })()}
 
                   {/* Appointments overlay */}
                   {(() => {
@@ -258,7 +282,7 @@ export default function DayView({
                         onDragEnd={onDragEnd}
                         onClick={() => openEditDialog(apt)}
                         className={`absolute rounded-[5px] overflow-hidden cursor-grab active:cursor-grabbing hover:scale-[1.03] hover:-translate-y-0.5 transition-all duration-200 flex flex-col ${
-                          isHighlighted ? 'ring-4 ring-yellow-400 ring-offset-2 z-20' : ''
+                          isHighlighted ? 'ring-4 ring-yellow-400 ring-offset-2 z-20' : 'z-[2]'
                         }`}
                         style={{
                           ...style,
