@@ -3,7 +3,7 @@ import { Scissors, Star, MapPin, Phone, ArrowLeft } from 'lucide-react';
 
 const SERVICES = {
   balayage: {
-    name: 'Balayage',
+    name: 'Balayage e colpi di sole',
     subtitle: 'Colorazione naturale con effetto sole',
     description: 'Il balayage è la tecnica di colorazione più richiesta del momento. Bruno Melito Hair a Santa Maria Capua Vetere ti offre un balayage personalizzato che valorizza il colore naturale dei tuoi capelli con sfumature luminose e naturali. Ogni trattamento è studiato sulla forma del viso e sulla struttura del capello.',
     benefits: ['Effetto naturale e luminoso', 'Durata superiore alla tinta tradizionale', 'Nessuna radice evidente', 'Adatto a tutti i tipi di capello'],
@@ -12,7 +12,7 @@ const SERVICES = {
     keywords: 'balayage Santa Maria Capua Vetere, colorazione capelli Caserta, salone di parrucchieri SMCV',
   },
   taglio: {
-    name: 'Taglio Donna',
+    name: 'Taglio e piega donna',
     subtitle: 'Taglio personalizzato per ogni forma di viso',
     description: 'Un buon taglio di capelli cambia tutto. Da Bruno Melito Hair a Santa Maria Capua Vetere, ogni taglio viene studiato in base alla forma del viso, alla struttura del capello e allo stile di vita della cliente. Precisione, cura dei dettagli e ascolto sono la nostra firma.',
     benefits: ['Consulenza personalizzata inclusa', 'Tecniche moderne e classiche', 'Styling e piega inclusi', 'Prodotti professionali'],
@@ -21,7 +21,7 @@ const SERVICES = {
     keywords: 'taglio capelli donna Santa Maria Capua Vetere, parrucchiere Caserta, haircut SMCV',
   },
   colorazione: {
-    name: 'Colorazione',
+    name: 'Colore senza ammoniaca',
     subtitle: 'Colore pieno, tinta e copertura capelli bianchi',
     description: 'La colorazione professionale da Bruno Melito Hair utilizza prodotti di alta qualità per garantire un colore brillante, uniforme e duraturo. Sia che tu voglia coprire i capelli bianchi o cambiare completamente colore, il nostro team saprà consigliarti la soluzione migliore.',
     benefits: ['Prodotti ammoniaca-free disponibili', 'Copertura completa capelli bianchi', 'Trattamento nutriente incluso', 'Consulenza colore gratuita'],
@@ -30,7 +30,7 @@ const SERVICES = {
     keywords: 'colorazione capelli Santa Maria Capua Vetere, tinta capelli Caserta, copertura bianchi SMCV',
   },
   trattamenti: {
-    name: 'Trattamenti',
+    name: 'Trattamenti cheratina',
     subtitle: 'Nutrizione, cheratina e ristrutturazione capillare',
     description: 'I capelli sani sono la base di ogni look. Da Bruno Melito Hair a Santa Maria Capua Vetere proponiamo trattamenti professionali per ogni esigenza: dalla cheratina per capelli lisci e morbidi, ai trattamenti nutrienti per capelli secchi o danneggiati.',
     benefits: ['Cheratina professionale', 'Trattamento nutriente intensivo', 'Ristrutturazione capelli danneggiati', 'Prodotti professionali inclusi'],

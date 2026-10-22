@@ -181,7 +181,7 @@ export default function WebsitePage() {
     const desc = config.hero_description || `Prenota online il tuo appuntamento da ${name}. Taglio, colore, trattamenti professionali.`;
     const url = window.location.origin + '/sito';
 
-    document.title = `${name} — Prenota Online`;
+    document.title = 'Bruno Melito Hair | Parrucchiere donna a Santa Maria Capua Vetere';
 
     const setMeta = (name, content, prop = false) => {
       const attr = prop ? 'property' : 'name';
@@ -609,6 +609,9 @@ export default function WebsitePage() {
 
           <p className="text-base md:text-lg text-white/80 max-w-xl mx-auto mb-10 leading-relaxed hero-animate hero-d4">
             {config.hero_description || "L'eccellenza dell'hair styling a Santa Maria Capua Vetere. Trattamenti premium, colore senza ammoniaca e stile personalizzato."}
+          </p>
+          <p className="text-sm text-white/70 max-w-xl mx-auto -mt-6 mb-10 hero-animate hero-d4">
+            Parrucchiere per signora e donna a Santa Maria Capua Vetere, dal 1983.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center hero-animate hero-d5">
