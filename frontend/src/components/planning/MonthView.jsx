@@ -6,6 +6,7 @@ export default function MonthView({
   selectedDate,
   monthAppointments,
   onDayClick,
+  onEditAppointment,
 }) {
   const ms = startOfMonth(selectedDate);
   const me = endOfMonth(selectedDate);
