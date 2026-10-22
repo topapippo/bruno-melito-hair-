@@ -130,7 +130,7 @@ export function ReminderBanner({ pendingRemindersCount, autoReminderPending, onB
 export function LastServiceBanner({ lastServiceAlerts, onDismiss }) {
   if (!lastServiceAlerts || lastServiceAlerts.length === 0) return null;
   return (
-    <a href="/abbonamenti" title={`${lastServiceAlerts.length} abbonamenti in esaurimento`} className="inline-flex items-center gap-1 px-2.5 py-1 bg-orange-100 border border-orange-300 rounded-full text-[11px] font-black text-orange-700 hover:bg-orange-200 transition-colors cursor-pointer" data-testid="last-service-banner">
+    <a href="/cards" title={`${lastServiceAlerts.length} abbonamenti in esaurimento`} className="inline-flex items-center gap-1 px-2.5 py-1 bg-orange-100 border border-orange-300 rounded-full text-[11px] font-black text-orange-700 hover:bg-orange-200 transition-colors cursor-pointer" data-testid="last-service-banner">
       <AlertTriangle className="w-3.5 h-3.5" />
       {lastServiceAlerts.length}
     </a>

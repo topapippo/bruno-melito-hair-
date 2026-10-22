@@ -22,7 +22,7 @@ import NewAppointmentDialog from '../components/planning/NewAppointmentDialog';
 import EditAppointmentDialog from '../components/planning/EditAppointmentDialog';
 import RecurringDialog from '../components/planning/RecurringDialog';
 import BlockSlotDialog from '../components/planning/BlockSlotDialog';
-import { OnlineBookingBanner, IncomingMessageBanner } from '../components/planning/PlanningBanners';
+import { OnlineBookingBanner, IncomingMessageBanner, LastServiceBanner } from '../components/planning/PlanningBanners';
 import PlanningSearch from '../components/planning/PlanningSearch';
 import ErrorBoundary from '../components/ErrorBoundary';
 import AppointmentDetailPanel from '../components/planning/AppointmentDetailPanel';
@@ -76,6 +76,7 @@ export default function PlanningPage() {
   const [newOnlineBookings, setNewOnlineBookings] = useState([]);
   const [newIncomingMessages, setNewIncomingMessages] = useState([]);
   const [sendingConfirmId, setSendingConfirmId] = useState(null);
+  const [lastServiceAlerts, setLastServiceAlerts] = useState([]);
   const [editInCheckout, setEditInCheckout] = useState(false);
 
   // Dialogs
@@ -895,6 +896,10 @@ export default function PlanningPage() {
             >
               <RefreshCcw className="w-4 h-4 mr-1" /> Aggiorna
             </Button>
+            <LastServiceBanner
+              lastServiceAlerts={lastServiceAlerts}
+              onDismiss={() => setLastServiceAlerts([])}
+            />
             <Button
               variant="outline"
               onClick={handleToggleDayClosure}
