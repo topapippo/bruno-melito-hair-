@@ -566,7 +566,7 @@ export default function ClientsPage() {
                   >
                     <span className={`block text-lg text-[#2D2326] ${isActive ? 'font-bold' : ''}`}>{client.name}</span>
                     <span className="block text-base text-[#6B5A5E]">
-                      {client.total_visits} visite{!client.phone && ' · telefono mancante'}
+                      {client.total_visits} {client.total_visits === 1 ? 'visita' : 'visite'}{!client.phone && ' · telefono mancante'}
                     </span>
                   </button>
                 );
