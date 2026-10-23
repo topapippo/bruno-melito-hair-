@@ -180,7 +180,7 @@ async def send_automatic_message(phone: str, template_name: str = None, template
         res = await send_whatsapp_template(phone, template_name, template_vars, button_param=button_param)
         await _log_communication((user or {}).get("id", "system"), "whatsapp", phone, f"Template: {template_name}", res)
         if not res.get("sent"):
-            logger.warning(f"Meta Template {template_name} fallito: {res.get('error')}")
+            logger.warning(f"Meta Template {template_name} fallito: {res.get('error')} | risposta completa Meta: {res.get('data')}")
         return res
 
     # 2. Nessun template richiesto: testo libero diretto (va bene solo entro la
