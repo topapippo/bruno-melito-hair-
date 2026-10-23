@@ -1407,6 +1407,7 @@ export default function WebsiteAdminPage() {
                   <div><Label>Email</Label><Input value={config.email || ''} onChange={e => updateField('email', e.target.value)} /></div>
                   <div><Label>Indirizzo</Label><Input value={config.address || ''} onChange={e => updateField('address', e.target.value)} /></div>
                   <div><Label>Link Google Maps</Label><Input value={config.maps_url || ''} onChange={e => updateField('maps_url', e.target.value)} /></div>
+                  <div><Label>Link recensioni Google</Label><Input value={config.google_review_url || ''} onChange={e => updateField('google_review_url', e.target.value)} placeholder="https://g.page/r/..." /></div>
                   <div><Label>WhatsApp (con prefisso, es. 393397833526)</Label><Input value={config.whatsapp || ''} onChange={e => updateField('whatsapp', e.target.value)} /></div>
                   <div>
                     <Label>Numeri di Telefono</Label>

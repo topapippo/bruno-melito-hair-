@@ -8,6 +8,7 @@ export default function ReceiptPage() {
   const { paymentId } = useParams();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [reviewUrl, setReviewUrl] = useState('');
 
   useEffect(() => {
     api.get(`/public/receipt/${paymentId}`)
@@ -15,6 +16,12 @@ export default function ReceiptPage() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [paymentId]);
+
+  useEffect(() => {
+    api.get('/public/website')
+      .then(res => setReviewUrl(res.data?.config?.google_review_url || ''))
+      .catch(() => {});
+  }, []);
 
   // Esplosione di coriandoli (rosa, oro, verde) all'apertura della ricevuta
   useEffect(() => {
@@ -89,10 +96,10 @@ export default function ReceiptPage() {
           </div>
 
           {/* Call to Action Google */}
-          {data.google_review_link && (
-            <a href={data.google_review_link} target="_blank" rel="noopener noreferrer"
+          {(data.google_review_link || reviewUrl) && (
+            <a href={data.google_review_link || reviewUrl} target="_blank" rel="noopener noreferrer"
                className="w-full bg-[#C8617A] text-white font-black py-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 hover:scale-105 transition-transform mb-3">
-              <Star className="w-5 h-5 fill-white" /> Lascia una Recensione
+              <Star className="w-5 h-5 fill-white" /> Lascia una recensione su Google
             </a>
           )}
 
