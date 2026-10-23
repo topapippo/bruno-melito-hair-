@@ -339,6 +339,83 @@ async def get_client_stats(start_date: str, end_date: str, current_user: dict = 
     }
 
 
+@router.get("/stats/acquisizione")
+async def get_acquisition_stats(days: int = 90, current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
+    days = max(1, min(days, 730))
+    today = datetime.now(timezone.utc).date()
+    start = (today - timedelta(days=days - 1)).isoformat()
+    end = today.isoformat()
+    monthly = days > 120
+
+    def bucket(d: str) -> str:
+        if monthly:
+            return d[:7]
+        dt = datetime.strptime(d[:10], "%Y-%m-%d").date()
+        return (dt - timedelta(days=dt.weekday())).isoformat()
+
+    clients = await db.clients.find(
+        {"user_id": uid}, {"_id": 0, "id": 1, "created_at": 1}
+    ).to_list(5000)
+    created = {c["id"]: (c.get("created_at") or "")[:10] for c in clients}
+
+    apts = await db.appointments.find(
+        {"user_id": uid, "date": {"$gte": start, "$lte": end}, "status": {"$ne": "cancelled"}},
+        {"_id": 0, "client_id": 1, "date": 1, "source": 1, "notes": 1, "promo_id": 1}
+    ).to_list(5000)
+
+    promos = await db.promotions.find(
+        {"user_id": uid}, {"_id": 0, "id": 1, "name": 1, "code": 1, "promo_type": 1}
+    ).to_list(500)
+    amica_ids, under30_ids = set(), set()
+    for p in promos:
+        code = (p.get("code") or "").upper()
+        name = (p.get("name") or "").lower()
+        ptype = p.get("promo_type") or ""
+        if code == "AMICA" or ptype == "bring_friend":
+            amica_ids.add(p["id"])
+        if code == "UNDER30" or ptype == "under_30" or "under 30" in name:
+            under30_ids.add(p["id"])
+
+    online = amica = under30 = 0
+    trend = {}
+    ret_seen = {}
+    returning = set()
+    for a in apts:
+        notes = (a.get("notes") or "").lower()
+        pid = a.get("promo_id")
+        if a.get("source") == "online":
+            online += 1
+        if pid in amica_ids or "[promo-code: amica]" in notes or "[amica:" in notes:
+            amica += 1
+        if pid in under30_ids or "[promo-code: under30]" in notes:
+            under30 += 1
+        cid = a.get("client_id")
+        c_created = created.get(cid)
+        if c_created and c_created < start:
+            returning.add(cid)
+        if c_created and c_created < bucket(a["date"]) + ("-01" if monthly else ""):
+            ret_seen.setdefault(bucket(a["date"]), set()).add(cid)
+
+    new_ids = [cid for cid, d in created.items() if start <= d <= end]
+    for cid in new_ids:
+        b = bucket(created[cid])
+        trend.setdefault(b, {"period": b, "nuove": 0, "ritorno": 0})["nuove"] += 1
+    for b, ids in ret_seen.items():
+        trend.setdefault(b, {"period": b, "nuove": 0, "ritorno": 0})["ritorno"] = len(ids)
+
+    return {
+        "days": days,
+        "granularity": "month" if monthly else "week",
+        "new_clients": len(new_ids),
+        "returning_clients": len(returning),
+        "online_bookings": online,
+        "bring_friend": amica,
+        "under30": under30,
+        "trend": [trend[k] for k in sorted(trend)],
+    }
+
+
 @router.get("/stats/expenses-stats")
 async def get_expense_stats(start_date: str, end_date: str, current_user: dict = Depends(get_current_user)):
     uid = current_user["id"]

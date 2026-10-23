@@ -144,6 +144,9 @@ export default function StatsPage() {
   const [clientStats, setClientStats] = useState(null);
   const [expenseStats, setExpenseStats] = useState(null);
 
+  const [acqStats, setAcqStats] = useState(null);
+  const [acqDays, setAcqDays] = useState(90);
+  const [loadingAcq, setLoadingAcq] = useState(true);
   const [loadingRev, setLoadingRev] = useState(false);
   const [loadingCli, setLoadingCli] = useState(false);
   const [loadingExp, setLoadingExp] = useState(false);
@@ -185,6 +188,16 @@ export default function StatsPage() {
       setLoadingCli(false);
     }
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingAcq(true);
+    api.get(`${API}/stats/acquisizione`, { params: { days: acqDays } })
+      .then((res) => { if (!cancelled) setAcqStats(res.data); })
+      .catch(() => { if (!cancelled) toast.error('Errore caricamento nuove clienti'); })
+      .finally(() => { if (!cancelled) setLoadingAcq(false); });
+    return () => { cancelled = true; };
+  }, [acqDays]);
 
   const fetchExpenses = useCallback(async (s, e) => {
     setLoadingExp(true);
@@ -643,6 +656,51 @@ export default function StatsPage() {
                       ) : <EmptyChart height={220} />}
                     </CardContent>
                   </Card>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <h3 className="font-display text-lg text-[#2D1B14]">Nuove clienti e provenienza</h3>
+                    <div className="flex gap-1" role="group" aria-label="Periodo">
+                      {[30, 90, 365].map((d) => (
+                        <Button key={d} size="sm" variant={acqDays === d ? 'default' : 'outline'}
+                          onClick={() => setAcqDays(d)}
+                          className={acqDays === d ? 'bg-[#C8617A] hover:bg-[#A0404F] text-white h-8' : 'h-8'}>
+                          {d} giorni
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                  {loadingAcq ? (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-24" />)}
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <KpiCard label="Clienti nuove" value={acqStats?.new_clients || 0} sub={`${acqStats?.returning_clients || 0} di ritorno`} icon={Users} color="#C8617A" />
+                        <KpiCard label="Prenotazioni dal sito" value={acqStats?.online_bookings || 0} icon={TrendingUp} color="#D4AF7A" />
+                        <KpiCard label="Porta un'amica" value={acqStats?.bring_friend || 0} icon={Users} color="#C8617A" />
+                        <KpiCard label="Promo Under 30" value={acqStats?.under30 || 0} icon={Star} color="#D4AF7A" />
+                      </div>
+                      <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
+                        <CardContent className="pt-4">
+                          {acqStats?.trend?.length > 0 ? (
+                            <ResponsiveContainer width="100%" height={220}>
+                              <BarChart data={acqStats.trend}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#F0E6DC" />
+                                <XAxis dataKey="period" tick={{ fontSize: 11 }} />
+                                <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                                <Tooltip formatter={(v, n) => [v, n === 'nuove' ? 'Nuove' : 'Di ritorno']} />
+                                <Bar dataKey="nuove" fill="#C8617A" radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="ritorno" fill="#D4AF7A" radius={[4, 4, 0, 0]} />
+                              </BarChart>
+                            </ResponsiveContainer>
+                          ) : <EmptyChart height={220} />}
+                        </CardContent>
+                      </Card>
+                    </>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
