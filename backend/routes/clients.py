@@ -410,7 +410,7 @@ async def update_client(client_id: str, data: ClientUpdate, current_user: dict =
             {"id": client_id, "user_id": current_user["id"]},
             {"_id": 0, "personal_discount_type": 1, "personal_discount_value": 1},
         )
-        if not existing:
+        if existing is None:
             raise HTTPException(status_code=404, detail="Cliente non trovato")
         eff_type = (update_data["personal_discount_type"] if "personal_discount_type" in update_data
                     else existing.get("personal_discount_type")) or None
