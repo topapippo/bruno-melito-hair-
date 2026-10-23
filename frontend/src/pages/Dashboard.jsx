@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import api, { API } from '../lib/api';
+import api, { API, getErrorMessage } from '../lib/api';
 import { sendWA } from '../lib/sendWA';
 import Layout from '../components/Layout';
 import DashboardMorningBriefing from '../components/DashboardMorningBriefing';
@@ -9,34 +9,34 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import {
-  Users, Euro, Calendar, TrendingUp, Plus, ChevronRight,
-  Scissors, UserCheck, BarChart3,
-  CreditCard, Gift, Bell, Download, Globe, Settings, AlertTriangle,
-  MessageCircle, X, Sparkles, Heart, Star, ArrowDownCircle, FileBarChart, Cake,
-  CheckCircle2, AlertCircle, Zap, ArrowUpRight, Target, TrendingDown, Flame, Phone,
+  Users,
+  Euro,
+  Calendar,
+  TrendingUp,
+  Plus,
+  ChevronRight,
+  CreditCard,
+  Bell,
+  AlertTriangle,
+  MessageCircle,
+  X,
+  Sparkles,
+  Star,
+  Cake,
+  CheckCircle2,
+  AlertCircle,
+  Zap,
+  ArrowUpRight,
+  Target,
+  TrendingDown,
+  Flame,
+  Phone,
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
 import ClientAvatar from '../components/ClientAvatar';
-
-const MODULES = [
-  { path: '/',          label: 'Planning',      desc: 'Agenda giornaliera', icon: Calendar,       emoji: '📅', from: '#E8477C', to: '#F49AB3' },
-  { path: '/appointments', label: 'Prenota',    desc: 'Nuovo appuntamento', icon: Plus,           emoji: '✂️', from: '#F59E0B', to: '#FCD34D' },
-  { path: '/clients',   label: 'Clienti',       desc: 'Gestione clienti',   icon: Users,          emoji: '👥', from: '#3B82F6', to: '#93C5FD' },
-  { path: '/services',  label: 'Servizi',       desc: 'Listino prezzi',     icon: Scissors,       emoji: '💈', from: '#D4AF7A', to: '#EBD9B8' },
-  { path: '/operators', label: 'Operatori',     desc: 'Staff del salone',   icon: UserCheck,      emoji: '👤', from: '#F97316', to: '#FDBA74' },
-  { path: '/stats',     label: 'Statistiche',   desc: 'Report e grafici',   icon: BarChart3,      emoji: '📊', from: '#EC4899', to: '#F9A8D4' },
-  { path: '/incassi',   label: 'Incassi',       desc: 'Report pagamenti',   icon: Euro,           emoji: '💰', from: '#10B981', to: '#6EE7B7' },
-  { path: '/daily-summary', label: 'Riepilogo', desc: 'Giornaliero',        icon: FileBarChart,   emoji: '📋', from: '#B8860B', to: '#E9C46A' },
-  { path: '/cards',     label: 'Card',          desc: 'Abbonamenti',        icon: CreditCard,     emoji: '💳', from: '#0EA5E9', to: '#7DD3FC' },
-  { path: '/reminders', label: 'Promemoria',    desc: 'Notifiche WA',       icon: Bell,           emoji: '🔔', from: '#F97316', to: '#FDBA74' },
-  { path: '/uscite',    label: 'Uscite',        desc: 'Registro spese',     icon: ArrowDownCircle,emoji: '📤', from: '#EF4444', to: '#FCA5A5' },
-  { path: '/promozioni',label: 'Promozioni',    desc: 'Offerte speciali',   icon: Gift,           emoji: '🎁', from: '#D946EF', to: '#F0ABFC' },
-  { path: '/backup',    label: 'Backup',        desc: 'Esporta dati',       icon: Download,       emoji: '💾', from: '#6B7280', to: '#D1D5DB' },
-  { path: '/sito',      label: 'Sito Web',      desc: 'Pagina pubblica',    icon: Globe,          emoji: '🌐', from: '#14B8A6', to: '#5EEAD4' },
-  { path: '/settings',  label: 'Impostazioni',  desc: 'Configurazione',     icon: Settings,       emoji: '⚙️', from: '#6B7280', to: '#D1D5DB' },
-];
+import EditAppointmentDialog from '../components/planning/EditAppointmentDialog';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -55,6 +55,9 @@ export default function Dashboard() {
   const [inactiveClients, setInactiveClients] = useState([]);
   const [autoReminder, setAutoReminder] = useState(null);
   const navigate = useNavigate();
+  const [checkoutApt, setCheckoutApt] = useState(null);
+  const [checkoutData, setCheckoutData] = useState(null);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   useEffect(() => {
     fetchDashboardStats();
@@ -158,6 +161,42 @@ export default function Dashboard() {
     await sendWA(card.client_phone, msg, { successMsg: '✅ Notifica card inviata!' });
   };
 
+  const openCheckout = async (apt) => {
+    setCheckoutLoading(true);
+    try {
+      let data = checkoutData;
+      if (!data) {
+        const [opRes, clRes, svRes, webRes, ehRes] = await Promise.all([
+          api.get(`${API}/operators`),
+          api.get(`${API}/clients`),
+          api.get(`${API}/services`),
+          api.get(`${API}/public/website`).catch(() => ({ data: {} })),
+          api.get(`${API}/extra-hours?start=${format(addDays(new Date(), -90), 'yyyy-MM-dd')}`).catch(() => ({ data: [] })),
+        ]);
+        data = {
+          operators: (opRes.data || []).filter(op => op.active),
+          clients: clRes.data || [],
+          services: svRes.data || [],
+          cardTemplates: webRes.data?.card_templates || [],
+          extraHours: ehRes.data || [],
+        };
+        setCheckoutData(data);
+      }
+      setCheckoutApt(apt);
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
+  const closeCheckout = () => setCheckoutApt(null);
+
+  const afterCheckout = () => {
+    setCheckoutApt(null);
+    fetchDashboardStats();
+  };
+
   /* ── Loading skeleton ─────────────────────────────────────────────── */
   if (loading) return (
     <Layout>
@@ -182,6 +221,10 @@ export default function Dashboard() {
   const firstName = user?.name?.split(' ')[0] || 'Bruno';
 
   const todayTotal = stats?.today_appointments?.reduce((s, a) => s + (Number(a.total_price) || 0), 0) || 0;
+  const nowHHMM = format(new Date(), 'HH:mm');
+  const toCollect = (stats?.today_appointments || [])
+    .filter(a => a.status !== 'completed' && a.status !== 'cancelled' && (a.time || '99:99') <= nowHHMM)
+    .sort((a, b) => a.time.localeCompare(b.time));
   const completedToday = stats?.today_appointments?.filter(a => a.status === 'completed').length || 0;
   const totalToday = stats?.today_appointments_count || 0;
   const progressPct = totalToday > 0 ? Math.round((completedToday / totalToday) * 100) : 0;
@@ -670,41 +713,57 @@ export default function Dashboard() {
 
 
         {/* ══════════════════════════════════════════════════════════════
-            MODULI — griglia colorata con tooltip desc
+            DA INCASSARE OGGI
         ══════════════════════════════════════════════════════════════ */}
-        <div>
-          <div className="flex items-center gap-2.5 mb-3">
+        <div
+          className="rounded-2xl overflow-hidden"
+          data-testid="da-incassare-oggi"
+          style={{ background: 'var(--admin-content-bg)', border: '1px solid color-mix(in srgb, var(--admin-primary) 25%, transparent)' }}
+        >
+          <div className="flex items-center gap-2.5 px-5 py-4" style={{ borderBottom: '1px solid color-mix(in srgb, var(--admin-primary) 15%, transparent)' }}>
             <div className="w-7 h-7 rounded-xl flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--admin-primary) 15%, transparent)' }}>
-              <Heart className="w-4 h-4" style={{ color: 'var(--admin-primary)' }} />
+              <Euro className="w-4 h-4" style={{ color: 'var(--admin-primary)' }} />
             </div>
-            <h2 className="font-display text-xl font-bold" style={{ color: 'var(--admin-content-text)' }}>Accesso Rapido</h2>
-            <span className="text-xs font-semibold ml-auto hidden sm:block" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 35%, transparent)' }}>
-              {MODULES.length} moduli
-            </span>
+            <h2 className="font-display text-xl font-bold" style={{ color: 'var(--admin-content-text)' }}>Da incassare oggi</h2>
+            {toCollect.length > 0 && (
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full ml-auto" style={{ background: 'color-mix(in srgb, var(--admin-primary) 15%, transparent)', color: 'var(--admin-primary)' }}>
+                {toCollect.length}
+              </span>
+            )}
           </div>
-
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-9 gap-2.5 stagger-fast">
-            {MODULES.map((mod) => (
-              <button
-                key={mod.path}
-                data-testid={`module-${mod.path.slice(1)}`}
-                onClick={() => navigate(mod.path)}
-                className="module-card-3d rounded-2xl p-3 text-center cursor-pointer group relative overflow-hidden shadow-sm"
-                style={{ background: `linear-gradient(135deg, ${mod.from}, ${mod.to})` }}
-                title={mod.desc}
-              >
-                <div className="absolute -bottom-3 -right-3 w-14 h-14 rounded-full bg-white/10 transition-transform duration-300 group-hover:scale-150" />
-                <div className="absolute -top-4 -left-4 w-12 h-12 rounded-full bg-white/5" />
-                <div className="relative z-10 flex flex-col items-center">
-                  <div className="text-2xl mb-1.5 transition-all duration-300 group-hover:scale-125 group-hover:-rotate-6 leading-none">
-                    {mod.emoji}
+          {toCollect.length === 0 ? (
+            <div className="flex items-center gap-2 px-5 py-5 text-sm font-semibold" style={{ color: 'var(--admin-content-text)' }}>
+              <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--admin-accent)' }} />
+              Tutto incassato
+            </div>
+          ) : (
+            <div className="p-3 grid grid-cols-1 lg:grid-cols-2 gap-2">
+              {toCollect.map((apt) => (
+                <div key={apt.id} className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'color-mix(in srgb, var(--admin-primary) 6%, transparent)' }}>
+                  <div className="text-center w-12 flex-shrink-0">
+                    <p className="text-sm font-bold" style={{ color: 'var(--admin-primary)' }}>{apt.time}</p>
                   </div>
-                  <p className="font-bold text-white text-[10px] leading-tight">{mod.label}</p>
-                  <p className="text-white/55 text-[9px] leading-tight mt-0.5 hidden md:block truncate w-full">{mod.desc}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-sm truncate" style={{ color: 'var(--admin-content-text)' }}>{apt.client_name}</p>
+                    <p className="text-xs truncate" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 55%, transparent)' }}>
+                      {(apt.services || []).map(s => s.name).join(', ') || '—'}
+                    </p>
+                  </div>
+                  <p className="font-bold text-sm flex-shrink-0" style={{ color: 'var(--admin-content-text)' }}>€{(Number(apt.total_price) || 0).toFixed(2)}</p>
+                  <Button
+                    size="sm"
+                    onClick={() => openCheckout(apt)}
+                    disabled={checkoutLoading}
+                    className="flex-shrink-0 text-white"
+                    style={{ background: 'var(--admin-primary)' }}
+                    data-testid={`incassa-${apt.id}`}
+                  >
+                    Incassa
+                  </Button>
                 </div>
-              </button>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* ══════════════════════════════════════════════════════════════
@@ -1000,6 +1059,21 @@ export default function Dashboard() {
       </div>
 
     </Layout>
+
+    {checkoutApt && checkoutData && (
+      <EditAppointmentDialog
+        open
+        onClose={closeCheckout}
+        appointment={checkoutApt}
+        autoCheckout={true}
+        operators={checkoutData.operators}
+        clients={checkoutData.clients}
+        services={checkoutData.services}
+        cardTemplates={checkoutData.cardTemplates}
+        extraHours={checkoutData.extraHours}
+        onSuccess={afterCheckout}
+      />
+    )}
 
     {/* Modal dettaglio obiettivo mensile — fuori da Layout per evitare stacking context */}
     {showTargetModal && monthlyTarget > 0 && (() => {
