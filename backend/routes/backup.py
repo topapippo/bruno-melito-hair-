@@ -397,8 +397,11 @@ async def download_backup_pdf(current_user: dict = Depends(get_current_user)):
     )
 
 
+MAX_CLOUD_BACKUP_BYTES = int(4.5 * 1024 * 1024)
+
+
 async def send_backup_to_cloud(user_id: str) -> dict:
-    """Genera il backup JSON e lo invia al webhook Make (MAKE_BACKUP_WEBHOOK_URL) come allegato multipart."""
+    """Genera il backup JSON e lo invia al webhook Make (MAKE_BACKUP_WEBHOOK_URL) come POST JSON {filename, content}."""
     webhook_url = os.environ.get("MAKE_BACKUP_WEBHOOK_URL", "").strip()
     if not webhook_url:
         logger.error("Backup cloud: variabile MAKE_BACKUP_WEBHOOK_URL non impostata")
@@ -406,9 +409,16 @@ async def send_backup_to_cloud(user_id: str) -> dict:
     try:
         if not await run_backup(user_id):
             return {"success": False, "message": "Errore durante la creazione del backup."}
-        with open(_backup_file(user_id), "rb") as f:
+        with open(_backup_file(user_id), "r", encoding="utf-8") as f:
             content = f.read()
         filename = f"backup-{datetime.now(ZoneInfo('Europe/Rome')).strftime('%Y-%m-%d')}.json"
+
+        size_bytes = len(content.encode("utf-8"))
+        if size_bytes > MAX_CLOUD_BACKUP_BYTES:
+            size_mb = round(size_bytes / (1024 * 1024), 2)
+            logger.error(f"Backup cloud: backup troppo grande ({size_mb} MB, limite 4.5 MB), invio annullato user_id={user_id}")
+            return {"success": False, "size_mb": size_mb,
+                    "message": f"Backup troppo grande per l'invio a Make: {size_mb} MB (limite 4,5 MB). Invio annullato."}
 
         import requests
         import asyncio
@@ -416,7 +426,7 @@ async def send_backup_to_cloud(user_id: str) -> dict:
         def _post():
             return requests.post(
                 webhook_url,
-                files={"file": (filename, content, "application/json")},
+                json={"filename": filename, "content": content},
                 timeout=60,
             )
 
