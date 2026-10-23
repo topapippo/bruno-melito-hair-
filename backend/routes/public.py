@@ -312,6 +312,26 @@ async def get_website_data(response: Response):
     response.headers["Cache-Control"] = "no-store"
     return data
 
+def _clean_tpl_var(value) -> str:
+    """Valore per variabile template Meta: niente a capo, tab o 4+ spazi di fila; vuoto -> "-"."""
+    s = re.sub(r"[\r\n\t]+", " ", str(value or ""))
+    s = re.sub(r" {4,}", " ", s).strip()
+    return s or "-"
+
+
+async def _notify_salon_new_booking(phone: str, tpl_vars: list, fallback_text: str, user: dict):
+    """Avvisa il salone con il template Meta nuova_prenotazione_online; se fallisce, ripiega sul testo libero."""
+    res = None
+    try:
+        res = await send_automatic_message(phone, "nuova_prenotazione_online", tpl_vars, None, user)
+    except Exception as e:
+        res = {"sent": False, "error": repr(e)}
+    if res and res.get("sent"):
+        return
+    logger.error(f"Template nuova_prenotazione_online fallito, ripiego su testo libero. Errore completo: {res}")
+    await send_whatsapp(phone, fallback_text, user)
+
+
 @router.post("/public/booking")
 @limiter.limit("10/minute")
 async def create_public_booking(request: Request, data: PublicBookingRequest, background_tasks: BackgroundTasks):
@@ -428,7 +448,8 @@ async def create_public_booking(request: Request, data: PublicBookingRequest, ba
         d_p = data.date.split('-')
         date_it = f"{d_p[2]}/{d_p[1]}/{d_p[0]}" if len(d_p) == 3 else data.date
         msg_bruno = f"🔔 NUOVA PRENOTAZIONE ONLINE!\n👤 Cliente: {data.client_name}\n📅 Data: {date_it}\n⏰ Ora: {data.time}\n✂️ Servizi: {service_names}\n\nhttps://brunomelitohair.it/admin"
-        background_tasks.add_task(send_whatsapp, user.get("phone") or "3397833526", msg_bruno, user)
+        salon_vars = [_clean_tpl_var(v) for v in (data.client_name, date_it, data.time, service_names)]
+        background_tasks.add_task(_notify_salon_new_booking, user.get("phone") or "3397833526", salon_vars, msg_bruno, user)
         client_msg = f"Ciao {data.client_name}! ✅ Prenotazione confermata per il {date_it} alle {data.time}. Ti aspettiamo! 💇"
         if data.client_phone:
             # Prefer template di conferma approvato su Meta
