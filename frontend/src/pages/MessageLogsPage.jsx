@@ -37,7 +37,8 @@ function deliveryInfo(log) {
     return { label: 'Fallito', color: 'bg-red-500', Icon: X, problem: true, detail: log.error };
   }
   if (log.delivery_status === 'failed') {
-    const detail = log.delivery_error_code ? `${log.delivery_error} (#${log.delivery_error_code})` : log.delivery_error;
+    const reason = { 131026: 'Numero non raggiungibile su WhatsApp', 131047: 'Fuori dalle 24 ore, serve un template' }[log.delivery_error_code] || log.delivery_error;
+    const detail = log.delivery_error_code ? `${reason} (#${log.delivery_error_code})` : reason;
     return { label: 'Non consegnato', color: 'bg-red-500', Icon: X, problem: true, detail };
   }
   if (log.delivery_status === 'delivered' || log.delivery_status === 'read') {
@@ -63,18 +64,20 @@ export default function MessageLogsPage() {
   const [loading, setLoading] = useState(true);
   const [logs, setLogs] = useState([]);
   const [limit, setLimit] = useState('100');
-  const [onlyFailed, setOnlyFailed] = useState(false);
+  const [filter, setFilter] = useState('all');
+  const onlyFailed = filter !== 'all';
 
   useEffect(() => {
     fetchLogs();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [limit, onlyFailed]);
+  }, [limit, filter]);
 
   const fetchLogs = async () => {
     setLoading(true);
     try {
       const res = await api.get(`${API}/communication-logs?limit=${limit}&only_failed=${onlyFailed}`);
-      setLogs(res.data.logs || []);
+      const all = res.data.logs || [];
+      setLogs(filter === 'undelivered' ? all.filter((l) => l.delivery_status === 'failed') : all);
     } catch (err) {
       console.error('Error fetching communication logs:', err);
       toast.error('Errore nel caricamento dello storico messaggi');
@@ -117,13 +120,14 @@ export default function MessageLogsPage() {
             <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-2">
                 <Label className="text-sm text-[#7C5C4A]">Mostra:</Label>
-                <Select value={onlyFailed ? 'failed' : 'all'} onValueChange={(v) => setOnlyFailed(v === 'failed')}>
+                <Select value={filter} onValueChange={setFilter}>
                   <SelectTrigger className="w-44" data-testid="filter-select">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Tutti gli invii</SelectItem>
                     <SelectItem value="failed">Solo falliti</SelectItem>
+                    <SelectItem value="undelivered">Non consegnati</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

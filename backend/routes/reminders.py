@@ -936,3 +936,36 @@ async def get_communication_logs(
         query["$or"] = [{"sent": False}, {"delivery_status": "failed"}]
     logs = await db.communication_logs.find(query, {"_id": 0}).sort("timestamp", -1).to_list(limit)
     return {"logs": logs, "count": len(logs)}
+
+
+@router.get("/communication-logs/undelivered")
+async def get_undelivered_logs(
+    days: int = 7,
+    limit: int = 5,
+    current_user: dict = Depends(get_current_user),
+):
+    """Messaggi accettati da Meta ma poi non consegnati (stato `failed` dal webhook),
+    con nome cliente risolto dal numero di telefono."""
+    days = max(1, min(days, 90))
+    limit = max(1, min(limit, 100))
+    since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    query = {
+        "user_id": current_user["id"],
+        "delivery_status": "failed",
+        "timestamp": {"$gte": since},
+    }
+    total = await db.communication_logs.count_documents(query)
+    logs = await db.communication_logs.find(query, {"_id": 0}).sort("timestamp", -1).to_list(limit)
+    if logs:
+        clients = await db.clients.find(
+            {"user_id": current_user["id"]}, {"_id": 0, "name": 1, "phone": 1}
+        ).to_list(5000)
+        by_phone = {}
+        for c in clients:
+            digits = re.sub(r"\D", "", c.get("phone") or "")
+            if digits:
+                by_phone[digits[-10:]] = c.get("name")
+        for log in logs:
+            digits = re.sub(r"\D", "", log.get("phone") or "")
+            log["client_name"] = by_phone.get(digits[-10:]) if digits else None
+    return {"logs": logs, "count": total}

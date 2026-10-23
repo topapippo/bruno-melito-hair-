@@ -54,6 +54,13 @@ export default function Dashboard() {
   const [lastServiceAlerts, setLastServiceAlerts] = useState([]);
   const [inactiveClients, setInactiveClients] = useState([]);
   const [autoReminder, setAutoReminder] = useState(null);
+  const [undelivered, setUndelivered] = useState({ logs: [], count: 0 });
+
+  useEffect(() => {
+    api.get(`${API}/communication-logs/undelivered?days=7&limit=5`)
+      .then((res) => setUndelivered({ logs: res.data.logs || [], count: res.data.count || 0 }))
+      .catch(() => {});
+  }, []);
   const navigate = useNavigate();
   const [checkoutApt, setCheckoutApt] = useState(null);
   const [checkoutData, setCheckoutData] = useState(null);
@@ -765,6 +772,40 @@ export default function Dashboard() {
             </div>
           )}
         </div>
+
+        {undelivered.logs.length > 0 && (
+          <div
+            className="rounded-2xl overflow-hidden"
+            data-testid="messaggi-non-consegnati"
+            style={{ background: 'var(--admin-content-bg)', border: '1px solid color-mix(in srgb, var(--admin-primary) 25%, transparent)' }}
+          >
+            <div className="flex items-center gap-2.5 px-5 py-4" style={{ borderBottom: '1px solid color-mix(in srgb, var(--admin-primary) 15%, transparent)' }}>
+              <div className="w-7 h-7 rounded-xl flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--admin-primary) 15%, transparent)' }}>
+                <AlertCircle className="w-4 h-4" style={{ color: 'var(--admin-primary)' }} />
+              </div>
+              <h2 className="font-display text-xl font-bold" style={{ color: 'var(--admin-content-text)' }}>Messaggi non consegnati</h2>
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full" style={{ background: 'color-mix(in srgb, var(--admin-primary) 15%, transparent)', color: 'var(--admin-primary)' }}>
+                {undelivered.count}
+              </span>
+              <Link to="/log-messaggi" className="ml-auto text-xs font-bold flex items-center gap-1" style={{ color: 'var(--admin-primary)' }}>
+                Log Messaggi <ChevronRight className="w-3 h-3" />
+              </Link>
+            </div>
+            <div className="p-3 grid grid-cols-1 lg:grid-cols-2 gap-2">
+              {undelivered.logs.map((log) => (
+                <div key={log.id} className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'color-mix(in srgb, var(--admin-primary) 6%, transparent)' }}>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-sm truncate" style={{ color: 'var(--admin-content-text)' }}>{log.client_name || 'Cliente sconosciuto'}</p>
+                    <p className="text-xs truncate" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 55%, transparent)' }}>{log.phone || '—'}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--admin-primary)' }}>
+                      {{ 131026: 'Numero non raggiungibile su WhatsApp', 131047: 'Fuori dalle 24 ore, serve un template' }[log.delivery_error_code] || log.delivery_error || 'Motivo non disponibile'}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ══════════════════════════════════════════════════════════════
             APPUNTAMENTI DOMANI
