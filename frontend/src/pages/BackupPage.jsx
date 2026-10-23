@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api, { API } from '../lib/api';
+import api, { API, getErrorMessage } from '../lib/api';
 import Layout from '../components/Layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,8 @@ export default function BackupPage() {
   const [askSaveOnClose, setAskSaveOnClose] = useState(false);
   const [backupState, setBackupState] = useState('missing');
   const [downloadingDate, setDownloadingDate] = useState(null);
+  const [cloudSending, setCloudSending] = useState(false);
+  const [cloudResult, setCloudResult] = useState(null);
 
   useEffect(() => {
     fetchStats();
@@ -96,6 +98,20 @@ export default function BackupPage() {
       console.error(err);
     } finally {
       setBackupRunning(false);
+    }
+  };
+
+  const sendToCloud = async () => {
+    setCloudSending(true);
+    setCloudResult(null);
+    try {
+      const res = await api.post(`${API}/backup/send-to-cloud`);
+      setCloudResult(res.data);
+      await fetchBackupStatus();
+    } catch (err) {
+      setCloudResult({ success: false, message: getErrorMessage(err) });
+    } finally {
+      setCloudSending(false);
     }
   };
 
@@ -323,6 +339,21 @@ export default function BackupPage() {
                     <Share2 className="w-5 h-5 mr-2" />
                     {pdfLoading ? 'Generando...' : 'PDF su WhatsApp'}
                   </Button>
+                </div>
+                <div className="mt-3 flex flex-col items-center gap-2">
+                  <Button
+                    onClick={sendToCloud}
+                    disabled={cloudSending}
+                    className="bg-white text-[#C8617A] hover:bg-blue-50 font-black text-lg px-8 py-4"
+                  >
+                    <Share2 className="w-5 h-5 mr-2" />
+                    {cloudSending ? 'Invio in corso...' : 'Invia backup su Drive ora'}
+                  </Button>
+                  {cloudResult && (
+                    <p className={`text-sm font-semibold ${cloudResult.success ? 'text-emerald-100' : 'text-red-100'}`} data-testid="cloud-backup-result">
+                      {cloudResult.message}
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>

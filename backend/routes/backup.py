@@ -8,6 +8,7 @@ from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
 from email import encoders
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 
@@ -394,6 +395,47 @@ async def download_backup_pdf(current_user: dict = Depends(get_current_user)):
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+async def send_backup_to_cloud(user_id: str) -> dict:
+    """Genera il backup JSON e lo invia al webhook Make (MAKE_BACKUP_WEBHOOK_URL) come allegato multipart."""
+    webhook_url = os.environ.get("MAKE_BACKUP_WEBHOOK_URL", "").strip()
+    if not webhook_url:
+        logger.error("Backup cloud: variabile MAKE_BACKUP_WEBHOOK_URL non impostata")
+        return {"success": False, "message": "MAKE_BACKUP_WEBHOOK_URL non configurata sul server."}
+    try:
+        if not await run_backup(user_id):
+            return {"success": False, "message": "Errore durante la creazione del backup."}
+        with open(_backup_file(user_id), "rb") as f:
+            content = f.read()
+        filename = f"backup-{datetime.now(ZoneInfo('Europe/Rome')).strftime('%Y-%m-%d')}.json"
+
+        import requests
+        import asyncio
+
+        def _post():
+            return requests.post(
+                webhook_url,
+                files={"file": (filename, content, "application/json")},
+                timeout=60,
+            )
+
+        resp = await asyncio.to_thread(_post)
+        if resp.status_code >= 400:
+            logger.error(f"Backup cloud: Make ha risposto {resp.status_code}")
+            return {"success": False, "message": f"Make ha risposto con errore {resp.status_code}."}
+        logger.info(f"Backup cloud inviato: {filename} ({round(len(content) / 1024, 1)} KB) user_id={user_id}")
+        return {"success": True, "filename": filename, "size_kb": round(len(content) / 1024, 1),
+                "message": f"Backup {filename} inviato a Make."}
+    except Exception as e:
+        logger.error(f"Backup cloud: invio fallito: {type(e).__name__}")
+        return {"success": False, "message": "Invio fallito. Controlla i log del server."}
+
+
+@router.post("/backup/send-to-cloud")
+async def send_backup_to_cloud_route(current_user: dict = Depends(get_current_user)):
+    """Esegue subito il backup e lo invia al webhook Make; restituisce l'esito."""
+    return await send_backup_to_cloud(current_user["id"])
 
 
 @router.post("/backup/send-email")

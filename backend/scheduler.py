@@ -70,11 +70,36 @@ async def publish_scheduled_posts():
     except Exception as e:
         logger.error(f"Error in publish_scheduled_posts: {e}")
 
+_last_cloud_backup_date = None
+
+
+async def weekly_cloud_backup():
+    """Ogni domenica alle 03:00 (ora italiana) invia il backup JSON al webhook Make."""
+    global _last_cloud_backup_date
+    now_rome = datetime.now(ROME_TZ)
+    if now_rome.weekday() != 6 or now_rome.hour != 3:
+        return
+    today = now_rome.date()
+    if _last_cloud_backup_date == today:
+        return
+    _last_cloud_backup_date = today
+    try:
+        from routes.backup import send_backup_to_cloud
+        users = await db.users.find({}, {"_id": 0, "id": 1}).to_list(100)
+        for u in users:
+            result = await send_backup_to_cloud(u["id"])
+            if not result.get("success"):
+                logger.error(f"Backup cloud settimanale fallito: {result.get('message')}")
+    except Exception as e:
+        logger.error(f"Error in weekly_cloud_backup: {e}")
+
+
 async def run_scheduler():
     """Esegui lo scheduler ogni 10 minuti"""
     while True:
         try:
             await publish_scheduled_posts()
+            await weekly_cloud_backup()
         except Exception as e:
             logger.error(f"Scheduler error: {e}")
         finally:
