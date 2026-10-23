@@ -127,6 +127,41 @@ async def cloud_api_templates(current_user: dict = Depends(get_current_user)):
     except Exception as e:
         return {"ok": False, "error": f"Errore di connessione a Meta: {e}"}
 
+
+@router.post("/settings/cloud-api-create-template")
+async def cloud_api_create_template(current_user: dict = Depends(get_current_user)):
+    """Registra su Meta il template nuova_prenotazione_online (UTILITY, it)
+    e restituisce la risposta completa della Graph API."""
+    if not WA_TOKEN:
+        return {"ok": False, "error": "WHATSAPP_TOKEN non configurato su Render"}
+    if not WA_BUSINESS_ACCOUNT_ID:
+        return {"ok": False, "error": "WHATSAPP_BUSINESS_ACCOUNT_ID non configurato su Render"}
+    payload = {
+        "name": "nuova_prenotazione_online",
+        "language": "it",
+        "category": "UTILITY",
+        "components": [{
+            "type": "BODY",
+            "text": "Nuova prenotazione online: {{1}} ha prenotato per il {{2}} alle {{3}}. Servizi: {{4}}. Apri il gestionale per vedere i dettagli.",
+            "example": {"body_text": [["Carmela D'Onofrio", "23/10/2026", "16:15", "Piega, Colore ricrescita"]]},
+        }],
+    }
+    try:
+        resp = await asyncio.to_thread(
+            requests.post,
+            f"https://graph.facebook.com/v21.0/{WA_BUSINESS_ACCOUNT_ID}/message_templates",
+            headers={"Authorization": f"Bearer {WA_TOKEN}"},
+            json=payload,
+            timeout=20,
+        )
+        try:
+            meta = resp.json()
+        except ValueError:
+            meta = {"raw": resp.text}
+        return {"ok": resp.status_code in (200, 201), "status_code": resp.status_code, "meta": meta}
+    except Exception as e:
+        return {"ok": False, "error": f"Errore di connessione a Meta: {e}"}
+
 # ============== PAYMENTS ==============
 
 @router.get("/payments")
