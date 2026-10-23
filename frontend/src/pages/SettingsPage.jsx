@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api, { API } from '../lib/api';
+import api, { API, getErrorMessage } from '../lib/api';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -266,6 +266,7 @@ export default function SettingsPage() {
   const [testingCloudApi, setTestingCloudApi] = useState(false);
   const [cloudApiSendTest, setCloudApiSendTest] = useState({ phone: '', result: null, loading: false });
   const [templatesList, setTemplatesList] = useState({ loading: false, data: null, error: null });
+  const [createTemplate, setCreateTemplate] = useState({ loading: false, data: null, error: null });
   const [mergingDups, setMergingDups] = useState(false);
   const [waDiag, setWaDiag] = useState({ loading: false, data: null });
 
@@ -367,6 +368,16 @@ export default function SettingsPage() {
       }
     } catch (e) {
       setTemplatesList({ loading: false, data: null, error: e?.response?.data?.detail || e.message });
+    }
+  };
+
+  const createCloudApiTemplate = async () => {
+    setCreateTemplate({ loading: true, data: null, error: null });
+    try {
+      const res = await api.post(`${API}/settings/cloud-api-create-template`);
+      setCreateTemplate({ loading: false, data: res.data, error: null });
+    } catch (e) {
+      setCreateTemplate({ loading: false, data: null, error: getErrorMessage(e) });
     }
   };
 
@@ -1392,6 +1403,18 @@ export default function SettingsPage() {
                       </div>
                     ))}
                   </div>
+                )}
+              </div>
+              <div className="border-t border-green-100 pt-2 mt-2">
+                <Button onClick={createCloudApiTemplate} disabled={createTemplate.loading} variant="outline" className="border-blue-400 text-blue-700 hover:bg-blue-50 w-full" title="Registra su Meta il template nuova_prenotazione_online (UTILITY, italiano)">
+                  {createTemplate.loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                  Crea template nuova prenotazione
+                </Button>
+                {createTemplate.error && (
+                  <div className="mt-2 p-2 rounded bg-red-50 text-red-700 text-xs border border-red-200">{createTemplate.error}</div>
+                )}
+                {createTemplate.data && (
+                  <pre className={`mt-2 p-2 rounded text-[10px] overflow-auto max-h-60 whitespace-pre-wrap border ${createTemplate.data.ok ? 'bg-green-50 text-green-800 border-green-200' : 'bg-red-50 text-red-800 border-red-200'}`}>{JSON.stringify(createTemplate.data, null, 2)}</pre>
                 )}
               </div>
               {cloudApiSendTest.result && (
