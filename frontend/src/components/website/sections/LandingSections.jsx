@@ -128,7 +128,7 @@ export function SalonSection({ salonPhotos, T }) {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
           {salonPhotos.map((item, idx) => (
             <div key={item.id} className="relative rounded-[2.5rem] overflow-hidden aspect-square border border-white/10 group shadow-2xl">
-              <img src={getMediaUrl(item?.image_url)} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
+              <img src={getMediaUrl(item?.image_url)} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
               <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-500" />
             </div>
           ))}
@@ -153,7 +153,7 @@ export function AboutSection({ config, salonPhotos, T }) {
                 <div className="relative">
                   <div className="absolute -inset-4 border border-white/10 rounded-[3rem] z-0" />
                   <div className="rounded-[3.5rem] overflow-hidden aspect-[4/5] lg:aspect-auto lg:h-[650px] shadow-2xl relative z-10 border border-white/5">
-                    <img src={getMediaUrl(salonPhotos[0]?.image_url)} alt="Bruno Melito" className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" />
+                    <img src={getMediaUrl(salonPhotos[0]?.image_url)} alt="Bruno Melito" loading="lazy" decoding="async" className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
 
                   </div>
@@ -299,7 +299,7 @@ export function PhotoInterlude({ photo, index = 0, T }) {
             {isVideo ? (
               <video src={src} className="w-full h-[240px] sm:h-[420px] object-cover" autoPlay muted loop playsInline preload="metadata" />
             ) : (
-              <img src={src} alt="" className="w-full h-[240px] sm:h-[420px] object-cover transition-transform duration-[1200ms] group-hover:scale-105" />
+              <img src={src} alt="" loading="lazy" decoding="async" className="w-full h-[240px] sm:h-[420px] object-cover transition-transform duration-[1200ms] group-hover:scale-105" />
             )}
             {/* velo specchiato */}
             <div className="absolute inset-0 bg-gradient-to-b from-white/12 via-transparent to-white/5 pointer-events-none" />
@@ -311,7 +311,7 @@ export function PhotoInterlude({ photo, index = 0, T }) {
           {!isVideo && (
             <div className="hidden sm:block h-24 overflow-hidden rounded-b-[2.5rem]"
               style={{ transform: 'scaleY(-1)', opacity: 0.32, WebkitMaskImage: 'linear-gradient(black, transparent)', maskImage: 'linear-gradient(black, transparent)' }}>
-              <img src={src} alt="" className="w-full h-[420px] object-cover object-bottom blur-[1px]" />
+              <img src={src} alt="" loading="lazy" decoding="async" className="w-full h-[420px] object-cover object-bottom blur-[1px]" />
             </div>
           )}
         </motion.div>
@@ -439,6 +439,8 @@ export function GallerySection({ config, hairstylePhotos, setShowBooking, T }) {
                   <img
                     src={getMediaUrl(item?.image_url)}
                     alt=""
+                    loading="lazy"
+                    decoding="async"
                     className="w-full object-cover transition-transform duration-1000 group-hover:scale-110"
                   />
                 )}

@@ -69,6 +69,8 @@ export function GallerySection({ config, hairstylePhotos, setShowBooking, T }) {
                   <img
                     src={getMediaUrl(item?.image_url)}
                     alt={item.label || ''}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full object-cover transition-transform duration-1000 group-hover:scale-110"
                   />
                 )}
