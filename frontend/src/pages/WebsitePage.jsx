@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import api, { API } from '../lib/api';
-import { getMediaUrl } from '../lib/mediaUrl';
+import { getMediaUrl, optimizeCloudinaryVideo } from '../lib/mediaUrl';
 import { Button } from '@/components/ui/button';
 import { Scissors, MapPin, Phone, CalendarDays, Printer, Download, X, MessageCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -572,10 +572,10 @@ export default function WebsitePage() {
           loop
           muted
           playsInline
-          poster={heroVideoUrl ? undefined : DEFAULT_HERO_POSTER}
+          poster={heroVideoUrl ? (optimizeCloudinaryVideo(heroVideoUrl, true) || undefined) : DEFAULT_HERO_POSTER}
           className="absolute inset-0 w-full h-full object-cover"
         >
-          <source src={heroVideoUrl || DEFAULT_HERO_VIDEO} type="video/mp4" />
+          <source src={heroVideoUrl ? optimizeCloudinaryVideo(heroVideoUrl) : DEFAULT_HERO_VIDEO} type="video/mp4" />
         </video>
 
         {/* Overlay scuro elegante per leggibilità */}
