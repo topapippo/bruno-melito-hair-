@@ -55,6 +55,18 @@ def _normalize_client(doc: dict) -> dict:
     return doc
 
 
+async def _completed_visits_by_client(user_id: str, client_id: str = None) -> dict:
+    """Visite vere per cliente: appuntamenti incassati (status 'completed', impostato dal checkout)."""
+    match = {"user_id": user_id, "status": "completed", "client_id": {"$ne": None}}
+    if client_id:
+        match["client_id"] = client_id
+    rows = await db.appointments.aggregate([
+        {"$match": match},
+        {"$group": {"_id": "$client_id", "n": {"$sum": 1}}},
+    ]).to_list(5000)
+    return {r["_id"]: r["n"] for r in rows}
+
+
 @router.post("/clients/import")
 async def import_clients_bulk(data: ClientBulkImport, current_user: dict = Depends(get_current_user)):
     imported = 0
@@ -125,6 +137,9 @@ async def get_clients(current_user: dict = Depends(get_current_user)):
     docs = await db.clients.find(
         {"user_id": current_user["id"]}, {"_id": 0}
     ).sort("name", 1).to_list(1000)
+    visits = await _completed_visits_by_client(current_user["id"])
+    for d in docs:
+        d["total_visits"] = visits.get(d.get("id"), 0)
     return [ClientResponse(**_normalize_client(d)) for d in docs]
 
 
@@ -552,7 +567,7 @@ async def get_client_history(client_id: str, current_user: dict = Depends(get_cu
 
     return {
         "client": {"id": client.get("id"), "name": client.get("name"), "phone": client.get("phone", ""), "hair_notes": client.get("hair_notes", "")},
-        "total_visits": client.get("total_visits", 0),
+        "total_visits": (await _completed_visits_by_client(current_user["id"], client_id)).get(client_id, 0),
         "total_spent": total_spent,
         "active_rewards": active_rewards,
         "last_visit": last_visit,
