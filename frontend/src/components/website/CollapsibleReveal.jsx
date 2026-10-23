@@ -7,6 +7,7 @@ export default function CollapsibleReveal({ children, buttonBg, buttonText, labe
   const [open, setOpen] = useState(false);
   const reduceMotion = useReducedMotion();
   const buttonRef = useRef(null);
+  const rootRef = useRef(null);
 
   // Alla chiusura il pulsante resta nello stesso punto dello schermo: il layout che collassa
   // viene compensato con scroll istantanei, finché dura l'animazione (interrotto se l'utente scorre)
@@ -19,7 +20,14 @@ export default function CollapsibleReveal({ children, buttonBg, buttonText, labe
       const delta = btn.getBoundingClientRect().top - top0;
       if (Math.abs(delta) > 0.5) window.scrollBy({ top: delta, behavior: 'instant' });
     };
-    if (reduceMotion) { requestAnimationFrame(correct); return; }
+    // A chiusura finita, scorrimento dolce all'inizio della sezione (solo se è sopra lo schermo)
+    const scrollToSectionStart = () => {
+      const sec = btn.closest('section') || rootRef.current;
+      if (!sec) return;
+      const top = sec.getBoundingClientRect().top;
+      if (top < 0) window.scrollBy({ top: top - 16, behavior: reduceMotion ? 'instant' : 'smooth' });
+    };
+    if (reduceMotion) { requestAnimationFrame(() => { correct(); scrollToSectionStart(); }); return; }
     let done = false;
     const stop = () => { done = true; cleanup(); };
     const events = ['wheel', 'touchstart', 'keydown'];
@@ -29,13 +37,15 @@ export default function CollapsibleReveal({ children, buttonBg, buttonText, labe
     const frame = () => {
       if (done) return;
       correct();
-      if (performance.now() < end) requestAnimationFrame(frame); else cleanup();
+      if (performance.now() < end) { requestAnimationFrame(frame); return; }
+      cleanup();
+      scrollToSectionStart();
     };
     requestAnimationFrame(frame);
   };
 
   return (
-    <div>
+    <div ref={rootRef}>
       <div
         inert={!open}
         style={{
