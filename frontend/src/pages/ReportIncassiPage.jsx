@@ -284,14 +284,19 @@ export default function ReportIncassiPage() {
     <Layout>
       <div className="space-y-6" data-testid="report-incassi-page">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-4xl font-black text-black">Report Incassi</h1>
-            <p className="text-[#C8617A] mt-1 font-bold text-lg">{getPeriodLabel()}</p>
+        <div className="adm-bar p-4 sm:p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 adm-primary-bg">
+              <Euro className="w-5 h-5 text-white" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="font-display text-3xl font-medium adm-text">Report Incassi</h1>
+              <p className="adm-primary-text mt-0.5 font-semibold text-base">{getPeriodLabel()}</p>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Select value={period} onValueChange={setPeriod}>
-              <SelectTrigger className="w-48 border-2 border-[#C8617A] font-semibold">
+              <SelectTrigger className="min-h-11 text-sm w-full sm:w-48 border-2 border-[var(--admin-primary,#C8617A)] font-semibold">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -304,7 +309,7 @@ export default function ReportIncassiPage() {
                 <SelectItem value="last30">Ultimi 30 giorni</SelectItem>
               </SelectContent>
             </Select>
-            <Button onClick={exportToExcel} className="bg-green-600 hover:bg-green-700 text-white font-bold">
+            <Button onClick={exportToExcel} className="min-h-11 text-sm adm-btn-primary font-bold rounded-xl px-4">
               <FileSpreadsheet className="w-4 h-4 mr-2" />
               Esporta Excel
             </Button>
@@ -318,94 +323,83 @@ export default function ReportIncassiPage() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 stagger-fast">
-              {/* Totale Incassato */}
-              <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white col-span-2 md:col-span-1">
-                <CardContent className="p-5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-green-100 font-semibold text-sm">Totale Entrate</p>
-                      <p className="text-3xl font-black mt-1">€{stats.total.toFixed(2)}</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 stagger-fast">
+              <Card className="adm-card shadow-none col-span-2 md:col-span-1">
+                <CardContent className="p-4 sm:p-5">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-green-600">
+                      <Euro className="w-4 h-4 text-white" />
                     </div>
-                    <Euro className="w-10 h-10 text-green-200" />
+                    <p className="adm-muted font-semibold text-sm leading-tight">Totale Entrate</p>
                   </div>
-                  <p className="text-green-100 mt-1 text-xs font-medium">{stats.count} pagamenti</p>
+                  <p className="text-2xl font-black mt-2 whitespace-nowrap text-green-700">€{stats.total.toFixed(2)}</p>
+                  <p className="adm-muted mt-1 text-sm font-medium">{stats.count} pagamenti</p>
                 </CardContent>
               </Card>
-
-              {/* Uscite */}
-              <Card className="bg-gradient-to-br from-red-500 to-red-600 text-white col-span-2 md:col-span-1">
-                <CardContent className="p-5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-red-100 font-semibold text-sm">Totale Uscite</p>
-                      <p className="text-3xl font-black mt-1">€{stats.totalExpenses.toFixed(2)}</p>
+              <Card className="adm-card shadow-none col-span-2 md:col-span-1">
+                <CardContent className="p-4 sm:p-5">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-red-600">
+                      <TrendingDown className="w-4 h-4 text-white" />
                     </div>
-                    <TrendingDown className="w-10 h-10 text-red-200" />
+                    <p className="adm-muted font-semibold text-sm leading-tight">Totale Uscite</p>
                   </div>
-                  <p className="text-red-100 mt-1 text-xs font-medium">{expenses.length} uscite</p>
+                  <p className="text-2xl font-black mt-2 whitespace-nowrap text-red-600">€{stats.totalExpenses.toFixed(2)}</p>
+                  <p className="adm-muted mt-1 text-sm font-medium">{expenses.length} uscite</p>
                 </CardContent>
               </Card>
-
-              {/* Netto */}
-              <Card className={`col-span-2 md:col-span-1 ${stats.net >= 0 ? 'bg-gradient-to-br from-blue-500 to-blue-600' : 'bg-gradient-to-br from-orange-500 to-orange-600'} text-white`}>
-                <CardContent className="p-5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-blue-100 font-semibold text-sm">Netto</p>
-                      <p className="text-3xl font-black mt-1">€{stats.net.toFixed(2)}</p>
+              <Card className="adm-card shadow-none col-span-2 md:col-span-1">
+                <CardContent className="p-4 sm:p-5">
+                  <div className="flex items-center gap-2.5">
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${stats.net >= 0 ? 'adm-primary-bg' : 'bg-red-600'}`}>
+                      <TrendingUp className="w-4 h-4 text-white" />
                     </div>
-                    <TrendingUp className="w-10 h-10 text-blue-200" />
+                    <p className="adm-muted font-semibold text-sm leading-tight">Netto</p>
                   </div>
-                  <p className="text-blue-100 mt-1 text-xs font-medium">entrate − uscite</p>
+                  <p className={`text-2xl font-black mt-2 whitespace-nowrap ${stats.net >= 0 ? 'adm-text' : 'text-red-600'}`}>€{stats.net.toFixed(2)}</p>
+                  <p className="adm-muted mt-1 text-sm font-medium">entrate − uscite</p>
                 </CardContent>
               </Card>
-
-              {/* Contanti */}
-              <Card className="bg-white border-2 border-[#F0E6DC]">
-                <CardContent className="p-5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-[#7C5C4A] font-semibold text-sm">Contanti</p>
-                      <p className="text-2xl font-black text-[#2D1B14] mt-1">€{stats.cash.toFixed(2)}</p>
+              <Card className="adm-card shadow-none">
+                <CardContent className="p-4 sm:p-5">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 adm-primary-bg">
+                      <Banknote className="w-4 h-4 text-white" />
                     </div>
-                    <Banknote className="w-9 h-9 text-green-500" />
+                    <p className="adm-muted font-semibold text-sm leading-tight">Contanti</p>
                   </div>
+                  <p className="text-2xl font-black mt-2 whitespace-nowrap adm-text">€{stats.cash.toFixed(2)}</p>
                 </CardContent>
               </Card>
-
-              {/* POS */}
-              <Card className="bg-white border-2 border-[#F0E6DC]">
-                <CardContent className="p-5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-[#7C5C4A] font-semibold text-sm">POS</p>
-                      <p className="text-2xl font-black text-[#2D1B14] mt-1">€{stats.pos.toFixed(2)}</p>
+              <Card className="adm-card shadow-none">
+                <CardContent className="p-4 sm:p-5">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 adm-primary-bg">
+                      <CreditCard className="w-4 h-4 text-white" />
                     </div>
-                    <CreditCard className="w-9 h-9 text-blue-500" />
+                    <p className="adm-muted font-semibold text-sm leading-tight">POS</p>
                   </div>
+                  <p className="text-2xl font-black mt-2 whitespace-nowrap adm-text">€{stats.pos.toFixed(2)}</p>
                 </CardContent>
               </Card>
-
-              {/* Abbonamento */}
-              <Card className="bg-white border-2 border-[#F0E6DC]">
-                <CardContent className="p-5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-[#7C5C4A] font-semibold text-sm">Abbonamento</p>
-                      <p className="text-2xl font-black text-[#2D1B14] mt-1">€{stats.prepaid.toFixed(2)}</p>
+              <Card className="adm-card shadow-none">
+                <CardContent className="p-4 sm:p-5">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 adm-primary-bg">
+                      <CreditCard className="w-4 h-4 text-white" />
                     </div>
-                    <CreditCard className="w-9 h-9 text-[#C8617A]" />
+                    <p className="adm-muted font-semibold text-sm leading-tight">Abbonamento</p>
                   </div>
+                  <p className="text-2xl font-black mt-2 whitespace-nowrap adm-text">€{stats.prepaid.toFixed(2)}</p>
                 </CardContent>
               </Card>
             </div>
 
             {/* Grafico Trend */}
             {trendData.length > 1 && (
-              <Card className="bg-white border-2 border-[#F0E6DC]">
+              <Card className="adm-card shadow-none">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-black text-[#2D1B14]">Andamento — {getPeriodLabel()}</CardTitle>
+                  <CardTitle className="text-lg font-black adm-text">Andamento — {getPeriodLabel()}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={200}>
@@ -420,11 +414,11 @@ export default function ReportIncassiPage() {
                           <stop offset="95%" stopColor="#EF4444" stopOpacity={0} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#F0E6DC" />
-                      <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#7C5C4A' }} tickLine={false} axisLine={false} />
-                      <YAxis tick={{ fontSize: 11, fill: '#7C5C4A' }} tickLine={false} axisLine={false} tickFormatter={v => `€${v}`} width={55} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="color-mix(in srgb, var(--admin-primary, #C8617A) 16%, transparent)" />
+                      <XAxis dataKey="label" tick={{ fontSize: 14, fill: 'color-mix(in srgb, var(--admin-content-text, #2D1B14) 72%, transparent)' }} tickLine={false} axisLine={false} />
+                      <YAxis tick={{ fontSize: 14, fill: 'color-mix(in srgb, var(--admin-content-text, #2D1B14) 72%, transparent)' }} tickLine={false} axisLine={false} tickFormatter={v => `€${v}`} width={64} />
                       <Tooltip
-                        contentStyle={{ borderRadius: 12, border: '1px solid #F0E6DC', fontSize: 12 }}
+                        contentStyle={{ borderRadius: 12, border: '1px solid color-mix(in srgb, var(--admin-primary, #C8617A) 16%, transparent)', fontSize: 14 }}
                         formatter={(val, name) => [`€${val.toFixed(2)}`, name === 'entrate' ? 'Entrate' : 'Uscite']}
                       />
                       <Area type="monotone" dataKey="entrate" stroke="#10B981" strokeWidth={2} fill="url(#gradEntrate)" dot={false} />
@@ -432,8 +426,8 @@ export default function ReportIncassiPage() {
                     </AreaChart>
                   </ResponsiveContainer>
                   <div className="flex items-center gap-4 mt-2 justify-center">
-                    <span className="flex items-center gap-1.5 text-xs text-[#7C5C4A]"><span className="w-3 h-0.5 bg-emerald-500 inline-block rounded" />Entrate</span>
-                    <span className="flex items-center gap-1.5 text-xs text-[#7C5C4A]"><span className="w-3 h-0.5 bg-red-500 inline-block rounded" />Uscite</span>
+                    <span className="flex items-center gap-1.5 text-sm adm-muted"><span className="w-3 h-0.5 bg-emerald-500 inline-block rounded" />Entrate</span>
+                    <span className="flex items-center gap-1.5 text-sm adm-muted"><span className="w-3 h-0.5 bg-red-500 inline-block rounded" />Uscite</span>
                   </div>
                 </CardContent>
               </Card>
@@ -441,10 +435,10 @@ export default function ReportIncassiPage() {
 
             {/* Sezione Sospesi */}
             <div ref={sospesiRef}>
-            <Card className={`border-2 ${sospesi.length > 0 ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-white'}`}>
+            <Card className={`rounded-2xl shadow-none ${sospesi.length > 0 ? 'border-2 border-red-300 bg-red-50' : 'adm-card'}`}>
               <CardHeader className="pb-3">
-                <CardTitle className="text-xl font-black text-[#2D1B14] flex items-center gap-2">
-                  <AlertTriangle className={`w-5 h-5 ${sospesi.length > 0 ? 'text-red-500' : 'text-gray-300'}`} />
+                <CardTitle className="text-xl font-black adm-text flex flex-wrap items-center gap-2">
+                  <AlertTriangle className={`w-5 h-5 ${sospesi.length > 0 ? 'text-red-500' : 'adm-muted opacity-50'}`} />
                   Pagamenti Sospesi
                   {sospesi.length > 0 && (
                     <span className="ml-auto text-base font-black text-red-600">€{sospesiTotal.toFixed(2)} da incassare</span>
@@ -455,27 +449,27 @@ export default function ReportIncassiPage() {
                 {loadingSospesi ? (
                   <div className="space-y-2">{[1,2].map(i => <Skeleton key={i} className="h-16" />)}</div>
                 ) : sospesi.length === 0 ? (
-                  <p className="text-center py-6 text-gray-400 font-semibold">Nessun sospeso da incassare ✓</p>
+                  <p className="text-center py-6 adm-muted font-semibold">Nessun sospeso da incassare ✓</p>
                 ) : (
                   <div className="space-y-3">
                     {sospesi.map(s => (
-                      <div key={s.id} className="flex items-center justify-between p-4 bg-white rounded-xl border-2 border-red-200">
+                      <div key={s.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-white rounded-xl border-2 border-red-200">
                         <div className="flex-1 min-w-0">
-                          <p className="font-black text-[#2D1B14]">{s.client_name}</p>
-                          <p className="text-sm text-[#7C5C4A]">{s.services?.join(', ')}</p>
-                          <p className="text-xs text-gray-400 mt-0.5">{fmtDate(s.date)}</p>
+                          <p className="font-black adm-text">{s.client_name}</p>
+                          <p className="text-sm adm-muted">{s.services?.join(', ')}</p>
+                          <p className="text-sm adm-muted mt-0.5">{fmtDate(s.date)}</p>
                         </div>
-                        <div className="flex items-center gap-3 shrink-0 ml-4">
+                        <div className="flex flex-wrap items-center gap-3 shrink-0">
                           <span className="text-xl font-black text-red-600">€{(s.amount || 0).toFixed(2)}</span>
-                          <Button size="sm" disabled={settlingId === s.id}
-                            className="bg-green-600 hover:bg-green-700 text-white font-bold h-9 px-3"
+                          <Button disabled={settlingId === s.id}
+                            className="min-h-11 text-sm bg-green-600 hover:bg-green-700 text-white font-bold px-3"
                             onClick={() => handleSettleSospeso(s.id, 'cash')}>
-                            {settlingId === s.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <><Banknote className="w-3.5 h-3.5 mr-1" />Contanti</>}
+                            {settlingId === s.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Banknote className="w-4 h-4 mr-1" />Contanti</>}
                           </Button>
-                          <Button size="sm" disabled={settlingId === s.id}
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold h-9 px-3"
+                          <Button disabled={settlingId === s.id}
+                            className="min-h-11 text-sm adm-btn-primary font-bold px-3"
                             onClick={() => handleSettleSospeso(s.id, 'pos')}>
-                            {settlingId === s.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <><CreditCard className="w-3.5 h-3.5 mr-1" />POS</>}
+                            {settlingId === s.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CreditCard className="w-4 h-4 mr-1" />POS</>}
                           </Button>
                         </div>
                       </div>
@@ -488,13 +482,13 @@ export default function ReportIncassiPage() {
             </div>
 
             {/* Lista unificata pagamenti + uscite */}
-            <Card className="bg-white border-2 border-[#F0E6DC]">
+            <Card className="adm-card shadow-none">
               <CardHeader>
-                <CardTitle className="text-xl font-black text-[#2D1B14]">Dettaglio Movimenti</CardTitle>
+                <CardTitle className="text-xl font-black adm-text">Dettaglio Movimenti</CardTitle>
               </CardHeader>
               <CardContent>
                 {allEntries.length === 0 ? (
-                  <div className="text-center py-12 text-[#7C5C4A]">
+                  <div className="text-center py-12 adm-muted">
                     <Euro className="w-12 h-12 mx-auto mb-4 opacity-50" />
                     <p className="font-semibold">Nessun movimento in questo periodo</p>
                   </div>
@@ -503,45 +497,45 @@ export default function ReportIncassiPage() {
                     {allEntries.map((entry) => {
                       if (entry._type === 'payment') {
                         return (
-                          <div key={`p-${entry.id}`} className="flex items-center gap-3 p-4 bg-[#FAF7F2] rounded-xl border border-[#F0E6DC]">
-                            <div className="flex-1">
+                          <div key={`p-${entry.id}`} className="flex flex-wrap sm:flex-nowrap items-center gap-3 p-4 adm-soft rounded-xl border adm-border">
+                            <div className="flex-1 min-w-[180px]">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">ENTRATA</span>
-                                <p className="font-bold text-[#2D1B14]">{entry.client_name}</p>
+                                <span className="text-sm font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">ENTRATA</span>
+                                <p className="font-bold adm-text">{entry.client_name}</p>
                               </div>
-                              <p className="text-sm text-[#7C5C4A]">{entry.services?.map(s => s.name).join(', ')}</p>
-                              <p className="text-xs text-[#7C5C4A] mt-1">{fmtDate(entry.date)}</p>
+                              <p className="text-sm adm-muted">{entry.services?.map(s => s.name).join(', ')}</p>
+                              <p className="text-sm adm-muted mt-1">{fmtDate(entry.date)}</p>
                             </div>
                             <div className="text-right shrink-0">
                               <p className="text-xl font-black text-green-600">+€{entry.total_paid.toFixed(2)}</p>
-                              <p className="text-xs text-[#7C5C4A] capitalize">
+                              <p className="text-sm adm-muted capitalize">
                                 {(entry.payment_type === 'subscription_sale' || entry.payment_type === 'prepaid_sale' || (!entry.payment_type && entry.card_sale_id)) ? 'Vendita Abbonamento' : entry.payment_type === 'subscription_checkout' ? 'Abbonamento' : entry.payment_method === 'cash' ? 'Contanti' : entry.payment_method === 'pos' ? 'POS' : entry.payment_method === 'sospeso' ? 'Sospeso' : 'Abbonamento'}
                               </p>
                             </div>
-                            <div className="flex flex-col gap-1 shrink-0">
-                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-[#7C5C4A] hover:text-blue-600 hover:bg-blue-50" onClick={() => openEditPayment(entry)}>
-                                <Pencil className="w-3.5 h-3.5" />
+                            <div className="flex sm:flex-col gap-1 shrink-0">
+                              <Button size="icon" variant="ghost" aria-label="Modifica incasso" className="min-h-11 min-w-11 p-0 adm-muted adm-hover-primary adm-hover-soft" onClick={() => openEditPayment(entry)}>
+                                <Pencil className="w-4 h-4" />
                               </Button>
-                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-[#7C5C4A] hover:text-red-500 hover:bg-red-50" onClick={() => handleDeletePayment(entry)}>
-                                <Trash2 className="w-3.5 h-3.5" />
+                              <Button size="icon" variant="ghost" aria-label="Elimina incasso" className="min-h-11 min-w-11 p-0 adm-muted hover:text-red-500 hover:bg-red-50" onClick={() => handleDeletePayment(entry)}>
+                                <Trash2 className="w-4 h-4" />
                               </Button>
                             </div>
                           </div>
                         );
                       } else {
                         return (
-                          <div key={`e-${entry.id}`} className="flex items-center justify-between p-4 bg-red-50 rounded-xl border border-red-200">
-                            <div className="flex-1">
+                          <div key={`e-${entry.id}`} className="flex flex-wrap items-center justify-between gap-3 p-4 bg-red-50 rounded-xl border border-red-200">
+                            <div className="flex-1 min-w-[180px]">
                               <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">USCITA</span>
-                                <p className="font-bold text-[#2D1B14]">{entry.description}</p>
+                                <span className="text-sm font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">USCITA</span>
+                                <p className="font-bold adm-text">{entry.description}</p>
                               </div>
-                              <p className="text-sm text-[#7C5C4A] capitalize">{entry.category}</p>
-                              <p className="text-xs text-[#7C5C4A] mt-1">{fmtDate(entry.paid_date || entry.due_date)}</p>
+                              <p className="text-sm adm-muted capitalize">{entry.category}</p>
+                              <p className="text-sm adm-muted mt-1">{fmtDate(entry.paid_date || entry.due_date)}</p>
                             </div>
                             <div className="text-right">
                               <p className="text-xl font-black text-red-600">−€{entry.amount.toFixed(2)}</p>
-                              {entry.notes && <p className="text-xs text-[#7C5C4A]">{entry.notes}</p>}
+                              {entry.notes && <p className="text-sm adm-muted">{entry.notes}</p>}
                             </div>
                           </div>
                         );
@@ -559,21 +553,21 @@ export default function ReportIncassiPage() {
       <Dialog open={editPaymentOpen} onOpenChange={setEditPaymentOpen}>
         <DialogContent className="sm:max-w-[420px]">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-[#2D1B14]">Modifica Incasso</DialogTitle>
+            <DialogTitle className="text-xl font-bold adm-text">Modifica Incasso</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <div className="space-y-1.5">
               <Label>Cliente</Label>
-              <Input
+              <Input className="min-h-11 text-sm"
                 value={editPaymentForm.client_name}
                 onChange={e => setEditPaymentForm(f => ({ ...f, client_name: e.target.value }))}
                 placeholder="Nome cliente"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Data</Label>
-                <Input
+                <Input className="min-h-11 text-sm"
                   type="date"
                   value={editPaymentForm.date}
                   onChange={e => setEditPaymentForm(f => ({ ...f, date: e.target.value }))}
@@ -581,7 +575,7 @@ export default function ReportIncassiPage() {
               </div>
               <div className="space-y-1.5">
                 <Label>Importo (€)</Label>
-                <Input
+                <Input className="min-h-11 text-sm"
                   type="number"
                   step="0.01"
                   min="0"
@@ -594,7 +588,7 @@ export default function ReportIncassiPage() {
             <div className="space-y-1.5">
               <Label>Metodo di pagamento</Label>
               <Select value={editPaymentForm.payment_method} onValueChange={v => setEditPaymentForm(f => ({ ...f, payment_method: v }))}>
-                <SelectTrigger>
+                <SelectTrigger className="min-h-11 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -607,7 +601,7 @@ export default function ReportIncassiPage() {
             </div>
             <div className="space-y-1.5">
               <Label>Note</Label>
-              <Input
+              <Input className="min-h-11 text-sm"
                 value={editPaymentForm.notes}
                 onChange={e => setEditPaymentForm(f => ({ ...f, notes: e.target.value }))}
                 placeholder="Note aggiuntive..."
@@ -615,8 +609,8 @@ export default function ReportIncassiPage() {
             </div>
           </div>
           <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={() => setEditPaymentOpen(false)}>Annulla</Button>
-            <Button disabled={savingPayment} onClick={handleSavePayment} className="bg-[#C8617A] hover:bg-[#b54d68] text-white">
+            <Button className="min-h-11 text-sm" variant="outline" onClick={() => setEditPaymentOpen(false)}>Annulla</Button>
+            <Button disabled={savingPayment} onClick={handleSavePayment} className="min-h-11 text-sm adm-btn-primary">
               {savingPayment ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salva modifiche'}
             </Button>
           </DialogFooter>
