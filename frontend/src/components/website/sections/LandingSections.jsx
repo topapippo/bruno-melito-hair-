@@ -536,7 +536,7 @@ export function WelcomeBanner({ T, setShowBooking }) {
       <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center shrink-0 text-3xl">🎁</div>
       <div className="flex-1">
          <p className="text-white font-black text-lg uppercase tracking-tight italic">Prima volta da noi?</p>
-         <p className="text-white/80 text-sm font-medium">Ricevi il <strong>10% di sconto</strong> sul tuo primo appuntamento!</p>
+         <p className="text-white/80 text-sm font-medium">Un <strong>vantaggio speciale</strong> ti aspetta al tuo primo appuntamento!</p>
       </div>
       <div className="flex items-center gap-4">
          <button onClick={() => { setShowBooking(true); dismiss(); }} className="bg-white text-black px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-yellow-400 transition-colors shadow-lg">PRENOTA</button>

@@ -523,7 +523,7 @@ export default function BookingForm({
               >
                 <option value="">Nessuna promozione</option>
                 <option value="amica">Porta un&apos;Amica (Trattamento OMAGGIO)</option>
-                <option value="under30">Speciale Under 30 (Schiariture veloci a metà prezzo)</option>
+                <option value="under30">Speciale Under 30 (Balayage e Schiariture veloci)</option>
                 <option value="benvenuta">Prima Visita (Consulenza + Trattamento OMAGGIO)</option>
               </select>
               {(formData.notes || '').includes('[PROMO-CODE: amica]') && (
@@ -729,7 +729,7 @@ export default function BookingForm({
                       <span className="text-xl mt-0.5">⚡️</span>
                       <div>
                         <p className="font-black text-amber-800 text-sm">Power Hour attiva!</p>
-                        <p className="text-amber-700 text-xs mt-0.5">Ottimo! Hai scelto un orario <strong>mercoledì o giovedì mattina</strong>. Riceverai il <strong>10% di sconto</strong> sul servizio tecnico direttamente in salone.</p>
+                        <p className="text-amber-700 text-xs mt-0.5">Ottimo! Hai scelto un orario <strong>mercoledì o giovedì mattina</strong>. Riceverai un <strong>vantaggio dedicato</strong> sul servizio tecnico direttamente in salone.</p>
                       </div>
                     </div>
                   )}
