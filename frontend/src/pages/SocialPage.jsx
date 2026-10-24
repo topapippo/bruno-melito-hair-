@@ -1,259 +1,269 @@
 import { useState, useEffect, useRef } from 'react';
-import api, { API } from '../lib/api';
+import api, { API, getErrorMessage } from '../lib/api';
+import { getMediaUrl } from '../lib/mediaUrl';
 import Layout from '../components/Layout';
-import { Plus, Trash2, Send, Loader2, Image as ImageIcon, X, RefreshCw, ChevronRight, Sparkles, Edit3, Save } from 'lucide-react';
+import { Trash2, Send, Loader2, Image as ImageIcon, RefreshCw, Sparkles, Save, Check, X, Lightbulb } from 'lucide-react';
 import { toast } from 'sonner';
 
+const TEXT = 'text-[color:var(--admin-content-text)]';
+const MUTED = 'text-[color-mix(in_srgb,var(--admin-content-text)_72%,transparent)]';
+const BORDER = 'border-[color-mix(in_srgb,var(--admin-content-text)_15%,transparent)]';
+const SURFACE = `bg-white border ${BORDER} rounded-xl shadow-sm`;
+const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:var(--admin-primary)]';
+const BTN_PRIMARY = `inline-flex items-center justify-center gap-2 h-11 min-h-[44px] px-5 rounded-lg font-bold text-base bg-[color:var(--admin-primary)] text-white hover:brightness-90 disabled:opacity-60 disabled:pointer-events-none transition ${FOCUS}`;
+const BTN_OUTLINE = `inline-flex items-center justify-center gap-2 h-11 min-h-[44px] px-5 rounded-lg border-2 border-[color:var(--admin-primary)] bg-white text-[color:var(--admin-primary)] font-bold text-base hover:bg-[color-mix(in_srgb,var(--admin-primary)_10%,white)] disabled:opacity-60 disabled:pointer-events-none transition-colors ${FOCUS}`;
+const BTN_GHOST = `inline-flex items-center justify-center gap-2 h-11 min-h-[44px] px-4 rounded-lg font-semibold text-base ${MUTED} hover:bg-[color-mix(in_srgb,var(--admin-primary)_8%,white)] hover:text-[color:var(--admin-primary)] disabled:opacity-60 transition-colors ${FOCUS}`;
+const FIELD = `w-full rounded-lg border ${BORDER} bg-white p-3 text-base ${TEXT} focus:outline-none focus:border-[color:var(--admin-primary)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--admin-primary)_25%,transparent)]`;
+
+function StatusNote({ status }) {
+  if (!status) return null;
+  return (
+    <div
+      role={status.ok ? 'status' : 'alert'}
+      className={`flex items-start gap-2 rounded-lg border px-3 py-2 text-sm font-semibold ${status.ok ? 'bg-green-50 text-green-800 border-green-300' : 'bg-red-50 text-red-800 border-red-300'}`}
+      data-testid="social-status"
+    >
+      {status.ok ? <Check className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" /> : <X className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />}
+      <span>{status.message}</span>
+    </div>
+  );
+}
+
 export default function SocialPage() {
-  const [activeTab, setActiveTab] = useState('daily');
-  const [dailyPosts, setDailyPosts] = useState([]);
-  const [manualPosts, setManualPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [ideas, setIdeas] = useState([]);
+  const [drafts, setDrafts] = useState([]);
+  const [edits, setEdits] = useState({});          // modifiche locali per idea: { [id]: { text, image_url } }
+  const [status, setStatus] = useState({});        // esito per card: { [id]: { ok, message } }
+  const [busy, setBusy] = useState({});            // azione in corso per card: { [id]: 'publish' | 'draft' | 'upload' }
+  const [publishedIds, setPublishedIds] = useState([]);
+  const [loadingIdeas, setLoadingIdeas] = useState(true);
+  const [loadingDrafts, setLoadingDrafts] = useState(true);
   const [offset, setOffset] = useState(0);
-  
-  // Form modale (per creazione manuale e modifica)
-  const [showForm, setShowForm] = useState(false);
-  const [editingPost, setEditingPost] = useState(null); // Se è un post del giorno in modifica
-  const [formTitle, setFormTitle] = useState('');
-  const [formText, setFormText] = useState('');
-  const [formImage, setFormImage] = useState('');
-  const [uploading, setUploading] = useState(false);
-  const [publishingId, setPublishingId] = useState(null);
+  const uploadTarget = useRef(null);
   const fileRef = useRef(null);
 
-  useEffect(() => {
-    if (activeTab === 'daily') fetchDaily(0);
-    else fetchManual();
-  }, [activeTab]);
+  const setBusyFor = (id, v) => setBusy(prev => ({ ...prev, [id]: v }));
+  const setStatusFor = (id, v) => setStatus(prev => ({ ...prev, [id]: v }));
 
-  const fetchDaily = async (newOffset) => {
-    setLoading(true);
+  const fetchIdeas = async (newOffset) => {
+    setLoadingIdeas(true);
     try {
       const res = await api.get(`${API}/social/daily-suggestions`, { params: { offset: newOffset } });
-      setDailyPosts(res.data);
+      setIdeas(res.data);
       setOffset(newOffset);
-    } catch { toast.error('Errore caricamento post del giorno'); }
-    finally { setLoading(false); }
+    } catch (err) { toast.error(getErrorMessage(err, 'Errore caricamento idee')); }
+    finally { setLoadingIdeas(false); }
   };
 
-  const fetchManual = async () => {
-    setLoading(true);
+  const fetchDrafts = async () => {
+    setLoadingDrafts(true);
     try {
       const res = await api.get(`${API}/social/posts`);
-      setManualPosts(res.data);
-    } catch { toast.error('Errore caricamento bozze'); }
-    finally { setLoading(false); }
+      setDrafts(res.data);
+    } catch (err) { toast.error(getErrorMessage(err, 'Errore caricamento bozze')); }
+    finally { setLoadingDrafts(false); }
   };
+
+  useEffect(() => { fetchIdeas(0); fetchDrafts(); }, []);
+
+  const valueOf = (p) => ({
+    text: edits[p.id]?.text ?? p.text ?? '',
+    image_url: edits[p.id]?.image_url ?? p.image_url ?? '',
+  });
+  const edit = (id, patch) => setEdits(prev => ({ ...prev, [id]: { ...prev[id], ...patch } }));
+
+  const pickPhoto = (id) => { uploadTarget.current = id; fileRef.current?.click(); };
 
   const handleUpload = async (e) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
+    const id = uploadTarget.current;
+    e.target.value = '';
+    if (!file || !id) return;
+    setBusyFor(id, 'upload');
     try {
       const form = new FormData();
       form.append('file', file);
       const res = await api.post(`${API}/social/upload-image`, form, { headers: { 'Content-Type': 'multipart/form-data' } });
-      setFormImage(res.data.url);
-      toast.success('Foto caricata!');
-    } catch { toast.error('Errore upload'); }
-    finally { setUploading(false); }
+      edit(id, { image_url: res.data.url });
+      setStatusFor(id, { ok: true, message: 'Foto caricata.' });
+    } catch (err) { setStatusFor(id, { ok: false, message: `Foto non caricata: ${getErrorMessage(err, 'errore di upload')}` }); }
+    finally { setBusyFor(id, null); }
   };
 
-  const openNewForm = () => {
-    setEditingPost(null);
-    setFormTitle(''); setFormText(''); setFormImage('');
-    setShowForm(true);
-  };
-
-  const openEditForm = (post) => {
-    setEditingPost(post);
-    setFormTitle(post.title || ''); 
-    setFormText(post.text || ''); 
-    setFormImage(post.image_url || '');
-    setShowForm(true);
-  };
-
-  const handleSaveDraft = async () => {
-    if (!formText || !formImage) { toast.error('Scrivi testo e inserisci foto'); return; }
+  const publish = async (p) => {
+    const v = valueOf(p);
+    if (!v.text.trim()) { setStatusFor(p.id, { ok: false, message: 'Scrivi il testo prima di pubblicare.' }); return; }
+    setBusyFor(p.id, 'publish');
+    setStatusFor(p.id, null);
     try {
-      // Se stiamo modificando un post del giorno, salviamo il titolo originale
-      const titleToSave = editingPost ? (formTitle || editingPost.title) : 'Post Manuale';
-      await api.post(`${API}/social/posts`, { title: titleToSave, text: formText, image_url: formImage });
-      toast.success('Bozza salvata!');
-      setShowForm(false);
-      setActiveTab('manual'); 
-      fetchManual();
-    } catch { toast.error('Errore salvataggio'); }
-  };
-
-  const handlePublishEdited = async () => {
-    if (!formText || !formImage) { toast.error('Scrivi testo e inserisci foto'); return; }
-    if (!editingPost) return;
-
-    setPublishingId(editingPost.id);
-    try {
-      // 1. Salva le modifiche nel DB per i post del giorno
-      if (editingPost.daily_date) {
-        await api.put(`${API}/social/wingman-suggestions/${editingPost.id}`, { 
-          text: formText, 
-          image_url: formImage,
-          title: formTitle
-        });
+      if (p.daily_date) {
+        await api.put(`${API}/social/wingman-suggestions/${p.id}`, { text: v.text, image_url: v.image_url, title: p.title });
       }
-      
-      // 2. Pubblica su Make.com con i dati modificati
-      await api.post(`${API}/social/publish-via-make`, { 
-        text: formText, 
-        image_url: formImage 
-      });
-      toast.success('Post modificato e pubblicato!');
-      setShowForm(false);
-    } catch (err) { toast.error(err.response?.data?.detail || 'Errore pubblicazione'); }
-    finally { setPublishingId(null); }
+      await api.post(`${API}/social/publish-via-make`, { text: v.text, image_url: v.image_url });
+      setPublishedIds(prev => [...prev, p.id]);
+      setStatusFor(p.id, { ok: true, message: 'Post inviato a Make: sarà pubblicato sui tuoi social a breve.' });
+    } catch (err) {
+      setStatusFor(p.id, { ok: false, message: `Pubblicazione non riuscita: ${getErrorMessage(err, 'errore sconosciuto')}` });
+    } finally { setBusyFor(p.id, null); }
   };
 
-  const handlePublishDirect = async (post) => {
-    setPublishingId(post.id);
+  const saveDraft = async (p) => {
+    const v = valueOf(p);
+    if (!v.text.trim()) { setStatusFor(p.id, { ok: false, message: 'Scrivi il testo prima di salvare la bozza.' }); return; }
+    setBusyFor(p.id, 'draft');
+    setStatusFor(p.id, null);
     try {
-      await api.post(`${API}/social/publish-via-make`, post);
-      toast.success('Post inviato a Make.com!');
-    } catch (err) { toast.error(err.response?.data?.detail || 'Errore pubblicazione'); }
-    finally { setPublishingId(null); }
+      await api.post(`${API}/social/posts`, { title: p.title || 'Post Manuale', text: v.text, image_url: v.image_url });
+      setStatusFor(p.id, { ok: true, message: 'Bozza salvata: la trovi qui sotto in "Bozze e pubblicati".' });
+      fetchDrafts();
+    } catch (err) {
+      setStatusFor(p.id, { ok: false, message: `Bozza non salvata: ${getErrorMessage(err, 'errore sconosciuto')}` });
+    } finally { setBusyFor(p.id, null); }
   };
 
-  const handleDeleteDaily = async (id) => {
+  const discardIdea = async (id) => {
     try {
       await api.delete(`${API}/social/wingman-suggestions/${id}`);
-      setDailyPosts(prev => prev.filter(p => p.id !== id));
-      toast.success('Post rimosso dalla lista');
-    } catch { toast.error('Errore'); }
+      setIdeas(prev => prev.filter(p => p.id !== id));
+    } catch (err) { toast.error(getErrorMessage(err, 'Errore')); }
   };
 
-  const handleDeleteManual = async (id) => {
+  const deleteDraft = async (id) => {
     if (!window.confirm('Eliminare definitivamente questa bozza?')) return;
     try {
       await api.delete(`${API}/social/posts/${id}`);
-      setManualPosts(prev => prev.filter(p => p.id !== id));
-    } catch { toast.error('Errore'); }
+      setDrafts(prev => prev.filter(p => p.id !== id));
+    } catch (err) { toast.error(getErrorMessage(err, 'Errore')); }
   };
-
-  const handleNextDaily = () => fetchDaily(offset + 1);
 
   return (
     <Layout>
-      <div className="max-w-3xl mx-auto px-4 py-8 pb-24">
-        <h1 className="text-3xl font-black text-[#2D1B14] mb-6 flex items-center gap-2" style={{fontFamily: "'Playfair Display', serif"}}>
-          <Sparkles className="w-7 h-7 text-[#C8617A]" /> Social Studio
-        </h1>
+      <div className="max-w-3xl mx-auto px-4 py-6 pb-24 space-y-8" data-testid="social-page">
+        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} data-testid="social-file-input" />
 
-        {/* Tabs */}
-        <div className="flex bg-[#FDF8F5] border border-[#F0E6DC] rounded-2xl p-1.5 mb-6">
-          <button onClick={() => setActiveTab('daily')} className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'daily' ? 'bg-white text-[#C8617A] shadow-sm' : 'text-[#9C7060]'}`}>
-            Post del Giorno
-          </button>
-          <button onClick={() => setActiveTab('manual')} className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'manual' ? 'bg-white text-[#C8617A] shadow-sm' : 'text-[#9C7060]'}`}>
-            Le mie Bozze
-          </button>
-        </div>
+        <header>
+          <h1 className={`font-display text-2xl sm:text-3xl font-bold ${TEXT} flex items-center gap-2`}>
+            <Sparkles className="w-6 h-6 text-[color:var(--admin-primary)]" aria-hidden="true" /> Social Studio
+          </h1>
+          <p className={`text-base ${MUTED} mt-1`}>Scegli un&apos;idea, ritocca il testo, aggiungi una foto e pubblica.</p>
+        </header>
 
-        {activeTab === 'manual' && !showForm && (
-          <button onClick={openNewForm} className="w-full mb-6 bg-[#C8617A] text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-[#A0404F]">
-            <Plus className="w-5 h-5" /> Crea Nuovo Post
-          </button>
-        )}
-
-        {/* EDITOR / FORM */}
-        {showForm && (
-          <div className="bg-white border border-[#F0E6DC] rounded-2xl p-5 mb-6 shadow-sm">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-[#2D1B14]">{editingPost ? 'Modifica Post' : 'Crea Post'}</h3>
-              <button onClick={() => setShowForm(false)} className="text-[#9C7060] hover:text-red-500"><X className="w-5 h-5" /></button>
-            </div>
-            
-            <textarea value={formText} onChange={e => setFormText(e.target.value)} placeholder="Scrivi il testo del post..." className="w-full border border-[#F0E6DC] rounded-xl p-3 mb-4 min-h-[120px] focus:border-[#C8617A] outline-none text-sm"></textarea>
-            
-            {formImage ? (
-              <div className="relative mb-4">
-                <img src={formImage} alt="Preview" className="w-full h-56 object-cover rounded-xl" />
-                <button onClick={() => setFormImage('')} className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full"><X className="w-4 h-4" /></button>
-              </div>
-            ) : (
-              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-[#F0E6DC] rounded-xl cursor-pointer hover:bg-[#FDF8F5] mb-4">
-                {uploading ? <Loader2 className="animate-spin text-[#C8617A]" /> : <ImageIcon className="text-[#9C7060]" />}
-                <span className="text-xs text-[#9C7060] mt-2">Carica foto</span>
-                <input type="file" accept="image/*" onChange={handleUpload} className="hidden" />
-              </label>
-            )}
-            
-            <div className="flex gap-2">
-              <button onClick={handleSaveDraft} className="flex-1 bg-[#2D1B14] text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2">
-                <Save className="w-4 h-4" /> Salva Bozza
-              </button>
-              {editingPost && (
-                <button onClick={handlePublishEdited} disabled={publishingId === editingPost.id} className="flex-1 bg-[#C8617A] text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2">
-                  {publishingId === editingPost.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Pubblica
-                </button>
-              )}
-            </div>
+        {/* IDEE DI OGGI */}
+        <section aria-labelledby="idee-titolo" className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 id="idee-titolo" className={`font-display text-xl sm:text-2xl font-bold ${TEXT}`}>Idee di oggi</h2>
+            <button type="button" onClick={() => fetchIdeas(offset + 1)} disabled={loadingIdeas} className={BTN_OUTLINE} data-testid="social-more-ideas">
+              <RefreshCw className={`w-4 h-4 ${loadingIdeas ? 'animate-spin' : ''}`} aria-hidden="true" /> Altre idee
+            </button>
           </div>
-        )}
 
-        {/* LISTE */}
-        {loading ? (
-          <div className="flex justify-center py-20"><Loader2 className="animate-spin text-[#C8617A] w-10 h-10" /></div>
-        ) : activeTab === 'daily' ? (
-          <div>
-            <div className="flex justify-end mb-4">
-              <button onClick={handleNextDaily} className="flex items-center gap-1 text-sm font-bold text-[#C8617A] hover:underline">
-                <RefreshCw className="w-4 h-4" /> Altre idee
-              </button>
+          {loadingIdeas ? (
+            <div className="flex justify-center py-12"><Loader2 className="animate-spin text-[color:var(--admin-primary)] w-8 h-8" aria-label="Caricamento idee" /></div>
+          ) : ideas.length === 0 ? (
+            <div className={`${SURFACE} border-dashed p-6 text-center`} data-testid="social-ideas-empty">
+              <Lightbulb className="w-8 h-8 mx-auto mb-2 text-[color:var(--admin-accent)]" aria-hidden="true" />
+              <p className={`text-base font-bold ${TEXT}`}>Nessuna idea disponibile adesso</p>
+              <p className={`text-base ${MUTED} mt-1`}>Tocca &quot;Altre idee&quot; per ricevere nuovi suggerimenti. Le idee che scarti non tornano più oggi.</p>
             </div>
-            <div className="space-y-4">
-              {dailyPosts.map(p => (
-                <div key={p.id} className="bg-white border border-[#F0E6DC] rounded-2xl p-4 flex flex-col sm:flex-row gap-4 shadow-sm">
-                  <img src={p.image_url} alt="" className="w-full sm:w-28 h-28 object-cover rounded-xl shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-[#C8617A] mb-1 text-sm uppercase tracking-wide">{p.title}</h3>
-                    <p className="text-xs text-[#9C7060] line-clamp-3 mb-3 whitespace-pre-line">{p.text}</p>
-                    <div className="flex gap-2">
-                      <button onClick={() => handlePublishDirect(p)} disabled={publishingId === p.id} className="bg-[#C8617A] text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1">
-                        {publishingId === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />} Pubblica
+          ) : (
+            ideas.map(p => {
+              const v = valueOf(p);
+              const b = busy[p.id];
+              const done = publishedIds.includes(p.id);
+              return (
+                <article key={p.id} className={`${SURFACE} p-4 space-y-4`} data-testid={`idea-card-${p.id}`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className={`font-bold text-lg ${TEXT}`}>{p.title}</h3>
+                    {done && <span className="shrink-0 text-sm font-semibold px-2.5 py-1 rounded-full bg-[color-mix(in_srgb,var(--admin-accent)_30%,white)] text-[color:var(--admin-content-text)]">Pubblicato</span>}
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="sm:w-48 shrink-0 space-y-2">
+                      {v.image_url ? (
+                        <img src={getMediaUrl(v.image_url)} alt="Foto del post" className="w-full h-40 sm:h-40 object-cover rounded-lg" />
+                      ) : (
+                        <div className={`w-full h-40 rounded-lg border-2 border-dashed ${BORDER} flex flex-col items-center justify-center gap-1 ${MUTED}`}>
+                          <ImageIcon className="w-6 h-6" aria-hidden="true" />
+                          <span className="text-sm">Nessuna foto</span>
+                        </div>
+                      )}
+                      <button type="button" onClick={() => pickPhoto(p.id)} disabled={b === 'upload'} className={`${BTN_OUTLINE} w-full whitespace-nowrap`} data-testid={`idea-photo-${p.id}`}>
+                        {b === 'upload' ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <ImageIcon className="w-4 h-4" aria-hidden="true" />}
+                        {v.image_url ? 'Cambia foto' : 'Carica foto'}
                       </button>
-                      <button onClick={() => openEditForm(p)} className="border border-[#F0E6DC] text-[#2D1B14] px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1">
-                        <Edit3 className="w-3 h-3" /> Modifica
-                      </button>
-                      <button onClick={() => handleDeleteDaily(p.id)} className="text-red-500 px-2"><Trash2 className="w-4 h-4" /></button>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <label htmlFor={`idea-text-${p.id}`} className={`block text-sm font-semibold ${TEXT} mb-1`}>Testo del post</label>
+                      <textarea
+                        id={`idea-text-${p.id}`}
+                        value={v.text}
+                        onChange={e => edit(p.id, { text: e.target.value })}
+                        rows={6}
+                        className={`${FIELD} min-h-[160px] resize-y`}
+                        data-testid={`idea-text-${p.id}`}
+                      />
                     </div>
                   </div>
-                </div>
-              ))}
+                  <StatusNote status={status[p.id]} />
+                  <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2">
+                    <button type="button" onClick={() => publish(p)} disabled={!!b} className={BTN_PRIMARY} data-testid={`idea-publish-${p.id}`}>
+                      {b === 'publish' ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <Send className="w-4 h-4" aria-hidden="true" />} Pubblica ora
+                    </button>
+                    <button type="button" onClick={() => saveDraft(p)} disabled={!!b} className={BTN_OUTLINE} data-testid={`idea-draft-${p.id}`}>
+                      {b === 'draft' ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <Save className="w-4 h-4" aria-hidden="true" />} Salva bozza
+                    </button>
+                    <button type="button" onClick={() => discardIdea(p.id)} disabled={!!b} className={`${BTN_GHOST} sm:ml-auto`} aria-label={`Scarta l'idea ${p.title}`}>
+                      <Trash2 className="w-4 h-4" aria-hidden="true" /> Scarta idea
+                    </button>
+                  </div>
+                </article>
+              );
+            })
+          )}
+        </section>
+
+        {/* BOZZE E PUBBLICATI */}
+        <section aria-labelledby="bozze-titolo" className="space-y-4">
+          <h2 id="bozze-titolo" className={`font-display text-xl sm:text-2xl font-bold ${TEXT}`}>Bozze e pubblicati</h2>
+          {loadingDrafts ? (
+            <div className="flex justify-center py-8"><Loader2 className="animate-spin text-[color:var(--admin-primary)] w-8 h-8" aria-label="Caricamento bozze" /></div>
+          ) : drafts.length === 0 ? (
+            <div className={`${SURFACE} border-dashed p-6 text-center`} data-testid="social-drafts-empty">
+              <p className={`text-base ${MUTED}`}>Nessuna bozza salvata. Usa &quot;Salva bozza&quot; su un&apos;idea per ritrovarla qui.</p>
             </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {manualPosts.length === 0 ? (
-              <div className="text-center py-10 text-[#9C7060]">
-                <p>Nessuna bozza salvata.</p>
-              </div>
-            ) : (
-              manualPosts.map(p => (
-                <div key={p.id} className="bg-white border border-[#F0E6DC] rounded-2xl p-4 flex gap-4 shadow-sm">
-                  <img src={p.image_url} alt="" className="w-28 h-28 object-cover rounded-xl shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-[#C8617A] mb-1 text-sm uppercase tracking-wide">{p.title}</h3>
-                    <p className="text-xs text-[#9C7060] line-clamp-2 mb-2 whitespace-pre-line">{p.text}</p>
-                    <div className="flex gap-2">
-                      <button onClick={() => handlePublishDirect(p)} disabled={publishingId === p.id} className="bg-[#C8617A] text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1">
-                        {publishingId === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />} Pubblica
-                      </button>
-                      <button onClick={() => handleDeleteManual(p.id)} className="text-red-500 px-2"><Trash2 className="w-4 h-4" /></button>
+          ) : (
+            drafts.map(p => {
+              const b = busy[p.id];
+              const done = publishedIds.includes(p.id);
+              return (
+                <article key={p.id} className={`${SURFACE} p-4 space-y-3`} data-testid={`draft-card-${p.id}`}>
+                  <div className="flex gap-4">
+                    {p.image_url ? (
+                      <img src={getMediaUrl(p.image_url)} alt="" className="w-24 h-24 object-cover rounded-lg shrink-0" />
+                    ) : (
+                      <div className={`w-24 h-24 rounded-lg border-2 border-dashed ${BORDER} flex items-center justify-center shrink-0 ${MUTED}`}><ImageIcon className="w-6 h-6" aria-hidden="true" /></div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className={`font-bold text-base ${TEXT}`}>{p.title}</h3>
+                        {done && <span className="shrink-0 text-sm font-semibold px-2.5 py-1 rounded-full bg-[color-mix(in_srgb,var(--admin-accent)_30%,white)] text-[color:var(--admin-content-text)]">Pubblicato</span>}
+                      </div>
+                      <p className={`text-base ${MUTED} line-clamp-3 whitespace-pre-line mt-1`}>{p.text}</p>
                     </div>
                   </div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
+                  <StatusNote status={status[p.id]} />
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <button type="button" onClick={() => publish(p)} disabled={!!b} className={BTN_PRIMARY} data-testid={`draft-publish-${p.id}`}>
+                      {b === 'publish' ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <Send className="w-4 h-4" aria-hidden="true" />} Pubblica ora
+                    </button>
+                    <button type="button" onClick={() => deleteDraft(p.id)} disabled={!!b} className={`${BTN_GHOST} sm:ml-auto`} aria-label={`Elimina la bozza ${p.title}`} data-testid={`draft-delete-${p.id}`}>
+                      <Trash2 className="w-4 h-4" aria-hidden="true" /> Elimina
+                    </button>
+                  </div>
+                </article>
+              );
+            })
+          )}
+        </section>
       </div>
     </Layout>
   );
