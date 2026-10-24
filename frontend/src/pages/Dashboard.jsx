@@ -5,9 +5,7 @@ import { sendWA } from '../lib/sendWA';
 import Layout from '../components/Layout';
 import DashboardMorningBriefing from '../components/DashboardMorningBriefing';
 import { useAuth } from '../context/AuthContext';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
 import {
   Users,
   Euro,
@@ -25,18 +23,32 @@ import {
   Cake,
   CheckCircle2,
   AlertCircle,
-  Zap,
   ArrowUpRight,
   Target,
   TrendingDown,
   Flame,
-  Phone,
+  Clock,
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { toast } from 'sonner';
 import ClientAvatar from '../components/ClientAvatar';
 import EditAppointmentDialog from '../components/planning/EditAppointmentDialog';
+
+const CARD = 'rounded-2xl border border-[color-mix(in_srgb,var(--admin-content-text)_15%,transparent)] bg-[color:var(--admin-content-bg)]';
+const INNER_BORDER = 'border border-[color-mix(in_srgb,var(--admin-content-text)_12%,transparent)]';
+const CARD_HEAD = 'flex items-center gap-2.5 px-4 sm:px-5 py-3 min-h-[60px] border-b border-[color-mix(in_srgb,var(--admin-content-text)_12%,transparent)]';
+const TITLE = 'font-display text-xl font-bold text-[color:var(--admin-content-text)]';
+const MUTED = 'text-[color-mix(in_srgb,var(--admin-content-text)_68%,transparent)]';
+const ICON_BOX = 'w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-[color-mix(in_srgb,var(--admin-primary)_14%,transparent)] text-[color:var(--admin-primary)]';
+const ICON_BOX_ACCENT = 'w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-[color-mix(in_srgb,var(--admin-accent)_22%,transparent)] text-[color-mix(in_srgb,var(--admin-accent)_60%,var(--admin-content-text))]';
+const TILE = `flex items-center gap-3 p-4 rounded-xl ${INNER_BORDER} bg-[color-mix(in_srgb,var(--admin-primary)_4%,transparent)]`;
+const ROW = 'flex items-center gap-3 p-3 rounded-xl bg-[color-mix(in_srgb,var(--admin-primary)_6%,transparent)]';
+const BADGE = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-bold bg-[color-mix(in_srgb,var(--admin-primary)_14%,transparent)] text-[color:var(--admin-primary)]';
+const PILL = 'text-sm font-semibold px-2.5 py-0.5 rounded-full bg-[color-mix(in_srgb,var(--admin-primary)_12%,transparent)] text-[color:var(--admin-content-text)]';
+const BTN_PRIMARY = 'inline-flex items-center justify-center gap-2 h-11 min-h-[44px] px-5 rounded-lg font-bold text-base text-white bg-[color:var(--admin-primary)] hover:brightness-90 hover:text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:var(--admin-primary)]';
+const BTN_OUTLINE = 'inline-flex items-center justify-center gap-1.5 h-11 min-h-[44px] px-4 rounded-lg border-2 border-[color:var(--admin-primary)] bg-[color:var(--admin-content-bg)] text-[color:var(--admin-primary)] font-bold text-base hover:bg-[color-mix(in_srgb,var(--admin-primary)_10%,white)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:var(--admin-primary)]';
+const BTN_ICON = 'inline-flex items-center justify-center w-11 h-11 min-w-[44px] rounded-lg shrink-0 text-[color:var(--admin-primary)] hover:bg-[color-mix(in_srgb,var(--admin-primary)_12%,transparent)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--admin-primary)]';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -224,7 +236,6 @@ export default function Dashboard() {
 
   const hour = new Date().getHours();
   const greeting = hour < 6 ? 'Buonanotte' : hour < 12 ? 'Buongiorno' : hour < 18 ? 'Buon pomeriggio' : 'Buonasera';
-  const greetingEmoji = hour < 6 ? '🌙' : hour < 12 ? '☀️' : hour < 18 ? '🌤️' : '🌙';
   const firstName = user?.name?.split(' ')[0] || 'Bruno';
 
   const todayTotal = stats?.today_appointments?.reduce((s, a) => s + (Number(a.total_price) || 0), 0) || 0;
@@ -245,400 +256,297 @@ export default function Dashboard() {
   const projectedRevenue = _dayOfMonth > 0 && _dayOfMonth < _daysInMonth
     ? Math.round((monthlyRevenue / _dayOfMonth) * _daysInMonth) : 0;
 
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const overdueExpenses = upcomingExpenses.filter(e => e.overdue || (new Date(e.due_date).toISOString().slice(0, 10) <= todayIso));
+  const inactiveToContact = inactiveClients.filter(c => !c.already_recalled);
+
   return (
     <>
     <Layout>
       <div className="space-y-5" data-testid="dashboard-page">
 
-        {/* ══════════════════════════════════════════════════════════════
-            HERO
-        ══════════════════════════════════════════════════════════════ */}
-        <div
-          className="relative rounded-3xl overflow-hidden px-6 pt-7 pb-6 md:px-9 md:pt-9 md:pb-7 greeting-in"
-          style={{
-            background: 'linear-gradient(135deg, color-mix(in srgb, var(--admin-primary) 22%, var(--admin-content-bg)) 0%, color-mix(in srgb, var(--admin-accent) 16%, var(--admin-content-bg)) 100%)',
-            border: '1px solid color-mix(in srgb, var(--admin-primary) 32%, transparent)',
-            boxShadow: '0 4px 32px color-mix(in srgb, var(--admin-primary) 8%, transparent)',
-          }}
-        >
-          {/* Blob decorativi */}
-          <div
-            className="absolute top-0 right-0 w-80 h-80 rounded-full pointer-events-none blob-animate"
-            style={{ background: 'radial-gradient(circle, var(--admin-primary) 0%, transparent 70%)', opacity: 0.17, transform: 'translate(35%, -35%)' }}
-          />
-          <div
-            className="absolute bottom-0 left-16 w-48 h-48 rounded-full pointer-events-none"
-            style={{ background: 'radial-gradient(circle, var(--admin-accent) 0%, transparent 70%)', opacity: 0.14, transform: 'translateY(40%)' }}
-          />
-
-          <div className="relative flex flex-col md:flex-row md:items-start md:justify-between gap-5">
-            {/* Left: saluto + data */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--admin-primary) 18%, transparent)' }}>
-                  <Sparkles className="w-3 h-3 animate-pulse-slow" style={{ color: 'var(--admin-primary)' }} />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--admin-primary)' }}>
-                  Dashboard Bruno Melito Hair
-                </span>
-              </div>
-              <h1 className="font-display text-4xl md:text-5xl font-black leading-tight tracking-tight" style={{ color: 'var(--admin-content-text)' }}>
-                {greetingEmoji} {greeting}, {firstName}!
-              </h1>
-              <p className="text-sm mt-1 capitalize font-medium" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 50%, transparent)' }}>
+        {/* ── Intestazione ─────────────────────────────────────────── */}
+        <div className={`${CARD} p-4 sm:p-6`}>
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div className="min-w-0">
+              <h1 className="text-base font-bold uppercase tracking-widest text-[color:var(--admin-primary)] leading-tight">Dashboard</h1>
+              <p className="font-display font-bold text-[color:var(--admin-content-text)] mt-0.5 text-3xl sm:text-[40px] leading-tight break-words">
+                {greeting}, {firstName}!
+              </p>
+              <p className={`text-base mt-1 capitalize font-medium ${MUTED}`}>
                 {format(new Date(), "EEEE, d MMMM yyyy", { locale: it })}
               </p>
+            </div>
+            <Link to="/appointments" className={`${BTN_PRIMARY} shrink-0 w-full md:w-auto`} data-testid="new-appointment-btn">
+              <Plus className="w-5 h-5" aria-hidden="true" />
+              Nuovo Appuntamento
+            </Link>
+          </div>
 
-              {/* Stat tiles */}
-              <div className="flex flex-wrap gap-3 mt-5">
-                {totalToday > 0 && (
-                  <div
-                    className="flex items-center gap-3 px-4 py-3 rounded-2xl"
-                    style={{ background: 'color-mix(in srgb, var(--admin-primary) 12%, transparent)', border: '1px solid color-mix(in srgb, var(--admin-primary) 20%, transparent)' }}
-                  >
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                      style={{ background: 'color-mix(in srgb, var(--admin-primary) 18%, transparent)' }}>
-                      <Calendar className="w-5 h-5" style={{ color: 'var(--admin-primary)' }} />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-black leading-none" style={{ color: 'var(--admin-primary)' }}>{totalToday}</p>
-                      <p className="text-[11px] font-semibold mt-0.5" style={{ color: 'color-mix(in srgb, var(--admin-primary) 70%, transparent)' }}>appuntamenti oggi</p>
-                    </div>
+          {(totalToday > 0 || todayTotal > 0 || (stats?.monthly_revenue || 0) > 0) && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5">
+              {totalToday > 0 && (
+                <div className={TILE}>
+                  <div className={ICON_BOX}><Calendar className="w-5 h-5" aria-hidden="true" /></div>
+                  <div className="min-w-0">
+                    <p className="text-2xl font-black leading-none text-[color:var(--admin-content-text)]">{totalToday}</p>
+                    <p className={`text-sm font-semibold mt-1 ${MUTED}`}>appuntamenti oggi</p>
                   </div>
-                )}
-                {todayTotal > 0 && (
-                  <div
-                    className="flex items-center gap-3 px-4 py-3 rounded-2xl"
-                    style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}
-                  >
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                      style={{ background: 'rgba(16,185,129,0.15)' }}>
-                      <Euro className="w-5 h-5 text-emerald-600" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-black leading-none text-emerald-600">€{todayTotal.toFixed(0)}</p>
-                      <p className="text-[11px] font-semibold mt-0.5 text-emerald-700">incassati oggi</p>
-                    </div>
+                </div>
+              )}
+              {todayTotal > 0 && (
+                <div className={TILE}>
+                  <div className={`${ICON_BOX} !bg-emerald-100 !text-emerald-700`}><Euro className="w-5 h-5" aria-hidden="true" /></div>
+                  <div className="min-w-0">
+                    <p className="text-2xl font-black leading-none text-emerald-700">€{todayTotal.toFixed(0)}</p>
+                    <p className={`text-sm font-semibold mt-1 ${MUTED}`}>incassati oggi</p>
                   </div>
-                )}
-                {(stats?.monthly_revenue || 0) > 0 && (
-                  <div
-                    className="flex items-center gap-3 px-4 py-3 rounded-2xl"
-                    style={{ background: 'color-mix(in srgb, var(--admin-accent) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--admin-accent) 20%, transparent)' }}
-                  >
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                      style={{ background: 'color-mix(in srgb, var(--admin-accent) 15%, transparent)' }}>
-                      <TrendingUp className="w-5 h-5" style={{ color: 'var(--admin-accent)' }} />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-black leading-none" style={{ color: 'var(--admin-accent)' }}>€{(stats.monthly_revenue || 0).toFixed(0)}</p>
-                      <p className="text-[11px] font-semibold mt-0.5" style={{ color: 'color-mix(in srgb, var(--admin-accent) 70%, transparent)' }}>questo mese</p>
-                    </div>
+                </div>
+              )}
+              {(stats?.monthly_revenue || 0) > 0 && (
+                <div className={TILE}>
+                  <div className={ICON_BOX_ACCENT}><TrendingUp className="w-5 h-5" aria-hidden="true" /></div>
+                  <div className="min-w-0">
+                    <p className="text-2xl font-black leading-none text-[color:var(--admin-content-text)]">€{(stats.monthly_revenue || 0).toFixed(0)}</p>
+                    <p className={`text-sm font-semibold mt-1 ${MUTED}`}>questo mese</p>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
+            </div>
+          )}
 
+          {(monthlyTarget > 0 || totalToday > 0) && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
               {/* Widget obiettivo mensile — cliccabile */}
               {monthlyTarget > 0 && (
                 <button
+                  type="button"
                   onClick={() => setShowTargetModal(true)}
-                  className="mt-4 w-full max-w-sm text-left rounded-2xl p-4 transition-all duration-200 hover:scale-[1.02] active:scale-[0.99] cursor-pointer"
-                  style={{
-                    background: monthlyPct >= 100
-                      ? 'linear-gradient(135deg, rgba(16,185,129,0.15), rgba(5,150,105,0.08))'
-                      : 'linear-gradient(135deg, color-mix(in srgb, var(--admin-accent) 12%, transparent), color-mix(in srgb, var(--admin-primary) 6%, transparent))',
-                    border: `1px solid ${monthlyPct >= 100 ? 'rgba(16,185,129,0.3)' : 'color-mix(in srgb, var(--admin-accent) 25%, transparent)'}`,
-                    boxShadow: monthlyPct >= 100 ? '0 2px 16px rgba(16,185,129,0.12)' : '0 2px 16px color-mix(in srgb, var(--admin-accent) 10%, transparent)',
-                  }}
+                  className={`${TILE} !flex-col !items-stretch !gap-0 text-left cursor-pointer min-h-[44px] hover:bg-[color-mix(in_srgb,var(--admin-primary)_6%,transparent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--admin-primary)]`}
                 >
-                  {/* Header */}
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center justify-between mb-3 gap-2">
                     <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-                        style={{ background: monthlyPct >= 100 ? 'rgba(16,185,129,0.2)' : 'color-mix(in srgb, var(--admin-accent) 18%, transparent)' }}>
-                        {monthlyPct >= 100
-                          ? <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                          : <Target className="w-4 h-4" style={{ color: 'var(--admin-accent)' }} />}
-                      </div>
-                      <span className="text-xs font-bold uppercase tracking-wider"
-                        style={{ color: 'color-mix(in srgb, var(--admin-content-text) 55%, transparent)' }}>
-                        Obiettivo mensile
-                      </span>
+                      {monthlyPct >= 100
+                        ? <CheckCircle2 className="w-5 h-5 text-emerald-600" aria-hidden="true" />
+                        : <Target className="w-5 h-5 text-[color:var(--admin-primary)]" aria-hidden="true" />}
+                      <span className="text-base font-bold text-[color:var(--admin-content-text)]">Obiettivo mensile</span>
                     </div>
-                    <div className="flex items-center gap-1" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 40%, transparent)' }}>
-                      <span className="text-[10px]">dettagli</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </div>
+                    <span className={`flex items-center gap-1 text-sm ${MUTED}`}>
+                      dettagli <ChevronRight className="w-4 h-4" aria-hidden="true" />
+                    </span>
                   </div>
 
-                  {/* Cifre principali */}
                   <div className="flex items-end gap-2 mb-3">
-                    <span className="text-3xl font-black leading-none"
-                      style={{ color: monthlyPct >= 100 ? '#10B981' : 'var(--admin-accent)' }}>
+                    <span className={`text-3xl font-black leading-none ${monthlyPct >= 100 ? 'text-emerald-700' : 'text-[color:var(--admin-content-text)]'}`}>
                       €{monthlyRevenue.toFixed(0)}
                     </span>
-                    <span className="text-sm font-semibold mb-0.5"
-                      style={{ color: 'color-mix(in srgb, var(--admin-content-text) 45%, transparent)' }}>
-                      / €{monthlyTarget.toFixed(0)}
-                    </span>
-                    <span className="ml-auto text-lg font-black mb-0.5"
-                      style={{ color: monthlyPct >= 100 ? '#10B981' : 'var(--admin-accent)' }}>
-                      {monthlyPct}%
-                    </span>
+                    <span className={`text-base font-semibold mb-0.5 ${MUTED}`}>/ €{monthlyTarget.toFixed(0)}</span>
+                    <span className={`ml-auto text-lg font-black mb-0.5 ${monthlyPct >= 100 ? 'text-emerald-700' : 'text-[color:var(--admin-primary)]'}`}>{monthlyPct}%</span>
                   </div>
 
-                  {/* Barra grande */}
-                  <div className="h-3 rounded-full overflow-hidden"
-                    style={{ background: 'color-mix(in srgb, var(--admin-content-text) 10%, transparent)' }}>
+                  <div className="h-3 rounded-full overflow-hidden bg-[color-mix(in_srgb,var(--admin-content-text)_10%,transparent)]">
                     <div
-                      className="h-full rounded-full transition-all duration-700"
+                      className="h-full rounded-full transition-all duration-700 motion-reduce:transition-none"
                       style={{
                         width: `${monthlyPct}%`,
-                        background: monthlyPct >= 100
-                          ? 'linear-gradient(90deg, #10B981, #059669)'
-                          : 'linear-gradient(90deg, var(--admin-accent), var(--admin-primary))',
+                        background: monthlyPct >= 100 ? '#059669' : 'var(--admin-primary)',
                         minWidth: monthlyPct > 0 ? '12px' : '0',
                       }}
                     />
                   </div>
 
-                  {/* Proiezione / Completato */}
-                  <div className="mt-2 flex items-center gap-1">
+                  <div className="mt-2 flex items-center gap-1.5">
                     {monthlyPct >= 100 ? (
-                      <span className="text-xs font-bold text-emerald-600">Obiettivo raggiunto!</span>
+                      <span className="text-sm font-bold text-emerald-700">Obiettivo raggiunto!</span>
                     ) : projectedRevenue > monthlyTarget ? (
                       <>
-                        <Flame className="w-3 h-3 text-orange-500" />
-                        <span className="text-xs font-semibold" style={{ color: 'var(--admin-accent)' }}>
+                        <Flame className="w-4 h-4 text-[color:var(--admin-primary)]" aria-hidden="true" />
+                        <span className="text-sm font-semibold text-[color:var(--admin-content-text)]">
                           Proiezione €{projectedRevenue.toFixed(0)} — supererai il target!
                         </span>
                       </>
                     ) : projectedRevenue > 0 ? (
-                      <span className="text-xs" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 50%, transparent)' }}>
-                        Proiezione fine mese: €{projectedRevenue.toFixed(0)}
-                      </span>
+                      <span className={`text-sm ${MUTED}`}>Proiezione fine mese: €{projectedRevenue.toFixed(0)}</span>
                     ) : null}
                   </div>
                 </button>
               )}
 
-              {/* Progress bar appuntamenti oggi */}
+              {/* Progresso appuntamenti oggi */}
               {totalToday > 0 && (
-                <div className="mt-4 max-w-xs">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 45%, transparent)' }}>
-                      Progresso giornata
-                    </span>
-                    <span className="text-[10px] font-bold" style={{ color: 'var(--admin-primary)' }}>
-                      {completedToday}/{totalToday} completati
-                    </span>
+                <div className={`${TILE} !flex-col !items-stretch !gap-2 justify-center`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-base font-bold text-[color:var(--admin-content-text)]">Progresso giornata</span>
+                    <span className="text-sm font-bold text-[color:var(--admin-primary)]">{completedToday}/{totalToday} completati</span>
                   </div>
-                  <div className="h-2 rounded-full overflow-hidden" style={{ background: 'color-mix(in srgb, var(--admin-content-text) 10%, transparent)' }}>
+                  <div className="h-3 rounded-full overflow-hidden bg-[color-mix(in_srgb,var(--admin-content-text)_10%,transparent)]">
                     <div
-                      className="h-full rounded-full transition-all duration-700"
-                      style={{
-                        width: `${progressPct}%`,
-                        background: 'linear-gradient(90deg, var(--admin-primary), var(--admin-accent))',
-                        minWidth: progressPct > 0 ? '8px' : '0',
-                      }}
+                      className="h-full rounded-full transition-all duration-700 motion-reduce:transition-none bg-[color:var(--admin-primary)]"
+                      style={{ width: `${progressPct}%`, minWidth: progressPct > 0 ? '8px' : '0' }}
                     />
                   </div>
                 </div>
               )}
             </div>
+          )}
+        </div>
 
-            {/* Right: CTA button */}
-            <div className="flex items-start gap-2 shrink-0 mt-1">
-              <Link to="/appointments">
-                <Button
-                  data-testid="new-appointment-btn"
-                  className="glow-btn text-white font-bold rounded-2xl px-5 py-2.5 shadow-lg text-sm"
-                  style={{ background: 'linear-gradient(135deg, var(--admin-primary), color-mix(in srgb, var(--admin-primary) 70%, var(--admin-accent)))' }}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nuovo Appuntamento
-                </Button>
-              </Link>
-            </div>
+        {/* ── Da incassare oggi ────────────────────────────────────── */}
+        <div className={`${CARD} overflow-hidden`} data-testid="da-incassare-oggi">
+          <div className={CARD_HEAD}>
+            <div className={ICON_BOX}><Euro className="w-5 h-5" aria-hidden="true" /></div>
+            <h2 className={TITLE}>Da incassare oggi</h2>
+            {toCollect.length > 0 && <span className={`${BADGE} ml-auto`}>{toCollect.length}</span>}
           </div>
+          {toCollect.length === 0 ? (
+            <div className="flex items-center gap-2 px-5 py-5 text-base font-semibold text-[color:var(--admin-content-text)]">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600" aria-hidden="true" />
+              Tutto incassato
+            </div>
+          ) : (
+            <div className="p-3 grid grid-cols-1 lg:grid-cols-2 gap-2">
+              {toCollect.map((apt) => (
+                <div key={apt.id} className={`${ROW} flex-wrap sm:flex-nowrap`}>
+                  <p className="text-base font-bold w-14 shrink-0 text-[color:var(--admin-primary)]">{apt.time}</p>
+                  <div className="flex-1 min-w-[9rem]">
+                    <p className="font-bold text-base truncate text-[color:var(--admin-content-text)]">{apt.client_name}</p>
+                    <p className={`text-sm truncate ${MUTED}`}>
+                      {(apt.services || []).map(s => s.name).join(', ') || '—'}
+                    </p>
+                  </div>
+                  <p className="font-bold text-base shrink-0 text-[color:var(--admin-content-text)]">€{(Number(apt.total_price) || 0).toFixed(2)}</p>
+                  <button
+                    type="button"
+                    onClick={() => openCheckout(apt)}
+                    disabled={checkoutLoading}
+                    className={`${BTN_PRIMARY} w-full sm:w-auto sm:shrink-0 disabled:opacity-60`}
+                    data-testid={`incassa-${apt.id}`}
+                  >
+                    Incassa
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <DashboardMorningBriefing />
 
-        {/* ══════════════════════════════════════════════════════════════
-            AZIONI RAPIDE
-        ══════════════════════════════════════════════════════════════ */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 stagger-fast">
+        {/* ── Azioni rapide ────────────────────────────────────────── */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
-            { label: 'Prenota appuntamento', desc: 'Aggiungi una nuova prenotazione', icon: Plus,        color: '#E8477C', bg: '#FFF0F5', path: '/appointments' },
-            { label: 'Nuovo cliente',         desc: 'Aggiungi un cliente alla rubrica', icon: Users,      color: '#2EC4B6', bg: '#F0FDFB', path: '/clients' },
-            { label: "Registra un'uscita",    desc: 'Tieni traccia delle spese',        icon: CreditCard, color: '#F59E0B', bg: '#FFFBEB', path: '/uscite' },
-          ].map(({ label, desc, icon: Icon, color, bg, path }) => (
+            { label: 'Prenota appuntamento', desc: 'Aggiungi una nuova prenotazione', icon: Plus,        path: '/appointments' },
+            { label: 'Nuovo cliente',         desc: 'Aggiungi un cliente alla rubrica', icon: Users,      path: '/clients' },
+            { label: "Registra un'uscita",    desc: 'Tieni traccia delle spese',        icon: CreditCard, path: '/uscite' },
+          ].map(({ label, desc, icon: Icon, path }) => (
             <button
               key={path}
+              type="button"
               onClick={() => navigate(path)}
-              className="gradient-border group flex items-center gap-4 p-5 rounded-2xl text-left transition-all hover:shadow-lg hover:-translate-y-0.5"
-              style={{ background: 'var(--admin-content-bg)' }}
+              className={`${CARD} group flex items-center gap-3 p-4 min-h-[44px] text-left transition-colors hover:border-[color:var(--admin-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--admin-primary)]`}
             >
-              <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3"
-                style={{ background: bg, color }}
-              >
-                <Icon className="w-5 h-5" />
-              </div>
+              <div className={ICON_BOX}><Icon className="w-5 h-5" aria-hidden="true" /></div>
               <div className="min-w-0">
-                <p className="text-sm font-bold" style={{ color: 'var(--admin-content-text)' }}>{label}</p>
-                <p className="text-xs mt-0.5 truncate" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 45%, transparent)' }}>{desc}</p>
+                <p className="text-base font-bold text-[color:var(--admin-content-text)]">{label}</p>
+                <p className={`text-sm mt-0.5 ${MUTED}`}>{desc}</p>
               </div>
-              <ArrowUpRight className="w-4 h-4 ml-auto flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color }} />
+              <ArrowUpRight className="w-5 h-5 ml-auto shrink-0 text-[color:var(--admin-primary)]" aria-hidden="true" />
             </button>
           ))}
         </div>
 
-        {/* ══════════════════════════════════════════════════════════════
-            AVVISI E REMINDERS — BRIEFING MATTINA
-        ══════════════════════════════════════════════════════════════ */}
-        {(autoReminder?.pending?.length > 0 || tomorrowApts.length > 0 || upcomingExpenses.length > 0 || lastServiceAlerts.length > 0 || inactiveClients.filter(c => !c.already_recalled).length > 0) && (
+        {/* ── Avvisi e reminders ───────────────────────────────────── */}
+        {(autoReminder?.pending?.length > 0 || tomorrowApts.length > 0 || upcomingExpenses.length > 0 || lastServiceAlerts.length > 0 || inactiveToContact.length > 0) && (
           <div>
             <div className="flex items-center gap-2.5 mb-3">
-              <div className="w-7 h-7 rounded-xl flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--admin-primary) 15%, transparent)' }}>
-                <Bell className="w-4 h-4" style={{ color: 'var(--admin-primary)' }} />
-              </div>
-              <h2 className="font-display text-xl font-bold" style={{ color: 'var(--admin-content-text)' }}>Avvisi e Reminders</h2>
-              <span className="text-xs font-semibold ml-auto hidden sm:block" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 35%, transparent)' }}>
-                Briefing mattina
-              </span>
+              <div className={ICON_BOX}><Bell className="w-5 h-5" aria-hidden="true" /></div>
+              <h2 className={TITLE}>Avvisi e Reminders</h2>
+              <span className={`text-sm font-semibold ml-auto hidden sm:block ${MUTED}`}>Briefing mattina</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 stagger-fast">
-              {/* Promemoria Urgenti */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {autoReminder?.pending?.length > 0 && (
-                <button
+                <AlertTile
                   onClick={() => navigate('/reminders')}
-                  className="gradient-border group flex flex-col items-start gap-3 p-4 rounded-2xl text-left transition-all hover:shadow-lg hover:-translate-y-0.5"
-                  style={{ background: 'var(--admin-content-bg)' }}
                   title="Promemoria da inviare ora"
-                >
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 bg-green-100">
-                    <Bell className="w-5 h-5 text-green-600 animate-bounce" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-2xl font-black text-green-600">{autoReminder.pending.length}</p>
-                    <p className="text-sm font-semibold mt-1" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 60%, transparent)' }}>Promemoria Urgenti</p>
-                  </div>
-                </button>
+                  icon={Bell}
+                  count={autoReminder.pending.length}
+                  label="Promemoria Urgenti"
+                  urgent
+                />
               )}
-
-              {/* Promemoria Domani */}
               {tomorrowApts.length > 0 && (!autoReminder?.pending?.length || autoReminder.pending.length === 0) && (
-                <button
+                <AlertTile
                   onClick={() => navigate('/reminders')}
-                  className="gradient-border group flex flex-col items-start gap-3 p-4 rounded-2xl text-left transition-all hover:shadow-lg hover:-translate-y-0.5"
-                  style={{ background: 'var(--admin-content-bg)' }}
                   title="Appuntamenti domani"
-                >
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 bg-amber-100">
-                    <Calendar className="w-5 h-5 text-amber-600" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-2xl font-black text-amber-600">{tomorrowApts.length}</p>
-                    <p className="text-sm font-semibold mt-1" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 60%, transparent)' }}>Domani</p>
-                  </div>
-                </button>
+                  icon={Calendar}
+                  count={tomorrowApts.length}
+                  label="Domani"
+                />
               )}
-
-              {/* Uscite in Scadenza */}
-              {upcomingExpenses.filter(e => e.overdue || (new Date(e.due_date).toISOString().slice(0, 10) <= new Date().toISOString().slice(0, 10))).length > 0 && (
-                <button
+              {overdueExpenses.length > 0 && (
+                <AlertTile
                   onClick={() => navigate('/uscite')}
-                  className="gradient-border group flex flex-col items-start gap-3 p-4 rounded-2xl text-left transition-all hover:shadow-lg hover:-translate-y-0.5"
-                  style={{ background: 'var(--admin-content-bg)' }}
                   title="Uscite in scadenza"
-                >
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 bg-red-100">
-                    <Euro className="w-5 h-5 text-red-600" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-2xl font-black text-red-600">{upcomingExpenses.filter(e => e.overdue || (new Date(e.due_date).toISOString().slice(0, 10) <= new Date().toISOString().slice(0, 10))).length}</p>
-                    <p className="text-sm font-semibold mt-1" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 60%, transparent)' }}>Uscite Scadute</p>
-                  </div>
-                </button>
+                  icon={Euro}
+                  count={overdueExpenses.length}
+                  label="Uscite Scadute"
+                  urgent
+                />
               )}
-
-              {/* Abbonamenti in Esaurimento */}
               {lastServiceAlerts.length > 0 && (
-                <button
+                <AlertTile
                   onClick={() => navigate('/abbonamenti')}
-                  className="gradient-border group flex flex-col items-start gap-3 p-4 rounded-2xl text-left transition-all hover:shadow-lg hover:-translate-y-0.5"
-                  style={{ background: 'var(--admin-content-bg)' }}
                   title="Abbonamenti in esaurimento"
-                >
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 bg-amber-100">
-                    <AlertTriangle className="w-5 h-5 text-amber-600" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-2xl font-black text-amber-600">{lastServiceAlerts.length}</p>
-                    <p className="text-sm font-semibold mt-1" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 60%, transparent)' }}>Abbonamenti Esauriti</p>
-                  </div>
-                </button>
+                  icon={AlertTriangle}
+                  count={lastServiceAlerts.length}
+                  label="Abbonamenti Esauriti"
+                />
               )}
-
-              {/* Clienti Inattivi */}
-              {inactiveClients.filter(c => !c.already_recalled).length > 0 && (
-                <button
+              {inactiveToContact.length > 0 && (
+                <AlertTile
                   onClick={() => navigate('/reminders')}
-                  className="gradient-border group flex flex-col items-start gap-3 p-4 rounded-2xl text-left transition-all hover:shadow-lg hover:-translate-y-0.5"
-                  style={{ background: 'var(--admin-content-bg)' }}
                   title="Clienti da contattare"
-                >
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 bg-orange-100">
-                    <Users className="w-5 h-5 text-orange-600" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-2xl font-black text-orange-600">{inactiveClients.filter(c => !c.already_recalled).length}</p>
-                    <p className="text-sm font-semibold mt-1" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 60%, transparent)' }}>Clienti Assenti</p>
-                  </div>
-                </button>
+                  icon={Users}
+                  count={inactiveToContact.length}
+                  label="Clienti Assenti"
+                />
               )}
             </div>
           </div>
         )}
 
-        {/* ══════════════════════════════════════════════════════════════
-            ALERT BANNERS
-        ══════════════════════════════════════════════════════════════ */}
+        {/* ── Avvisi card ──────────────────────────────────────────── */}
         {showAlerts && cardAlerts.total > 0 && (
-          <div
-            className="relative overflow-hidden rounded-2xl p-4 shadow-md"
-            style={{ background: 'linear-gradient(135deg, #FFFBEB, #FFF7ED, #FFF1F2)', border: '1px solid #FCD34D88' }}
-            data-testid="daily-alerts-banner"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0 heartbeat">
-                  <Bell className="w-5 h-5 text-amber-600" />
-                </div>
-                <div>
-                  <p className="font-bold text-amber-800 flex items-center gap-2 text-sm">
-                    <AlertTriangle className="w-3.5 h-3.5" />
+          <div className={`${CARD} p-4`} data-testid="daily-alerts-banner">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3 min-w-0">
+                <div className={ICON_BOX}><Bell className="w-5 h-5" aria-hidden="true" /></div>
+                <div className="min-w-0">
+                  <p className="font-bold text-base text-[color:var(--admin-content-text)]">
                     {cardAlerts.total} Avvisi Card da gestire
                   </p>
-                  <p className="text-xs text-amber-600 mt-0.5">
+                  <p className={`text-sm mt-0.5 ${MUTED}`}>
                     {cardAlerts.expiring.length > 0 && `${cardAlerts.expiring.length} in scadenza`}
                     {cardAlerts.expiring.length > 0 && cardAlerts.low_balance.length > 0 && ' · '}
                     {cardAlerts.low_balance.length > 0 && `${cardAlerts.low_balance.length} credito basso`}
                   </p>
-                  <div className="mt-2 flex flex-wrap gap-2">
+                  <div className="mt-3 flex flex-wrap gap-2">
                     {[...cardAlerts.expiring.slice(0,2).map(c => ({...c, type:'expiring'})),
                       ...cardAlerts.low_balance.slice(0,2).map(c => ({...c, type:'low'}))].map(card => (
-                      <div key={card.id} className="flex items-center gap-1.5 bg-white/80 rounded-lg px-2.5 py-1 border border-amber-100 shadow-sm">
-                        <span className="text-xs font-semibold text-gray-800">{card.client_name}</span>
-                        <Badge className={`text-[10px] px-1.5 ${card.type==='expiring' ? 'bg-amber-400' : 'bg-rose-400'} text-white`}>
+                      <div key={card.id} className={`flex items-center gap-2 pl-3 ${card.client_phone ? 'pr-1' : 'pr-3'} min-h-[44px] rounded-lg ${INNER_BORDER} bg-[color-mix(in_srgb,var(--admin-primary)_6%,transparent)]`}>
+                        <span className="text-sm font-semibold text-[color:var(--admin-content-text)]">{card.client_name}</span>
+                        <span className={`text-sm font-bold ${card.type==='expiring' ? 'text-[color:var(--admin-primary)]' : 'text-red-700'}`}>
                           {card.type==='expiring' ? `${card.days_until_expiry}g` : `${card.percent_remaining}%`}
-                        </Badge>
+                        </span>
                         {card.client_phone && (
-                          <button onClick={() => sendQuickWhatsApp(card, card.type)} className="w-5 h-5 rounded-full bg-green-500 hover:bg-green-600 flex items-center justify-center transition-colors">
-                            <MessageCircle className="w-2.5 h-2.5 text-white" />
+                          <button
+                            type="button"
+                            onClick={() => sendQuickWhatsApp(card, card.type)}
+                            className={BTN_ICON}
+                            aria-label={`Invia notifica WhatsApp a ${card.client_name}`}
+                          >
+                            <MessageCircle className="w-5 h-5" aria-hidden="true" />
                           </button>
                         )}
                       </div>
@@ -647,157 +555,88 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <Link to="/cards">
-                  <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-white text-xs h-7 rounded-lg">Vedi tutti</Button>
-                </Link>
-                <button onClick={() => setShowAlerts(false)} className="w-7 h-7 rounded-lg hover:bg-amber-100 flex items-center justify-center transition-colors">
-                  <X className="w-3.5 h-3.5 text-amber-600" />
+                <Link to="/cards" className={`${BTN_OUTLINE} hidden sm:inline-flex`}>Vedi tutti</Link>
+                <button type="button" onClick={() => setShowAlerts(false)} className={BTN_ICON} aria-label="Chiudi avvisi card">
+                  <X className="w-5 h-5" aria-hidden="true" />
                 </button>
               </div>
             </div>
+            <Link to="/cards" className={`${BTN_OUTLINE} sm:hidden mt-3 w-full`}>Vedi tutti</Link>
           </div>
         )}
 
-        {/* WhatsApp pending */}
+        {/* ── WhatsApp da inviare ──────────────────────────────────── */}
         {whatsappPending.total > 0 && (
           <div
-            className="relative overflow-hidden rounded-2xl p-4 shadow-md cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5"
-            style={{ background: 'linear-gradient(135deg, #F0FDF4, #ECFDF5, #F0FDFA)', border: '1px solid #86EFAC88' }}
+            className={`${CARD} p-4 cursor-pointer transition-colors hover:border-[color:var(--admin-primary)]`}
             onClick={() => navigate('/reminders')}
             data-testid="whatsapp-pending-banner"
           >
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-green-500 flex items-center justify-center shrink-0 shadow">
-                  <MessageCircle className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="font-bold text-green-800 text-sm">{whatsappPending.total} Messaggi WhatsApp da inviare</p>
-                  <div className="flex items-center flex-wrap gap-2 mt-0.5">
-                    {whatsappPending.reminders > 0 && <span className="text-xs text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded-full">{whatsappPending.reminders} promemoria</span>}
-                    {whatsappPending.colors > 0 && <span className="text-xs text-[#8A6D3B] font-semibold bg-[#D4AF7A]/15 px-2 py-0.5 rounded-full">{whatsappPending.colors} colore</span>}
-                    {whatsappPending.inactive > 0 && <span className="text-xs text-orange-600 font-semibold bg-orange-50 px-2 py-0.5 rounded-full">{whatsappPending.inactive} inattivi</span>}
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className={ICON_BOX}><MessageCircle className="w-5 h-5" aria-hidden="true" /></div>
+                <div className="min-w-0">
+                  <p className="font-bold text-base text-[color:var(--admin-content-text)]">{whatsappPending.total} Messaggi WhatsApp da inviare</p>
+                  <div className="flex items-center flex-wrap gap-2 mt-1">
+                    {whatsappPending.reminders > 0 && <span className={PILL}>{whatsappPending.reminders} promemoria</span>}
+                    {whatsappPending.colors > 0 && <span className={PILL}>{whatsappPending.colors} colore</span>}
+                    {whatsappPending.inactive > 0 && <span className={PILL}>{whatsappPending.inactive} inattivi</span>}
                   </div>
                 </div>
               </div>
-              <Button size="sm" className="bg-green-500 hover:bg-green-600 text-white text-xs h-8 rounded-xl shrink-0 font-bold">
-                Vai <ChevronRight className="w-3 h-3 ml-0.5" />
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Compleanni */}
-        {birthdayToday.length > 0 && (
-          <div
-            className="relative overflow-hidden rounded-2xl p-4 shadow-md cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5"
-            style={{ background: 'linear-gradient(135deg, #FDF2F8, #FFF1F2, #F5F3FF)', border: '1px solid #F9A8D488' }}
-            onClick={() => navigate('/reminders')}
-          >
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-pink-500 flex items-center justify-center shrink-0 shadow float">
-                  <Cake className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="font-bold text-pink-800 text-sm">
-                    🎂 {birthdayToday.length === 1 ? `Compleanno di ${birthdayToday[0].name}` : `${birthdayToday.length} compleanni`}{' '}
-                    {birthdayToday.some(c => c.days_until === 0) ? 'oggi!' : 'domani!'}
-                  </p>
-                  <p className="text-xs text-pink-600 mt-0.5">{birthdayToday.map(c => c.name).join(', ')}</p>
-                </div>
-              </div>
-              <button
-                onClick={e => { e.stopPropagation(); navigate('/reminders'); }}
-                className="text-xs bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded-xl font-bold shrink-0 transition-colors"
-              >
-                Invia Auguri 🎉
+              <button type="button" className={`${BTN_PRIMARY} shrink-0`}>
+                Vai <ChevronRight className="w-4 h-4" aria-hidden="true" />
               </button>
             </div>
           </div>
         )}
 
-
-
-        {/* ══════════════════════════════════════════════════════════════
-            DA INCASSARE OGGI
-        ══════════════════════════════════════════════════════════════ */}
-        <div
-          className="rounded-2xl overflow-hidden"
-          data-testid="da-incassare-oggi"
-          style={{ background: 'var(--admin-content-bg)', border: '1px solid color-mix(in srgb, var(--admin-primary) 25%, transparent)' }}
-        >
-          <div className="flex items-center gap-2.5 px-5 py-4" style={{ borderBottom: '1px solid color-mix(in srgb, var(--admin-primary) 15%, transparent)' }}>
-            <div className="w-7 h-7 rounded-xl flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--admin-primary) 15%, transparent)' }}>
-              <Euro className="w-4 h-4" style={{ color: 'var(--admin-primary)' }} />
-            </div>
-            <h2 className="font-display text-xl font-bold" style={{ color: 'var(--admin-content-text)' }}>Da incassare oggi</h2>
-            {toCollect.length > 0 && (
-              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full ml-auto" style={{ background: 'color-mix(in srgb, var(--admin-primary) 15%, transparent)', color: 'var(--admin-primary)' }}>
-                {toCollect.length}
-              </span>
-            )}
-          </div>
-          {toCollect.length === 0 ? (
-            <div className="flex items-center gap-2 px-5 py-5 text-sm font-semibold" style={{ color: 'var(--admin-content-text)' }}>
-              <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--admin-accent)' }} />
-              Tutto incassato
-            </div>
-          ) : (
-            <div className="p-3 grid grid-cols-1 lg:grid-cols-2 gap-2">
-              {toCollect.map((apt) => (
-                <div key={apt.id} className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'color-mix(in srgb, var(--admin-primary) 6%, transparent)' }}>
-                  <div className="text-center w-12 flex-shrink-0">
-                    <p className="text-sm font-bold" style={{ color: 'var(--admin-primary)' }}>{apt.time}</p>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm truncate" style={{ color: 'var(--admin-content-text)' }}>{apt.client_name}</p>
-                    <p className="text-xs truncate" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 55%, transparent)' }}>
-                      {(apt.services || []).map(s => s.name).join(', ') || '—'}
-                    </p>
-                  </div>
-                  <p className="font-bold text-sm flex-shrink-0" style={{ color: 'var(--admin-content-text)' }}>€{(Number(apt.total_price) || 0).toFixed(2)}</p>
-                  <Button
-                    size="sm"
-                    onClick={() => openCheckout(apt)}
-                    disabled={checkoutLoading}
-                    className="flex-shrink-0 text-white"
-                    style={{ background: 'var(--admin-primary)' }}
-                    data-testid={`incassa-${apt.id}`}
-                  >
-                    Incassa
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {undelivered.logs.length > 0 && (
+        {/* ── Compleanni ───────────────────────────────────────────── */}
+        {birthdayToday.length > 0 && (
           <div
-            className="rounded-2xl overflow-hidden"
-            data-testid="messaggi-non-consegnati"
-            style={{ background: 'var(--admin-content-bg)', border: '1px solid color-mix(in srgb, var(--admin-primary) 25%, transparent)' }}
+            className={`${CARD} p-4 cursor-pointer transition-colors hover:border-[color:var(--admin-primary)]`}
+            onClick={() => navigate('/reminders')}
           >
-            <div className="flex items-center gap-2.5 px-5 py-4" style={{ borderBottom: '1px solid color-mix(in srgb, var(--admin-primary) 15%, transparent)' }}>
-              <div className="w-7 h-7 rounded-xl flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--admin-primary) 15%, transparent)' }}>
-                <AlertCircle className="w-4 h-4" style={{ color: 'var(--admin-primary)' }} />
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className={ICON_BOX}><Cake className="w-5 h-5" aria-hidden="true" /></div>
+                <div className="min-w-0">
+                  <p className="font-bold text-base text-[color:var(--admin-content-text)]">
+                    {birthdayToday.length === 1 ? `Compleanno di ${birthdayToday[0].name}` : `${birthdayToday.length} compleanni`}{' '}
+                    {birthdayToday.some(c => c.days_until === 0) ? 'oggi!' : 'domani!'}
+                  </p>
+                  <p className={`text-sm mt-0.5 ${MUTED}`}>{birthdayToday.map(c => c.name).join(', ')}</p>
+                </div>
               </div>
-              <h2 className="font-display text-xl font-bold" style={{ color: 'var(--admin-content-text)' }}>Messaggi non consegnati</h2>
-              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full" style={{ background: 'color-mix(in srgb, var(--admin-primary) 15%, transparent)', color: 'var(--admin-primary)' }}>
-                {undelivered.count}
-              </span>
-              <Link to="/log-messaggi" className="ml-auto text-xs font-bold flex items-center gap-1" style={{ color: 'var(--admin-primary)' }}>
-                Log Messaggi <ChevronRight className="w-3 h-3" />
+              <button
+                type="button"
+                onClick={e => { e.stopPropagation(); navigate('/reminders'); }}
+                className={`${BTN_PRIMARY} shrink-0`}
+              >
+                Invia Auguri
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Messaggi non consegnati ──────────────────────────────── */}
+        {undelivered.logs.length > 0 && (
+          <div className={`${CARD} overflow-hidden`} data-testid="messaggi-non-consegnati">
+            <div className={`${CARD_HEAD} flex-wrap`}>
+              <div className={ICON_BOX}><AlertCircle className="w-5 h-5" aria-hidden="true" /></div>
+              <h2 className={TITLE}>Messaggi non consegnati</h2>
+              <span className={BADGE}>{undelivered.count}</span>
+              <Link to="/log-messaggi" className="ml-auto inline-flex items-center gap-1 min-h-[44px] text-base font-bold text-[color:var(--admin-primary)]">
+                Log Messaggi <ChevronRight className="w-4 h-4" aria-hidden="true" />
               </Link>
             </div>
             <div className="p-3 grid grid-cols-1 lg:grid-cols-2 gap-2">
               {undelivered.logs.map((log) => (
-                <div key={log.id} className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'color-mix(in srgb, var(--admin-primary) 6%, transparent)' }}>
+                <div key={log.id} className={ROW}>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm truncate" style={{ color: 'var(--admin-content-text)' }}>{log.client_name || 'Cliente sconosciuto'}</p>
-                    <p className="text-xs truncate" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 55%, transparent)' }}>{log.phone || '—'}</p>
-                    <p className="text-xs mt-0.5" style={{ color: 'var(--admin-primary)' }}>
+                    <p className="font-bold text-base truncate text-[color:var(--admin-content-text)]">{log.client_name || 'Cliente sconosciuto'}</p>
+                    <p className={`text-sm truncate ${MUTED}`}>{log.phone || '—'}</p>
+                    <p className="text-sm mt-0.5 text-red-700">
                       {{ 131026: 'Numero non raggiungibile su WhatsApp', 131047: 'Fuori dalle 24 ore, serve un template' }[log.delivery_error_code] || log.delivery_error || 'Motivo non disponibile'}
                     </p>
                   </div>
@@ -807,38 +646,36 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* ══════════════════════════════════════════════════════════════
-            APPUNTAMENTI DOMANI
-        ══════════════════════════════════════════════════════════════ */}
+        {/* ── Appuntamenti domani ──────────────────────────────────── */}
         {tomorrowApts.length > 0 && (
-          <div className="rounded-2xl overflow-hidden shadow-lg" style={{ background: 'linear-gradient(135deg, #0F2027, #203A43, #2C5364)' }}>
-            <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-              <div className="flex items-center gap-2.5">
-                <div className="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse" />
-                <h2 className="font-display text-lg font-bold text-white">Appuntamenti Domani</h2>
-                <span className="text-xs bg-green-500/25 text-green-300 px-2.5 py-0.5 rounded-full font-bold">{tomorrowApts.length}</span>
-              </div>
-              <p className="text-xs text-white/35 hidden sm:block">Tasto verde → promemoria WhatsApp</p>
+          <div className={`${CARD} overflow-hidden`}>
+            <div className={`${CARD_HEAD} flex-wrap`}>
+              <div className={ICON_BOX}><Calendar className="w-5 h-5" aria-hidden="true" /></div>
+              <h2 className={TITLE}>Appuntamenti Domani</h2>
+              <span className={BADGE}>{tomorrowApts.length}</span>
+              <p className={`text-sm ml-auto hidden sm:block ${MUTED}`}>Il pulsante messaggio invia il promemoria WhatsApp</p>
             </div>
-            <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            <div className="p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               {tomorrowApts.map((apt) => (
-                <div key={apt.id} className="glass-card flex items-center gap-3 p-3 rounded-xl transition-all hover:bg-white/10">
-                  <div className="text-center w-12 flex-shrink-0">
-                    <p className="text-sm font-bold text-green-300">{apt.time}</p>
-                    <p className="text-[10px] text-white/35">{apt.total_duration}min</p>
+                <div key={apt.id} className={ROW}>
+                  <div className="text-center w-14 shrink-0">
+                    <p className="text-base font-bold text-[color:var(--admin-primary)]">{apt.time}</p>
+                    <p className={`text-sm ${MUTED}`}>{apt.total_duration}min</p>
                   </div>
-                  <ClientAvatar name={apt.client_name} size="sm" />
+                  <ClientAvatar name={apt.client_name} size="lg" />
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-white text-sm truncate">{apt.client_name}</p>
-                    <p className="text-xs text-white/45 truncate">{(apt.services || []).map(s => s.name).join(', ')}</p>
+                    <p className="font-bold text-base truncate text-[color:var(--admin-content-text)]">{apt.client_name}</p>
+                    <p className={`text-sm truncate ${MUTED}`}>{(apt.services || []).map(s => s.name).join(', ')}</p>
                   </div>
                   {apt.client_phone && (
                     <button
+                      type="button"
                       onClick={() => sendReminderWhatsApp(apt)}
-                      className="w-8 h-8 rounded-full bg-green-500 hover:bg-green-400 flex items-center justify-center flex-shrink-0 shadow transition-all hover:scale-110"
+                      className={`${BTN_ICON} !bg-[color:var(--admin-primary)] !text-white hover:brightness-90`}
                       title="Invia promemoria WhatsApp"
+                      aria-label={`Invia promemoria WhatsApp a ${apt.client_name}`}
                     >
-                      <MessageCircle className="w-4 h-4 text-white" />
+                      <MessageCircle className="w-5 h-5" aria-hidden="true" />
                     </button>
                   )}
                 </div>
@@ -847,41 +684,25 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* ══════════════════════════════════════════════════════════════
-            OGGI + PROSSIMI
-        ══════════════════════════════════════════════════════════════ */}
+        {/* ── Oggi + prossimi ──────────────────────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
 
-          {/* Appuntamenti di oggi */}
-          <div className="lg:col-span-8 rounded-2xl overflow-hidden shadow-lg" style={{ background: 'linear-gradient(135deg, #1A1A2E, #2D2B55)' }}>
-            <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-              <div className="flex items-center gap-2.5">
-                <div className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ backgroundColor: 'var(--admin-primary)' }} />
-                <h2 className="font-display text-lg font-bold text-white">Appuntamenti di Oggi</h2>
-                {totalToday > 0 && (
-                  <span
-                    className="text-xs px-2 py-0.5 rounded-full font-bold"
-                    style={{ background: 'color-mix(in srgb, var(--admin-primary) 25%, transparent)', color: 'color-mix(in srgb, var(--admin-primary) 90%, white)' }}
-                  >
-                    {totalToday}
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-3">
+          <div className={`lg:col-span-8 ${CARD} overflow-hidden`}>
+            <div className={`${CARD_HEAD} flex-wrap`}>
+              <div className={ICON_BOX}><Calendar className="w-5 h-5" aria-hidden="true" /></div>
+              <h2 className={TITLE}>Appuntamenti di Oggi</h2>
+              {totalToday > 0 && <span className={BADGE}>{totalToday}</span>}
+              <div className="flex items-center gap-3 ml-auto">
                 {todayTotal > 0 && (
-                  <span className="text-xs font-bold text-green-300 hidden sm:block">
-                    €{todayTotal.toFixed(0)} totale
-                  </span>
+                  <span className="text-base font-bold text-emerald-700 hidden sm:block">€{todayTotal.toFixed(0)} totale</span>
                 )}
-                <Link to="/planning">
-                  <button className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all hover:bg-white/10" style={{ color: 'color-mix(in srgb, var(--admin-primary) 80%, white)' }}>
-                    Vedi tutti <ChevronRight className="inline w-3 h-3" />
-                  </button>
+                <Link to="/planning" className={BTN_OUTLINE}>
+                  Vedi tutti <ChevronRight className="w-4 h-4" aria-hidden="true" />
                 </Link>
               </div>
             </div>
 
-            <div className="p-4">
+            <div className="p-3">
               {stats?.today_appointments?.length > 0 ? (
                 <div className="space-y-2">
                   {stats.today_appointments.map((apt) => (
@@ -890,52 +711,41 @@ export default function Dashboard() {
                       type="button"
                       onClick={() => navigate('/planning')}
                       data-testid={`appointment-${apt.id}`}
-                      className="appt-row flex items-center gap-3 w-full p-3 rounded-xl transition-all text-left glass-card hover:bg-white/10"
+                      className={`${ROW} w-full text-left min-h-[44px] transition-colors hover:bg-[color-mix(in_srgb,var(--admin-primary)_12%,transparent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--admin-primary)]`}
                     >
-                      <ClientAvatar name={apt.client_name} size="sm" />
-                      <div className="flex-shrink-0 text-center w-12">
-                        <p className="text-sm font-bold" style={{ color: 'var(--admin-primary)' }}>{apt.time}</p>
-                        <p className="text-[10px] text-white/35">{apt.end_time}</p>
+                      <ClientAvatar name={apt.client_name} size="lg" />
+                      <div className="shrink-0 text-center w-14">
+                        <p className="text-base font-bold text-[color:var(--admin-primary)]">{apt.time}</p>
+                        <p className={`text-sm ${MUTED}`}>{apt.end_time}</p>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-white text-sm truncate">{apt.client_name}</p>
-                        <p className="text-xs text-white/45 truncate">{apt.services.map(s => s.name).join(', ')}</p>
+                        <p className="font-bold text-base truncate text-[color:var(--admin-content-text)]">{apt.client_name}</p>
+                        <p className={`text-sm truncate ${MUTED}`}>{apt.services.map(s => s.name).join(', ')}</p>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="font-bold text-white text-sm">€{apt.total_price}</p>
-                        <p className="text-[10px] text-white/35">{apt.total_duration} min</p>
+                        <p className="font-bold text-base text-[color:var(--admin-content-text)]">€{apt.total_price}</p>
+                        <p className={`text-sm ${MUTED}`}>{apt.total_duration} min</p>
                       </div>
                     </button>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 rounded-2xl bg-white/8 flex items-center justify-center mx-auto mb-3 float">
-                    <Calendar className="w-8 h-8 text-white/30" strokeWidth={1} />
-                  </div>
-                  <p className="text-white/35 text-sm">Nessun appuntamento per oggi</p>
-                  <Link to="/appointments">
-                    <button className="mt-4 text-xs px-5 py-2 rounded-xl border font-semibold transition-all hover:bg-white/10" style={{ borderColor: 'color-mix(in srgb, var(--admin-primary) 50%, transparent)', color: 'var(--admin-primary)' }}>
-                      Prenota ora
-                    </button>
-                  </Link>
+                <div className="text-center py-10">
+                  <Calendar className="w-10 h-10 mx-auto mb-3 text-[color:var(--admin-primary)] opacity-60" strokeWidth={1.5} aria-hidden="true" />
+                  <p className={`text-base ${MUTED}`}>Nessun appuntamento per oggi</p>
+                  <Link to="/appointments" className={`${BTN_OUTLINE} mt-4`}>Prenota ora</Link>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Prossimi appuntamenti */}
-          <div className="lg:col-span-4 rounded-2xl overflow-hidden shadow-lg" style={{ background: 'linear-gradient(135deg, #0C4A6E, #164E63)' }}>
-            <div className="px-5 py-4 flex items-center gap-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-              <div className="w-2.5 h-2.5 rounded-full bg-teal-400 animate-pulse" />
-              <h2 className="font-display text-lg font-bold text-white">Prossimi</h2>
-              {stats?.upcoming_appointments?.length > 0 && (
-                <span className="text-xs bg-teal-500/25 text-teal-300 px-2 py-0.5 rounded-full font-bold ml-auto">
-                  {stats.upcoming_appointments.length}
-                </span>
-              )}
+          <div className={`lg:col-span-4 ${CARD} overflow-hidden`}>
+            <div className={CARD_HEAD}>
+              <div className={ICON_BOX_ACCENT}><Clock className="w-5 h-5" aria-hidden="true" /></div>
+              <h2 className={TITLE}>Prossimi</h2>
+              {stats?.upcoming_appointments?.length > 0 && <span className={`${BADGE} ml-auto`}>{stats.upcoming_appointments.length}</span>}
             </div>
-            <div className="p-4">
+            <div className="p-3">
               {stats?.upcoming_appointments?.length > 0 ? (
                 <div className="space-y-1">
                   {stats.upcoming_appointments.slice(0, 6).map((apt) => (
@@ -943,71 +753,57 @@ export default function Dashboard() {
                       key={apt.id}
                       type="button"
                       onClick={() => navigate('/planning')}
-                      className="flex items-center gap-3 py-2.5 px-2 w-full text-left rounded-xl transition-all hover:bg-white/10 group"
+                      className="flex items-center gap-3 py-2 px-2 min-h-[44px] w-full text-left rounded-xl transition-colors hover:bg-[color-mix(in_srgb,var(--admin-primary)_8%,transparent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--admin-primary)]"
                     >
-                      <ClientAvatar name={apt.client_name} size="xs" />
+                      <ClientAvatar name={apt.client_name} size="lg" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-white truncate">{apt.client_name}</p>
-                        <p className="text-xs text-white/45">{format(new Date(apt.date), "dd/MM/yy")} · {apt.time}</p>
+                        <p className="text-base font-bold truncate text-[color:var(--admin-content-text)]">{apt.client_name}</p>
+                        <p className={`text-sm ${MUTED}`}>{format(new Date(apt.date), "dd/MM/yy")} · {apt.time}</p>
                       </div>
-                      <ChevronRight className="w-3.5 h-3.5 text-white/20 group-hover:text-white/50 transition-colors flex-shrink-0" />
+                      <ChevronRight className={`w-4 h-4 shrink-0 ${MUTED}`} aria-hidden="true" />
                     </button>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-10">
-                  <p className="text-sm text-white/30">Nessun appuntamento in programma</p>
+                <div className="text-center py-8">
+                  <p className={`text-base ${MUTED}`}>Nessun appuntamento in programma</p>
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* ══════════════════════════════════════════════════════════════
-            VIP + SCADENZE COLORE
-        ══════════════════════════════════════════════════════════════ */}
+        {/* ── VIP + scadenze colore ────────────────────────────────── */}
         {(topClients.length > 0 || colorExpiry.length > 0) && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-            {/* Top Clienti VIP */}
             {topClients.length > 0 && (
-              <div
-                className="rounded-2xl overflow-hidden shadow-md"
-                style={{
-                  background: 'var(--admin-content-bg)',
-                  border: '1px solid color-mix(in srgb, var(--admin-content-text) 10%, transparent)',
-                }}
-              >
-                <div className="flex items-center gap-2.5 px-5 py-4" style={{ borderBottom: '1px solid color-mix(in srgb, var(--admin-content-text) 8%, transparent)' }}>
-                  <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center">
-                    <Star className="w-4 h-4 text-amber-500" />
-                  </div>
-                  <h2 className="font-display text-lg font-bold" style={{ color: 'var(--admin-content-text)' }}>Clienti VIP</h2>
-                  <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold ml-auto">Top {topClients.length}</span>
+              <div className={`${CARD} overflow-hidden`}>
+                <div className={CARD_HEAD}>
+                  <div className={ICON_BOX_ACCENT}><Star className="w-5 h-5" aria-hidden="true" /></div>
+                  <h2 className={TITLE}>Clienti VIP</h2>
+                  <span className={`${BADGE} ml-auto`}>Top {topClients.length}</span>
                 </div>
                 <div className="p-4 space-y-3">
                   {topClients.map((c, i) => (
                     <div key={i} className="flex items-center gap-3">
-                      <span
-                        className="text-xs font-black w-5 shrink-0 text-center"
-                        style={{ color: i === 0 ? '#F59E0B' : i === 1 ? '#94A3B8' : i === 2 ? '#CD7C2F' : 'color-mix(in srgb, var(--admin-content-text) 30%, transparent)' }}
-                      >
+                      <span className={`text-base font-black w-5 shrink-0 text-center ${i === 0 ? 'text-[color:var(--admin-primary)]' : MUTED}`}>
                         {i + 1}
                       </span>
-                      <ClientAvatar name={c.name} size="sm" />
+                      <ClientAvatar name={c.name} size="lg" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
-                          <p className="text-sm font-bold truncate" style={{ color: 'var(--admin-content-text)' }}>{c.name}</p>
-                          <span className="text-sm font-black text-emerald-600 shrink-0 ml-2">€{c.total.toFixed(0)}</span>
+                          <p className="text-base font-bold truncate text-[color:var(--admin-content-text)]">{c.name}</p>
+                          <span className="text-base font-black shrink-0 ml-2 text-[color:var(--admin-content-text)]">€{c.total.toFixed(0)}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'color-mix(in srgb, var(--admin-content-text) 10%, transparent)' }}>
+                          <div className="flex-1 h-2 rounded-full overflow-hidden bg-[color-mix(in_srgb,var(--admin-content-text)_10%,transparent)]">
                             <div
                               className="h-full rounded-full"
-                              style={{ width: `${c.percent}%`, background: i === 0 ? 'linear-gradient(90deg, #F59E0B, #FBBF24)' : i === 1 ? 'linear-gradient(90deg, #94A3B8, #CBD5E1)' : 'linear-gradient(90deg, var(--admin-primary), color-mix(in srgb, var(--admin-primary) 60%, white))' }}
+                              style={{ width: `${c.percent}%`, background: i === 0 ? 'var(--admin-primary)' : 'color-mix(in srgb, var(--admin-primary) 55%, white)' }}
                             />
                           </div>
-                          <span className="text-[10px] shrink-0" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 40%, transparent)' }}>{c.visits} visite</span>
+                          <span className={`text-sm shrink-0 ${MUTED}`}>{c.visits} visite</span>
                         </div>
                       </div>
                     </div>
@@ -1016,21 +812,12 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* Scadenze Colore */}
             {colorExpiry.length > 0 && (
-              <div
-                className="rounded-2xl overflow-hidden shadow-md"
-                style={{
-                  background: 'var(--admin-content-bg)',
-                  border: '1px solid color-mix(in srgb, #D4AF7A 18%, transparent)',
-                }}
-              >
-                <div className="flex items-center gap-2.5 px-5 py-4" style={{ borderBottom: '1px solid color-mix(in srgb, #D4AF7A 12%, transparent)' }}>
-                  <div className="w-8 h-8 rounded-xl bg-[#D4AF7A]/15 flex items-center justify-center">
-                    <Sparkles className="w-4 h-4 text-[#B8860B]" />
-                  </div>
-                  <h2 className="font-display text-lg font-bold" style={{ color: 'var(--admin-content-text)' }}>Scadenze Colore</h2>
-                  <span className="text-xs bg-[#D4AF7A]/15 text-[#8A6D3B] px-2 py-0.5 rounded-full font-bold ml-auto">
+              <div className={`${CARD} overflow-hidden`}>
+                <div className={`${CARD_HEAD} flex-wrap`}>
+                  <div className={ICON_BOX_ACCENT}><Sparkles className="w-5 h-5" aria-hidden="true" /></div>
+                  <h2 className={TITLE}>Scadenze Colore</h2>
+                  <span className={`${BADGE} ml-auto`}>
                     {colorExpiry.filter(c => !c.already_sent).length} da contattare
                   </span>
                 </div>
@@ -1043,19 +830,19 @@ export default function Dashboard() {
                     const nextWeek = colorExpiry.filter(c => { const d = new Date(c.due_date); return d >= weekEnd && d < nextWeekEnd; });
                     const later = colorExpiry.filter(c => new Date(c.due_date) >= nextWeekEnd);
                     return (
-                      <div className="space-y-3">
+                      <div className="space-y-4">
                         {thisWeek.length > 0 && (
                           <div>
-                            <p className="text-[10px] font-black text-[#8A6D3B] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                              <span className="w-2 h-2 rounded-full bg-[#B8860B] inline-block" />
+                            <p className="text-base font-bold text-[color:var(--admin-content-text)] mb-2 flex items-center gap-2">
+                              <span className="w-2.5 h-2.5 rounded-full bg-[color:var(--admin-primary)] inline-block" aria-hidden="true" />
                               Questa settimana ({thisWeek.length})
                             </p>
-                            <div className="space-y-1.5">
+                            <div className="space-y-2">
                               {thisWeek.slice(0,4).map((c,i) => (
-                                <div key={i} className={`flex items-center gap-2 px-3 py-2 rounded-xl ${c.already_sent ? 'bg-gray-50 opacity-60' : 'bg-[#D4AF7A]/10 border border-[#D4AF7A]/25'}`}>
-                                  <ClientAvatar name={c.client_name} size="xs" />
-                                  <span className="text-sm font-semibold flex-1 truncate" style={{ color: 'var(--admin-content-text)' }}>{c.client_name}</span>
-                                  {c.already_sent && <span className="text-[10px] text-gray-400">inviato ✓</span>}
+                                <div key={i} className={`${ROW} ${c.already_sent ? 'opacity-60' : ''}`}>
+                                  <ClientAvatar name={c.client_name} size="lg" />
+                                  <span className="text-base font-semibold flex-1 truncate text-[color:var(--admin-content-text)]">{c.client_name}</span>
+                                  {c.already_sent && <span className={`text-sm ${MUTED}`}>inviato ✓</span>}
                                 </div>
                               ))}
                             </div>
@@ -1063,30 +850,25 @@ export default function Dashboard() {
                         )}
                         {nextWeek.length > 0 && (
                           <div>
-                            <p className="text-[10px] font-black text-indigo-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                              <span className="w-2 h-2 rounded-full bg-indigo-400 inline-block" />
+                            <p className="text-base font-bold text-[color:var(--admin-content-text)] mb-2 flex items-center gap-2">
+                              <span className="w-2.5 h-2.5 rounded-full bg-[color:var(--admin-accent)] inline-block" aria-hidden="true" />
                               Settimana prossima ({nextWeek.length})
                             </p>
-                            <div className="space-y-1.5">
+                            <div className="space-y-2">
                               {nextWeek.slice(0,3).map((c,i) => (
-                                <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-50 border border-indigo-100">
-                                  <ClientAvatar name={c.client_name} size="xs" />
-                                  <span className="text-sm flex-1 truncate" style={{ color: 'var(--admin-content-text)' }}>{c.client_name}</span>
+                                <div key={i} className={`${ROW} bg-[color-mix(in_srgb,var(--admin-accent)_12%,transparent)]`}>
+                                  <ClientAvatar name={c.client_name} size="lg" />
+                                  <span className="text-base flex-1 truncate text-[color:var(--admin-content-text)]">{c.client_name}</span>
                                 </div>
                               ))}
                             </div>
                           </div>
                         )}
                         {later.length > 0 && (
-                          <p className="text-xs text-center" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 40%, transparent)' }}>
-                            + {later.length} altri nei prossimi giorni
-                          </p>
+                          <p className={`text-sm text-center ${MUTED}`}>+ {later.length} altri nei prossimi giorni</p>
                         )}
-                        <button
-                          onClick={() => navigate('/reminders')}
-                          className="w-full text-xs font-bold text-[#B8860B] hover:text-[#8A6D3B] text-center transition-colors hover:underline pt-1"
-                        >
-                          Gestisci tutti i promemoria colore →
+                        <button type="button" onClick={() => navigate('/reminders')} className={`${BTN_OUTLINE} w-full`}>
+                          Gestisci tutti i promemoria colore <ChevronRight className="w-4 h-4" aria-hidden="true" />
                         </button>
                       </div>
                     );
@@ -1126,117 +908,98 @@ export default function Dashboard() {
       const _dailyNeeded = _daysLeft > 0 ? _remaining / _daysLeft : 0;
       const _dailyAvg = _dayOfMonth > 0 ? monthlyRevenue / _dayOfMonth : 0;
       const monthName = _today.toLocaleString('it-IT', { month: 'long' });
+      const STAT = 'p-3 rounded-xl bg-[color-mix(in_srgb,var(--admin-content-text)_5%,transparent)]';
+      const STAT_LABEL = `text-sm font-semibold mb-1 ${MUTED}`;
       return (
         <div
           className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-4"
-          style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
+          style={{ background: 'rgba(0,0,0,0.55)' }}
           onClick={() => setShowTargetModal(false)}
         >
           <div
-            className="w-full max-w-sm rounded-3xl p-6 shadow-2xl"
-            style={{ background: 'var(--admin-card-bg)', border: '1px solid color-mix(in srgb, var(--admin-content-text) 10%, transparent)' }}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Obiettivo ${monthName}`}
+            className="w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-2xl p-5 shadow-2xl"
+            style={{ background: 'var(--admin-card-bg, var(--admin-content-bg, #fff))', border: '1px solid color-mix(in srgb, var(--admin-content-text, #2D1B14) 15%, transparent)' }}
             onClick={e => e.stopPropagation()}
           >
-            {/* Header */}
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-                  style={{ background: monthlyPct >= 100 ? 'rgba(16,185,129,0.15)' : 'color-mix(in srgb, var(--admin-accent) 15%, transparent)' }}>
-                  <Target className="w-5 h-5" style={{ color: monthlyPct >= 100 ? '#10B981' : 'var(--admin-accent)' }} />
+            <div className="flex items-center justify-between mb-5 gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className={monthlyPct >= 100 ? `${ICON_BOX} !bg-emerald-100 !text-emerald-700` : ICON_BOX}>
+                  <Target className="w-5 h-5" aria-hidden="true" />
                 </div>
-                <div>
-                  <p className="font-black text-base" style={{ color: 'var(--admin-content-text)' }}>Obiettivo {monthName}</p>
-                  <p className="text-xs" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 50%, transparent)' }}>
-                    giorno {_dayOfMonth} / {_daysInMonth}
-                  </p>
+                <div className="min-w-0">
+                  <p className="font-black text-lg text-[color:var(--admin-content-text)]">Obiettivo {monthName}</p>
+                  <p className={`text-sm ${MUTED}`}>giorno {_dayOfMonth} / {_daysInMonth}</p>
                 </div>
               </div>
-              <button onClick={() => setShowTargetModal(false)}
-                className="w-8 h-8 rounded-full flex items-center justify-center"
-                style={{ background: 'color-mix(in srgb, var(--admin-content-text) 8%, transparent)' }}>
-                <X className="w-4 h-4" style={{ color: 'var(--admin-content-text)' }} />
+              <button type="button" onClick={() => setShowTargetModal(false)} className={BTN_ICON} aria-label="Chiudi">
+                <X className="w-5 h-5" aria-hidden="true" />
               </button>
             </div>
 
-            {/* Cifre + barra */}
             <div className="mb-2 flex items-end justify-between">
-              <span className="text-4xl font-black" style={{ color: monthlyPct >= 100 ? '#10B981' : 'var(--admin-accent)' }}>
+              <span className={`text-4xl font-black ${monthlyPct >= 100 ? 'text-emerald-700' : 'text-[color:var(--admin-content-text)]'}`}>
                 €{monthlyRevenue.toFixed(0)}
               </span>
-              <span className="text-xl font-bold mb-1" style={{ color: 'color-mix(in srgb, var(--admin-content-text) 40%, transparent)' }}>
-                / €{monthlyTarget.toFixed(0)}
-              </span>
+              <span className={`text-xl font-bold mb-1 ${MUTED}`}>/ €{monthlyTarget.toFixed(0)}</span>
             </div>
-            <div className="h-4 rounded-full overflow-hidden mb-1"
-              style={{ background: 'color-mix(in srgb, var(--admin-content-text) 10%, transparent)' }}>
-              <div className="h-full rounded-full transition-all duration-700 relative"
-                style={{
-                  width: `${monthlyPct}%`,
-                  background: monthlyPct >= 100
-                    ? 'linear-gradient(90deg, #10B981, #059669)'
-                    : 'linear-gradient(90deg, var(--admin-accent), var(--admin-primary))',
-                  minWidth: monthlyPct > 0 ? '16px' : '0',
-                }}>
-                <div className="absolute inset-0 rounded-full opacity-40"
-                  style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.4) 0%, transparent 100%)' }} />
-              </div>
+            <div className="h-4 rounded-full overflow-hidden mb-1 bg-[color-mix(in_srgb,var(--admin-content-text)_10%,transparent)]">
+              <div
+                className="h-full rounded-full transition-all duration-700 motion-reduce:transition-none"
+                style={{ width: `${monthlyPct}%`, background: monthlyPct >= 100 ? '#059669' : 'var(--admin-primary)', minWidth: monthlyPct > 0 ? '16px' : '0' }}
+              />
             </div>
-            <p className="text-right text-sm font-black mb-5"
-              style={{ color: monthlyPct >= 100 ? '#10B981' : 'var(--admin-accent)' }}>
+            <p className={`text-right text-base font-black mb-5 ${monthlyPct >= 100 ? 'text-emerald-700' : 'text-[color:var(--admin-primary)]'}`}>
               {monthlyPct}% completato
             </p>
 
-            {/* Griglia statistiche */}
             <div className="grid grid-cols-2 gap-3 mb-4">
-              <div className="p-3 rounded-2xl" style={{ background: 'color-mix(in srgb, var(--admin-content-text) 5%, transparent)' }}>
-                <p className="text-[10px] font-bold uppercase tracking-wider mb-1"
-                  style={{ color: 'color-mix(in srgb, var(--admin-content-text) 45%, transparent)' }}>Media/giorno</p>
-                <p className="text-xl font-black" style={{ color: 'var(--admin-content-text)' }}>€{_dailyAvg.toFixed(0)}</p>
+              <div className={STAT}>
+                <p className={STAT_LABEL}>Media/giorno</p>
+                <p className="text-xl font-black text-[color:var(--admin-content-text)]">€{_dailyAvg.toFixed(0)}</p>
               </div>
-              <div className="p-3 rounded-2xl" style={{ background: 'color-mix(in srgb, var(--admin-content-text) 5%, transparent)' }}>
-                <p className="text-[10px] font-bold uppercase tracking-wider mb-1"
-                  style={{ color: 'color-mix(in srgb, var(--admin-content-text) 45%, transparent)' }}>Giorni rimasti</p>
-                <p className="text-xl font-black" style={{ color: 'var(--admin-content-text)' }}>{_daysLeft}</p>
+              <div className={STAT}>
+                <p className={STAT_LABEL}>Giorni rimasti</p>
+                <p className="text-xl font-black text-[color:var(--admin-content-text)]">{_daysLeft}</p>
               </div>
               {monthlyPct < 100 && (
-                <div className="p-3 rounded-2xl" style={{ background: 'color-mix(in srgb, var(--admin-content-text) 5%, transparent)' }}>
-                  <p className="text-[10px] font-bold uppercase tracking-wider mb-1"
-                    style={{ color: 'color-mix(in srgb, var(--admin-content-text) 45%, transparent)' }}>Mancante</p>
-                  <p className="text-xl font-black text-rose-500">€{_remaining.toFixed(0)}</p>
+                <div className={STAT}>
+                  <p className={STAT_LABEL}>Mancante</p>
+                  <p className="text-xl font-black text-red-700">€{_remaining.toFixed(0)}</p>
                 </div>
               )}
               {monthlyPct < 100 && _daysLeft > 0 && (
-                <div className="p-3 rounded-2xl" style={{ background: 'color-mix(in srgb, var(--admin-content-text) 5%, transparent)' }}>
-                  <p className="text-[10px] font-bold uppercase tracking-wider mb-1"
-                    style={{ color: 'color-mix(in srgb, var(--admin-content-text) 45%, transparent)' }}>Serve/giorno</p>
-                  <p className="text-xl font-black" style={{ color: _dailyNeeded > _dailyAvg ? '#f97316' : '#10B981' }}>
+                <div className={STAT}>
+                  <p className={STAT_LABEL}>Serve/giorno</p>
+                  <p className={`text-xl font-black ${_dailyNeeded > _dailyAvg ? 'text-red-700' : 'text-emerald-700'}`}>
                     €{_dailyNeeded.toFixed(0)}
                   </p>
                 </div>
               )}
             </div>
 
-            {/* Banner stato */}
             {monthlyPct >= 100 ? (
-              <div className="p-3 rounded-2xl text-center" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)' }}>
-                <p className="font-black text-emerald-600">Obiettivo raggiunto!</p>
-                <p className="text-xs text-emerald-700 mt-0.5">Ottimo lavoro questo mese</p>
+              <div className="p-3 rounded-xl text-center bg-emerald-50 border border-emerald-200">
+                <p className="font-black text-emerald-700">Obiettivo raggiunto!</p>
+                <p className="text-sm text-emerald-800 mt-0.5">Ottimo lavoro questo mese</p>
               </div>
             ) : projectedRevenue >= monthlyTarget ? (
-              <div className="p-3 rounded-2xl" style={{ background: 'rgba(251,146,60,0.1)', border: '1px solid rgba(251,146,60,0.25)' }}>
+              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <Flame className="w-4 h-4 text-orange-500" />
-                  <p className="font-bold text-orange-600 text-sm">Sei in anticipo sul target!</p>
+                  <Flame className="w-5 h-5 text-emerald-700" aria-hidden="true" />
+                  <p className="font-bold text-emerald-700 text-base">Sei in anticipo sul target!</p>
                 </div>
-                <p className="text-xs text-orange-700">Proiezione fine mese: €{projectedRevenue.toFixed(0)}</p>
+                <p className="text-sm text-emerald-800">Proiezione fine mese: €{projectedRevenue.toFixed(0)}</p>
               </div>
             ) : projectedRevenue > 0 ? (
-              <div className="p-3 rounded-2xl" style={{ background: 'color-mix(in srgb, var(--admin-accent) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--admin-accent) 20%, transparent)' }}>
+              <div className="p-3 rounded-xl bg-red-50 border border-red-200">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <TrendingDown className="w-4 h-4" style={{ color: 'var(--admin-accent)' }} />
-                  <p className="font-bold text-sm" style={{ color: 'var(--admin-accent)' }}>Proiezione sotto target</p>
+                  <TrendingDown className="w-5 h-5 text-red-700" aria-hidden="true" />
+                  <p className="font-bold text-base text-red-700">Proiezione sotto target</p>
                 </div>
-                <p className="text-xs" style={{ color: 'color-mix(in srgb, var(--admin-accent) 80%, #7a3000)' }}>
+                <p className="text-sm text-red-800">
                   A questo ritmo: €{projectedRevenue.toFixed(0)} — serve +€{(_dailyNeeded - _dailyAvg).toFixed(0)}/gg
                 </p>
               </div>
@@ -1246,5 +1009,25 @@ export default function Dashboard() {
       );
     })()}
     </>
+  );
+}
+
+/* ── Scheda avviso: stessa forma per tutti, rosso solo se urgente ── */
+function AlertTile({ onClick, title, icon: Icon, count, label, urgent }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className={`${CARD} flex flex-col items-start gap-3 p-4 min-h-[44px] text-left transition-colors hover:border-[color:var(--admin-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--admin-primary)]`}
+    >
+      <div className={urgent ? `${ICON_BOX} !bg-red-100 !text-red-700` : ICON_BOX}>
+        <Icon className="w-5 h-5" aria-hidden="true" />
+      </div>
+      <div className="min-w-0">
+        <p className={`text-2xl font-black ${urgent ? 'text-red-700' : 'text-[color:var(--admin-content-text)]'}`}>{count}</p>
+        <p className={`text-base font-semibold mt-1 ${MUTED}`}>{label}</p>
+      </div>
+    </button>
   );
 }
