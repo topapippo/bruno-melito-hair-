@@ -186,7 +186,7 @@ export default function ServicesPage() {
               <Scissors className="w-5 h-5 text-white" />
             </div>
             <div className="min-w-0">
-              <h1 className="font-display text-3xl font-medium text-[#2D1B14]">Servizi</h1>
+              <h1 className="font-display text-3xl font-medium adm-text">Servizi</h1>
               <p className="text-sm mt-0.5" style={adminTextMuted}>{services.length} servizi disponibili</p>
             </div>
           </div>
@@ -235,7 +235,7 @@ export default function ServicesPage() {
                       className="w-3 h-3 rounded-full"
                       style={{ backgroundColor: category.color }}
                     />
-                    <h2 className="font-display text-xl text-[#2D1B14]">{category.label}</h2>
+                    <h2 className="font-display text-xl adm-text">{category.label}</h2>
                     <Badge variant="outline" className="ml-2 text-sm min-h-7 px-2.5" style={{ borderColor: adminBorder, ...adminTextMuted }}>
                       {categoryServices.length}
                     </Badge>
@@ -246,7 +246,7 @@ export default function ServicesPage() {
                       aria-label={`Modifica la categoria ${category.label}`}
                       onClick={() => setCatDialogOpen(true)}
                       data-testid={`edit-category-${category.value}`}
-                      className={`${BTN_ICON} hover:text-[var(--admin-primary,#C8617A)]`}
+                      className={`${BTN_ICON} adm-hover-primary`}
                       style={adminTextMuted}
                     >
                       <Edit2 className="w-4 h-4" />
@@ -267,12 +267,12 @@ export default function ServicesPage() {
                             <div className="flex items-start gap-3">
                               <div className="w-3 h-3 rounded-full mt-2 shrink-0" style={{ backgroundColor: service.color || category.color }} />
                               <div>
-                                <h3 className="font-medium text-[#2D1B14] text-lg break-words">{service.name}</h3>
+                                <h3 className="font-medium adm-text text-lg break-words">{service.name}</h3>
                                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-sm whitespace-nowrap" style={adminTextMuted}>
                                   <span className="flex items-center gap-1">
                                     <Clock className="w-4 h-4" /> {service.duration} min
                                   </span>
-                                  <span className="flex items-center gap-1 font-semibold text-[#2D1B14]">
+                                  <span className="flex items-center gap-1 font-semibold adm-text">
                                     <Euro className="w-4 h-4" /> {service.price.toFixed(2)}
                                   </span>
                                 </div>
@@ -284,7 +284,7 @@ export default function ServicesPage() {
                                 variant="ghost"
                                 aria-label={`Modifica ${service.name}`}
                                 onClick={() => handleEdit(service)}
-                                className={`${BTN_ICON} hover:text-[var(--admin-primary,#C8617A)]`}
+                                className={`${BTN_ICON} adm-hover-primary`}
                                 style={adminTextMuted}
                               >
                                 <Edit2 className="w-4 h-4" />
@@ -317,7 +317,7 @@ export default function ServicesPage() {
           <Card className="rounded-2xl shadow-none" style={adminCardStyle}>
             <CardContent className="py-16 text-center">
               <Scissors className="w-16 h-16 mx-auto mb-4" style={{ color: mix('var(--admin-primary, #C8617A)', 35) }} strokeWidth={1.5} />
-              <h3 className="font-display text-xl text-[#2D1B14] mb-2">Nessun servizio</h3>
+              <h3 className="font-display text-xl adm-text mb-2">Nessun servizio</h3>
               <p className="mb-4" style={adminTextMuted}>Aggiungi i tuoi servizi per iniziare</p>
               <Button
                 onClick={openNewDialog}
@@ -334,7 +334,7 @@ export default function ServicesPage() {
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle className="font-display text-2xl text-[#2D1B14]">
+              <DialogTitle className="font-display text-2xl adm-text">
                 {editingService ? 'Modifica Servizio' : 'Nuovo Servizio'}
               </DialogTitle>
             </DialogHeader>
@@ -346,7 +346,7 @@ export default function ServicesPage() {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Es. Taglio Donna"
                   data-testid="service-name-input"
-                  className="h-11 text-sm bg-[#FAF7F2] border-transparent focus:border-[var(--admin-primary,#C8617A)]"
+                  className="h-11 text-sm adm-soft border-transparent adm-focus-primary"
                   required
                 />
               </div>
@@ -389,7 +389,7 @@ export default function ServicesPage() {
                     value={formData.sort_order}
                     onChange={(e) => setFormData({ ...formData, sort_order: parseInt(e.target.value) || 0 })}
                     data-testid="service-sort-order-input"
-                    className="h-11 text-sm bg-[#FAF7F2] border-transparent focus:border-[var(--admin-primary,#C8617A)]"
+                    className="h-11 text-sm adm-soft border-transparent adm-focus-primary"
                   />
                 </div>
                 <div className="space-y-2">
@@ -401,7 +401,7 @@ export default function ServicesPage() {
                     value={formData.duration}
                     onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) || 0 })}
                     data-testid="service-duration-input"
-                    className="h-11 text-sm bg-[#FAF7F2] border-transparent focus:border-[var(--admin-primary,#C8617A)]"
+                    className="h-11 text-sm adm-soft border-transparent adm-focus-primary"
                   />
                 </div>
                 <div className="space-y-2">
@@ -413,7 +413,7 @@ export default function ServicesPage() {
                     value={formData.price}
                     onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
                     data-testid="service-price-input"
-                    className="h-11 text-sm bg-[#FAF7F2] border-transparent focus:border-[var(--admin-primary,#C8617A)]"
+                    className="h-11 text-sm adm-soft border-transparent adm-focus-primary"
                   />
                 </div>
               </div>
