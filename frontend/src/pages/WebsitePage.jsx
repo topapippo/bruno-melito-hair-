@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import api, { API } from '../lib/api';
 import { getMediaUrl, optimizeCloudinaryVideo } from '../lib/mediaUrl';
 import { Button } from '@/components/ui/button';
@@ -9,11 +9,14 @@ import { toast } from 'sonner';
 import { groupServicesByCategory } from '../lib/categories';
 import { SOCIAL_LINKS } from '../lib/websiteConstants';
 
+// Sezioni caricate solo quando servono (split del codice)
+const PageSpinner = () => <div className="min-h-screen flex items-center justify-center bg-[#FDF8F5]"><div className="w-9 h-9 border-4 border-[#C8617A] border-t-transparent rounded-full animate-spin" /></div>;
+const withSuspense = (Lazy, Fallback = () => null) => (props) => <Suspense fallback={<Fallback />}><Lazy {...props} /></Suspense>;
 // Extracted components
-import BookingForm from '../components/website/BookingForm';
-import BookingSuccess from '../components/website/BookingSuccess';
-import MyAppointmentsModal from '../components/website/MyAppointmentsModal';
-import TrendGallery from '../components/website/TrendGallery';
+const BookingForm = withSuspense(lazy(() => import('../components/website/BookingForm')), PageSpinner);
+const BookingSuccess = withSuspense(lazy(() => import('../components/website/BookingSuccess')), PageSpinner);
+const MyAppointmentsModal = withSuspense(lazy(() => import('../components/website/MyAppointmentsModal')));
+const TrendGallery = withSuspense(lazy(() => import('../components/website/TrendGallery')));
 import CollapsibleReveal from '../components/website/CollapsibleReveal';
 import BackToPreviousSection from '../components/website/BackToPreviousSection';
 import CinematicInterlude from '../components/website/sections/CinematicInterlude';

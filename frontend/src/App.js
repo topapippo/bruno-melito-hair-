@@ -8,11 +8,11 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
 
 // Pagine pubbliche — caricate subito (nessun login richiesto)
-import LoginPage from "./pages/LoginPage";
+const LoginPage = lazy(() => import("./pages/LoginPage"));
 import WebsitePage from "./pages/WebsitePage";
-import ConfirmAppointmentPage from "./pages/ConfirmAppointmentPage";
-import ReceiptPage from "./pages/ReceiptPage";
-import PrivacyPage from "./pages/PrivacyPage";
+const ConfirmAppointmentPage = lazy(() => import("./pages/ConfirmAppointmentPage"));
+const ReceiptPage = lazy(() => import("./pages/ReceiptPage"));
+const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 import PWAInstallBanner from "./components/PWAInstallBanner";
 
 // Pagine admin — lazy load: non vengono scaricate finché non servono
