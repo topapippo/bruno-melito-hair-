@@ -288,7 +288,7 @@ async def public_get_website():
         db.website_config.find_one(uid_filter, {"_id": 0, "user_id": 0}),
         db.website_reviews.find(uid_filter, {"_id": 0, "user_id": 0}).to_list(100),
         db.website_gallery.find({**uid_filter, "is_deleted": {"$ne": True}}, {"_id": 0, "user_id": 0}).sort("sort_order", 1).to_list(100),
-        db.services.find(uid_filter, {"_id": 0}).sort("sort_order", 1).to_list(1000),
+        db.services.find({**uid_filter, "hidden_online": {"$ne": True}}, {"_id": 0}).sort("sort_order", 1).to_list(1000),
         db.card_templates.find({**uid_filter, "is_deleted": {"$ne": True}}, {"_id": 0}).to_list(100),
         db.operators.find(uid_filter, {"_id": 0, "user_id": 0, "phone": 0}).to_list(50),
         db.promotions.find({**uid_filter, "active": True}, {"_id": 0, "user_id": 0}).to_list(20),
@@ -413,7 +413,7 @@ async def create_public_booking(request: Request, data: PublicBookingRequest, ba
     )
 
     # 5. Fetch services and calculate times
-    services = await db.services.find({"id": {"$in": data.service_ids}, "user_id": user_id}).to_list(100)
+    services = await db.services.find({"id": {"$in": data.service_ids}, "user_id": user_id, "hidden_online": {"$ne": True}}).to_list(100)
     if not services:
         raise HTTPException(status_code=400, detail="Servizi non validi")
 

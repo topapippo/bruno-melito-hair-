@@ -65,6 +65,7 @@ export default function ServicesPage() {
     color: '#0EA5E9',
     linked_inventory_id: '',
     is_smart_offer: false,
+    hidden_online: false,
     sort_order: 0,
   });
 
@@ -112,7 +113,7 @@ export default function ServicesPage() {
       }
       setDialogOpen(false);
       setEditingService(null);
-      setFormData({ name: '', category: CATEGORIES[0]?.value || 'altro', duration: 30, price: 0, color: '#0EA5E9', linked_inventory_id: '', is_smart_offer: false, sort_order: 0 });
+      setFormData({ name: '', category: CATEGORIES[0]?.value || 'altro', duration: 30, price: 0, color: '#0EA5E9', linked_inventory_id: '', is_smart_offer: false, hidden_online: false, sort_order: 0 });
       fetchServices();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Errore nel salvataggio');
@@ -131,6 +132,7 @@ export default function ServicesPage() {
       color: service.color || CATEGORIES.find(c => c.value === service.category)?.color || '#0EA5E9',
       linked_inventory_id: service.linked_inventory_id || '',
       is_smart_offer: service.is_smart_offer || false,
+      hidden_online: service.hidden_online || false,
       sort_order: service.sort_order || 0,
     });
     setDialogOpen(true);
@@ -151,7 +153,7 @@ export default function ServicesPage() {
 
   const openNewDialog = () => {
     setEditingService(null);
-    setFormData({ name: '', category: CATEGORIES[0]?.value || 'altro', duration: 30, price: 0, color: '#0EA5E9', linked_inventory_id: '', is_smart_offer: false, sort_order: 0 });
+    setFormData({ name: '', category: CATEGORIES[0]?.value || 'altro', duration: 30, price: 0, color: '#0EA5E9', linked_inventory_id: '', is_smart_offer: false, hidden_online: false, sort_order: 0 });
     setDialogOpen(true);
   };
 
@@ -441,6 +443,16 @@ export default function ServicesPage() {
                   className="w-4 h-4 accent-[#C8617A]"
                 />
                 <Label htmlFor="smart_offer" className="cursor-pointer">Offerta Smart (evidenziata sul sito)</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="hidden_online"
+                  checked={formData.hidden_online}
+                  onChange={(e) => setFormData({ ...formData, hidden_online: e.target.checked })}
+                  className="w-4 h-4 accent-[#C8617A]"
+                />
+                <Label htmlFor="hidden_online" className="cursor-pointer">Nascondi dalla prenotazione online</Label>
               </div>
               {formData.category !== 'colore' && (
                 <div className="space-y-2">
