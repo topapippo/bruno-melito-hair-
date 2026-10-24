@@ -21,6 +21,7 @@ const Dashboard        = lazy(() => import("./pages/Dashboard"));
 const StatsPage        = lazy(() => import("./pages/StatsPage"));
 const ClientsPage      = lazy(() => import("./pages/ClientsPage"));
 const ServicesPage     = lazy(() => import("./pages/ServicesPage"));
+const PrintPriceListPage = lazy(() => import("./pages/PrintPriceListPage"));
 const SettingsPage     = lazy(() => import("./pages/SettingsPage"));
 const AppointmentsPage = lazy(() => import("./pages/AppointmentsPage"));
 const OperatorsPage    = lazy(() => import("./pages/OperatorsPage"));
@@ -207,6 +208,15 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <ServicesPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/listino-stampa"
+            element={
+              <ProtectedRoute>
+                <PrintPriceListPage />
               </ProtectedRoute>
             }
           />

@@ -31,7 +31,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Scissors, Plus, Clock, Euro, Edit2, Trash2, Loader2, Tags } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Scissors, Plus, Clock, Euro, Edit2, Trash2, Loader2, Tags, Printer } from 'lucide-react';
 import { toast } from 'sonner';
 import { CATEGORIES, CATEGORY_ORDER, getCategoryInfo, useCategories } from '../lib/categories';
 import CategoriesManager from '../components/CategoriesManager';
@@ -201,6 +202,18 @@ export default function ServicesPage() {
             >
               <Tags className="w-5 h-5 mr-2" />
               Gestisci categorie
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              data-testid="print-price-list-btn"
+              className={`border-2 ${BTN}`}
+              style={adminBtnOutlineStyle}
+            >
+              <Link to="/listino-stampa">
+                <Printer className="w-5 h-5 mr-2" />
+                Stampa listino
+              </Link>
             </Button>
             <Button
               onClick={openNewDialog}
