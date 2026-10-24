@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import api, { API, getErrorMessage } from '../lib/api';
+import { useNavigate } from 'react-router-dom';
+import api, { API } from '../lib/api';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,130 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Settings, Save, Loader2, Clock, Building2, User, Lock, Unlock, Palette, Type, RotateCcw, Plus, Trash2, Check, Download, Share2, FileText, ChevronLeft, ChevronRight, CalendarDays, X, Image } from 'lucide-react';
+import { Settings, Save, Loader2, Clock, Building2, User, Lock, Unlock, Palette, Type, RotateCcw, Plus, Trash2, Check, Share2, ChevronLeft, ChevronRight, CalendarDays, X, Image } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
-
-function BackupButtons() {
-  const [loading, setLoading] = useState(false);
-  const [pdfLoading, setPdfLoading] = useState(false);
-
-  const runAndDownload = async () => {
-    setLoading(true);
-    try {
-      await api.post(`${API}/backup/run`);
-      const res = await api.get(`${API}/backup/download`, { responseType: 'blob' });
-      const blob = new Blob([res.data], { type: 'application/json' });
-      const date = new Date().toISOString().slice(0, 10);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `backup_${date}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success('Backup JSON scaricato sul PC');
-    } catch {
-      toast.error('Errore durante il backup');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const shareWhatsApp = async () => {
-    setLoading(true);
-    try {
-      await api.post(`${API}/backup/run`);
-      const res = await api.get(`${API}/backup/download`, { responseType: 'blob' });
-      const blob = new Blob([res.data], { type: 'application/json' });
-      const date = new Date().toISOString().slice(0, 10);
-      const filename = `backup_${date}.json`;
-      if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename)] })) {
-        await navigator.share({ files: [new File([blob], filename)], title: 'Backup Salone' });
-      } else {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(url);
-        toast('File scaricato. Aprilo e condividilo su WhatsApp.', { icon: '📲' });
-      }
-    } catch {
-      toast.error('Errore durante la condivisione');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const downloadPDF = async () => {
-    setPdfLoading(true);
-    try {
-      const res = await api.get(`${API}/backup/download-pdf`, { responseType: 'blob' });
-      const date = new Date().toISOString().slice(0, 10);
-      const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `backup_${date}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success('PDF scaricato sul PC');
-    } catch {
-      toast.error('Errore nella generazione del PDF');
-    } finally {
-      setPdfLoading(false);
-    }
-  };
-
-  const sharePDFWhatsApp = async () => {
-    setPdfLoading(true);
-    try {
-      const res = await api.get(`${API}/backup/download-pdf`, { responseType: 'blob' });
-      const date = new Date().toISOString().slice(0, 10);
-      const filename = `backup_${date}.pdf`;
-      const blob = new Blob([res.data], { type: 'application/pdf' });
-      if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename)] })) {
-        await navigator.share({ files: [new File([blob], filename)], title: 'Backup Salone PDF' });
-      } else {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(url);
-        toast('PDF scaricato. Aprilo e condividilo su WhatsApp.', { icon: '📲' });
-      }
-    } catch {
-      toast.error('Errore durante la condivisione PDF');
-    } finally {
-      setPdfLoading(false);
-    }
-  };
-
-  return (
-    <div className="flex flex-wrap gap-2">
-      <Button type="button" onClick={runAndDownload} disabled={loading} variant="outline"
-        className="border-[#C8617A] text-[#C8617A] hover:bg-[#C8617A]/10">
-        {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2" />}
-        Scarica JSON (PC)
-      </Button>
-      <Button type="button" onClick={shareWhatsApp} disabled={loading} variant="outline"
-        className="border-green-600 text-green-700 hover:bg-green-50">
-        {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Share2 className="w-4 h-4 mr-2" />}
-        JSON su WhatsApp
-      </Button>
-      <Button type="button" onClick={downloadPDF} disabled={pdfLoading} variant="outline"
-        className="border-red-500 text-red-600 hover:bg-red-50">
-        {pdfLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FileText className="w-4 h-4 mr-2" />}
-        Scarica PDF (PC)
-      </Button>
-      <Button type="button" onClick={sharePDFWhatsApp} disabled={pdfLoading} variant="outline"
-        className="border-green-700 text-green-800 hover:bg-green-50">
-        {pdfLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Share2 className="w-4 h-4 mr-2" />}
-        PDF su WhatsApp
-      </Button>
-    </div>
-  );
-}
 
 function CalendarSyncCard() {
   const [feedUrl, setFeedUrl] = useState('');
@@ -238,6 +118,7 @@ const MONTH_NAMES = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Lu
 
 export default function SettingsPage() {
   const { updateUser } = useAuth();
+  const navigate = useNavigate();
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -264,21 +145,8 @@ export default function SettingsPage() {
   const [editingBlock, setEditingBlock] = useState(null);
   const [cloudApiTest, setCloudApiTest] = useState(null);
   const [testingCloudApi, setTestingCloudApi] = useState(false);
-  const [cloudApiSendTest, setCloudApiSendTest] = useState({ phone: '', result: null, loading: false });
   const [templatesList, setTemplatesList] = useState({ loading: false, data: null, error: null });
-  const [createTemplate, setCreateTemplate] = useState({ loading: false, data: null, error: null });
   const [mergingDups, setMergingDups] = useState(false);
-  const [waDiag, setWaDiag] = useState({ loading: false, data: null });
-
-  const handleWaDiagnosi = async () => {
-    setWaDiag({ loading: true, data: null });
-    try {
-      const res = await api.get('/settings/whatsapp-diagnosi');
-      setWaDiag({ loading: false, data: res.data });
-    } catch {
-      setWaDiag({ loading: false, data: { verdetto: '❌ Impossibile eseguire la diagnosi. Riprova tra un momento.', controlli: [] } });
-    }
-  };
 
   const handleMergeDuplicates = async () => {
     if (!window.confirm('Unire tutti i clienti con lo stesso nome? Gli appuntamenti e i pagamenti dei duplicati verranno spostati su un unico cliente. Operazione consigliata, ma non reversibile.')) return;
@@ -333,30 +201,6 @@ export default function SettingsPage() {
     finally { setTestingCloudApi(false); }
   };
 
-  const sendCloudApiTestMessage = async () => {
-    if (!cloudApiSendTest.phone) return;
-    setCloudApiSendTest(p => ({ ...p, loading: true, result: null }));
-    try {
-      const res = await api.post(`${API}/settings/cloud-api-send-test`, { phone: cloudApiSendTest.phone });
-      setCloudApiSendTest(p => ({ ...p, result: res.data, loading: false }));
-    } catch (e) {
-      setCloudApiSendTest(p => ({ ...p, result: { ok: false, message: 'Errore server: ' + (e?.response?.data?.detail || e.message) }, loading: false }));
-    }
-  };
-
-  const registerCloudApiNumber = async () => {
-    const pin = window.prompt('Inserisci un PIN a 6 cifre (es. 123456). Verrà associato al numero Cloud API su Meta.');
-    if (!pin) return;
-    if (!/^\d{6}$/.test(pin)) { toast.error('PIN deve essere esattamente 6 cifre'); return; }
-    setCloudApiSendTest(p => ({ ...p, loading: true, result: null }));
-    try {
-      const res = await api.post(`${API}/settings/cloud-api-register-number`, { pin });
-      setCloudApiSendTest(p => ({ ...p, result: res.data, loading: false }));
-    } catch (e) {
-      setCloudApiSendTest(p => ({ ...p, result: { ok: false, message: 'Errore server: ' + (e?.response?.data?.detail || e.message) }, loading: false }));
-    }
-  };
-
   const fetchCloudApiTemplates = async () => {
     setTemplatesList({ loading: true, data: null, error: null });
     try {
@@ -368,32 +212,6 @@ export default function SettingsPage() {
       }
     } catch (e) {
       setTemplatesList({ loading: false, data: null, error: e?.response?.data?.detail || e.message });
-    }
-  };
-
-  const createCloudApiTemplate = async () => {
-    setCreateTemplate({ loading: true, data: null, error: null });
-    try {
-      const res = await api.post(`${API}/settings/cloud-api-create-template`);
-      setCreateTemplate({ loading: false, data: res.data, error: null });
-    } catch (e) {
-      setCreateTemplate({ loading: false, data: null, error: getErrorMessage(e) });
-    }
-  };
-
-  const sendCloudApiTemplateTest = async (templateName = 'promemoria_appuntamento', variables = null) => {
-    if (!cloudApiSendTest.phone) return;
-    setCloudApiSendTest(p => ({ ...p, loading: true, result: null }));
-    try {
-      const res = await api.post(`${API}/settings/cloud-api-send-template-test`, {
-        phone: cloudApiSendTest.phone,
-        template_name: templateName,
-        language_code: 'it',
-        ...(variables ? { variables } : {}),
-      });
-      setCloudApiSendTest(p => ({ ...p, result: res.data, loading: false }));
-    } catch (e) {
-      setCloudApiSendTest(p => ({ ...p, result: { ok: false, message: 'Errore server: ' + (e?.response?.data?.detail || e.message) }, loading: false }));
     }
   };
 
@@ -1096,63 +914,12 @@ export default function SettingsPage() {
 
           {/* Backup */}
           <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
-            <CardHeader>
-              <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
-                <Save className="w-5 h-5 text-[#C8617A]" />
-                Backup Dati
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-[#7C5C4A]">
-                Salva una copia di tutti i dati del salone sul tuo PC o condividila su WhatsApp.
-              </p>
-              <BackupButtons />
-            </CardContent>
-          </Card>
-
-          {/* Diagnosi WhatsApp — un click controlla tutto */}
-          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
-            <CardHeader>
-              <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
-                <Settings className="w-5 h-5 text-[#C8617A]" />
-                Diagnosi WhatsApp
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-[#7C5C4A]">
-                Controlla con un click se i messaggi WhatsApp possono partire e, in caso contrario, cosa fare.
-              </p>
-              <Button
-                type="button"
-                onClick={handleWaDiagnosi}
-                disabled={waDiag.loading}
-                className="bg-[#C8617A] hover:bg-[#A0404F] text-white"
-                data-testid="wa-diagnosi-btn"
-              >
-                {waDiag.loading ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Controllo in corso…</>
-                ) : (
-                  <><Check className="w-4 h-4 mr-2" /> Controlla WhatsApp</>
-                )}
+            <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
+              <p className="text-sm text-[#7C5C4A]">I backup si gestiscono nella pagina Backup</p>
+              <Button type="button" variant="outline" onClick={() => navigate('/backup')}
+                className="border-[#C8617A] text-[#C8617A] hover:bg-[#C8617A]/10">
+                <Save className="w-4 h-4 mr-2" /> Vai ai Backup
               </Button>
-
-              {waDiag.data && (
-                <div className="mt-2 space-y-3">
-                  <div className="rounded-lg border border-[#F0E6DC] bg-[#FBF7F3] p-3 text-sm font-semibold text-[#2D1B14]">
-                    {waDiag.data.verdetto}
-                  </div>
-                  {Array.isArray(waDiag.data.controlli) && waDiag.data.controlli.length > 0 && (
-                    <ul className="space-y-1.5">
-                      {waDiag.data.controlli.map((c, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm">
-                          <span className="shrink-0">{c.ok ? '✅' : '❌'}</span>
-                          <span className="text-[#2D1B14]"><b>{c.nome}:</b> {c.dettaglio}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              )}
             </CardContent>
           </Card>
 
@@ -1347,32 +1114,6 @@ export default function SettingsPage() {
               </div>
             )}
             <div className="border-t border-green-100 pt-4 space-y-2">
-              <Label className="text-[#2D1B14] font-semibold text-sm">Invia messaggio di prova</Label>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Es. 339 783 3526"
-                  value={cloudApiSendTest.phone}
-                  onChange={e => setCloudApiSendTest(p => ({ ...p, phone: e.target.value, result: null }))}
-                  className="border-green-200 focus:border-green-400"
-                />
-                <Button onClick={sendCloudApiTestMessage} disabled={cloudApiSendTest.loading || !cloudApiSendTest.phone} className="bg-green-600 hover:bg-green-700 text-white shrink-0">
-                  {cloudApiSendTest.loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Invia testo'}
-                </Button>
-                <Button onClick={() => sendCloudApiTemplateTest('promemoria_appuntamento')} disabled={cloudApiSendTest.loading || !cloudApiSendTest.phone} className="bg-emerald-700 hover:bg-emerald-800 text-white shrink-0" title="Invia il template promemoria_appuntamento con variabili di esempio">
-                  {cloudApiSendTest.loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Invia template'}
-                </Button>
-                <Button onClick={() => sendCloudApiTemplateTest('richiamo_inattivo', ['Test', '30'])} disabled={cloudApiSendTest.loading || !cloudApiSendTest.phone} className="bg-[#C8617A] hover:bg-[#a94f65] text-white shrink-0" title="Invia il template richiamo_inattivo (usato da Clienti Assenti) con variabili di esempio">
-                  {cloudApiSendTest.loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Invia richiamo_inattivo'}
-                </Button>
-              </div>
-              <p className="text-xs text-[#7A5A4D]">In modalità Live di Meta, i messaggi non-template possono fallire se il destinatario non ha scritto nelle ultime 24h. Usa "Invia richiamo_inattivo" per vedere l'errore esatto restituito da Meta per il template dei Clienti Assenti.</p>
-              <div className="border-t border-green-100 pt-2 mt-2">
-                <Button onClick={registerCloudApiNumber} disabled={cloudApiSendTest.loading} variant="outline" className="border-amber-400 text-amber-700 hover:bg-amber-50 w-full" title="Registra il numero Cloud API via POST /{phone-id}/register con PIN a 6 cifre">
-                  {cloudApiSendTest.loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                  🔐 Registra numero con PIN (per errore 133010)
-                </Button>
-                <p className="text-xs text-[#7A5A4D] mt-1">Usa solo se la UI Meta non ti fa impostare il PIN. Annota il PIN scelto — ti servirà se rigeneri il token.</p>
-              </div>
               <div className="border-t border-green-100 pt-2 mt-2">
                 <Button onClick={fetchCloudApiTemplates} disabled={templatesList.loading} variant="outline" className="border-blue-400 text-blue-700 hover:bg-blue-50 w-full" title="Mostra tutti i template registrati su Meta (con stato approvazione)">
                   {templatesList.loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
@@ -1405,28 +1146,6 @@ export default function SettingsPage() {
                   </div>
                 )}
               </div>
-              <div className="border-t border-green-100 pt-2 mt-2">
-                <Button onClick={createCloudApiTemplate} disabled={createTemplate.loading} variant="outline" className="border-blue-400 text-blue-700 hover:bg-blue-50 w-full" title="Registra su Meta il template nuova_prenotazione_online (UTILITY, italiano)">
-                  {createTemplate.loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                  Crea template nuova prenotazione
-                </Button>
-                {createTemplate.error && (
-                  <div className="mt-2 p-2 rounded bg-red-50 text-red-700 text-xs border border-red-200">{createTemplate.error}</div>
-                )}
-                {createTemplate.data && (
-                  <pre className={`mt-2 p-2 rounded text-[10px] overflow-auto max-h-60 whitespace-pre-wrap border ${createTemplate.data.ok ? 'bg-green-50 text-green-800 border-green-200' : 'bg-red-50 text-red-800 border-red-200'}`}>{JSON.stringify(createTemplate.data, null, 2)}</pre>
-                )}
-              </div>
-              {cloudApiSendTest.result && (
-                <>
-                  <div className={`p-3 rounded-xl text-sm font-medium ${cloudApiSendTest.result.ok ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
-                    {cloudApiSendTest.result.message}
-                  </div>
-                  {cloudApiSendTest.result.raw && (
-                    <pre className="p-2 rounded bg-gray-900 text-gray-100 text-[10px] overflow-auto max-h-60 whitespace-pre-wrap">{JSON.stringify(cloudApiSendTest.result.raw, null, 2)}</pre>
-                  )}
-                </>
-              )}
             </div>
           </CardContent>
         </Card>
