@@ -47,20 +47,33 @@ MAX_RECIPIENTS = 500
 DORMANT_DAYS = {"dormant_60_days": 60, "dormant_90_days": 90}
 
 
-def _segment_query(uid: str, segment: str) -> dict:
+async def _segment_query(uid: str, segment: str) -> dict:
     query = {"user_id": uid, "phone": {"$exists": True, "$ne": ""}}
     days = DORMANT_DAYS.get(segment)
     if days:
-        limit_date = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
-        query["created_at"] = {"$lte": limit_date}
-        query["total_visits"] = {"$gt": 0}
+        now = datetime.now(timezone.utc)
+        limit_date = (now - timedelta(days=days)).strftime("%Y-%m-%d")
+        today = now.strftime("%Y-%m-%d")
+        # Ultimo appuntamento completed per cliente, in un solo aggregate
+        last_visits = await db.appointments.aggregate([
+            {"$match": {"user_id": uid, "status": "completed", "client_id": {"$nin": [None, ""]}}},
+            {"$group": {"_id": "$client_id", "last_date": {"$max": "$date"}}},
+            {"$match": {"last_date": {"$lt": limit_date}}},
+        ]).to_list(5000)
+        dormant_ids = [r["_id"] for r in last_visits]
+        # Clienti con appuntamenti futuri già prenotati: esclusi
+        booked = await db.appointments.distinct(
+            "client_id",
+            {"user_id": uid, "date": {"$gte": today}, "status": {"$nin": ["completed", "cancelled", "no_show"]}},
+        )
+        query["id"] = {"$in": dormant_ids, "$nin": [b for b in booked if b]}
     return query
 
 
 @router.get("/marketing/recipients-count")
 async def recipients_count(segment: str = "all", current_user: dict = Depends(get_current_user)):
     """Quante clienti riceverebbero la campagna (stessa logica di send-campaign, tetto 500)."""
-    query = _segment_query(current_user["id"], segment)
+    query = await _segment_query(current_user["id"], segment)
     total = await db.clients.count_documents(query)
     first = await db.clients.find_one(query, {"_id": 0, "name": 1})
     first_name = ((first or {}).get("name") or "").split()
@@ -77,7 +90,7 @@ async def send_campaign(data: CampaignRequest, background_tasks: BackgroundTasks
     """Avvia una campagna marketing in background. Limite di sicurezza: max 500 destinatari per batch."""
     uid = current_user["id"]
 
-    query = _segment_query(uid, data.target_segment)
+    query = await _segment_query(uid, data.target_segment)
 
     clients = await db.clients.find(query, {"_id": 0, "id": 1}).to_list(MAX_RECIPIENTS)
     client_ids = [c["id"] for c in clients]
