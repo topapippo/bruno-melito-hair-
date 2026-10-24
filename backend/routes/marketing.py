@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class CampaignRequest(BaseModel):
     template_name: str
     template_vars: List[str] = []
-    target_segment: str  # "all", "dormant_90_days"
+    target_segment: str  # "all", "dormant_60_days", "dormant_90_days"
 
 
 async def _run_campaign(uid: str, template_name: str, template_vars: list, client_ids: list):
@@ -43,19 +43,43 @@ async def _run_campaign(uid: str, template_name: str, template_vars: list, clien
     logger.info(f"Campagna utente {uid} terminata. Inviati: {sent_count}, Falliti: {failed_count}.")
 
 
+MAX_RECIPIENTS = 500
+DORMANT_DAYS = {"dormant_60_days": 60, "dormant_90_days": 90}
+
+
+def _segment_query(uid: str, segment: str) -> dict:
+    query = {"user_id": uid, "phone": {"$exists": True, "$ne": ""}}
+    days = DORMANT_DAYS.get(segment)
+    if days:
+        limit_date = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
+        query["created_at"] = {"$lte": limit_date}
+        query["total_visits"] = {"$gt": 0}
+    return query
+
+
+@router.get("/marketing/recipients-count")
+async def recipients_count(segment: str = "all", current_user: dict = Depends(get_current_user)):
+    """Quante clienti riceverebbero la campagna (stessa logica di send-campaign, tetto 500)."""
+    query = _segment_query(current_user["id"], segment)
+    total = await db.clients.count_documents(query)
+    first = await db.clients.find_one(query, {"_id": 0, "name": 1})
+    first_name = ((first or {}).get("name") or "").split()
+    return {
+        "count": min(total, MAX_RECIPIENTS),
+        "total": total,
+        "limit": MAX_RECIPIENTS,
+        "first_name": first_name[0] if first_name else "",
+    }
+
+
 @router.post("/marketing/send-campaign")
 async def send_campaign(data: CampaignRequest, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
     """Avvia una campagna marketing in background. Limite di sicurezza: max 500 destinatari per batch."""
     uid = current_user["id"]
 
-    query = {"user_id": uid, "phone": {"$exists": True, "$ne": ""}}
+    query = _segment_query(uid, data.target_segment)
 
-    if data.target_segment == "dormant_90_days":
-        ninety_days_ago = (datetime.now(timezone.utc) - timedelta(days=90)).strftime("%Y-%m-%d")
-        query["created_at"] = {"$lte": ninety_days_ago}
-        query["total_visits"] = {"$gt": 0}
-
-    clients = await db.clients.find(query, {"_id": 0, "id": 1}).to_list(500)
+    clients = await db.clients.find(query, {"_id": 0, "id": 1}).to_list(MAX_RECIPIENTS)
     client_ids = [c["id"] for c in clients]
 
     if not client_ids:
