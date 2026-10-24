@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api, { API } from '../lib/api';
 import Layout from '../components/Layout';
-import PageHeader from '../components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -129,32 +128,36 @@ export default function SellAbbonamentoPage() {
   return (
     <Layout>
       <div className="max-w-2xl mx-auto px-4 py-6">
-        <PageHeader
-          title="Vendi Abbonamento"
-          subtitle="Crea e vendi un abbonamento al cliente"
-          icon={CreditCard}
-        />
+        <div className="adm-bar p-4 sm:p-5 flex items-center gap-3">
+          <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 adm-primary-bg">
+            <CreditCard className="w-5 h-5 text-white" />
+          </div>
+          <div className="min-w-0">
+            <h1 className="font-display text-3xl font-medium adm-text">Vendi Abbonamento</h1>
+            <p className="text-sm adm-muted mt-0.5">Crea e vendi un abbonamento al cliente</p>
+          </div>
+        </div>
 
         {/* Step indicator */}
         <div className="flex items-center gap-2 mb-8 mt-4">
           {STEPS.map((s, i) => (
             <div key={s} className="flex items-center gap-2">
               <div className={`flex items-center gap-1.5 text-sm font-medium ${
-                i < step ? 'text-[#C8617A]' : i === step ? 'text-[#2D1B14]' : 'text-[#2D1B14]/40'
+                i < step ? 'adm-primary-text' : i === step ? 'adm-text' : 'adm-muted opacity-70'
               }`}>
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 flex-shrink-0 ${
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold border-2 flex-shrink-0 ${
                   i < step
-                    ? 'bg-[#C8617A] border-[#C8617A] text-white'
+                    ? 'adm-primary-bg border-[var(--admin-primary,#C8617A)] text-white'
                     : i === step
-                    ? 'bg-white border-[#C8617A] text-[#C8617A]'
-                    : 'bg-white border-[#2D1B14]/20 text-[#2D1B14]/40'
+                    ? 'border-[var(--admin-primary,#C8617A)] adm-primary-text'
+                    : 'adm-border adm-muted opacity-70'
                 }`}>
                   {i < step ? <CheckCircle2 className="w-4 h-4" /> : i + 1}
                 </div>
                 <span className="hidden sm:inline">{s}</span>
               </div>
               {i < STEPS.length - 1 && (
-                <ChevronRight className="w-4 h-4 text-[#2D1B14]/20" />
+                <ChevronRight className="w-4 h-4 adm-muted opacity-50" />
               )}
             </div>
           ))}
@@ -162,12 +165,12 @@ export default function SellAbbonamentoPage() {
 
         {/* ── STEP 1: Cliente ── */}
         {step === 0 && (
-          <div className="bg-white rounded-2xl border border-[#F0E8E3] p-6 shadow-sm">
-            <h2 className="text-base font-semibold text-[#2D1B14] mb-4 flex items-center gap-2">
-              <User className="w-4 h-4 text-[#C8617A]" /> Cerca cliente
+          <div className="adm-card p-5 sm:p-6">
+            <h2 className="text-base font-semibold adm-text mb-4 flex items-center gap-2">
+              <User className="w-4 h-4 adm-primary-text" /> Cerca cliente
             </h2>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7C5C4A]/60" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 adm-muted" />
               <Input
                 ref={searchRef}
                 id="client-search"
@@ -177,21 +180,21 @@ export default function SellAbbonamentoPage() {
                 onChange={e => { setClientSearch(e.target.value); setSelectedClient(null); setShowDropdown(true); }}
                 onFocus={() => { clearTimeout(blurTimer.current); setShowDropdown(true); }}
                 onBlur={() => { blurTimer.current = setTimeout(() => setShowDropdown(false), 150); }}
-                className="pl-9 border-[#E8D5CA] focus:border-[#C8617A]"
+                className="min-h-11 text-sm pl-9 adm-border adm-focus-primary"
               />
               {showDropdown && filteredClients.length > 0 && (
-                <div role="listbox" aria-label="Clienti trovati" className="absolute z-10 w-full mt-1 bg-white border border-[#F0E8E3] rounded-xl shadow-lg overflow-hidden">
+                <div role="listbox" aria-label="Clienti trovati" className="absolute z-10 w-full mt-1 adm-card shadow-lg overflow-hidden">
                   {filteredClients.map(c => (
                     <button
                       key={c.id}
                       role="option"
                       aria-selected={selectedClient?.id === c.id}
-                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-[#FDF8F5] flex items-center gap-2 transition-colors"
+                      className="min-h-11 w-full text-left px-4 py-2.5 text-sm adm-hover-soft flex items-center gap-2 transition-colors"
                       onMouseDown={() => selectClient(c)}
                     >
-                      <User className="w-3.5 h-3.5 text-[#C8617A] flex-shrink-0" />
-                      <span className="font-medium text-[#2D1B14]">{c.name}</span>
-                      {c.phone && <span className="text-[#7C5C4A]/60 text-xs ml-auto">{c.phone}</span>}
+                      <User className="w-4 h-4 adm-primary-text flex-shrink-0" />
+                      <span className="font-medium adm-text">{c.name}</span>
+                      {c.phone && <span className="adm-muted text-sm ml-auto">{c.phone}</span>}
                     </button>
                   ))}
                 </div>
@@ -199,7 +202,7 @@ export default function SellAbbonamentoPage() {
             </div>
 
             {selectedClient && (
-              <div className="mt-3 flex items-center gap-2 text-sm text-[#C8617A] font-medium">
+              <div className="mt-3 flex items-center gap-2 text-sm adm-primary-text font-medium">
                 <CheckCircle2 className="w-4 h-4" />
                 {selectedClient.name} selezionato
               </div>
@@ -209,7 +212,7 @@ export default function SellAbbonamentoPage() {
               <Button
                 disabled={!canProceedStep1}
                 onClick={() => setStep(1)}
-                className="bg-[#C8617A] hover:bg-[#A0404F] text-white"
+                className="min-h-11 text-sm adm-btn-primary"
               >
                 Avanti <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
@@ -219,13 +222,13 @@ export default function SellAbbonamentoPage() {
 
         {/* ── STEP 2: Pacchetto ── */}
         {step === 1 && (
-          <div className="bg-white rounded-2xl border border-[#F0E8E3] p-6 shadow-sm">
-            <h2 className="text-base font-semibold text-[#2D1B14] mb-4 flex items-center gap-2">
-              <Package className="w-4 h-4 text-[#C8617A]" /> Scegli pacchetto
+          <div className="adm-card p-5 sm:p-6">
+            <h2 className="text-base font-semibold adm-text mb-4 flex items-center gap-2">
+              <Package className="w-4 h-4 adm-primary-text" /> Scegli pacchetto
             </h2>
 
             {templates.length === 0 && (
-              <p className="text-xs text-[#7C5C4A]/70 italic mb-3">
+              <p className="text-sm adm-muted italic mb-3">
                 Nessun pacchetto salvato — usa "Personalizzato" oppure crea prima i template in <span className="underline">Card / Abbonamenti</span>.
               </p>
             )}
@@ -235,37 +238,37 @@ export default function SellAbbonamentoPage() {
                   <button
                     key={tmpl.id}
                     onClick={() => selectTemplate(tmpl)}
-                    className={`w-full text-left rounded-xl border-2 p-4 transition-all ${
+                    className={`min-h-11 w-full text-left rounded-xl border-2 p-4 transition-all ${
                       selectedTemplate?.id === tmpl.id
-                        ? 'border-[#C8617A] bg-[#FDF8F5]'
-                        : 'border-[#F0E8E3] hover:border-[#C8617A]/40 hover:bg-[#FDF8F5]/50'
+                        ? 'border-[var(--admin-primary,#C8617A)] adm-soft'
+                        : 'adm-border hover:border-[var(--admin-primary,#C8617A)] adm-hover-soft'
                     }`}
                   >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-semibold text-[#2D1B14] text-sm">{tmpl.name}</p>
-                        <div className="flex items-center gap-3 mt-1 text-xs text-[#7C5C4A]">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="font-semibold adm-text text-sm">{tmpl.name}</p>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-sm adm-muted">
                           {tmpl.total_services && (
                             <span className="flex items-center gap-1">
-                              <Layers className="w-3 h-3" />{tmpl.total_services} servizi
+                              <Layers className="w-4 h-4" />{tmpl.total_services} servizi
                             </span>
                           )}
                           {tmpl.duration_months && (
                             <span className="flex items-center gap-1">
-                              <Calendar className="w-3 h-3" />scade {templateValidUntil(tmpl)}
+                              <Calendar className="w-4 h-4" />scade {templateValidUntil(tmpl)}
                             </span>
                           )}
                           {tmpl.notes && <span className="italic opacity-70">{tmpl.notes}</span>}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge className={`text-xs font-bold ${
-                          tmpl.card_type === 'subscription' ? 'bg-[#C8617A]/10 text-[#C8617A]' : 'bg-[#D4AF7A]/20 text-[#A08050]'
+                        <Badge className={`text-sm font-bold ${
+                          tmpl.card_type === 'subscription' ? 'adm-primary-tint' : 'adm-accent-tint'
                         }`}>
                           €{tmpl.total_value.toFixed(2)}
                         </Badge>
                         {selectedTemplate?.id === tmpl.id && (
-                          <CheckCircle2 className="w-4 h-4 text-[#C8617A]" />
+                          <CheckCircle2 className="w-4 h-4 adm-primary-text" />
                         )}
                       </div>
                     </div>
@@ -277,86 +280,86 @@ export default function SellAbbonamentoPage() {
             {/* Custom option */}
             <button
               onClick={selectCustom}
-              className={`w-full text-left rounded-xl border-2 p-4 transition-all ${
+              className={`min-h-11 w-full text-left rounded-xl border-2 p-4 transition-all ${
                 isCustom
-                  ? 'border-[#D4AF7A] bg-[#FDF8F5]'
-                  : 'border-dashed border-[#D4AF7A]/50 hover:border-[#D4AF7A] hover:bg-[#FDF8F5]/50'
+                  ? 'border-[var(--admin-accent,#D4AF7A)] adm-soft'
+                  : 'border-dashed border-[var(--admin-accent,#D4AF7A)] adm-hover-soft'
               }`}
             >
               <div className="flex items-center gap-2">
-                <Pencil className="w-4 h-4 text-[#D4AF7A]" />
-                <span className="font-medium text-[#2D1B14] text-sm">Personalizzato</span>
-                {isCustom && <CheckCircle2 className="w-4 h-4 text-[#D4AF7A] ml-auto" />}
+                <Pencil className="w-4 h-4 adm-accent-text" />
+                <span className="font-medium adm-text text-sm">Personalizzato</span>
+                {isCustom && <CheckCircle2 className="w-4 h-4 adm-accent-text ml-auto" />}
               </div>
             </button>
 
             {isCustom && (
-              <div className="mt-4 space-y-3 border-t border-[#F0E8E3] pt-4">
-                <div className="grid grid-cols-2 gap-3">
+              <div className="mt-4 space-y-3 border-t adm-border pt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <Label htmlFor="custom-name" className="text-xs text-[#7C5C4A] mb-1">Nome pacchetto *</Label>
+                    <Label htmlFor="custom-name" className="text-sm adm-muted mb-1">Nome pacchetto *</Label>
                     <Input
                       id="custom-name"
                       placeholder="es. Abbonamento mensile"
                       value={customForm.name}
                       onChange={e => setCustomForm(f => ({ ...f, name: e.target.value }))}
-                      className="border-[#E8D5CA] text-sm"
+                      className="min-h-11 text-sm adm-border text-sm"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="custom-value" className="text-xs text-[#7C5C4A] mb-1">Valore (€) *</Label>
+                    <Label htmlFor="custom-value" className="text-sm adm-muted mb-1">Valore (€) *</Label>
                     <Input
                       id="custom-value"
                       type="number" min="0" step="0.01" placeholder="0.00"
                       value={customForm.total_value}
                       onChange={e => { setCustomForm(f => ({ ...f, total_value: e.target.value })); setAmountPaid(e.target.value); }}
-                      className="border-[#E8D5CA] text-sm"
+                      className="min-h-11 text-sm adm-border text-sm"
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <Label htmlFor="custom-services" className="text-xs text-[#7C5C4A] mb-1">N° servizi</Label>
+                    <Label htmlFor="custom-services" className="text-sm adm-muted mb-1">N° servizi</Label>
                     <Input
                       id="custom-services"
                       type="number" min="1" placeholder="es. 10"
                       value={customForm.total_services}
                       onChange={e => setCustomForm(f => ({ ...f, total_services: e.target.value }))}
-                      className="border-[#E8D5CA] text-sm"
+                      className="min-h-11 text-sm adm-border text-sm"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="custom-expiry" className="text-xs text-[#7C5C4A] mb-1">Scadenza</Label>
+                    <Label htmlFor="custom-expiry" className="text-sm adm-muted mb-1">Scadenza</Label>
                     <Input
                       id="custom-expiry"
                       type="date"
                       value={customForm.valid_until}
                       onChange={e => setCustomForm(f => ({ ...f, valid_until: e.target.value }))}
-                      className="border-[#E8D5CA] text-sm"
+                      className="min-h-11 text-sm adm-border text-sm"
                     />
                   </div>
                 </div>
                 <div>
-                  <Label htmlFor="custom-notes" className="text-xs text-[#7C5C4A] mb-1">Note</Label>
+                  <Label htmlFor="custom-notes" className="text-sm adm-muted mb-1">Note</Label>
                   <Input
                     id="custom-notes"
                     placeholder="Note opzionali"
                     value={customForm.notes}
                     onChange={e => setCustomForm(f => ({ ...f, notes: e.target.value }))}
-                    className="border-[#E8D5CA] text-sm"
+                    className="min-h-11 text-sm adm-border text-sm"
                   />
                 </div>
               </div>
             )}
 
-            <div className="flex justify-between mt-6">
-              <Button variant="outline" onClick={() => setStep(0)} className="border-[#E8D5CA] text-[#7C5C4A]">
+            <div className="flex flex-wrap justify-between gap-3 mt-6">
+              <Button variant="outline" onClick={() => setStep(0)} className="min-h-11 text-sm adm-border adm-muted">
                 <ArrowLeft className="w-4 h-4 mr-1" /> Indietro
               </Button>
               <Button
                 disabled={!canProceedStep2}
                 onClick={() => setStep(2)}
-                className="bg-[#C8617A] hover:bg-[#A0404F] text-white"
+                className="min-h-11 text-sm adm-btn-primary"
               >
                 Avanti <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
@@ -366,51 +369,51 @@ export default function SellAbbonamentoPage() {
 
         {/* ── STEP 3: Pagamento ── */}
         {step === 2 && (
-          <div className="bg-white rounded-2xl border border-[#F0E8E3] p-6 shadow-sm">
-            <h2 className="text-base font-semibold text-[#2D1B14] mb-4 flex items-center gap-2">
-              <Euro className="w-4 h-4 text-[#C8617A]" /> Riepilogo e pagamento
+          <div className="adm-card p-5 sm:p-6">
+            <h2 className="text-base font-semibold adm-text mb-4 flex items-center gap-2">
+              <Euro className="w-4 h-4 adm-primary-text" /> Riepilogo e pagamento
             </h2>
 
             {/* Summary */}
-            <div className="bg-[#FDF8F5] rounded-xl p-4 mb-5 space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-[#7C5C4A]">Cliente</span>
-                <span className="font-semibold text-[#2D1B14]">{selectedClient?.name}</span>
+            <div className="adm-tile p-4 mb-5 space-y-2 text-sm">
+              <div className="flex justify-between gap-3">
+                <span className="adm-muted">Cliente</span>
+                <span className="font-semibold adm-text">{selectedClient?.name}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#7C5C4A]">Pacchetto</span>
-                <span className="font-semibold text-[#2D1B14]">
+                <span className="adm-muted">Pacchetto</span>
+                <span className="font-semibold adm-text">
                   {selectedTemplate?.name ?? customForm.name}
                 </span>
               </div>
               {(selectedTemplate?.total_services || customForm.total_services) && (
                 <div className="flex justify-between">
-                  <span className="text-[#7C5C4A]">Servizi inclusi</span>
-                  <span className="font-semibold text-[#2D1B14]">
+                  <span className="adm-muted">Servizi inclusi</span>
+                  <span className="font-semibold adm-text">
                     {selectedTemplate?.total_services ?? customForm.total_services}
                   </span>
                 </div>
               )}
-              <div className="flex justify-between border-t border-[#E8D5CA] pt-2 mt-2">
-                <span className="text-[#7C5C4A] font-medium">Valore abbonamento</span>
-                <span className="font-bold text-[#C8617A] text-base">€{effectiveValue.toFixed(2)}</span>
+              <div className="flex justify-between border-t adm-border pt-2 mt-2">
+                <span className="adm-muted font-medium">Valore abbonamento</span>
+                <span className="font-bold adm-primary-text text-base">€{effectiveValue.toFixed(2)}</span>
               </div>
             </div>
 
             {/* Payment method */}
             <div className="mb-4">
-              <Label className="text-xs text-[#7C5C4A] mb-2 block">Metodo di pagamento</Label>
-              <div className="flex gap-2">
+              <Label className="text-sm adm-muted mb-2 block">Metodo di pagamento</Label>
+              <div className="flex flex-wrap gap-2">
                 {PAYMENT_METHODS.map(pm => {
                   const Icon = pm.icon;
                   return (
                     <button
                       key={pm.value}
                       onClick={() => setPaymentMethod(pm.value)}
-                      className={`flex-1 flex flex-col items-center gap-1 py-3 rounded-xl border-2 text-xs font-medium transition-all ${
+                      className={`min-h-11 flex-1 min-w-[96px] flex flex-col items-center gap-1 py-3 rounded-xl border-2 text-sm font-medium transition-all ${
                         paymentMethod === pm.value
-                          ? 'border-[#C8617A] bg-[#FDF8F5] text-[#C8617A]'
-                          : 'border-[#F0E8E3] text-[#7C5C4A] hover:border-[#C8617A]/40'
+                          ? 'border-[var(--admin-primary,#C8617A)] adm-soft adm-primary-text'
+                          : 'adm-border adm-muted adm-hover-soft'
                       }`}
                     >
                       <Icon className="w-4 h-4" />
@@ -423,30 +426,30 @@ export default function SellAbbonamentoPage() {
 
             {/* Amount paid */}
             <div className="mb-6">
-              <Label htmlFor="amount-paid" className="text-xs text-[#7C5C4A] mb-1 block">Importo incassato (€)</Label>
+              <Label htmlFor="amount-paid" className="text-sm adm-muted mb-1 block">Importo incassato (€)</Label>
               <Input
                 id="amount-paid"
                 type="number" min="0" step="0.01"
                 value={amountPaid}
                 onChange={e => setAmountPaid(e.target.value)}
-                className="border-[#E8D5CA] focus:border-[#C8617A] text-lg font-semibold"
+                className="min-h-11 text-sm adm-border adm-focus-primary text-lg font-semibold"
                 placeholder="0.00"
               />
               {parseFloat(amountPaid) !== effectiveValue && parseFloat(amountPaid) > 0 && effectiveValue > 0 && (
-                <p className="text-xs text-[#D4AF7A] mt-1">
+                <p className="text-sm text-amber-700 mt-1">
                   Pagamento parziale: €{(effectiveValue - parseFloat(amountPaid)).toFixed(2)} rimanenti
                 </p>
               )}
             </div>
 
-            <div className="flex justify-between">
-              <Button variant="outline" onClick={() => setStep(1)} className="border-[#E8D5CA] text-[#7C5C4A]">
+            <div className="flex flex-wrap justify-between gap-3">
+              <Button variant="outline" onClick={() => setStep(1)} className="min-h-11 text-sm adm-border adm-muted">
                 <ArrowLeft className="w-4 h-4 mr-1" /> Indietro
               </Button>
               <Button
                 onClick={handleSell}
                 disabled={saving || !amountPaid || parseFloat(amountPaid) <= 0}
-                className="bg-[#C8617A] hover:bg-[#A0404F] text-white min-w-[140px]"
+                className="min-h-11 text-sm adm-btn-primary min-w-[140px]"
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : (
                   <>
