@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import api, { API } from '../lib/api';
 import Layout from '../components/Layout';
-import PageHeader from '../components/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,7 +35,7 @@ import { Scissors, Plus, Clock, Euro, Edit2, Trash2, Loader2, Tags } from 'lucid
 import { toast } from 'sonner';
 import { CATEGORIES, CATEGORY_ORDER, getCategoryInfo, useCategories } from '../lib/categories';
 import CategoriesManager from '../components/CategoriesManager';
-import { COLORS } from '../lib/brandColors';
+import { adminBarStyle, adminCardStyle, adminBtnPrimaryStyle, adminBtnOutlineStyle, adminIconBg, adminBorder, adminTextMuted, mix, BTN, BTN_ICON } from '../lib/adminUi';
 
 
 const COLOR_PRESETS = [
@@ -181,10 +180,15 @@ export default function ServicesPage() {
     <Layout>
       <div className="space-y-6" data-testid="services-page">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="font-display text-3xl font-medium text-[#2D1B14]">Servizi</h1>
-            <p className="text-[#7C5C4A] mt-1 ">{services.length} servizi disponibili</p>
+        <div className="rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4" style={adminBarStyle}>
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0" style={adminIconBg}>
+              <Scissors className="w-5 h-5 text-white" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="font-display text-3xl font-medium text-[#2D1B14]">Servizi</h1>
+              <p className="text-sm mt-0.5" style={adminTextMuted}>{services.length} servizi disponibili</p>
+            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button
@@ -192,19 +196,21 @@ export default function ServicesPage() {
               variant="outline"
               onClick={() => setCatDialogOpen(true)}
               data-testid="manage-categories-btn"
-              className="border-[#C8617A] text-[#A0404F] hover:bg-[#C8617A]/10"
+              className={`border-2 ${BTN}`}
+              style={adminBtnOutlineStyle}
             >
               <Tags className="w-5 h-5 mr-2" />
               Gestisci categorie
             </Button>
-          <Button 
-            onClick={openNewDialog}
-            data-testid="new-service-btn"
-            className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-[0_4px_12px_rgba(200,97,122,0.3)] shadow-lg shadow-[rgba(200,97,122,0.3)]"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            Nuovo Servizio
-          </Button>
+            <Button
+              onClick={openNewDialog}
+              data-testid="new-service-btn"
+              className={`${BTN} text-white`}
+              style={adminBtnPrimaryStyle}
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Nuovo Servizio
+            </Button>
           </div>
         </div>
 
@@ -230,7 +236,7 @@ export default function ServicesPage() {
                       style={{ backgroundColor: category.color }}
                     />
                     <h2 className="font-display text-xl text-[#2D1B14]">{category.label}</h2>
-                    <Badge variant="outline" className="ml-2 border-[#F0E6DC] text-[#7C5C4A]">
+                    <Badge variant="outline" className="ml-2 text-sm min-h-7 px-2.5" style={{ borderColor: adminBorder, ...adminTextMuted }}>
                       {categoryServices.length}
                     </Badge>
                     <Button
@@ -240,7 +246,8 @@ export default function ServicesPage() {
                       aria-label={`Modifica la categoria ${category.label}`}
                       onClick={() => setCatDialogOpen(true)}
                       data-testid={`edit-category-${category.value}`}
-                      className="text-[#7C5C4A] hover:text-[#C8617A]"
+                      className={`${BTN_ICON} hover:text-[var(--admin-primary,#C8617A)]`}
+                      style={adminTextMuted}
                     >
                       <Edit2 className="w-4 h-4" />
                     </Button>
@@ -251,31 +258,17 @@ export default function ServicesPage() {
                       <div
                         key={service.id}
                         data-testid={`service-card-${service.id}`}
-                        onMouseEnter={e => {
-                          e.currentTarget.style.boxShadow = `0 16px 48px rgba(212,175,122,0.4), inset 0 1px 0 rgba(255,255,255,0.3)`;
-                          e.currentTarget.style.transform = 'scale(1.03) translateY(-4px)';
-                        }}
-                        onMouseLeave={e => {
-                          e.currentTarget.style.boxShadow = `0 8px 24px rgba(212,175,122,0.25)`;
-                          e.currentTarget.style.transform = 'scale(1)';
-                        }}
-                        className="transition-all duration-300"
-                        style={{
-                          background: `linear-gradient(135deg, #FEFBF5 0%, ${COLORS.bgLight} 100%)`,
-                          border: `1px solid ${COLORS.borderLight}`,
-                          borderRadius: '16px',
-                          padding: '20px',
-                          boxShadow: `0 8px 24px rgba(212,175,122,0.25)`,
-                        }}
+                        className="rounded-2xl p-4 sm:p-5 transition-transform duration-200 hover:-translate-y-0.5"
+                        style={adminCardStyle}
                       >
                         <Card className="border-0 bg-transparent shadow-none">
                         <CardContent className="p-0">
-                          <div className="flex items-start justify-between">
+                          <div className="flex items-start justify-between gap-2">
                             <div className="flex items-start gap-3">
                               <div className="w-3 h-3 rounded-full mt-2 shrink-0" style={{ backgroundColor: service.color || category.color }} />
                               <div>
-                                <h3 className="font-medium text-[#2D1B14] text-lg">{service.name}</h3>
-                                <div className="flex items-center gap-4 mt-3 text-sm text-[#7C5C4A]">
+                                <h3 className="font-medium text-[#2D1B14] text-lg break-words">{service.name}</h3>
+                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-sm whitespace-nowrap" style={adminTextMuted}>
                                   <span className="flex items-center gap-1">
                                     <Clock className="w-4 h-4" /> {service.duration} min
                                   </span>
@@ -285,23 +278,27 @@ export default function ServicesPage() {
                                 </div>
                               </div>
                             </div>
-                            <div className="flex gap-1">
+                            <div className="flex gap-1 shrink-0">
                               <Button
                                 size="icon"
                                 variant="ghost"
+                                aria-label={`Modifica ${service.name}`}
                                 onClick={() => handleEdit(service)}
-                                className="text-[#7C5C4A] hover:text-[#C8617A]"
+                                className={`${BTN_ICON} hover:text-[var(--admin-primary,#C8617A)]`}
+                                style={adminTextMuted}
                               >
                                 <Edit2 className="w-4 h-4" />
                               </Button>
                               <Button
                                 size="icon"
                                 variant="ghost"
+                                aria-label={`Elimina ${service.name}`}
                                 onClick={() => {
                                   setServiceToDelete(service.id);
                                   setDeleteDialogOpen(true);
                                 }}
-                                className="text-[#7C5C4A] hover:text-[#E76F51]"
+                                className={`${BTN_ICON} hover:text-[#E76F51]`}
+                                style={adminTextMuted}
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
@@ -317,14 +314,15 @@ export default function ServicesPage() {
             })}
           </div>
         ) : (
-          <Card className="bg-white border-[#F0E6DC]/30">
+          <Card className="rounded-2xl shadow-none" style={adminCardStyle}>
             <CardContent className="py-16 text-center">
-              <Scissors className="w-16 h-16 mx-auto text-[#E2E8F0] mb-4" strokeWidth={1.5} />
+              <Scissors className="w-16 h-16 mx-auto mb-4" style={{ color: mix('var(--admin-primary, #C8617A)', 35) }} strokeWidth={1.5} />
               <h3 className="font-display text-xl text-[#2D1B14] mb-2">Nessun servizio</h3>
-              <p className="text-[#7C5C4A] mb-4">Aggiungi i tuoi servizi per iniziare</p>
+              <p className="mb-4" style={adminTextMuted}>Aggiungi i tuoi servizi per iniziare</p>
               <Button
                 onClick={openNewDialog}
-                className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-[0_4px_12px_rgba(200,97,122,0.3)]"
+                className={`${BTN} text-white`}
+                style={adminBtnPrimaryStyle}
               >
                 <Plus className="w-4 h-4 mr-2" /> Aggiungi Servizio
               </Button>
@@ -348,7 +346,7 @@ export default function ServicesPage() {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Es. Taglio Donna"
                   data-testid="service-name-input"
-                  className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
+                  className="h-11 text-sm bg-[#FAF7F2] border-transparent focus:border-[var(--admin-primary,#C8617A)]"
                   required
                 />
               </div>
@@ -391,7 +389,7 @@ export default function ServicesPage() {
                     value={formData.sort_order}
                     onChange={(e) => setFormData({ ...formData, sort_order: parseInt(e.target.value) || 0 })}
                     data-testid="service-sort-order-input"
-                    className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
+                    className="h-11 text-sm bg-[#FAF7F2] border-transparent focus:border-[var(--admin-primary,#C8617A)]"
                   />
                 </div>
                 <div className="space-y-2">
@@ -403,7 +401,7 @@ export default function ServicesPage() {
                     value={formData.duration}
                     onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) || 0 })}
                     data-testid="service-duration-input"
-                    className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
+                    className="h-11 text-sm bg-[#FAF7F2] border-transparent focus:border-[var(--admin-primary,#C8617A)]"
                   />
                 </div>
                 <div className="space-y-2">
@@ -415,7 +413,7 @@ export default function ServicesPage() {
                     value={formData.price}
                     onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
                     data-testid="service-price-input"
-                    className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
+                    className="h-11 text-sm bg-[#FAF7F2] border-transparent focus:border-[var(--admin-primary,#C8617A)]"
                   />
                 </div>
               </div>
@@ -427,7 +425,8 @@ export default function ServicesPage() {
                       key={c}
                       type="button"
                       onClick={() => setFormData({ ...formData, color: c })}
-                      className={`w-7 h-7 rounded-full border-2 transition-all hover:scale-110 ${formData.color === c ? 'border-[#0F172A] scale-110 ring-2 ring-offset-1 ring-[#0F172A]/20' : 'border-transparent'}`}
+                      aria-label={`Colore ${c}`}
+                      className={`w-11 h-11 rounded-full border-2 transition-all hover:scale-105 ${formData.color === c ? 'border-[#0F172A] scale-105 ring-2 ring-offset-1 ring-[#0F172A]/20' : 'border-transparent'}`}
                       style={{ backgroundColor: c }}
                       data-testid={`color-${c}`}
                     />
@@ -440,7 +439,7 @@ export default function ServicesPage() {
                   id="smart_offer"
                   checked={formData.is_smart_offer}
                   onChange={(e) => setFormData({ ...formData, is_smart_offer: e.target.checked })}
-                  className="w-4 h-4 accent-[#C8617A]"
+                  className="w-5 h-5 accent-[var(--admin-primary,#C8617A)]"
                 />
                 <Label htmlFor="smart_offer" className="cursor-pointer">Offerta Smart (evidenziata sul sito)</Label>
               </div>
@@ -450,7 +449,7 @@ export default function ServicesPage() {
                   id="hidden_online"
                   checked={formData.hidden_online}
                   onChange={(e) => setFormData({ ...formData, hidden_online: e.target.checked })}
-                  className="w-4 h-4 accent-[#C8617A]"
+                  className="w-5 h-5 accent-[var(--admin-primary,#C8617A)]"
                 />
                 <Label htmlFor="hidden_online" className="cursor-pointer">Nascondi dalla prenotazione online</Label>
               </div>
@@ -473,7 +472,7 @@ export default function ServicesPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-[#9C7060]">Alla cassa scala 1 dose dal magazzino. I Colori usano invece il "Codice Colore" del cliente.</p>
+                  <p className="text-sm" style={adminTextMuted}>Alla cassa scala 1 dose dal magazzino. I Colori usano invece il "Codice Colore" del cliente.</p>
                 </div>
               )}
               <DialogFooter>
@@ -481,7 +480,8 @@ export default function ServicesPage() {
                   type="submit"
                   disabled={saving}
                   data-testid="save-service-btn"
-                  className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-[0_4px_12px_rgba(200,97,122,0.3)]"
+                  className={`${BTN} text-white`}
+                  style={adminBtnPrimaryStyle}
                 >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : editingService ? 'Salva Modifiche' : 'Aggiungi Servizio'}
                 </Button>
@@ -502,10 +502,10 @@ export default function ServicesPage() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Annulla</AlertDialogCancel>
+              <AlertDialogCancel className="min-h-11">Annulla</AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDelete}
-                className="bg-[#E76F51] hover:bg-[#D55F41]"
+                className="min-h-11 bg-[#E76F51] hover:bg-[#D55F41]"
               >
                 Elimina
               </AlertDialogAction>
