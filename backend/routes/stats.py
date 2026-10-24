@@ -361,20 +361,24 @@ async def get_acquisition_stats(days: int = 90, current_user: dict = Depends(get
 
     apts = await db.appointments.find(
         {"user_id": uid, "date": {"$gte": start, "$lte": end}, "status": {"$ne": "cancelled"}},
-        {"_id": 0, "client_id": 1, "date": 1, "source": 1, "notes": 1, "promo_id": 1}
+        {"_id": 0, "client_id": 1, "date": 1, "source": 1, "notes": 1, "promo_id": 1, "service_ids": 1}
     ).to_list(5000)
+    under30_services = await db.services.find(
+        {"user_id": uid, "name": {"$regex": "under 30", "$options": "i"}}, {"_id": 0, "id": 1}
+    ).to_list(50)
+    under30_service_ids = {s["id"] for s in under30_services}
 
     promos = await db.promotions.find(
-        {"user_id": uid}, {"_id": 0, "id": 1, "name": 1, "code": 1, "promo_type": 1}
+        {"user_id": uid}, {"_id": 0, "id": 1, "name": 1, "code": 1, "promo_code": 1, "promo_type": 1, "rule_type": 1}
     ).to_list(500)
     amica_ids, under30_ids = set(), set()
     for p in promos:
-        code = (p.get("code") or "").upper()
+        code = (p.get("code") or p.get("promo_code") or "").upper()
         name = (p.get("name") or "").lower()
-        ptype = p.get("promo_type") or ""
+        ptype = p.get("promo_type") or p.get("rule_type") or ""
         if code == "AMICA" or ptype == "bring_friend":
             amica_ids.add(p["id"])
-        if code == "UNDER30" or ptype == "under_30" or "under 30" in name:
+        if code in ("UNDER30", "UNDER30B") or ptype == "under_30" or "under 30" in name:
             under30_ids.add(p["id"])
 
     online = amica = under30 = 0
@@ -388,7 +392,7 @@ async def get_acquisition_stats(days: int = 90, current_user: dict = Depends(get
             online += 1
         if pid in amica_ids or "[promo-code: amica]" in notes or "[amica:" in notes:
             amica += 1
-        if pid in under30_ids or "[promo-code: under30]" in notes:
+        if pid in under30_ids or "[promo-code: under30]" in notes or under30_service_ids.intersection(a.get("service_ids") or []):
             under30 += 1
         cid = a.get("client_id")
         c_created = created.get(cid)
