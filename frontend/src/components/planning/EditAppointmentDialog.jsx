@@ -267,6 +267,24 @@ export default function EditAppointmentDialog({
     }));
   };
 
+  // Promo con servizio collegato: lo aggiunge (o toglie) dall'appuntamento prima dell'incasso
+  const togglePromo = async (promo, isSel) => {
+    setSelectedPromo(isSel ? null : promo);
+    const sid = promo.linked_service_id;
+    const apt = localAppointment || appointment;
+    if (!sid || !apt) return;
+    const ids = formData.service_ids;
+    const next = isSel ? ids.filter(i => i !== sid) : (ids.includes(sid) ? ids : [...ids, sid]);
+    if (next.length === ids.length) return;
+    try {
+      const res = await api.put(`${API}/appointments/${apt.id}`, { service_ids: next, ...(isSel ? {} : { promo_id: promo.id }) });
+      setFormData(prev => ({ ...prev, service_ids: next }));
+      setLocalAppointment(res.data);
+    } catch (err) {
+      toast.error(extractErrorMessage(err));
+    }
+  };
+
   const getComputedServices = () => {
     const apt = localAppointment || appointment;
     const aptSvcMap = {};
@@ -1293,7 +1311,7 @@ export default function EditAppointmentDialog({
                         {eligiblePromos.map(promo=>{
                           const isSel=selectedPromo?.id===promo.id;
                           return (
-                            <button key={promo.id} type="button" onClick={()=>setSelectedPromo(isSel?null:promo)}
+                            <button key={promo.id} type="button" onClick={()=>togglePromo(promo, isSel)}
                               className={`w-full p-3 rounded-xl border-2 text-left transition-all ${isSel?'border-pink-500 bg-pink-50 shadow-sm':'border-gray-200 hover:border-pink-300'}`}>
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
@@ -1363,7 +1381,7 @@ export default function EditAppointmentDialog({
                 <div className="bg-white border-2 border-[#E8DCDD] rounded-xl px-4 py-3 space-y-1.5">
                   <div className="flex justify-between text-lg text-gray-600"><span>Servizi:</span><span className="font-semibold">€{calculateSubtotal().toFixed(2)}</span></div>
                   {retailItems.length > 0 && <div className="flex justify-between text-lg text-gray-600"><span>Rivendita:</span><span className="font-semibold">€{calculateRetailTotal().toFixed(2)}</span></div>}
-                  {selectedPromo && <div className="flex justify-between text-sm text-pink-600"><span className="flex items-center gap-1"><Gift className="w-3.5 h-3.5"/>Omaggio:</span><span className="font-semibold">{selectedPromo.free_service_name}</span></div>}
+                  {selectedPromo?.free_service_name && <div className="flex justify-between text-sm text-pink-600"><span className="flex items-center gap-1"><Gift className="w-3.5 h-3.5"/>Omaggio:</span><span className="font-semibold">{selectedPromo.free_service_name}</span></div>}
                   {discountType!=='none' && calculateDiscount()>0 && <div className="flex justify-between text-sm text-red-500"><span>Sconto:</span><span className="font-semibold">-€{calculateDiscount().toFixed(2)}</span></div>}
                   {selectedCard && (
                     <div className="flex justify-between text-sm text-[#D4AF7A]">
