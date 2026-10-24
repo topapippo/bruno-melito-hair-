@@ -147,7 +147,7 @@ export default function OperatorsPage() {
               <Users className="w-5 h-5 text-white" />
             </div>
             <div className="min-w-0">
-              <h1 className="font-display text-3xl font-medium text-[#2D1B14]">Operatori</h1>
+              <h1 className="font-display text-3xl font-medium adm-text">Operatori</h1>
               <p className="text-sm mt-0.5" style={adminTextMuted}>{operators.length} collaboratori</p>
             </div>
           </div>
@@ -195,7 +195,7 @@ export default function OperatorsPage() {
                         />
                       </div>
                       <div className="min-w-0">
-                        <h3 className="font-medium text-[#2D1B14] text-lg break-words">{operator.name}</h3>
+                        <h3 className="font-medium adm-text text-lg break-words">{operator.name}</h3>
                         {operator.phone && (
                           <p className="text-sm" style={adminTextMuted}>{operator.phone}</p>
                         )}
@@ -225,7 +225,7 @@ export default function OperatorsPage() {
                         variant="ghost"
                         aria-label={`Modifica ${operator.name}`}
                         onClick={() => handleEdit(operator)}
-                        className={`${BTN_ICON} hover:text-[var(--admin-primary,#C8617A)]`}
+                        className={`${BTN_ICON} adm-hover-primary`}
                         style={adminTextMuted}
                       >
                         <Edit2 className="w-4 h-4" />
@@ -254,7 +254,7 @@ export default function OperatorsPage() {
           <Card className="rounded-2xl shadow-none" style={adminCardStyle}>
             <CardContent className="py-16 text-center">
               <Users className="w-16 h-16 mx-auto mb-4" style={{ color: mix('var(--admin-primary, #C8617A)', 35) }} strokeWidth={1.5} />
-              <h3 className="font-display text-xl text-[#2D1B14] mb-2">Nessun operatore</h3>
+              <h3 className="font-display text-xl adm-text mb-2">Nessun operatore</h3>
               <p className="mb-4" style={adminTextMuted}>Aggiungi le tue collaboratrici</p>
               <Button
                 onClick={openNewDialog}
@@ -271,7 +271,7 @@ export default function OperatorsPage() {
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle className="font-display text-2xl text-[#2D1B14]">
+              <DialogTitle className="font-display text-2xl adm-text">
                 {editingOperator ? 'Modifica Operatore' : 'Nuovo Operatore'}
               </DialogTitle>
             </DialogHeader>
@@ -283,7 +283,7 @@ export default function OperatorsPage() {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Nome operatore"
                   data-testid="operator-name-input"
-                  className="h-11 text-sm bg-[#FAF7F2] border-transparent focus:border-[var(--admin-primary,#C8617A)]"
+                  className="h-11 text-sm adm-soft border-transparent adm-focus-primary"
                   required
                 />
               </div>
@@ -294,7 +294,7 @@ export default function OperatorsPage() {
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   placeholder="+39 ..."
                   data-testid="operator-phone-input"
-                  className="h-11 text-sm bg-[#FAF7F2] border-transparent focus:border-[var(--admin-primary,#C8617A)]"
+                  className="h-11 text-sm adm-soft border-transparent adm-focus-primary"
                 />
               </div>
               <div className="space-y-2">
