@@ -1,17 +1,93 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api, { API } from '../lib/api';
+import api, { API, getErrorMessage } from '../lib/api';
 import Layout from '../components/Layout';
-import PageHeader from '../components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Settings, Save, Loader2, Clock, Building2, User, Lock, Unlock, Palette, Type, RotateCcw, Plus, Trash2, Check, Share2, ChevronLeft, ChevronRight, CalendarDays, X, Image } from 'lucide-react';
+import { Save, Loader2, Clock, Building2, User, Lock, Unlock, Palette, Type, RotateCcw, Trash2, Check, Share2, ChevronLeft, ChevronRight, CalendarDays, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
+
+const TABS = [
+  { key: 'salone', label: 'Salone' },
+  { key: 'orari', label: 'Orari e blocchi' },
+  { key: 'messaggi', label: 'Messaggi' },
+  { key: 'collegamenti', label: 'Collegamenti' },
+  { key: 'account', label: 'Account e aspetto' },
+];
+const TAB_STORAGE_KEY = 'settingsTab';
+const readStoredTab = () => {
+  try {
+    const t = localStorage.getItem(TAB_STORAGE_KEY);
+    return TABS.some(x => x.key === t) ? t : 'salone';
+  } catch { return 'salone'; }
+};
+
+const BTN_PRIMARY = 'h-11 min-h-[44px] px-5 rounded-lg font-bold text-base bg-[color:var(--admin-primary)] text-white hover:bg-[color:var(--admin-primary)] hover:text-white hover:brightness-90 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:var(--admin-primary)]';
+const BTN_OUTLINE = 'h-11 min-h-[44px] px-5 rounded-lg border-2 border-[color:var(--admin-primary)] bg-white text-[color:var(--admin-primary)] font-bold text-base hover:bg-[color-mix(in_srgb,var(--admin-primary)_10%,white)] hover:text-[color:var(--admin-primary)]';
+const BTN_CHIP = 'inline-flex items-center gap-1.5 min-h-[44px] px-4 rounded-lg text-sm font-semibold border border-[color:var(--admin-primary)] text-[color:var(--admin-primary)] bg-white hover:bg-[color-mix(in_srgb,var(--admin-primary)_10%,white)] transition-colors';
+const FIELD = 'h-11 text-base bg-[#FAF7F2] border-transparent focus:border-[color:var(--admin-primary)]';
+
+function SectionCard({ icon: Icon, title, description, children }) {
+  return (
+    <Card className="bg-white border-[#F0E6DC] shadow-sm">
+      <CardHeader className="pb-3">
+        <CardTitle className="font-display text-xl sm:text-2xl text-[#2D1B14] flex items-center gap-2">
+          <Icon className="w-5 h-5 text-[color:var(--admin-primary)] shrink-0" aria-hidden="true" />
+          {title}
+        </CardTitle>
+        {description && <p className="text-sm sm:text-base text-[#7C5C4A] mt-1">{description}</p>}
+      </CardHeader>
+      <CardContent className="space-y-4">{children}</CardContent>
+    </Card>
+  );
+}
+
+function StatusNote({ status }) {
+  if (!status) return null;
+  return (
+    <div
+      role={status.ok ? 'status' : 'alert'}
+      className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold ${status.ok ? 'bg-green-50 text-green-800 border-green-300' : 'bg-red-50 text-red-800 border-red-300'}`}
+    >
+      {status.ok ? <Check className="w-4 h-4 shrink-0" aria-hidden="true" /> : <X className="w-4 h-4 shrink-0" aria-hidden="true" />}
+      <span>{String(status.message ?? '').replace(/^[^\p{L}\p{N}]+/u, '')}</span>
+    </div>
+  );
+}
+
+function SettingsTabs({ value, onChange }) {
+  return (
+    <div
+      role="tablist"
+      aria-label="Sezioni delle impostazioni"
+      className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+    >
+      {TABS.map(t => {
+        const active = value === t.key;
+        return (
+          <button
+            key={t.key}
+            type="button"
+            role="tab"
+            id={`settings-tab-${t.key}`}
+            aria-selected={active}
+            aria-controls="settings-panel"
+            onClick={(e) => { onChange(t.key); e.currentTarget.scrollIntoView?.({ inline: 'center', block: 'nearest' }); }}
+            data-testid={`settings-tab-${t.key}`}
+            className={`shrink-0 h-12 px-4 rounded-lg border-2 border-[color:var(--admin-primary)] text-base font-bold whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:var(--admin-primary)] ${active ? 'bg-[color:var(--admin-primary)] text-white hover:brightness-90' : 'bg-white text-[color:var(--admin-primary)] hover:bg-[color-mix(in_srgb,var(--admin-primary)_10%,white)]'}`}
+          >
+            {t.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 
 function CalendarSyncCard() {
   const [feedUrl, setFeedUrl] = useState('');
@@ -57,21 +133,18 @@ function CalendarSyncCard() {
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-[#7C5C4A]">
-        Genera un link da inserire una sola volta come "calendario da URL" su Google Calendar o iPhone: da quel momento ogni appuntamento apparirà automaticamente sul telefono.
-      </p>
       {feedUrl ? (
         <div className="flex flex-wrap gap-2">
-          <Input readOnly value={feedUrl} className="flex-1 min-w-[220px] font-mono text-xs" aria-label="Link feed calendario" />
-          <Button type="button" onClick={copyLink} variant="outline" className="border-[#C8617A] text-[#C8617A] hover:bg-[#C8617A]/10" aria-label="Copia link calendario">
+          <Input readOnly value={feedUrl} className={`flex-1 min-w-[220px] font-mono ${FIELD} text-sm`} aria-label="Link feed calendario" />
+          <Button type="button" onClick={copyLink} variant="outline" className={BTN_OUTLINE} aria-label="Copia link calendario">
             Copia
           </Button>
-          <Button type="button" onClick={resetLink} disabled={resetting} variant="outline" className="border-red-400 text-red-600 hover:bg-red-50" aria-label="Rigenera link calendario">
+          <Button type="button" onClick={resetLink} disabled={resetting} variant="outline" className="h-11 min-h-[44px] px-5 rounded-lg font-bold text-base border-2 border-red-400 text-red-700 bg-white hover:bg-red-50 hover:text-red-700" aria-label="Rigenera link calendario">
             {resetting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Rigenera link'}
           </Button>
         </div>
       ) : (
-        <Button type="button" onClick={loadLink} disabled={loading} className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] text-white font-bold">
+        <Button type="button" onClick={loadLink} disabled={loading} className={BTN_PRIMARY}>
           {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CalendarDays className="w-4 h-4 mr-2" />}
           Genera link calendario
         </Button>
@@ -147,6 +220,15 @@ export default function SettingsPage() {
   const [testingCloudApi, setTestingCloudApi] = useState(false);
   const [templatesList, setTemplatesList] = useState({ loading: false, data: null, error: null });
   const [mergingDups, setMergingDups] = useState(false);
+  const [tab, setTab] = useState(readStoredTab);
+  const [saveStatus, setSaveStatus] = useState(null);
+  const [pwStatus, setPwStatus] = useState(null);
+  const [makeStatus, setMakeStatus] = useState(null);
+
+  const changeTab = (key) => {
+    setTab(key);
+    try { localStorage.setItem(TAB_STORAGE_KEY, key); } catch { /* storage non disponibile */ }
+  };
 
   const handleMergeDuplicates = async () => {
     if (!window.confirm('Unire tutti i clienti con lo stesso nome? Gli appuntamenti e i pagamenti dei duplicati verranno spostati su un unico cliente. Operazione consigliata, ma non reversibile.')) return;
@@ -365,6 +447,7 @@ export default function SettingsPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
+    setSaveStatus(null);
     try {
       const res = await api.put(`${API}/settings`, {
         salon_name: settings.salon_name,
@@ -379,9 +462,12 @@ export default function SettingsPage() {
         make_webhook_url: makeWebhookUrl,
       });
       updateUser({ name: settings.name, salon_name: settings.salon_name });
+      setSaveStatus({ ok: true, message: 'Impostazioni salvate' });
       toast.success('Impostazioni salvate!');
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Errore nel salvataggio');
+      const msg = getErrorMessage(err, 'Errore nel salvataggio');
+      setSaveStatus({ ok: false, message: msg });
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
@@ -407,15 +493,19 @@ export default function SettingsPage() {
       return;
     }
     setChangingPw(true);
+    setPwStatus(null);
     try {
       await api.put(`${API}/auth/change-password`, {
         current_password: pwForm.current_password,
         new_password: pwForm.new_password
       });
+      setPwStatus({ ok: true, message: 'Password cambiata con successo' });
       toast.success('Password cambiata con successo!');
       setPwForm({ current_password: '', new_password: '', confirm_password: '' });
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Errore nel cambio password');
+      const msg = getErrorMessage(err, 'Errore nel cambio password');
+      setPwStatus({ ok: false, message: msg });
+      toast.error(msg);
     } finally {
       setChangingPw(false);
     }
@@ -423,11 +513,15 @@ export default function SettingsPage() {
 
   const saveMakeWebhookUrl = async () => {
     setSavingMakeWebhook(true);
+    setMakeStatus(null);
     try {
       await api.put(`${API}/social/config`, { make_webhook_url: makeWebhookUrl });
+      setMakeStatus({ ok: true, message: 'Webhook salvato' });
       toast.success('Webhook Make salvato!');
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Errore nel salvataggio webhook');
+      const msg = getErrorMessage(err, 'Errore nel salvataggio webhook');
+      setMakeStatus({ ok: false, message: msg });
+      toast.error(msg);
     } finally {
       setSavingMakeWebhook(false);
     }
@@ -448,200 +542,195 @@ export default function SettingsPage() {
   return (
     <Layout>
       <div className="space-y-6" data-testid="settings-page">
-        {/* Header */}
         <div>
-          <h1 className="font-display text-3xl font-medium text-[#2D1B14]">Impostazioni</h1>
-          <p className="text-[#7C5C4A] mt-1 ">Gestisci le impostazioni del tuo salone</p>
+          <h1 className="font-display font-bold text-3xl sm:text-[40px] leading-tight text-[#2D2326]">Impostazioni</h1>
+          <p className="text-base text-[#7C5C4A] mt-1">Gestisci le impostazioni del tuo salone</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6 stagger-in">
-          {/* Profile Settings */}
-          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
-            <CardHeader>
-              <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
-                <User className="w-5 h-5 text-[#C8617A]" />
-                Profilo
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Il tuo nome</Label>
-                  <Input
-                    value={settings.name || ''}
-                    onChange={(e) => setSettings({ ...settings, name: e.target.value })}
-                    data-testid="settings-name-input"
-                    className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Email</Label>
-                  <Input
-                    value={settings.email || ''}
-                    disabled
-                    className="bg-[#FAF7F2] border-transparent opacity-60"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <SettingsTabs value={tab} onChange={changeTab} />
 
-          {/* Salon Settings */}
-          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
-            <CardHeader>
-              <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-[#C8617A]" />
-                Salone
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Nome del Salone</Label>
-                <Input
-                  value={settings.salon_name || ''}
-                  onChange={(e) => setSettings({ ...settings, salon_name: e.target.value })}
-                  data-testid="settings-salon-name-input"
-                  className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Link Recensioni Google</Label>
-                <Input
-                  value={settings.google_review_link || ''}
-                  onChange={(e) => setSettings({ ...settings, google_review_link: e.target.value })}
-                  placeholder="https://search.google.com/local/writereview?placeid=..."
-                  data-testid="settings-google-review-input"
-                  className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
-                />
-                <p className="text-xs text-[#9C7060]">Cerca il tuo salone su Google Maps → Condividi → Copia link recensione</p>
-              </div>
-              <div className="space-y-2">
-                <Label>Obiettivo incasso mensile (€)</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="100"
-                  value={settings.monthly_target || ''}
-                  onChange={(e) => setSettings({ ...settings, monthly_target: e.target.value })}
-                  placeholder="es. 3000"
-                  className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
-                />
-                <p className="text-xs text-[#9C7060]">Imposta un target e vedrai il progresso in dashboard ogni giorno</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Working Hours */}
-          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
-            <CardHeader>
-              <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
-                <Clock className="w-5 h-5 text-[#C8617A]" />
-                Orari di Apertura
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Apertura</Label>
-                  <Input
-                    type="time"
-                    value={settings.opening_time || '09:00'}
-                    onChange={(e) => setSettings({ ...settings, opening_time: e.target.value })}
-                    data-testid="settings-opening-time-input"
-                    className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
-                  />
+        <div role="tabpanel" id="settings-panel" aria-labelledby={`settings-tab-${tab}`} className="space-y-6">
+          {tab === 'salone' && (
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <SectionCard icon={User} title="Profilo" description="I tuoi dati di accesso. L'email non si può modificare.">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="settings-name">Il tuo nome</Label>
+                    <Input
+                      id="settings-name"
+                      value={settings.name || ''}
+                      onChange={(e) => setSettings({ ...settings, name: e.target.value })}
+                      data-testid="settings-name-input"
+                      className={FIELD}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="settings-email">Email</Label>
+                    <Input
+                      id="settings-email"
+                      value={settings.email || ''}
+                      disabled
+                      className={`${FIELD} opacity-70`}
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Chiusura</Label>
-                  <Input
-                    type="time"
-                    value={settings.closing_time || '19:00'}
-                    onChange={(e) => setSettings({ ...settings, closing_time: e.target.value })}
-                    data-testid="settings-closing-time-input"
-                    className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
-                  />
-                </div>
-              </div>
+              </SectionCard>
 
-              <div className="space-y-3">
-                <Label>Giorni Lavorativi</Label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {DAYS.map((day) => {
-                    const isActive = settings.working_days?.includes(day.value);
-                    return (
-                      <div
-                        key={day.value}
-                        className={`flex items-center space-x-2 p-3 rounded-xl border cursor-pointer transition-colors ${
-                          isActive
-                            ? 'bg-[#C8617A]/10 border-[#C8617A]'
-                            : 'bg-[#FAF7F2] border-transparent hover:border-[#F0E6DC]'
-                        }`}
-                        onClick={() => toggleDay(day.value)}
-                        data-testid={`day-toggle-${day.value}`}
-                      >
-                        <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${isActive ? 'bg-[#C8617A] border-[#C8617A]' : 'border-gray-300'}`}>
-                          {isActive && <Check className="w-3 h-3 text-white" />}
-                        </div>
-                        <span className={`text-sm ${
-                          isActive ? 'text-[#C8617A] font-medium' : 'text-[#2D1B14]'
-                        }`}>
+              <SectionCard icon={Building2} title="Salone" description="Nome, recensioni e obiettivo di incasso mostrato in dashboard.">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="settings-salon-name">Nome del salone</Label>
+                    <Input
+                      id="settings-salon-name"
+                      value={settings.salon_name || ''}
+                      onChange={(e) => setSettings({ ...settings, salon_name: e.target.value })}
+                      data-testid="settings-salon-name-input"
+                      className={FIELD}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="settings-monthly-target">Obiettivo incasso mensile (€)</Label>
+                    <Input
+                      id="settings-monthly-target"
+                      type="number"
+                      min="0"
+                      step="100"
+                      value={settings.monthly_target || ''}
+                      onChange={(e) => setSettings({ ...settings, monthly_target: e.target.value })}
+                      placeholder="es. 3000"
+                      className={FIELD}
+                    />
+                    <p className="text-sm text-[#7C5C4A]">Imposta un target e vedrai il progresso in dashboard ogni giorno</p>
+                  </div>
+                  <div className="space-y-2 lg:col-span-2">
+                    <Label htmlFor="settings-google-review">Link recensioni Google</Label>
+                    <Input
+                      id="settings-google-review"
+                      value={settings.google_review_link || ''}
+                      onChange={(e) => setSettings({ ...settings, google_review_link: e.target.value })}
+                      placeholder="https://search.google.com/local/writereview?placeid=..."
+                      data-testid="settings-google-review-input"
+                      className={FIELD}
+                    />
+                    <p className="text-sm text-[#7C5C4A]">Cerca il tuo salone su Google Maps → Condividi → Copia link recensione</p>
+                  </div>
+                </div>
+              </SectionCard>
+
+              <SectionCard icon={Clock} title="Orari di apertura" description="Orario del salone e giorni in cui si lavora. Valgono per il Planning e per le prenotazioni online.">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="settings-opening-time">Apertura</Label>
+                    <Input
+                      id="settings-opening-time"
+                      type="time"
+                      value={settings.opening_time || '09:00'}
+                      onChange={(e) => setSettings({ ...settings, opening_time: e.target.value })}
+                      data-testid="settings-opening-time-input"
+                      className={FIELD}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="settings-closing-time">Chiusura</Label>
+                    <Input
+                      id="settings-closing-time"
+                      type="time"
+                      value={settings.closing_time || '19:00'}
+                      onChange={(e) => setSettings({ ...settings, closing_time: e.target.value })}
+                      data-testid="settings-closing-time-input"
+                      className={FIELD}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <Label>Giorni lavorativi</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {DAYS.map((day) => {
+                      const isActive = settings.working_days?.includes(day.value);
+                      return (
+                        <button
+                          key={day.value}
+                          type="button"
+                          aria-pressed={isActive}
+                          onClick={() => toggleDay(day.value)}
+                          data-testid={`day-toggle-${day.value}`}
+                          className={`flex items-center gap-2 min-h-[44px] px-3 rounded-lg border-2 text-left text-base transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--admin-primary)] ${
+                            isActive
+                              ? 'bg-[color-mix(in_srgb,var(--admin-primary)_10%,transparent)] border-[color:var(--admin-primary)] text-[color:var(--admin-primary)] font-semibold'
+                              : 'bg-[#FAF7F2] border-transparent text-[#2D1B14] hover:border-[#F0E6DC]'
+                          }`}
+                        >
+                          <span className={`w-5 h-5 shrink-0 rounded border-2 flex items-center justify-center ${isActive ? 'bg-[color:var(--admin-primary)] border-[color:var(--admin-primary)]' : 'border-gray-300 bg-white'}`}>
+                            {isActive && <Check className="w-3.5 h-3.5 text-white" aria-hidden="true" />}
+                          </span>
                           {day.label}
-                        </span>
-                      </div>
-                    );
-                  })}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
+              </SectionCard>
+
+              <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="sm:flex-1"><StatusNote status={saveStatus} /></div>
+                <Button
+                  type="submit"
+                  disabled={saving}
+                  data-testid="save-settings-btn"
+                  className={`${BTN_PRIMARY} w-full sm:w-auto sm:px-8`}
+                >
+                  {saving ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      <Save className="w-5 h-5 mr-2" aria-hidden="true" />
+                      Salva Impostazioni
+                    </>
+                  )}
+                </Button>
               </div>
-            </CardContent>
-          </Card>
+            </form>
+          )}
 
-          {/* Blocked Slots */}
-          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
-            <CardHeader>
-              <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
-                <Lock className="w-5 h-5 text-red-500" />
-                Blocco Orari
-              </CardTitle>
-              <p className="text-sm text-[#7C5C4A] mt-1">Clicca i giorni nel calendario per bloccarli in blocco. Le festività italiane sono evidenziate in giallo.</p>
-            </CardHeader>
-            <CardContent className="space-y-5">
-
-              {/* ── CALENDARIO ─────────────────────────────────────── */}
+          {tab === 'orari' && (
+            <>
+              <SectionCard icon={Lock} title="Blocco orari" description="Tocca i giorni nel calendario per bloccarli. Le festività italiane sono evidenziate.">
               <div className="rounded-2xl border border-[#F0E6DC] overflow-hidden">
                 {/* Navigazione mese */}
-                <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-red-50 to-orange-50 border-b border-[#F0E6DC]">
-                  <button onClick={calPrevMonth} className="w-8 h-8 rounded-full hover:bg-white/70 flex items-center justify-center transition-colors">
+                <div className="flex items-center justify-between px-4 py-3 bg-[color-mix(in_srgb,var(--admin-accent)_16%,white)] border-b border-[#F0E6DC]">
+                  <button type="button" aria-label="Mese precedente" onClick={calPrevMonth} className="w-11 h-11 rounded-full hover:bg-white/70 flex items-center justify-center transition-colors">
                     <ChevronLeft className="w-4 h-4 text-[#7C5C4A]" />
                   </button>
                   <div className="text-center">
                     <p className="font-bold text-[#2D1B14] capitalize">
                       {new Date(calYear, calMonth, 1).toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}
                     </p>
-                    <div className="flex items-center justify-center gap-3 mt-1">
-                      <span className="flex items-center gap-1 text-[10px] text-[#7C5C4A]"><span className="w-2.5 h-2.5 rounded-sm bg-amber-300 inline-block" /> Festività</span>
-                      <span className="flex items-center gap-1 text-[10px] text-[#7C5C4A]"><span className="w-2.5 h-2.5 rounded-sm bg-red-400 inline-block" /> Bloccato</span>
-                      <span className="flex items-center gap-1 text-[10px] text-[#7C5C4A]"><span className="w-2.5 h-2.5 rounded-sm bg-orange-400 inline-block" /> Ricorrente</span>
-                      <span className="flex items-center gap-1 text-[10px] text-[#7C5C4A]"><span className="w-2.5 h-2.5 rounded-sm bg-[#C8617A] inline-block" /> Selezionato</span>
+                    <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 mt-1">
+                      <span className="flex items-center gap-1 text-sm text-[#7C5C4A]"><span className="w-2.5 h-2.5 rounded-sm bg-amber-300 inline-block" /> Festività</span>
+                      <span className="flex items-center gap-1 text-sm text-[#7C5C4A]"><span className="w-2.5 h-2.5 rounded-sm bg-red-400 inline-block" /> Bloccato</span>
+                      <span className="flex items-center gap-1 text-sm text-[#7C5C4A]"><span className="w-2.5 h-2.5 rounded-sm bg-orange-400 inline-block" /> Ricorrente</span>
+                      <span className="flex items-center gap-1 text-sm text-[#7C5C4A]"><span className="w-2.5 h-2.5 rounded-sm bg-[color:var(--admin-primary)] inline-block" /> Selezionato</span>
                     </div>
                   </div>
-                  <button onClick={calNextMonth} className="w-8 h-8 rounded-full hover:bg-white/70 flex items-center justify-center transition-colors">
+                  <button type="button" aria-label="Mese successivo" onClick={calNextMonth} className="w-11 h-11 rounded-full hover:bg-white/70 flex items-center justify-center transition-colors">
                     <ChevronRight className="w-4 h-4 text-[#7C5C4A]" />
                   </button>
                 </div>
 
                 {/* Pulsanti rapidi */}
                 <div className="flex flex-wrap gap-2 px-4 py-2 bg-[#FAF7F2] border-b border-[#F0E6DC]">
-                  <button onClick={selectHolidaysInMonth}
-                    className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-100 text-amber-800 hover:bg-amber-200 transition-colors">
-                    🎉 Aggiungi festività del mese
+                  <button type="button" onClick={selectHolidaysInMonth}
+                    className={BTN_CHIP}>
+                    Aggiungi festività del mese
                   </button>
-                  <button onClick={selectAllInMonth}
-                    className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors">
+                  <button type="button" onClick={selectAllInMonth}
+                    className={BTN_CHIP}>
                     <CalendarDays className="w-3 h-3" /> Seleziona tutto il mese
                   </button>
                   {selectedDates.size > 0 && (
-                    <button onClick={() => setSelectedDates(new Set())}
-                      className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors ml-auto">
+                    <button type="button" onClick={() => setSelectedDates(new Set())}
+                      className={BTN_CHIP}>
                       <X className="w-3 h-3" /> Deseleziona tutto
                     </button>
                   )}
@@ -652,11 +741,11 @@ export default function SettingsPage() {
                   {/* Intestazione giorni */}
                   <div className="grid grid-cols-7 mb-1">
                     {['Lun','Mar','Mer','Gio','Ven','Sab','Dom'].map(d => (
-                      <div key={d} className="text-center text-[10px] font-bold text-[#7C5C4A] uppercase py-1">{d}</div>
+                      <div key={d} className="text-center text-sm font-bold text-[#7C5C4A] uppercase py-1">{d}</div>
                     ))}
                   </div>
                   {/* Celle giorni */}
-                  <div className="grid grid-cols-7 gap-0.5">
+                  <div className="grid grid-cols-7 gap-1">
                     {(() => {
                       const firstDay = new Date(calYear, calMonth, 1);
                       // Lunedì = 0, ... Domenica = 6
@@ -678,18 +767,18 @@ export default function SettingsPage() {
                         const isSaturday = new Date(calYear, calMonth, d).getDay() === 6;
                         const isEditing = editingBlock?.date === key;
 
-                        let bg = 'bg-white hover:bg-[#FFF0F3]';
+                        let bg = 'bg-white hover:bg-[color-mix(in_srgb,var(--admin-primary)_8%,white)]';
                         let text = 'text-[#2D1B14]';
                         let border = 'border border-[#F0E6DC]';
 
-                        if (isSelected) { bg = 'bg-[#C8617A]'; text = 'text-white'; border = 'border border-[#A0404F]'; }
+                        if (isSelected) { bg = 'bg-[color:var(--admin-primary)]'; text = 'text-white'; border = 'border border-[color:var(--admin-primary)]'; }
                         else if (isBlocked && !isRecurringBlocked) { bg = 'bg-red-400 hover:bg-red-500'; text = 'text-white'; border = 'border border-red-500'; }
                         else if (isRecurringBlocked) { bg = 'bg-orange-400 hover:bg-orange-500'; text = 'text-white'; border = 'border border-orange-500'; }
                         else if (isHoliday) { bg = 'bg-amber-100 hover:bg-amber-200'; text = 'text-amber-900'; border = 'border border-amber-300'; }
                         else if (isSunday) { bg = 'bg-slate-50 hover:bg-slate-100'; text = 'text-slate-500'; }
 
                         cells.push(
-                          <button
+                          <button type="button" type="button"
                             key={key}
                             onClick={() => {
                               if (isBlocked) {
@@ -704,7 +793,7 @@ export default function SettingsPage() {
                               });
                             }}
                             title={isHoliday ? calHolidays[key] : isBlocked ? `${blockedDateMap[key]?.reason || 'Bloccato'} — clicca per gestire` : key}
-                            className={`relative rounded-lg text-xs font-semibold h-9 flex flex-col items-center justify-center transition-all ${bg} ${text} ${border} cursor-pointer ${isToday && !isSelected ? 'ring-2 ring-[#C8617A] ring-offset-1' : ''} ${isEditing ? 'ring-2 ring-orange-400 ring-offset-1' : ''}`}
+                            className={`relative rounded-lg text-sm font-semibold h-11 flex flex-col items-center justify-center transition-all ${bg} ${text} ${border} cursor-pointer ${isToday && !isSelected ? 'ring-2 ring-[color:var(--admin-primary)] ring-offset-1' : ''} ${isEditing ? 'ring-2 ring-orange-400 ring-offset-1' : ''}`}
                           >
                             <span>{d}</span>
                             {isHoliday && !isSelected && !isBlocked && <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-amber-400" />}
@@ -719,15 +808,15 @@ export default function SettingsPage() {
 
                 {/* Pannello selezione attiva */}
                 {selectedDates.size > 0 && (
-                  <div className="border-t border-[#F0E6DC] bg-[#FFF5F7] px-4 py-3 space-y-3">
-                    <p className="text-sm font-bold text-[#C8617A]">
+                  <div className="border-t border-[#F0E6DC] bg-[color-mix(in_srgb,var(--admin-primary)_6%,white)] px-4 py-3 space-y-3">
+                    <p className="text-sm font-bold text-[color:var(--admin-primary)]">
                       {selectedDates.size} giorn{selectedDates.size === 1 ? 'o selezionato' : 'i selezionati'} — imposta il blocco:
                     </p>
                     <div className="flex flex-wrap items-center gap-3">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <div
                           onClick={() => setCalForm(f => ({...f, all_day: !f.all_day}))}
-                          className={`w-10 h-5 rounded-full transition-colors relative ${calForm.all_day ? 'bg-[#C8617A]' : 'bg-gray-300'}`}>
+                          className={`w-10 h-5 rounded-full transition-colors relative ${calForm.all_day ? 'bg-[color:var(--admin-primary)]' : 'bg-gray-300'}`}>
                           <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${calForm.all_day ? 'left-5' : 'left-0.5'}`} />
                         </div>
                         <span className="text-sm font-semibold text-[#2D1B14]">Giornata intera</span>
@@ -735,25 +824,25 @@ export default function SettingsPage() {
                       {!calForm.all_day && (
                         <>
                           <div className="flex items-center gap-1">
-                            <Label className="text-xs text-[#7C5C4A]">Da</Label>
+                            <Label className="text-sm text-[#7C5C4A]">Da</Label>
                             <Input type="time" value={calForm.start_time}
                               onChange={e => setCalForm(f => ({...f, start_time: e.target.value}))}
-                              className="w-24 text-sm h-8" />
+                              className="w-24 text-sm h-11" />
                           </div>
                           <div className="flex items-center gap-1">
-                            <Label className="text-xs text-[#7C5C4A]">A</Label>
+                            <Label className="text-sm text-[#7C5C4A]">A</Label>
                             <Input type="time" value={calForm.end_time}
                               onChange={e => setCalForm(f => ({...f, end_time: e.target.value}))}
-                              className="w-24 text-sm h-8" />
+                              className="w-24 text-sm h-11" />
                           </div>
                         </>
                       )}
                       <Input placeholder="Motivo (es. Ferie, Festività...)"
                         value={calForm.reason}
                         onChange={e => setCalForm(f => ({...f, reason: e.target.value}))}
-                        className="flex-1 min-w-[160px] text-sm h-8" />
+                        className="flex-1 min-w-[160px] text-sm h-11" />
                       <Button onClick={bulkBlockDates} disabled={bulkSaving}
-                        className="bg-red-500 hover:bg-red-600 text-white font-bold h-9 shrink-0">
+                        className={`${BTN_PRIMARY} shrink-0`}>
                         {bulkSaving
                           ? <><Loader2 className="w-4 h-4 animate-spin mr-1" /> Salvo...</>
                           : <><Lock className="w-4 h-4 mr-1" /> Blocca {selectedDates.size} giorn{selectedDates.size === 1 ? 'o' : 'i'}</>}
@@ -762,10 +851,10 @@ export default function SettingsPage() {
                     {/* Elenco giorni selezionati */}
                     <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto">
                       {[...selectedDates].sort().map(d => (
-                        <span key={d} className="flex items-center gap-1 bg-[#C8617A]/10 text-[#C8617A] text-xs font-semibold px-2 py-0.5 rounded-full border border-[#C8617A]/20">
+                        <span key={d} className="flex items-center gap-1 bg-[color-mix(in_srgb,var(--admin-primary)_10%,transparent)] text-[color:var(--admin-primary)] text-sm font-semibold px-2 py-0.5 rounded-full border border-[color-mix(in_srgb,var(--admin-primary)_20%,transparent)]">
                           {d.slice(8)}/{d.slice(5,7)}
-                          {calHolidays[d] && <span className="text-amber-600">🎉</span>}
-                          <button onClick={() => setSelectedDates(prev => { const n = new Set(prev); n.delete(d); return n; })} className="hover:text-red-600 ml-0.5">×</button>
+                          
+                          <button type="button" onClick={() => setSelectedDates(prev => { const n = new Set(prev); n.delete(d); return n; })} aria-label={`Rimuovi ${d.slice(8)}/${d.slice(5,7)}`} className="hover:text-red-600 ml-0.5 -my-3 -mr-2 min-w-[44px] min-h-[44px] inline-flex items-center justify-center">×</button>
                         </span>
                       ))}
                     </div>
@@ -782,23 +871,23 @@ export default function SettingsPage() {
                         <p className="text-sm text-[#2D1B14] mt-0.5">
                           {editingBlock.slot.start_time} – {editingBlock.slot.end_time}
                           {editingBlock.slot.start_time === '00:00' && editingBlock.slot.end_time === '23:59' &&
-                            <span className="ml-1.5 text-xs font-semibold text-orange-600">Giornata intera</span>}
+                            <span className="ml-1.5 text-sm font-semibold text-orange-600">Giornata intera</span>}
                         </p>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${editingBlock.slot.type === 'recurring' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'}`}>
+                          <span className={`text-sm font-bold px-2 py-0.5 rounded-full ${editingBlock.slot.type === 'recurring' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'}`}>
                             {editingBlock.slot.type === 'recurring' ? `Ogni ${editingBlock.slot.day_of_week}` : 'Una tantum'}
                           </span>
-                          {editingBlock.slot.reason && <span className="text-xs text-[#7C5C4A]">{editingBlock.slot.reason}</span>}
+                          {editingBlock.slot.reason && <span className="text-sm text-[#7C5C4A]">{editingBlock.slot.reason}</span>}
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
                         <Button size="sm" variant="ghost"
                           onClick={() => { deleteBlockedSlot(editingBlock.slot.id); setEditingBlock(null); }}
-                          className="text-red-500 hover:bg-red-100 h-8 px-3 text-xs font-bold">
+                          className="text-red-500 hover:bg-red-100 h-11 px-3 text-sm font-bold">
                           <Trash2 className="w-3.5 h-3.5 mr-1" /> Elimina
                         </Button>
-                        <button onClick={() => setEditingBlock(null)}
-                          className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400">
+                        <button type="button" onClick={() => setEditingBlock(null)}
+                          className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400">
                           <X className="w-4 h-4" />
                         </button>
                       </div>
@@ -806,25 +895,14 @@ export default function SettingsPage() {
                   </div>
                 )}
               </div>
+              </SectionCard>
 
-            </CardContent>
-          </Card>
-
-          {/* Blocco Orari Ricorrenti */}
-          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
-            <CardHeader>
-              <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
-                <Lock className="w-5 h-5 text-red-500" />
-                Blocca Orari Ricorrenti
-              </CardTitle>
-              <p className="text-sm text-[#7C5C4A] mt-1">Blocca una fascia oraria che si ripete (es. pausa pranzo), come i Giorni Lavorativi qui sopra — vale sia sul Planning che sulle prenotazioni online.</p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-wrap items-end gap-3">
+              <SectionCard icon={Lock} title="Blocca orari ricorrenti" description="Blocca una fascia oraria che si ripete (es. pausa pranzo). Vale sia sul Planning che sulle prenotazioni online.">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
                 <div>
-                  <Label className="text-xs font-semibold">Tipo</Label>
+                  <Label className="text-sm font-semibold block mb-1">Tipo</Label>
                   <select value={newBlock.type} onChange={e => setNewBlock(b => ({ ...b, type: e.target.value }))}
-                    className="w-full p-2 border rounded-lg text-sm h-9">
+                    className="w-full px-3 border rounded-lg text-base h-11 bg-white">
                     <option value="recurring">Ogni settimana</option>
                     <option value="daily">Ogni giorno</option>
                     <option value="monthly">Ogni mese</option>
@@ -833,43 +911,43 @@ export default function SettingsPage() {
                 </div>
                 {newBlock.type === 'recurring' && (
                   <div>
-                    <Label className="text-xs font-semibold">Giorno</Label>
+                    <Label className="text-sm font-semibold block mb-1">Giorno</Label>
                     <select value={newBlock.day_of_week} onChange={e => setNewBlock(b => ({ ...b, day_of_week: e.target.value }))}
-                      className="w-full p-2 border rounded-lg text-sm h-9">
+                      className="w-full px-3 border rounded-lg text-base h-11 bg-white">
                       {DAYS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
                     </select>
                   </div>
                 )}
                 {(newBlock.type === 'monthly' || newBlock.type === 'yearly') && (
                   <div>
-                    <Label className="text-xs font-semibold">Giorno del mese</Label>
+                    <Label className="text-sm font-semibold block mb-1">Giorno del mese</Label>
                     <Input type="number" min={1} max={31} value={newBlock.day_of_month}
                       onChange={e => setNewBlock(b => ({ ...b, day_of_month: parseInt(e.target.value) || 1 }))}
-                      className="w-20 h-9" />
+                      className="w-full h-11" />
                   </div>
                 )}
                 {newBlock.type === 'yearly' && (
                   <div>
-                    <Label className="text-xs font-semibold">Mese</Label>
+                    <Label className="text-sm font-semibold block mb-1">Mese</Label>
                     <select value={newBlock.month_of_year} onChange={e => setNewBlock(b => ({ ...b, month_of_year: parseInt(e.target.value) }))}
-                      className="w-full p-2 border rounded-lg text-sm h-9">
+                      className="w-full px-3 border rounded-lg text-base h-11 bg-white">
                       {MONTH_NAMES.map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
                     </select>
                   </div>
                 )}
                 <div>
-                  <Label className="text-xs font-semibold">Da</Label>
-                  <Input type="time" value={newBlock.start_time} onChange={e => setNewBlock(b => ({ ...b, start_time: e.target.value }))} className="w-28 h-9" />
+                  <Label className="text-sm font-semibold block mb-1">Da</Label>
+                  <Input type="time" value={newBlock.start_time} onChange={e => setNewBlock(b => ({ ...b, start_time: e.target.value }))} className="w-full h-11" />
                 </div>
                 <div>
-                  <Label className="text-xs font-semibold">A</Label>
-                  <Input type="time" value={newBlock.end_time} onChange={e => setNewBlock(b => ({ ...b, end_time: e.target.value }))} className="w-28 h-9" />
+                  <Label className="text-sm font-semibold block mb-1">A</Label>
+                  <Input type="time" value={newBlock.end_time} onChange={e => setNewBlock(b => ({ ...b, end_time: e.target.value }))} className="w-full h-11" />
                 </div>
-                <div className="flex-1 min-w-[160px]">
-                  <Label className="text-xs font-semibold">Motivo (opzionale)</Label>
-                  <Input placeholder="es. Pausa pranzo" value={newBlock.reason} onChange={e => setNewBlock(b => ({ ...b, reason: e.target.value }))} className="h-9" />
+                <div className="sm:col-span-2">
+                  <Label className="text-sm font-semibold block mb-1">Motivo (opzionale)</Label>
+                  <Input placeholder="es. Pausa pranzo" value={newBlock.reason} onChange={e => setNewBlock(b => ({ ...b, reason: e.target.value }))} className="h-11" />
                 </div>
-                <Button onClick={addBlockedSlot} disabled={savingBlock} className="bg-red-500 hover:bg-red-600 text-white h-9">
+                <Button onClick={addBlockedSlot} disabled={savingBlock} className={BTN_PRIMARY}>
                   {savingBlock ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Lock className="w-4 h-4 mr-1" />} Blocca
                 </Button>
               </div>
@@ -890,90 +968,133 @@ export default function SettingsPage() {
                       </span>
                       {s.reason && <span className="text-[#7C5C4A] italic ml-2">— {s.reason}</span>}
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => deleteBlockedSlot(s.id)} className="text-red-500 hover:bg-red-100 h-7 px-2 text-xs font-bold shrink-0">
+                    <Button variant="ghost" size="sm" onClick={() => deleteBlockedSlot(s.id)} className="text-red-600 hover:bg-red-50 h-11 px-3 text-sm font-bold shrink-0">
                       <Unlock className="w-3.5 h-3.5 mr-1" /> Sblocca
                     </Button>
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
+              </SectionCard>
+            </>
+          )}
 
-          {/* Sincronizzazione calendario */}
-          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
-            <CardHeader>
-              <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
-                <CalendarDays className="w-5 h-5 text-[#C8617A]" />
-                Sincronizza Calendario
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <CalendarSyncCard />
-            </CardContent>
-          </Card>
-
-          {/* Backup */}
-          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
-            <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
-              <p className="text-sm text-[#7C5C4A]">I backup si gestiscono nella pagina Backup</p>
-              <Button type="button" variant="outline" onClick={() => navigate('/backup')}
-                className="border-[#C8617A] text-[#C8617A] hover:bg-[#C8617A]/10">
-                <Save className="w-4 h-4 mr-2" /> Vai ai Backup
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Manutenzione dati — unione duplicati */}
-          <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
-            <CardHeader>
-              <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
-                <User className="w-5 h-5 text-[#C8617A]" />
-                Manutenzione dati
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-[#7C5C4A]">
-                Se una cliente appare due volte in rubrica o risulta "assente" pur essendo venuta,
-                potrebbe esserci un doppione. Questo strumento unisce i clienti con lo stesso nome
-                e riassegna i loro appuntamenti a un unico profilo.
-              </p>
-              <Button
-                type="button"
-                onClick={handleMergeDuplicates}
-                disabled={mergingDups}
-                className="bg-[#C8617A] hover:bg-[#A0404F] text-white"
-                data-testid="merge-duplicates-btn"
-              >
-                {mergingDups ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Unione in corso…</>
-                ) : (
-                  <><Check className="w-4 h-4 mr-2" /> Trova e unisci clienti duplicati</>
+          {tab === 'messaggi' && (
+            <SectionCard icon={Share2} title="WhatsApp Cloud API" description="Il collegamento con Meta per i messaggi ai clienti. Token e Phone Number ID sono già impostati su Render: qui controlli solo che tutto funzioni.">
+              <div>
+                <Button type="button" onClick={testCloudApi} disabled={testingCloudApi} className={BTN_PRIMARY}>
+                  {testingCloudApi ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                  Verifica stato
+                </Button>
+              </div>
+              {cloudApiTest && <StatusNote status={{ ok: !!cloudApiTest.ok, message: cloudApiTest.message }} />}
+              <div className="border-t border-[#F0E6DC] pt-4 space-y-3">
+                <div>
+                  <p className="text-base font-semibold text-[#2D1B14]">Template approvati su Meta</p>
+                  <p className="text-sm text-[#7C5C4A]">Richiede la variabile <code>WHATSAPP_BUSINESS_ACCOUNT_ID</code> su Render. Mostra nome, stato (APPROVED/PENDING/REJECTED), lingua e numero di parametri.</p>
+                </div>
+                <Button type="button" onClick={fetchCloudApiTemplates} disabled={templatesList.loading} variant="outline" className={BTN_OUTLINE} title="Mostra tutti i template registrati su Meta (con stato approvazione)">
+                  {templatesList.loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                  Lista template Meta
+                </Button>
+                {templatesList.error && (
+                  <div className="mt-2 p-2 rounded bg-red-50 text-red-700 text-sm border border-red-200">{templatesList.error}</div>
                 )}
-              </Button>
-            </CardContent>
-          </Card>
+                {templatesList.data && (
+                  <div className="mt-2 space-y-1 max-h-72 overflow-auto">
+                    <p className="text-sm font-semibold text-[#2D1B14]">{templatesList.data.count} template trovati ({templatesList.data.approved?.length || 0} approvati)</p>
+                    {templatesList.data.phone_belongs_to_this_waba === false && (
+                      <div className="p-2 rounded border text-sm bg-red-50 border-red-300 text-red-800 font-medium">
+                        ❌ Il numero di invio (Phone Number ID {templatesList.data.sending_phone_id}) NON appartiene a questo WhatsApp Business Account — i template qui sopra non sono utilizzabili per l'invio da questo numero, anche se "approvati". Verifica WHATSAPP_BUSINESS_ACCOUNT_ID su Render.
+                      </div>
+                    )}
+                    {templatesList.data.phone_belongs_to_this_waba === true && (
+                      <div className="p-2 rounded border text-sm bg-green-50 border-green-300 text-green-800">✅ Numero di invio verificato: appartiene a questo WABA.</div>
+                    )}
+                    {templatesList.data.all?.map((t, i) => (
+                      <div key={i} className={`p-2 rounded border text-sm ${t.status === 'APPROVED' ? 'bg-green-50 border-green-200' : t.status === 'REJECTED' ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'}`}>
+                        <div className="flex flex-wrap justify-between items-center gap-x-3 gap-y-1">
+                          <code className="font-bold break-all">{t.name}</code>
+                          <span className="font-medium">{t.status} · {t.category} · {t.language} · {t.param_count} var</span>
+                        </div>
+                        {t.body_text && <div className="text-sm text-gray-600 mt-1 line-clamp-2">{t.body_text}</div>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </SectionCard>
+          )}
 
-          {/* Save Button */}
-          <div className="flex justify-end">
-            <Button
-              type="submit"
-              disabled={saving}
-              data-testid="save-settings-btn"
-              className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-[0_4px_12px_rgba(200,97,122,0.3)] shadow-lg shadow-[rgba(200,97,122,0.3)] px-8"
-            >
-              {saving ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <>
-                  <Save className="w-5 h-5 mr-2" />
-                  Salva Impostazioni
-                </>
-              )}
-            </Button>
-          </div>
-        </form>
+          {tab === 'collegamenti' && (
+            <>
+              <SectionCard icon={CalendarDays} title="Sincronizza calendario" description="Genera un link da inserire una sola volta come «calendario da URL» su Google Calendar o iPhone: da quel momento ogni appuntamento apparirà automaticamente sul telefono.">
+                <CalendarSyncCard />
+              </SectionCard>
 
-        {/* Admin Theme Customization */}
+              <SectionCard icon={Share2} title="Make.com — post social" description="Incolla l'URL del webhook di Make.com per pubblicare i post su Instagram, Facebook e TikTok. Lo trovi in Make.com → scenario dei post social → webhook.">
+                <div className="space-y-2">
+                  <Label htmlFor="settings-make-webhook">Webhook URL Make.com</Label>
+                  <Input
+                    id="settings-make-webhook"
+                    type="url"
+                    placeholder="https://hook.make.com/..."
+                    value={makeWebhookUrl}
+                    onChange={(e) => setMakeWebhookUrl(e.target.value)}
+                    className={`${FIELD} font-mono text-sm`}
+                  />
+                  <p className="text-sm text-[#7C5C4A]">
+                    L'URL deve iniziare con <code className="bg-gray-100 px-1 rounded">https://hook.make.com/</code>. Le immagini dei post vengono caricate automaticamente su Cloudinary.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button
+                    type="button"
+                    onClick={saveMakeWebhookUrl}
+                    disabled={savingMakeWebhook || !makeWebhookUrl.trim()}
+                    className={BTN_PRIMARY}
+                  >
+                    {savingMakeWebhook ? (
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Salvo...</>
+                    ) : (
+                      <><Save className="w-4 h-4 mr-2" aria-hidden="true" /> Salva webhook</>
+                    )}
+                  </Button>
+                  {makeStatus
+                    ? <StatusNote status={makeStatus} />
+                    : makeWebhookUrl && (
+                      <span className="inline-flex items-center gap-1 text-sm font-semibold text-green-800">
+                        <Check className="w-4 h-4" aria-hidden="true" /> Configurato
+                      </span>
+                    )}
+                </div>
+              </SectionCard>
+
+              <SectionCard icon={User} title="Manutenzione dati" description={'Se una cliente appare due volte in rubrica o risulta "assente" pur essendo venuta, potrebbe esserci un doppione. Questo strumento unisce i clienti con lo stesso nome e riassegna i loro appuntamenti a un unico profilo.'}>
+                <Button
+                  type="button"
+                  onClick={handleMergeDuplicates}
+                  disabled={mergingDups}
+                  className={BTN_PRIMARY}
+                  data-testid="merge-duplicates-btn"
+                >
+                  {mergingDups ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Unione in corso…</>
+                  ) : (
+                    <><Check className="w-4 h-4 mr-2" aria-hidden="true" /> Trova e unisci clienti duplicati</>
+                  )}
+                </Button>
+              </SectionCard>
+
+              <SectionCard icon={Save} title="Backup" description="I backup si gestiscono nella pagina Backup">
+                <Button type="button" onClick={() => navigate('/backup')} className={BTN_PRIMARY}>
+                  Vai ai Backup
+                </Button>
+              </SectionCard>
+            </>
+          )}
+
+          {tab === 'account' && (
+            <>
         <Card className="bg-white border-[#F0E6DC]/30 shadow-sm">
           <CardHeader>
             <CardTitle className="font-display text-xl text-[#2D1B14] flex items-center gap-2">
@@ -1074,196 +1195,91 @@ export default function SettingsPage() {
             </div>
 
             {/* Save / Reset */}
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <Button onClick={saveAdminTheme} disabled={savingTheme}
-                className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white px-8" data-testid="save-admin-theme-btn">
+                className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white px-8 min-h-[44px]" data-testid="save-admin-theme-btn">
                 {savingTheme ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-2" /> Salva Tema</>}
               </Button>
               <Button variant="outline" onClick={() => {
                 const def = { primary: '#C8617A', sidebar_bg: '#FAF7F2', sidebar_text: '#2D1B14', accent: '#D4A847', font_display: 'Cormorant Garamond', font_body: 'Poppins', content_bg: '#F8F5F0', content_text: '#2D1B14' };
                 setAdminTheme(def); applyAdminTheme(def);
                 toast.success('Tema ripristinato — salva per confermare');
-              }} className="text-[#7C5C4A]" data-testid="reset-admin-theme-btn">
+              }} className="text-[#7C5C4A] min-h-[44px]" data-testid="reset-admin-theme-btn">
                 <RotateCcw className="w-4 h-4 mr-2" /> Ripristina Default
               </Button>
             </div>
           </CardContent>
         </Card>
 
-        {/* WhatsApp Cloud API — Meta ufficiale */}
-        <Card className="border-2 border-green-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-[#2D1B14]">
-              <Share2 className="w-5 h-5 text-green-600" />
-              WhatsApp Cloud API — Meta (provider ufficiale)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="p-3 rounded-xl bg-green-50 border border-green-200 text-sm text-green-800">
-              Il token e il Phone Number ID sono configurati come variabili d'ambiente su Render. Non serve inserire nulla qui — clicca "Verifica stato" per controllare che tutto funzioni.
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <Button onClick={testCloudApi} disabled={testingCloudApi} variant="outline" className="border-2 border-green-200 text-green-700 hover:bg-green-50">
-                {testingCloudApi ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                Verifica stato
-              </Button>
-            </div>
-            {cloudApiTest && (
-              <div className={`p-3 rounded-xl text-sm font-medium ${cloudApiTest.ok ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
-                {cloudApiTest.message}
-              </div>
-            )}
-            <div className="border-t border-green-100 pt-4 space-y-2">
-              <div className="border-t border-green-100 pt-2 mt-2">
-                <Button onClick={fetchCloudApiTemplates} disabled={templatesList.loading} variant="outline" className="border-blue-400 text-blue-700 hover:bg-blue-50 w-full" title="Mostra tutti i template registrati su Meta (con stato approvazione)">
-                  {templatesList.loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                  📋 Lista template Meta (verifica approvati)
-                </Button>
-                <p className="text-xs text-[#7A5A4D] mt-1">Richiede env var <code>WHATSAPP_BUSINESS_ACCOUNT_ID</code> su Render. Mostra nome, stato (APPROVED/PENDING/REJECTED), lingua e n° parametri.</p>
-                {templatesList.error && (
-                  <div className="mt-2 p-2 rounded bg-red-50 text-red-700 text-xs border border-red-200">{templatesList.error}</div>
-                )}
-                {templatesList.data && (
-                  <div className="mt-2 space-y-1 max-h-72 overflow-auto">
-                    <p className="text-xs font-semibold text-[#2D1B14]">{templatesList.data.count} template trovati ({templatesList.data.approved?.length || 0} approvati)</p>
-                    {templatesList.data.phone_belongs_to_this_waba === false && (
-                      <div className="p-2 rounded border text-xs bg-red-50 border-red-300 text-red-800 font-medium">
-                        ❌ Il numero di invio (Phone Number ID {templatesList.data.sending_phone_id}) NON appartiene a questo WhatsApp Business Account — i template qui sopra non sono utilizzabili per l'invio da questo numero, anche se "approvati". Verifica WHATSAPP_BUSINESS_ACCOUNT_ID su Render.
-                      </div>
-                    )}
-                    {templatesList.data.phone_belongs_to_this_waba === true && (
-                      <div className="p-2 rounded border text-xs bg-green-50 border-green-300 text-green-800">✅ Numero di invio verificato: appartiene a questo WABA.</div>
-                    )}
-                    {templatesList.data.all?.map((t, i) => (
-                      <div key={i} className={`p-2 rounded border text-xs ${t.status === 'APPROVED' ? 'bg-green-50 border-green-200' : t.status === 'REJECTED' ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'}`}>
-                        <div className="flex justify-between items-center">
-                          <code className="font-bold">{t.name}</code>
-                          <span className="font-medium">{t.status} · {t.category} · {t.language} · {t.param_count} var</span>
-                        </div>
-                        {t.body_text && <div className="text-[10px] text-gray-600 mt-1 line-clamp-2">{t.body_text}</div>}
-                      </div>
-                    ))}
+              <SectionCard icon={Lock} title="Cambia password" description="Scegli una nuova password di almeno 6 caratteri.">
+                <form onSubmit={handleChangePassword} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="settings-current-password">Password attuale</Label>
+                    <Input
+                      id="settings-current-password"
+                      type="password"
+                      value={pwForm.current_password}
+                      onChange={(e) => setPwForm({ ...pwForm, current_password: e.target.value })}
+                      placeholder="Inserisci password attuale"
+                      required
+                      autoComplete="current-password"
+                      data-testid="current-password-input"
+                      className={FIELD}
+                    />
                   </div>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Make.com Webhook Configuration */}
-        <Card className="border-2 border-amber-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-[#2D1B14]">
-              <Share2 className="w-5 h-5 text-amber-600" />
-              Configura Make.com — Webhooks per Post Social
-            </CardTitle>
-            <p className="text-sm text-[#7C5C4A] mt-1">Incolla l'URL del webhook Make.com per permettere al gestionale di pubblicare post automaticamente su Instagram, Facebook e TikTok</p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-800">
-              Accedi a <strong>Make.com</strong> → Scenario di post social → Copia l'URL del webhook → Incollalo qui sotto
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[#2D1B14] font-semibold">Webhook URL Make.com</Label>
-              <Input
-                type="url"
-                placeholder="https://hook.make.com/..."
-                value={makeWebhookUrl}
-                onChange={(e) => setMakeWebhookUrl(e.target.value)}
-                className="font-mono text-xs"
-              />
-              <p className="text-xs text-[#7C5C4A]">
-                L'URL deve iniziare con <code className="bg-gray-100 px-1 rounded">https://hook.make.com/</code>
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                onClick={saveMakeWebhookUrl}
-                disabled={savingMakeWebhook || !makeWebhookUrl.trim()}
-                className="bg-amber-600 hover:bg-amber-700 text-white"
-              >
-                {savingMakeWebhook ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Salvo...</>
-                ) : (
-                  <><Save className="w-4 h-4 mr-2" /> Salva Webhook</>
-                )}
-              </Button>
-              {makeWebhookUrl && (
-                <div className="flex items-center gap-1 text-sm text-green-700 bg-green-50 px-3 py-2 rounded-lg border border-green-200">
-                  <Check className="w-4 h-4" />
-                  Configurato
-                </div>
-              )}
-            </div>
-            <p className="text-sm text-green-700 bg-green-50 p-3 rounded-lg border border-green-200">
-              ✅ Le immagini dei post vengono caricate automaticamente su Cloudinary.
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Change Password */}
-        <Card className="border-2 border-[#F0E6DC]">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-[#2D1B14]">
-              <Lock className="w-5 h-5 text-[#C8617A]" />
-              Cambia Password
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleChangePassword} className="space-y-4">
-              <div className="space-y-2">
-                <Label className="text-[#2D1B14] font-semibold">Password Attuale</Label>
-                <Input
-                  type="password"
-                  value={pwForm.current_password}
-                  onChange={(e) => setPwForm({ ...pwForm, current_password: e.target.value })}
-                  placeholder="Inserisci password attuale"
-                  required
-                  data-testid="current-password-input"
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-[#2D1B14] font-semibold">Nuova Password</Label>
-                  <Input
-                    type="password"
-                    value={pwForm.new_password}
-                    onChange={(e) => setPwForm({ ...pwForm, new_password: e.target.value })}
-                    placeholder="Minimo 6 caratteri"
-                    required
-                    data-testid="new-password-input"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[#2D1B14] font-semibold">Conferma Nuova Password</Label>
-                  <Input
-                    type="password"
-                    value={pwForm.confirm_password}
-                    onChange={(e) => setPwForm({ ...pwForm, confirm_password: e.target.value })}
-                    placeholder="Ripeti nuova password"
-                    required
-                    data-testid="confirm-password-input"
-                  />
-                </div>
-              </div>
-              <Button
-                type="submit"
-                disabled={changingPw}
-                className="bg-[#0F172A] hover:bg-[#1E293B] text-white"
-                data-testid="change-password-btn"
-              >
-                {changingPw ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <>
-                    <Lock className="w-4 h-4 mr-2" />
-                    Cambia Password
-                  </>
-                )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="settings-new-password">Nuova password</Label>
+                      <Input
+                        id="settings-new-password"
+                        type="password"
+                        value={pwForm.new_password}
+                        onChange={(e) => setPwForm({ ...pwForm, new_password: e.target.value })}
+                        placeholder="Minimo 6 caratteri"
+                        required
+                        autoComplete="new-password"
+                        data-testid="new-password-input"
+                        className={FIELD}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="settings-confirm-password">Conferma nuova password</Label>
+                      <Input
+                        id="settings-confirm-password"
+                        type="password"
+                        value={pwForm.confirm_password}
+                        onChange={(e) => setPwForm({ ...pwForm, confirm_password: e.target.value })}
+                        placeholder="Ripeti nuova password"
+                        required
+                        autoComplete="new-password"
+                        data-testid="confirm-password-input"
+                        className={FIELD}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Button
+                      type="submit"
+                      disabled={changingPw}
+                      className={BTN_PRIMARY}
+                      data-testid="change-password-btn"
+                    >
+                      {changingPw ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <>
+                          <Lock className="w-4 h-4 mr-2" aria-hidden="true" />
+                          Cambia password
+                        </>
+                      )}
+                    </Button>
+                    <StatusNote status={pwStatus} />
+                  </div>
+                </form>
+              </SectionCard>
+            </>
+          )}
+        </div>
       </div>
     </Layout>
   );
