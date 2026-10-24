@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import api, { API } from '../lib/api';
 import Layout from '../components/Layout';
-import PageHeader from '../components/PageHeader';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,7 +26,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Users, Plus, Edit2, Trash2, Loader2, UserCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { COLORS as BRAND_COLORS } from '../lib/brandColors';
+import { adminBarStyle, adminCardStyle, adminBtnPrimaryStyle, adminIconBg, adminBorder, adminTextMuted, mix, BTN, BTN_ICON } from '../lib/adminUi';
 
 
 const COLORS = [
@@ -142,15 +141,21 @@ export default function OperatorsPage() {
     <Layout>
       <div className="space-y-6" data-testid="operators-page">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="font-display text-3xl font-medium text-[#2D1B14]">Operatori</h1>
-            <p className="text-[#7C5C4A] mt-1 ">{operators.length} collaboratori</p>
+        <div className="rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4" style={adminBarStyle}>
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0" style={adminIconBg}>
+              <Users className="w-5 h-5 text-white" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="font-display text-3xl font-medium text-[#2D1B14]">Operatori</h1>
+              <p className="text-sm mt-0.5" style={adminTextMuted}>{operators.length} collaboratori</p>
+            </div>
           </div>
-          <Button 
+          <Button
             onClick={openNewDialog}
             data-testid="new-operator-btn"
-            className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-[0_4px_12px_rgba(200,97,122,0.3)] shadow-lg shadow-[rgba(200,97,122,0.3)]"
+            className={`${BTN} text-white`}
+            style={adminBtnPrimaryStyle}
           >
             <Plus className="w-5 h-5 mr-2" />
             Nuovo Operatore
@@ -170,27 +175,14 @@ export default function OperatorsPage() {
               <div
                 key={operator.id}
                 data-testid={`operator-card-${operator.id}`}
-                onMouseEnter={e => {
-                  e.currentTarget.style.boxShadow = `0 16px 48px rgba(200,97,122,0.3), inset 0 1px 0 rgba(255,255,255,0.3)`;
-                  e.currentTarget.style.transform = 'scale(1.03) translateY(-4px)';
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.boxShadow = `0 8px 24px rgba(200,97,122,0.2)`;
-                  e.currentTarget.style.transform = 'scale(1)';
-                }}
-                className={`transition-all duration-300 rounded-2xl ${
+                className={`rounded-2xl p-4 sm:p-5 transition-transform duration-200 hover:-translate-y-0.5 ${
                   !operator.active ? 'opacity-60' : ''
                 }`}
-                style={{
-                  background: `linear-gradient(135deg, #FFFFFF 0%, ${BRAND_COLORS.bgLight} 100%)`,
-                  border: `1px solid ${BRAND_COLORS.borderLight}`,
-                  boxShadow: `0 8px 24px rgba(200,97,122,0.2)`,
-                  padding: '20px',
-                }}
+                style={adminCardStyle}
               >
                 <Card className="border-0 bg-transparent shadow-none">
                 <CardContent className="p-0">
-                  <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-start justify-between gap-2 mb-4">
                     <div className="flex items-center gap-3">
                       <div 
                         className="w-12 h-12 rounded-full flex items-center justify-center"
@@ -202,47 +194,52 @@ export default function OperatorsPage() {
                           strokeWidth={1.5}
                         />
                       </div>
-                      <div>
-                        <h3 className="font-medium text-[#2D1B14]">{operator.name}</h3>
+                      <div className="min-w-0">
+                        <h3 className="font-medium text-[#2D1B14] text-lg break-words">{operator.name}</h3>
                         {operator.phone && (
-                          <p className="text-sm text-[#7C5C4A]">{operator.phone}</p>
+                          <p className="text-sm" style={adminTextMuted}>{operator.phone}</p>
                         )}
                       </div>
                     </div>
                     <div 
-                      className="w-4 h-4 rounded-full"
+                      className="w-4 h-4 rounded-full shrink-0"
                       style={{ backgroundColor: operator.color }}
                     />
                   </div>
 
-                  <div className="flex items-center justify-between pt-3 border-t border-[#F0E6DC]/30">
-                    <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between pt-3 border-t" style={{ borderColor: adminBorder }}>
+                    <div className="flex items-center gap-2 min-h-11">
                       <Switch
                         checked={operator.active}
                         onCheckedChange={() => handleToggleActive(operator)}
-                        className="data-[state=checked]:bg-[#789F8A]"
+                        aria-label={`Attiva o disattiva ${operator.name}`}
+                        className="relative after:absolute after:-inset-3 after:content-[''] data-[state=checked]:bg-[var(--admin-primary,#C8617A)]"
                       />
-                      <span className="text-sm text-[#7C5C4A]">
+                      <span className="text-sm" style={adminTextMuted}>
                         {operator.active ? 'Attivo' : 'Inattivo'}
                       </span>
                     </div>
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 shrink-0">
                       <Button
                         size="icon"
                         variant="ghost"
+                        aria-label={`Modifica ${operator.name}`}
                         onClick={() => handleEdit(operator)}
-                        className="text-[#7C5C4A] hover:text-[#C8617A]"
+                        className={`${BTN_ICON} hover:text-[var(--admin-primary,#C8617A)]`}
+                        style={adminTextMuted}
                       >
                         <Edit2 className="w-4 h-4" />
                       </Button>
                       <Button
                         size="icon"
                         variant="ghost"
+                        aria-label={`Elimina ${operator.name}`}
                         onClick={() => {
                           setOperatorToDelete(operator.id);
                           setDeleteDialogOpen(true);
                         }}
-                        className="text-[#7C5C4A] hover:text-[#E76F51]"
+                        className={`${BTN_ICON} hover:text-[#E76F51]`}
+                        style={adminTextMuted}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -254,14 +251,15 @@ export default function OperatorsPage() {
             ))}
           </div>
         ) : (
-          <Card className="bg-white border-[#F0E6DC]/30">
+          <Card className="rounded-2xl shadow-none" style={adminCardStyle}>
             <CardContent className="py-16 text-center">
-              <Users className="w-16 h-16 mx-auto text-[#E2E8F0] mb-4" strokeWidth={1.5} />
+              <Users className="w-16 h-16 mx-auto mb-4" style={{ color: mix('var(--admin-primary, #C8617A)', 35) }} strokeWidth={1.5} />
               <h3 className="font-display text-xl text-[#2D1B14] mb-2">Nessun operatore</h3>
-              <p className="text-[#7C5C4A] mb-4">Aggiungi le tue collaboratrici</p>
+              <p className="mb-4" style={adminTextMuted}>Aggiungi le tue collaboratrici</p>
               <Button
                 onClick={openNewDialog}
-                className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-[0_4px_12px_rgba(200,97,122,0.3)]"
+                className={`${BTN} text-white`}
+                style={adminBtnPrimaryStyle}
               >
                 <Plus className="w-4 h-4 mr-2" /> Aggiungi Operatore
               </Button>
@@ -285,7 +283,7 @@ export default function OperatorsPage() {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Nome operatore"
                   data-testid="operator-name-input"
-                  className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
+                  className="h-11 text-sm bg-[#FAF7F2] border-transparent focus:border-[var(--admin-primary,#C8617A)]"
                   required
                 />
               </div>
@@ -296,7 +294,7 @@ export default function OperatorsPage() {
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   placeholder="+39 ..."
                   data-testid="operator-phone-input"
-                  className="bg-[#FAF7F2] border-transparent focus:border-[#C8617A]"
+                  className="h-11 text-sm bg-[#FAF7F2] border-transparent focus:border-[var(--admin-primary,#C8617A)]"
                 />
               </div>
               <div className="space-y-2">
@@ -307,13 +305,14 @@ export default function OperatorsPage() {
                       key={color.value}
                       type="button"
                       onClick={() => setFormData({ ...formData, color: color.value })}
-                      className={`w-full h-10 rounded-xl transition-all ${
+                      className={`w-full h-11 rounded-xl transition-all ${
                         formData.color === color.value 
                           ? 'ring-2 ring-offset-2 ring-[#0F172A]' 
                           : ''
                       }`}
                       style={{ backgroundColor: color.value }}
                       title={color.name}
+                      aria-label={color.name}
                     />
                   ))}
                 </div>
@@ -323,7 +322,8 @@ export default function OperatorsPage() {
                   type="submit"
                   disabled={saving}
                   data-testid="save-operator-btn"
-                  className="bg-gradient-to-r from-[#C8617A] to-[#A0404F] hover:from-[#A0404F] hover:to-[#C8617A] text-white shadow-[0_4px_12px_rgba(200,97,122,0.3)]"
+                  className={`${BTN} text-white`}
+                  style={adminBtnPrimaryStyle}
                 >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : editingOperator ? 'Salva Modifiche' : 'Aggiungi Operatore'}
                 </Button>
@@ -342,10 +342,10 @@ export default function OperatorsPage() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Annulla</AlertDialogCancel>
+              <AlertDialogCancel className="min-h-11">Annulla</AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDelete}
-                className="bg-[#E76F51] hover:bg-[#D55F41]"
+                className="min-h-11 bg-[#E76F51] hover:bg-[#D55F41]"
               >
                 Elimina
               </AlertDialogAction>
