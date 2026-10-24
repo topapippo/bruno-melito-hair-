@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import api, { API } from '../lib/api';
+import api, { API, getErrorMessage } from '../lib/api';
 import { sendWA } from '../lib/sendWA';
 import Layout from '../components/Layout';
 import { Button } from '@/components/ui/button';
@@ -454,17 +454,17 @@ export default function PlanningPage() {
   const sendConfirmation = async (booking) => {
     setSendingConfirmId(booking.id);
     try {
-      const res = await api.post(`${API}/reminders/appointment/${booking.id}/send-confirmation`);
+      const res = await api.post(`${API}/appointments/${booking.id}/send-booking-confirmation`);
       setNewOnlineBookings(prev => prev.map(b =>
-        b.id === booking.id ? { ...b, confirmation_status: 'pending' } : b
+        b.id === booking.id ? { ...b, client_confirmation_sent: !!res.data.sent } : b
       ));
       if (res.data.sent) {
-        toast.success(`✅ Conferma WA inviata a ${booking.client_name}!`);
+        toast.success(`Conferma WhatsApp inviata a ${booking.client_name}`);
       } else {
-        toast.warning(`⚠️ WA non inviato a ${booking.client_name} — verifica Green API in Impostazioni`, { duration: 8000 });
+        toast.warning(`WhatsApp non inviato a ${booking.client_name}. Controlla il numero e le impostazioni WhatsApp`, { duration: 8000 });
       }
     } catch (e) {
-      toast.error(e.response?.data?.detail || 'Errore invio messaggio');
+      toast.error(getErrorMessage(e, 'Errore invio messaggio'));
     }
     setSendingConfirmId(null);
   };

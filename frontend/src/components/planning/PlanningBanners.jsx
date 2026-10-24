@@ -38,15 +38,18 @@ export function OnlineBookingBanner({ newOnlineBookings, dismissOnlineBooking, d
                   <span className="text-[10px] font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded-full">✓ Confermato</span>
                 ) : booking.confirmation_status === 'pending' ? (
                   <span className="text-[10px] font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">⏳ In attesa</span>
+                ) : booking.client_confirmation_sent ? (
+                  <span className="text-[10px] font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full" data-testid={`confirm-sent-${booking.id}`}>✓ Conferma inviata</span>
                 ) : (
                   <Button
                     size="sm"
                     onClick={(e) => { e.stopPropagation(); onSendConfirmation?.(booking); }}
                     disabled={sendingConfirmId === booking.id}
-                    className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2"
+                    className="h-11 min-w-[44px] text-xs text-white font-bold px-3 hover:opacity-90"
+                    style={{ background: 'linear-gradient(135deg, var(--admin-primary, #C8617A), var(--admin-accent, #D4AF7A))' }}
                     data-testid={`confirm-booking-${booking.id}`}
                   >
-                    {sendingConfirmId === booking.id ? '...' : '📩 Invia conferma'}
+                    {sendingConfirmId === booking.id ? '...' : 'Invia conferma'}
                   </Button>
                 )}
                 <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); dismissOnlineBooking(booking.id); }} className="h-7 w-7 shrink-0 text-emerald-500 hover:bg-emerald-100" data-testid={`dismiss-booking-${booking.id}`}>
