@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api, { API, getErrorMessage } from '../lib/api';
 import { sendWA } from '../lib/sendWA';
@@ -52,6 +52,8 @@ const BTN_ICON = 'inline-flex items-center justify-center w-11 h-11 min-w-[44px]
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const pageRef = useRef(null);
+  const [modalTheme, setModalTheme] = useState({});
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showTargetModal, setShowTargetModal] = useState(false);
@@ -209,6 +211,20 @@ export default function Dashboard() {
     }
   };
 
+  // Il modal è fuori dal Layout: gli passo i colori del tema admin.
+  const openTargetModal = () => {
+    const cs = pageRef.current ? getComputedStyle(pageRef.current) : null;
+    const t = {};
+    if (cs) {
+      ['--admin-primary', '--admin-accent', '--admin-content-bg', '--admin-content-text'].forEach((k) => {
+        const v = cs.getPropertyValue(k).trim();
+        if (v) t[k] = v;
+      });
+    }
+    setModalTheme(t);
+    setShowTargetModal(true);
+  };
+
   const closeCheckout = () => setCheckoutApt(null);
 
   const afterCheckout = () => {
@@ -263,7 +279,7 @@ export default function Dashboard() {
   return (
     <>
     <Layout>
-      <div className="space-y-5" data-testid="dashboard-page">
+      <div ref={pageRef} className="space-y-5" data-testid="dashboard-page">
 
         {/* ── Intestazione ─────────────────────────────────────────── */}
         <div className={`${CARD} p-4 sm:p-6`}>
@@ -321,7 +337,7 @@ export default function Dashboard() {
               {monthlyTarget > 0 && (
                 <button
                   type="button"
-                  onClick={() => setShowTargetModal(true)}
+                  onClick={openTargetModal}
                   className={`${TILE} !flex-col !items-stretch !gap-0 text-left cursor-pointer min-h-[44px] hover:bg-[color-mix(in_srgb,var(--admin-primary)_6%,transparent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--admin-primary)]`}
                 >
                   <div className="flex items-center justify-between mb-3 gap-2">
@@ -913,7 +929,7 @@ export default function Dashboard() {
       return (
         <div
           className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-4"
-          style={{ background: 'rgba(0,0,0,0.55)' }}
+          style={{ background: 'rgba(0,0,0,0.55)', ...modalTheme }}
           onClick={() => setShowTargetModal(false)}
         >
           <div
