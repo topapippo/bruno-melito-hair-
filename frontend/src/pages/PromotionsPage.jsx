@@ -47,10 +47,14 @@ export default function PromotionsPage() {
 
   const [formData, setFormData] = useState({
     name: '', description: '', rule_type: 'under_30',
-    free_service_name: '', promo_code: '', active: true, show_on_booking: true
+    free_service_name: '', linked_service_id: '', promo_code: '', active: true, show_on_booking: true
   });
+  const [services, setServices] = useState([]);
 
-  useEffect(() => { fetchPromos(); }, []);
+  useEffect(() => {
+    fetchPromos();
+    api.get(`${API}/services`).then(res => setServices(res.data || [])).catch(() => setServices([]));
+  }, []);
 
   const fetchPromos = async () => {
     try {
@@ -65,8 +69,8 @@ export default function PromotionsPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.free_service_name) {
-      toast.error('Compila nome e servizio omaggio');
+    if (!formData.name || !(formData.free_service_name || formData.linked_service_id)) {
+      toast.error('Compila nome e servizio omaggio o servizio collegato');
       return;
     }
     setSaving(true);
@@ -115,7 +119,7 @@ export default function PromotionsPage() {
     setEditing(promo);
     setFormData({
       name: promo.name, description: promo.description, rule_type: promo.rule_type,
-      free_service_name: promo.free_service_name, promo_code: promo.promo_code || '',
+      free_service_name: promo.free_service_name || '', linked_service_id: promo.linked_service_id || '', promo_code: promo.promo_code || '',
       active: promo.active, show_on_booking: promo.show_on_booking
     });
     setDialogOpen(true);
@@ -125,7 +129,7 @@ export default function PromotionsPage() {
     setEditing(null);
     setFormData({
       name: '', description: '', rule_type: 'under_30',
-      free_service_name: '', promo_code: '', active: true, show_on_booking: true
+      free_service_name: '', linked_service_id: '', promo_code: '', active: true, show_on_booking: true
     });
   };
 
@@ -245,11 +249,18 @@ export default function PromotionsPage() {
                         </div>
                         <h3 className="font-bold text-lg text-[#2D1B14]">{promo.name}</h3>
                         <p className="text-sm text-[#7C5C4A] mt-1">{promo.description}</p>
-                        <div className="mt-3 p-2.5 bg-pink-50 border border-pink-200 rounded-xl">
-                          <p className="text-sm font-bold text-pink-700 flex items-center gap-1.5">
-                            <Gift className="w-4 h-4" /> OMAGGIO: {promo.free_service_name}
+                        {promo.free_service_name && (
+                          <div className="mt-3 p-2.5 bg-pink-50 border border-pink-200 rounded-xl">
+                            <p className="text-sm font-bold text-pink-700 flex items-center gap-1.5">
+                              <Gift className="w-4 h-4" /> OMAGGIO: {promo.free_service_name}
+                            </p>
+                          </div>
+                        )}
+                        {promo.linked_service_id && (
+                          <p className="mt-3 text-sm font-bold text-pink-700">
+                            Servizio collegato: {services.find(sv => sv.id === promo.linked_service_id)?.name || '—'}
                           </p>
-                        </div>
+                        )}
                         <div className="flex items-center gap-4 mt-3 text-sm">
                           <button onClick={() => copyCode(promo.promo_code)}
                             className="flex items-center gap-1.5 text-[#C8617A] hover:underline font-mono font-bold"
@@ -302,7 +313,7 @@ export default function PromotionsPage() {
                 <Label>Descrizione</Label>
                 <Input value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="es. Piega GRATIS con qualsiasi servizio colore per under 30" />
+                  placeholder="es. Per clienti sotto i 30 anni: trattamento in omaggio con qualsiasi servizio" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -318,12 +329,25 @@ export default function PromotionsPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Servizio in Omaggio *</Label>
+                  <Label>Servizio in Omaggio</Label>
                   <Input value={formData.free_service_name}
                     onChange={(e) => setFormData({ ...formData, free_service_name: e.target.value })}
                     placeholder="es. Piega, Trattamento Olaplex"
                     data-testid="promo-service-input" />
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Servizio collegato (opzionale: si aggiunge in cassa)</Label>
+                <Select value={formData.linked_service_id || 'none'}
+                  onValueChange={(v) => setFormData({ ...formData, linked_service_id: v === 'none' ? '' : v })}>
+                  <SelectTrigger data-testid="promo-linked-service-select"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nessuno</SelectItem>
+                    {services.map(sv => (
+                      <SelectItem key={sv.id} value={sv.id}>{sv.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label>Codice Promo (opzionale, generato automaticamente)</Label>
@@ -367,7 +391,7 @@ export default function PromotionsPage() {
                   <p className="text-sm text-[#7C5C4A] mt-1">{newlyCreatedPromo.description}</p>
                   <div className="mt-3 p-2 bg-white rounded-xl border border-pink-300">
                     <p className="text-sm font-bold text-pink-700 flex items-center gap-1.5">
-                      <Gift className="w-4 h-4" /> OMAGGIO: {newlyCreatedPromo.free_service_name}
+                      <Gift className="w-4 h-4" /> {newlyCreatedPromo.free_service_name ? `OMAGGIO: ${newlyCreatedPromo.free_service_name}` : 'Servizio collegato in cassa'}
                     </p>
                   </div>
                   <p className="text-xs text-[#64748B] mt-2 font-mono">Codice: {newlyCreatedPromo.promo_code}</p>
