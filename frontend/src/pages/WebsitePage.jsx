@@ -352,7 +352,7 @@ export default function WebsitePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#1C1008] flex flex-col items-center justify-center gap-5 px-6">
-        <img src="/logo.png?v=4" alt="Bruno Melito Hair" className="w-16 h-16 rounded-2xl border-2 border-amber-400/40" />
+        <img src="/logo-128.png?v=1" decoding="async" alt="Bruno Melito Hair" className="w-16 h-16 rounded-2xl border-2 border-amber-400/40" />
         <div className="w-10 h-10 border-4 border-amber-400 border-t-transparent rounded-full animate-spin" />
         {loadingSlow && (
           <div className="text-center max-w-xs animate-pulse">
@@ -496,7 +496,7 @@ export default function WebsitePage() {
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navScrolled ? 'bg-white shadow-md border-b border-gray-200' : 'bg-[#FDF8F5]/80 backdrop-blur-sm border-b border-[#1A0A10]/10'}`}>
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/logo.png?v=4" alt={config.salon_name} className="w-10 h-10 rounded-lg" />
+            <img src="/logo-128.png?v=1" decoding="async" alt={config.salon_name} className="w-10 h-10 rounded-lg" />
             <span className="font-black text-sm sm:text-base tracking-tight transition-colors duration-300"
               style={{ color: navScrolled ? T.text : '#1A0A10' }}>
               {config.salon_name || 'BRUNO MELITO HAIR'}
@@ -851,7 +851,7 @@ export default function WebsitePage() {
         <div className="max-w-6xl mx-auto px-4">
           <AnimatedSection>
             <div className="flex flex-col items-center gap-6">
-              <img src="/logo.png?v=4" alt={config.salon_name} className="w-14 h-14 rounded-2xl border border-white/20 shadow-sm hover:scale-110 transition-transform duration-300" />
+              <img src="/logo-128.png?v=1" decoding="async" alt={config.salon_name} className="w-14 h-14 rounded-2xl border border-white/20 shadow-sm hover:scale-110 transition-transform duration-300" />
               <p className="text-white text-sm font-bold">{config.salon_name || 'BRUNO MELITO HAIR'}</p>
               <div className="flex items-center gap-3">
                 {SOCIAL_LINKS.map((link, i) => (
