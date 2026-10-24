@@ -110,8 +110,6 @@ export default function WebsitePage() {
   const [navScrolled, setNavScrolled] = useState(false);
   const [heroVisible, setHeroVisible] = useState(true);
   const [showWelcome, setShowWelcome] = useState(true);
-  // Su telefono il video hero non parte da solo: resta il poster leggero (meno dati, LCP più rapido)
-  const [isPhone] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches);
 
   useEffect(() => {
     const timer = setTimeout(() => setShowWelcome(false), 2500);
@@ -573,8 +571,7 @@ export default function WebsitePage() {
         {/* Sfondo Video */}
         <video
           key={heroVideoUrl}
-          autoPlay={!isPhone}
-          preload={isPhone ? 'none' : 'auto'}
+          autoPlay
           loop
           muted
           playsInline
