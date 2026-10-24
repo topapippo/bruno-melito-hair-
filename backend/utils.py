@@ -197,6 +197,27 @@ async def send_whatsapp(phone: str, message: str, user: dict = None) -> dict:
     """Invio testo libero via Meta Cloud API."""
     return await send_automatic_message(phone, None, None, message, user)
 
+async def send_booking_confirmation(appointment_id: str, name: str, phone: str, date: str, time: str, user: dict) -> dict:
+    """Invia il template conferma_prenotazione alla cliente e salva l'esito
+    sull'appuntamento (client_confirmation_sent / client_confirmation_at)."""
+    from database import db
+    d_p = (date or "").split('-')
+    date_it = f"{d_p[2]}/{d_p[1]}/{d_p[0]}" if len(d_p) == 3 else date
+    msg = f"Ciao {name}! ✅ Prenotazione confermata per il {date_it} alle {time}. Ti aspettiamo! 💇"
+    res = {"sent": False}
+    if phone:
+        try:
+            res = await send_automatic_message(phone, "conferma_prenotazione", [name, date_it, time], msg, user)
+        except Exception as e:
+            logger.error(f"Invio conferma prenotazione {appointment_id} fallito: {e}", exc_info=True)
+            res = {"sent": False}
+    sent = bool(res.get("sent"))
+    await db.appointments.update_one(
+        {"id": appointment_id},
+        {"$set": {"client_confirmation_sent": sent, "client_confirmation_at": datetime.now(timezone.utc).isoformat()}},
+    )
+    return {"sent": sent}
+
 async def resolve_client(user_id: str, name: str, phone: str = "") -> tuple:
     """Trova un cliente esistente (per NOME esatto case-insensitive, poi per
     TELEFONO normalizzato come fallback) o ne crea uno nuovo. Evita i duplicati

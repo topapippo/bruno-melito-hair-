@@ -17,7 +17,7 @@ from client_ip import get_client_ip
 from database import db
 from auth import get_current_user
 from models import PublicBookingRequest, get_loyalty_rewards, LOYALTY_POINTS_PER_EURO
-from utils import normalize_phone_wa, send_whatsapp, calculate_end_time, send_automatic_message, resolve_client
+from utils import normalize_phone_wa, send_whatsapp, calculate_end_time, send_automatic_message, send_booking_confirmation, resolve_client
 from cache_utils import invalidate_website_cache, get_cached_website, set_cached_website
 from routes.categories import public_categories
 from database import fs, sync_db
@@ -450,11 +450,11 @@ async def create_public_booking(request: Request, data: PublicBookingRequest, ba
         msg_bruno = f"🔔 NUOVA PRENOTAZIONE ONLINE!\n👤 Cliente: {data.client_name}\n📅 Data: {date_it}\n⏰ Ora: {data.time}\n✂️ Servizi: {service_names}\n\nhttps://brunomelitohair.it/admin"
         salon_vars = [_clean_tpl_var(v) for v in (data.client_name, date_it, data.time, service_names)]
         background_tasks.add_task(_notify_salon_new_booking, user.get("phone") or "3397833526", salon_vars, msg_bruno, user)
-        client_msg = f"Ciao {data.client_name}! ✅ Prenotazione confermata per il {date_it} alle {data.time}. Ti aspettiamo! 💇"
         if data.client_phone:
-            # Prefer template di conferma approvato su Meta
-            background_tasks.add_task(send_automatic_message, data.client_phone, "conferma_prenotazione", [data.client_name, date_it, data.time], client_msg, user)
+            background_tasks.add_task(send_booking_confirmation, appointment_id, data.client_name, data.client_phone, data.date, data.time, user)
             wa_result = True
+        else:
+            await db.appointments.update_one({"id": appointment_id}, {"$set": {"client_confirmation_sent": False}})
     except Exception as e:
         # Logga l'errore specifico per il debugging, ma non bloccare la risposta all'utente
         logger.error(f"Fallimento invio notifica WhatsApp per prenotazione {appointment_id}: {str(e)}", exc_info=True)

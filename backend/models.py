@@ -210,6 +210,8 @@ class AppointmentResponse(BaseModel):
     confirmation_token: Optional[str] = None
     confirmation_status: Optional[str] = None
     confirmation_sent_at: Optional[str] = None
+    client_confirmation_sent: Optional[bool] = None
+    client_confirmation_at: Optional[str] = None
     created_at: str
 
 class AppointmentUpdate(BaseModel):

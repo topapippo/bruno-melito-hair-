@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from auth import get_current_user
 from database import db
 from models import AppointmentCreate, AppointmentResponse
-from utils import calculate_end_time, send_whatsapp, send_automatic_message, resolve_client
+from utils import calculate_end_time, send_whatsapp, send_automatic_message, send_booking_confirmation, resolve_client
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -102,6 +102,17 @@ async def create_appointment(data: AppointmentCreate, current_user: dict = Depen
         pass
 
     return AppointmentResponse(**{k: v for k, v in doc.items() if k != "user_id"})
+
+@router.post("/appointments/{appointment_id}/send-booking-confirmation")
+async def send_booking_confirmation_route(appointment_id: str, current_user: dict = Depends(get_current_user)):
+    apt = await db.appointments.find_one({"id": appointment_id, "user_id": current_user["id"]}, {"_id": 0})
+    if not apt:
+        raise HTTPException(status_code=404, detail="Appuntamento non trovato")
+    return await send_booking_confirmation(
+        appointment_id, apt.get("client_name", ""), apt.get("client_phone", ""),
+        apt.get("date", ""), apt.get("time", ""), current_user,
+    )
+
 
 @router.post("/appointments/{appointment_id}/checkout")
 async def checkout_appointment(appointment_id: str, data: SafeCheckoutData, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
