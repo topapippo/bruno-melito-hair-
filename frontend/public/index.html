@@ -101,12 +101,21 @@
         -->
         <title>Bruno Melito Hair | Parrucchiere donna a Santa Maria Capua Vetere</title>
         <!-- Google Analytics 4 -->
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-8KQQHD9YK3"></script>
         <script>
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
           gtag('config', 'G-8KQQHD9YK3');
+          window.addEventListener('load', function () {
+            var load = function () {
+              var g = document.createElement('script');
+              g.async = true;
+              g.src = 'https://www.googletagmanager.com/gtag/js?id=G-8KQQHD9YK3';
+              document.head.appendChild(g);
+            };
+            if ('requestIdleCallback' in window) requestIdleCallback(load, { timeout: 4000 });
+            else setTimeout(load, 2000);
+          });
         </script>
         <script>window.addEventListener("error",function(e){if(e.error instanceof DOMException&&e.error.name==="DataCloneError"&&e.message&&e.message.includes("PerformanceServerTiming")){e.stopImmediatePropagation();e.preventDefault()}},true);</script>
     </head>
