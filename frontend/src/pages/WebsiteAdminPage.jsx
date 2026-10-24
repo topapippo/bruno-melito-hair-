@@ -137,7 +137,7 @@ export default function WebsiteAdminPage() {
   const [promotions, setPromotions] = useState([]);
   const [promoDialog, setPromoDialog] = useState(false);
   const [editPromo, setEditPromo] = useState(null);
-  const [promoForm, setPromoForm] = useState({ name: '', description: '', discount_type: 'percent', discount_value: 10, active: true, show_on_booking: true });
+  const [promoForm, setPromoForm] = useState({ name: '', description: '', active: true, show_on_booking: true });
   const heroInputRef = useRef(null);
   const heroVideoInputRef = useRef(null);
   const [uploadingVideo, setUploadingVideo] = useState(false);
@@ -220,13 +220,13 @@ export default function WebsiteAdminPage() {
   // ── Promotions helpers ──
   const openNewPromo = () => {
     setEditPromo(null);
-    setPromoForm({ name: '', description: '', discount_type: 'percent', discount_value: 10, active: true, show_on_booking: true });
+    setPromoForm({ name: '', description: '', active: true, show_on_booking: true });
     setPromoDialog(true);
   };
 
   const openEditPromo = (promo) => {
     setEditPromo(promo);
-    setPromoForm({ name: promo.name, description: promo.description || '', discount_type: promo.discount_type || 'percent', discount_value: promo.discount_value || 0, active: promo.active !== false, show_on_booking: promo.show_on_booking !== false });
+    setPromoForm({ name: promo.name, description: promo.description || '', active: promo.active !== false, show_on_booking: promo.show_on_booking !== false });
     setPromoDialog(true);
   };
 
@@ -955,9 +955,6 @@ export default function WebsiteAdminPage() {
                             {promo.show_on_booking && <span className="text-sm px-2 py-0.5 rounded-full bg-[color-mix(in_srgb,var(--admin-accent)_25%,white)] text-[#2D1B14] font-medium">Sul sito</span>}
                           </div>
                           <p className="text-sm text-[#7C5C4A] mt-1">{promo.description || 'Nessuna descrizione'}</p>
-                          <p className="text-sm text-[color:var(--admin-primary)] font-bold mt-1">
-                            {promo.discount_type === 'percent' && promo.discount_value ? `Sconto: ${promo.discount_value}%` : promo.discount_type === 'fixed' && promo.discount_value ? `Sconto: ${promo.discount_value}\u20AC` : ''}
-                          </p>
                         </div>
                         <div className="flex gap-1 shrink-0">
                           <Button variant="ghost" size="icon" onClick={() => togglePromoActive(promo)} className={promo.active ? 'text-[color:var(--admin-primary)]' : 'text-[#7C5C4A]'}>
@@ -983,7 +980,7 @@ export default function WebsiteAdminPage() {
                 <div className="flex items-center justify-between flex-wrap gap-3">
                   <div>
                     <CardTitle className={TITLE}><TrendingUp className="w-5 h-5" /> Upselling Servizi</CardTitle>
-                    <p className="text-sm text-[#7C5C4A] mt-1">Dopo la prenotazione, suggerisci servizi complementari con uno sconto. Il cliente può aggiungerli con un click.</p>
+                    <p className="text-sm text-[#7C5C4A] mt-1">Dopo la prenotazione, suggerisci servizi complementari con un'offerta dedicata. Il cliente può aggiungerli con un click.</p>
                   </div>
                 </div>
               </CardHeader>
@@ -1459,24 +1456,8 @@ export default function WebsiteAdminPage() {
           <DialogContent>
             <DialogHeader><DialogTitle>{editPromo ? 'Modifica Promozione' : 'Nuova Promozione'}</DialogTitle></DialogHeader>
             <div className="space-y-4">
-              <div><Label>Nome Promozione</Label><Input value={promoForm.name} onChange={e => setPromoForm({ ...promoForm, name: e.target.value })} placeholder="Es. Sconto Primavera" data-testid="promo-name-input" /></div>
+              <div><Label>Nome Promozione</Label><Input value={promoForm.name} onChange={e => setPromoForm({ ...promoForm, name: e.target.value })} placeholder="Es. Speciale Under 30" data-testid="promo-name-input" /></div>
               <div><Label>Descrizione</Label><Textarea value={promoForm.description} onChange={e => setPromoForm({ ...promoForm, description: e.target.value })} rows={2} placeholder="Descrizione della promozione..." data-testid="promo-desc-input" /></div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Tipo Sconto</Label>
-                  <Select value={promoForm.discount_type} onValueChange={v => setPromoForm({ ...promoForm, discount_type: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="percent">Percentuale (%)</SelectItem>
-                      <SelectItem value="fixed">Fisso ({'\u20AC'})</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Valore Sconto</Label>
-                  <Input type="number" value={promoForm.discount_value} onChange={e => setPromoForm({ ...promoForm, discount_value: parseFloat(e.target.value) || 0 })} />
-                </div>
-              </div>
               <div className="flex items-center gap-6">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <Switch checked={promoForm.active} onCheckedChange={v => setPromoForm({ ...promoForm, active: v })} />
